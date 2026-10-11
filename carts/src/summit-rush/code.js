@@ -1,8 +1,9 @@
 // SUMMIT RUSH - vertical slice: stage 1 (Base Camp) with Claude.
 // Design: docs/carts/summit-rush.md. The arrows move the racer around the
-// screen. A dashes (spends Electricity to smash through obstacles), B uses
-// Claude's special (Constitution). After the round, a scoreboard ranks your
-// score against the six other models' simulated runs.
+// screen and B uses Claude's special (Constitution). Each bucket powers the
+// racer: Electricity moves you faster, GPU reveals extra chips, CPU widens
+// your pickup radius and RAM raises the other buckets' cap. After the round,
+// a scoreboard ranks your score against the other six models' simulated runs.
 
 // --- Tuning -------------------------------------------------------------------
 
@@ -12,12 +13,10 @@ const KNOCKBACK = 16; // px a hit pushes the racer down the screen
 const FINISH_Y = -2600; // world y of the finish line (start line is y 0)
 const HUD_H = 20;
 const CHIP_VALUE = 5;
-const SHIELD_COST = 15;
-const DASH_COST = 1 / 3; // Electricity per frame (20 per second)
-const DASH_SPEED = 1.4; // scroll multiplier while dashing
+const HIT_COST = 10; // bucket points an obstacle takes
 const TIERS = [[80, 2000, 'GOLD', 14], [50, 750, 'SILVER', 10], [25, 250, 'BRONZE', 9]];
 const BEST_SLOT = 10, BEST_PLACE_SLOT = 11; // save slots (SPEC 12)
-const VERSION_SLOT = 0, SAVE_VERSION = 3; // version 3: no time or place points
+const VERSION_SLOT = 0, SAVE_VERSION = 4; // version 4: bucket effects reworked
 
 /**
  * The other models' rounds are simulated from these profiles (SPEC 5.1):
@@ -33,14 +32,22 @@ const RIVALS = [
 ];
 
 const MODEL = {
-  name: 'CLAUDE', start: [10, 10, 15, 15], speed: 1, handling: 1.1,
+  name: 'CLAUDE', start: [10, 10, 15, 15], handling: 1.1,
   special: 'CONSTITUTION', specialFrames: 180,
 };
 
 // --- Art ----------------------------------------------------------------------
 
 const GRASS = 1, ROCK = 2, EDGE_L = 3, EDGE_R = 4, CHECKER = 5, START_LINE = 6, FLOWER = 7;
-const SPR = { RUN: 32, LEAN: 36, CHIPS: [38, 40, 42, 44], WAFER: 46, PROTEST: 64, TAPE: 68, FLAME: 69 };
+const SPR = { RUN: 32, LEAN: 36, CHIPS: [38, 40, 42, 44], WAFER: 46, PROTEST: 64, TAPE: 68, PRICE: 70, LAW: 72 };
+
+/** Each obstacle takes from one bucket (SPEC 8). */
+const OBSTACLES = {
+  protester: { bucket: 1, text: 'PROTEST' },
+  tape: { bucket: 0, text: 'RED TAPE' },
+  price: { bucket: 3, text: 'HIGH PRICES' },
+  law: { bucket: 2, text: 'LEGISLATION' },
+};
 const BUCKET_NAME = ['ELEC', 'GPU', 'CPU', 'RAM'];
 const BUCKET_LETTER = ['E', 'G', 'C', 'R'];
 const PURPLE = 135; // sprite palette 0, color 7, recolored for RAM
@@ -80,8 +87,8 @@ function reset() {
   camY = -150;
   p = {
     x: 120, y: 0, sy: 150, vx: 0, vy: 0, b: [...MODEL.start],
-    slow: 0, tape: 0, inv: 0, immune: 0, special: 1,
-    dashing: false, frames: 0, speed: SCROLL,
+    slow: 0, inv: 0, immune: 0, special: 1, frames: 0,
+    bonusY: -200, bonusN: 0, // where GPU's next bonus chip appears
   };
   entities = buildCourse();
   popups = [];
@@ -148,10 +155,10 @@ function nextType() {
 }
 
 /**
- * What fills each stretch of course. Every ten stretches deal this mix in a
+ * What fills each stretch of course. Every eleven stretches deal this mix in a
  * shuffled order, so chips and obstacles stay in balance over the stage.
  */
-const SLOT_MIX = ['chips', 'chips', 'chips', 'chips', 'chips', 'protest', 'protest', 'tape', 'both', 'wafer'];
+const SLOT_MIX = ['chips', 'chips', 'chips', 'chips', 'chips', 'protest', 'tape', 'price', 'law', 'both', 'wafer'];
 let slots = [];
 function nextSlot() {
   if (!slots.length) {
@@ -199,6 +206,16 @@ function buildCourse() {
       const t = nextType();
       placed[t]++;
       list.push({ kind: 'chip', type: t, x: clamp(x + 8, a, b), y: y - 30 });
+    } else if (k === 'price') {
+      // High prices: a pair of price tags hanging over the track.
+      const [x0, x1] = trackRange(y, 36);
+      const x = x0 + rand() * (x1 - x0);
+      list.push({ kind: 'price', x, y }, { kind: 'price', x: x + 20, y: y - 6 });
+    } else if (k === 'law') {
+      // Legislation: one or two stacks of law books.
+      const [x0, x1] = trackRange(y);
+      const n = 1 + Math.floor(rand() * 2);
+      for (let i = 0; i < n; i++) list.push({ kind: 'law', x: x0 + rand() * (x1 - x0), y: y - i * 26 });
     } else if (k === 'wafer') {
       const [x0, x1] = trackRange(y);
       list.push({ kind: 'wafer', x: x0 + rand() * (x1 - x0), y });
@@ -241,9 +258,8 @@ function race() {
   p.frames++;
   const [elec, gpu, cpu] = p.b;
 
-  // Steering: CPU sharpens it, red tape halves it.
-  const handling = MODEL.handling * (1 + cpu * 0.005) * (p.tape > 0 ? 0.5 : 1);
-  const acc = 0.22 * handling, maxV = 2 * handling;
+  // Electricity powers movement: 1.4 px/frame at 0 up to 2.6 at 100.
+  const maxV = (1.4 + elec * 0.012) * MODEL.handling, acc = maxV * 0.11;
   if (btn(LEFT)) p.vx -= acc;
   else if (btn(RIGHT)) p.vx += acc;
   else p.vx *= 0.8;
@@ -261,21 +277,11 @@ function race() {
     p.vx = 0;
   }
 
-  // Scroll speed: dashing speeds it up, hits slow it. It moves the camera;
-  // the racer keeps its place on screen.
+  // The course scrolls at a steady speed; protesters slow it for a moment.
   let v = SCROLL;
-  const wasDashing = p.dashing;
-  p.dashing = btn(A) && elec > 0;
-  if (p.dashing) {
-    v *= DASH_SPEED;
-    p.b[0] = Math.max(0, elec - DASH_COST);
-    if (!wasDashing) sfx(7);
-  }
   if (p.slow > 0) { v *= 0.5; p.slow--; }
-  if (p.tape > 0) p.tape--;
   if (p.inv > 0) p.inv--;
   if (p.immune > 0) p.immune--;
-  p.speed = v;
   camY -= v;
   p.y = camY + p.sy;
 
@@ -288,8 +294,15 @@ function race() {
 
   streamRows();
 
-  // GPU is a pickup magnet: chips this close drift to the racer.
-  const reach = 12 + 2 + gpu * 0.16; // half a sprite plus 2-18 px
+  // GPU lets you see more: bonus chips of the other types appear ahead,
+  // every 400 px at GPU 0 down to 100 px at GPU 100.
+  if (camY < p.bonusY && camY > FINISH_Y + 100) {
+    bonusChip();
+    p.bonusY -= 400 - 3 * gpu;
+  }
+
+  // CPU is the pickup radius: chips this close drift to the racer.
+  const reach = 12 + 2 + cpu * 0.16; // half a sprite plus 2-18 px
   for (const e of entities) {
     if (e.gone || e.y - camY < -40 || e.y - camY > 240) continue;
     if (e.kind === 'protester') walk(e);
@@ -300,6 +313,13 @@ function race() {
   popups = popups.filter((q) => q.t > 0);
 
   if (p.y <= FINISH_Y) finish();
+}
+
+/** A GPU bonus chip just above the screen, placed the same way every run. */
+function bonusChip() {
+  const h = Math.imul(++p.bonusN, 2654435761) >>> 0;
+  const y = camY - 24, [x0, x1] = trackRange(y);
+  entities.push({ kind: 'chip', type: [0, 2, 3][h % 3], x: x0 + ((h >>> 8) % 1000) / 1000 * (x1 - x0), y, bonus: true });
 }
 
 function magnet(e, reach) {
@@ -319,49 +339,54 @@ function walk(e) {
 
 function collide(e) {
   const w = e.kind === 'tape' ? 32 : 16, h = e.kind === 'tape' ? 8 : 16;
+  // Books and tags fill less of their sprite, so their box is trimmed more.
+  const inset = e.kind === 'law' || e.kind === 'price' ? 3 : 2;
   // Player hitbox is the middle 10x12 of its sprite.
-  if (p.x + 13 < e.x + 2 || p.x + 3 > e.x + w - 2 || p.y + 14 < e.y + 2 || p.y + 2 > e.y + h - 2) return;
+  if (p.x + 13 < e.x + inset || p.x + 3 > e.x + w - inset || p.y + 14 < e.y + inset || p.y + 2 > e.y + h - inset) return;
   if (e.kind === 'chip') {
     e.gone = true;
-    add(e.type, CHIP_VALUE);
-    gain(e.type, CHIP_VALUE);
-    sfx(e.type);
+    if (add(e.type, CHIP_VALUE) > 0) {
+      gain(e.type, CHIP_VALUE);
+      sfx(e.type);
+    } else {
+      popup(`${BUCKET_NAME[e.type]} FULL`, 3);
+    }
   } else if (e.kind === 'wafer') {
     e.gone = true;
-    for (let i = 0; i < 4; i++) add(i, CHIP_VALUE);
+    // RAM first, so the other buckets get the raised cap.
+    for (const i of [3, 0, 1, 2]) add(i, CHIP_VALUE);
     popup('+5 ALL!', 14);
     sfx(4);
-  } else if (p.dashing) {
-    // Dashing smashes obstacles aside at no cost.
-    e.gone = true;
-    popup('SMASH!', 14);
-    sfx(12);
   } else if (p.inv === 0) {
     if (e.kind === 'protester' && p.immune > 0) return;
+    const o = OBSTACLES[e.kind];
     p.inv = 60;
     p.sy = Math.min(BOTTOM_Y, p.sy + KNOCKBACK);
     p.vy = 0;
-    if (p.b[3] >= SHIELD_COST) {
-      p.b[3] -= SHIELD_COST;
-      popup(`SHIELD -${SHIELD_COST} RAM`, PURPLE);
-      sfx(6);
-    } else if (e.kind === 'protester') {
-      p.slow = 60;
-      add(1, -5);
-      popup('-5 GPU', 6);
-      sfx(5);
-    } else {
-      p.tape = 120;
-      add(2, -5);
-      popup('RED TAPE -5 CPU', 6);
-      sfx(5);
-    }
+    if (e.kind === 'protester') p.slow = 60;
+    add(o.bucket, -HIT_COST);
+    popup(`${o.text} -${HIT_COST} ${BUCKET_NAME[o.bucket]}`, 6);
+    sfx(5);
   }
 }
 
+/** RAM sets the cap of the other three buckets: 60 at 0 RAM, 100 at 100. */
+function cap(i) {
+  return i === 3 ? 100 : Math.min(100, 60 + 0.4 * p.b[3]);
+}
+
+/** Change a bucket within its cap. Returns how much it actually changed. */
 function add(i, n) {
   const before = p.b[i];
-  p.b[i] = clamp(p.b[i] + n, 0, 100);
+  p.b[i] = n > 0 ? Math.max(before, Math.min(before + n, cap(i))) : Math.max(0, before + n);
+  if (i === 3 && n < 0) {
+    // Losing memory drops anything over the new cap down to it.
+    let lost = 0;
+    for (let j = 0; j < 3; j++) {
+      if (p.b[j] > cap(j)) { lost += p.b[j] - cap(j); p.b[j] = cap(j); }
+    }
+    if (lost > 0) popup(`OUT OF MEMORY -${Math.round(lost)}`, 6, -14);
+  }
   // Chime when a bucket crosses a tier threshold.
   for (const [mark] of TIERS) {
     if (before < mark && p.b[i] >= mark) {
@@ -369,6 +394,7 @@ function add(i, n) {
       break;
     }
   }
+  return p.b[i] - before;
 }
 
 /** A floating message above the racer; dy lifts it onto its own line. */
@@ -449,9 +475,9 @@ function draw() {
     else if (e.kind === 'wafer') spr(SPR.WAFER, x, sy + bob(e), { size: 16, prio: 2 });
     else if (e.kind === 'protester') spr(SPR.PROTEST + (flr(e.step / 12) % 2) * 2, x, sy, { size: 16, fx: e.vx < 0, prio: 2 });
     else if (e.kind === 'tape') for (let i = 0; i < 4; i++) spr(SPR.TAPE, x + i * 8, sy, { prio: 2 });
+    else if (e.kind === 'price') spr(SPR.PRICE, x, sy + bob(e), { size: 16, prio: 2 });
+    else if (e.kind === 'law') spr(SPR.LAW, x, sy, { size: 16, prio: 2 });
   }
-
-  speedLines();
 
   // The player flickers while invulnerable after a hit.
   const sy = Math.floor(p.y - camY);
@@ -459,7 +485,6 @@ function draw() {
     const lean = Math.abs(p.vx) > 1;
     const n = lean ? SPR.LEAN : SPR.RUN + (flr(p.frames / 8) % 2) * 2;
     spr(n, Math.floor(p.x), sy, { size: 16, fx: p.vx < -1, prio: 3 });
-    if (p.dashing) spr(SPR.FLAME, Math.floor(p.x) + 4, sy + 14 + (p.frames % 4 < 2 ? 0 : 1), { prio: 3 });
   }
   if (p.immune > 0) circ(Math.floor(p.x) + 8, sy + 8, 11 + (p.frames % 8 < 4 ? 0 : 1), 13);
 
@@ -471,20 +496,6 @@ function draw() {
   if (paused) banner('PAUSED', 15);
   if (state === 'done') results();
   if (state === 'board') scoreboard();
-}
-
-/** Streaks along the track edges that grow with speed. */
-function speedLines() {
-  const k = p.speed / SCROLL - 1;
-  if (k < 0.15) return;
-  const len = Math.round(6 + k * 30);
-  for (let i = 0; i < 8; i++) {
-    const wy = Math.floor(camY / 48) * 48 + i * 48 + (i * 37) % 48;
-    const [l, rt] = walls(Math.floor(wy / 8));
-    const sy = Math.floor(wy - camY);
-    const side = i % 2 ? rt * 8 - 6 - (i * 5) % 12 : l * 8 + 4 + (i * 7) % 12;
-    line(side, sy, side, sy + len, 15);
-  }
 }
 
 /** Text on a dark backing, readable over any ground. */
@@ -510,6 +521,8 @@ function hud() {
     rect(x + 9, 2, 42, 8, 3);
     rectfill(x + 10, 3, Math.round(v * 0.4), 6, v >= 25 ? tierOf(v)[3] : BUCKET_COLOR[i]);
     for (const [mark] of TIERS) pset(x + 10 + Math.round(mark * 0.4), 9, 15);
+    // The memory cap, set by RAM.
+    if (cap(i) < 100) line(x + 10 + Math.round(cap(i) * 0.4), 2, x + 10 + Math.round(cap(i) * 0.4), 9, 6);
   }
   print('BASE CAMP', 3, 11, 13);
   print(p.special > 0 ? 'B:READY' : 'B:USED', 92, 11, p.special > 0 ? 11 : 3);

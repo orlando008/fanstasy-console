@@ -23,7 +23,7 @@ after every round a scoreboard shows where you stand.
 ## 2. Core loop
 
 1. **Select** one of seven models on the title screen. Each has a stat profile and a special ability.
-2. **Round:** climb one stage of auto-scrolling mountain. Steer to collect chips, avoid obstacles, and dash when it pays.
+2. **Round:** climb one stage of auto-scrolling mountain. Steer to collect chips and avoid obstacles; the buckets you fill make you better at both.
 3. **Tally:** your buckets are scored against tier thresholds, then the **scoreboard** shows every model's round score and running total, ranked.
 4. Repeat for stages 2 and 3. Buckets start fresh each round from your model's starting values.
 5. **Final standings:** your place among the seven, your total on the leaderboard, initials, then try again or pick another model.
@@ -34,7 +34,6 @@ after every round a scoreboard shows where you stand.
 |---|---|
 | LEFT / RIGHT | Move left and right within the track walls |
 | UP / DOWN | Move up and down the screen (between y 40 and 200) |
-| A | Dash: spend Electricity to smash through obstacles unharmed |
 | B | Special ability (per model, see 6.2) |
 | START | Pause |
 | SELECT | (Title) toggle music |
@@ -42,19 +41,22 @@ after every round a scoreboard shows where you stand.
 ## 4. The four buckets
 
 Each bucket holds 0–100 and does two jobs: it is a **score resource** at the
-summit, and it **modifies your racer** while climbing.
+end of the round, and it **powers your racer** the way that component powers a
+computer. Every effect makes collecting easier, so a good start snowballs; each
+round resets the buckets to the model's starting values.
 
 | Bucket | Chip | Color | Effect during the race |
 |---|---|---|---|
-| ⚡ Electricity | Lightning bolt | Yellow | Dash fuel. Holding A spends 20 per second; while dashing, obstacles are smashed aside with no penalty and the scroll speeds up 40%. |
-| 🎮 GPU | Green chip | Green | Pickup magnet: chips within 2 px + 0.16 px per point (up to 18 px) of the racer are pulled in. |
-| 🧠 CPU | Blue chip | Blue | Steering: acceleration and max lateral speed +0.5% per point. |
-| 💾 RAM | Purple stick | Purple | Shielding: with 15 or more RAM, a hit is absorbed and costs 15 RAM. |
+| ⚡ Electricity | Lightning bolt | Yellow | **Power:** movement speed in all four directions, from 1.4 px/frame at 0 to 2.6 at 100 (times the model's handling). |
+| 🎮 GPU | Green chip | Green | **Vision:** reveals bonus chips of the other three types ahead, one every 400 − 3 × GPU px of climb (every ~5 s at the start, ~2 s at 80). |
+| 🧠 CPU | Blue chip | Blue | **Reach:** pickup radius; chips within 2 + 0.16 px per point (up to 18 px) of the racer are pulled in. |
+| 💾 RAM | Purple stick | Purple | **Memory:** the cap of the other three buckets is 60 + 0.4 × RAM (66 with 15 RAM, 80 with 50, 100 with 100). RAM's own cap is 100. |
 
 - Each chip pickup adds **+5** to its bucket. A rare **Golden Wafer** adds +5 to all four.
-- Each stage offers every bucket the same number of chips (about 20 in a 30-second stage, plus a few Golden Wafers), so reaching Gold takes collecting roughly half to two-thirds of a bucket's chips over the race, before dash and shield costs. Chip lines go to whichever bucket has had the fewest chips so far, and each ten stretches of course deal a fixed mix: 5 chip lines, 2 protester groups, 1 red tape with a bait chip, 1 pair of chips on opposite sides, 1 Golden Wafer.
-- Dashing consumes Electricity, so Electricity's final value reflects what you saved rather than what you collected: spending it protects the other three buckets.
-- RAM absorbing hits gives the core trade-off: protecting yourself costs score.
+- A pickup above the bucket's cap is wasted ("FULL"). When RAM drops, any bucket above the new cap is cut down to it ("OUT OF MEMORY"), so RAM hits hurt twice.
+- Reaching Gold (80) in Electricity, GPU or CPU needs RAM 50 or more first: RAM is the gate, so what you grab first matters.
+- Each stage places about 20 chips per bucket (plus GPU's bonus chips and a few Golden Wafers). Chip lines go to whichever bucket has had the fewest chips so far, and each eleven stretches of course deal a fixed shuffled mix: 5 chip lines of 4, 1 protester group, 1 red tape with a bait chip, 1 pair of price tags, 1 or 2 stacks of law books, 1 pair of chips on opposite sides, 1 Golden Wafer.
+- There is no shield and no button that spends a bucket: protection is dodging, which Electricity and CPU make easier, and each model's special.
 
 ### 4.1 Tier thresholds
 
@@ -92,7 +94,7 @@ The six models you aren't playing don't appear on the course. After each round, 
 | GPT | 60 / 65 / 55 / 50 | 12 | Strong all-rounder |
 | Gemini | 55 / 60 / 60 / 60 | 10 | Balanced |
 | Grok | 55 / 70 / 45 / 35 | 25 | Wild: sometimes tops the board, sometimes last |
-| DeepSeek | 65 / 50 / 65 / 45 | 12 | Efficient, saves Electricity |
+| DeepSeek | 65 / 50 / 65 / 45 | 12 | Efficient, high Electricity |
 | GLM | 55 / 55 / 55 / 55 | 6 | Steady, rarely surprises |
 | Kimi | 45 / 45 / 55 / 75 | 10 | Hoards RAM |
 
@@ -109,11 +111,11 @@ choices, not claims about the real systems. Seven racers:
 |---|---|---|---|
 | Claude | 10 / 10 / 15 / 15 | ★★★★ | **Constitution:** 3 s of immunity to protesters |
 | GPT | 15 / 15 / 10 / 10 | ★★★ | **Scale Up:** doubles the next 5 chip pickups |
-| Gemini | 10 / 15 / 10 / 15 | ★★★ | **Multimodal:** pickup magnet of 40 px for 4 s |
-| Grok | 20 / 10 / 10 / 5 | ★★ | **Unfiltered:** dash for 3 s without spending Electricity |
-| DeepSeek | 5 / 10 / 15 / 10 | ★★★ | **Efficiency:** dashing costs no Electricity for 5 s |
+| Gemini | 10 / 15 / 10 / 15 | ★★★ | **Multimodal:** pickup radius of 40 px for 4 s |
+| Grok | 20 / 10 / 10 / 5 | ★★ | **Unfiltered:** smash through obstacles unharmed for 3 s |
+| DeepSeek | 5 / 10 / 15 / 10 | ★★★ | **Efficiency:** movement at full Electricity speed (2.6 px/frame) for 5 s |
 | GLM | 10 / 10 / 10 / 10 | ★★★★★ | **Agent Mode:** auto-steers toward the nearest chips for 3 s |
-| Kimi | 10 / 5 / 10 / 20 | ★★★★ | **Long Context:** upcoming obstacles are marked from further away, and RAM shield hits cost nothing, for 5 s |
+| Kimi | 10 / 5 / 10 / 20 | ★★★★ | **Long Context:** caps rise to 100 and RAM can't be lost, for 5 s |
 
 - **Specials** charge once per round: they're available at the start of each stage and used up on activation.
 - Each model has a 16×16 racer sprite (two-frame climb animation, lean left/right frames) and a portrait for the select screen.
@@ -129,11 +131,9 @@ choices, not claims about the real systems. Seven racers:
 | 2 | The Treeline | ~30 s | 1.2× | Pines, switchback walls, narrower course |
 | 3 | The Summit | ~30 s | 1.4× | Snow and ice (lower traction), wind gusts |
 
-The racer moves freely around the screen, and the stage's scroll speed (faster
-while dashing, slower after a hit) only sets how fast the course passes, so
-dashing never costs reaction room. Speed lines streak along the track edges
-while dashing. A hit slows the scroll and knocks the racer 16 px down the
-screen. There is no fall-off penalty.
+The racer moves freely around the screen while the course scrolls at the
+stage's speed. Protesters slow the scroll for a moment; every hit knocks the
+racer 16 px down the screen. There is no fall-off penalty.
 
 ### 7.2 Layout
 
@@ -151,16 +151,18 @@ screen. There is no fall-off penalty.
 
 ## 8. Obstacles
 
-| Obstacle | Size | Behavior | Hit effect (if no RAM shield) |
-|---|---|---|---|
-| Protesters with signs | 16×16 | Walk slowly across the track in groups of 2–4; signs carry short jokes ("PAUSE AI", "TOUCH GRASS", "MY JOB!") | Speed halves for 1 s, −5 GPU |
-| Regulation books | 16×16 | Static stacks; tall stacks are 16×32 | Stop for 0.5 s, −10 from your highest bucket |
-| Red tape | 32×8 | Strips across part of the track; flutters | Steering reduced 50% for 2 s, −5 CPU |
-| Ice patch (stage 3) | 32×16 | Low traction | Drift; no bucket cost |
-| Wind gust (stage 3) | — | Pushes all racers sideways for 1 s; arrows warn first | — |
+Each obstacle takes from one bucket, so a hit always reads as a specific loss.
 
-- With a RAM shield (15+ RAM), any hit is fully absorbed and costs 15 RAM instead.
-- After a hit, 1 s of invulnerability, shown as sprite flicker.
+| Obstacle | Size | Behavior | Hit cost |
+|---|---|---|---|
+| Protesters with signs | 16×16 | Walk across the track in groups of 2–4; signs carry short jokes ("PAUSE AI", "TOUCH GRASS", "MY JOB!") | −10 GPU, and the scroll slows to half for 1 s |
+| Red tape | 32×8 | Strips across part of the track, with a chip as bait | −10 Electricity |
+| High prices | 16×16 | Price tags hanging over the track, in pairs | −10 RAM, then other buckets are cut to the new cap |
+| Legislation | 16×16 | Stacks of law books, one or two at a time | −10 CPU |
+| Ice patch (stage 3) | 32×16 | Low traction | Drift; no bucket cost |
+| Wind gust (stage 3) | — | Pushes the racer sideways for 1 s; arrows warn first | — |
+
+- A hit knocks the racer 16 px down the screen and gives 1 s of invulnerability, shown as sprite flicker.
 
 ## 9. HUD
 
@@ -170,7 +172,7 @@ Top 16 px of the overlay:
 [⚡▮▮▮▯] [🎮▮▮▯▯] [🧠▮▮▮▮] [💾▮▯▯▯]   STAGE 2   3rd   67%
 ```
 
-- Each bucket is a 40 px bar with tick marks at 25/50/80; the bar color changes when it crosses a tier.
+- Each bucket is a 40 px bar with tick marks at 25/50/80; the bar color changes when it crosses a tier. A red marker shows the cap RAM currently allows.
 - Pickup popups (`+5 GPU`) float up from the racer for 30 frames.
 - The special ability shows an icon that lights up when ready.
 - The right side shows progress up the mountain (percent of the climb) rather than a clock.
@@ -199,7 +201,7 @@ Top 16 px of the overlay:
 | 3 | Stage 3 | Tense, minor, 150 bpm |
 | 4 | Summit / AGI fanfare | Short, non-looping |
 
-**SFX** (one each): chip pickup per bucket (4, rising pitches), Golden Wafer, dash start, smash, hit (protester / book / tape), shield absorb, special activate, countdown beep, GO, tier-up chime, menu move, menu select. Protester chant: a noise-channel rhythm, if it fits.
+**SFX** (one each): chip pickup per bucket (4, rising pitches), Golden Wafer, bucket full, out of memory, hit (one per obstacle), special activate, countdown beep, GO, tier-up chime, menu move, menu select. Protester chant: a noise-channel rhythm, if it fits.
 
 ## 12. Persistence (save slots)
 
