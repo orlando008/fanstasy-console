@@ -76,7 +76,7 @@ const GEM_BLOCK = [0, 32, 34], GEM_MINI = [0, 36, 37]; // the same with a rune
 const STAR = 10, STAR2 = 11, RAIN = 12, EYES = 13, CIRCLE = 256; // room tiles; three eye tiles
 const PAL_MARKED = 1, PAL_PENDING = 2, PAL_HUD = 3, PAL_ROOM = 4;
 // Overlay colors, in BG sub-palette 3 (CGRAM 48-63).
-const INK = 50, DIM = 51, GOLD = 52, LINE = 53, GLOW = 54, PULSE = 55, RED = 56, PANEL = 57, CYAN = 58, EDGE = 59;
+const INK = 50, DIM = 51, GOLD = 52, LINE = 53, GLOW = 54, PULSE = 55, RED = 56, PANEL = 57, CYAN = 58, EDGE = 59, SPELL = 60;
 const ROOM = 64; // BG sub-palette 4: 1-2 stars, 3 rain, 4-6 eyes, 7-8 rune circle
 /**
  * Sound effects, all played on channel 1, which the songs leave free (SPEC
@@ -96,6 +96,7 @@ const grid = new Uint8Array(COLS * ROWS); // settled cells: 0 empty, 1 light, 2 
 const mark = new Uint8Array(COLS * ROWS); // part of at least one square
 const caught = new Uint8Array(COLS * ROWS); // caught this sweep: 1 in a square, 2 by a gem only
 const pend = new Uint8Array(COLS * ROWS); // caught and passed by the line: erased with its group
+const spell = new Uint8Array(COLS * ROWS); // what a gem in a square will clear when it's caught
 let squares = []; // top-left index of every square
 let dirty = true; // grid changed since squares were found
 let falling = []; // loose cells settling: { col, y, c, split }
@@ -428,6 +429,12 @@ function findSquares() {
   }
   squares = found;
   if (fresh) snd(SFX.square);
+  spell.fill(0);
+  for (const i of found) {
+    for (const j of [i, i + 1, i + COLS, i + COLS + 1]) {
+      if (grid[j] & GEM && !spell[j]) for (const k of connected(j)) spell[k] = 1;
+    }
+  }
 }
 
 /** Screen x of the timeline for timeline frame tl. */
@@ -463,25 +470,35 @@ function sweepColumn(c) {
  * until the line passes the far edge of the flood.
  */
 function flood(start) {
-  const v = grid[start] & 3, todo = [start];
   let n = 0;
-  while (todo.length) {
-    const i = todo.pop();
-    if (!grid[i] || (grid[i] & 3) !== v || (pend[i] && caught[i])) continue;
+  for (const i of connected(start)) {
+    if (pend[i] && caught[i]) continue;
     if (!caught[i]) caught[i] = 2;
     pend[i] = 1;
     n++;
-    const c = i % COLS;
-    if (c > 0) todo.push(i - 1);
-    if (c < COLS - 1) todo.push(i + 1);
-    if (i >= COLS) todo.push(i - COLS);
-    if (i + COLS < grid.length) todo.push(i + COLS);
   }
   if (n) {
     snd(SFX.gem);
     cast = 40;
     popup('WIZARD GEM!', 128 - 44, FIELD_Y + 26, GOLD);
   }
+}
+
+/** Every settled cell of start's color joined to it, up, down, left or right. */
+function connected(start) {
+  const v = grid[start] & 3, todo = [start], seen = new Uint8Array(COLS * ROWS), out = [];
+  while (todo.length) {
+    const i = todo.pop();
+    if (seen[i] || (grid[i] & 3) !== v) continue;
+    seen[i] = 1;
+    out.push(i);
+    const c = i % COLS;
+    if (c > 0) todo.push(i - 1);
+    if (c < COLS - 1) todo.push(i + 1);
+    if (i >= COLS) todo.push(i - COLS);
+    if (i + COLS < grid.length) todo.push(i + COLS);
+  }
+  return out;
 }
 
 /** Erase every pending cell; the cells above them come loose and fall. */
@@ -707,7 +724,7 @@ function draw() {
   const k = tl < 0 ? 0 : ((tl % beatFrames) * 12) / beatFrames;
   setColors(PULSE, [mix(stage.pulse, [8, 8, 8], k / 16)]);
   const rune = mix([31, 31, 31], stage.pulse, 0.5 + 0.5 * Math.sin(rf * 0.15));
-  for (const base of [9, 25, 41, 137]) setColors(base, [rune]);
+  for (const base of [9, 25, 41, 137, SPELL]) setColors(base, [rune]);
 
   if (showField) {
     drawField();
@@ -775,7 +792,7 @@ function drawField() {
   for (let r = 0; r < 24; r++) for (let c = 0; c < 32; c++) mset(c, r, 0);
   for (let i = 0; i < grid.length; i++) {
     if (!grid[i]) continue;
-    const pal = pend[i] ? PAL_PENDING : mark[i] ? PAL_MARKED : 0;
+    const pal = pend[i] ? PAL_PENDING : mark[i] || spell[i] ? PAL_MARKED : 0;
     put(i % COLS, 4 + Math.floor(i / COLS) * 2, grid[i], pal);
   }
   // Loose cells move in half-cell steps, so they sit on whole tile rows.
@@ -791,6 +808,21 @@ function drawField() {
     if (!same(c, r + 1, v)) line(x0, y1, x1, y1, PULSE);
     if (!same(c - 1, r, v)) line(x0, y0, x0, y1, PULSE);
     if (!same(c + 1, r, v)) line(x1, y0, x1, y1, PULSE);
+  }
+  // A gem's reach: a dashed outline in the rune's color that marches around it.
+  const inSpell = (c, r) => c >= 0 && c < COLS && r >= 0 && r < ROWS && spell[r * COLS + c] && !pend[r * COLS + c];
+  // Bright dashes on dark gaps, so it reads on light and dark blocks alike.
+  const dash = (x, y) => pset(x, y, ((x + y - (rf >> 1)) & 3) < 2 ? SPELL : PANEL);
+  for (let i = 0; i < grid.length; i++) {
+    if (!spell[i] || pend[i]) continue;
+    const c = i % COLS, r = Math.floor(i / COLS);
+    const x0 = c * CELL, y0 = FIELD_Y + r * CELL, x1 = x0 + CELL - 1, y1 = y0 + CELL - 1;
+    for (let k = 0; k < CELL; k++) {
+      if (!inSpell(c, r - 1)) dash(x0 + k, y0);
+      if (!inSpell(c, r + 1)) dash(x0 + k, y1);
+      if (!inSpell(c - 1, r)) dash(x0, y0 + k);
+      if (!inSpell(c + 1, r)) dash(x1, y0 + k);
+    }
   }
   // Erased cells flash and shrink away.
   for (const s of sparks) {

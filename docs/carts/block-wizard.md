@@ -135,6 +135,7 @@ its first frame.
 - One cell per bag of 16 pieces carries a gem, drawn as a rune on the block.
 - When a square that contains the gem is caught, every cell of the gem's color connected to it (up, down, left or right, through settled cells) also turns pending. All of it is erased with the gem's group.
 - The extra cells (those not in any caught square) score separately (9.1). They don't add to the sweep's square count.
+- **Preview.** As soon as a gem sits in a marked square, every cell it will clear is shown ahead of time: lit like a marked square, and edged with a marching dashed outline in the rune's color (bright dashes on dark gaps, so it reads on both block colors). The preview uses the same search as the flood, so it always matches what clears.
 - The flooded cells count as caught, so the gem's group stays open until the line passes the far edge of the flood, picking up any squares it catches on the way.
 - A gem is a flag on the cell, so it rides through rotation, splits and falls. Its rune is palette color 9 in the block palettes, which twinkles toward the room's outline color. The next queue shows it too. It has its own sound (SFX 48).
 
