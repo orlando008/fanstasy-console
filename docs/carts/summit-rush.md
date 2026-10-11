@@ -1,7 +1,7 @@
 # Summit Rush: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** In progress: stages 1–2 with all seven models and the select screen
+**Status:** In progress: all three stages and all seven models, with the select screen. Title, leaderboard, art and audio still to come.
 **Cart source:** `carts/src/summit-rush/` → `carts/summit-rush.nova`
 
 ---
@@ -149,9 +149,15 @@ As built:
   - A ~160 px trail (20 ±1 tiles) that switchbacks: its center zigzags 5 tiles either side every 56 rows, so you keep crossing the screen.
   - Pines fill the rock where a 2×2 patch allows.
   - It uses BG palette 1, a copy of palette 0 with mossier grass, darker greens and cooler rock.
-- **Stage length:** both stages are 2,600 px long, about 35 s and 29 s.
+- **The Summit:**
+  - Scroll 1.75 px/frame (1.4×).
+  - A ~140 px course (17 ±1 tiles) winding along a ridge.
+  - It uses BG palette 2: snow for the track, dark slate rock dusted with snow.
+  - Falling snow on the overlay, ice patches and wind gusts (see 8).
+- **Stage length:** every stage is 2,600 px long, about 35, 29 and 25 s.
 - **Layout:** each stage has its own fixed layout seed.
-- **Simulated models:** their bucket means drop by 3 on the Treeline.
+- **Simulated models:** their bucket means drop by 3 on the Treeline and by 6 on the Summit.
+- **Course mix:** each stage deals its stretches from a mix. The Summit adds two ice patches and one gust to every pass of the base mix.
 
 The racer moves freely around the screen while the course scrolls at the
 stage's speed. Protesters slow the scroll for a moment; every hit knocks the
@@ -181,9 +187,10 @@ Each obstacle takes from one bucket, so a hit always reads as a specific loss.
 | Red tape | 32×8 | Strips across part of the track, with a chip as bait | −10 Electricity |
 | High prices | 16×16 | Price tags hanging over the track, in pairs | −10 RAM, then other buckets are cut to the new cap |
 | Legislation | 16×16 | Stacks of law books, one or two at a time | −10 CPU |
-| Ice patch (stage 3) | 32×16 | Low traction | Drift; no bucket cost |
-| Wind gust (stage 3) | — | Pushes the racer sideways for 1 s; arrows warn first | — |
+| Ice patch (stage 3) | 32×16 | Low traction: 20% of normal acceleration, and with no input you keep 98.5% of your speed per frame instead of 80%. A chip sits just past each patch as bait. | Drift; no bucket cost |
+| Wind gust (stage 3) | — | Fires as its point scrolls into view: blinking ">>>" arrows on the upwind side for 1 s, then a 1.3 px/frame push for 1 s, with streaks and sideways snow | — |
 
+- Ice and wind are terrain, not hazards: no red outline or "!", and Unfiltered can't smash them.
 - A hit knocks the racer 16 px down the screen and gives 1 s of invulnerability, shown as sprite flicker.
 - **Hazards must read as bad at a glance.** Every hazard has a red outline that pulses about twice a second. It is color 7 of its own sprite palette (palette 1, a copy of palette 0), so a single CGRAM write animates every hazard. Hazards that don't walk also jitter by ±1 px, while pickups bob smoothly. The rule is: red and shaking means avoid it, smooth bobbing means grab it. Each hazard group also gets a blinking white "!" on a tag in the same pulsing red as it scrolls in. The tag disappears once the hazard is past the upper half of the screen, where it is close enough to read on its own.
 
