@@ -176,7 +176,7 @@ function drawErrorScreen(message, line) {
     text(l, 16, y, ERR_FG);
     y += 10;
   }
-  text('CTRL+R: RESTART', 16, SCREEN_H - 20, ERR_DIM);
+  text('ESC: EDIT   CTRL+R: RESTART', 16, SCREEN_H - 20, ERR_DIM);
   ctx.putImageData(image, 0, 0);
 }
 

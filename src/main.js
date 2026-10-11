@@ -1,169 +1,199 @@
-// Boot: frame clock, input sampling, and wiring between the page and the
-// console worker (SPEC section 10).
+// Boot and wiring: the console machine, the editor shell, files, autosave and
+// save data (SPEC sections 10 and 11).
 
-import { cartId, validateCart } from './formats/cart.js';
-import { readNova } from './formats/nova-json.js';
+import { Shell } from './editors/shell.js';
+import { openCart, saveCart } from './files.js';
+import { cartId, createCart } from './formats/cart.js';
+import { readNova, writeNova } from './formats/nova-json.js';
 import { Input } from './input.js';
-import { loadSave, storeSave } from './storage.js';
+import { Machine } from './machine.js';
+import { loadAutosave, loadSave, storeAutosave, storeSave } from './storage.js';
 
-const FRAME_MS = 1000 / 60;
-const MAX_BACKLOG = 4; // frames; beyond this the clock drops the backlog
-const WATCHDOG_MS = 5000; // a frame this slow means the cart is stuck
+const AUTOSAVE_MS = 10000;
+
+const NEW_CART_CODE = `// A new cart. Esc switches between the editor and the game; Ctrl+R restarts.
+
+let x = 120, y = 100;
+
+function init() {
+}
+
+function update() {
+  if (btn(LEFT)) x--;
+  if (btn(RIGHT)) x++;
+  if (btn(UP)) y--;
+  if (btn(DOWN)) y++;
+}
+
+function draw() {
+  cls();
+  print('HELLO NOVA-16', 76, 40, 15);
+  rectfill(x, y, 16, 16, 8);
+}
+`;
 
 const screenEl = document.getElementById('screen');
 const statusEl = document.getElementById('status');
 const input = new Input(window);
 
-let canvas = null;
-let worker = null;
-let cart = null;
-let seed = 0;
-let saveKey = '';
+const machine = new Machine(screenEl, input, {
+  onLog: (text) => shell.log(text),
+  onError: (err) => {
+    app.hasError = true;
+    shell.showError(err);
+  },
+  onHang: () => {
+    app.hasError = false;
+    notify('The cart stopped responding (infinite loop?). Esc opens the editor; Ctrl+R restarts.');
+  },
+  onSave: (data) => storeSave(app.saveKey, data),
+  onAudio: () => {}, // the APU arrives in M7
+});
 
-// Clock state.
-let acc = 0;
-let last = performance.now();
-let busySince = 0; // when the in-flight tick was sent, or 0 if idle
-let frame = 0;
-let running = false;
-let paused = false;
+const app = {
+  cart: createCart(),
+  fileHandle: null,
+  fileName: '',
+  dirty: false, // changed since the last load or file save
+  autosaveDue: false,
+  revision: 0, // bumped on every edit
+  launchedRevision: -1, // revision the running cart was started from
+  hasError: false,
+  saveKey: '',
+  mode: 'run',
 
-// --- Worker lifecycle -------------------------------------------------------
+  /** Called by the editors after any change to the working cart. */
+  changed(kind) {
+    this.revision++;
+    this.dirty = true;
+    this.autosaveDue = true;
+    shell.updateTitle(this.cart, true);
+    if (kind === 'meta') updateDocumentTitle();
+  },
 
-function startWorker() {
-  if (worker) worker.terminate();
-  // A canvas can only be transferred once, so every worker gets a fresh one.
-  canvas?.remove();
-  canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 224;
-  canvas.tabIndex = 0;
-  screenEl.prepend(canvas);
-  fit();
+  /** Esc from Edit: resume the game, or restart it if the cart changed. */
+  run() {
+    setMode('run');
+    if (!machine.running || this.revision !== this.launchedRevision) this.launch();
+    else machine.resume();
+  },
 
-  worker = new Worker(workerUrl(), { type: 'module' });
-  worker.onmessage = onWorkerMessage;
-  worker.onerror = (e) => {
-    e.preventDefault();
-    showStatus(`Console crashed: ${e.message}`);
-  };
-  const off = canvas.transferControlToOffscreen();
-  worker.postMessage({ type: 'init', canvas: off }, [off]);
-  busySince = 0;
-}
+  /** Esc from Run: pause and show the editor, at the error line if there is one. */
+  edit() {
+    machine.pause();
+    setMode('edit');
+    if (this.hasError) shell.revealError();
+  },
+
+  restart() {
+    setMode('run');
+    this.launch();
+  },
+
+  /** Boot the working cart from scratch. */
+  launch() {
+    hideStatus();
+    shell.clearError();
+    this.hasError = false;
+    this.saveKey = cartId(this.cart);
+    machine.load(this.cart, seedFromUrl() ?? crypto.getRandomValues(new Uint32Array(1))[0], loadSave(this.saveKey));
+    this.launchedRevision = this.revision;
+  },
+
+  async newCart() {
+    if (!confirmDiscard()) return;
+    const cart = createCart();
+    cart.code = NEW_CART_CODE;
+    loadCart(cart, { autosave: true });
+    setMode('edit');
+    shell.showTab('code');
+  },
+
+  async open() {
+    if (!confirmDiscard()) return;
+    try {
+      const r = await openCart();
+      if (r) loadCart(r.cart, { fileName: r.name, handle: r.handle, autosave: true });
+    } catch (e) {
+      notify(`Could not open the file: ${e.message}`);
+    }
+  },
+
+  async save(saveAs) {
+    try {
+      const r = await saveCart(this.cart, this.fileHandle, saveAs);
+      if (!r) return;
+      this.fileHandle = r.handle;
+      this.fileName = r.name;
+      this.dirty = false;
+      shell.setFileName(r.name);
+      shell.updateTitle(this.cart, false);
+      shell.log(`Saved ${r.name}`);
+    } catch (e) {
+      notify(`Could not save: ${e.message}`);
+    }
+  },
+};
+
+const shell = new Shell(document.getElementById('editor'), app);
 
 /**
- * A dedicated worker loaded from a network URL gets its CSP from response
- * headers, which static hosting can't set, so it would ignore the page's
- * meta CSP. A blob: worker inherits the page policy, so the console is
- * started from a one-line blob that imports the real module.
+ * Make a cart the working cart. autosave says whether it should replace the
+ * autosaved cart right away; a demo opened by URL only does once edited.
  */
-let bootUrl = null;
-function workerUrl() {
-  if (!bootUrl) {
-    const src = new URL('./console/worker.js', import.meta.url).href;
-    const blob = new Blob([`import ${JSON.stringify(src)};\n`], { type: 'text/javascript' });
-    bootUrl = URL.createObjectURL(blob);
-  }
-  return bootUrl;
+function loadCart(cart, { fileName = '', handle = null, autosave = false } = {}) {
+  app.cart = cart;
+  app.fileHandle = handle;
+  app.fileName = fileName;
+  app.dirty = false;
+  app.revision++;
+  app.autosaveDue = autosave;
+  shell.setCart(cart, fileName);
+  updateDocumentTitle();
+  if (app.mode === 'run') app.launch();
+  else machine.pause();
 }
 
-function onWorkerMessage(e) {
-  const msg = e.data;
-  switch (msg.type) {
-    case 'stat':
-      busySince = 0;
-      running = !!msg.running;
-      pump();
-      break;
-    case 'log':
-      console.log('[cart]', String(msg.text));
-      break;
-    case 'error':
-      running = false;
-      console.error(`[cart] line ${msg.line}: ${msg.message}`);
-      break;
-    case 'save':
-      if (saveKey) storeSave(saveKey, msg.data);
-      break;
-    case 'audio':
-      // The APU arrives in M7; commands are dropped until then.
-      break;
+function setMode(mode) {
+  app.mode = mode;
+  shell.setMode(mode);
+  input.enabled = mode === 'run';
+  input.clear();
+  if (mode === 'run') {
+    machine.fit();
+    machine.canvas?.focus();
+  } else {
+    hideStatus();
   }
 }
 
-/** Load a cart object into a fresh run. */
-function loadCart(c) {
-  validateCart(c);
-  cart = c;
-  seed = seedFromUrl() ?? (crypto.getRandomValues(new Uint32Array(1))[0]);
-  saveKey = cartId(c);
-  document.title = c.meta.title ? `${c.meta.title} - NOVA-16` : 'NOVA-16';
-  if (!worker) startWorker();
-  worker.postMessage({ type: 'load', cart: c, seed, save: loadSave(saveKey) });
-  running = true;
-  frame = 0;
-  acc = 0;
-  last = performance.now();
-  hideStatus();
+function confirmDiscard() {
+  if (!app.dirty) return true;
+  const title = app.cart.meta.title || 'this cart';
+  return confirm(`Discard unsaved changes to ${title}?`);
 }
 
-function restart() {
-  if (!cart) return;
-  startWorker();
-  loadCart(cart);
+function autosave() {
+  if (!app.autosaveDue) return;
+  if (storeAutosave(writeNova(app.cart, { minify: true }))) app.autosaveDue = false;
 }
 
-// --- Frame clock ------------------------------------------------------------
-
-function pump() {
-  const now = performance.now();
-  acc += now - last;
-  last = now;
-  if (acc > FRAME_MS * MAX_BACKLOG) acc = FRAME_MS;
-
-  if (busySince) {
-    if (now - busySince > WATCHDOG_MS) {
-      startWorker();
-      running = false;
-      showStatus('The cart stopped responding (infinite loop?). Press Ctrl+R to restart.');
-    }
-    return;
+/** Report a problem: in the log, and on screen in Run mode. */
+function notify(text) {
+  shell.log(text, 'error');
+  if (app.mode === 'run') {
+    statusEl.textContent = text;
+    statusEl.hidden = false;
   }
-  if (!worker || !running || paused) {
-    acc = 0;
-    return;
-  }
-  if (acc >= FRAME_MS) {
-    acc -= FRAME_MS;
-    busySince = now;
-    worker.postMessage({ type: 'tick', frame: frame++, input: input.sample() });
-  }
-}
-
-function loop() {
-  pump();
-  requestAnimationFrame(loop);
-}
-
-// --- Page -------------------------------------------------------------------
-
-/** Scale the screen by the largest integer factor that fits the window. */
-function fit() {
-  const scale = Math.max(1, Math.floor(Math.min(innerWidth / 256, innerHeight / 224)));
-  if (canvas) {
-    canvas.style.width = `${256 * scale}px`;
-    canvas.style.height = `${224 * scale}px`;
-  }
-}
-
-function showStatus(text) {
-  statusEl.textContent = text;
-  statusEl.hidden = false;
 }
 
 function hideStatus() {
   statusEl.hidden = true;
+}
+
+function updateDocumentTitle() {
+  const t = app.cart.meta.title;
+  document.title = t ? `${t} - NOVA-16` : 'NOVA-16';
 }
 
 function seedFromUrl() {
@@ -171,54 +201,69 @@ function seedFromUrl() {
   return s != null && /^\d+$/.test(s) ? Number(s) >>> 0 : null;
 }
 
-async function fetchCart(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Could not load ${url}: ${res.status}`);
+async function fetchCart(name) {
+  if (!/^[\w-]+$/.test(name)) throw new Error(`Bad cart name: ${name}`);
+  const res = await fetch(`carts/${name}.nova`);
+  if (!res.ok) throw new Error(`Could not load carts/${name}.nova: ${res.status}`);
   return readNova(await res.text());
 }
 
-async function loadFile(file) {
-  try {
-    loadCart(readNova(await file.text()));
-  } catch (e) {
-    showStatus(String(e.message || e));
-  }
-}
+// --- Page events -------------------------------------------------------------
 
-window.addEventListener('resize', fit);
+window.addEventListener('resize', () => machine.fit());
 
-window.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyR') {
-    e.preventDefault();
-    restart();
-  }
-});
-
+let hiddenPause = false;
 document.addEventListener('visibilitychange', () => {
-  paused = document.hidden;
-  if (paused) input.clear();
-  last = performance.now();
+  if (document.hidden) {
+    autosave();
+    input.clear();
+    if (app.mode === 'run' && !machine.paused) {
+      machine.pause();
+      hiddenPause = true;
+    }
+  } else if (hiddenPause) {
+    hiddenPause = false;
+    if (app.mode === 'run') machine.resume();
+  }
 });
+window.addEventListener('pagehide', autosave);
+setInterval(autosave, AUTOSAVE_MS);
 
 window.addEventListener('dragover', (e) => e.preventDefault());
-window.addEventListener('drop', (e) => {
+window.addEventListener('drop', async (e) => {
   e.preventDefault();
   const file = e.dataTransfer?.files?.[0];
-  if (file) loadFile(file);
+  if (!file || !confirmDiscard()) return;
+  try {
+    loadCart(readNova(await file.text()), { fileName: file.name, autosave: true });
+  } catch (err) {
+    notify(`Could not load ${file.name}: ${err.message}`);
+  }
 });
 
+// --- Boot --------------------------------------------------------------------
+
 async function boot() {
-  startWorker();
-  requestAnimationFrame(loop);
-  const name = new URLSearchParams(location.search).get('cart') || 'hello';
-  if (!/^[\w-]+$/.test(name)) {
-    showStatus('Bad cart name');
-    return;
-  }
+  setMode('run');
+  const name = new URLSearchParams(location.search).get('cart');
   try {
-    loadCart(await fetchCart(`carts/${name}.nova`));
+    if (name) {
+      loadCart(await fetchCart(name));
+      return;
+    }
+    const saved = loadAutosave();
+    if (saved) {
+      try {
+        loadCart(readNova(saved));
+        shell.log('Restored your autosaved cart.');
+        return;
+      } catch (e) {
+        shell.log(`Autosave could not be read (${e.message}); loading the default cart.`, 'error');
+      }
+    }
+    loadCart(await fetchCart('hello'));
   } catch (e) {
-    showStatus(String(e.message || e));
+    notify(String(e.message || e));
   }
 }
 

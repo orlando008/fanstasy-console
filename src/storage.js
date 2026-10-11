@@ -31,3 +31,24 @@ export function storeSave(id, data) {
     return false;
   }
 }
+
+const AUTOSAVE_KEY = 'nova16.autosave';
+
+/** The autosaved working cart as .nova text, or null. */
+export function loadAutosave() {
+  try {
+    return localStorage.getItem(AUTOSAVE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** Store the working cart's .nova text. Returns false if storage is unavailable or full. */
+export function storeAutosave(text) {
+  try {
+    localStorage.setItem(AUTOSAVE_KEY, text);
+    return true;
+  } catch {
+    return false;
+  }
+}

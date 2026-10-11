@@ -14,7 +14,8 @@ limits.
 | M2 Sprites: VRAM, OAM, sizes, flips, priorities, per-line limit, `.nova` loading | Done |
 | M3 Backgrounds: Map RAM, BG0-2, scrolling, wrap, tile priority, compositing | Done |
 | M4 Raster effects: `scanline()` hook, BG2 affine mode | Done |
-| M5-M9 Shell and editors, audio, PNG carts, recording | Not started |
+| M5 Shell and code editor: run/edit modes, error screen, save/load `.nova`, autosave | Done |
+| M6-M9 Graphics editors, audio, PNG carts, recording | Not started |
 
 The full cart API from SPEC section 8 is callable. `sfx`, `music` and `volume`
 queue commands but make no sound until the audio milestone.
@@ -30,7 +31,7 @@ python3 -m http.server 8000
 
 Then open <http://localhost:8000/>. Pick a demo cart with `?cart=<name>`, and
 pin the random seed with `?seed=<n>`. You can also drop a `.nova` file onto
-the page.
+the page. Without `?cart=`, the console reopens your autosaved working cart.
 
 | Cart | Shows |
 |---|---|
@@ -41,7 +42,19 @@ the page.
 | `mode7` | Per-line BG2 affine perspective floor and sky gradient |
 
 Keyboard: arrows = d-pad, X = A, Z = B, S = X, A = Y, Q = L, W = R,
-Enter = Start, Shift = Select. Ctrl+R restarts the cart.
+Enter = Start, Shift = Select.
+
+Shell shortcuts:
+
+| Key | Action |
+|---|---|
+| Esc | Switch between the game and the editor. Leaving the editor resumes the game, or restarts it if the cart changed. After an error, Esc opens the code at the failing line. |
+| Ctrl+R | Restart the cart with the current code |
+| Ctrl+S / Ctrl+Shift+S | Save / save as `.nova` |
+| Ctrl+O | Open a `.nova` file |
+| Ctrl+F | Find in the code editor (Enter / Shift+Enter for next / previous) |
+
+The working cart autosaves to this browser every 10 seconds.
 
 ## Development
 
