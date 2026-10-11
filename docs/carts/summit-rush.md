@@ -1,7 +1,7 @@
 # Summit Rush: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Pre-implementation
+**Status:** In progress: stage 1 with all seven models and the select screen
 **Cart source:** `carts/src/summit-rush/` → `carts/summit-rush.nova`
 
 ---
@@ -118,7 +118,18 @@ choices, not claims about the real systems. Seven racers:
 | Kimi | 10 / 5 / 10 / 20 | ★★★★ | **Long Context:** caps rise to 100 and RAM can't be lost, for 5 s |
 
 - **Specials** charge once per round: they're available at the start of each stage and used up on activation.
+- **Handling** scales top speed: ★★ ×0.9, ★★★ ×1.0, ★★★★ ×1.1, ★★★★★ ×1.2, on top of the Electricity speed.
+- **How the specials play:**
+  - A timed special draws a ring around the racer and shows its HUD tag (IMMUNE, MAGNET, SMASH, MAX SPD, AGENT, CAP 100). Scale Up shows `X2 *n` until its five doubled chips are used.
+  - Multimodal's ring is drawn at the 40 px pickup radius.
+  - Unfiltered destroys each obstacle it touches, with no cost or knockback.
+  - Agent Mode replaces your steering. It heads for the nearest chip on screen that still has room in its bucket, and veers away from hazards that get close.
+  - Long Context: a RAM hit while it runs costs nothing ("RAM SAFE"). When it ends, buckets keep what they gained above the cap, but can't grow further until RAM raises the cap again. A later RAM loss clips them as usual.
 - Each model has a 16×16 racer sprite (two-frame climb animation, lean left/right frames) and a portrait for the select screen.
+  - **Placeholder art:** all seven share one racer sprite and one 32×32 portrait, tinted per model.
+  - The tint goes into a copy of sprite palette 0: color 9 is the body and color 4 the shade.
+  - Model colors: Claude clay, GPT white, Gemini violet, Grok charcoal, DeepSeek blue, GLM cyan, Kimi moon yellow.
+  - In the race, the chosen model's tint lives in sprite palette 2. On the select screen, palettes 1–7 hold one tint per portrait.
 - The other six models never appear on the course; their rounds are simulated (5.1).
 
 ## 7. Course
@@ -181,7 +192,7 @@ Top 16 px of the overlay:
 ## 10. Screens and flow
 
 1. **Title:** spinning mountain logo (BG2 affine), "PRESS START", top score.
-2. **Model select:** seven portraits; LEFT/RIGHT to choose, showing starting buckets, star ratings, and the special.
+2. **Model select:** seven portraits in a row; LEFT/RIGHT to choose, START (or A) to climb. The chosen model shows its name in its color, handling stars, starting buckets as bars, its special with a two-line description, and its best score. The last model picked is remembered. After the scoreboard, START races again with the same model and B returns here.
 3. **Stage intro:** stage name card, 3-2-1-GO countdown.
 4. **Race:** three stages with a short stage card between them (buckets carry over).
 5. **Round tally:** the bucket tally animating into tier medals and the round score. If all four buckets reach Gold: "AGI ACHIEVED" with fanfare.
@@ -209,7 +220,7 @@ Top 16 px of the overlay:
 | Slots | Contents |
 |---|---|
 | 0 | Format version |
-| 1–2 | Options: music on/off, last selected model |
+| 1–2 | Options: music on/off (1), last selected model (2) |
 | 10–109 | Overall top 10: per entry total, final place, the three round scores, model, initials (packed 3×8 bits), 3 reserved = 10 slots |
 | 110–179 | Best score per model (7 × 10 slots, same layout) |
 | 180–255 | Reserved |

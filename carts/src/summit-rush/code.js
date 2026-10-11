@@ -1,7 +1,7 @@
-// SUMMIT RUSH - vertical slice: stage 1 (Base Camp) with Claude.
-// Design: docs/carts/summit-rush.md. The arrows move the racer around the
-// screen and B uses Claude's special (Constitution). Each bucket powers the
-// racer: Electricity moves you faster, GPU reveals extra chips, CPU widens
+// SUMMIT RUSH - stage 1 (Base Camp) with all seven models.
+// Design: docs/carts/summit-rush.md. Pick a model, then the arrows move the
+// racer around the screen and B uses that model's special. Each bucket powers
+// the racer: Electricity moves you faster, GPU reveals extra chips, CPU widens
 // your pickup radius and RAM raises the other buckets' cap. After the round,
 // a scoreboard ranks your score against the other six models' simulated runs.
 
@@ -15,31 +15,68 @@ const HUD_H = 20;
 const CHIP_VALUE = 5;
 const HIT_COST = 10; // bucket points an obstacle takes
 const TIERS = [[80, 2000, 'GOLD', 14], [50, 750, 'SILVER', 10], [25, 250, 'BRONZE', 9]];
-const BEST_SLOT = 10, BEST_PLACE_SLOT = 11; // save slots (SPEC 12)
+// Save slots (SPEC 12).
 const VERSION_SLOT = 0, SAVE_VERSION = 4; // version 4: bucket effects reworked
+const LAST_MODEL_SLOT = 2;
+const BEST_SLOT = 10, BEST_PLACE_SLOT = 11; // overall best
+const MODEL_BEST_SLOT = 110; // + 10 per model: that model's best score
 
 /**
- * The other models' rounds are simulated from these profiles (SPEC 5.1):
- * each bucket ends at mean + spread * noise.
+ * The seven racers (SPEC 6.1). `power` is what the special does while it
+ * runs for `frames`; `tag` is its HUD label. A model you don't play is
+ * simulated from `sim` and `spread` (SPEC 5.1): each bucket ends at
+ * sim + spread * noise. `body` and `shade` tint the shared racer sprite.
  */
-const RIVALS = [
-  { name: 'GPT', mean: [60, 65, 55, 50], spread: 12 },
-  { name: 'GEMINI', mean: [55, 60, 60, 60], spread: 10 },
-  { name: 'GROK', mean: [55, 70, 45, 35], spread: 25 },
-  { name: 'DEEPSEEK', mean: [65, 50, 65, 45], spread: 12 },
-  { name: 'GLM', mean: [55, 55, 55, 55], spread: 6 },
-  { name: 'KIMI', mean: [45, 45, 55, 75], spread: 10 },
+const MODELS = [
+  {
+    name: 'CLAUDE', start: [10, 10, 15, 15], stars: 4,
+    special: 'CONSTITUTION', power: 'immune', frames: 180, tag: 'IMMUNE',
+    info: ["PROTESTERS CAN'T TOUCH", 'YOU FOR 3 SECONDS'],
+    sim: [55, 55, 65, 65], spread: 10, body: [27, 14, 9], shade: [17, 8, 5],
+  },
+  {
+    name: 'GPT', start: [15, 15, 10, 10], stars: 3,
+    special: 'SCALE UP', power: 'double', frames: 0, tag: 'X2',
+    info: ['YOUR NEXT 5 CHIPS', 'COUNT DOUBLE'],
+    sim: [60, 65, 55, 50], spread: 12, body: [27, 28, 26], shade: [16, 17, 16],
+  },
+  {
+    name: 'GEMINI', start: [10, 15, 10, 15], stars: 3,
+    special: 'MULTIMODAL', power: 'magnet', frames: 240, tag: 'MAGNET',
+    info: ['HUGE PICKUP RADIUS', 'FOR 4 SECONDS'],
+    sim: [55, 60, 60, 60], spread: 10, body: [19, 13, 30], shade: [10, 7, 19],
+  },
+  {
+    name: 'GROK', start: [20, 10, 10, 5], stars: 2,
+    special: 'UNFILTERED', power: 'smash', frames: 180, tag: 'SMASH',
+    info: ['SMASH THROUGH OBSTACLES', 'FOR 3 SECONDS'],
+    sim: [55, 70, 45, 35], spread: 25, body: [8, 8, 9], shade: [4, 4, 5], ink: 15,
+  },
+  {
+    name: 'DEEPSEEK', start: [5, 10, 15, 10], stars: 3,
+    special: 'EFFICIENCY', power: 'speed', frames: 300, tag: 'MAX SPD',
+    info: ['FULL ELECTRICITY SPEED', 'FOR 5 SECONDS'],
+    sim: [65, 50, 65, 45], spread: 12, body: [9, 13, 31], shade: [5, 7, 20],
+  },
+  {
+    name: 'GLM', start: [10, 10, 10, 10], stars: 5,
+    special: 'AGENT MODE', power: 'agent', frames: 180, tag: 'AGENT',
+    info: ['STEERS ITSELF TO CHIPS', 'FOR 3 SECONDS'],
+    sim: [55, 55, 55, 55], spread: 6, body: [7, 24, 27], shade: [3, 14, 17],
+  },
+  {
+    name: 'KIMI', start: [10, 5, 10, 20], stars: 4,
+    special: 'LONG CONTEXT', power: 'context', frames: 300, tag: 'CAP 100',
+    info: ["CAPS 100, RAM CAN'T DROP", 'FOR 5 SECONDS'],
+    sim: [45, 45, 55, 75], spread: 10, body: [29, 25, 10], shade: [19, 15, 5],
+  },
 ];
-
-const MODEL = {
-  name: 'CLAUDE', start: [10, 10, 15, 15], handling: 1.1,
-  special: 'CONSTITUTION', specialFrames: 180,
-};
+const HANDLING = [0, 0.8, 0.9, 1, 1.1, 1.2]; // top-speed multiplier by star rating
 
 // --- Art ----------------------------------------------------------------------
 
 const GRASS = 1, ROCK = 2, EDGE_L = 3, EDGE_R = 4, CHECKER = 5, START_LINE = 6, FLOWER = 7;
-const SPR = { RUN: 32, LEAN: 36, CHIPS: [38, 40, 42, 44], WAFER: 46, PROTEST: 64, TAPE: 68, PRICE: 70, LAW: 72 };
+const SPR = { RUN: 32, LEAN: 36, PORTRAIT: 96, CHIPS: [38, 40, 42, 44], WAFER: 46, PROTEST: 64, TAPE: 68, PRICE: 70, LAW: 72 };
 
 /** Each obstacle takes from one bucket (SPEC 8). */
 const OBSTACLES = {
@@ -52,13 +89,16 @@ const BUCKET_NAME = ['ELEC', 'GPU', 'CPU', 'RAM'];
 const BUCKET_LETTER = ['E', 'G', 'C', 'R'];
 const PURPLE = 135; // sprite palette 0, color 7, recolored for RAM
 const HAZARD_PAL = 1; // sprite palette 1 = CGRAM 144-159
+const RACER_PAL = 2; // the chosen model's tint of palette 0
 const HAZARD_OUTLINE = 151; // its color 7
 const WARN_UNTIL = 110; // screen y below which the "!" marker stops showing
 const BUCKET_COLOR = [14, 11, 13, PURPLE];
 
 // --- State --------------------------------------------------------------------
 
-let state; // 'count', 'race', 'done'
+let state; // 'select', 'count', 'race', 'done', 'board'
+let pick = 0; // index of the chosen model
+let model = MODELS[0];
 let timer; // frames in the current state
 let camY;
 let p; // the player
@@ -71,10 +111,8 @@ const written = new Int32Array(64).fill(0x7fffffff); // world row held by each m
 let rng = 1;
 
 function init() {
+  color(0, 3, 3, 8); // backdrop, seen on the select screen
   color(PURPLE, 18, 9, 26);
-  // Hazards draw with their own copy of the sprite palette, whose index 7 is
-  // the pulsing red warning outline (see draw()).
-  palcopy(9, 8);
   bg(0, { mx: 0, my: 0, mw: 32, mh: 64, wrap: true });
   bg(1, { show: false });
   bg(2, { show: false });
@@ -82,18 +120,46 @@ function init() {
     // Scores from an older scoring rule aren't comparable; start fresh.
     dset(VERSION_SLOT, SAVE_VERSION);
     dset(BEST_SLOT, 0);
+    for (let i = 0; i < MODELS.length; i++) dset(MODEL_BEST_SLOT + i * 10, 0);
   }
-  best = dget(BEST_SLOT);
+  pick = clamp(dget(LAST_MODEL_SLOT), 0, MODELS.length - 1);
   reset();
+  select();
 }
 
+/** Show the model-select screen. */
+function select() {
+  state = 'select';
+  timer = 0;
+  bg(0, { show: false });
+  // Each portrait wears its own model's tint, in sprite palettes 1-7.
+  MODELS.forEach((m, i) => tint(1 + i, m));
+  music(0);
+}
+
+/** Make sprite palette `pal` a copy of palette 0 with model m's colors. */
+function tint(pal, m) {
+  const base = (8 + pal) * 16;
+  palcopy(8 + pal, 8);
+  color(base + 9, ...m.body);
+  color(base + 4, ...m.shade);
+}
+
+/** Start a round with the chosen model. */
 function reset() {
+  model = MODELS[pick];
+  best = dget(MODEL_BEST_SLOT + pick * 10);
+  // Hazards draw with their own copy of the sprite palette, whose index 7 is
+  // the pulsing red warning outline (see draw()).
+  palcopy(8 + HAZARD_PAL, 8);
+  tint(RACER_PAL, model);
+  bg(0, { show: true });
   state = 'count';
   timer = 0;
   camY = -150;
   p = {
-    x: 120, y: 0, sy: 150, vx: 0, vy: 0, b: [...MODEL.start],
-    slow: 0, inv: 0, immune: 0, special: 1, frames: 0,
+    x: 120, y: 0, sy: 150, vx: 0, vy: 0, b: [...model.start],
+    slow: 0, inv: 0, power: 0, double: 0, special: 1, frames: 0,
     bonusY: -200, bonusN: 0, // where GPU's next bonus chip appears
   };
   entities = buildCourse();
@@ -242,6 +308,16 @@ function buildCourse() {
 
 function update() {
   timer++;
+  if (state === 'select') {
+    if (btnp(LEFT)) { pick = (pick + MODELS.length - 1) % MODELS.length; sfx(8); }
+    if (btnp(RIGHT)) { pick = (pick + 1) % MODELS.length; sfx(8); }
+    if (timer > 10 && (btnp(START) || btnp(A))) {
+      dset(LAST_MODEL_SLOT, pick);
+      sfx(9);
+      reset();
+    }
+    return;
+  }
   if (state === 'count') {
     if (timer % 60 === 0) sfx(timer === 180 ? 9 : 8);
     if (timer >= 180) { state = 'race'; timer = 0; }
@@ -253,6 +329,7 @@ function update() {
   }
   if (state === 'board') {
     if (timer > 30 && btnp(START)) reset();
+    else if (timer > 30 && btnp(B)) select();
     return;
   }
   if (btnp(START)) paused = !paused;
@@ -262,16 +339,15 @@ function update() {
 
 function race() {
   p.frames++;
-  const [elec, gpu, cpu] = p.b;
+  const [, gpu, cpu] = p.b;
 
   // Electricity powers movement: 1.4 px/frame at 0 up to 2.6 at 100.
-  const maxV = (1.4 + elec * 0.012) * MODEL.handling, acc = maxV * 0.11;
-  if (btn(LEFT)) p.vx -= acc;
-  else if (btn(RIGHT)) p.vx += acc;
-  else p.vx *= 0.8;
-  if (btn(UP)) p.vy -= acc;
-  else if (btn(DOWN)) p.vy += acc;
-  else p.vy *= 0.8;
+  const elec = active('speed') ? 100 : p.b[0];
+  const maxV = (1.4 + elec * 0.012) * HANDLING[model.stars], acc = maxV * 0.11;
+  let ix = btn(RIGHT) - btn(LEFT), iy = btn(DOWN) - btn(UP);
+  if (active('agent')) [ix, iy] = agentSteer();
+  if (ix) p.vx += ix * acc; else p.vx *= 0.8;
+  if (iy) p.vy += iy * acc; else p.vy *= 0.8;
   p.vx = clamp(p.vx, -maxV, maxV);
   p.vy = clamp(p.vy, -maxV, maxV);
   p.x += p.vx;
@@ -287,14 +363,15 @@ function race() {
   let v = SCROLL;
   if (p.slow > 0) { v *= 0.5; p.slow--; }
   if (p.inv > 0) p.inv--;
-  if (p.immune > 0) p.immune--;
+  if (p.power > 0) p.power--;
   camY -= v;
   p.y = camY + p.sy;
 
   if (btnp(B) && p.special > 0) {
     p.special--;
-    p.immune = MODEL.specialFrames;
-    popup(MODEL.special, 12);
+    if (model.power === 'double') p.double = 5;
+    else p.power = model.frames;
+    popup(model.special, 12);
     sfx(10);
   }
 
@@ -308,7 +385,7 @@ function race() {
   }
 
   // CPU is the pickup radius: chips this close drift to the racer.
-  const reach = 12 + 2 + cpu * 0.16; // half a sprite plus 2-18 px
+  const reach = active('magnet') ? 12 + 40 : 12 + 2 + cpu * 0.16; // half a sprite plus 2-18 px
   for (const e of entities) {
     if (e.gone || e.y - camY < -40 || e.y - camY > 240) continue;
     if (e.kind === 'protester') walk(e);
@@ -319,6 +396,35 @@ function race() {
   popups = popups.filter((q) => q.t > 0);
 
   if (p.y <= FINISH_Y) finish();
+}
+
+/** True while the chosen model's special `power` is running. */
+function active(power) {
+  return p.power > 0 && model.power === power;
+}
+
+/**
+ * Agent Mode: steer toward the nearest chip on screen that still has room,
+ * while veering away from any hazard that gets close.
+ */
+function agentSteer() {
+  let goal = null, nearest = Infinity;
+  let ax = 0, ay = 0;
+  for (const e of entities) {
+    if (e.gone || e.y - camY < TOP_Y - 16 || e.y - camY > BOTTOM_Y + 16) continue;
+    if (OBSTACLES[e.kind]) {
+      const w = e.kind === 'tape' ? 32 : 16, h = e.kind === 'tape' ? 8 : 16;
+      const dx = p.x + 8 - (e.x + w / 2), dy = p.y + 8 - (e.y + h / 2);
+      const d = Math.max(1, Math.hypot(dx, dy) - w / 2);
+      if (d < 36) { ax += (dx / d) * (36 - d) / 12; ay += (dy / d) * (36 - d) / 12; }
+      continue;
+    }
+    if (e.kind === 'chip' && p.b[e.type] >= cap(e.type)) continue;
+    const d = Math.hypot(e.x - p.x, e.y - p.y);
+    if (d < nearest) { nearest = d; goal = e; }
+  }
+  if (goal && nearest > 1) { ax += (goal.x - p.x) / nearest; ay += (goal.y - p.y) / nearest; }
+  return [Math.abs(ax) > 0.25 ? Math.sign(ax) : 0, Math.abs(ay) > 0.25 ? Math.sign(ay) : 0];
 }
 
 /** A GPU bonus chip just above the screen, placed the same way every run. */
@@ -351,8 +457,10 @@ function collide(e) {
   if (p.x + 13 < e.x + inset || p.x + 3 > e.x + w - inset || p.y + 14 < e.y + inset || p.y + 2 > e.y + h - inset) return;
   if (e.kind === 'chip') {
     e.gone = true;
-    if (add(e.type, CHIP_VALUE) > 0) {
-      gain(e.type, CHIP_VALUE);
+    const got = add(e.type, p.double > 0 ? CHIP_VALUE * 2 : CHIP_VALUE);
+    if (got > 0) {
+      if (p.double > 0) p.double--;
+      gain(e.type, got);
       sfx(e.type);
     } else {
       popup(`${BUCKET_NAME[e.type]} FULL`, 3);
@@ -363,26 +471,36 @@ function collide(e) {
     for (const i of [3, 0, 1, 2]) add(i, CHIP_VALUE);
     popup('+5 ALL!', 14);
     sfx(4);
+  } else if (active('smash')) {
+    e.gone = true;
+    popup('SMASH!', 14);
+    sfx(12);
   } else if (p.inv === 0) {
-    if (e.kind === 'protester' && p.immune > 0) return;
+    if (e.kind === 'protester' && active('immune')) return;
     const o = OBSTACLES[e.kind];
     p.inv = 60;
     p.sy = Math.min(BOTTOM_Y, p.sy + KNOCKBACK);
     p.vy = 0;
     if (e.kind === 'protester') p.slow = 60;
-    add(o.bucket, -HIT_COST);
-    popup(`${o.text} -${HIT_COST} ${BUCKET_NAME[o.bucket]}`, 6);
+    const lost = -add(o.bucket, -HIT_COST);
+    const safe = o.bucket === 3 && active('context');
+    popup(safe ? `${o.text} RAM SAFE` : `${o.text} -${lost} ${BUCKET_NAME[o.bucket]}`, safe ? 12 : 6);
     sfx(5);
   }
 }
 
-/** RAM sets the cap of the other three buckets: 60 at 0 RAM, 100 at 100. */
+/**
+ * RAM sets the cap of the other three buckets: 60 at 0 RAM, 100 at 100.
+ * Long Context lifts every cap to 100 while it runs; when it ends, buckets
+ * keep what they hold but can't grow past the cap again.
+ */
 function cap(i) {
-  return i === 3 ? 100 : Math.min(100, 60 + 0.4 * p.b[3]);
+  return i === 3 || active('context') ? 100 : Math.min(100, 60 + 0.4 * p.b[3]);
 }
 
 /** Change a bucket within its cap. Returns how much it actually changed. */
 function add(i, n) {
+  if (i === 3 && n < 0 && active('context')) return 0;
   const before = p.b[i];
   p.b[i] = n > 0 ? Math.max(before, Math.min(before + n, cap(i))) : Math.max(0, before + n);
   if (i === 3 && n < 0) {
@@ -438,13 +556,15 @@ function finish() {
   const mult = allGold ? 1.5 : 1;
   const total = scoreOf(b);
   const newBest = total > best;
-  if (newBest) { best = total; dset(BEST_SLOT, best); }
+  if (newBest) { best = total; dset(MODEL_BEST_SLOT + pick * 10, best); }
+  if (total > dget(BEST_SLOT)) dset(BEST_SLOT, total);
 
   // Simulate the other models' rounds and rank everyone.
-  const board = [{ name: MODEL.name, score: total, you: true }];
-  for (const r of RIVALS) {
-    const sim = r.mean.map((m) => clamp(Math.round(m + r.spread * noise()), 0, 100));
-    board.push({ name: r.name, score: scoreOf(sim) });
+  const board = [{ name: model.name, score: total, you: true }];
+  for (const m of MODELS) {
+    if (m === model) continue;
+    const sim = m.sim.map((v) => clamp(Math.round(v + m.spread * noise()), 0, 100));
+    board.push({ name: m.name, score: scoreOf(sim) });
   }
   board.sort((x, y) => y.score - x.score);
   const place = board.findIndex((e) => e.you) + 1;
@@ -470,6 +590,7 @@ function noise() {
 
 function draw() {
   cls();
+  if (state === 'select') { selectScreen(); return; }
   const k = (Math.sin(t() / 5) + 1) / 2;
   color(HAZARD_OUTLINE, 31, flr(2 + 8 * k), flr(2 + 8 * k));
   bgscroll(0, 0, ((Math.floor(camY) % 512) + 512) % 512);
@@ -494,9 +615,13 @@ function draw() {
   if (p.inv === 0 || flr(p.inv / 4) % 2 === 0) {
     const lean = Math.abs(p.vx) > 1;
     const n = lean ? SPR.LEAN : SPR.RUN + (flr(p.frames / 8) % 2) * 2;
-    spr(n, Math.floor(p.x), sy, { size: 16, fx: p.vx < -1, prio: 3 });
+    spr(n, Math.floor(p.x), sy, { size: 16, fx: p.vx < -1, prio: 3, pal: RACER_PAL });
   }
-  if (p.immune > 0) circ(Math.floor(p.x) + 8, sy + 8, 11 + (p.frames % 8 < 4 ? 0 : 1), 13);
+  // A ring while a timed special runs; Multimodal shows its pickup radius.
+  if (p.power > 0) {
+    const r = model.power === 'magnet' ? 40 : 11 + (p.frames % 8 < 4 ? 0 : 1);
+    if (p.power > 45 || p.frames % 8 < 4) circ(Math.floor(p.x) + 8, sy + 8, r, model.power === 'smash' ? 14 : 13);
+  }
 
   // A blinking "!" over each hazard group as it scrolls in, gone by the time
   // it's close enough to read on its own.
@@ -553,7 +678,8 @@ function hud() {
   }
   print('BASE CAMP', 3, 11, 13);
   print(p.special > 0 ? 'B:READY' : 'B:USED', 92, 11, p.special > 0 ? 11 : 3);
-  if (p.immune > 0) print('IMMUNE', 156, 11, 13);
+  if (p.power > 0) print(model.tag, 156, 11, 13);
+  else if (p.double > 0) print(`X2 *${p.double}`, 156, 11, 13);
   // Progress up the mountain instead of a clock.
   const pct = clamp(Math.floor((p.y / FINISH_Y) * 100), 0, 100);
   print(`${String(pct).padStart(3)}%`, 216, 11, 15);
@@ -613,7 +739,38 @@ function scoreboard() {
   if (timer < 70) return;
   const msg = r.place === 1 ? 'YOU TOP THE BOARD!' : `YOU PLACED ${ORDINAL[r.place - 1]} OF 7`;
   center(msg, 168, r.place === 1 ? 14 : 15);
-  if (timer % 60 < 40) center('START: RACE AGAIN', 200, 11);
+  if (timer % 60 < 40) center('START: RACE AGAIN', 188, 11);
+  center('B: CHANGE MODEL', 202, 12);
+}
+
+/** Model select (SPEC 10): portraits, starting buckets, handling, special. */
+function selectScreen() {
+  const m = MODELS[pick];
+  center('SUMMIT RUSH', 6, 14);
+  center('CHOOSE YOUR MODEL', 18, 13);
+  for (let i = 0; i < MODELS.length; i++) {
+    const on = i === pick, x = 4 + i * 36;
+    const y = 36 - (on ? 3 + Math.round(Math.sin(timer / 8)) : 0);
+    spr(SPR.PORTRAIT, x, y, { size: 32, pal: 1 + i, prio: 3 });
+    rect(x - 2, y - 2, 36, 36, on ? 14 : 2);
+    if (on) rect(x - 3, y - 3, 38, 38, 14);
+  }
+  // The name in the model's own body color (or white if that's too dark).
+  center(m.name, 80, m.ink ?? (9 + pick) * 16 + 9);
+  print('HANDLING', 64, 96, 13);
+  for (let s = 0; s < 5; s++) print('*', 136 + s * 9, 96, s < m.stars ? 14 : 2);
+  m.start.forEach((v, i) => {
+    const y = 112 + i * 11;
+    print(BUCKET_NAME[i], 64, y, BUCKET_COLOR[i]);
+    rect(104, y, 62, 7, 2);
+    rectfill(105, y + 1, v * 3, 5, BUCKET_COLOR[i]);
+    print(String(v).padStart(3), 168, y, 15);
+  });
+  center(`B: ${m.special}`, 162, 12);
+  m.info.forEach((line, i) => center(line, 174 + i * 10, 15));
+  const top = dget(MODEL_BEST_SLOT + pick * 10);
+  center(top ? `BEST ${top}` : 'NO SCORE YET', 198, 3);
+  if (timer % 60 < 40) center('< >  CHOOSE    START  CLIMB', 212, 11);
 }
 
 function center(text, y, c) {

@@ -44,7 +44,7 @@ autosaved working cart.
 | `water` | `scanline()` reflection with per-line wobble and palette swaps |
 | `mode7` | Per-line BG2 affine perspective floor and sky gradient |
 | `chiptune` | A six-channel song and five sound effects, all editable in the Music and SFX tabs |
-| `summit-rush` | Vertical slice of the first real game: Base Camp with Claude (see docs/carts/summit-rush.md) |
+| `summit-rush` | The first real game, in progress: Base Camp with all seven models and a model-select screen (see docs/carts/summit-rush.md) |
 
 Keyboard: arrows = d-pad, X = A, Z = B, S = X, A = Y, Q = L, W = R,
 Enter = Start, Shift = Select.
