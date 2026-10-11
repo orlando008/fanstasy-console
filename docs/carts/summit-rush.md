@@ -16,12 +16,12 @@ your four resource buckets are when you get there.
 
 - **Genre:** vertical-scrolling dodge-and-collect racer.
 - **Run length:** about 90 seconds, in three stages.
-- **Players:** 1 (with up to 5 AI rivals on screen).
+- **Players:** 1 (with up to 6 AI rivals on screen).
 - **Tone:** light satire. Obstacles carry jokes; no model or person is mocked.
 
 ## 2. Core loop
 
-1. **Select** a model on the title screen. Each has a stat profile and a special ability.
+1. **Select** one of seven models on the title screen. Each has a stat profile and a special ability.
 2. **Climb** three stages of auto-scrolling mountain. Steer to collect chips, avoid obstacles, and use boost.
 3. **Summit:** buckets are tallied against tier thresholds, bonuses applied, and the result is ranked.
 4. **Leaderboard:** enter initials, see where you placed, try again or pick another model.
@@ -71,7 +71,7 @@ At the summit:
 base     = (ELEC + GPU + CPU + RAM) × 10          // max 4000
 tiers    = sum of the highest tier bonus reached per bucket
 time     = max(0, 120 − seconds) × 25             // finishing under 120 s
-place    = [1500, 1000, 600, 300, 100, 0][finish position − 1]
+place    = [1500, 1000, 600, 300, 150, 50, 0][finish position − 1]
 score    = (base + tiers + time + place) × multiplier
 ```
 
@@ -84,20 +84,21 @@ score    = (base + tiers + time + place) × multiplier
 ### 6.1 Roster
 
 Real model names, used affectionately. The stat profiles are game balance
-choices, not claims about the real systems. Six racers:
+choices, not claims about the real systems. Seven racers:
 
 | Model | Start ELEC/GPU/CPU/RAM | Base speed | Handling | Special (B) |
 |---|---|---|---|---|
 | Claude | 10 / 10 / 15 / 15 | ★★★ | ★★★★ | **Constitution:** 3 s of immunity to protesters |
 | GPT | 15 / 15 / 10 / 10 | ★★★★ | ★★★ | **Scale Up:** doubles the next 5 chip pickups |
 | Gemini | 10 / 15 / 10 / 15 | ★★★ | ★★★ | **Multimodal:** chips within 24 px are pulled in for 4 s |
-| Llama | 10 / 10 / 10 / 10 | ★★★ | ★★★★★ | **Open Weights:** the next 3 chips you touch give +5 to every bucket |
 | Grok | 20 / 10 / 10 / 5 | ★★★★★ | ★★ | **Unfiltered:** smash through obstacles for 3 s (no RAM cost) |
 | DeepSeek | 5 / 10 / 15 / 10 | ★★★★ | ★★★ | **Efficiency:** boost costs no Electricity for 5 s |
+| GLM | 10 / 10 / 10 / 10 | ★★★ | ★★★★★ | **Agent Mode:** auto-steers toward the nearest chips for 3 s |
+| Kimi | 10 / 5 / 10 / 20 | ★★★ | ★★★★ | **Long Context:** upcoming obstacles are marked from further away, and RAM shield hits cost nothing, for 5 s |
 
 - **Specials** charge once per stage: they're available at the start of each stage and used up on activation.
 - Each model has a 16×16 racer sprite (two-frame climb animation, lean left/right frames) and a portrait for the select screen.
-- The other five models appear as **AI rivals**, using simple steering: follow a target lane, swerve around obstacles, occasionally grab chips. Rivals can be bumped (small knockback for both).
+- The other six models appear as **AI rivals**, using simple steering: follow a target lane, swerve around obstacles, occasionally grab chips. Rivals can be bumped (small knockback for both).
 - Rival places decide the finish order shown at the summit.
 
 ## 7. Course
@@ -156,7 +157,7 @@ Top 16 px of the overlay:
 ## 10. Screens and flow
 
 1. **Title:** spinning mountain logo (BG2 affine), "PRESS START", top score.
-2. **Model select:** six portraits; LEFT/RIGHT to choose, showing starting buckets, star ratings, and the special.
+2. **Model select:** seven portraits; LEFT/RIGHT to choose, showing starting buckets, star ratings, and the special.
 3. **Stage intro:** stage name card, 3-2-1-GO countdown.
 4. **Race:** three stages with a short stage card between them (buckets carry over).
 5. **Summit:** finish order, then the bucket tally animating into tier medals, then the score breakdown. If all four buckets reach Gold: an "AGI ACHIEVED" screen with fanfare.
@@ -184,8 +185,8 @@ Top 16 px of the overlay:
 | 0 | Format version |
 | 1–2 | Options: music on/off, last selected model |
 | 10–109 | Overall top 10: per entry score, time (frames), place, ELEC, GPU, CPU, RAM, model, initials (packed 3×8 bits), reserved = 10 slots |
-| 110–169 | Best score per model (6 × 10 slots, same layout) |
-| 170–255 | Reserved |
+| 110–179 | Best score per model (7 × 10 slots, same layout) |
+| 180–255 | Reserved |
 
 ## 13. Asset budget
 
@@ -195,14 +196,14 @@ Top 16 px of the overlay:
 | Tiles | ≤ 600 of 1024: course ~150, scenery ~200, sprites ~200, title/logo ~50 |
 | Map RAM | 3 stages × 32×200 tiles, plus scenery strips |
 | Sprites on screen | ≤ 60 typical, ≤ 32 per line (pickups and protesters are laid out to stay under the limit) |
-| Palettes | BG 0–2 course/scenery per stage, BG 3 snow; sprites: one per racer (6), one for pickups/obstacles, one for effects |
+| Palettes | BG 0–2 course/scenery per stage, BG 3 snow; sprites: 8 sprite palettes shared by 7 racers, pickups/obstacles and effects (racers share palettes where colors allow) |
 | Songs / SFX | 5 songs (~16 patterns total), ~18 SFX |
 | PNG cart | Must fit the 147 KB `.nova.png` limit |
 
 ## 14. Implementation plan
 
 1. **Vertical slice:** stage 1 only with one model (Claude), placeholder art, the four buckets and HUD, two obstacle types, scoring at the end. Proves the feel.
-2. **Racers:** all six models, specials, AI rivals, finish order.
+2. **Racers:** all seven models, specials, AI rivals, finish order.
 3. **Stages 2 and 3:** narrowing course, ice and wind, scroll speeds.
 4. **Flow:** title, select, stage cards, summit tally, AGI screen, leaderboard with initials and saves.
 5. **Art pass:** final sprites, tiles and palettes, all made in the Sprites, Map and Palette tabs.
@@ -213,7 +214,6 @@ Any console bugs or editor gaps found along the way are logged and fixed as sepa
 
 ## 15. Open questions
 
-- **Rival count:** 5 rivals on screen is busy with pickups and protesters. Fall back to 3 if readability or the per-line sprite limit suffers.
+- **Rival count:** 6 rivals on screen is busy with pickups and protesters. Fall back to 3 (picked at random per race) if readability or the per-line sprite limit suffers.
 - **Balance:** whether the ×1.5 all-Gold multiplier is too dominant compared with the time and place components; tune after the slice.
-- **Model roster and names:** the six models above, or a different set.
 - **Real-name sensitivity:** if the cart is ever shared publicly, decide whether to keep real model names or swap to parodies.
