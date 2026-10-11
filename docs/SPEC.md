@@ -144,9 +144,13 @@ Typical uses are wavy water (`bgscroll` with a sine offset per line), sky gradie
 
 Each channel has volume (0–15) and stereo pan (−1 to 1). Pitch covers C0–B7 (96 notes), equal temperament with A4 = 440 Hz.
 
+The channel decides the voice. An instrument's waveform picks the pulse duty (`pulse12`, `pulse25`, `pulse50`, `pulse75`), the noise mode (`noise`, or `noise-short` for the metallic mode) or the sample (`sample` plus a sample slot); `triangle` and `saw` name their channels. `sfx(n)` with `ch = -1` uses a channel whose voice matches the instrument of the SFX's first note: a free one if possible, otherwise the one whose SFX started first.
+
 ### 5.2 Instruments
 
 There are 32 instrument slots. Each has a waveform (and duty or sample index where relevant), an ADSR envelope in frames, base volume, vibrato depth and speed, and an optional fixed pan.
+
+Attack, decay and release are lengths in frames (0–255) and sustain is a level (0–15). A note-off (`OFF` in a pattern) starts the release.
 
 ### 5.3 Patterns, songs and SFX
 
@@ -168,6 +172,8 @@ Pattern effects:
 | `Cxx` | Set volume |
 | `Exx` | Note cut after xx ticks |
 | `Fxx` | Set speed |
+
+An effect lasts for the row it is on. Slides and portamento move 1/16 semitone per tick per unit of `xx`, starting on the second tick of the row. Vibrato (in `4xy` and in instruments) has a depth of `y`/8 semitones and advances `x`/64 of a cycle per tick. `Axy` changes the volume by (x − y)/4 per tick. `000` means no effect.
 
 ### 5.4 Samples
 
@@ -356,6 +362,7 @@ This is the working and version-control format. It is plain JSON and is laid out
 
 - Palette entries are 4-digit hex RGB555 values: `0bbbbbgggggrrrrr`.
 - Empty patterns, SFX and samples may be omitted or left `null`. Loaders must fill in defaults.
+- A pattern row is an array of 6 cells, one per channel; an SFX's `rows` is an array of single cells. A cell is `null` when empty, and any of its fields may be omitted. `n` is a note such as `C-4` or `C#4`, or `OFF`.
 - Loaders reject unknown `format` values and any `version` newer than they support.
 
 ### 9.2 Distribution format: `.nova.png`
@@ -456,8 +463,10 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 │   │   └── prng.js         # xoshiro128**
 │   ├── audio/
 │   │   ├── apu.js          # Main-thread side: AudioContext setup
-│   │   └── worklet.js      # Synth, mixer, sequencer
+│   │   ├── synth.js        # Voices, envelopes, effects, sequencer (no Web Audio)
+│   │   └── worklet.js      # AudioWorklet running the synth at a 60 Hz tick
 │   ├── formats/
+│   │   ├── audio.js        # Audio data model, defaults, .nova audio sections
 │   │   ├── cart.js         # Cart model, defaults, validation
 │   │   ├── nova-json.js    # .nova read and write
 │   │   └── nova-png.js     # .nova.png encode and decode
@@ -470,10 +479,13 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 │   │   ├── palette.js
 │   │   ├── sfx.js
 │   │   ├── music.js
+│   │   ├── audio-base.js   # Shared SFX/Music tab plumbing
+│   │   ├── instrument.js   # Instrument panel with ADSR graph and sample import
 │   │   └── cart.js
 │   └── ui/                 # Shared widgets (buttons, grids, sliders)
 │       ├── dom.js          # Element-building helpers
-│       ├── history.js      # Undo/redo storing only changed elements
+│       ├── history.js      # Undo/redo: changed elements, or snapshots of edited units
+│       ├── tracker.js      # Tracker grid shared by SFX and Music
 │       ├── pixels.js       # RGB555 conversion and tile-sheet drawing
 │       └── sheet-view.js   # Tile-sheet picker shared by Sprites and Map
 ├── carts/                  # Demo and test carts (.nova)

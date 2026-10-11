@@ -2,6 +2,8 @@
 // main thread, the console worker and the dev tools, so it must not touch the
 // DOM.
 
+import { emptyAudio } from './audio.js';
+
 export const CART_FORMAT = 'nova16-cart';
 export const CART_VERSION = 1;
 
@@ -43,11 +45,7 @@ export function createCart() {
     palette: defaultPalette(),
     tiles: new Uint8Array(SHEET_W * SHEET_H), // sheet pixels, row-major, 0-15
     map: new Uint16Array(MAP_W * MAP_H),
-    instruments: [],
-    patterns: [],
-    songs: [],
-    sfx: [],
-    samples: [],
+    ...emptyAudio(), // instruments, patterns, songs, sfx, samples
   };
 }
 

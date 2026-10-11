@@ -1,6 +1,7 @@
 // Boot and wiring: the console machine, the editor shell, files, autosave and
 // save data (SPEC sections 10 and 11).
 
+import { Apu } from './audio/apu.js';
 import { Shell } from './editors/shell.js';
 import { openCart, saveCart } from './files.js';
 import { cartId, createCart } from './formats/cart.js';
@@ -35,19 +36,22 @@ function draw() {
 const screenEl = document.getElementById('screen');
 const statusEl = document.getElementById('status');
 const input = new Input(window);
+const apu = new Apu();
 
 const machine = new Machine(screenEl, input, {
   onLog: (text) => shell.log(text),
   onError: (err) => {
     app.hasError = true;
+    apu.reset();
     shell.showError(err);
   },
   onHang: () => {
     app.hasError = false;
+    apu.reset();
     notify('The cart stopped responding (infinite loop?). Esc opens the editor; Ctrl+R restarts.');
   },
   onSave: (data) => storeSave(app.saveKey, data),
-  onAudio: () => {}, // the APU arrives in M7
+  onAudio: (cmds) => apu.commands(cmds),
 });
 
 const app = {
@@ -65,6 +69,7 @@ const app = {
 
   /** Called by the editors after any change to the working cart. */
   changed(kind) {
+    if (kind === 'audio') scheduleAudioUpdate();
     this.revision++;
     this.dirty = true;
     this.autosaveDue = true;
@@ -76,12 +81,12 @@ const app = {
   run() {
     setMode('run');
     if (!machine.running || this.revision !== this.launchedRevision) this.launch();
-    else machine.resume();
+    else resumeGame();
   },
 
   /** Esc from Run: pause and show the editor, at the error line if there is one. */
   edit() {
-    machine.pause();
+    pauseGame();
     setMode('edit');
     if (this.hasError) shell.revealError();
   },
@@ -97,9 +102,21 @@ const app = {
     shell.clearError();
     this.hasError = false;
     this.saveKey = cartId(this.cart);
+    apu.load(this.cart);
+    apu.resume();
     machine.load(this.cart, seedFromUrl() ?? crypto.getRandomValues(new Uint32Array(1))[0], loadSave(this.saveKey));
     this.launchedRevision = this.revision;
     this.launchedCart = this.cart;
+  },
+
+  /** Editor audio preview: see Apu.preview. */
+  preview(cmd) {
+    apu.preview(cmd);
+  },
+
+  /** Called with the preview playback position ({ kind, row, ... } or null). */
+  set onPreviewRow(fn) {
+    apu.onRow = fn;
   },
 
   /** Background layer regions of the loaded game, for the map editor. */
@@ -159,7 +176,17 @@ function loadCart(cart, { fileName = '', handle = null, autosave = false } = {})
   shell.setCart(cart, fileName);
   updateDocumentTitle();
   if (app.mode === 'run') app.launch();
-  else machine.pause();
+  else pauseGame();
+}
+
+function pauseGame() {
+  machine.pause();
+  apu.pause();
+}
+
+function resumeGame() {
+  machine.resume();
+  apu.resume();
 }
 
 function setMode(mode) {
@@ -168,6 +195,7 @@ function setMode(mode) {
   input.enabled = mode === 'run';
   input.clear();
   if (mode === 'run') {
+    apu.stopPreview();
     machine.fit();
     machine.canvas?.focus();
   } else {
@@ -226,12 +254,12 @@ document.addEventListener('visibilitychange', () => {
     autosave();
     input.clear();
     if (app.mode === 'run' && !machine.paused) {
-      machine.pause();
+      pauseGame();
       hiddenPause = true;
     }
   } else if (hiddenPause) {
     hiddenPause = false;
-    if (app.mode === 'run') machine.resume();
+    if (app.mode === 'run') resumeGame();
   }
 });
 window.addEventListener('pagehide', autosave);
@@ -251,7 +279,18 @@ window.addEventListener('drop', async (e) => {
 
 // --- Boot --------------------------------------------------------------------
 
+/** Send edited audio data to the APU, at most every 150 ms. */
+let audioTimer = 0;
+function scheduleAudioUpdate() {
+  if (audioTimer) return;
+  audioTimer = setTimeout(() => {
+    audioTimer = 0;
+    apu.update(app.cart);
+  }, 150);
+}
+
 async function boot() {
+  apu.start().catch((e) => shell.log(`Audio is unavailable: ${e.message}`, 'error'));
   setMode('run');
   const name = new URLSearchParams(location.search).get('cart');
   try {

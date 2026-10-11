@@ -68,3 +68,65 @@ export class History {
     return true;
   }
 }
+
+/**
+ * Undo/redo for structured data (the audio editors). Each edit snapshots just
+ * the unit it touches, such as one pattern or one instrument.
+ */
+export class SnapshotHistory {
+  constructor(onApply, limit = 200) {
+    this.onApply = onApply;
+    this.limit = limit;
+    this.clear();
+  }
+
+  clear() {
+    this.undoStack = [];
+    this.redoStack = [];
+  }
+
+  /**
+   * Run mutate() and record the change. get() returns the unit's current
+   * value and set(v) replaces it; key identifies the unit so consecutive
+   * edits to one field can merge (for example dragging a slider).
+   */
+  edit(get, set, mutate, key = null) {
+    const before = structuredClone(get());
+    mutate();
+    const after = structuredClone(get());
+    if (JSON.stringify(before) === JSON.stringify(after)) return false;
+    const top = this.undoStack[this.undoStack.length - 1];
+    if (key && top && top.key === key) {
+      top.after = after;
+    } else {
+      this.undoStack.push({ get, set, before, after, key });
+      if (this.undoStack.length > this.limit) this.undoStack.shift();
+    }
+    this.redoStack = [];
+    return true;
+  }
+
+  /** Stop merging into the last entry. */
+  seal() {
+    const top = this.undoStack[this.undoStack.length - 1];
+    if (top) top.key = null;
+  }
+
+  undo() {
+    return this.step(this.undoStack, this.redoStack, 'before');
+  }
+
+  redo() {
+    return this.step(this.redoStack, this.undoStack, 'after');
+  }
+
+  step(from, to, side) {
+    const e = from.pop();
+    if (!e) return false;
+    e.set(structuredClone(e[side]));
+    e.key = null;
+    to.push(e);
+    this.onApply();
+    return true;
+  }
+}

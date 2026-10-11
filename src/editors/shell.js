@@ -5,7 +5,9 @@ import { button, h } from '../ui/dom.js';
 import { CartPanel } from './cart.js';
 import { CodeEditor } from './code.js';
 import { MapEditor } from './map.js';
+import { MusicEditor } from './music.js';
 import { PaletteEditor } from './palette.js';
+import { SfxEditor } from './sfx.js';
 import { SpriteEditor } from './sprite.js';
 
 const MAX_LOG = 200;
@@ -28,12 +30,18 @@ export class Shell {
       },
     });
     this.cartPanel = new CartPanel(app);
-    // Graphics editors share an interface: setCart, refresh, undo, redo,
+    // Asset editors share an interface: setCart, refresh, undo, redo,
     // copy, paste and onKey.
     this.gfx = {
       sprites: new SpriteEditor(app),
       map: new MapEditor(app),
       palette: new PaletteEditor(app),
+      sfx: new SfxEditor(app),
+      music: new MusicEditor(app),
+    };
+    app.onPreviewRow = (info) => {
+      this.gfx.sfx.onRow(info);
+      this.gfx.music.onRow(info);
     };
 
     this.tabs = [
@@ -41,6 +49,8 @@ export class Shell {
       { id: 'sprites', label: 'Sprites', panel: this.gfx.sprites.el },
       { id: 'map', label: 'Map', panel: this.gfx.map.el },
       { id: 'palette', label: 'Palette', panel: this.gfx.palette.el },
+      { id: 'sfx', label: 'SFX', panel: this.gfx.sfx.el },
+      { id: 'music', label: 'Music', panel: this.gfx.music.el },
       { id: 'cart', label: 'Cart', panel: this.cartPanel.el },
     ];
     this.tabButtons = this.tabs.map((t) => h('button', {
@@ -121,7 +131,7 @@ export class Shell {
     }
   }
 
-  /** Route undo, redo, copy, paste and tool keys to the active graphics editor. */
+  /** Route undo, redo, copy, paste and tool keys to the active asset editor. */
   gfxKey(e, mod, key) {
     const ed = this.gfx[this.activeTab];
     if (!ed || isFormField(e.target)) return;
