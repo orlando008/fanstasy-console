@@ -33,18 +33,24 @@ export function compileCart(source, api) {
   const values = names.map((n) => api[n]);
   const offset = lineOffset(names);
   const tail = HOOKS.map((h) => `${h}: typeof ${h} === 'function' ? ${h} : null`).join(', ');
-  // Cart line 1 sits on the line after the directive. The tail starts on a
-  // new line so a trailing // comment in the cart can't swallow it.
-  const body = `'use strict';\n${source}\n;return { ${tail} };`;
+  // The cart runs inside a block so its own let/const/function declarations
+  // can shadow API names instead of clashing with the parameters. Cart line 1
+  // sits on the line after the directive. The tail starts on a new line so a
+  // trailing // comment in the cart can't swallow it.
+  const body = `'use strict'; {\n${source}\n;return { ${tail} }; }`;
 
   let fn;
   try {
     fn = new Function(...names, body);
   } catch (e) {
-    throw new CartError(`${e.name}: ${e.message}`, syntaxErrorLine(e, source, names));
+    throw diagnoseSyntax(e, source);
   }
   try {
     const hooks = fn(...values);
+    // A top-level return in the cart skips the tail that collects the hooks.
+    if (!hooks || typeof hooks !== 'object') {
+      throw new CartError('Carts cannot use return at the top level');
+    }
     hooks.lineOffset = offset;
     return hooks;
   } catch (e) {
@@ -91,30 +97,42 @@ function rawStackLine(e) {
 }
 
 /**
- * Syntax errors carry no usable stack in V8. Find the line by compiling ever
- * longer prefixes of the source as a module-less script; the first prefix that
- * fails with the same message localizes the error.
+ * Turn a compile failure into a CartError with a source line. The Function
+ * constructor wraps the body in its own braces, so an unbalanced brace in the
+ * cart produces a misleading message there. Instead the cart is recompiled
+ * alone as a strict script through indirect eval; the leading throw means it
+ * is only parsed, never run. Syntax errors carry no usable line in V8, so the
+ * line is found by compiling ever longer prefixes: the first prefix that fails
+ * with the same message localizes the error.
  */
-function syntaxErrorLine(err, source, names) {
-  const fromStack = rawStackLine(err);
-  if (fromStack) return Math.max(0, fromStack - lineOffset(names));
-  const lines = source.split('\n');
-  if (/end of input/i.test(err.message)) return lines.length;
-  let lo = 1, hi = lines.length;
-  const fails = (n) => {
+function diagnoseSyntax(err, source) {
+  const compile = (src) => {
     try {
-      new Function(...names, `'use strict';\n${lines.slice(0, n).join('\n')}\n`);
-      return false;
+      (0, eval)(`'use strict'; throw 0;\n${src}\n`);
     } catch (e) {
-      // A prefix can also fail just because a block is still open.
-      return e.message === err.message && !/end of input/i.test(e.message);
+      return e === 0 ? null : e;
     }
+    return null;
   };
-  if (!fails(hi)) return 0;
+  const full = compile(source);
+  if (!full) return new CartError(`${err.name}: ${err.message}`);
+  const message = `${full.name}: ${full.message}`;
+  const lines = source.split('\n');
+  if (/end of input/i.test(full.message)) {
+    let last = lines.length;
+    while (last > 1 && !lines[last - 1].trim()) last--;
+    return new CartError(message, last);
+  }
+  const fails = (n) => {
+    const e = compile(lines.slice(0, n).join('\n'));
+    // A prefix can also fail just because a block is still open.
+    return !!e && e.message === full.message;
+  };
+  let lo = 1, hi = lines.length;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
     if (fails(mid)) hi = mid;
     else lo = mid + 1;
   }
-  return lo;
+  return new CartError(message, fails(lo) ? lo : 0);
 }

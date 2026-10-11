@@ -212,7 +212,7 @@ function scanline(y) {}   // optional; before each line is rendered
 
 ### 7.2 Execution environment
 
-- The cart source runs in strict mode inside the console Web Worker, wrapped in a `Function` that receives the API as named parameters.
+- The cart source runs in strict mode inside the console Web Worker, wrapped in a `Function` that receives the API as named parameters. The source sits inside a block in that function, so a cart may declare its own variables or functions with API names (for example `const START = 0`); these shadow the built-ins within the cart. A top-level `return` is not allowed.
 - The source limit is 65 536 UTF-8 bytes. Larger carts refuse to run, and the editor shows a live byte counter.
 - `Math.random` is replaced with the seeded PRNG (xoshiro128\*\*). Carts should use `t()` for time, not `Date`.
 - The worker has no DOM access. The page's Content-Security-Policy (`connect-src 'self'`) blocks network requests to other sites.
