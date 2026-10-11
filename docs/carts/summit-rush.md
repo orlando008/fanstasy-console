@@ -1,7 +1,7 @@
 # Summit Rush: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** In progress: stage 1 with all seven models and the select screen
+**Status:** In progress: all three stages and all seven models, with the select screen. Title, leaderboard, art and audio still to come.
 **Cart source:** `carts/src/summit-rush/` → `carts/summit-rush.nova`
 
 ---
@@ -142,6 +142,23 @@ choices, not claims about the real systems. Seven racers:
 | 2 | The Treeline | ~30 s | 1.2× | Pines, switchback walls, narrower course |
 | 3 | The Summit | ~30 s | 1.4× | Snow and ice (lower traction), wind gusts |
 
+As built:
+- **Base Camp:** scroll 1.25 px/frame; a ~192 px course with gentle bends.
+- **The Treeline:**
+  - Scroll 1.5 px/frame (1.2×).
+  - A ~160 px trail (20 ±1 tiles) that switchbacks: its center zigzags 5 tiles either side every 56 rows, so you keep crossing the screen.
+  - Pines fill the rock where a 2×2 patch allows.
+  - It uses BG palette 1, a copy of palette 0 with mossier grass, darker greens and cooler rock.
+- **The Summit:**
+  - Scroll 1.75 px/frame (1.4×).
+  - A ~140 px course (17 ±1 tiles) winding along a ridge.
+  - It uses BG palette 2: snow for the track, dark slate rock dusted with snow.
+  - Falling snow on the overlay, ice patches and wind gusts (see 8).
+- **Stage length:** every stage is 2,600 px long, about 35, 29 and 25 s.
+- **Layout:** each stage has its own fixed layout seed.
+- **Simulated models:** their bucket means drop by 3 on the Treeline and by 6 on the Summit.
+- **Course mix:** each stage deals its stretches from a mix. The Summit adds two ice patches and one gust to every pass of the base mix.
+
 The racer moves freely around the screen while the course scrolls at the
 stage's speed. Protesters slow the scroll for a moment; every hit knocks the
 racer 16 px down the screen. There is no fall-off penalty.
@@ -170,9 +187,10 @@ Each obstacle takes from one bucket, so a hit always reads as a specific loss.
 | Red tape | 32×8 | Strips across part of the track, with a chip as bait | −10 Electricity |
 | High prices | 16×16 | Price tags hanging over the track, in pairs | −10 RAM, then other buckets are cut to the new cap |
 | Legislation | 16×16 | Stacks of law books, one or two at a time | −10 CPU |
-| Ice patch (stage 3) | 32×16 | Low traction | Drift; no bucket cost |
-| Wind gust (stage 3) | — | Pushes the racer sideways for 1 s; arrows warn first | — |
+| Ice patch (stage 3) | 32×16 | Low traction: 20% of normal acceleration, and with no input you keep 98.5% of your speed per frame instead of 80%. A chip sits just past each patch as bait. | Drift; no bucket cost |
+| Wind gust (stage 3) | — | Fires as its point scrolls into view: blinking ">>>" arrows on the upwind side for 1 s, then a 1.3 px/frame push for 1 s, with streaks and sideways snow | — |
 
+- Ice and wind are terrain, not hazards: no red outline or "!", and Unfiltered can't smash them.
 - A hit knocks the racer 16 px down the screen and gives 1 s of invulnerability, shown as sprite flicker.
 - **Hazards must read as bad at a glance.** Every hazard has a red outline that pulses about twice a second. It is color 7 of its own sprite palette (palette 1, a copy of palette 0), so a single CGRAM write animates every hazard. Hazards that don't walk also jitter by ±1 px, while pickups bob smoothly. The rule is: red and shaking means avoid it, smooth bobbing means grab it. Each hazard group also gets a blinking white "!" on a tag in the same pulsing red as it scrolls in. The tag disappears once the hazard is past the upper half of the screen, where it is close enough to read on its own.
 
@@ -193,10 +211,10 @@ Top 16 px of the overlay:
 
 1. **Title:** spinning mountain logo (BG2 affine), "PRESS START", top score.
 2. **Model select:** seven portraits in a row; LEFT/RIGHT to choose, START (or A) to climb. The chosen model shows its name in its color, handling stars, starting buckets as bars, its special with a two-line description, and its best score. The last model picked is remembered. After the scoreboard, START races again with the same model and B returns here.
-3. **Stage intro:** stage name card, 3-2-1-GO countdown.
+3. **Stage intro:** stage name card ("STAGE 2 OF 3 / THE TREELINE"), 3-2-1-GO countdown.
 4. **Race:** three stages with a short stage card between them (buckets carry over).
 5. **Round tally:** the bucket tally animating into tier medals and the round score. If all four buckets reach Gold: "AGI ACHIEVED" with fanfare.
-6. **Scoreboard:** all seven models ranked by running total, with each one's round score; your row highlighted and an arrow showing places gained or lost this round.
+6. **Scoreboard:** all seven models ranked by running total, with each one's round score; your row highlighted and an arrow showing places gained or lost this round. START goes on to the next stage. After the last stage: START races again, B changes model.
 7. After round 3, **final standings**: your place of seven.
 8. **Initials entry** if the total makes the top 10.
 9. **Leaderboard:** overall top 10, with a tab per model (LEFT/RIGHT).
@@ -222,7 +240,7 @@ Top 16 px of the overlay:
 | 0 | Format version |
 | 1–2 | Options: music on/off (1), last selected model (2) |
 | 10–109 | Overall top 10: per entry total, final place, the three round scores, model, initials (packed 3×8 bits), 3 reserved = 10 slots |
-| 110–179 | Best score per model (7 × 10 slots, same layout) |
+| 110–179 | Best run total per model (7 × 10 slots, same layout) |
 | 180–255 | Reserved |
 
 ## 13. Asset budget
