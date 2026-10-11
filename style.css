@@ -1,0 +1,40 @@
+:root {
+  color-scheme: dark;
+  --bg: #000;
+  --fg: #deeed6;
+  --panel: #1b1b24;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.4 ui-monospace, Menlo, Consolas, monospace;
+  overflow: hidden;
+}
+
+#screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+#screen canvas {
+  grid-area: 1 / 1;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  outline: none;
+}
+
+#status {
+  grid-area: 1 / 1;
+  align-self: end;
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  max-width: calc(100% - 32px);
+  background: var(--panel);
+  border-radius: 4px;
+  z-index: 1;
+}

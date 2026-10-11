@@ -58,6 +58,7 @@ The PPU renders into a 256 × 224 RGBA image, one scanline at a time. The image 
 - 1024 tiles, each 8 × 8 at 4 bpp, which is 32 bytes. Pixels are packed two per byte, with the high nibble on the left.
 - The tile sheet is addressed as a 128 × 512 pixel image, 16 tiles wide by 64 tiles tall. Tile `n` sits at column `n % 16`, row `floor(n / 16)`.
 - A 16 × 16 sprite at tile `n` uses tiles `n, n+1, n+16, n+17`. A 32 × 32 sprite uses the 4 × 4 block starting at `n`.
+- **Tile 0 is the reserved empty tile.** It is always fully transparent: `sset` writes to it are ignored and loaders discard any pixels stored there. Because cleared Map RAM is all zeros, empty map entries draw nothing, so background layers can be visible by default without filling the screen.
 
 ### 4.4 Map RAM
 
@@ -124,7 +125,7 @@ From back to front:
 
 When `draw()` returns, the PPU snapshots all video state, then renders lines 0–223 in order. If the cart defines `scanline(y)`, it is called before line `y` is rendered.
 
-Inside `scanline()`, only these calls are allowed: `bgscroll`, `bg`, `affine`, `color`, `palcopy` and `t`. Anything else throws an error. A change applies from that line onward and is **discarded at the end of the frame**, so every frame starts from the state `draw()` left behind.
+Inside `scanline()`, only these calls are allowed: `bgscroll`, `bg`, `affine`, `color`, `palcopy` and `t`, plus the pure math helpers (`flr`, `ceil`, `abs`, `sgn`, `mid`, `clamp`, `lerp`). Anything else throws an error. A change applies from that line onward and is **discarded at the end of the frame**, so every frame starts from the state `draw()` left behind.
 
 Typical uses are wavy water (`bgscroll` with a sine offset per line), sky gradients (`color(0, ...)` per line) and Mode 7 floors (`affine` per line).
 
@@ -211,7 +212,7 @@ function scanline(y) {}   // optional; before each line is rendered
 
 ### 7.2 Execution environment
 
-- The cart source runs in strict mode inside the console Web Worker, wrapped in a `Function` that receives the API as named parameters.
+- The cart source runs in strict mode inside the console Web Worker, wrapped in a `Function` that receives the API as named parameters. The source sits inside a block in that function, so a cart may declare its own variables or functions with API names (for example `const START = 0`); these shadow the built-ins within the cart. A top-level `return` is not allowed.
 - The source limit is 65 536 UTF-8 bytes. Larger carts refuse to run, and the editor shows a live byte counter.
 - `Math.random` is replaced with the seeded PRNG (xoshiro128\*\*). Carts should use `t()` for time, not `Date`.
 - The worker has no DOM access. The page's Content-Security-Policy (`connect-src 'self'`) blocks network requests to other sites.
@@ -246,7 +247,7 @@ The console measures how long `update + draw + render` takes each frame. If one 
 
 | Function | Description |
 |---|---|
-| `sget(x, y)` / `sset(x, y, c)` | Read or write a tile-sheet pixel (128 × 512 space, value 0–15) |
+| `sget(x, y)` / `sset(x, y, c)` | Read or write a tile-sheet pixel (128 × 512 space, value 0–15). Tile 0 always reads 0. |
 | `mget(x, y)` / `mset(x, y, entry)` | Read or write a Map RAM entry |
 | `tile(n, pal = 0, fx = false, fy = false, pri = false)` | Build a map entry |
 

@@ -6,6 +6,19 @@ limits.
 
 - Specification: [docs/SPEC.md](docs/SPEC.md)
 
+## Status
+
+| Milestone | State |
+|---|---|
+| M1 Boot: worker, frame clock, CGRAM, overlay, font, input | Done |
+| M2 Sprites: VRAM, OAM, sizes, flips, priorities, per-line limit, `.nova` loading | Done |
+| M3 Backgrounds: Map RAM, BG0-2, scrolling, wrap, tile priority, compositing | Done |
+| M4 Raster effects: `scanline()` hook, BG2 affine mode | Done |
+| M5-M9 Shell and editors, audio, PNG carts, recording | Not started |
+
+The full cart API from SPEC section 8 is callable. `sfx`, `music` and `volume`
+queue commands but make no sound until the audio milestone.
+
 ## Running locally
 
 Module workers and AudioWorklets need HTTP, so `file://` will not work. From
@@ -15,7 +28,20 @@ the repository root:
 python3 -m http.server 8000
 ```
 
-Then open <http://localhost:8000/>.
+Then open <http://localhost:8000/>. Pick a demo cart with `?cart=<name>`, and
+pin the random seed with `?seed=<n>`. You can also drop a `.nova` file onto
+the page.
+
+| Cart | Shows |
+|---|---|
+| `hello` (default) | Overlay drawing, font, input from keyboard and up to 4 gamepads |
+| `sprites` | OAM: sizes, flips, sprite palettes, priorities, 128-entry and 32-per-line limits |
+| `parallax` | Three scrolling background layers, sub-palettes, tile priority |
+| `water` | `scanline()` reflection with per-line wobble and palette swaps |
+| `mode7` | Per-line BG2 affine perspective floor and sky gradient |
+
+Keyboard: arrows = d-pad, X = A, Z = B, S = X, A = Y, Q = L, W = R,
+Enter = Start, Shift = Select. Ctrl+R restarts the cart.
 
 ## Development
 
@@ -24,4 +50,11 @@ check on every source file:
 
 ```sh
 find src -name '*.js' -print0 | xargs -0 -n1 node --check
+```
+
+Demo carts are built from `carts/src/<name>/` (code, metadata and tile art) by
+a Node script:
+
+```sh
+node tools/pack.js carts/src/hello carts/hello.nova
 ```
