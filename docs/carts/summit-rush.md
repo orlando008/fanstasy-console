@@ -126,10 +126,18 @@ choices, not claims about the real systems. Seven racers:
   - Agent Mode replaces your steering. It heads for the nearest chip on screen that still has room in its bucket, and veers away from hazards that get close.
   - Long Context: a RAM hit while it runs costs nothing ("RAM SAFE"). When it ends, buckets keep what they gained above the cap, but can't grow further until RAM raises the cap again. A later RAM loss clips them as usual.
 - Each model has a 16×16 racer sprite (two-frame climb animation, lean left/right frames) and a portrait for the select screen.
-  - **Placeholder art:** all seven share one racer sprite and one 32×32 portrait, tinted per model.
-  - The tint goes into a copy of sprite palette 0: color 9 is the body and color 4 the shade.
-  - Model colors: Claude clay, GPT white, Gemini violet, Grok charcoal, DeepSeek blue, GLM cyan, Kimi moon yellow.
-  - In the race, the chosen model's tint lives in sprite palette 2. On the select screen, palettes 1–7 hold one tint per portrait.
+  - **Art (first pass):** each model has its own silhouette and emblem, so they read apart even without color:
+    - Claude: round, with an asterisk.
+    - GPT: rounded square, with a hex knot.
+    - Gemini: teardrop, with a sparkle.
+    - Grok: octagon, with a slash.
+    - DeepSeek: a whale with a tail and a pale belly.
+    - GLM: hexagon, with a Z.
+    - Kimi: crescent moon, with a star.
+  - **Sheet layout:** racer frames (run A, run B, lean) at sheet y 144 + 16 per model; 32×32 portraits in a four-wide grid from y 256.
+  - **Palettes:** colors 9 (body), 4 (shade) and 12 (accent) are tinted per model in a copy of sprite palette 0.
+    - Model colors: Claude clay, GPT white, Gemini violet, Grok charcoal with a light rim, DeepSeek blue, GLM cyan, Kimi moon yellow.
+    - In the race, the chosen model's tint lives in sprite palette 2; on the menu screens, palettes 1–7 hold one tint per model.
 - The other six models never appear on the course; their rounds are simulated (5.1).
 
 ## 7. Course
@@ -148,6 +156,7 @@ As built:
   - Scroll 1.5 px/frame (1.2×).
   - A ~160 px trail (20 ±1 tiles) that switchbacks: its center zigzags 5 tiles either side every 56 rows, so you keep crossing the screen.
   - Pines fill the rock where a 2×2 patch allows.
+- **Scenery:** each stage scatters 16×16 scenery on the rock where a 2×2 patch allows. Base Camp has server racks, whose LEDs blink through their own BG palette 3. The Treeline has pines, and the Summit snowy boulders. Grass tufts and cracked rock vary the plain tiles.
   - It uses BG palette 1, a copy of palette 0 with mossier grass, darker greens and cooler rock.
 - **The Summit:**
   - Scroll 1.75 px/frame (1.4×).
@@ -211,7 +220,7 @@ Top 16 px of the overlay:
 
 1. **Title:**
    - The mountain logo (64×64, map columns 64–71) spins and zooms in on BG2 affine over 1.5 s, then sways gently at 2×.
-   - Below it: the title, a tagline, the seven racers hopping, "PRESS START" (or A), "B: LEADERBOARD", and the top score.
+   - Below it: the title in 16×16 letters drawn from the system font at 2× (sheet y 320), rippling; a tagline; the seven racers hopping, "PRESS START" (or A), "B: LEADERBOARD", and the top score.
    - The title, select, initials and leaderboard screens share a sky-gradient backdrop drawn in `scanline()`.
 2. **Model select:** seven portraits in a row; LEFT/RIGHT to choose, START (or A) to climb. The chosen model shows its name in its color, handling stars, starting buckets as bars, its special with a two-line description, and its best score. The last model picked is remembered. After the scoreboard, START races again with the same model and B returns here.
 3. **Stage intro:** stage name card ("STAGE 2 OF 3 / THE TREELINE"), 3-2-1-GO countdown.
@@ -272,7 +281,10 @@ Top 16 px of the overlay:
 2. **Models:** all seven playable, with specials and the select screen.
 3. **Stages 2 and 3:** narrowing course, ice and wind, scroll speeds.
 4. **Flow:** title, select, stage cards, summit tally, AGI screen, leaderboard with initials and saves.
-5. **Art pass:** final sprites, tiles and palettes, all made in the Sprites, Map and Palette tabs.
+5. **Art pass:** final sprites, tiles and palettes. First pass done:
+   - Per-model racers and portraits, title lettering, stage scenery and protest signs.
+   - The art is tile data in `tiles.txt`, so it can be refined in the Sprites, Map and Palette tabs.
+   - Still open: parallax scenery (BG1/BG2) behind the course. The opaque rock walls currently cover the whole screen, so they would need gaps to show it.
 6. **Audio pass:** songs and SFX in the Music and SFX tabs.
 7. **Balance and polish:** tune thresholds so Gold in all four is hard but possible; record replays of good runs (F9/F10); capture a label (F7); export a PNG cart.
 

@@ -26,6 +26,12 @@ const MODEL_BEST_SLOT = 110; // + ENTRY per model: that model's best run
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const LOGO_TILE = 160, LOGO_MX = 64; // 8x8-tile title logo: sheet tiles, then map columns
 
+const GRASS2 = 14, ROCK2 = 15; // variants: a grass tuft, a cracked rock
+// 16x16 scenery on rock, each as four BG tiles: Treeline pines, Base Camp
+// server racks (their LEDs blink in BG palette 3), Summit snowy boulders.
+const PINE = [8, 9, 24, 25], RACK = [10, 11, 26, 27], BOULDER = [12, 13, 28, 29];
+const RACK_PAL = 3;
+
 /**
  * What fills each stretch of a stage's course. Every pass deals the whole mix
  * in a shuffled order, so chips and obstacles stay in balance over the stage.
@@ -40,15 +46,15 @@ const BASE_MIX = ['chips', 'chips', 'chips', 'chips', 'chips', 'protest', 'tape'
 const STAGES = [
   {
     name: 'BASE CAMP', short: 'BASE CAMP', clear: 'BASE CAMP CLEAR',
-    scroll: 1, walls: baseCampWalls, pal: 0, pines: false, simShift: 0, mix: BASE_MIX,
+    scroll: 1, walls: baseCampWalls, pal: 0, scenery: RACK, sceneryRate: 18, simShift: 0, mix: BASE_MIX,
   },
   {
     name: 'THE TREELINE', short: 'TREELINE', clear: 'TREELINE CLEAR',
-    scroll: 1.2, walls: treelineWalls, pal: 1, pines: true, simShift: -3, mix: BASE_MIX,
+    scroll: 1.2, walls: treelineWalls, pal: 1, scenery: PINE, sceneryRate: 55, simShift: -3, mix: BASE_MIX,
   },
   {
     name: 'THE SUMMIT', short: 'SUMMIT', clear: 'SUMMIT REACHED',
-    scroll: 1.4, walls: summitWalls, pal: 2, pines: false, simShift: -6, snow: true,
+    scroll: 1.4, walls: summitWalls, pal: 2, scenery: BOULDER, sceneryRate: 22, simShift: -6, snow: true,
     mix: [...BASE_MIX, 'ice', 'ice', 'wind'],
   },
 ];
@@ -61,50 +67,51 @@ const GUST_PUSH = 1.3; // px per frame sideways
  * The seven racers (SPEC 6.1). `power` is what the special does while it
  * runs for `frames`; `tag` is its HUD label. A model you don't play is
  * simulated from `sim` and `spread` (SPEC 5.1): each bucket ends at
- * sim + spread * noise. `body` and `shade` tint the shared racer sprite.
+ * sim + spread * noise. `body`, `shade` and `accent` tint the model's
+ * sprites (colors 9, 4 and 12 of its palette).
  */
 const MODELS = [
   {
     name: 'CLAUDE', start: [10, 10, 15, 15], stars: 4,
     special: 'CONSTITUTION', power: 'immune', frames: 180, tag: 'IMMUNE',
     info: ["PROTESTERS CAN'T TOUCH", 'YOU FOR 3 SECONDS'],
-    sim: [55, 55, 65, 65], spread: 10, body: [27, 14, 9], shade: [17, 8, 5],
+    sim: [55, 55, 65, 65], spread: 10, body: [27, 14, 9], shade: [17, 8, 5], accent: [31, 27, 21],
   },
   {
     name: 'GPT', start: [15, 15, 10, 10], stars: 3,
     special: 'SCALE UP', power: 'double', frames: 0, tag: 'X2',
     info: ['YOUR NEXT 5 CHIPS', 'COUNT DOUBLE'],
-    sim: [60, 65, 55, 50], spread: 12, body: [27, 28, 26], shade: [16, 17, 16],
+    sim: [60, 65, 55, 50], spread: 12, body: [27, 28, 26], shade: [16, 17, 16], accent: [5, 6, 7],
   },
   {
     name: 'GEMINI', start: [10, 15, 10, 15], stars: 3,
     special: 'MULTIMODAL', power: 'magnet', frames: 240, tag: 'MAGNET',
     info: ['HUGE PICKUP RADIUS', 'FOR 4 SECONDS'],
-    sim: [55, 60, 60, 60], spread: 10, body: [19, 13, 30], shade: [10, 7, 19],
+    sim: [55, 60, 60, 60], spread: 10, body: [19, 13, 30], shade: [10, 7, 19], accent: [29, 30, 31],
   },
   {
     name: 'GROK', start: [20, 10, 10, 5], stars: 2,
     special: 'UNFILTERED', power: 'smash', frames: 180, tag: 'SMASH',
     info: ['SMASH THROUGH OBSTACLES', 'FOR 3 SECONDS'],
-    sim: [55, 70, 45, 35], spread: 25, body: [8, 8, 9], shade: [4, 4, 5], ink: 15,
+    sim: [55, 70, 45, 35], spread: 25, body: [8, 8, 9], shade: [13, 13, 15], accent: [29, 29, 30], ink: 15,
   },
   {
     name: 'DEEPSEEK', start: [5, 10, 15, 10], stars: 3,
     special: 'EFFICIENCY', power: 'speed', frames: 300, tag: 'MAX SPD',
     info: ['FULL ELECTRICITY SPEED', 'FOR 5 SECONDS'],
-    sim: [65, 50, 65, 45], spread: 12, body: [9, 13, 31], shade: [5, 7, 20],
+    sim: [65, 50, 65, 45], spread: 12, body: [9, 13, 31], shade: [5, 7, 20], accent: [20, 25, 31],
   },
   {
     name: 'GLM', start: [10, 10, 10, 10], stars: 5,
     special: 'AGENT MODE', power: 'agent', frames: 180, tag: 'AGENT',
     info: ['STEERS ITSELF TO CHIPS', 'FOR 3 SECONDS'],
-    sim: [55, 55, 55, 55], spread: 6, body: [7, 24, 27], shade: [3, 14, 17],
+    sim: [55, 55, 55, 55], spread: 6, body: [7, 24, 27], shade: [3, 14, 17], accent: [3, 9, 14],
   },
   {
     name: 'KIMI', start: [10, 5, 10, 20], stars: 4,
     special: 'LONG CONTEXT', power: 'context', frames: 300, tag: 'CAP 100',
     info: ["CAPS 100, RAM CAN'T DROP", 'FOR 5 SECONDS'],
-    sim: [45, 45, 55, 75], spread: 10, body: [29, 25, 10], shade: [19, 15, 5],
+    sim: [45, 45, 55, 75], spread: 10, body: [29, 25, 10], shade: [19, 15, 5], accent: [31, 31, 24],
   },
 ];
 const HANDLING = [0, 0.8, 0.9, 1, 1.1, 1.2]; // top-speed multiplier by star rating
@@ -112,8 +119,8 @@ const HANDLING = [0, 0.8, 0.9, 1, 1.1, 1.2]; // top-speed multiplier by star rat
 // --- Art ----------------------------------------------------------------------
 
 const GRASS = 1, ROCK = 2, EDGE_L = 3, EDGE_R = 4, CHECKER = 5, START_LINE = 6, FLOWER = 7;
-const PINE = [8, 9, 24, 25]; // a 16x16 pine on rock, as four BG tiles
-const SPR = { RUN: 32, LEAN: 36, PORTRAIT: 96, CHIPS: [38, 40, 42, 44], WAFER: 46, ICE: 74, PROTEST: 64, TAPE: 68, PRICE: 70, LAW: 72 };
+const TITLE_TEXT = 'SUMMIT RUSH', TITLE_LETTERS = 'SUMITRH'; // 16x16 letters from SPR.TITLE
+const SPR = { TITLE: 640, CHIPS: [38, 40, 42, 44], WAFER: 46, ICE: 74, PROTEST: 64, TAPE: 68, PRICE: 70, LAW: 72 };
 
 /** Each obstacle takes from one bucket (SPEC 8). */
 const OBSTACLES = {
@@ -163,6 +170,8 @@ function init() {
   color(16 + 11, 8, 15, 6);
   color(16 + 5, 4, 9, 4);
   color(16 + 3, 8, 9, 11);
+  // Server racks get their own BG palette so their LEDs can blink.
+  palcopy(RACK_PAL, 0);
   // The Summit's BG palette: snow for grass, dark slate rock dusted with snow.
   palcopy(2, 0);
   color(32 + 11, 26, 28, 31);
@@ -267,6 +276,17 @@ function tint(pal, m) {
   palcopy(8 + pal, 8);
   color(base + 9, ...m.body);
   color(base + 4, ...m.shade);
+  color(base + 12, ...m.accent);
+}
+
+/** Model i's racer frames: run A, run B (+2), lean (+4). Sheet y 144 + 16i. */
+function racerTile(i) {
+  return 288 + 32 * i;
+}
+
+/** Model i's 32x32 portrait, in a four-wide grid from sheet y 256. */
+function portraitTile(i) {
+  return 512 + 64 * (i >> 2) + 4 * (i & 3);
 }
 
 /** Start a run with the chosen model, from the first stage. */
@@ -355,13 +375,18 @@ function isRock(r, c) {
   return c < l - 1 || c > rt;
 }
 
-/** Rock, or on wooded stages a quarter of a pine where a 2x2 patch is all rock. */
+/** A fixed pseudo-random 0-99 for map cell (c, r). */
+function cellHash(c, r) {
+  return ((Math.imul(c, 73856093) ^ Math.imul(r, 19349663)) >>> 0) % 100;
+}
+
+/** Rock, or a quarter of the stage's scenery where a 2x2 patch is all rock. */
 function rockTile(r, c) {
-  if (!stage.pines) return ROCK;
   const ar = r & ~1, ac = c & ~1;
-  if (ac > 30 || ((Math.imul(ac, 73856093) ^ Math.imul(ar, 19349663)) >>> 0) % 100 > 55) return ROCK;
-  if (!isRock(ar, ac) || !isRock(ar, ac + 1) || !isRock(ar + 1, ac) || !isRock(ar + 1, ac + 1)) return ROCK;
-  return PINE[(r - ar) * 2 + (c - ac)];
+  const plain = cellHash(c + 7, r) < 20 ? ROCK2 : ROCK;
+  if (ac > 30 || cellHash(ac, ar) >= stage.sceneryRate) return plain;
+  if (!isRock(ar, ac) || !isRock(ar, ac + 1) || !isRock(ar + 1, ac) || !isRock(ar + 1, ac + 1)) return plain;
+  return stage.scenery[(r - ar) * 2 + (c - ac)];
 }
 
 function rowTile(r, c) {
@@ -372,7 +397,8 @@ function rowTile(r, c) {
   const fr = Math.floor(FINISH_Y / 8);
   if (r === fr || r === fr - 1) return CHECKER;
   if (r === 0) return START_LINE;
-  return ((c * 7 + r * 13) & 15) === 0 ? FLOWER : GRASS;
+  if (((c * 7 + r * 13) & 15) === 0) return FLOWER;
+  return cellHash(c, r + 3) < 12 ? GRASS2 : GRASS;
 }
 
 /** Write map rows for whatever the camera can see into the 64-row ring buffer. */
@@ -382,7 +408,10 @@ function streamRows() {
     const m = ((r % 64) + 64) % 64;
     if (written[m] === r) continue;
     written[m] = r;
-    for (let c = 0; c < 32; c++) mset(c, m, tile(rowTile(r, c), stage.pal));
+    for (let c = 0; c < 32; c++) {
+      const n = rowTile(r, c);
+      mset(c, m, tile(n, RACK.includes(n) ? RACK_PAL : stage.pal));
+    }
   }
 }
 
@@ -867,6 +896,11 @@ function draw() {
   if (state === 'ranks') { ranksScreen(); return; }
   const k = (Math.sin(t() / 5) + 1) / 2;
   color(HAZARD_OUTLINE, 31, flr(2 + 8 * k), flr(2 + 8 * k));
+  // Rack LEDs: green and red blink out of step, amber flickers.
+  const blink = flr(t() / 20) % 2;
+  color(RACK_PAL * 16 + 11, 6, blink ? 31 : 12, 6);
+  color(RACK_PAL * 16 + 6, blink ? 12 : 31, 4, 4);
+  color(RACK_PAL * 16 + 14, 31, 22 + (flr(t() / 7) % 3) * 3, 6);
   bgscroll(0, 0, ((Math.floor(camY) % 512) + 512) % 512);
 
   for (const e of entities) {
@@ -897,7 +931,7 @@ function draw() {
   const sy = Math.floor(p.y - camY);
   if (p.inv === 0 || flr(p.inv / 4) % 2 === 0) {
     const lean = Math.abs(p.vx) > 1;
-    const n = lean ? SPR.LEAN : SPR.RUN + (flr(p.frames / 8) % 2) * 2;
+    const n = racerTile(pick) + (lean ? 4 : (flr(p.frames / 8) % 2) * 2);
     spr(n, Math.floor(p.x), sy, { size: 16, fx: p.vx < -1, prio: 3, pal: RACER_PAL });
   }
   // A ring while a timed special runs; Multimodal shows its pickup radius.
@@ -1101,7 +1135,7 @@ function selectScreen() {
   for (let i = 0; i < MODELS.length; i++) {
     const on = i === pick, x = 4 + i * 36;
     const y = 36 - (on ? 3 + Math.round(Math.sin(timer / 8)) : 0);
-    spr(SPR.PORTRAIT, x, y, { size: 32, pal: 1 + i, prio: 3 });
+    spr(portraitTile(i), x, y, { size: 32, pal: 1 + i, prio: 3 });
     rect(x - 2, y - 2, 36, 36, on ? 14 : 2);
     if (on) rect(x - 3, y - 3, 38, 38, 14);
   }
@@ -1133,20 +1167,25 @@ function titleScreen() {
   affine({ a: ca, b: sa, c: -sa, d: ca, cx: 32, cy: 32 });
   bgscroll(2, 32 - 128, 32 - 72);
   if (timer < 90) return;
-  print('SUMMIT RUSH', 129 - 44, 143, 1);
-  center('SUMMIT RUSH', 142, 14);
-  center('A RACE TO THE TOP FOR AI MODELS', 154, 13);
+  // The title in 16x16 letters, rippling.
+  for (let i = 0; i < TITLE_TEXT.length; i++) {
+    const k = TITLE_LETTERS.indexOf(TITLE_TEXT[i]);
+    if (k < 0) continue;
+    const y = 138 + Math.round(Math.sin((timer - i * 6) / 10) * 2);
+    spr(SPR.TITLE + k * 2, 128 - TITLE_TEXT.length * 8 + i * 16, y, { size: 16, prio: 3 });
+  }
+  center('A RACE TO THE TOP FOR AI MODELS', 160, 13);
   // The seven racers, hopping in turn.
   for (let i = 0; i < MODELS.length; i++) {
     const hop = Math.round(Math.abs(Math.sin((timer + i * 9) / 9)) * 4);
-    spr(SPR.RUN + (flr((timer + i * 5) / 8) % 2) * 2, 128 - 77 + i * 22, 168 - hop, { size: 16, pal: 1 + i, prio: 3 });
+    spr(racerTile(i) + (flr((timer + i * 5) / 8) % 2) * 2, 128 - 77 + i * 22, 176 - hop, { size: 16, pal: 1 + i, prio: 3 });
   }
-  if (timer % 60 < 40) center('PRESS START', 192, 15);
-  print('B: LEADERBOARD', 8, 210, 12);
+  if (timer % 60 < 40) center('PRESS START', 198, 15);
+  print('B: LEADERBOARD', 8, 212, 12);
   const top = readEntry(TOP_SLOT);
   if (top.total) {
     const t = `TOP ${top.total} ${top.initials}`;
-    print(t, 248 - t.length * 8, 210, 10);
+    print(t, 248 - t.length * 8, 212, 10);
   }
 }
 
@@ -1157,7 +1196,7 @@ function agiScreen() {
     const a = i * Math.PI / 8 + timer / 40;
     line(cx + Math.cos(a) * 24, cy + Math.sin(a) * 24, cx + Math.cos(a) * 220, cy + Math.sin(a) * 220, i % 2 ? 14 : 9);
   }
-  spr(SPR.PORTRAIT, cx - 16, cy - 16 - Math.round(Math.abs(Math.sin(timer / 10)) * 3), { size: 32, pal: RACER_PAL, prio: 3 });
+  spr(portraitTile(pick), cx - 16, cy - 16 - Math.round(Math.abs(Math.sin(timer / 10)) * 3), { size: 32, pal: RACER_PAL, prio: 3 });
   const c = [14, 15, 9, 13][flr(timer / 6) % 4];
   rectfill(40, 112, 176, 56, 1);
   rect(40, 112, 176, 56, c);
@@ -1172,7 +1211,7 @@ function initialsScreen() {
   center('NEW HIGH SCORE!', 30, 14);
   center(`#${result.rank + 1} OF ${TOP_N}`, 46, 13);
   center(String(result.run), 62, 15);
-  spr(SPR.PORTRAIT, 112, 80, { size: 32, pal: 1 + pick, prio: 3 });
+  spr(portraitTile(pick), 112, 80, { size: 32, pal: 1 + pick, prio: 3 });
   center('ENTER YOUR INITIALS', 124, 13);
   for (let i = 0; i < 3; i++) {
     const x = 128 - 36 + i * 28, on = i === ini.pos;
@@ -1205,7 +1244,7 @@ function ranksScreen() {
     });
   } else {
     const i = tab - 1, e = readEntry(MODEL_BEST_SLOT + i * ENTRY);
-    spr(SPR.PORTRAIT, 112, 34, { size: 32, pal: 1 + i, prio: 3 });
+    spr(portraitTile(i), 112, 34, { size: 32, pal: 1 + i, prio: 3 });
     if (!e.total) {
       center('NO RUNS YET', 96, 10);
     } else {
