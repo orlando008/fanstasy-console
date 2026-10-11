@@ -55,6 +55,10 @@ self.onmessage = (e) => {
     case 'tick':
       tick(msg.input);
       break;
+    case 'capture':
+      // F7 label capture: a copy of the last rendered frame.
+      post({ type: 'frame', id: msg.id, data: image ? image.data.slice() : null });
+      break;
     case 'video':
       // The editors ask for the layer regions the paused game is using.
       post({ type: 'video', id: msg.id, layers: cart ? ppu.layers.map((l) => ({ ...l })) : null });

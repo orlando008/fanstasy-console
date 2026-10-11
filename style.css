@@ -509,3 +509,17 @@ select, .num, .hex-input {
 .pan-row { display: inline-flex; align-items: center; gap: 6px; }
 .adsr { display: block; width: 280px; height: 90px; margin: 8px 0; border-radius: 4px; }
 .inst-samples { margin-top: 8px; }
+
+/* --- Label and PNG cart --------------------------------------------------- */
+
+.label-row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.panel-section:has(.label-row) { max-width: 760px; }
+.label-side { flex: 1; min-width: 260px; }
+.label-side .hint:first-child { margin-top: 0; }
+.label-box { flex: none; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.label-img { display: block; width: 256px; height: 224px; image-rendering: pixelated; }
+.label-empty { display: grid; place-items: center; color: var(--dim); background: var(--panel-2); }
+.meter { height: 10px; margin: 12px 0 4px; border-radius: 5px; background: var(--panel-2); border: 1px solid var(--line); overflow: hidden; max-width: 320px; }
+.meter-bar { height: 100%; width: 0; background: var(--accent); }
+.meter-bar.over { background: var(--error); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }

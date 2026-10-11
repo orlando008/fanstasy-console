@@ -84,6 +84,19 @@ export class Machine {
     });
   }
 
+  /** The last rendered frame as RGBA ImageData (256x224), or null. */
+  captureFrame() {
+    if (!this.worker) return Promise.resolve(null);
+    const id = ++this.queryId;
+    return new Promise((resolve) => {
+      this.queries.set(id, resolve);
+      this.worker.postMessage({ type: 'capture', id });
+      setTimeout(() => {
+        if (this.queries.delete(id)) resolve(null);
+      }, 1000);
+    });
+  }
+
   /** Scale the screen by the largest integer factor that fits its box. */
   fit() {
     if (!this.canvas) return;
@@ -140,6 +153,13 @@ export class Machine {
         const resolve = this.queries.get(msg.id);
         this.queries.delete(msg.id);
         resolve?.(Array.isArray(msg.layers) ? msg.layers : null);
+        break;
+      }
+      case 'frame': {
+        const resolve = this.queries.get(msg.id);
+        this.queries.delete(msg.id);
+        const ok = msg.data instanceof Uint8ClampedArray && msg.data.length === 256 * 224 * 4;
+        resolve?.(ok ? new ImageData(msg.data, 256, 224) : null);
         break;
       }
       case 'audio':

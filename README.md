@@ -17,7 +17,8 @@ limits.
 | M5 Shell and code editor: run/edit modes, error screen, save/load `.nova`, autosave | Done |
 | M6 Graphics editors: Sprites, Map and Palette tabs | Done |
 | M7 Audio: worklet synth, instruments, SFX, patterns, songs, SFX and Music tabs | Done |
-| M8-M9 PNG carts and saves, recording | Not started |
+| M8 Persistence and PNG carts: `dget`/`dset`, label capture, `.nova.png` export and import | Done |
+| M9 Recording: input replay, WebM and GIF capture | Not started |
 
 The full cart API from SPEC section 8 is callable.
 
@@ -32,7 +33,8 @@ python3 -m http.server 8000
 
 Then open <http://localhost:8000/>. Pick a demo cart with `?cart=<name>`, and
 pin the random seed with `?seed=<n>`. You can also drop a `.nova` file onto
-the page. Without `?cart=`, the console reopens your autosaved working cart.
+the page, or a `.nova.png` PNG cart. Without `?cart=`, the console reopens your
+autosaved working cart.
 
 | Cart | Shows |
 |---|---|
@@ -53,7 +55,8 @@ Shell shortcuts:
 | Esc | Switch between the game and the editor. Leaving the editor resumes the game, or restarts it if the cart changed. After an error, Esc opens the code at the failing line. |
 | Ctrl+R | Restart the cart with the current code |
 | Ctrl+S / Ctrl+Shift+S | Save / save as `.nova` |
-| Ctrl+O | Open a `.nova` file |
+| Ctrl+O | Open a `.nova` file or a `.nova.png` PNG cart |
+| F7 | Capture the current frame as the cart's label |
 | Ctrl+F | Find in the code editor (Enter / Shift+Enter for next / previous) |
 | Ctrl+Z / Ctrl+Y | Undo / redo in the Sprites, Map and Palette tabs (the code editor uses the browser's own undo) |
 | Ctrl+C / Ctrl+V | Copy / paste pixels (Sprites), a rectangle of map cells (Map) or a sub-palette (Palette) |
@@ -68,7 +71,16 @@ Tile 0 is reserved and can't be drawn in.
 
 Browsers start audio only after the first click or key press on the page.
 
-The working cart autosaves to this browser every 10 seconds.
+The working cart autosaves to this browser every 10 seconds. Save data written
+with `dset` is kept per cart (by title and author) in this browser.
+
+## PNG carts
+
+The Cart tab exports the cart as a `.nova.png`: a picture of a cartridge with
+the label on it and the whole game hidden in the pixels. Dropping it onto the
+console plays it. A meter shows how full the PNG would be (up to 147,443
+compressed bytes). Share PNG carts as files: sites that recompress images
+destroy the data.
 
 ## Development
 

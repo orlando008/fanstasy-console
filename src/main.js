@@ -3,7 +3,7 @@
 
 import { Apu } from './audio/apu.js';
 import { Shell } from './editors/shell.js';
-import { openCart, saveCart } from './files.js';
+import { exportPng, isPngFile, openCart, readCartFile, saveCart } from './files.js';
 import { cartId, createCart } from './formats/cart.js';
 import { readNova, writeNova } from './formats/nova-json.js';
 import { Input } from './input.js';
@@ -107,6 +107,40 @@ const app = {
     machine.load(this.cart, seedFromUrl() ?? crypto.getRandomValues(new Uint32Array(1))[0], loadSave(this.saveKey));
     this.launchedRevision = this.revision;
     this.launchedCart = this.cart;
+  },
+
+  /** F7: make the current frame the cart's label. */
+  async captureLabel() {
+    const frame = await machine.captureFrame();
+    if (!frame) {
+      notify('No frame to capture yet: run the cart first.');
+      return;
+    }
+    const canvas = new OffscreenCanvas(256, 224);
+    canvas.getContext('2d').putImageData(frame, 0, 0);
+    const bytes = new Uint8Array(await (await canvas.convertToBlob({ type: 'image/png' })).arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    this.cart.label = btoa(bin);
+    this.changed('label');
+    shell.labelChanged();
+    shell.log('Label captured from the current frame.');
+    if (this.mode === 'run') flashStatus('Label captured');
+  },
+
+  clearLabel() {
+    this.cart.label = null;
+    this.changed('label');
+    shell.labelChanged();
+  },
+
+  async exportPng() {
+    try {
+      const name = await exportPng(this.cart);
+      if (name) shell.log(`Exported ${name}`);
+    } catch (e) {
+      notify(`Could not export: ${e.message}`);
+    }
   },
 
   /** Editor audio preview: see Apu.preview. */
@@ -223,6 +257,15 @@ function notify(text) {
   }
 }
 
+/** Show a short message over the game for two seconds. */
+let flashTimer = 0;
+function flashStatus(text) {
+  statusEl.textContent = text;
+  statusEl.hidden = false;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(hideStatus, 2000);
+}
+
 function hideStatus() {
   statusEl.hidden = true;
 }
@@ -271,7 +314,8 @@ window.addEventListener('drop', async (e) => {
   const file = e.dataTransfer?.files?.[0];
   if (!file || !confirmDiscard()) return;
   try {
-    loadCart(readNova(await file.text()), { fileName: file.name, autosave: true });
+    // A dropped PNG cart has no .nova file to save back to.
+    loadCart(await readCartFile(file), { fileName: isPngFile(file) ? '' : file.name, autosave: true });
   } catch (err) {
     notify(`Could not load ${file.name}: ${err.message}`);
   }
