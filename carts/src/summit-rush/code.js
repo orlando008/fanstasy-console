@@ -53,6 +53,7 @@ const BUCKET_LETTER = ['E', 'G', 'C', 'R'];
 const PURPLE = 135; // sprite palette 0, color 7, recolored for RAM
 const HAZARD_PAL = 1; // sprite palette 1 = CGRAM 144-159
 const HAZARD_OUTLINE = 151; // its color 7
+const WARN_UNTIL = 110; // screen y below which the "!" marker stops showing
 const BUCKET_COLOR = [14, 11, 13, PURPLE];
 
 // --- State --------------------------------------------------------------------
@@ -200,13 +201,13 @@ function buildCourse() {
       const x = x0 + rand() * (x1 - x0);
       for (let i = 0; i < n; i++) {
         const [a, b] = trackRange(y - i * 4);
-        list.push({ kind: 'protester', x: clamp(x + i * 20 * dir, a, b), y: y - i * 4, vx: 0.4 * dir, step: i * 7 });
+        list.push({ kind: 'protester', x: clamp(x + i * 20 * dir, a, b), y: y - i * 4, vx: 0.4 * dir, step: i * 7, warn: i === 0 ? 8 : 0 });
       }
     } else if (k === 'tape') {
       // Red tape across part of the track, with a chip as bait beside it.
       const [x0, x1] = trackRange(y, 32);
       const x = x0 + rand() * (x1 - x0);
-      list.push({ kind: 'tape', x, y });
+      list.push({ kind: 'tape', x, y, warn: 16 });
       const [a, b] = trackRange(y - 30);
       const t = nextType();
       placed[t]++;
@@ -215,12 +216,12 @@ function buildCourse() {
       // High prices: a pair of price tags hanging over the track.
       const [x0, x1] = trackRange(y, 36);
       const x = x0 + rand() * (x1 - x0);
-      list.push({ kind: 'price', x, y }, { kind: 'price', x: x + 20, y: y - 6 });
+      list.push({ kind: 'price', x, y, warn: 18 }, { kind: 'price', x: x + 20, y: y - 6 });
     } else if (k === 'law') {
       // Legislation: one or two stacks of law books.
       const [x0, x1] = trackRange(y);
       const n = 1 + Math.floor(rand() * 2);
-      for (let i = 0; i < n; i++) list.push({ kind: 'law', x: x0 + rand() * (x1 - x0), y: y - i * 26 });
+      for (let i = 0; i < n; i++) list.push({ kind: 'law', x: x0 + rand() * (x1 - x0), y: y - i * 26, warn: 8 });
     } else if (k === 'wafer') {
       const [x0, x1] = trackRange(y);
       list.push({ kind: 'wafer', x: x0 + rand() * (x1 - x0), y });
@@ -496,6 +497,18 @@ function draw() {
     spr(n, Math.floor(p.x), sy, { size: 16, fx: p.vx < -1, prio: 3 });
   }
   if (p.immune > 0) circ(Math.floor(p.x) + 8, sy + 8, 11 + (p.frames % 8 < 4 ? 0 : 1), 13);
+
+  // A blinking "!" over each hazard group as it scrolls in, gone by the time
+  // it's close enough to read on its own.
+  if (flr(p.frames / 8) % 4 !== 3) for (const e of entities) {
+    if (!e.warn || e.gone) continue;
+    const ey = Math.floor(e.y - camY);
+    if (ey > WARN_UNTIL || ey - 13 < HUD_H + 2) continue;
+    const x = Math.floor(e.x) + e.warn - 4, y = ey - 13;
+    rectfill(x - 2, y - 2, 12, 11, HAZARD_OUTLINE);
+    pset(x - 2, y - 2, 0); pset(x + 9, y - 2, 0); pset(x - 2, y + 8, 0); pset(x + 9, y + 8, 0);
+    print('!', x, y, 15);
+  }
 
   for (const q of popups) label(q.text, Math.round(p.x + 8 - q.text.length * 4), Math.round(q.y), q.c);
   hud();
