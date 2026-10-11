@@ -365,7 +365,11 @@ This is the working and version-control format. It is plain JSON and is laid out
 - A pattern row is an array of 6 cells, one per channel; an SFX's `rows` is an array of single cells. A cell is `null` when empty, and any of its fields may be omitted. `n` is a note such as `C-4` or `C#4`, or `OFF`.
 - Loaders reject unknown `format` values and any `version` newer than they support.
 
-### 9.2 Distribution format: `.nova.png`
+### 9.2 Input recordings: `.replay.json`
+
+A recording holds what is needed to reproduce a run exactly: `{ "format": "nova16-replay", "version": 1, "title", "seed", "save", "frames", "input" }`. `save` is the 1 KB of save data at the start (base64 of 256 little-endian int32s) and `input` is base64 of 4 little-endian uint16 pad masks per frame. Replays never write save data.
+
+### 9.3 Distribution format: `.nova.png`
 
 - A 512 × 384 PNG. Its visible image is a cartridge frame with the cart's label at the center (256 × 224 at x 128, y 44) and the title and author below it. Carts without a label show a "NO LABEL" placeholder.
 - **Payload.** A header followed by the cart's minified `.nova` JSON, compressed with `CompressionStream('deflate-raw')`.
@@ -470,6 +474,11 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 │   │   ├── cart.js         # Cart model, defaults, validation
 │   │   ├── nova-json.js    # .nova read and write
 │   │   └── nova-png.js     # .nova.png encode and decode
+│   ├── record/
+│   │   ├── clip.js         # Clip capture: WebM via MediaRecorder, frames for GIF
+│   │   ├── gif.js          # GIF encoder with per-frame color tables
+│   │   ├── replay.js       # Input recordings
+│   │   └── webm-duration.js # Adds the duration MediaRecorder leaves out
 │   ├── editors/
 │   │   ├── shell.js        # Tabs, run/edit switching
 │   │   ├── code.js
@@ -544,5 +553,5 @@ jobs:
 
 - The final name of the console.
 - Whether to add a second, smaller 4 × 6 font to the overlay.
-- How GIF export handles frames whose mid-frame palette changes produce more than 256 distinct colors (proposed: per-frame local color tables, with quantization only when needed).
+- ~~How GIF export handles frames whose mid-frame palette changes produce more than 256 distinct colors.~~ Decided: every GIF frame has its own local color table, and only frames with more than 256 colors are median-cut quantized.
 - Whether `peek`/`poke` arrive in v2 over a defined memory map.

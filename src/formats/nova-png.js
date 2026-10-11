@@ -1,4 +1,4 @@
-// .nova.png distribution format (SPEC 9.2): a 512x384 cartridge picture whose
+// .nova.png distribution format (SPEC 9.3): a 512x384 cartridge picture whose
 // pixels carry the compressed cart in the low 2 bits of R, G and B.
 
 import { FONT, FONT_FIRST, FONT_LAST } from '../console/font.js';

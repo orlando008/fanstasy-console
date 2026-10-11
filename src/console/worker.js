@@ -35,6 +35,7 @@ let cart = null, seed = 0;
 let hooks = null;
 let running = false;
 let fpsFrames = 0, fpsStart = 0;
+let streamFrames = false; // send every frame to the page while a clip records
 
 self.onmessage = (e) => {
   const msg = e.data;
@@ -54,6 +55,9 @@ self.onmessage = (e) => {
       break;
     case 'tick':
       tick(msg.input);
+      break;
+    case 'stream':
+      streamFrames = !!msg.on;
       break;
     case 'capture':
       // F7 label capture: a copy of the last rendered frame.
@@ -132,6 +136,10 @@ function runFrame(input) {
     return;
   }
   ctx.putImageData(image, 0, 0);
+  if (streamFrames) {
+    const copy = out32.slice();
+    post({ type: 'rframe', data: copy }, [copy.buffer]);
+  }
   m.stats.cpu = performance.now() - start;
   m.frame++;
 
