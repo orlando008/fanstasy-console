@@ -300,12 +300,12 @@ slots are taken.
 
 ## 12. Screens and flow
 
-1. **Title:** the Block Wizard logo, the wizard, the high score. Menu: PLAY, PRACTICE, SCORES (SCORES is still to come).
+1. **Title:** the Block Wizard logo, the wizard, the high score. Menu: PLAY, PRACTICE, SCORES.
 2. **Run:** stages 1–8 back to back (8.2), starting with a 1-second READY over the first piece.
 3. **Pause:** START. The field is hidden. Menu: RESUME, QUIT TO TITLE (quitting ends the run without recording it).
 4. **Results:** GAME OVER or TOWER BEATEN, total score, stage reached, the score for each stage played.
-5. **Initials entry** if the total makes the top 10.
-6. **Scores:** top 10 runs, plus a second page of practice bests per stage.
+5. **Initials entry** if the total makes the top 10. The run is saved the moment it ends, under the last initials used, so it counts even if the player leaves before typing. UP/DOWN changes a letter (A–Z, 0–9), LEFT/RIGHT moves, A moves on (or saves on the last letter), START saves. The new initials overwrite that row, and the scores screen opens with it highlighted.
+6. **Scores:** top 10 runs (initials, the room reached or TOWER!, total), plus a second page of practice bests per stage; LEFT/RIGHT switches pages. After a run, START plays again and SELECT goes to the title.
 7. **Practice:** play one stage from an empty field. Stage 1 is always available, and each other stage opens once you clear it in a run. A practice run ends at the end of the stage or on top-out, shows the score against that stage's best, and never enters the top 10. Moving through the list previews each room's colors, scenery and song. **Testing aid:** holding L and R together on this screen opens every room for the session, without saving.
 
 ## 13. Persistence (save slots)
@@ -316,6 +316,7 @@ slots are taken.
 | 1 | Practice unlocks (bit `n − 1` = stage `n` cleared) |
 | 2 | Furthest stage reached |
 | 3 | Audio offset `LAG` in frames, from the sync check |
+| 4 | Last initials entered (packed 3 × 8 bits), offered first next time |
 | 10–129 | Top 10 runs, 12 slots each: total, stage reached (9 = tower beaten), 8 stage scores, initials (packed 3 × 8 bits), 1 reserved |
 | 130–137 | Practice best per stage |
 | 138–255 | Reserved |
@@ -338,7 +339,7 @@ per-line limit.
 
 | Asset | Budget |
 |---|---|
-| Code | ≤ 44 KB of the 64 KB limit (34 KB with all eight stages and practice) |
+| Code | ≤ 48 KB of the 64 KB limit (44 KB with all eight stages, practice, every scoring rule and the top 10) |
 | Tiles | ≤ 700 of 1024: blocks and gem ~60 (shared by all stages; colors by palette), HUD ~30, title ~100, rooms ~60 each |
 | Map RAM | Rooms in two 28-row bands (8 × 32 columns each for BG1 and BG2), field 32 × 20, title |
 | Palettes | BG 0 blocks, BG 1 marked, BG 2 pending, BG 3 HUD, overlay colors and grid, BG 4–7 room. Sprites: piece and queue (copy of BG 0), wizard, effects. Each stage loads its own colors. |
@@ -352,7 +353,7 @@ per-line limit.
 2. **Console change** (separate): `music(song, pos, row)` for pause and resume.
 3. **All eight stages:** *(Done.)* Stage table, transitions, stage-clear bonus, the tower bonus, per-stage palettes, backdrop effects and scenery, a placeholder song and five SFX per stage, and practice mode with unlocks.
 4. **Scoring extras:** *(Done.)* Wizard gem, single color, all clear.
-5. **Flow:** title, pause, results, initials, scores, practice and unlocks, saves.
+5. **Flow:** title, pause, results, initials *(done)*, scores *(done)*, practice and unlocks *(done)*, saves. Still to do: the pause menu's QUIT TO TITLE and the READY at the start of a run.
 6. **Art pass:** block tiles and glyphs, eight rooms, the wizard, the title, all made in the built-in editors.
 7. **Audio pass:** eight songs and the SFX in the Music and SFX tabs.
 8. **Balance and polish:** gravity, the score tables and the gem rate; record replays of good runs (F9/F10); capture a label (F7); export a PNG cart.

@@ -58,14 +58,17 @@ const STAGES = [
     light: [30, 28, 18], dark: [21, 3, 7], glow: [20, 26, 31], pulse: [31, 31, 31],
     sky: [[7, 1, 6], [18, 4, 11]], floor: [[4, 1, 4], [6, 2, 6]] },
 ];
-const TITLE_MENU = ['PLAY', 'PRACTICE'];
+const TITLE_MENU = ['PLAY', 'PRACTICE', 'SCORES'];
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 // Save slots (SPEC 13).
 const VERSION_SLOT = 0, SAVE_VERSION = 1;
 const UNLOCK_SLOT = 1; // bit s: stage s + 1 cleared in a run
 const REACHED_SLOT = 2; // furthest stage reached in a run (9: the tower beaten)
 const LAG_SLOT = 3; // audio offset from the sync check, in frames
-const TOP_SLOT = 10; // first top-10 entry; its total is the high score
+const INITIALS_SLOT = 4; // the last initials entered, packed
+const TOP_SLOT = 10, TOP_N = 10; // the top 10 runs, best first; the first total is the high score
+const ENTRY = 12; // slots per run: total, stage reached, 8 stage scores, initials, spare
 const PRACTICE_SLOT = 130; // + stage: best practice score
 
 // --- Art ----------------------------------------------------------------------
@@ -120,6 +123,9 @@ let popups = [], sparks = [], banner = null;
 let cast = 0; // the wizard's flourish after a charged sweep
 let flash = 0; // Storm Spire lightning, 0-1
 let menu = 0, pick = 0, openAll = false;
+let rank = -1; // the finished run's row in the top 10, or -1
+let initials = null; // { chars, pos } while entering initials
+let view = null; // the scores screen: { page, from, hl }
 const prev = {}; // buttons held last frame, for presses that never repeat
 let GRAD = []; // backdrop color per scanline for the current room
 const LINES = new Uint8Array(224 * 3); // this frame's backdrop, effects applied
@@ -637,14 +643,90 @@ function finish(kind) {
   timer = 0;
   piece = null;
   banner = null;
+  popups = [];
   music(-1);
   snd(kind === 'over' ? SFX.over : towerBonus ? SFX.tower : SFX.clear);
+  rank = -1;
   if (practice) {
     if (score > best) dset(PRACTICE_SLOT + plan[0], score);
-  } else if (score > hi) {
-    hi = score;
-    dset(TOP_SLOT, hi);
+    return;
   }
+  // Saved now under the last-used initials, so the run counts even if the
+  // player never gets to the initials screen; entering new ones writes over them.
+  const stages = STAGES.map((_, i) => stageScores[i] || 0);
+  rank = insertTop({ total: score, reached: towerBonus ? STAGES.length + 1 : plan[si] + 1, stages, initials: lastInitials() });
+  hi = dget(TOP_SLOT);
+}
+
+// --- Top 10 -------------------------------------------------------------------
+
+function readEntry(i) {
+  const slot = TOP_SLOT + i * ENTRY;
+  return {
+    total: dget(slot), reached: dget(slot + 1),
+    stages: STAGES.map((_, k) => dget(slot + 2 + k)),
+    initials: unpackInitials(dget(slot + 10)),
+  };
+}
+
+function writeEntry(i, e) {
+  const slot = TOP_SLOT + i * ENTRY;
+  dset(slot, e.total);
+  dset(slot + 1, e.reached);
+  e.stages.forEach((v, k) => dset(slot + 2 + k, v));
+  dset(slot + 10, packInitials(e.initials));
+}
+
+function topTen() {
+  return Array.from({ length: TOP_N }, (_, i) => readEntry(i));
+}
+
+/** Put a run into the top 10 if it makes it. Returns its row, or -1. */
+function insertTop(e) {
+  const list = topTen();
+  const at = list.findIndex((x) => e.total > x.total);
+  if (at < 0) return -1;
+  list.splice(at, 0, e);
+  for (let i = at; i < TOP_N; i++) writeEntry(i, list[i]);
+  return at;
+}
+
+/** Three characters, 8 bits each. */
+function packInitials(str) {
+  return (str.charCodeAt(0) << 16) | (str.charCodeAt(1) << 8) | str.charCodeAt(2);
+}
+
+function unpackInitials(v) {
+  return v ? String.fromCharCode((v >> 16) & 255, (v >> 8) & 255, v & 255) : '---';
+}
+
+function lastInitials() {
+  const v = dget(INITIALS_SLOT);
+  return v ? unpackInitials(v) : 'AAA';
+}
+
+/** The scores screen. `from` is 'title' or 'run'; `hl` is a top-10 row to highlight. */
+function scores(from, hl = -1) {
+  state = 'scores';
+  timer = 0;
+  view = { page: 0, from, hl };
+}
+
+/** UP/DOWN pick a letter, LEFT/RIGHT move, A moves on (saving on the last), START saves. */
+function enterInitials() {
+  const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
+  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; snd(SFX.menu); }
+  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; snd(SFX.menu); }
+  if (tap(LEFT)) ini.pos = Math.max(0, ini.pos - 1);
+  if (tap(RIGHT)) ini.pos = Math.min(2, ini.pos + 1);
+  const done = tap(START) || (tap(A) && ini.pos === 2);
+  if (tap(A) && ini.pos < 2) ini.pos++;
+  if (!done || timer < 20) return;
+  const v = packInitials(ini.chars.join(''));
+  dset(INITIALS_SLOT, v);
+  dset(TOP_SLOT + rank * ENTRY + 10, v);
+  snd(SFX.start);
+  scores('run', rank);
 }
 
 function popup(text, x, y, c) {
@@ -656,16 +738,28 @@ function popup(text, x, y, c) {
 function update() {
   timer++;
   if (state === 'title') {
-    if (tap(UP) || tap(DOWN)) { menu = 1 - menu; snd(SFX.menu); }
+    const dir = (tap(DOWN) ? 1 : 0) - (tap(UP) ? 1 : 0);
+    if (dir) { menu = (menu + dir + TITLE_MENU.length) % TITLE_MENU.length; snd(SFX.menu); }
     if (tap(START) || tap(A)) {
       if (menu === 0) start(STAGES.map((_, i) => i), false);
-      else rooms();
+      else if (menu === 1) rooms();
+      else scores('title');
     }
   } else if (state === 'rooms') {
     pickRoom();
   } else if (state === 'over' || state === 'clear') {
-    if (timer > 40 && tap(START)) start(plan, practice);
+    if (timer > 40 && tap(START) && rank >= 0) {
+      initials = { chars: lastInitials().split(''), pos: 0 };
+      state = 'initials';
+      timer = 0;
+    } else if (timer > 40 && tap(START)) start(plan, practice);
     else if (timer > 40 && tap(SELECT)) { if (practice) rooms(); else title(); }
+  } else if (state === 'initials') {
+    enterInitials();
+  } else if (state === 'scores') {
+    if (tap(LEFT) || tap(RIGHT)) { view.page = 1 - view.page; snd(SFX.menu); }
+    if (view.from === 'run' && tap(START)) start(plan, false);
+    else if (tap(START) || tap(SELECT) || tap(B)) title();
   } else {
     play();
   }
@@ -755,10 +849,12 @@ function draw() {
   cls();
   const tl = rf - lag - (state === 'play' || state === 'over' || state === 'clear' ? starts[si] : 0);
   drawRoom(state === 'play' ? rf : timer);
-  const showField = state !== 'title' && state !== 'rooms' && !paused;
+  const showField = (state === 'play' || state === 'over' || state === 'clear') && !paused;
   bg(0, { show: showField });
   if (state === 'title') { drawTitle(); return; }
   if (state === 'rooms') { drawRooms(); return; }
+  if (state === 'initials') { drawInitials(); return; }
+  if (state === 'scores') { drawScores(); return; }
   // Marked squares pulse with the beat: bright on it, fading to dim.
   const k = tl < 0 ? 0 : ((tl % beatFrames) * 12) / beatFrames;
   setColors(PULSE, [mix(stage.pulse, [8, 8, 8], k / 16)]);
@@ -949,9 +1045,11 @@ function drawResult() {
   });
   if (towerBonus) print(`TOWER BONUS  ${towerBonus}`, 36, 136, GOLD);
   print(`SCORE ${pad(score)}`, 36, 150, INK);
-  const top = score >= hi && score > 0;
-  print(top ? 'NEW HIGH SCORE!' : `HI    ${pad(hi)}`, 36, 162, top ? GOLD : DIM);
-  if (timer > 40) print('START AGAIN  SELECT TITLE', 28, 180, timer % 60 < 40 ? INK : DIM);
+  if (rank === 0) print('NEW HIGH SCORE!', 36, 162, GOLD);
+  else if (rank > 0) print(`TOP 10: #${rank + 1}`, 36, 162, GOLD);
+  else print(`HI    ${pad(hi)}`, 36, 162, DIM);
+  const next = rank >= 0 ? 'START: ENTER INITIALS' : 'START AGAIN  SELECT TITLE';
+  if (timer > 40) print(next, 128 - next.length * 4, 180, timer % 60 < 40 ? INK : DIM);
 }
 
 function drawTitle() {
@@ -963,6 +1061,58 @@ function drawTitle() {
   help.forEach((s, i) => print(s, 128 - s.length * 4, 140 + i * 12, DIM));
   const h = `HI ${pad(hi)}`;
   print(h, 128 - h.length * 4, 192, DIM);
+}
+
+/** "NEW HIGH SCORE": three initials for the top 10. */
+function drawInitials() {
+  const ini = initials;
+  panel(24, 24, 208, 176);
+  const head = rank === 0 ? 'NEW HIGH SCORE!' : `TOP 10: #${rank + 1}`;
+  shadowText(head, 128 - head.length * 4, 36, GOLD);
+  const total = pad(score);
+  print(total, 128 - total.length * 4, 52, INK);
+  const ask = 'ENTER YOUR INITIALS';
+  print(ask, 128 - ask.length * 4, 96, DIM);
+  for (let i = 0; i < 3; i++) {
+    const x = 128 - 36 + i * 28, on = i === ini.pos;
+    rect(x - 4, 112, 16, 18, on ? GOLD : EDGE);
+    print(ini.chars[i], x, 117, on ? GOLD : INK);
+    if (on && timer % 30 < 20) {
+      line(x + 1, 108, x + 6, 108, GOLD); // up and down hints
+      line(x + 1, 133, x + 6, 133, GOLD);
+    }
+  }
+  print('UP/DOWN    LETTER', 60, 148, DIM);
+  print('LEFT/RIGHT MOVE', 60, 158, DIM);
+  if (timer % 60 < 40) print('START: SAVE', 84, 172, INK);
+}
+
+/** The scores: the top 10 runs, and a page of practice bests (LEFT/RIGHT). */
+function drawScores() {
+  panel(4, 4, 248, 216);
+  const head = view.page === 0 ? '< TOP 10 RUNS >' : '< PRACTICE BESTS >';
+  shadowText(head, 128 - head.length * 4, 12, GOLD);
+  if (view.page === 0) {
+    print('    NAME  REACHED       SCORE', 8, 30, DIM);
+    topTen().forEach((e, i) => {
+      const y = 44 + i * 15, hl = i === view.hl;
+      if (hl && timer % 40 < 30) rectfill(6, y - 4, 244, 14, EDGE);
+      print(String(i + 1).padStart(2), 12, y, i === 0 ? GOLD : DIM);
+      if (!e.total) { print('---', 40, y, DIM); return; }
+      print(e.initials, 40, y, hl ? GOLD : INK);
+      const reached = e.reached > STAGES.length ? 'TOWER!' : e.reached ? `ROOM ${e.reached}` : '-';
+      print(reached, 80, y, e.reached > STAGES.length ? GOLD : DIM);
+      print(pad(e.total), 188, y, i === 0 ? GOLD : INK);
+    });
+  } else {
+    STAGES.forEach((st, i) => {
+      const y = 36 + i * 18, v = dget(PRACTICE_SLOT + i);
+      print(`${i + 1} ${st.name}`, 12, y, unlocked(i) ? INK : DIM);
+      print(v ? pad(v) : '-------', 188, y, v ? INK : DIM);
+    });
+  }
+  const back = view.from === 'run' ? 'START AGAIN  SELECT TITLE' : 'START: BACK';
+  if (timer % 60 < 40) print(back, 128 - back.length * 4, 204, INK);
 }
 
 function drawRooms() {
