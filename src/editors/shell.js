@@ -126,6 +126,9 @@ export class Shell {
     } else if (mod && key === 'o') {
       e.preventDefault();
       this.app.open();
+    } else if (e.key === 'F7') {
+      e.preventDefault();
+      this.app.captureLabel();
     } else if (this.mode === 'edit') {
       this.gfxKey(e, mod, key);
     }
@@ -159,6 +162,10 @@ export class Shell {
 
   setFileName(name) {
     this.cartPanel.setFileName(name);
+  }
+
+  labelChanged() {
+    this.cartPanel.refresh();
   }
 
   updateTitle(cart, dirty) {

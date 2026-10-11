@@ -1,11 +1,15 @@
 // Hello NOVA: the M1 boot cart. Move the box with the d-pad, keyboard
 // arrows or a gamepad's left stick. A changes its color, B leaves a trail.
+// Save slot 0 counts how many times the cart has booted.
 
 let box = { x: 120, y: 100, c: 8 };
 let trail = false;
 let stars = [];
+let boots = 0;
 
 function init() {
+  boots = dget(0) + 1;
+  dset(0, boots);
   for (let i = 0; i < 48; i++) {
     stars.push({ x: rnd(256), y: rnd(224), s: rnd(1.5) + 0.25 });
   }
@@ -38,6 +42,7 @@ function draw() {
 
   rectfill(0, 0, 256, 11, 1);
   print('NOVA-16', 4, 2, 15);
+  print(`BOOT ${boots}`, 4, 150, 3);
   print(`FPS ${stat('fps')} CPU ${stat('cpu').toFixed(1)}`, 112, 2, 13);
 
   // The 16 default colors along the bottom edge.

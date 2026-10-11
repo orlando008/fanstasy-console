@@ -367,10 +367,10 @@ This is the working and version-control format. It is plain JSON and is laid out
 
 ### 9.2 Distribution format: `.nova.png`
 
-- A 512 × 384 PNG. Its visible image is a cartridge frame with the cart's label at the center.
+- A 512 × 384 PNG. Its visible image is a cartridge frame with the cart's label at the center (256 × 224 at x 128, y 44) and the title and author below it. Carts without a label show a "NO LABEL" placeholder.
 - **Payload.** A header followed by the cart's minified `.nova` JSON, compressed with `CompressionStream('deflate-raw')`.
 - **Header (13 bytes).** Magic `NV16` (4 bytes), format version (1 byte), payload length (uint32, big-endian), CRC32 of the payload (uint32, big-endian).
-- **Encoding.** Bits go into the low 2 bits of R, G and B of each pixel, in row-major order. Alpha is always 255, which avoids premultiplication errors.
+- **Encoding.** Bits go into the low 2 bits of R, G and B of each pixel, in row-major order. Each byte is split into four 2-bit groups, most significant first, filling R, then G, then B of one pixel before moving to the next. Alpha is always 255, which avoids premultiplication errors.
 - **Capacity.** 512 × 384 × 6 bits = 147 456 bytes, so the maximum payload is 147 443 bytes. The export screen shows a capacity meter, and carts over the limit cannot be exported as PNG.
 - **Decoding.** Use `createImageBitmap(blob, { colorSpaceConversion: 'none', premultiplyAlpha: 'none' })`, draw it to an `OffscreenCanvas`, then read with `getImageData`.
 - **Encoding.** Draw the image, write the bits, then call `toBlob('image/png')`. Never add a color profile.
