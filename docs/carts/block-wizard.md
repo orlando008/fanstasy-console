@@ -1,7 +1,7 @@
 # Block Wizard: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** In progress: all eight stages playable with practice mode and the wizard gem (placeholder art and songs)
+**Status:** In progress: all eight stages, practice mode and every scoring rule (placeholder art and songs)
 **Cart source:** `carts/src/block-wizard/` → `carts/block-wizard.nova`
 
 ---
@@ -214,10 +214,12 @@ grid of dots marks the cells.
 |---|---|
 | Sweep | `40 × n × S(n) × M`, where `n` is squares caught in the sweep |
 | Gem extra cells | `10 × cells × M` |
-| Single color | `1,000 × stage` when an erase leaves at least 8 cells, all of one color, and both colors were on the field before it |
+| Single color | `1,000 × stage` when an erase leaves at least 8 cells, all of one color, and both colors were on the field before it. Cells still falling after the erase count; the active piece doesn't. |
 | All clear | `5,000 × stage` when an erase empties the field |
 | Stage clear | `1,000 × stage + 50 × empty cells` at the end of each stage (the field part is worth up to 8,000 when it's empty) |
 | Tower beaten | `50,000` when stage 8 ends |
+
+The single-color and all-clear bonuses are added the moment the erase happens, with a popup and their own sound (SFX 49 and 50). The chain doesn't multiply them.
 
 **Size bonus `S(n)`:**
 
@@ -349,7 +351,7 @@ per-line limit.
 1. **Vertical slice: stage 1 only.** *(Done.)* Field, bag, movement and rotation, splits, gravity, squares, the timeline, sweep scoring with chains, top-out, pause with resync, the sync check. Placeholder art and a placeholder song at 112.5 bpm with a drum hit on every beat. **Sync:** no clock drift over a full stage (10); `LAG` is set by ear with the sync check.
 2. **Console change** (separate): `music(song, pos, row)` for pause and resume.
 3. **All eight stages:** *(Done.)* Stage table, transitions, stage-clear bonus, the tower bonus, per-stage palettes, backdrop effects and scenery, a placeholder song and five SFX per stage, and practice mode with unlocks.
-4. **Scoring extras:** wizard gem *(done)*, single color, all clear.
+4. **Scoring extras:** *(Done.)* Wizard gem, single color, all clear.
 5. **Flow:** title, pause, results, initials, scores, practice and unlocks, saves.
 6. **Art pass:** block tiles and glyphs, eight rooms, the wizard, the title, all made in the built-in editors.
 7. **Audio pass:** eight songs and the SFX in the Music and SFX tabs.

@@ -28369,6 +28369,132 @@
     null,
     null
    ]
+  },
+  {
+   "speed": 3,
+   "rows": [
+    {
+     "n": "A-5",
+     "i": 7
+    },
+    {
+     "n": "C#6",
+     "i": 7
+    },
+    {
+     "n": "E-6",
+     "i": 7
+    },
+    {
+     "n": "A-6",
+     "i": 7
+    },
+    null,
+    {
+     "n": "E-6",
+     "i": 7
+    },
+    {
+     "n": "A-6",
+     "i": 7
+    },
+    null,
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 3,
+   "rows": [
+    {
+     "n": "D-5",
+     "i": 7
+    },
+    {
+     "n": "F#5",
+     "i": 7
+    },
+    {
+     "n": "A-5",
+     "i": 7
+    },
+    {
+     "n": "D-6",
+     "i": 7
+    },
+    {
+     "n": "F#6",
+     "i": 7
+    },
+    {
+     "n": "A-6",
+     "i": 7
+    },
+    {
+     "n": "D-7",
+     "i": 7
+    },
+    null,
+    {
+     "n": "A-6",
+     "i": 7
+    },
+    {
+     "n": "D-7",
+     "i": 7
+    },
+    {
+     "n": "F#7",
+     "i": 7
+    },
+    null,
+    null,
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
   }
  ]
 }
