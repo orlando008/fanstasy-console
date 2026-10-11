@@ -102,8 +102,10 @@ export class Ppu {
     return this.tiles[sheetOffset(x, y)];
   }
 
+  /** Tile 0 is the reserved empty tile: writes to it are ignored. */
   sset(x, y, c) {
     if (x < 0 || y < 0 || x >= SHEET_W || y >= SHEET_H) return;
+    if (x < 8 && y < 8) return;
     this.tiles[sheetOffset(x, y)] = c & 15;
   }
 

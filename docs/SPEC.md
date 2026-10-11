@@ -58,6 +58,7 @@ The PPU renders into a 256 × 224 RGBA image, one scanline at a time. The image 
 - 1024 tiles, each 8 × 8 at 4 bpp, which is 32 bytes. Pixels are packed two per byte, with the high nibble on the left.
 - The tile sheet is addressed as a 128 × 512 pixel image, 16 tiles wide by 64 tiles tall. Tile `n` sits at column `n % 16`, row `floor(n / 16)`.
 - A 16 × 16 sprite at tile `n` uses tiles `n, n+1, n+16, n+17`. A 32 × 32 sprite uses the 4 × 4 block starting at `n`.
+- **Tile 0 is the reserved empty tile.** It is always fully transparent: `sset` writes to it are ignored and loaders discard any pixels stored there. Because cleared Map RAM is all zeros, empty map entries draw nothing, so background layers can be visible by default without filling the screen.
 
 ### 4.4 Map RAM
 
@@ -246,7 +247,7 @@ The console measures how long `update + draw + render` takes each frame. If one 
 
 | Function | Description |
 |---|---|
-| `sget(x, y)` / `sset(x, y, c)` | Read or write a tile-sheet pixel (128 × 512 space, value 0–15) |
+| `sget(x, y)` / `sset(x, y, c)` | Read or write a tile-sheet pixel (128 × 512 space, value 0–15). Tile 0 always reads 0. |
 | `mget(x, y)` / `mset(x, y, entry)` | Read or write a Map RAM entry |
 | `tile(n, pal = 0, fx = false, fy = false, pri = false)` | Build a map entry |
 

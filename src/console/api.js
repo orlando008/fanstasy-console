@@ -70,7 +70,7 @@ export function buildApi(m) {
     /** Read a tile-sheet pixel (128x512 space). */
     sget: (x, y) => ppu.sget(int(x), int(y)),
 
-    /** Write a tile-sheet pixel (value 0-15). */
+    /** Write a tile-sheet pixel (value 0-15). Tile 0 is always empty; writes to it are ignored. */
     sset: (x, y, c) => ppu.sset(int(x), int(y), int(c)),
 
     /** Read a Map RAM entry. */
