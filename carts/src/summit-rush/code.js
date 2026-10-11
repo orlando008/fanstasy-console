@@ -254,7 +254,7 @@ function collide(e) {
   if (e.kind === 'chip') {
     e.gone = true;
     add(e.type, CHIP_VALUE);
-    popup(`+${CHIP_VALUE} ${BUCKET_NAME[e.type]}`, BUCKET_COLOR[e.type]);
+    gain(e.type, CHIP_VALUE);
     sfx(e.type);
   } else if (e.kind === 'wafer') {
     e.gone = true;
@@ -290,14 +290,29 @@ function add(i, n) {
   // Chime when a bucket crosses a tier threshold.
   for (const [mark] of TIERS) {
     if (before < mark && p.b[i] >= mark) {
-      popup(`${BUCKET_NAME[i]} ${tierOf(p.b[i])[2]}!`, tierOf(p.b[i])[3]);
+      popup(`${BUCKET_NAME[i]} ${tierOf(p.b[i])[2]}!`, tierOf(p.b[i])[3], -14);
       break;
     }
   }
 }
 
-function popup(text, c) {
-  popups.push({ text, c, x: p.x + 8 - text.length * 4, y: p.y - camY - 10, t: 45 });
+/** A floating message above the racer; dy lifts it onto its own line. */
+function popup(text, c, dy = 0) {
+  popups.push({ text, c, y: p.y - camY - 12 + dy, t: 45 });
+}
+
+/** "+5 GPU" for a pickup; quick pickups of one bucket add up in one popup. */
+function gain(type, n) {
+  const q = popups.find((o) => o.bucket === type && o.t > 15);
+  if (q) {
+    q.total += n;
+    q.text = `+${q.total} ${BUCKET_NAME[type]}`;
+    q.t = 45;
+    q.y = p.y - camY - 12;
+    return;
+  }
+  popup(`+${n} ${BUCKET_NAME[type]}`, BUCKET_COLOR[type]);
+  Object.assign(popups[popups.length - 1], { bucket: type, total: n });
 }
 
 function tierOf(v) {
@@ -352,7 +367,7 @@ function draw() {
   }
   if (p.immune > 0) circ(Math.floor(p.x) + 8, sy + 8, 11 + (p.frames % 8 < 4 ? 0 : 1), 13);
 
-  for (const q of popups) print(q.text, q.x, q.y, q.c);
+  for (const q of popups) label(q.text, Math.round(p.x + 8 - q.text.length * 4), Math.round(q.y), q.c);
   hud();
 
   if (state === 'count') banner(String(3 - flr(timer / 60)), 15);
@@ -373,6 +388,16 @@ function speedLines() {
     const side = i % 2 ? rt * 8 - 6 - (i * 5) % 12 : l * 8 + 4 + (i * 7) % 12;
     line(side, sy, side, sy + len, 15);
   }
+}
+
+/** Text on a dark backing, readable over any ground. */
+function label(text, x, y, c) {
+  const w = text.length * 8;
+  x = clamp(x, 2, 254 - w);
+  rectfill(x - 2, y - 2, w + 4, 11, 1);
+  pset(x - 2, y - 2, 0); pset(x + w + 1, y - 2, 0);
+  pset(x - 2, y + 8, 0); pset(x + w + 1, y + 8, 0);
+  print(text, x, y, c);
 }
 
 function bob(e) {
