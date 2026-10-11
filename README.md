@@ -44,7 +44,7 @@ autosaved working cart.
 | `water` | `scanline()` reflection with per-line wobble and palette swaps |
 | `mode7` | Per-line BG2 affine perspective floor and sky gradient |
 | `chiptune` | A six-channel song and five sound effects, all editable in the Music and SFX tabs |
-| `summit-rush` | The first real game, in progress: playable end to end: title, model select, three stages (Base Camp, the Treeline, the Summit), and a top-10 leaderboard (see docs/carts/summit-rush.md) |
+| `summit-rush` | The first real game: race one of seven AI models up three stages, with a title screen, a top-10 leaderboard, and music from the Summit Rush series. Also released as the PNG cart `summit-rush.nova.png` (see docs/carts/summit-rush.md) |
 
 Keyboard: arrows = d-pad, X = A, Z = B, S = X, A = Y, Q = L, W = R,
 Enter = Start, Shift = Select.

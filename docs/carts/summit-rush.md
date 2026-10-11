@@ -1,7 +1,7 @@
 # Summit Rush: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** In progress: the game is playable end to end (title, select, three stages, AGI screen, standings, initials, leaderboard). Still to come: the art pass, the audio pass, and balance and polish.
+**Status:** Complete (version 1.0). Playable end to end with art and audio, and released as `carts/summit-rush.nova` and the PNG cart `carts/summit-rush.nova.png`.
 **Cart source:** `carts/src/summit-rush/` → `carts/summit-rush.nova`
 
 ---
@@ -289,7 +289,7 @@ The songs and SFX are data in `audio.json`, so they can be reworked in the Music
 
 | Asset | Budget |
 |---|---|
-| Code | ≤ 40 KB of the 64 KB limit |
+| Code | ≤ 40 KB of the 64 KB limit (as built: about 49 KB) |
 | Tiles | ≤ 600 of 1024: course ~150, scenery ~200, sprites ~200, title/logo ~50 |
 | Map RAM | 3 stages × 32×200 tiles, plus scenery strips |
 | Sprites on screen | ≤ 60 typical, ≤ 32 per line (pickups and protesters are laid out to stay under the limit) |
@@ -308,7 +308,10 @@ The songs and SFX are data in `audio.json`, so they can be reworked in the Music
    - The art is tile data in `tiles.txt`, so it can be refined in the Sprites, Map and Palette tabs.
    - Still open: parallax scenery (BG1/BG2) behind the course. The opaque rock walls currently cover the whole screen, so they would need gaps to show it.
 6. **Audio pass:** songs and SFX. First pass done (see 11). The tracks were composed as data, so they're worth a listen and a tune in the Music tab.
-7. **Balance and polish:** tune thresholds so Gold in all four is hard but possible; record replays of good runs (F9/F10); capture a label (F7); export a PNG cart.
+7. **Release:** done.
+   - The label is the title screen, captured with F7 and kept as `carts/src/summit-rush/label.png`; `tools/pack.js` reads it.
+   - The PNG cart was exported from the Cart tab, and it decodes back to the identical cart.
+   - Balance tuning (tier thresholds, the simulated models' scores) and replay recordings were left as they are by choice.
 
 Any console bugs or editor gaps found along the way are logged and fixed as separate changes.
 

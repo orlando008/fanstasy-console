@@ -7,6 +7,7 @@
 //   tiles.txt   tile-sheet rows, one hex digit per pixel ('.' means 0)
 //   palette.txt one entry per line: "index rrggbb" (24-bit, converted to RGB555)
 //   audio.json  instruments, patterns, songs, sfx and samples in .nova layout
+//   label.png   the cart label: a 256x224 PNG, as captured with F7
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -55,6 +56,9 @@ if (palette) {
     if (m) cart.palette[Number(m[1]) & 255] = rgb24to555(parseInt(m[2], 16));
   }
 }
+
+const label = join(dir, 'label.png');
+if (existsSync(label)) cart.label = readFileSync(label).toString('base64');
 
 const audio = read('audio.json');
 if (audio) Object.assign(cart, readAudio(JSON.parse(audio)));
