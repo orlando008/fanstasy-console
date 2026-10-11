@@ -1,7 +1,7 @@
 # Summit Rush: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** In progress: stage 1 with all seven models and the select screen
+**Status:** Complete (version 1.0). Playable end to end with art and audio, and released as `carts/summit-rush.nova` and the PNG cart `carts/summit-rush.nova.png`.
 **Cart source:** `carts/src/summit-rush/` → `carts/summit-rush.nova`
 
 ---
@@ -126,10 +126,18 @@ choices, not claims about the real systems. Seven racers:
   - Agent Mode replaces your steering. It heads for the nearest chip on screen that still has room in its bucket, and veers away from hazards that get close.
   - Long Context: a RAM hit while it runs costs nothing ("RAM SAFE"). When it ends, buckets keep what they gained above the cap, but can't grow further until RAM raises the cap again. A later RAM loss clips them as usual.
 - Each model has a 16×16 racer sprite (two-frame climb animation, lean left/right frames) and a portrait for the select screen.
-  - **Placeholder art:** all seven share one racer sprite and one 32×32 portrait, tinted per model.
-  - The tint goes into a copy of sprite palette 0: color 9 is the body and color 4 the shade.
-  - Model colors: Claude clay, GPT white, Gemini violet, Grok charcoal, DeepSeek blue, GLM cyan, Kimi moon yellow.
-  - In the race, the chosen model's tint lives in sprite palette 2. On the select screen, palettes 1–7 hold one tint per portrait.
+  - **Art (first pass):** each model has its own silhouette and emblem, so they read apart even without color:
+    - Claude: round, with an asterisk.
+    - GPT: rounded square, with a hex knot.
+    - Gemini: teardrop, with a sparkle.
+    - Grok: octagon, with a slash.
+    - DeepSeek: a whale with a tail and a pale belly.
+    - GLM: hexagon, with a Z.
+    - Kimi: crescent moon, with a star.
+  - **Sheet layout:** racer frames (run A, run B, lean) at sheet y 144 + 16 per model; 32×32 portraits in a four-wide grid from y 256.
+  - **Palettes:** colors 9 (body), 4 (shade) and 12 (accent) are tinted per model in a copy of sprite palette 0.
+    - Model colors: Claude clay, GPT white, Gemini violet, Grok charcoal with a light rim, DeepSeek blue, GLM cyan, Kimi moon yellow.
+    - In the race, the chosen model's tint lives in sprite palette 2; on the menu screens, palettes 1–7 hold one tint per model.
 - The other six models never appear on the course; their rounds are simulated (5.1).
 
 ## 7. Course
@@ -141,6 +149,24 @@ choices, not claims about the real systems. Seven racers:
 | 1 | Base Camp | ~30 s | 1.0× | Green foothills, server racks as scenery |
 | 2 | The Treeline | ~30 s | 1.2× | Pines, switchback walls, narrower course |
 | 3 | The Summit | ~30 s | 1.4× | Snow and ice (lower traction), wind gusts |
+
+As built:
+- **Base Camp:** scroll 1.25 px/frame; a ~192 px course with gentle bends.
+- **The Treeline:**
+  - Scroll 1.5 px/frame (1.2×).
+  - A ~160 px trail (20 ±1 tiles) that switchbacks: its center zigzags 5 tiles either side every 56 rows, so you keep crossing the screen.
+  - Pines fill the rock where a 2×2 patch allows.
+- **Scenery:** each stage scatters 16×16 scenery on the rock where a 2×2 patch allows. Base Camp has server racks, whose LEDs blink through their own BG palette 3. The Treeline has pines, and the Summit snowy boulders. Grass tufts and cracked rock vary the plain tiles.
+  - It uses BG palette 1, a copy of palette 0 with mossier grass, darker greens and cooler rock.
+- **The Summit:**
+  - Scroll 1.75 px/frame (1.4×).
+  - A ~140 px course (17 ±1 tiles) winding along a ridge.
+  - It uses BG palette 2: snow for the track, dark slate rock dusted with snow.
+  - Falling snow on the overlay, ice patches and wind gusts (see 8).
+- **Stage length:** every stage is 2,600 px long, about 35, 29 and 25 s.
+- **Layout:** each stage has its own fixed layout seed.
+- **Simulated models:** their bucket means drop by 3 on the Treeline and by 6 on the Summit.
+- **Course mix:** each stage deals its stretches from a mix. The Summit adds two ice patches and one gust to every pass of the base mix.
 
 The racer moves freely around the screen while the course scrolls at the
 stage's speed. Protesters slow the scroll for a moment; every hit knocks the
@@ -170,9 +196,10 @@ Each obstacle takes from one bucket, so a hit always reads as a specific loss.
 | Red tape | 32×8 | Strips across part of the track, with a chip as bait | −10 Electricity |
 | High prices | 16×16 | Price tags hanging over the track, in pairs | −10 RAM, then other buckets are cut to the new cap |
 | Legislation | 16×16 | Stacks of law books, one or two at a time | −10 CPU |
-| Ice patch (stage 3) | 32×16 | Low traction | Drift; no bucket cost |
-| Wind gust (stage 3) | — | Pushes the racer sideways for 1 s; arrows warn first | — |
+| Ice patch (stage 3) | 32×16 | Low traction: 20% of normal acceleration, and with no input you keep 98.5% of your speed per frame instead of 80%. A chip sits just past each patch as bait. | Drift; no bucket cost |
+| Wind gust (stage 3) | — | Fires as its point scrolls into view: blinking ">>>" arrows on the upwind side for 1 s, then a 1.3 px/frame push for 1 s, with streaks and sideways snow | — |
 
+- Ice and wind are terrain, not hazards: no red outline or "!", and Unfiltered can't smash them.
 - A hit knocks the racer 16 px down the screen and gives 1 s of invulnerability, shown as sprite flicker.
 - **Hazards must read as bad at a glance.** Every hazard has a red outline that pulses about twice a second. It is color 7 of its own sprite palette (palette 1, a copy of palette 0), so a single CGRAM write animates every hazard. Hazards that don't walk also jitter by ±1 px, while pickups bob smoothly. The rule is: red and shaking means avoid it, smooth bobbing means grab it. Each hazard group also gets a blinking white "!" on a tag in the same pulsing red as it scrolls in. The tag disappears once the hazard is past the upper half of the screen, where it is close enough to read on its own.
 
@@ -191,45 +218,78 @@ Top 16 px of the overlay:
 
 ## 10. Screens and flow
 
-1. **Title:** spinning mountain logo (BG2 affine), "PRESS START", top score.
+1. **Title:**
+   - The mountain logo (64×64, map columns 64–71) spins and zooms in on BG2 affine over 1.5 s, then sways gently at 2×.
+   - Below it: the title in 16×16 letters drawn from the system font at 2× (sheet y 320), rippling; a tagline; the seven racers hopping, "PRESS START" (or A), "B: LEADERBOARD", and the top score.
+   - The title, select, initials and leaderboard screens share a sky-gradient backdrop drawn in `scanline()`.
 2. **Model select:** seven portraits in a row; LEFT/RIGHT to choose, START (or A) to climb. The chosen model shows its name in its color, handling stars, starting buckets as bars, its special with a two-line description, and its best score. The last model picked is remembered. After the scoreboard, START races again with the same model and B returns here.
-3. **Stage intro:** stage name card, 3-2-1-GO countdown.
+3. **Stage intro:** stage name card ("STAGE 2 OF 3 / THE TREELINE"), 3-2-1-GO countdown.
 4. **Race:** three stages with a short stage card between them (buckets carry over).
-5. **Round tally:** the bucket tally animating into tier medals and the round score. If all four buckets reach Gold: "AGI ACHIEVED" with fanfare.
-6. **Scoreboard:** all seven models ranked by running total, with each one's round score; your row highlighted and an arrow showing places gained or lost this round.
-7. After round 3, **final standings**: your place of seven.
-8. **Initials entry** if the total makes the top 10.
-9. **Leaderboard:** overall top 10, with a tab per model (LEFT/RIGHT).
+5. **Round tally:** the bucket tally animating into tier medals and the round score, with a "GENERALIST" or "SPECIALIST" tag when it applies.
+   - If all four buckets reach Gold, an **AGI ACHIEVED** screen comes first: rotating rays, your portrait, and "ROUND SCORE X1.5". It lasts 3.5 s; START skips it after 1 s.
+   - The fanfare is a placeholder SFX until the audio pass.
+6. **Scoreboard:** all seven models ranked by running total, with each one's round score; your row highlighted and an arrow showing places gained or lost this round. START goes on to the next stage. After the last stage: START races again, B changes model.
+7. After round 3, **final standings**: your place of seven, "NEW BEST RUN!" and "TOP 10: #n" when they apply, then START: CONTINUE.
+8. **Initials entry** if the total makes the top 10: UP/DOWN cycles A–Z and 0–9, LEFT/RIGHT moves, START (or A on the last letter) saves. It starts from the last initials used.
+   - The run is saved at the finish under those last initials, then the new ones are written over that entry and the model best.
+9. **Leaderboard:**
+   - LEFT/RIGHT switches between the overall top 10 and a tab per model.
+   - Overall: rank, initials, model and total. The new entry blinks.
+   - Model tab: that model's best run (initials, total, finishing place, each stage's score) and its spots in the top 10.
+   - After a run: START races again, B changes model. From the title: START or B goes back.
+   - The select screen's B also goes back to the title.
 
 ## 11. Audio
 
-**Songs** (Music tab):
+**Songs** (Music tab). They're built on the music of the *Summit Rush* animated series (`orlando008/summit-rush`, `engine/audio.js`). Its main theme is `hero`, 140 bpm over C–G–Am–F:
+- A 25% pulse lead in a dotted 3-3-4-2-4 rhythm: E5 G5 C6, B5 G5.
+- A root, fifth and octave bass, and 16th-note chord arpeggios on a 12.5% pulse.
+- A kick on 1, the "and" of 2, and 3.
 
-| Song | Use | Feel |
-|---|---|---|
-| 0 | Title / select | Upbeat, 120 bpm |
-| 1 | Stage 1 | Driving, pulse lead |
-| 2 | Stage 2 | Faster variant |
-| 3 | Stage 3 | Tense, minor, 150 bpm |
-| 4 | Summit / AGI fanfare | Short, non-looping |
+The cart reproduces the series' lead lines, chords, bass, arpeggio and drum patterns step for step. Rows are 16th notes; channel 5 carries only the `Fxx` speed.
 
-**SFX** (one each): chip pickup per bucket (4, rising pitches), Golden Wafer, bucket full, out of memory, hit (one per obstacle), special activate, countdown beep, GO, tier-up chime, menu move, menu select. Protester chant: a noise-channel rhythm, if it fits.
+| Song | Use | Order | Tempo | From the series |
+|---|---|---|---|---|
+| 0 | Title and menus | intro, then hero, anthem, hero (loops from hero) | ~82, then ~138 bpm | `intro` (the episode cold open) leading into `hero`, as in episode 1's opening |
+| 1 | Base Camp | hero, hero, anthem, hero | ~138 bpm (speeds 7 and 6 alternate per row) | `hero`, with `anthem` (same chord family) as the B section |
+| 2 | The Treeline | hero in D, race, hero in D, race | 150 bpm | the theme a step up with `race`'s driving bass and drums, alternating with `race` itself |
+| 3 | The Summit | hero in D minor, battle, ×2 | 180 bpm | the theme recast in D minor over `battle`'s chords (Dm Bb C A), with the galloping bass, alternating with `battle` |
+| 4 | AGI fanfare | once, 3.2 s | speed 3 | the hero motif (E G C, B D) on brass, resolving to a held C with a crash |
+
+- **Arrangement:** pulse 1 lead, pulse 2 arpeggios (the series' triangle slow arp moves to a soft pulse, since the triangle carries the bass), triangle bass, saw pad, noise drums. Music volumes sit about a fifth under the SFX.
+- **Menus** share song 0 without restarting it, so the intro plays once at boot. Each stage starts its own song. Music stops at the finish line. The fanfare plays over the AGI screen in place of the finish jingle.
+
+**SFX:**
+
+| # | Sound | # | Sound |
+|---|---|---|---|
+| 0–3 | Chip pickups, rising per bucket | 11 | Finish |
+| 4 | Golden Wafer | 12 | Smash (Unfiltered) |
+| 5 | Protest hit: crowd boo | 13 | Red tape hit: rip |
+| 6 | Bucket full: dull bonk | 14 | High prices hit: cha-ching sliding down |
+| 7 | Out of memory: descending glitch | 15 | Legislation hit: gavel thud |
+| 8 | Countdown beep | 16 | Tier-up chime |
+| 9 | GO | 17 | Menu move |
+| 10 | Special activate | 18 | Menu select |
+| | | 19 | Wind gust: rising whoosh |
+
+The songs and SFX are data in `audio.json`, so they can be reworked in the Music and SFX tabs.
 
 ## 12. Persistence (save slots)
 
 | Slots | Contents |
 |---|---|
 | 0 | Format version |
-| 1–2 | Options: music on/off (1), last selected model (2) |
-| 10–109 | Overall top 10: per entry total, final place, the three round scores, model, initials (packed 3×8 bits), 3 reserved = 10 slots |
-| 110–179 | Best score per model (7 × 10 slots, same layout) |
+| 1–3 | Options: music on/off (1, unused so far), last selected model (2), last initials (3) |
+| 10–109 | Overall top 10, best first. Each entry is 10 slots: total, final place, the three round scores, model index, initials (packed 3×8 bits), 3 reserved. An empty entry has total 0. |
+| 110–179 | Best run total per model (7 × 10 slots, same layout) |
 | 180–255 | Reserved |
 
 ## 13. Asset budget
 
 | Asset | Budget |
 |---|---|
-| Code | ≤ 40 KB of the 64 KB limit |
+| Code | ≤ 40 KB of the 64 KB limit (as built: about 49 KB) |
 | Tiles | ≤ 600 of 1024: course ~150, scenery ~200, sprites ~200, title/logo ~50 |
 | Map RAM | 3 stages × 32×200 tiles, plus scenery strips |
 | Sprites on screen | ≤ 60 typical, ≤ 32 per line (pickups and protesters are laid out to stay under the limit) |
@@ -243,9 +303,15 @@ Top 16 px of the overlay:
 2. **Models:** all seven playable, with specials and the select screen.
 3. **Stages 2 and 3:** narrowing course, ice and wind, scroll speeds.
 4. **Flow:** title, select, stage cards, summit tally, AGI screen, leaderboard with initials and saves.
-5. **Art pass:** final sprites, tiles and palettes, all made in the Sprites, Map and Palette tabs.
-6. **Audio pass:** songs and SFX in the Music and SFX tabs.
-7. **Balance and polish:** tune thresholds so Gold in all four is hard but possible; record replays of good runs (F9/F10); capture a label (F7); export a PNG cart.
+5. **Art pass:** final sprites, tiles and palettes. First pass done:
+   - Per-model racers and portraits, title lettering, stage scenery and protest signs.
+   - The art is tile data in `tiles.txt`, so it can be refined in the Sprites, Map and Palette tabs.
+   - Still open: parallax scenery (BG1/BG2) behind the course. The opaque rock walls currently cover the whole screen, so they would need gaps to show it.
+6. **Audio pass:** songs and SFX. First pass done (see 11). The tracks were composed as data, so they're worth a listen and a tune in the Music tab.
+7. **Release:** done.
+   - The label is the title screen, captured with F7 and kept as `carts/src/summit-rush/label.png`; `tools/pack.js` reads it.
+   - The PNG cart was exported from the Cart tab, and it decodes back to the identical cart.
+   - Balance tuning (tier thresholds, the simulated models' scores) and replay recordings were left as they are by choice.
 
 Any console bugs or editor gaps found along the way are logged and fixed as separate changes.
 

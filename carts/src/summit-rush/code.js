@@ -1,13 +1,15 @@
-// SUMMIT RUSH - stage 1 (Base Camp) with all seven models.
+// SUMMIT RUSH - three stages (Base Camp, the Treeline, the Summit) with all
+// seven models.
 // Design: docs/carts/summit-rush.md. Pick a model, then the arrows move the
 // racer around the screen and B uses that model's special. Each bucket powers
 // the racer: Electricity moves you faster, GPU reveals extra chips, CPU widens
-// your pickup radius and RAM raises the other buckets' cap. After the round,
-// a scoreboard ranks your score against the other six models' simulated runs.
+// your pickup radius and RAM raises the other buckets' cap. Each stage is a
+// round; after it, a scoreboard ranks your running total against the other
+// six models' simulated runs.
 
 // --- Tuning -------------------------------------------------------------------
 
-const SCROLL = 1.25; // scroll speed at base climbing speed, px per frame
+const SCROLL = 1.25; // stage 1 scroll speed, px per frame
 const TOP_Y = 40, BOTTOM_Y = 200; // how far up and down the screen the racer can move
 const KNOCKBACK = 16; // px a hit pushes the racer down the screen
 const FINISH_Y = -2600; // world y of the finish line (start line is y 0)
@@ -16,59 +18,100 @@ const CHIP_VALUE = 5;
 const HIT_COST = 10; // bucket points an obstacle takes
 const TIERS = [[80, 2000, 'GOLD', 14], [50, 750, 'SILVER', 10], [25, 250, 'BRONZE', 9]];
 // Save slots (SPEC 12).
-const VERSION_SLOT = 0, SAVE_VERSION = 4; // version 4: bucket effects reworked
-const LAST_MODEL_SLOT = 2;
-const BEST_SLOT = 10, BEST_PLACE_SLOT = 11; // overall best
-const MODEL_BEST_SLOT = 110; // + 10 per model: that model's best score
+const VERSION_SLOT = 0, SAVE_VERSION = 6; // version 6: top-10 table of run entries
+const LAST_MODEL_SLOT = 2, INITIALS_SLOT = 3;
+const ENTRY = 10; // slots per run entry: total, place, 3 round scores, model, initials, 3 spare
+const TOP_SLOT = 10, TOP_N = 10; // overall top 10, best first
+const MODEL_BEST_SLOT = 110; // + ENTRY per model: that model's best run
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const LOGO_TILE = 160, LOGO_MX = 64; // 8x8-tile title logo: sheet tiles, then map columns
+
+const GRASS2 = 14, ROCK2 = 15; // variants: a grass tuft, a cracked rock
+// 16x16 scenery on rock, each as four BG tiles: Treeline pines, Base Camp
+// server racks (their LEDs blink in BG palette 3), Summit snowy boulders.
+const PINE = [8, 9, 24, 25], RACK = [10, 11, 26, 27], BOULDER = [12, 13, 28, 29];
+const RACK_PAL = 3;
+
+/**
+ * What fills each stretch of a stage's course. Every pass deals the whole mix
+ * in a shuffled order, so chips and obstacles stay in balance over the stage.
+ */
+const BASE_MIX = ['chips', 'chips', 'chips', 'chips', 'chips', 'protest', 'tape', 'price', 'law', 'both', 'wafer'];
+
+/**
+ * The stages of a run (SPEC 7.1), one round each. `scroll` scales SCROLL,
+ * `walls` shapes the course, `pal` is the BG palette its tiles use, and
+ * `simShift` moves the simulated models' bucket means for a harder stage.
+ */
+const STAGES = [
+  {
+    name: 'BASE CAMP', short: 'BASE CAMP', clear: 'BASE CAMP CLEAR',
+    scroll: 1, walls: baseCampWalls, pal: 0, scenery: RACK, sceneryRate: 18, simShift: 0, mix: BASE_MIX,
+  },
+  {
+    name: 'THE TREELINE', short: 'TREELINE', clear: 'TREELINE CLEAR',
+    scroll: 1.2, walls: treelineWalls, pal: 1, scenery: PINE, sceneryRate: 55, simShift: -3, mix: BASE_MIX,
+  },
+  {
+    name: 'THE SUMMIT', short: 'SUMMIT', clear: 'SUMMIT REACHED',
+    scroll: 1.4, walls: summitWalls, pal: 2, scenery: BOULDER, sceneryRate: 22, simShift: -6, snow: true,
+    mix: [...BASE_MIX, 'ice', 'ice', 'wind'],
+  },
+];
+const ICE_GRIP = 0.2; // share of normal acceleration on ice
+const ICE_GLIDE = 0.985; // speed kept per frame on ice with no input (0.8 off it)
+const GUST_WARN = 60, GUST_TIME = 60; // frames of warning arrows, then of push
+const GUST_PUSH = 1.3; // px per frame sideways
 
 /**
  * The seven racers (SPEC 6.1). `power` is what the special does while it
  * runs for `frames`; `tag` is its HUD label. A model you don't play is
  * simulated from `sim` and `spread` (SPEC 5.1): each bucket ends at
- * sim + spread * noise. `body` and `shade` tint the shared racer sprite.
+ * sim + spread * noise. `body`, `shade` and `accent` tint the model's
+ * sprites (colors 9, 4 and 12 of its palette).
  */
 const MODELS = [
   {
     name: 'CLAUDE', start: [10, 10, 15, 15], stars: 4,
     special: 'CONSTITUTION', power: 'immune', frames: 180, tag: 'IMMUNE',
     info: ["PROTESTERS CAN'T TOUCH", 'YOU FOR 3 SECONDS'],
-    sim: [55, 55, 65, 65], spread: 10, body: [27, 14, 9], shade: [17, 8, 5],
+    sim: [55, 55, 65, 65], spread: 10, body: [27, 14, 9], shade: [17, 8, 5], accent: [31, 27, 21],
   },
   {
     name: 'GPT', start: [15, 15, 10, 10], stars: 3,
     special: 'SCALE UP', power: 'double', frames: 0, tag: 'X2',
     info: ['YOUR NEXT 5 CHIPS', 'COUNT DOUBLE'],
-    sim: [60, 65, 55, 50], spread: 12, body: [27, 28, 26], shade: [16, 17, 16],
+    sim: [60, 65, 55, 50], spread: 12, body: [27, 28, 26], shade: [16, 17, 16], accent: [5, 6, 7],
   },
   {
     name: 'GEMINI', start: [10, 15, 10, 15], stars: 3,
     special: 'MULTIMODAL', power: 'magnet', frames: 240, tag: 'MAGNET',
     info: ['HUGE PICKUP RADIUS', 'FOR 4 SECONDS'],
-    sim: [55, 60, 60, 60], spread: 10, body: [19, 13, 30], shade: [10, 7, 19],
+    sim: [55, 60, 60, 60], spread: 10, body: [19, 13, 30], shade: [10, 7, 19], accent: [29, 30, 31],
   },
   {
     name: 'GROK', start: [20, 10, 10, 5], stars: 2,
     special: 'UNFILTERED', power: 'smash', frames: 180, tag: 'SMASH',
     info: ['SMASH THROUGH OBSTACLES', 'FOR 3 SECONDS'],
-    sim: [55, 70, 45, 35], spread: 25, body: [8, 8, 9], shade: [4, 4, 5], ink: 15,
+    sim: [55, 70, 45, 35], spread: 25, body: [8, 8, 9], shade: [13, 13, 15], accent: [29, 29, 30], ink: 15,
   },
   {
     name: 'DEEPSEEK', start: [5, 10, 15, 10], stars: 3,
     special: 'EFFICIENCY', power: 'speed', frames: 300, tag: 'MAX SPD',
     info: ['FULL ELECTRICITY SPEED', 'FOR 5 SECONDS'],
-    sim: [65, 50, 65, 45], spread: 12, body: [9, 13, 31], shade: [5, 7, 20],
+    sim: [65, 50, 65, 45], spread: 12, body: [9, 13, 31], shade: [5, 7, 20], accent: [20, 25, 31],
   },
   {
     name: 'GLM', start: [10, 10, 10, 10], stars: 5,
     special: 'AGENT MODE', power: 'agent', frames: 180, tag: 'AGENT',
     info: ['STEERS ITSELF TO CHIPS', 'FOR 3 SECONDS'],
-    sim: [55, 55, 55, 55], spread: 6, body: [7, 24, 27], shade: [3, 14, 17],
+    sim: [55, 55, 55, 55], spread: 6, body: [7, 24, 27], shade: [3, 14, 17], accent: [3, 9, 14],
   },
   {
     name: 'KIMI', start: [10, 5, 10, 20], stars: 4,
     special: 'LONG CONTEXT', power: 'context', frames: 300, tag: 'CAP 100',
     info: ["CAPS 100, RAM CAN'T DROP", 'FOR 5 SECONDS'],
-    sim: [45, 45, 55, 75], spread: 10, body: [29, 25, 10], shade: [19, 15, 5],
+    sim: [45, 45, 55, 75], spread: 10, body: [29, 25, 10], shade: [19, 15, 5], accent: [31, 31, 24],
   },
 ];
 const HANDLING = [0, 0.8, 0.9, 1, 1.1, 1.2]; // top-speed multiplier by star rating
@@ -76,15 +119,20 @@ const HANDLING = [0, 0.8, 0.9, 1, 1.1, 1.2]; // top-speed multiplier by star rat
 // --- Art ----------------------------------------------------------------------
 
 const GRASS = 1, ROCK = 2, EDGE_L = 3, EDGE_R = 4, CHECKER = 5, START_LINE = 6, FLOWER = 7;
-const SPR = { RUN: 32, LEAN: 36, PORTRAIT: 96, CHIPS: [38, 40, 42, 44], WAFER: 46, PROTEST: 64, TAPE: 68, PRICE: 70, LAW: 72 };
+const TITLE_TEXT = 'SUMMIT RUSH', TITLE_LETTERS = 'SUMITRH'; // 16x16 letters from SPR.TITLE
+const SPR = { TITLE: 640, CHIPS: [38, 40, 42, 44], WAFER: 46, ICE: 74, PROTEST: 64, TAPE: 68, PRICE: 70, LAW: 72 };
 
 /** Each obstacle takes from one bucket (SPEC 8). */
 const OBSTACLES = {
-  protester: { bucket: 1, text: 'PROTEST' },
-  tape: { bucket: 0, text: 'RED TAPE' },
-  price: { bucket: 3, text: 'HIGH PRICES' },
-  law: { bucket: 2, text: 'LEGISLATION' },
+  protester: { bucket: 1, text: 'PROTEST', sfx: 5 },
+  tape: { bucket: 0, text: 'RED TAPE', sfx: 13 },
+  price: { bucket: 3, text: 'HIGH PRICES', sfx: 14 },
+  law: { bucket: 2, text: 'LEGISLATION', sfx: 15 },
 };
+
+// Audio (SPEC 11). Songs: 0 menus, 1-3 the stages, 4 the AGI fanfare.
+const SONG_MENU = 0, SONG_FANFARE = 4;
+const SFX_FULL = 6, SFX_OOM = 7, SFX_TIER = 16, SFX_MOVE = 17, SFX_PICK = 18, SFX_GUST = 19;
 const BUCKET_NAME = ['ELEC', 'GPU', 'CPU', 'RAM'];
 const BUCKET_LETTER = ['E', 'G', 'C', 'R'];
 const PURPLE = 135; // sprite palette 0, color 7, recolored for RAM
@@ -96,7 +144,7 @@ const BUCKET_COLOR = [14, 11, 13, PURPLE];
 
 // --- State --------------------------------------------------------------------
 
-let state; // 'select', 'count', 'race', 'done', 'board'
+let state; // 'title', 'select', 'count', 'race', 'agi', 'done', 'board', 'initials', 'ranks'
 let pick = 0; // index of the chosen model
 let model = MODELS[0];
 let timer; // frames in the current state
@@ -106,35 +154,130 @@ let entities;
 let popups;
 let paused = false;
 let result = null;
-let best = 0;
+let best = 0; // the chosen model's best run total
+let round = 0; // index into STAGES
+let stage = STAGES[0];
+let totals = {}; // model name -> run total so far
+let places = {}; // model name -> place on the previous board
+let myRounds = []; // the player's round scores this run
+let entry = null; // the run just finished, as saved
+let initials = null; // { chars, pos } while entering initials
+let view = null; // { tab, from, hl } on the leaderboard
 const written = new Int32Array(64).fill(0x7fffffff); // world row held by each map row
 let rng = 1;
+let song = -1; // the song playing, so moving between menus doesn't restart it
 
 function init() {
   color(0, 3, 3, 8); // backdrop, seen on the select screen
   color(PURPLE, 18, 9, 26);
+  // The Treeline's BG palette: mossier grass, darker greens, cooler rock.
+  palcopy(1, 0);
+  color(16 + 11, 8, 15, 6);
+  color(16 + 5, 4, 9, 4);
+  color(16 + 3, 8, 9, 11);
+  // Server racks get their own BG palette so their LEDs can blink.
+  palcopy(RACK_PAL, 0);
+  // The Summit's BG palette: snow for grass, dark slate rock dusted with snow.
+  palcopy(2, 0);
+  color(32 + 11, 26, 28, 31);
+  color(32 + 5, 19, 22, 27);
+  color(32 + 3, 9, 10, 14);
+  color(32 + 10, 23, 25, 29);
+  color(32 + 12, 20, 26, 31);
+  color(32 + 14, 31, 31, 31);
   bg(0, { mx: 0, my: 0, mw: 32, mh: 64, wrap: true });
   bg(1, { show: false });
   bg(2, { show: false });
   if (dget(VERSION_SLOT) !== SAVE_VERSION) {
     // Scores from an older scoring rule aren't comparable; start fresh.
     dset(VERSION_SLOT, SAVE_VERSION);
-    dset(BEST_SLOT, 0);
-    for (let i = 0; i < MODELS.length; i++) dset(MODEL_BEST_SLOT + i * 10, 0);
+    for (let i = TOP_SLOT; i < MODEL_BEST_SLOT + MODELS.length * ENTRY; i++) dset(i, 0);
   }
   pick = clamp(dget(LAST_MODEL_SLOT), 0, MODELS.length - 1);
-  reset();
-  select();
+  // The title logo lives in map columns 64-71, clear of the course window.
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) mset(LOGO_MX + c, r, tile(LOGO_TILE + r * 16 + c));
+  newRun();
+  title();
+}
+
+/** Switch to a menu screen: no course, every model's tint in palettes 1-7. */
+function menu(next) {
+  state = next;
+  timer = 0;
+  bg(0, { show: false });
+  bg(2, { show: false });
+  affine(null);
+  MODELS.forEach((m, i) => tint(1 + i, m));
+  play(SONG_MENU);
+}
+
+/** Start song n (-1 stops music) unless it's already playing. */
+function play(n) {
+  if (n !== song) music(n);
+  song = n;
+}
+
+/** The title screen: the logo spins in on BG2 (SPEC 10). */
+function title() {
+  menu('title');
+  bg(2, { show: true, mx: LOGO_MX, my: 0, mw: 8, mh: 8, wrap: false });
 }
 
 /** Show the model-select screen. */
 function select() {
-  state = 'select';
-  timer = 0;
-  bg(0, { show: false });
-  // Each portrait wears its own model's tint, in sprite palettes 1-7.
-  MODELS.forEach((m, i) => tint(1 + i, m));
-  music(0);
+  menu('select');
+}
+
+/** The leaderboard. `from` is 'title' or 'run'; `hl` is a top-10 row to highlight. */
+function ranks(from, hl = -1) {
+  menu('ranks');
+  view = { tab: 0, from, hl };
+}
+
+// --- Saves --------------------------------------------------------------------
+
+function readEntry(slot) {
+  return {
+    total: dget(slot), place: dget(slot + 1),
+    rounds: [dget(slot + 2), dget(slot + 3), dget(slot + 4)],
+    model: dget(slot + 5), initials: unpackInitials(dget(slot + 6)),
+  };
+}
+
+function writeEntry(slot, e) {
+  dset(slot, e.total);
+  dset(slot + 1, e.place);
+  e.rounds.forEach((v, i) => dset(slot + 2 + i, v));
+  dset(slot + 5, e.model);
+  dset(slot + 6, packInitials(e.initials));
+}
+
+function topTen() {
+  return Array.from({ length: TOP_N }, (_, i) => readEntry(TOP_SLOT + i * ENTRY));
+}
+
+/** Put a run into the top 10 if it makes it. Returns its row, or -1. */
+function insertTop(e) {
+  const list = topTen();
+  const at = list.findIndex((x) => e.total > x.total);
+  if (at < 0) return -1;
+  list.splice(at, 0, e);
+  for (let i = at; i < TOP_N; i++) writeEntry(TOP_SLOT + i * ENTRY, list[i]);
+  return at;
+}
+
+/** Three characters packed 8 bits each. */
+function packInitials(str) {
+  return (str.charCodeAt(0) << 16) | (str.charCodeAt(1) << 8) | str.charCodeAt(2);
+}
+
+function unpackInitials(v) {
+  return v ? String.fromCharCode((v >> 16) & 255, (v >> 8) & 255, v & 255) : '---';
+}
+
+function lastInitials() {
+  const v = dget(INITIALS_SLOT);
+  return v ? unpackInitials(v) : 'AAA';
 }
 
 /** Make sprite palette `pal` a copy of palette 0 with model m's colors. */
@@ -143,23 +286,46 @@ function tint(pal, m) {
   palcopy(8 + pal, 8);
   color(base + 9, ...m.body);
   color(base + 4, ...m.shade);
+  color(base + 12, ...m.accent);
 }
 
-/** Start a round with the chosen model. */
-function reset() {
+/** Model i's racer frames: run A, run B (+2), lean (+4). Sheet y 144 + 16i. */
+function racerTile(i) {
+  return 288 + 32 * i;
+}
+
+/** Model i's 32x32 portrait, in a four-wide grid from sheet y 256. */
+function portraitTile(i) {
+  return 512 + 64 * (i >> 2) + 4 * (i & 3);
+}
+
+/** Start a run with the chosen model, from the first stage. */
+function newRun() {
   model = MODELS[pick];
-  best = dget(MODEL_BEST_SLOT + pick * 10);
+  best = dget(MODEL_BEST_SLOT + pick * ENTRY);
+  round = 0;
+  totals = {};
+  places = {};
+  myRounds = [];
+  startStage();
+}
+
+/** Start the current stage's round. Buckets start fresh each round. */
+function startStage() {
+  stage = STAGES[round];
   // Hazards draw with their own copy of the sprite palette, whose index 7 is
   // the pulsing red warning outline (see draw()).
   palcopy(8 + HAZARD_PAL, 8);
   tint(RACER_PAL, model);
   bg(0, { show: true });
+  bg(2, { show: false });
+  affine(null);
   state = 'count';
   timer = 0;
   camY = -150;
   p = {
     x: 120, y: 0, sy: 150, vx: 0, vy: 0, b: [...model.start],
-    slow: 0, inv: 0, power: 0, double: 0, special: 1, frames: 0,
+    slow: 0, inv: 0, power: 0, double: 0, special: 1, frames: 0, onIce: false, wind: 0,
     bonusY: -200, bonusN: 0, // where GPU's next bonus chip appears
   };
   entities = buildCourse();
@@ -167,7 +333,8 @@ function reset() {
   result = null;
   written.fill(0x7fffffff);
   streamRows();
-  music(0);
+  song = 1 + round; // each stage has its own song, started fresh
+  music(song);
 }
 
 // --- Course -------------------------------------------------------------------
@@ -180,6 +347,11 @@ function rand() {
 
 /** Track bounds for world tile row r: track columns are [left, right). */
 function walls(r) {
+  return stage.walls(r);
+}
+
+/** Base Camp: a wide course with gentle bends. */
+function baseCampWalls(r) {
   if (r > -6) return [3, 29];
   const w = 24 + Math.round(2 * Math.sin(r * 0.031));
   const center = 16 + 3 * Math.sin(r * 0.045) + 2 * Math.sin(r * 0.017 + 1);
@@ -187,15 +359,57 @@ function walls(r) {
   return [left, Math.min(31, left + w)];
 }
 
+/**
+ * The Treeline: a narrower trail (about 160 px) that switchbacks across the
+ * mountain face, zigzagging 5 tiles either side of center every 56 rows.
+ */
+function treelineWalls(r) {
+  const w = 20 + Math.round(Math.sin(r * 0.05));
+  const ph = (((-r) % 56) + 56) % 56 / 56;
+  const zig = ph < 0.5 ? ph * 4 - 1 : 3 - ph * 4; // -1..1 and back
+  const left = Math.max(1, Math.round(16 + 5 * zig - w / 2));
+  return [left, Math.min(31, left + w)];
+}
+
+/**
+ * The Summit: the narrowest course (about 140 px) on a winding ridge.
+ */
+function summitWalls(r) {
+  const w = 17 + Math.round(Math.sin(r * 0.04));
+  const center = 16 + 4 * Math.sin(r * 0.06) + 1.5 * Math.sin(r * 0.023 + 2);
+  const left = Math.max(1, Math.round(center - w / 2));
+  return [left, Math.min(31, left + w)];
+}
+
+function isRock(r, c) {
+  const [l, rt] = walls(r);
+  return c < l - 1 || c > rt;
+}
+
+/** A fixed pseudo-random 0-99 for map cell (c, r). */
+function cellHash(c, r) {
+  return ((Math.imul(c, 73856093) ^ Math.imul(r, 19349663)) >>> 0) % 100;
+}
+
+/** Rock, or a quarter of the stage's scenery where a 2x2 patch is all rock. */
+function rockTile(r, c) {
+  const ar = r & ~1, ac = c & ~1;
+  const plain = cellHash(c + 7, r) < 20 ? ROCK2 : ROCK;
+  if (ac > 30 || cellHash(ac, ar) >= stage.sceneryRate) return plain;
+  if (!isRock(ar, ac) || !isRock(ar, ac + 1) || !isRock(ar + 1, ac) || !isRock(ar + 1, ac + 1)) return plain;
+  return stage.scenery[(r - ar) * 2 + (c - ac)];
+}
+
 function rowTile(r, c) {
   const [l, rt] = walls(r);
-  if (c < l - 1 || c > rt) return ROCK;
+  if (c < l - 1 || c > rt) return rockTile(r, c);
   if (c === l - 1) return EDGE_L;
   if (c === rt) return EDGE_R;
   const fr = Math.floor(FINISH_Y / 8);
   if (r === fr || r === fr - 1) return CHECKER;
   if (r === 0) return START_LINE;
-  return ((c * 7 + r * 13) & 15) === 0 ? FLOWER : GRASS;
+  if (((c * 7 + r * 13) & 15) === 0) return FLOWER;
+  return cellHash(c, r + 3) < 12 ? GRASS2 : GRASS;
 }
 
 /** Write map rows for whatever the camera can see into the 64-row ring buffer. */
@@ -205,7 +419,10 @@ function streamRows() {
     const m = ((r % 64) + 64) % 64;
     if (written[m] === r) continue;
     written[m] = r;
-    for (let c = 0; c < 32; c++) mset(c, m, tile(rowTile(r, c)));
+    for (let c = 0; c < 32; c++) {
+      const n = rowTile(r, c);
+      mset(c, m, tile(n, RACK.includes(n) ? RACK_PAL : stage.pal));
+    }
   }
 }
 
@@ -226,15 +443,11 @@ function nextType() {
   return ties[Math.floor(rand() * ties.length)];
 }
 
-/**
- * What fills each stretch of course. Every eleven stretches deal this mix in a
- * shuffled order, so chips and obstacles stay in balance over the stage.
- */
-const SLOT_MIX = ['chips', 'chips', 'chips', 'chips', 'chips', 'protest', 'tape', 'price', 'law', 'both', 'wafer'];
+/** The next stretch's contents, dealt from the stage's mix. */
 let slots = [];
 function nextSlot() {
   if (!slots.length) {
-    slots = [...SLOT_MIX];
+    slots = [...stage.mix];
     for (let i = slots.length - 1; i > 0; i--) {
       const j = Math.floor(rand() * (i + 1));
       [slots[i], slots[j]] = [slots[j], slots[i]];
@@ -244,7 +457,7 @@ function nextSlot() {
 }
 
 function buildCourse() {
-  rng = 20261011;
+  rng = 20261011 + round * 7919; // each stage has its own fixed layout
   placed = [0, 0, 0, 0];
   slots = [];
   const list = [];
@@ -288,6 +501,18 @@ function buildCourse() {
       const [x0, x1] = trackRange(y);
       const n = 1 + Math.floor(rand() * 2);
       for (let i = 0; i < n; i++) list.push({ kind: 'law', x: x0 + rand() * (x1 - x0), y: y - i * 26, warn: 8 });
+    } else if (k === 'ice') {
+      // An ice patch, with a chip just past it to tempt you across.
+      const [x0, x1] = trackRange(y, 32);
+      const x = x0 + rand() * (x1 - x0);
+      list.push({ kind: 'ice', x, y });
+      const [a, b] = trackRange(y - 28);
+      const t = nextType();
+      placed[t]++;
+      list.push({ kind: 'chip', type: t, x: clamp(x + 8, a, b), y: y - 28 });
+    } else if (k === 'wind') {
+      // A gust: it fires as this point scrolls onto the screen.
+      list.push({ kind: 'wind', y, dir: rand() < 0.5 ? -1 : 1, t: 0 });
     } else if (k === 'wafer') {
       const [x0, x1] = trackRange(y);
       list.push({ kind: 'wafer', x: x0 + rand() * (x1 - x0), y });
@@ -308,14 +533,33 @@ function buildCourse() {
 
 function update() {
   timer++;
+  if (state === 'title') {
+    if (timer > 30 && (btnp(START) || btnp(A))) { sfx(SFX_PICK); select(); }
+    else if (timer > 30 && btnp(B)) { sfx(SFX_MOVE); ranks('title'); }
+    return;
+  }
   if (state === 'select') {
-    if (btnp(LEFT)) { pick = (pick + MODELS.length - 1) % MODELS.length; sfx(8); }
-    if (btnp(RIGHT)) { pick = (pick + 1) % MODELS.length; sfx(8); }
+    if (btnp(LEFT)) { pick = (pick + MODELS.length - 1) % MODELS.length; sfx(SFX_MOVE); }
+    if (btnp(RIGHT)) { pick = (pick + 1) % MODELS.length; sfx(SFX_MOVE); }
     if (timer > 10 && (btnp(START) || btnp(A))) {
       dset(LAST_MODEL_SLOT, pick);
-      sfx(9);
-      reset();
-    }
+      sfx(SFX_PICK);
+      newRun();
+    } else if (timer > 10 && btnp(B)) title();
+    return;
+  }
+  if (state === 'agi') {
+    if (timer >= 210 || (timer > 60 && btnp(START))) { state = 'done'; timer = 0; }
+    return;
+  }
+  if (state === 'initials') { enterInitials(); return; }
+  if (state === 'ranks') {
+    if (btnp(LEFT)) { view.tab = (view.tab + MODELS.length) % (MODELS.length + 1); sfx(SFX_MOVE); }
+    if (btnp(RIGHT)) { view.tab = (view.tab + 1) % (MODELS.length + 1); sfx(SFX_MOVE); }
+    if (timer < 20) return;
+    if (view.from === 'title' && (btnp(START) || btnp(B))) title();
+    else if (view.from === 'run' && btnp(START)) newRun();
+    else if (view.from === 'run' && btnp(B)) select();
     return;
   }
   if (state === 'count') {
@@ -328,8 +572,13 @@ function update() {
     return;
   }
   if (state === 'board') {
-    if (timer > 30 && btnp(START)) reset();
-    else if (timer > 30 && btnp(B)) select();
+    if (timer < 30) return;
+    if (!btnp(START)) return;
+    if (!result.last) { round++; startStage(); }
+    else if (result.rank >= 0) {
+      initials = { chars: lastInitials().split(''), pos: 0 };
+      menu('initials');
+    } else ranks('run');
     return;
   }
   if (btnp(START)) paused = !paused;
@@ -346,11 +595,13 @@ function race() {
   const maxV = (1.4 + elec * 0.012) * HANDLING[model.stars], acc = maxV * 0.11;
   let ix = btn(RIGHT) - btn(LEFT), iy = btn(DOWN) - btn(UP);
   if (active('agent')) [ix, iy] = agentSteer();
-  if (ix) p.vx += ix * acc; else p.vx *= 0.8;
-  if (iy) p.vy += iy * acc; else p.vy *= 0.8;
+  // On ice you barely steer and keep sliding (last frame's contact).
+  const grip = p.onIce ? ICE_GRIP : 1, glide = p.onIce ? ICE_GLIDE : 0.8;
+  if (ix) p.vx += ix * acc * grip; else p.vx *= glide;
+  if (iy) p.vy += iy * acc * grip; else p.vy *= glide;
   p.vx = clamp(p.vx, -maxV, maxV);
   p.vy = clamp(p.vy, -maxV, maxV);
-  p.x += p.vx;
+  p.x += p.vx + p.wind;
   p.sy = clamp(p.sy + p.vy, TOP_Y, BOTTOM_Y);
   p.y = camY + p.sy;
   const [minX, maxX] = trackRange(p.y + 8);
@@ -360,7 +611,7 @@ function race() {
   }
 
   // The course scrolls at a steady speed; protesters slow it for a moment.
-  let v = SCROLL;
+  let v = SCROLL * stage.scroll;
   if (p.slow > 0) { v *= 0.5; p.slow--; }
   if (p.inv > 0) p.inv--;
   if (p.power > 0) p.power--;
@@ -386,16 +637,43 @@ function race() {
 
   // CPU is the pickup radius: chips this close drift to the racer.
   const reach = active('magnet') ? 12 + 40 : 12 + 2 + cpu * 0.16; // half a sprite plus 2-18 px
+  p.onIce = false;
+  p.wind = 0;
   for (const e of entities) {
     if (e.gone || e.y - camY < -40 || e.y - camY > 240) continue;
+    if (e.kind === 'wind') { gust(e); continue; }
+    if (e.kind === 'ice') { if (touching(e, 32, 16, 4)) p.onIce = true; continue; }
     if (e.kind === 'protester') walk(e);
     if (e.kind === 'chip' || e.kind === 'wafer') magnet(e, reach);
     collide(e);
   }
   for (const q of popups) { q.y -= 0.5; q.t--; }
   popups = popups.filter((q) => q.t > 0);
+  if (stage.snow) snowfall();
 
   if (p.y <= FINISH_Y) finish();
+}
+
+/** A wind gust: warning arrows, then a sideways push, then it's spent. */
+function gust(e) {
+  e.t++;
+  if (e.t === 1) sfx(SFX_GUST);
+  if (e.t > GUST_WARN) p.wind += e.dir * GUST_PUSH;
+  if (e.t >= GUST_WARN + GUST_TIME) e.gone = true;
+}
+
+/** Falling snow; it streams sideways while a gust blows. */
+let flakes = [];
+function snowfall() {
+  if (!flakes.length) {
+    for (let i = 0; i < 40; i++) flakes.push({ x: rnd() * 256, y: HUD_H + rnd() * 204, s: 0.4 + rnd() * 0.8 });
+  }
+  for (const f of flakes) {
+    f.y += f.s + SCROLL * stage.scroll * 0.3;
+    f.x += Math.sin((p.frames + f.y) / 20) * 0.3 + p.wind * 3;
+    if (f.y > 224) { f.y = HUD_H; f.x = rnd() * 256; }
+    f.x = (f.x + 256) % 256;
+  }
 }
 
 /** True while the chosen model's special `power` is running. */
@@ -449,12 +727,16 @@ function walk(e) {
   if (e.x < a || e.x > b) { e.vx = -e.vx; e.x = clamp(e.x, a, b); }
 }
 
+/** Whether the player's hitbox (the middle 10x12 of its sprite) overlaps e's box. */
+function touching(e, w, h, inset) {
+  return !(p.x + 13 < e.x + inset || p.x + 3 > e.x + w - inset || p.y + 14 < e.y + inset || p.y + 2 > e.y + h - inset);
+}
+
 function collide(e) {
   const w = e.kind === 'tape' ? 32 : 16, h = e.kind === 'tape' ? 8 : 16;
   // Books and tags fill less of their sprite, so their box is trimmed more.
   const inset = e.kind === 'law' || e.kind === 'price' ? 3 : 2;
-  // Player hitbox is the middle 10x12 of its sprite.
-  if (p.x + 13 < e.x + inset || p.x + 3 > e.x + w - inset || p.y + 14 < e.y + inset || p.y + 2 > e.y + h - inset) return;
+  if (!touching(e, w, h, inset)) return;
   if (e.kind === 'chip') {
     e.gone = true;
     const got = add(e.type, p.double > 0 ? CHIP_VALUE * 2 : CHIP_VALUE);
@@ -464,6 +746,7 @@ function collide(e) {
       sfx(e.type);
     } else {
       popup(`${BUCKET_NAME[e.type]} FULL`, 3);
+      sfx(SFX_FULL);
     }
   } else if (e.kind === 'wafer') {
     e.gone = true;
@@ -485,7 +768,7 @@ function collide(e) {
     const lost = -add(o.bucket, -HIT_COST);
     const safe = o.bucket === 3 && active('context');
     popup(safe ? `${o.text} RAM SAFE` : `${o.text} -${lost} ${BUCKET_NAME[o.bucket]}`, safe ? 12 : 6);
-    sfx(5);
+    sfx(o.sfx);
   }
 }
 
@@ -509,12 +792,13 @@ function add(i, n) {
     for (let j = 0; j < 3; j++) {
       if (p.b[j] > cap(j)) { lost += p.b[j] - cap(j); p.b[j] = cap(j); }
     }
-    if (lost > 0) popup(`OUT OF MEMORY -${Math.round(lost)}`, 6, -14);
+    if (lost > 0) { popup(`OUT OF MEMORY -${Math.round(lost)}`, 6, -14); sfx(SFX_OOM); }
   }
   // Chime when a bucket crosses a tier threshold.
   for (const [mark] of TIERS) {
     if (before < mark && p.b[i] >= mark) {
       popup(`${BUCKET_NAME[i]} ${tierOf(p.b[i])[2]}!`, tierOf(p.b[i])[3], -14);
+      sfx(SFX_TIER);
       break;
     }
   }
@@ -545,32 +829,61 @@ function tierOf(v) {
 }
 
 function finish() {
-  state = 'done';
   timer = 0;
-  music(-1);
-  sfx(11);
+  play(-1);
   const b = p.b.map((v) => Math.floor(v));
   const base = b.reduce((s, v) => s + v, 0) * 10;
   const tiers = b.reduce((s, v) => s + tierOf(v)[1], 0);
   const allGold = b.every((v) => v >= TIERS[0][0]);
   const mult = allGold ? 1.5 : 1;
   const total = scoreOf(b);
-  const newBest = total > best;
-  if (newBest) { best = total; dset(MODEL_BEST_SLOT + pick * 10, best); }
-  if (total > dget(BEST_SLOT)) dset(BEST_SLOT, total);
+  myRounds.push(total);
+  state = allGold ? 'agi' : 'done';
+  if (allGold) play(SONG_FANFARE);
+  else sfx(11);
 
-  // Simulate the other models' rounds and rank everyone.
-  const board = [{ name: model.name, score: total, you: true }];
-  for (const m of MODELS) {
-    if (m === model) continue;
-    const sim = m.sim.map((v) => clamp(Math.round(v + m.spread * noise()), 0, 100));
-    board.push({ name: m.name, score: scoreOf(sim) });
+  // Simulate the other models' rounds and rank everyone by run total.
+  const board = MODELS.map((m) => {
+    const you = m === model;
+    const score = you ? total
+      : scoreOf(m.sim.map((v) => clamp(Math.round(v + stage.simShift + m.spread * noise()), 0, 100)));
+    totals[m.name] = (totals[m.name] || 0) + score;
+    return { name: m.name, score, total: totals[m.name], you, was: places[m.name] };
+  });
+  board.sort((x, y) => y.total - x.total);
+  board.forEach((e, i) => { places[e.name] = i + 1; });
+  const place = places[model.name];
+
+  // Bests are for whole runs, so they're saved after the last stage, under
+  // the last-used initials until new ones are entered.
+  const last = round === STAGES.length - 1, run = totals[model.name];
+  let newBest = false, rank = -1;
+  if (last) {
+    entry = { total: run, place, rounds: [...myRounds], model: pick, initials: lastInitials() };
+    newBest = run > best;
+    if (newBest) { best = run; writeEntry(MODEL_BEST_SLOT + pick * ENTRY, entry); }
+    rank = insertTop(entry);
   }
-  board.sort((x, y) => y.score - x.score);
-  const place = board.findIndex((e) => e.you) + 1;
-  const bestPlace = dget(BEST_PLACE_SLOT);
-  if (!bestPlace || place < bestPlace) dset(BEST_PLACE_SLOT, place);
-  result = { b, base, tiers, mult, total, allGold, newBest, board, place };
+  result = { b, base, tiers, mult, total, allGold, newBest, board, place, last, run, rank };
+}
+
+/** Initials entry: UP/DOWN pick a letter, LEFT/RIGHT move, START or A on the last letter confirms. */
+function enterInitials() {
+  const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
+  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; sfx(SFX_MOVE); }
+  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; sfx(SFX_MOVE); }
+  if (btnp(LEFT)) ini.pos = Math.max(0, ini.pos - 1);
+  if (btnp(RIGHT)) ini.pos = Math.min(2, ini.pos + 1);
+  const done = btnp(START) || (btnp(A) && ini.pos === 2);
+  if (btnp(A) && ini.pos < 2) ini.pos++;
+  if (!done || timer < 20) return;
+  // The run was saved under the last-used initials; write the new ones over them.
+  const v = packInitials(ini.chars.join(''));
+  dset(INITIALS_SLOT, v);
+  dset(TOP_SLOT + result.rank * ENTRY + 6, v);
+  if (result.newBest) dset(MODEL_BEST_SLOT + pick * ENTRY + 6, v);
+  sfx(SFX_PICK);
+  ranks('run', result.rank);
 }
 
 /** A round's score from final bucket values (SPEC 5). */
@@ -590,9 +903,17 @@ function noise() {
 
 function draw() {
   cls();
+  if (state === 'title') { titleScreen(); return; }
   if (state === 'select') { selectScreen(); return; }
+  if (state === 'initials') { initialsScreen(); return; }
+  if (state === 'ranks') { ranksScreen(); return; }
   const k = (Math.sin(t() / 5) + 1) / 2;
   color(HAZARD_OUTLINE, 31, flr(2 + 8 * k), flr(2 + 8 * k));
+  // Rack LEDs: green and red blink out of step, amber flickers.
+  const blink = flr(t() / 20) % 2;
+  color(RACK_PAL * 16 + 11, 6, blink ? 31 : 12, 6);
+  color(RACK_PAL * 16 + 6, blink ? 12 : 31, 4, 4);
+  color(RACK_PAL * 16 + 14, 31, 22 + (flr(t() / 7) % 3) * 3, 6);
   bgscroll(0, 0, ((Math.floor(camY) % 512) + 512) % 512);
 
   for (const e of entities) {
@@ -609,12 +930,21 @@ function draw() {
     else if (e.kind === 'price') spr(SPR.PRICE, jx, sy, { size: 16, prio: 2, pal: HAZARD_PAL });
     else if (e.kind === 'law') spr(SPR.LAW, jx, sy, { size: 16, prio: 2, pal: HAZARD_PAL });
   }
+  // Ice is ground, so it goes under everything else: among sprites of the
+  // same priority the first drawn wins, so it's drawn last.
+  for (const e of entities) {
+    if (e.gone || e.kind !== 'ice') continue;
+    const sy = Math.floor(e.y - camY);
+    if (sy < -16 || sy > 224) continue;
+    spr(SPR.ICE, Math.floor(e.x), sy, { size: 16, prio: 2 });
+    spr(SPR.ICE + 2, Math.floor(e.x) + 16, sy, { size: 16, prio: 2 });
+  }
 
   // The player flickers while invulnerable after a hit.
   const sy = Math.floor(p.y - camY);
   if (p.inv === 0 || flr(p.inv / 4) % 2 === 0) {
     const lean = Math.abs(p.vx) > 1;
-    const n = lean ? SPR.LEAN : SPR.RUN + (flr(p.frames / 8) % 2) * 2;
+    const n = racerTile(pick) + (lean ? 4 : (flr(p.frames / 8) % 2) * 2);
     spr(n, Math.floor(p.x), sy, { size: 16, fx: p.vx < -1, prio: 3, pal: RACER_PAL });
   }
   // A ring while a timed special runs; Multimodal shows its pickup radius.
@@ -635,14 +965,30 @@ function draw() {
     print('!', x, y, 15);
   }
 
+  if (stage.snow && state !== 'count') {
+    for (const f of flakes) pset(f.x, f.y, f.s > 0.8 ? 15 : 13);
+    windArrows();
+  }
+
   for (const q of popups) label(q.text, Math.round(p.x + 8 - q.text.length * 4), Math.round(q.y), q.c);
   hud();
 
-  if (state === 'count') banner(String(3 - flr(timer / 60)), 15);
+  if (state === 'count') {
+    stageCard();
+    banner(String(3 - flr(timer / 60)), 15);
+  }
   else if (state === 'race' && p.frames < 40) banner('GO!', 11);
   if (paused) banner('PAUSED', 15);
+  if (state === 'agi') agiScreen();
   if (state === 'done') results();
   if (state === 'board') scoreboard();
+}
+
+/** A sky gradient behind the menu screens. */
+function scanline(y) {
+  if (state === 'title' || state === 'select' || state === 'initials' || state === 'ranks') {
+    color(0, 2 + flr(y / 40), 3 + flr(y / 28), 8 + flr(y / 18));
+  }
 }
 
 /** Text on a dark backing, readable over any ground. */
@@ -676,13 +1022,39 @@ function hud() {
     // The memory cap, set by RAM.
     if (cap(i) < 100) line(x + 10 + Math.round(cap(i) * 0.4), 2, x + 10 + Math.round(cap(i) * 0.4), 9, 6);
   }
-  print('BASE CAMP', 3, 11, 13);
+  print(stage.short, 3, 11, 13);
   print(p.special > 0 ? 'B:READY' : 'B:USED', 92, 11, p.special > 0 ? 11 : 3);
   if (p.power > 0) print(model.tag, 156, 11, 13);
   else if (p.double > 0) print(`X2 *${p.double}`, 156, 11, 13);
   // Progress up the mountain instead of a clock.
   const pct = clamp(Math.floor((p.y / FINISH_Y) * 100), 0, 100);
   print(`${String(pct).padStart(3)}%`, 216, 11, 15);
+}
+
+/** Chevrons on the upwind side before a gust, and streaks while it blows. */
+function windArrows() {
+  for (const e of entities) {
+    if (e.kind !== 'wind' || e.gone || e.t === 0) continue;
+    const arrow = e.dir > 0 ? '>>>' : '<<<';
+    const x = e.dir > 0 ? 8 : 220;
+    if (e.t <= GUST_WARN) {
+      if (flr(e.t / 6) % 2 === 0) for (const y of [70, 110, 150]) label(arrow, x, y, 15);
+    } else {
+      for (let i = 0; i < 12; i++) {
+        const y = HUD_H + 10 + ((i * 53 + e.t * 3) % 190);
+        const x0 = (i * 97 + e.t * 9 * e.dir + 2560) % 256;
+        line(x0, y, x0 + 20 * e.dir, y, i % 3 ? 10 : 15);
+      }
+    }
+  }
+}
+
+/** "STAGE 2 OF 3 / THE TREELINE" over the countdown. */
+function stageCard() {
+  rectfill(48, 54, 160, 32, 1);
+  rect(48, 54, 160, 32, 13);
+  center(`STAGE ${round + 1} OF ${STAGES.length}`, 60, 13);
+  center(stage.name, 72, 14);
 }
 
 function banner(text, c) {
@@ -697,7 +1069,11 @@ function results() {
   const show = Math.min(1, timer / 90); // tally in over 1.5 s
   rectfill(16, 26, 224, 190, 1);
   rect(16, 26, 224, 190, 15);
-  center(r.allGold ? 'AGI ACHIEVED!' : 'SUMMIT REACHED', 34, r.allGold ? 14 : 15);
+  center(r.allGold ? 'AGI ACHIEVED!' : stage.clear, 34, r.allGold ? 14 : 15);
+  // Flavor only (SPEC 5).
+  const golds = r.b.filter((v) => v >= TIERS[0][0]).length;
+  if (!r.allGold && r.b.every((v) => v >= TIERS[1][0])) center('GENERALIST', 43, 13);
+  else if (golds === 1 && r.b.filter((v) => v < TIERS[2][0]).length === 3) center('SPECIALIST', 43, 13);
   for (let i = 0; i < 4; i++) {
     const y = 52 + i * 14, v = Math.round(r.b[i] * show), [, bonus, name, c] = tierOf(v);
     print(BUCKET_NAME[i], 28, y, BUCKET_COLOR[i]);
@@ -714,9 +1090,10 @@ function results() {
     print(String(v).padStart(6), 176, 112 + k * 10, 15);
   });
   if (r.mult > 1) print('ALL GOLD X1.5', 28, 154, 14);
-  print('TOTAL', 28, 168, 15);
+  print('ROUND SCORE', 28, 168, 15);
   print(String(r.total).padStart(6), 176, 168, 14);
-  print(r.newBest ? 'NEW BEST!' : `BEST ${best}`, 28, 182, r.newBest ? 14 : 3);
+  print('RUN TOTAL', 28, 182, 13);
+  print(String(r.run).padStart(6), 176, 182, 15);
   if (timer % 60 < 40) center('START: SCOREBOARD', 200, 11);
 }
 
@@ -726,21 +1103,41 @@ function scoreboard() {
   const r = result;
   rectfill(16, 26, 224, 190, 1);
   rect(16, 26, 224, 190, 15);
-  center('FINAL STANDINGS', 34, 15);
-  print('ROUND 1 OF 1', 28, 48, 3);
+  center(r.last ? 'FINAL STANDINGS' : 'STANDINGS', 34, 15);
+  print(`ROUND ${round + 1} OF ${STAGES.length}`, 28, 46, 3);
+  print('RND', 152, 46, 3);
+  print('TOTAL', 192, 46, 3);
   r.board.forEach((e, i) => {
     if (timer < i * 8) return; // rows drop in one by one
-    const y = 64 + i * 14;
+    const y = 60 + i * 14;
     if (e.you) rectfill(22, y - 3, 212, 13, 2);
     print(ORDINAL[i], 28, y, i === 0 ? 14 : 13);
-    print(e.name, 72, y, e.you ? 15 : 10);
-    print(String(e.score).padStart(6), 176, y, e.you ? 14 : 15);
+    if (e.was) placeArrow(56, y, e.was - (i + 1));
+    print(e.name, 64, y, e.you ? 15 : 10);
+    print(String(e.score).padStart(6), 128, y, e.you ? 15 : 3);
+    print(String(e.total).padStart(6), 184, y, e.you ? 14 : 15);
   });
   if (timer < 70) return;
+  if (!r.last) {
+    center(`YOU ARE ${ORDINAL[r.place - 1]} AFTER ROUND ${round + 1}`, 166, 15);
+    if (timer % 60 < 40) center(`START: ${STAGES[round + 1].name}`, 188, 11);
+    return;
+  }
+  if (r.newBest) center('NEW BEST RUN!', 156, 14);
   const msg = r.place === 1 ? 'YOU TOP THE BOARD!' : `YOU PLACED ${ORDINAL[r.place - 1]} OF 7`;
   center(msg, 168, r.place === 1 ? 14 : 15);
-  if (timer % 60 < 40) center('START: RACE AGAIN', 188, 11);
-  center('B: CHANGE MODEL', 202, 12);
+  if (r.rank >= 0) center(`TOP 10: #${r.rank + 1}!`, 182, 14);
+  if (timer % 60 < 40) center('START: CONTINUE', 200, 11);
+}
+
+/** A small up or down triangle for places gained or lost since last round. */
+function placeArrow(x, y, moved) {
+  if (moved === 0) return;
+  const c = moved > 0 ? 11 : 6;
+  for (let k = 0; k < 4; k++) {
+    const yy = moved > 0 ? y + 1 + k : y + 6 - k;
+    line(x + 3 - k, yy, x + 3 + k, yy, c);
+  }
 }
 
 /** Model select (SPEC 10): portraits, starting buckets, handling, special. */
@@ -751,7 +1148,7 @@ function selectScreen() {
   for (let i = 0; i < MODELS.length; i++) {
     const on = i === pick, x = 4 + i * 36;
     const y = 36 - (on ? 3 + Math.round(Math.sin(timer / 8)) : 0);
-    spr(SPR.PORTRAIT, x, y, { size: 32, pal: 1 + i, prio: 3 });
+    spr(portraitTile(i), x, y, { size: 32, pal: 1 + i, prio: 3 });
     rect(x - 2, y - 2, 36, 36, on ? 14 : 2);
     if (on) rect(x - 3, y - 3, 38, 38, 14);
   }
@@ -768,9 +1165,117 @@ function selectScreen() {
   });
   center(`B: ${m.special}`, 162, 12);
   m.info.forEach((line, i) => center(line, 174 + i * 10, 15));
-  const top = dget(MODEL_BEST_SLOT + pick * 10);
-  center(top ? `BEST ${top}` : 'NO SCORE YET', 198, 3);
-  if (timer % 60 < 40) center('< >  CHOOSE    START  CLIMB', 212, 11);
+  const top = dget(MODEL_BEST_SLOT + pick * ENTRY);
+  center(top ? `BEST ${top}` : 'NO SCORE YET', 198, 10);
+  if (timer % 60 < 40) center('< > CHOOSE  START GO  B BACK', 212, 11);
+}
+
+/** Title (SPEC 10): the logo spins and zooms in on BG2, then sways. */
+function titleScreen() {
+  const k = Math.min(1, timer / 90), e = 1 - (1 - k) ** 3;
+  const ang = (1 - e) * Math.PI * 4 + Math.sin(timer / 50) * 0.06 * e;
+  const s = 0.05 + 1.95 * e; // on-screen scale
+  const ca = Math.cos(ang) / s, sa = Math.sin(ang) / s;
+  // Rotate and scale about the logo's center (32, 32), placed at screen (128, 72).
+  affine({ a: ca, b: sa, c: -sa, d: ca, cx: 32, cy: 32 });
+  bgscroll(2, 32 - 128, 32 - 72);
+  if (timer < 90) return;
+  // The title in 16x16 letters, rippling.
+  for (let i = 0; i < TITLE_TEXT.length; i++) {
+    const k = TITLE_LETTERS.indexOf(TITLE_TEXT[i]);
+    if (k < 0) continue;
+    const y = 138 + Math.round(Math.sin((timer - i * 6) / 10) * 2);
+    spr(SPR.TITLE + k * 2, 128 - TITLE_TEXT.length * 8 + i * 16, y, { size: 16, prio: 3 });
+  }
+  center('A RACE TO THE TOP FOR AI MODELS', 160, 13);
+  // The seven racers, hopping in turn.
+  for (let i = 0; i < MODELS.length; i++) {
+    const hop = Math.round(Math.abs(Math.sin((timer + i * 9) / 9)) * 4);
+    spr(racerTile(i) + (flr((timer + i * 5) / 8) % 2) * 2, 128 - 77 + i * 22, 176 - hop, { size: 16, pal: 1 + i, prio: 3 });
+  }
+  if (timer % 60 < 40) center('PRESS START', 198, 15);
+  print('B: LEADERBOARD', 8, 212, 12);
+  const top = readEntry(TOP_SLOT);
+  if (top.total) {
+    const t = `TOP ${top.total} ${top.initials}`;
+    print(t, 248 - t.length * 8, 212, 10);
+  }
+}
+
+/** AGI ACHIEVED (SPEC 5): all four buckets at Gold. Rays, your portrait, the x1.5. */
+function agiScreen() {
+  const cx = 128, cy = 76;
+  for (let i = 0; i < 16; i++) {
+    const a = i * Math.PI / 8 + timer / 40;
+    line(cx + Math.cos(a) * 24, cy + Math.sin(a) * 24, cx + Math.cos(a) * 220, cy + Math.sin(a) * 220, i % 2 ? 14 : 9);
+  }
+  spr(portraitTile(pick), cx - 16, cy - 16 - Math.round(Math.abs(Math.sin(timer / 10)) * 3), { size: 32, pal: RACER_PAL, prio: 3 });
+  const c = [14, 15, 9, 13][flr(timer / 6) % 4];
+  rectfill(40, 112, 176, 56, 1);
+  rect(40, 112, 176, 56, c);
+  center('AGI ACHIEVED', 120, c);
+  center('ALL FOUR BUCKETS GOLD', 136, 15);
+  center('ROUND SCORE X1.5', 150, 14);
+}
+
+/** "NEW HIGH SCORE": enter three initials for the top 10. */
+function initialsScreen() {
+  const ini = initials;
+  center('NEW HIGH SCORE!', 30, 14);
+  center(`#${result.rank + 1} OF ${TOP_N}`, 46, 13);
+  center(String(result.run), 62, 15);
+  spr(portraitTile(pick), 112, 80, { size: 32, pal: 1 + pick, prio: 3 });
+  center('ENTER YOUR INITIALS', 124, 13);
+  for (let i = 0; i < 3; i++) {
+    const x = 128 - 36 + i * 28, on = i === ini.pos;
+    rect(x - 4, 138, 16, 18, on ? 14 : 2);
+    print(ini.chars[i], x, 143, on ? 14 : 15);
+    if (on && timer % 30 < 20) {
+      line(x + 1, 134, x + 6, 134, 14); // up and down hints
+      line(x + 1, 159, x + 6, 159, 14);
+    }
+  }
+  center('UP/DOWN LETTER  LEFT/RIGHT MOVE', 176, 10);
+  if (timer % 60 < 40) center('START: SAVE', 196, 11);
+}
+
+/** The leaderboard: the overall top 10, then a tab for each model's best run. */
+function ranksScreen() {
+  const tab = view.tab;
+  center('LEADERBOARD', 6, 14);
+  const name = tab === 0 ? 'OVERALL' : MODELS[tab - 1].name;
+  center(`< ${name} >`, 20, tab === 0 ? 15 : MODELS[tab - 1].ink ?? (8 + tab) * 16 + 9);
+  if (tab === 0) {
+    topTen().forEach((e, i) => {
+      const y = 38 + i * 15;
+      if (i === view.hl && timer % 40 < 30) rectfill(14, y - 4, 228, 14, 2);
+      print(String(i + 1).padStart(2), 18, y, i === 0 ? 14 : 13);
+      if (!e.total) { print('---', 48, y, 10); return; }
+      print(e.initials, 48, y, 15);
+      print(MODELS[e.model]?.name ?? '?', 88, y, 10);
+      print(String(e.total).padStart(6), 184, y, i === 0 ? 14 : 15);
+    });
+  } else {
+    const i = tab - 1, e = readEntry(MODEL_BEST_SLOT + i * ENTRY);
+    spr(portraitTile(i), 112, 34, { size: 32, pal: 1 + i, prio: 3 });
+    if (!e.total) {
+      center('NO RUNS YET', 96, 10);
+    } else {
+      center('BEST RUN', 76, 13);
+      center(`${e.initials}  ${e.total}`, 90, 14);
+      center(`FINISHED ${ORDINAL[e.place - 1] ?? '?'} OF 7`, 104, 15);
+      STAGES.forEach((st, k) => {
+        print(st.name, 40, 124 + k * 12, 13);
+        print(String(e.rounds[k]).padStart(6), 168, 124 + k * 12, 15);
+      });
+    }
+    const spots = topTen().map((x, k) => (x.total && x.model === i ? `#${k + 1}` : '')).filter(Boolean);
+    center(spots.length ? `TOP 10: ${spots.slice(0, 5).join(' ')}` : 'NOT IN THE TOP 10', 172, spots.length ? 11 : 10);
+  }
+  if (view.from === 'run') {
+    if (timer % 60 < 40) center('START: RACE AGAIN', 196, 11);
+    center('B: CHANGE MODEL', 210, 12);
+  } else if (timer % 60 < 40) center('START: BACK', 204, 11);
 }
 
 function center(text, y, c) {
