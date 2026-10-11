@@ -1,7 +1,7 @@
 # Summit Rush: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** In progress: all three stages and all seven models, with the select screen. Title, leaderboard, art and audio still to come.
+**Status:** In progress: the game is playable end to end (title, select, three stages, AGI screen, standings, initials, leaderboard). Still to come: the art pass, the audio pass, and balance and polish.
 **Cart source:** `carts/src/summit-rush/` → `carts/summit-rush.nova`
 
 ---
@@ -209,15 +209,26 @@ Top 16 px of the overlay:
 
 ## 10. Screens and flow
 
-1. **Title:** spinning mountain logo (BG2 affine), "PRESS START", top score.
+1. **Title:**
+   - The mountain logo (64×64, map columns 64–71) spins and zooms in on BG2 affine over 1.5 s, then sways gently at 2×.
+   - Below it: the title, a tagline, the seven racers hopping, "PRESS START" (or A), "B: LEADERBOARD", and the top score.
+   - The title, select, initials and leaderboard screens share a sky-gradient backdrop drawn in `scanline()`.
 2. **Model select:** seven portraits in a row; LEFT/RIGHT to choose, START (or A) to climb. The chosen model shows its name in its color, handling stars, starting buckets as bars, its special with a two-line description, and its best score. The last model picked is remembered. After the scoreboard, START races again with the same model and B returns here.
 3. **Stage intro:** stage name card ("STAGE 2 OF 3 / THE TREELINE"), 3-2-1-GO countdown.
 4. **Race:** three stages with a short stage card between them (buckets carry over).
-5. **Round tally:** the bucket tally animating into tier medals and the round score. If all four buckets reach Gold: "AGI ACHIEVED" with fanfare.
+5. **Round tally:** the bucket tally animating into tier medals and the round score, with a "GENERALIST" or "SPECIALIST" tag when it applies.
+   - If all four buckets reach Gold, an **AGI ACHIEVED** screen comes first: rotating rays, your portrait, and "ROUND SCORE X1.5". It lasts 3.5 s; START skips it after 1 s.
+   - The fanfare is a placeholder SFX until the audio pass.
 6. **Scoreboard:** all seven models ranked by running total, with each one's round score; your row highlighted and an arrow showing places gained or lost this round. START goes on to the next stage. After the last stage: START races again, B changes model.
-7. After round 3, **final standings**: your place of seven.
-8. **Initials entry** if the total makes the top 10.
-9. **Leaderboard:** overall top 10, with a tab per model (LEFT/RIGHT).
+7. After round 3, **final standings**: your place of seven, "NEW BEST RUN!" and "TOP 10: #n" when they apply, then START: CONTINUE.
+8. **Initials entry** if the total makes the top 10: UP/DOWN cycles A–Z and 0–9, LEFT/RIGHT moves, START (or A on the last letter) saves. It starts from the last initials used.
+   - The run is saved at the finish under those last initials, then the new ones are written over that entry and the model best.
+9. **Leaderboard:**
+   - LEFT/RIGHT switches between the overall top 10 and a tab per model.
+   - Overall: rank, initials, model and total. The new entry blinks.
+   - Model tab: that model's best run (initials, total, finishing place, each stage's score) and its spots in the top 10.
+   - After a run: START races again, B changes model. From the title: START or B goes back.
+   - The select screen's B also goes back to the title.
 
 ## 11. Audio
 
@@ -238,8 +249,8 @@ Top 16 px of the overlay:
 | Slots | Contents |
 |---|---|
 | 0 | Format version |
-| 1–2 | Options: music on/off (1), last selected model (2) |
-| 10–109 | Overall top 10: per entry total, final place, the three round scores, model, initials (packed 3×8 bits), 3 reserved = 10 slots |
+| 1–3 | Options: music on/off (1, unused so far), last selected model (2), last initials (3) |
+| 10–109 | Overall top 10, best first. Each entry is 10 slots: total, final place, the three round scores, model index, initials (packed 3×8 bits), 3 reserved. An empty entry has total 0. |
 | 110–179 | Best run total per model (7 × 10 slots, same layout) |
 | 180–255 | Reserved |
 
