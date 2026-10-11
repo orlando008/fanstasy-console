@@ -241,17 +241,39 @@ Top 16 px of the overlay:
 
 ## 11. Audio
 
-**Songs** (Music tab):
+**Songs** (Music tab). They're built on the music of the *Summit Rush* animated series (`orlando008/summit-rush`, `engine/audio.js`). Its main theme is `hero`, 140 bpm over C–G–Am–F:
+- A 25% pulse lead in a dotted 3-3-4-2-4 rhythm: E5 G5 C6, B5 G5.
+- A root, fifth and octave bass, and 16th-note chord arpeggios on a 12.5% pulse.
+- A kick on 1, the "and" of 2, and 3.
 
-| Song | Use | Feel |
-|---|---|---|
-| 0 | Title / select | Upbeat, 120 bpm |
-| 1 | Stage 1 | Driving, pulse lead |
-| 2 | Stage 2 | Faster variant |
-| 3 | Stage 3 | Tense, minor, 150 bpm |
-| 4 | Summit / AGI fanfare | Short, non-looping |
+The cart reproduces the series' lead lines, chords, bass, arpeggio and drum patterns step for step. Rows are 16th notes; channel 5 carries only the `Fxx` speed.
 
-**SFX** (one each): chip pickup per bucket (4, rising pitches), Golden Wafer, bucket full, out of memory, hit (one per obstacle), special activate, countdown beep, GO, tier-up chime, menu move, menu select. Protester chant: a noise-channel rhythm, if it fits.
+| Song | Use | Order | Tempo | From the series |
+|---|---|---|---|---|
+| 0 | Title and menus | intro, then hero, anthem, hero (loops from hero) | ~82, then ~138 bpm | `intro` (the episode cold open) leading into `hero`, as in episode 1's opening |
+| 1 | Base Camp | hero, hero, anthem, hero | ~138 bpm (speeds 7 and 6 alternate per row) | `hero`, with `anthem` (same chord family) as the B section |
+| 2 | The Treeline | hero in D, race, hero in D, race | 150 bpm | the theme a step up with `race`'s driving bass and drums, alternating with `race` itself |
+| 3 | The Summit | hero in D minor, battle, ×2 | 180 bpm | the theme recast in D minor over `battle`'s chords (Dm Bb C A), with the galloping bass, alternating with `battle` |
+| 4 | AGI fanfare | once, 3.2 s | speed 3 | the hero motif (E G C, B D) on brass, resolving to a held C with a crash |
+
+- **Arrangement:** pulse 1 lead, pulse 2 arpeggios (the series' triangle slow arp moves to a soft pulse, since the triangle carries the bass), triangle bass, saw pad, noise drums. Music volumes sit about a fifth under the SFX.
+- **Menus** share song 0 without restarting it, so the intro plays once at boot. Each stage starts its own song. Music stops at the finish line. The fanfare plays over the AGI screen in place of the finish jingle.
+
+**SFX:**
+
+| # | Sound | # | Sound |
+|---|---|---|---|
+| 0–3 | Chip pickups, rising per bucket | 11 | Finish |
+| 4 | Golden Wafer | 12 | Smash (Unfiltered) |
+| 5 | Protest hit: crowd boo | 13 | Red tape hit: rip |
+| 6 | Bucket full: dull bonk | 14 | High prices hit: cha-ching sliding down |
+| 7 | Out of memory: descending glitch | 15 | Legislation hit: gavel thud |
+| 8 | Countdown beep | 16 | Tier-up chime |
+| 9 | GO | 17 | Menu move |
+| 10 | Special activate | 18 | Menu select |
+| | | 19 | Wind gust: rising whoosh |
+
+The songs and SFX are data in `audio.json`, so they can be reworked in the Music and SFX tabs.
 
 ## 12. Persistence (save slots)
 
@@ -285,7 +307,7 @@ Top 16 px of the overlay:
    - Per-model racers and portraits, title lettering, stage scenery and protest signs.
    - The art is tile data in `tiles.txt`, so it can be refined in the Sprites, Map and Palette tabs.
    - Still open: parallax scenery (BG1/BG2) behind the course. The opaque rock walls currently cover the whole screen, so they would need gaps to show it.
-6. **Audio pass:** songs and SFX in the Music and SFX tabs.
+6. **Audio pass:** songs and SFX. First pass done (see 11). The tracks were composed as data, so they're worth a listen and a tune in the Music tab.
 7. **Balance and polish:** tune thresholds so Gold in all four is hard but possible; record replays of good runs (F9/F10); capture a label (F7); export a PNG cart.
 
 Any console bugs or editor gaps found along the way are logged and fixed as separate changes.
