@@ -8,23 +8,25 @@
 
 ## 1. Concept
 
-Pick an AI model and race it up a mountain. The screen scrolls upward while you
-steer left and right, grabbing compute (electricity, GPU, CPU and RAM chips)
-and dodging the things that slow AI down (protesters, regulation books, red
-tape). Reaching the summit first matters, but what really counts is how full
-your four resource buckets are when you get there.
+Pick an AI model and climb a mountain. The screen scrolls upward while you
+steer around it, grabbing compute (electricity, GPU, CPU and RAM chips) and
+dodging the things that slow AI down (protesters, regulation books, red
+tape). Each stage is a round scored on how full your four resource buckets
+are at its end. You play alone; the other six models' runs are simulated, and
+after every round a scoreboard shows where you stand.
 
-- **Genre:** vertical-scrolling dodge-and-collect racer.
-- **Run length:** about 90 seconds, in three stages.
-- **Players:** 1 (with up to 6 AI rivals on screen).
+- **Genre:** vertical-scrolling dodge-and-collect score attack.
+- **Run length:** about 90 seconds, in three rounds (stages).
+- **Players:** 1, against six simulated models on the scoreboard.
 - **Tone:** light satire. Obstacles carry jokes; no model or person is mocked.
 
 ## 2. Core loop
 
 1. **Select** one of seven models on the title screen. Each has a stat profile and a special ability.
-2. **Climb** three stages of auto-scrolling mountain. Steer to collect chips, avoid obstacles, and use boost.
-3. **Summit:** buckets are tallied against tier thresholds, bonuses applied, and the result is ranked.
-4. **Leaderboard:** enter initials, see where you placed, try again or pick another model.
+2. **Round:** climb one stage of auto-scrolling mountain. Steer to collect chips, avoid obstacles, and dash when it pays.
+3. **Tally:** your buckets are scored against tier thresholds, then the **scoreboard** shows every model's round score and running total, ranked.
+4. Repeat for stages 2 and 3. Buckets start fresh each round from your model's starting values.
+5. **Final standings:** your place among the seven, your total on the leaderboard, initials, then try again or pick another model.
 
 ## 3. Controls
 
@@ -32,7 +34,7 @@ your four resource buckets are when you get there.
 |---|---|
 | LEFT / RIGHT | Move left and right within the track walls |
 | UP / DOWN | Move up and down the screen (between y 40 and 200) |
-| A | Boost: spend Electricity for a burst of speed |
+| A | Dash: spend Electricity to smash through obstacles unharmed |
 | B | Special ability (per model, see 6.2) |
 | START | Pause |
 | SELECT | (Title) toggle music |
@@ -44,14 +46,14 @@ summit, and it **modifies your racer** while climbing.
 
 | Bucket | Chip | Color | Effect during the race |
 |---|---|---|---|
-| ⚡ Electricity | Lightning bolt | Yellow | Boost fuel. A spends 20 per second for +60% speed. |
-| 🎮 GPU | Green chip | Green | Top speed: +0.4% per point (max +40%). |
+| ⚡ Electricity | Lightning bolt | Yellow | Dash fuel. Holding A spends 20 per second; while dashing, obstacles are smashed aside with no penalty and the scroll speeds up 40%. |
+| 🎮 GPU | Green chip | Green | Pickup magnet: chips within 2 px + 0.16 px per point (up to 18 px) of the racer are pulled in. |
 | 🧠 CPU | Blue chip | Blue | Steering: acceleration and max lateral speed +0.5% per point. |
 | 💾 RAM | Purple stick | Purple | Shielding: with 15 or more RAM, a hit is absorbed and costs 15 RAM. |
 
 - Each chip pickup adds **+5** to its bucket. A rare **Golden Wafer** adds +5 to all four.
-- Each stage offers every bucket the same number of chips (about 20 in a 30-second stage, plus a few Golden Wafers), so reaching Gold takes collecting roughly half to two-thirds of a bucket's chips over the race, before boosting and shield costs. Chip lines go to whichever bucket has had the fewest chips so far, and each ten stretches of course deal a fixed mix: 5 chip lines, 2 protester groups, 1 red tape with a bait chip, 1 pair of chips on opposite sides, 1 Golden Wafer.
-- Boosting consumes Electricity, so Electricity's final value reflects what you saved rather than what you collected.
+- Each stage offers every bucket the same number of chips (about 20 in a 30-second stage, plus a few Golden Wafers), so reaching Gold takes collecting roughly half to two-thirds of a bucket's chips over the race, before dash and shield costs. Chip lines go to whichever bucket has had the fewest chips so far, and each ten stretches of course deal a fixed mix: 5 chip lines, 2 protester groups, 1 red tape with a bait chip, 1 pair of chips on opposite sides, 1 Golden Wafer.
+- Dashing consumes Electricity, so Electricity's final value reflects what you saved rather than what you collected: spending it protects the other three buckets.
 - RAM absorbing hits gives the core trade-off: protecting yourself costs score.
 
 ### 4.1 Tier thresholds
@@ -66,18 +68,35 @@ Gold sits at 80, not 100, so it is reachable with good play without being automa
 
 ## 5. Scoring and results
 
-At the summit:
+At the end of each round (stage):
 
 ```
 base     = (ELEC + GPU + CPU + RAM) × 10          // max 4000
 tiers    = sum of the highest tier bonus reached per bucket
-place    = [1500, 1000, 600, 300, 150, 50, 0][finish position − 1]
-score    = (base + tiers + place) × multiplier
+round    = (base + tiers) × multiplier
+total    = round 1 + round 2 + round 3
 ```
 
 - **Multiplier:** ×1.0 by default, ×1.5 if **all four buckets reach Gold**. That is the "AGI Achieved" summit bonus, with its own fanfare and screen.
 - With all four at Silver or better, the result screen says "Generalist"; with one bucket at Gold and the rest below Bronze, it says "Specialist" (flavor only).
-- **Time does not score.** Course length and scroll speed bound a run to roughly 25–40 s, and the only ways to be faster (GPU and boost) are already buckets, so a time bonus mostly double-counted GPU and penalized saving Electricity. Speed pays off through **finishing place** against the AI rivals instead. A fast run with empty buckets still scores well below a balanced, well-collected run.
+- **Neither time nor speed scores.** Course length and scroll speed bound a round to roughly 25–40 s, so a time bonus barely separated runs and double-counted GPU. Your **place** is an outcome, not an input: it's where your total lands on the scoreboard.
+- A round score runs from about 1,000 (empty-ish buckets) to 16,800 (all four at 100, all Gold).
+
+### 5.1 Simulated models
+
+The six models you aren't playing don't appear on the course. After each round, each gets a round score simulated from its profile: every bucket's final value is drawn as `clamp(mean + spread × noise, 0, 100)` (noise roughly normal, from the per-run random seed), then scored with the same formula, including the all-Gold multiplier. Profiles give each model a consistent character while scores vary a little from run to run:
+
+| Model | Mean ELEC/GPU/CPU/RAM | Spread | Character |
+|---|---|---|---|
+| Claude | 55 / 55 / 65 / 65 | 10 | Careful, few hits |
+| GPT | 60 / 65 / 55 / 50 | 12 | Strong all-rounder |
+| Gemini | 55 / 60 / 60 / 60 | 10 | Balanced |
+| Grok | 55 / 70 / 45 / 35 | 25 | Wild: sometimes tops the board, sometimes last |
+| DeepSeek | 65 / 50 / 65 / 45 | 12 | Efficient, saves Electricity |
+| GLM | 55 / 55 / 55 / 55 | 6 | Steady, rarely surprises |
+| Kimi | 45 / 45 / 55 / 75 | 10 | Hoards RAM |
+
+These put a typical simulated round around 4,500–6,000, so a solid run lands mid-table, a strong one wins, and an all-Gold round (×1.5) is a near-certain 1st.
 
 ## 6. The models
 
@@ -86,20 +105,19 @@ score    = (base + tiers + place) × multiplier
 Real model names, used affectionately. The stat profiles are game balance
 choices, not claims about the real systems. Seven racers:
 
-| Model | Start ELEC/GPU/CPU/RAM | Base speed | Handling | Special (B) |
-|---|---|---|---|---|
-| Claude | 10 / 10 / 15 / 15 | ★★★ | ★★★★ | **Constitution:** 3 s of immunity to protesters |
-| GPT | 15 / 15 / 10 / 10 | ★★★★ | ★★★ | **Scale Up:** doubles the next 5 chip pickups |
-| Gemini | 10 / 15 / 10 / 15 | ★★★ | ★★★ | **Multimodal:** chips within 24 px are pulled in for 4 s |
-| Grok | 20 / 10 / 10 / 5 | ★★★★★ | ★★ | **Unfiltered:** smash through obstacles for 3 s (no RAM cost) |
-| DeepSeek | 5 / 10 / 15 / 10 | ★★★★ | ★★★ | **Efficiency:** boost costs no Electricity for 5 s |
-| GLM | 10 / 10 / 10 / 10 | ★★★ | ★★★★★ | **Agent Mode:** auto-steers toward the nearest chips for 3 s |
-| Kimi | 10 / 5 / 10 / 20 | ★★★ | ★★★★ | **Long Context:** upcoming obstacles are marked from further away, and RAM shield hits cost nothing, for 5 s |
+| Model | Start ELEC/GPU/CPU/RAM | Handling | Special (B) |
+|---|---|---|---|
+| Claude | 10 / 10 / 15 / 15 | ★★★★ | **Constitution:** 3 s of immunity to protesters |
+| GPT | 15 / 15 / 10 / 10 | ★★★ | **Scale Up:** doubles the next 5 chip pickups |
+| Gemini | 10 / 15 / 10 / 15 | ★★★ | **Multimodal:** pickup magnet of 40 px for 4 s |
+| Grok | 20 / 10 / 10 / 5 | ★★ | **Unfiltered:** dash for 3 s without spending Electricity |
+| DeepSeek | 5 / 10 / 15 / 10 | ★★★ | **Efficiency:** dashing costs no Electricity for 5 s |
+| GLM | 10 / 10 / 10 / 10 | ★★★★★ | **Agent Mode:** auto-steers toward the nearest chips for 3 s |
+| Kimi | 10 / 5 / 10 / 20 | ★★★★ | **Long Context:** upcoming obstacles are marked from further away, and RAM shield hits cost nothing, for 5 s |
 
-- **Specials** charge once per stage: they're available at the start of each stage and used up on activation.
+- **Specials** charge once per round: they're available at the start of each stage and used up on activation.
 - Each model has a 16×16 racer sprite (two-frame climb animation, lean left/right frames) and a portrait for the select screen.
-- The other six models appear as **AI rivals**, using simple steering: follow a target lane, swerve around obstacles, occasionally grab chips. Rivals can be bumped (small knockback for both).
-- Rival places decide the finish order shown at the summit.
+- The other six models never appear on the course; their rounds are simulated (5.1).
 
 ## 7. Course
 
@@ -111,11 +129,11 @@ choices, not claims about the real systems. Seven racers:
 | 2 | The Treeline | ~30 s | 1.2× | Pines, switchback walls, narrower course |
 | 3 | The Summit | ~30 s | 1.4× | Snow and ice (lower traction), wind gusts |
 
-The racer moves freely around the screen, and climbing speed (base speed,
-GPU, boost, slowdowns) only sets how fast the course scrolls past, so going
-faster never costs reaction room. Speed lines streak along the track edges
-when you are above base speed. A hit slows the scroll and knocks the racer
-16 px down the screen. There is no fall-off penalty.
+The racer moves freely around the screen, and the stage's scroll speed (faster
+while dashing, slower after a hit) only sets how fast the course passes, so
+dashing never costs reaction room. Speed lines streak along the track edges
+while dashing. A hit slows the scroll and knocks the racer 16 px down the
+screen. There is no fall-off penalty.
 
 ### 7.2 Layout
 
@@ -163,9 +181,11 @@ Top 16 px of the overlay:
 2. **Model select:** seven portraits; LEFT/RIGHT to choose, showing starting buckets, star ratings, and the special.
 3. **Stage intro:** stage name card, 3-2-1-GO countdown.
 4. **Race:** three stages with a short stage card between them (buckets carry over).
-5. **Summit:** finish order, then the bucket tally animating into tier medals, then the score breakdown. If all four buckets reach Gold: an "AGI ACHIEVED" screen with fanfare.
-6. **Initials entry** if the score makes the top 10.
-7. **Leaderboard:** overall top 10, with a tab per model (LEFT/RIGHT).
+5. **Round tally:** the bucket tally animating into tier medals and the round score. If all four buckets reach Gold: "AGI ACHIEVED" with fanfare.
+6. **Scoreboard:** all seven models ranked by running total, with each one's round score; your row highlighted and an arrow showing places gained or lost this round.
+7. After round 3, **final standings**: your place of seven.
+8. **Initials entry** if the total makes the top 10.
+9. **Leaderboard:** overall top 10, with a tab per model (LEFT/RIGHT).
 
 ## 11. Audio
 
@@ -179,7 +199,7 @@ Top 16 px of the overlay:
 | 3 | Stage 3 | Tense, minor, 150 bpm |
 | 4 | Summit / AGI fanfare | Short, non-looping |
 
-**SFX** (one each): chip pickup per bucket (4, rising pitches), Golden Wafer, boost start, boost loop tick, hit (protester / book / tape), shield absorb, special activate, countdown beep, GO, tier-up chime, menu move, menu select. Protester chant: a noise-channel rhythm, if it fits.
+**SFX** (one each): chip pickup per bucket (4, rising pitches), Golden Wafer, dash start, smash, hit (protester / book / tape), shield absorb, special activate, countdown beep, GO, tier-up chime, menu move, menu select. Protester chant: a noise-channel rhythm, if it fits.
 
 ## 12. Persistence (save slots)
 
@@ -187,7 +207,7 @@ Top 16 px of the overlay:
 |---|---|
 | 0 | Format version |
 | 1–2 | Options: music on/off, last selected model |
-| 10–109 | Overall top 10: per entry score, place, ELEC, GPU, CPU, RAM, model, initials (packed 3×8 bits), 2 reserved = 10 slots |
+| 10–109 | Overall top 10: per entry total, final place, the three round scores, model, initials (packed 3×8 bits), 3 reserved = 10 slots |
 | 110–179 | Best score per model (7 × 10 slots, same layout) |
 | 180–255 | Reserved |
 
@@ -205,8 +225,8 @@ Top 16 px of the overlay:
 
 ## 14. Implementation plan
 
-1. **Vertical slice:** stage 1 only with one model (Claude), placeholder art, the four buckets and HUD, two obstacle types, scoring at the end. Proves the feel.
-2. **Racers:** all seven models, specials, AI rivals, finish order.
+1. **Vertical slice:** stage 1 only with one model (Claude), placeholder art, the four buckets and HUD, two obstacle types, the round tally and the scoreboard with simulated models. Proves the feel.
+2. **Models:** all seven playable, with specials and the select screen.
 3. **Stages 2 and 3:** narrowing course, ice and wind, scroll speeds.
 4. **Flow:** title, select, stage cards, summit tally, AGI screen, leaderboard with initials and saves.
 5. **Art pass:** final sprites, tiles and palettes, all made in the Sprites, Map and Palette tabs.
@@ -217,6 +237,5 @@ Any console bugs or editor gaps found along the way are logged and fixed as sepa
 
 ## 15. Open questions
 
-- **Rival count:** 6 rivals on screen is busy with pickups and protesters. Fall back to 3 (picked at random per race) if readability or the per-line sprite limit suffers.
-- **Balance:** whether the ×1.5 all-Gold multiplier is too dominant compared with the time and place components; tune after the slice.
+- **Balance:** the simulated profiles (5.1) set how hard 1st place is; tune them against real play. Also whether the ×1.5 all-Gold multiplier makes an all-Gold round an automatic win.
 - **Real-name sensitivity:** if the cart is ever shared publicly, decide whether to keep real model names or swap to parodies.

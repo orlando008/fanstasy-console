@@ -1,7 +1,8 @@
 // SUMMIT RUSH - vertical slice: stage 1 (Base Camp) with Claude.
 // Design: docs/carts/summit-rush.md. The arrows move the racer around the
-// screen; your speed only sets how fast the mountain scrolls past. A boosts
-// (spends Electricity), B uses Claude's special (Constitution).
+// screen. A dashes (spends Electricity to smash through obstacles), B uses
+// Claude's special (Constitution). After the round, a scoreboard ranks your
+// score against the six other models' simulated runs.
 
 // --- Tuning -------------------------------------------------------------------
 
@@ -12,11 +13,24 @@ const FINISH_Y = -2600; // world y of the finish line (start line is y 0)
 const HUD_H = 20;
 const CHIP_VALUE = 5;
 const SHIELD_COST = 15;
-const BOOST_COST = 1 / 3; // Electricity per frame (20 per second)
+const DASH_COST = 1 / 3; // Electricity per frame (20 per second)
+const DASH_SPEED = 1.4; // scroll multiplier while dashing
 const TIERS = [[80, 2000, 'GOLD', 14], [50, 750, 'SILVER', 10], [25, 250, 'BRONZE', 9]];
-const PLACE_POINTS = [1500, 1000, 600, 300, 150, 50, 0];
-const BEST_SLOT = 10; // save slot holding the best score (SPEC 12)
-const VERSION_SLOT = 0, SAVE_VERSION = 2; // version 2: time no longer scores
+const BEST_SLOT = 10, BEST_PLACE_SLOT = 11; // save slots (SPEC 12)
+const VERSION_SLOT = 0, SAVE_VERSION = 3; // version 3: no time or place points
+
+/**
+ * The other models' rounds are simulated from these profiles (SPEC 5.1):
+ * each bucket ends at mean + spread * noise.
+ */
+const RIVALS = [
+  { name: 'GPT', mean: [60, 65, 55, 50], spread: 12 },
+  { name: 'GEMINI', mean: [55, 60, 60, 60], spread: 10 },
+  { name: 'GROK', mean: [55, 70, 45, 35], spread: 25 },
+  { name: 'DEEPSEEK', mean: [65, 50, 65, 45], spread: 12 },
+  { name: 'GLM', mean: [55, 55, 55, 55], spread: 6 },
+  { name: 'KIMI', mean: [45, 45, 55, 75], spread: 10 },
+];
 
 const MODEL = {
   name: 'CLAUDE', start: [10, 10, 15, 15], speed: 1, handling: 1.1,
@@ -67,7 +81,7 @@ function reset() {
   p = {
     x: 120, y: 0, sy: 150, vx: 0, vy: 0, b: [...MODEL.start],
     slow: 0, tape: 0, inv: 0, immune: 0, special: 1,
-    boosting: false, frames: 0, penalty: 0, speed: SCROLL,
+    dashing: false, frames: 0, speed: SCROLL,
   };
   entities = buildCourse();
   popups = [];
@@ -211,7 +225,11 @@ function update() {
     return;
   }
   if (state === 'done') {
-    if (timer > 60 && btnp(START)) reset();
+    if (timer > 100 && btnp(START)) { state = 'board'; timer = 0; }
+    return;
+  }
+  if (state === 'board') {
+    if (timer > 30 && btnp(START)) reset();
     return;
   }
   if (btnp(START)) paused = !paused;
@@ -243,15 +261,15 @@ function race() {
     p.vx = 0;
   }
 
-  // Climbing speed: GPU raises it, boost spends Electricity, hits slow it.
-  // It moves the camera; the racer keeps its place on screen.
-  let v = SCROLL * MODEL.speed * (1 + gpu * 0.004);
-  const wasBoosting = p.boosting;
-  p.boosting = btn(A) && elec > 0;
-  if (p.boosting) {
-    v *= 1.6;
-    p.b[0] = Math.max(0, elec - BOOST_COST);
-    if (!wasBoosting) sfx(7);
+  // Scroll speed: dashing speeds it up, hits slow it. It moves the camera;
+  // the racer keeps its place on screen.
+  let v = SCROLL;
+  const wasDashing = p.dashing;
+  p.dashing = btn(A) && elec > 0;
+  if (p.dashing) {
+    v *= DASH_SPEED;
+    p.b[0] = Math.max(0, elec - DASH_COST);
+    if (!wasDashing) sfx(7);
   }
   if (p.slow > 0) { v *= 0.5; p.slow--; }
   if (p.tape > 0) p.tape--;
@@ -270,15 +288,26 @@ function race() {
 
   streamRows();
 
+  // GPU is a pickup magnet: chips this close drift to the racer.
+  const reach = 12 + 2 + gpu * 0.16; // half a sprite plus 2-18 px
   for (const e of entities) {
     if (e.gone || e.y - camY < -40 || e.y - camY > 240) continue;
     if (e.kind === 'protester') walk(e);
+    if (e.kind === 'chip' || e.kind === 'wafer') magnet(e, reach);
     collide(e);
   }
   for (const q of popups) { q.y -= 0.5; q.t--; }
   popups = popups.filter((q) => q.t > 0);
 
   if (p.y <= FINISH_Y) finish();
+}
+
+function magnet(e, reach) {
+  const dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy);
+  if (d > reach || d < 1) return;
+  const step = Math.min(d, 3);
+  e.x += (dx / d) * step;
+  e.y += (dy / d) * step;
 }
 
 function walk(e) {
@@ -302,6 +331,11 @@ function collide(e) {
     for (let i = 0; i < 4; i++) add(i, CHIP_VALUE);
     popup('+5 ALL!', 14);
     sfx(4);
+  } else if (p.dashing) {
+    // Dashing smashes obstacles aside at no cost.
+    e.gone = true;
+    popup('SMASH!', 14);
+    sfx(12);
   } else if (p.inv === 0) {
     if (e.kind === 'protester' && p.immune > 0) return;
     p.inv = 60;
@@ -368,14 +402,36 @@ function finish() {
   const b = p.b.map((v) => Math.floor(v));
   const base = b.reduce((s, v) => s + v, 0) * 10;
   const tiers = b.reduce((s, v) => s + tierOf(v)[1], 0);
-  // Speed scores through finishing place against rivals, not the clock.
-  const place = PLACE_POINTS[0]; // no rivals in the slice yet
   const allGold = b.every((v) => v >= TIERS[0][0]);
   const mult = allGold ? 1.5 : 1;
-  const total = Math.round((base + tiers + place) * mult);
+  const total = scoreOf(b);
   const newBest = total > best;
   if (newBest) { best = total; dset(BEST_SLOT, best); }
-  result = { b, base, tiers, place, mult, total, allGold, newBest };
+
+  // Simulate the other models' rounds and rank everyone.
+  const board = [{ name: MODEL.name, score: total, you: true }];
+  for (const r of RIVALS) {
+    const sim = r.mean.map((m) => clamp(Math.round(m + r.spread * noise()), 0, 100));
+    board.push({ name: r.name, score: scoreOf(sim) });
+  }
+  board.sort((x, y) => y.score - x.score);
+  const place = board.findIndex((e) => e.you) + 1;
+  const bestPlace = dget(BEST_PLACE_SLOT);
+  if (!bestPlace || place < bestPlace) dset(BEST_PLACE_SLOT, place);
+  result = { b, base, tiers, mult, total, allGold, newBest, board, place };
+}
+
+/** A round's score from final bucket values (SPEC 5). */
+function scoreOf(b) {
+  const base = b.reduce((s, v) => s + v, 0) * 10;
+  const tiers = b.reduce((s, v) => s + tierOf(v)[1], 0);
+  const mult = b.every((v) => v >= TIERS[0][0]) ? 1.5 : 1;
+  return Math.round((base + tiers) * mult);
+}
+
+/** Roughly normal noise (mean 0, spread about 1) from the per-run seed. */
+function noise() {
+  return (rnd() + rnd() + rnd() + rnd() - 2) * 1.7;
 }
 
 // --- Draw ---------------------------------------------------------------------
@@ -403,7 +459,7 @@ function draw() {
     const lean = Math.abs(p.vx) > 1;
     const n = lean ? SPR.LEAN : SPR.RUN + (flr(p.frames / 8) % 2) * 2;
     spr(n, Math.floor(p.x), sy, { size: 16, fx: p.vx < -1, prio: 3 });
-    if (p.boosting) spr(SPR.FLAME, Math.floor(p.x) + 4, sy + 14 + (p.frames % 4 < 2 ? 0 : 1), { prio: 3 });
+    if (p.dashing) spr(SPR.FLAME, Math.floor(p.x) + 4, sy + 14 + (p.frames % 4 < 2 ? 0 : 1), { prio: 3 });
   }
   if (p.immune > 0) circ(Math.floor(p.x) + 8, sy + 8, 11 + (p.frames % 8 < 4 ? 0 : 1), 13);
 
@@ -414,6 +470,7 @@ function draw() {
   else if (state === 'race' && p.frames < 40) banner('GO!', 11);
   if (paused) banner('PAUSED', 15);
   if (state === 'done') results();
+  if (state === 'board') scoreboard();
 }
 
 /** Streaks along the track edges that grow with speed. */
@@ -484,7 +541,7 @@ function results() {
   }
   if (timer < 100) return;
   const rows = [
-    ['BUCKETS', r.base], ['TIERS', r.tiers], ['PLACE 1ST', r.place],
+    ['BUCKETS', r.base], ['TIERS', r.tiers],
   ];
   rows.forEach(([label, v], k) => {
     print(label, 28, 112 + k * 10, 13);
@@ -494,6 +551,28 @@ function results() {
   print('TOTAL', 28, 168, 15);
   print(String(r.total).padStart(6), 176, 168, 14);
   print(r.newBest ? 'NEW BEST!' : `BEST ${best}`, 28, 182, r.newBest ? 14 : 3);
+  if (timer % 60 < 40) center('START: SCOREBOARD', 200, 11);
+}
+
+const ORDINAL = ['1ST', '2ND', '3RD', '4TH', '5TH', '6TH', '7TH'];
+
+function scoreboard() {
+  const r = result;
+  rectfill(16, 26, 224, 190, 1);
+  rect(16, 26, 224, 190, 15);
+  center('FINAL STANDINGS', 34, 15);
+  print('ROUND 1 OF 1', 28, 48, 3);
+  r.board.forEach((e, i) => {
+    if (timer < i * 8) return; // rows drop in one by one
+    const y = 64 + i * 14;
+    if (e.you) rectfill(22, y - 3, 212, 13, 2);
+    print(ORDINAL[i], 28, y, i === 0 ? 14 : 13);
+    print(e.name, 72, y, e.you ? 15 : 10);
+    print(String(e.score).padStart(6), 176, y, e.you ? 14 : 15);
+  });
+  if (timer < 70) return;
+  const msg = r.place === 1 ? 'YOU TOP THE BOARD!' : `YOU PLACED ${ORDINAL[r.place - 1]} OF 7`;
+  center(msg, 168, r.place === 1 ? 14 : 15);
   if (timer % 60 < 40) center('START: RACE AGAIN', 200, 11);
 }
 
