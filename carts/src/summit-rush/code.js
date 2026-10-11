@@ -18,10 +18,13 @@ const CHIP_VALUE = 5;
 const HIT_COST = 10; // bucket points an obstacle takes
 const TIERS = [[80, 2000, 'GOLD', 14], [50, 750, 'SILVER', 10], [25, 250, 'BRONZE', 9]];
 // Save slots (SPEC 12).
-const VERSION_SLOT = 0, SAVE_VERSION = 5; // version 5: bests are multi-stage run totals
-const LAST_MODEL_SLOT = 2;
-const BEST_SLOT = 10, BEST_PLACE_SLOT = 11; // overall best run
-const MODEL_BEST_SLOT = 110; // + 10 per model: that model's best run total
+const VERSION_SLOT = 0, SAVE_VERSION = 6; // version 6: top-10 table of run entries
+const LAST_MODEL_SLOT = 2, INITIALS_SLOT = 3;
+const ENTRY = 10; // slots per run entry: total, place, 3 round scores, model, initials, 3 spare
+const TOP_SLOT = 10, TOP_N = 10; // overall top 10, best first
+const MODEL_BEST_SLOT = 110; // + ENTRY per model: that model's best run
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const LOGO_TILE = 160, LOGO_MX = 64; // 8x8-tile title logo: sheet tiles, then map columns
 
 /**
  * What fills each stretch of a stage's course. Every pass deals the whole mix
@@ -130,7 +133,7 @@ const BUCKET_COLOR = [14, 11, 13, PURPLE];
 
 // --- State --------------------------------------------------------------------
 
-let state; // 'select', 'count', 'race', 'done', 'board'
+let state; // 'title', 'select', 'count', 'race', 'agi', 'done', 'board', 'initials', 'ranks'
 let pick = 0; // index of the chosen model
 let model = MODELS[0];
 let timer; // frames in the current state
@@ -145,6 +148,10 @@ let round = 0; // index into STAGES
 let stage = STAGES[0];
 let totals = {}; // model name -> run total so far
 let places = {}; // model name -> place on the previous board
+let myRounds = []; // the player's round scores this run
+let entry = null; // the run just finished, as saved
+let initials = null; // { chars, pos } while entering initials
+let view = null; // { tab, from, hl } on the leaderboard
 const written = new Int32Array(64).fill(0x7fffffff); // world row held by each map row
 let rng = 1;
 
@@ -170,22 +177,88 @@ function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) {
     // Scores from an older scoring rule aren't comparable; start fresh.
     dset(VERSION_SLOT, SAVE_VERSION);
-    dset(BEST_SLOT, 0);
-    for (let i = 0; i < MODELS.length; i++) dset(MODEL_BEST_SLOT + i * 10, 0);
+    for (let i = TOP_SLOT; i < MODEL_BEST_SLOT + MODELS.length * ENTRY; i++) dset(i, 0);
   }
   pick = clamp(dget(LAST_MODEL_SLOT), 0, MODELS.length - 1);
+  // The title logo lives in map columns 64-71, clear of the course window.
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) mset(LOGO_MX + c, r, tile(LOGO_TILE + r * 16 + c));
   newRun();
-  select();
+  title();
+}
+
+/** Switch to a menu screen: no course, every model's tint in palettes 1-7. */
+function menu(next) {
+  state = next;
+  timer = 0;
+  bg(0, { show: false });
+  bg(2, { show: false });
+  affine(null);
+  MODELS.forEach((m, i) => tint(1 + i, m));
+}
+
+/** The title screen: the logo spins in on BG2 (SPEC 10). */
+function title() {
+  menu('title');
+  bg(2, { show: true, mx: LOGO_MX, my: 0, mw: 8, mh: 8, wrap: false });
+  music(0);
 }
 
 /** Show the model-select screen. */
 function select() {
-  state = 'select';
-  timer = 0;
-  bg(0, { show: false });
-  // Each portrait wears its own model's tint, in sprite palettes 1-7.
-  MODELS.forEach((m, i) => tint(1 + i, m));
-  music(0);
+  if (state !== 'title') music(0);
+  menu('select');
+}
+
+/** The leaderboard. `from` is 'title' or 'run'; `hl` is a top-10 row to highlight. */
+function ranks(from, hl = -1) {
+  menu('ranks');
+  view = { tab: 0, from, hl };
+}
+
+// --- Saves --------------------------------------------------------------------
+
+function readEntry(slot) {
+  return {
+    total: dget(slot), place: dget(slot + 1),
+    rounds: [dget(slot + 2), dget(slot + 3), dget(slot + 4)],
+    model: dget(slot + 5), initials: unpackInitials(dget(slot + 6)),
+  };
+}
+
+function writeEntry(slot, e) {
+  dset(slot, e.total);
+  dset(slot + 1, e.place);
+  e.rounds.forEach((v, i) => dset(slot + 2 + i, v));
+  dset(slot + 5, e.model);
+  dset(slot + 6, packInitials(e.initials));
+}
+
+function topTen() {
+  return Array.from({ length: TOP_N }, (_, i) => readEntry(TOP_SLOT + i * ENTRY));
+}
+
+/** Put a run into the top 10 if it makes it. Returns its row, or -1. */
+function insertTop(e) {
+  const list = topTen();
+  const at = list.findIndex((x) => e.total > x.total);
+  if (at < 0) return -1;
+  list.splice(at, 0, e);
+  for (let i = at; i < TOP_N; i++) writeEntry(TOP_SLOT + i * ENTRY, list[i]);
+  return at;
+}
+
+/** Three characters packed 8 bits each. */
+function packInitials(str) {
+  return (str.charCodeAt(0) << 16) | (str.charCodeAt(1) << 8) | str.charCodeAt(2);
+}
+
+function unpackInitials(v) {
+  return v ? String.fromCharCode((v >> 16) & 255, (v >> 8) & 255, v & 255) : '---';
+}
+
+function lastInitials() {
+  const v = dget(INITIALS_SLOT);
+  return v ? unpackInitials(v) : 'AAA';
 }
 
 /** Make sprite palette `pal` a copy of palette 0 with model m's colors. */
@@ -199,10 +272,11 @@ function tint(pal, m) {
 /** Start a run with the chosen model, from the first stage. */
 function newRun() {
   model = MODELS[pick];
-  best = dget(MODEL_BEST_SLOT + pick * 10);
+  best = dget(MODEL_BEST_SLOT + pick * ENTRY);
   round = 0;
   totals = {};
   places = {};
+  myRounds = [];
   startStage();
 }
 
@@ -214,6 +288,8 @@ function startStage() {
   palcopy(8 + HAZARD_PAL, 8);
   tint(RACER_PAL, model);
   bg(0, { show: true });
+  bg(2, { show: false });
+  affine(null);
   state = 'count';
   timer = 0;
   camY = -150;
@@ -417,6 +493,11 @@ function buildCourse() {
 
 function update() {
   timer++;
+  if (state === 'title') {
+    if (timer > 30 && (btnp(START) || btnp(A))) { sfx(9); select(); }
+    else if (timer > 30 && btnp(B)) { sfx(8); ranks('title'); }
+    return;
+  }
   if (state === 'select') {
     if (btnp(LEFT)) { pick = (pick + MODELS.length - 1) % MODELS.length; sfx(8); }
     if (btnp(RIGHT)) { pick = (pick + 1) % MODELS.length; sfx(8); }
@@ -424,7 +505,21 @@ function update() {
       dset(LAST_MODEL_SLOT, pick);
       sfx(9);
       newRun();
-    }
+    } else if (timer > 10 && btnp(B)) title();
+    return;
+  }
+  if (state === 'agi') {
+    if (timer >= 210 || (timer > 60 && btnp(START))) { state = 'done'; timer = 0; }
+    return;
+  }
+  if (state === 'initials') { enterInitials(); return; }
+  if (state === 'ranks') {
+    if (btnp(LEFT)) { view.tab = (view.tab + MODELS.length) % (MODELS.length + 1); sfx(8); }
+    if (btnp(RIGHT)) { view.tab = (view.tab + 1) % (MODELS.length + 1); sfx(8); }
+    if (timer < 20) return;
+    if (view.from === 'title' && (btnp(START) || btnp(B))) title();
+    else if (view.from === 'run' && btnp(START)) newRun();
+    else if (view.from === 'run' && btnp(B)) select();
     return;
   }
   if (state === 'count') {
@@ -438,9 +533,12 @@ function update() {
   }
   if (state === 'board') {
     if (timer < 30) return;
-    if (!result.last && btnp(START)) { round++; startStage(); }
-    else if (result.last && btnp(START)) newRun();
-    else if (result.last && btnp(B)) select();
+    if (!btnp(START)) return;
+    if (!result.last) { round++; startStage(); }
+    else if (result.rank >= 0) {
+      initials = { chars: lastInitials().split(''), pos: 0 };
+      menu('initials');
+    } else ranks('run');
     return;
   }
   if (btnp(START)) paused = !paused;
@@ -689,7 +787,6 @@ function tierOf(v) {
 }
 
 function finish() {
-  state = 'done';
   timer = 0;
   music(-1);
   sfx(11);
@@ -699,6 +796,9 @@ function finish() {
   const allGold = b.every((v) => v >= TIERS[0][0]);
   const mult = allGold ? 1.5 : 1;
   const total = scoreOf(b);
+  myRounds.push(total);
+  state = allGold ? 'agi' : 'done';
+  if (allGold) sfx(10);
 
   // Simulate the other models' rounds and rank everyone by run total.
   const board = MODELS.map((m) => {
@@ -712,17 +812,36 @@ function finish() {
   board.forEach((e, i) => { places[e.name] = i + 1; });
   const place = places[model.name];
 
-  // Bests are for whole runs, so they're settled after the last stage.
+  // Bests are for whole runs, so they're saved after the last stage, under
+  // the last-used initials until new ones are entered.
   const last = round === STAGES.length - 1, run = totals[model.name];
-  let newBest = false;
+  let newBest = false, rank = -1;
   if (last) {
+    entry = { total: run, place, rounds: [...myRounds], model: pick, initials: lastInitials() };
     newBest = run > best;
-    if (newBest) { best = run; dset(MODEL_BEST_SLOT + pick * 10, best); }
-    if (run > dget(BEST_SLOT)) dset(BEST_SLOT, run);
-    const bestPlace = dget(BEST_PLACE_SLOT);
-    if (!bestPlace || place < bestPlace) dset(BEST_PLACE_SLOT, place);
+    if (newBest) { best = run; writeEntry(MODEL_BEST_SLOT + pick * ENTRY, entry); }
+    rank = insertTop(entry);
   }
-  result = { b, base, tiers, mult, total, allGold, newBest, board, place, last, run };
+  result = { b, base, tiers, mult, total, allGold, newBest, board, place, last, run, rank };
+}
+
+/** Initials entry: UP/DOWN pick a letter, LEFT/RIGHT move, START or A on the last letter confirms. */
+function enterInitials() {
+  const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
+  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; sfx(8); }
+  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; sfx(8); }
+  if (btnp(LEFT)) ini.pos = Math.max(0, ini.pos - 1);
+  if (btnp(RIGHT)) ini.pos = Math.min(2, ini.pos + 1);
+  const done = btnp(START) || (btnp(A) && ini.pos === 2);
+  if (btnp(A) && ini.pos < 2) ini.pos++;
+  if (!done || timer < 20) return;
+  // The run was saved under the last-used initials; write the new ones over them.
+  const v = packInitials(ini.chars.join(''));
+  dset(INITIALS_SLOT, v);
+  dset(TOP_SLOT + result.rank * ENTRY + 6, v);
+  if (result.newBest) dset(MODEL_BEST_SLOT + pick * ENTRY + 6, v);
+  sfx(9);
+  ranks('run', result.rank);
 }
 
 /** A round's score from final bucket values (SPEC 5). */
@@ -742,7 +861,10 @@ function noise() {
 
 function draw() {
   cls();
+  if (state === 'title') { titleScreen(); return; }
   if (state === 'select') { selectScreen(); return; }
+  if (state === 'initials') { initialsScreen(); return; }
+  if (state === 'ranks') { ranksScreen(); return; }
   const k = (Math.sin(t() / 5) + 1) / 2;
   color(HAZARD_OUTLINE, 31, flr(2 + 8 * k), flr(2 + 8 * k));
   bgscroll(0, 0, ((Math.floor(camY) % 512) + 512) % 512);
@@ -810,8 +932,16 @@ function draw() {
   }
   else if (state === 'race' && p.frames < 40) banner('GO!', 11);
   if (paused) banner('PAUSED', 15);
+  if (state === 'agi') agiScreen();
   if (state === 'done') results();
   if (state === 'board') scoreboard();
+}
+
+/** A sky gradient behind the menu screens. */
+function scanline(y) {
+  if (state === 'title' || state === 'select' || state === 'initials' || state === 'ranks') {
+    color(0, 2 + flr(y / 40), 3 + flr(y / 28), 8 + flr(y / 18));
+  }
 }
 
 /** Text on a dark backing, readable over any ground. */
@@ -893,6 +1023,10 @@ function results() {
   rectfill(16, 26, 224, 190, 1);
   rect(16, 26, 224, 190, 15);
   center(r.allGold ? 'AGI ACHIEVED!' : stage.clear, 34, r.allGold ? 14 : 15);
+  // Flavor only (SPEC 5).
+  const golds = r.b.filter((v) => v >= TIERS[0][0]).length;
+  if (!r.allGold && r.b.every((v) => v >= TIERS[1][0])) center('GENERALIST', 43, 13);
+  else if (golds === 1 && r.b.filter((v) => v < TIERS[2][0]).length === 3) center('SPECIALIST', 43, 13);
   for (let i = 0; i < 4; i++) {
     const y = 52 + i * 14, v = Math.round(r.b[i] * show), [, bonus, name, c] = tierOf(v);
     print(BUCKET_NAME[i], 28, y, BUCKET_COLOR[i]);
@@ -945,8 +1079,8 @@ function scoreboard() {
   if (r.newBest) center('NEW BEST RUN!', 156, 14);
   const msg = r.place === 1 ? 'YOU TOP THE BOARD!' : `YOU PLACED ${ORDINAL[r.place - 1]} OF 7`;
   center(msg, 168, r.place === 1 ? 14 : 15);
-  if (timer % 60 < 40) center('START: RACE AGAIN', 188, 11);
-  center('B: CHANGE MODEL', 202, 12);
+  if (r.rank >= 0) center(`TOP 10: #${r.rank + 1}!`, 182, 14);
+  if (timer % 60 < 40) center('START: CONTINUE', 200, 11);
 }
 
 /** A small up or down triangle for places gained or lost since last round. */
@@ -984,9 +1118,112 @@ function selectScreen() {
   });
   center(`B: ${m.special}`, 162, 12);
   m.info.forEach((line, i) => center(line, 174 + i * 10, 15));
-  const top = dget(MODEL_BEST_SLOT + pick * 10);
-  center(top ? `BEST ${top}` : 'NO SCORE YET', 198, 3);
-  if (timer % 60 < 40) center('< >  CHOOSE    START  CLIMB', 212, 11);
+  const top = dget(MODEL_BEST_SLOT + pick * ENTRY);
+  center(top ? `BEST ${top}` : 'NO SCORE YET', 198, 10);
+  if (timer % 60 < 40) center('< > CHOOSE  START GO  B BACK', 212, 11);
+}
+
+/** Title (SPEC 10): the logo spins and zooms in on BG2, then sways. */
+function titleScreen() {
+  const k = Math.min(1, timer / 90), e = 1 - (1 - k) ** 3;
+  const ang = (1 - e) * Math.PI * 4 + Math.sin(timer / 50) * 0.06 * e;
+  const s = 0.05 + 1.95 * e; // on-screen scale
+  const ca = Math.cos(ang) / s, sa = Math.sin(ang) / s;
+  // Rotate and scale about the logo's center (32, 32), placed at screen (128, 72).
+  affine({ a: ca, b: sa, c: -sa, d: ca, cx: 32, cy: 32 });
+  bgscroll(2, 32 - 128, 32 - 72);
+  if (timer < 90) return;
+  print('SUMMIT RUSH', 129 - 44, 143, 1);
+  center('SUMMIT RUSH', 142, 14);
+  center('A RACE TO THE TOP FOR AI MODELS', 154, 13);
+  // The seven racers, hopping in turn.
+  for (let i = 0; i < MODELS.length; i++) {
+    const hop = Math.round(Math.abs(Math.sin((timer + i * 9) / 9)) * 4);
+    spr(SPR.RUN + (flr((timer + i * 5) / 8) % 2) * 2, 128 - 77 + i * 22, 168 - hop, { size: 16, pal: 1 + i, prio: 3 });
+  }
+  if (timer % 60 < 40) center('PRESS START', 192, 15);
+  print('B: LEADERBOARD', 8, 210, 12);
+  const top = readEntry(TOP_SLOT);
+  if (top.total) {
+    const t = `TOP ${top.total} ${top.initials}`;
+    print(t, 248 - t.length * 8, 210, 10);
+  }
+}
+
+/** AGI ACHIEVED (SPEC 5): all four buckets at Gold. Rays, your portrait, the x1.5. */
+function agiScreen() {
+  const cx = 128, cy = 76;
+  for (let i = 0; i < 16; i++) {
+    const a = i * Math.PI / 8 + timer / 40;
+    line(cx + Math.cos(a) * 24, cy + Math.sin(a) * 24, cx + Math.cos(a) * 220, cy + Math.sin(a) * 220, i % 2 ? 14 : 9);
+  }
+  spr(SPR.PORTRAIT, cx - 16, cy - 16 - Math.round(Math.abs(Math.sin(timer / 10)) * 3), { size: 32, pal: RACER_PAL, prio: 3 });
+  const c = [14, 15, 9, 13][flr(timer / 6) % 4];
+  rectfill(40, 112, 176, 56, 1);
+  rect(40, 112, 176, 56, c);
+  center('AGI ACHIEVED', 120, c);
+  center('ALL FOUR BUCKETS GOLD', 136, 15);
+  center('ROUND SCORE X1.5', 150, 14);
+}
+
+/** "NEW HIGH SCORE": enter three initials for the top 10. */
+function initialsScreen() {
+  const ini = initials;
+  center('NEW HIGH SCORE!', 30, 14);
+  center(`#${result.rank + 1} OF ${TOP_N}`, 46, 13);
+  center(String(result.run), 62, 15);
+  spr(SPR.PORTRAIT, 112, 80, { size: 32, pal: 1 + pick, prio: 3 });
+  center('ENTER YOUR INITIALS', 124, 13);
+  for (let i = 0; i < 3; i++) {
+    const x = 128 - 36 + i * 28, on = i === ini.pos;
+    rect(x - 4, 138, 16, 18, on ? 14 : 2);
+    print(ini.chars[i], x, 143, on ? 14 : 15);
+    if (on && timer % 30 < 20) {
+      line(x + 1, 134, x + 6, 134, 14); // up and down hints
+      line(x + 1, 159, x + 6, 159, 14);
+    }
+  }
+  center('UP/DOWN LETTER  LEFT/RIGHT MOVE', 176, 10);
+  if (timer % 60 < 40) center('START: SAVE', 196, 11);
+}
+
+/** The leaderboard: the overall top 10, then a tab for each model's best run. */
+function ranksScreen() {
+  const tab = view.tab;
+  center('LEADERBOARD', 6, 14);
+  const name = tab === 0 ? 'OVERALL' : MODELS[tab - 1].name;
+  center(`< ${name} >`, 20, tab === 0 ? 15 : MODELS[tab - 1].ink ?? (8 + tab) * 16 + 9);
+  if (tab === 0) {
+    topTen().forEach((e, i) => {
+      const y = 38 + i * 15;
+      if (i === view.hl && timer % 40 < 30) rectfill(14, y - 4, 228, 14, 2);
+      print(String(i + 1).padStart(2), 18, y, i === 0 ? 14 : 13);
+      if (!e.total) { print('---', 48, y, 10); return; }
+      print(e.initials, 48, y, 15);
+      print(MODELS[e.model]?.name ?? '?', 88, y, 10);
+      print(String(e.total).padStart(6), 184, y, i === 0 ? 14 : 15);
+    });
+  } else {
+    const i = tab - 1, e = readEntry(MODEL_BEST_SLOT + i * ENTRY);
+    spr(SPR.PORTRAIT, 112, 34, { size: 32, pal: 1 + i, prio: 3 });
+    if (!e.total) {
+      center('NO RUNS YET', 96, 10);
+    } else {
+      center('BEST RUN', 76, 13);
+      center(`${e.initials}  ${e.total}`, 90, 14);
+      center(`FINISHED ${ORDINAL[e.place - 1] ?? '?'} OF 7`, 104, 15);
+      STAGES.forEach((st, k) => {
+        print(st.name, 40, 124 + k * 12, 13);
+        print(String(e.rounds[k]).padStart(6), 168, 124 + k * 12, 15);
+      });
+    }
+    const spots = topTen().map((x, k) => (x.total && x.model === i ? `#${k + 1}` : '')).filter(Boolean);
+    center(spots.length ? `TOP 10: ${spots.slice(0, 5).join(' ')}` : 'NOT IN THE TOP 10', 172, spots.length ? 11 : 10);
+  }
+  if (view.from === 'run') {
+    if (timer % 60 < 40) center('START: RACE AGAIN', 196, 11);
+    center('B: CHANGE MODEL', 210, 12);
+  } else if (timer % 60 < 40) center('START: BACK', 204, 11);
 }
 
 function center(text, y, c) {
