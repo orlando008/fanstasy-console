@@ -1,7 +1,7 @@
 # Block Wizard: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Specification
+**Status:** In progress: stage 1 vertical slice (placeholder art and song)
 **Cart source:** `carts/src/block-wizard/` → `carts/block-wizard.nova`
 
 ---
@@ -57,10 +57,10 @@ which fills the full width.
 
 | y | Band | Contents |
 |---|---|---|
-| 0–15 | HUD | Line 1: stage number and room name, score. Line 2: stage time left, combo multiplier, high score. |
-| 16–47 | Spawn band | Active piece appears here at columns 7–8. Next 3 pieces at half size on the left (x 8–79). The wizard (decoration) and the current sweep's square count on the right. |
+| 0–15 | HUD | Next 3 pieces at half size on the left. This sweep's square count and the chain multiplier in the middle. Score and high score on the right. |
+| 16–47 | Spawn band | Active piece appears here at columns 7–8 and can move across the whole band, so nothing else that needs reading goes here. The wizard (decoration) stands at the right, behind the piece. |
 | 48–207 | Field | 16 × 10 cells |
-| 208–223 | Footer | Stage progress bar (song position), sweeps left |
+| 208–223 | Footer | Stage progress bar (song position). Stage number and room on the left, sweep number and time left on the right. The sync check (10) replaces the text. |
 
 ## 5. Pieces
 
@@ -121,7 +121,7 @@ waits for the next sweep.
 ### 7.3 Sweep counter
 
 The number of squares caught so far this sweep shows at the head of the line
-and in the spawn band. When the line reaches the right edge, the sweep is
+and in the HUD. When the line reaches the right edge, the sweep is
 scored (9.1) and the counter resets.
 
 ### 7.4 Stage boundaries
@@ -246,7 +246,9 @@ part most likely to go wrong. The rules:
 - **The game clock is the source of truth.** The stage clock counts frames. The cart calls `music(stage − 1)` on the stage's first frame and never reads audio state, so the simulation stays deterministic.
 - **Tempo.** `music()` resets speed to 6, so every pattern in a song whose speed isn't 6 starts with `Fxx` on row 0. It goes in channel 1's column, which carries no notes (11).
 - **Song shape.** The order list has exactly the stage's pattern count (8.1). The loop point is set to the start, but the next stage always calls `music()` before it is reached. It is only a fallback.
-- **Latency.** Audio commands pass from the worker to the main thread to the worklet, then through the output buffer. A constant `LAG` (frames, default 0) delays the timeline relative to the stage clock to make up for it. It is measured in the vertical slice.
+- **Latency.** Audio commands pass from the worker to the main thread to the worklet, then through the output buffer. `LAG` (frames, −10 to 30, default 0) delays the timeline relative to the stage clock to make up for it. Latency depends on the player's machine and headphones, so it's a setting, not a constant.
+- **Sync check.** SELECT during play shows a box in the footer that lights on every beat by the game clock, and the current `LAG`. L and R change it by one frame and save it in slot 3. Set it so the box flashes with the kick drum.
+- **Measured in the slice.** Over a full 94-second stage in Chromium, the frame clock and the audio clock stayed within about one frame of each other with no buildup. The rest is a fixed output delay, about 40 ms (2–3 frames) on that machine, which is what `LAG` is for.
 - **Console pause** (Esc, hidden tab) already pauses the game and the audio together.
 - **In-game pause (START).** This needs to restart the song mid-pattern on resume, which `music(song, pos)` can't do. It needs a small console change, `music(song, pos, row)`. The sequencer would start at that row and apply the last `Fxx` from earlier rows of that pattern. That change is made separately. Until it exists, resuming plays silence until the next pattern boundary, then the cart starts the song at that order position.
 - **Hiding the field.** While paused the field is hidden, so pausing can't be used to plan.
@@ -302,6 +304,7 @@ slots are taken.
 | 0 | Format version |
 | 1 | Practice unlocks (bit `n − 1` = stage `n` cleared) |
 | 2 | Furthest stage reached |
+| 3 | Audio offset `LAG` in frames, from the sync check |
 | 10–129 | Top 10 runs, 12 slots each: total, stage reached (9 = tower beaten), 8 stage scores, initials (packed 3 × 8 bits), 1 reserved |
 | 130–137 | Practice best per stage |
 | 138–255 | Reserved |
@@ -310,10 +313,10 @@ slots are taken.
 
 | Layer | Use |
 |---|---|
-| BG0 | Field cells: normal, marked (merged outline variants) and pending (dim sub-palette); cells falling after an erase |
+| BG0 | Field cells: normal, marked (BG 1, with the merged outline drawn on the overlay) and pending (BG 2); cells falling after an erase |
 | BG1 | Room midground, dimmed behind the field, with the cell grid dots |
 | BG2 | Far backdrop and room effects (scanline gradients, affine rotation) |
-| Sprites | Active piece (4 × 16 × 16), next queue (12 × 8 × 8), wizard, timeline head, erase sparkles |
+| Sprites | Active piece (4 × 16 × 16), next queue (12 × 8 × 8), wizard |
 | Overlay | HUD, timeline line, sweep counter, popups, banners, menus |
 
 The active piece is drawn as sprites, so it falls smoothly. Settled and
@@ -327,14 +330,14 @@ per-line limit.
 | Code | ≤ 32 KB of the 64 KB limit |
 | Tiles | ≤ 700 of 1024: blocks and gem ~60 (shared by all stages; colors by palette), HUD ~30, title ~100, rooms ~60 each |
 | Map RAM | Rooms in two 28-row bands (8 × 32 columns each for BG1 and BG2), field 32 × 20, title |
-| Palettes | BG 0 blocks, BG 1 pending, BG 2 HUD and grid, BG 3–7 room. Sprites: piece (copy of BG 0), queue, wizard, effects. Each stage loads its own colors. |
+| Palettes | BG 0 blocks, BG 1 marked, BG 2 pending, BG 3 HUD, overlay colors and grid, BG 4–7 room. Sprites: piece and queue (copy of BG 0), wizard, effects. Each stage loads its own colors. |
 | Sprites on screen | ≤ 30 |
 | Songs / SFX | 8 songs, 64 patterns, about 51 SFX; drum samples in Sample RAM |
 | PNG cart | Must fit the 147 KB `.nova.png` limit |
 
 ## 16. Implementation plan
 
-1. **Vertical slice: stage 1 only.** Field, bag, movement and rotation, splits, gravity, squares, the timeline, sweep scoring with combos, top-out. Placeholder art and a placeholder song at 112.5 bpm with a clear beat. **Prove the sync:** play 90 s and check that the line stays on the beat, then set `LAG`.
+1. **Vertical slice: stage 1 only.** *(Done.)* Field, bag, movement and rotation, splits, gravity, squares, the timeline, sweep scoring with chains, top-out, pause with resync, the sync check. Placeholder art and a placeholder song at 112.5 bpm with a drum hit on every beat. **Sync:** no clock drift over a full stage (10); `LAG` is set by ear with the sync check.
 2. **Console change** (separate): `music(song, pos, row)` for pause and resume.
 3. **All eight stages:** stage table, transitions, stage-clear bonus, per-stage palettes.
 4. **Scoring extras:** wizard gem, single color, all clear.
@@ -348,7 +351,7 @@ separate changes.
 
 ## 17. Open questions
 
-- **Score tuning:** the `S(n)` steps, the ×8 combo cap and the bonus sizes (9.1) need to be checked against real play.
+- **Score tuning:** the `S(n)` steps, the ×8 combo cap and the bonus sizes (9.1) need to be checked against real play. A simple bot that places each piece for adjacency and a low stack scores 100k–155k on stage 1 alone, mostly from holding the ×8 chain. That is well above the totals estimated in 9.2, so the chain is likely too strong, or the estimates too low.
 - **Gem rate:** one per 16 pieces may be too generous or too rare.
 - **Beat-quantized SFX:** delaying rotate and square-formed sounds to the next 16th note would sound more musical, but makes the game feel less responsive. Try both.
 - **Practice unlocks:** clearing a stage unlocks it (12). Unlocking on *reaching* a stage would let players practice the stage that beat them.
