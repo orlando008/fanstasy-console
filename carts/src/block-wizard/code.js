@@ -20,6 +20,8 @@ const CHAIN_MAX = 8;
 const TOWER_BONUS = 50000;
 const GEM = 4; // flag bit on a cell: it carries a wizard gem (SPEC 7.5)
 const GEM_POINTS = 10; // per cell the gem clears outside any square
+const SINGLE_COLOR = 1000, ALL_CLEAR = 5000; // times the stage number (SPEC 9.1)
+const SINGLE_MIN = 8; // cells a single-color field must hold to count
 const LAG_MIN = -10, LAG_MAX = 30;
 
 /**
@@ -83,7 +85,7 @@ const ROOM = 64; // BG sub-palette 4: 1-2 stars, 3 rain, 4-6 eyes, 7-8 rune circ
  * 11). Negative entries are per stage: each room has its own five, in the
  * key of its song, at 8 + 5 x stage.
  */
-const SFX = { move: 0, start: 1, over: 2, clear: 3, pause: 4, drop: 5, tower: 6, menu: 7, gem: 48, rotate: -1, land: -2, square: -3, erase: -4, chain: -5 };
+const SFX = { move: 0, start: 1, over: 2, clear: 3, pause: 4, drop: 5, tower: 6, menu: 7, gem: 48, single: 49, allClear: 50, rotate: -1, land: -2, square: -3, erase: -4, chain: -5 };
 const SFX_CH = 1;
 
 // --- State --------------------------------------------------------------------
@@ -503,6 +505,7 @@ function connected(start) {
 
 /** Erase every pending cell; the cells above them come loose and fall. */
 function erase() {
+  const before = colorsOnField();
   let n = 0;
   for (let i = 0; i < grid.length; i++) {
     if (!pend[i]) continue;
@@ -522,6 +525,42 @@ function erase() {
     }
   }
   dirty = true;
+  fieldBonus(before);
+}
+
+/** How many cells of each color the field holds, settled or still falling. */
+function colorsOnField() {
+  const count = [0, 0, 0];
+  for (const v of grid) if (v) count[v & 3]++;
+  for (const f of falling) count[f.c & 3]++;
+  return count;
+}
+
+/**
+ * After an erase: the all-clear bonus for an empty field, or the single-color
+ * bonus when it removed the last of one color and at least SINGLE_MIN cells
+ * of the other remain (SPEC 9.1). Neither is multiplied by the chain.
+ */
+function fieldBonus(before) {
+  const [, light, dark] = colorsOnField();
+  const n = plan[si] + 1;
+  let text = '', pts = 0;
+  if (!light && !dark) {
+    pts = ALL_CLEAR * n;
+    text = 'ALL CLEAR!';
+    snd(SFX.allClear);
+  } else if (before[1] && before[2] && (!light || !dark) && light + dark >= SINGLE_MIN) {
+    pts = SINGLE_COLOR * n;
+    text = 'SINGLE COLOR!';
+    snd(SFX.single);
+  } else {
+    return;
+  }
+  score += pts;
+  cast = 40;
+  // Below the stage banner (y 100-119), so the two never overlap as this rises.
+  popup(text, 128 - text.length * 4, FIELD_Y + 88, GOLD);
+  popup(`+${pts}`, 128 - String(pts).length * 4 - 4, FIELD_Y + 98, INK);
 }
 
 /** S(n): the size bonus for n squares in one sweep (SPEC 9.1). */
