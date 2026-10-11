@@ -10,13 +10,13 @@ const TOP_Y = 40, BOTTOM_Y = 200; // how far up and down the screen the racer ca
 const KNOCKBACK = 16; // px a hit pushes the racer down the screen
 const FINISH_Y = -2600; // world y of the finish line (start line is y 0)
 const HUD_H = 20;
-const PAR_SECONDS = 40; // the slice is one stage: a third of the full race's 120 s
 const CHIP_VALUE = 5;
 const SHIELD_COST = 15;
 const BOOST_COST = 1 / 3; // Electricity per frame (20 per second)
 const TIERS = [[80, 2000, 'GOLD', 14], [50, 750, 'SILVER', 10], [25, 250, 'BRONZE', 9]];
 const PLACE_POINTS = [1500, 1000, 600, 300, 150, 50, 0];
 const BEST_SLOT = 10; // save slot holding the best score (SPEC 12)
+const VERSION_SLOT = 0, SAVE_VERSION = 2; // version 2: time no longer scores
 
 const MODEL = {
   name: 'CLAUDE', start: [10, 10, 15, 15], speed: 1, handling: 1.1,
@@ -51,6 +51,11 @@ function init() {
   bg(0, { mx: 0, my: 0, mw: 32, mh: 64, wrap: true });
   bg(1, { show: false });
   bg(2, { show: false });
+  if (dget(VERSION_SLOT) !== SAVE_VERSION) {
+    // Scores from an older scoring rule aren't comparable; start fresh.
+    dset(VERSION_SLOT, SAVE_VERSION);
+    dset(BEST_SLOT, 0);
+  }
   best = dget(BEST_SLOT);
   reset();
 }
@@ -363,15 +368,14 @@ function finish() {
   const b = p.b.map((v) => Math.floor(v));
   const base = b.reduce((s, v) => s + v, 0) * 10;
   const tiers = b.reduce((s, v) => s + tierOf(v)[1], 0);
-  const seconds = (p.frames + p.penalty) / 60;
-  const time = Math.max(0, Math.round((PAR_SECONDS - seconds) * 75));
+  // Speed scores through finishing place against rivals, not the clock.
   const place = PLACE_POINTS[0]; // no rivals in the slice yet
   const allGold = b.every((v) => v >= TIERS[0][0]);
   const mult = allGold ? 1.5 : 1;
-  const total = Math.round((base + tiers + time + place) * mult);
+  const total = Math.round((base + tiers + place) * mult);
   const newBest = total > best;
   if (newBest) { best = total; dset(BEST_SLOT, best); }
-  result = { b, base, tiers, seconds, time, place, mult, total, allGold, newBest };
+  result = { b, base, tiers, place, mult, total, allGold, newBest };
 }
 
 // --- Draw ---------------------------------------------------------------------
@@ -453,12 +457,9 @@ function hud() {
   print('BASE CAMP', 3, 11, 13);
   print(p.special > 0 ? 'B:READY' : 'B:USED', 92, 11, p.special > 0 ? 11 : 3);
   if (p.immune > 0) print('IMMUNE', 156, 11, 13);
-  print(clock(p.frames + p.penalty), 204, 11, 15);
-}
-
-function clock(frames) {
-  const s = frames / 60;
-  return `${flr(s / 60)}:${String(flr(s % 60)).padStart(2, '0')}.${flr((s * 10) % 10)}`;
+  // Progress up the mountain instead of a clock.
+  const pct = clamp(Math.floor((p.y / FINISH_Y) * 100), 0, 100);
+  print(`${String(pct).padStart(3)}%`, 216, 11, 15);
 }
 
 function banner(text, c) {
@@ -483,8 +484,7 @@ function results() {
   }
   if (timer < 100) return;
   const rows = [
-    ['BUCKETS', r.base], ['TIERS', r.tiers],
-    [`TIME ${r.seconds.toFixed(1)}S`, r.time], ['PLACE 1ST', r.place],
+    ['BUCKETS', r.base], ['TIERS', r.tiers], ['PLACE 1ST', r.place],
   ];
   rows.forEach(([label, v], k) => {
     print(label, 28, 112 + k * 10, 13);

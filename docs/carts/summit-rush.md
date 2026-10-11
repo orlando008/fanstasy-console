@@ -71,14 +71,13 @@ At the summit:
 ```
 base     = (ELEC + GPU + CPU + RAM) × 10          // max 4000
 tiers    = sum of the highest tier bonus reached per bucket
-time     = max(0, 120 − seconds) × 25             // finishing under 120 s
 place    = [1500, 1000, 600, 300, 150, 50, 0][finish position − 1]
-score    = (base + tiers + time + place) × multiplier
+score    = (base + tiers + place) × multiplier
 ```
 
 - **Multiplier:** ×1.0 by default, ×1.5 if **all four buckets reach Gold**. That is the "AGI Achieved" summit bonus, with its own fanfare and screen.
 - With all four at Silver or better, the result screen says "Generalist"; with one bucket at Gold and the rest below Bronze, it says "Specialist" (flavor only).
-- **Time** and **finish place** matter, but a fast run with empty buckets scores well below a balanced, well-collected run.
+- **Time does not score.** Course length and scroll speed bound a run to roughly 25–40 s, and the only ways to be faster (GPU and boost) are already buckets, so a time bonus mostly double-counted GPU and penalized saving Electricity. Speed pays off through **finishing place** against the AI rivals instead. A fast run with empty buckets still scores well below a balanced, well-collected run.
 
 ## 6. The models
 
@@ -150,12 +149,13 @@ when you are above base speed. A hit slows the scroll and knocks the racer
 Top 16 px of the overlay:
 
 ```
-[⚡▮▮▮▯] [🎮▮▮▯▯] [🧠▮▮▮▮] [💾▮▯▯▯]   STAGE 2   0:41.2   3rd
+[⚡▮▮▮▯] [🎮▮▮▯▯] [🧠▮▮▮▮] [💾▮▯▯▯]   STAGE 2   3rd   67%
 ```
 
 - Each bucket is a 40 px bar with tick marks at 25/50/80; the bar color changes when it crosses a tier.
 - Pickup popups (`+5 GPU`) float up from the racer for 30 frames.
 - The special ability shows an icon that lights up when ready.
+- The right side shows progress up the mountain (percent of the climb) rather than a clock.
 
 ## 10. Screens and flow
 
@@ -187,7 +187,7 @@ Top 16 px of the overlay:
 |---|---|
 | 0 | Format version |
 | 1–2 | Options: music on/off, last selected model |
-| 10–109 | Overall top 10: per entry score, time (frames), place, ELEC, GPU, CPU, RAM, model, initials (packed 3×8 bits), reserved = 10 slots |
+| 10–109 | Overall top 10: per entry score, place, ELEC, GPU, CPU, RAM, model, initials (packed 3×8 bits), 2 reserved = 10 slots |
 | 110–179 | Best score per model (7 × 10 slots, same layout) |
 | 180–255 | Reserved |
 
