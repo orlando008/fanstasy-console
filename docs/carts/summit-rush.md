@@ -30,8 +30,8 @@ your four resource buckets are when you get there.
 
 | Button | Action |
 |---|---|
-| LEFT / RIGHT | Steer (free movement within the course bounds) |
-| UP / DOWN | Lean forward/back: small speed change (±10%) for fine positioning |
+| LEFT / RIGHT | Move left and right within the track walls |
+| UP / DOWN | Move up and down the screen (between y 40 and 200) |
 | A | Boost: spend Electricity for a burst of speed |
 | B | Special ability (per model, see 6.2) |
 | START | Pause |
@@ -111,9 +111,11 @@ choices, not claims about the real systems. Seven racers:
 | 2 | The Treeline | ~30 s | 1.2× | Pines, switchback walls, narrower course |
 | 3 | The Summit | ~30 s | 1.4× | Snow and ice (lower traction), wind gusts |
 
-The course auto-scrolls, and your own speed moves you up or down the screen
-(boosting pulls you toward the top, collisions push you down). Falling off the
-bottom edge costs 3 seconds and respawns you at the center.
+The racer moves freely around the screen, and climbing speed (base speed,
+GPU, boost, slowdowns) only sets how fast the course scrolls past, so going
+faster never costs reaction room. Speed lines streak along the track edges
+when you are above base speed. A hit slows the scroll and knocks the racer
+16 px down the screen. There is no fall-off penalty.
 
 ### 7.2 Layout
 

@@ -1,10 +1,13 @@
 // SUMMIT RUSH - vertical slice: stage 1 (Base Camp) with Claude.
-// Design: docs/carts/summit-rush.md. Steer with LEFT/RIGHT, lean with UP/DOWN,
-// A boosts (spends Electricity), B uses Claude's special (Constitution).
+// Design: docs/carts/summit-rush.md. The arrows move the racer around the
+// screen; your speed only sets how fast the mountain scrolls past. A boosts
+// (spends Electricity), B uses Claude's special (Constitution).
 
 // --- Tuning -------------------------------------------------------------------
 
-const SCROLL = 1.25; // auto-scroll, px per frame
+const SCROLL = 1.25; // scroll speed at base climbing speed, px per frame
+const TOP_Y = 40, BOTTOM_Y = 200; // how far up and down the screen the racer can move
+const KNOCKBACK = 16; // px a hit pushes the racer down the screen
 const FINISH_Y = -2600; // world y of the finish line (start line is y 0)
 const HUD_H = 20;
 const PAR_SECONDS = 40; // the slice is one stage: a third of the full race's 120 s
@@ -55,11 +58,11 @@ function init() {
 function reset() {
   state = 'count';
   timer = 0;
-  camY = -150; // the racer starts at screen y 150
+  camY = -150;
   p = {
-    x: 120, y: 0, vx: 0, b: [...MODEL.start],
+    x: 120, y: 0, sy: 150, vx: 0, vy: 0, b: [...MODEL.start],
     slow: 0, tape: 0, inv: 0, immune: 0, special: 1,
-    boosting: false, frames: 0, penalty: 0,
+    boosting: false, frames: 0, penalty: 0, speed: SCROLL,
   };
   entities = buildCourse();
   popups = [];
@@ -185,18 +188,23 @@ function race() {
   if (btn(LEFT)) p.vx -= acc;
   else if (btn(RIGHT)) p.vx += acc;
   else p.vx *= 0.8;
+  if (btn(UP)) p.vy -= acc;
+  else if (btn(DOWN)) p.vy += acc;
+  else p.vy *= 0.8;
   p.vx = clamp(p.vx, -maxV, maxV);
+  p.vy = clamp(p.vy, -maxV, maxV);
   p.x += p.vx;
+  p.sy = clamp(p.sy + p.vy, TOP_Y, BOTTOM_Y);
+  p.y = camY + p.sy;
   const [minX, maxX] = trackRange(p.y + 8);
   if (p.x < minX || p.x > maxX) {
     p.x = clamp(p.x, minX, maxX);
     p.vx = 0;
   }
 
-  // Climbing: GPU raises top speed, boost spends Electricity.
+  // Climbing speed: GPU raises it, boost spends Electricity, hits slow it.
+  // It moves the camera; the racer keeps its place on screen.
   let v = SCROLL * MODEL.speed * (1 + gpu * 0.004);
-  if (btn(UP)) v *= 1.1;
-  if (btn(DOWN)) v *= 0.9;
   const wasBoosting = p.boosting;
   p.boosting = btn(A) && elec > 0;
   if (p.boosting) {
@@ -208,7 +216,9 @@ function race() {
   if (p.tape > 0) p.tape--;
   if (p.inv > 0) p.inv--;
   if (p.immune > 0) p.immune--;
-  p.y -= v;
+  p.speed = v;
+  camY -= v;
+  p.y = camY + p.sy;
 
   if (btnp(B) && p.special > 0) {
     p.special--;
@@ -217,20 +227,6 @@ function race() {
     sfx(10);
   }
 
-  // Camera: scrolls on its own, eases off while the player is near the
-  // bottom edge, and follows a player who pulls ahead.
-  const nearBottom = p.y - camY > 170;
-  camY = Math.max(camY - SCROLL * (nearBottom ? 0.7 : 1), FINISH_Y - 120);
-  if (p.y - camY < 70) camY = p.y - 70;
-  if (p.y - camY > 224) {
-    p.penalty += 180;
-    p.y = camY + 150;
-    p.x = 120;
-    p.vx = 0;
-    p.inv = 90;
-    popup('-3 SEC', 6);
-    sfx(12);
-  }
   streamRows();
 
   for (const e of entities) {
@@ -268,6 +264,8 @@ function collide(e) {
   } else if (p.inv === 0) {
     if (e.kind === 'protester' && p.immune > 0) return;
     p.inv = 60;
+    p.sy = Math.min(BOTTOM_Y, p.sy + KNOCKBACK);
+    p.vy = 0;
     if (p.b[3] >= SHIELD_COST) {
       p.b[3] -= SHIELD_COST;
       popup('SHIELD -25 RAM', PURPLE);
@@ -342,6 +340,8 @@ function draw() {
     else if (e.kind === 'tape') for (let i = 0; i < 4; i++) spr(SPR.TAPE, x + i * 8, sy, { prio: 2 });
   }
 
+  speedLines();
+
   // The player flickers while invulnerable after a hit.
   const sy = Math.floor(p.y - camY);
   if (p.inv === 0 || flr(p.inv / 4) % 2 === 0) {
@@ -359,6 +359,20 @@ function draw() {
   else if (state === 'race' && p.frames < 40) banner('GO!', 11);
   if (paused) banner('PAUSED', 15);
   if (state === 'done') results();
+}
+
+/** Streaks along the track edges that grow with speed. */
+function speedLines() {
+  const k = p.speed / SCROLL - 1;
+  if (k < 0.15) return;
+  const len = Math.round(6 + k * 30);
+  for (let i = 0; i < 8; i++) {
+    const wy = Math.floor(camY / 48) * 48 + i * 48 + (i * 37) % 48;
+    const [l, rt] = walls(Math.floor(wy / 8));
+    const sy = Math.floor(wy - camY);
+    const side = i % 2 ? rt * 8 - 6 - (i * 5) % 12 : l * 8 + 4 + (i * 7) % 12;
+    line(side, sy, side, sy + len, 15);
+  }
 }
 
 function bob(e) {
