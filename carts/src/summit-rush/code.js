@@ -124,11 +124,15 @@ const SPR = { TITLE: 640, CHIPS: [38, 40, 42, 44], WAFER: 46, ICE: 74, PROTEST: 
 
 /** Each obstacle takes from one bucket (SPEC 8). */
 const OBSTACLES = {
-  protester: { bucket: 1, text: 'PROTEST' },
-  tape: { bucket: 0, text: 'RED TAPE' },
-  price: { bucket: 3, text: 'HIGH PRICES' },
-  law: { bucket: 2, text: 'LEGISLATION' },
+  protester: { bucket: 1, text: 'PROTEST', sfx: 5 },
+  tape: { bucket: 0, text: 'RED TAPE', sfx: 13 },
+  price: { bucket: 3, text: 'HIGH PRICES', sfx: 14 },
+  law: { bucket: 2, text: 'LEGISLATION', sfx: 15 },
 };
+
+// Audio (SPEC 11). Songs: 0 menus, 1-3 the stages, 4 the AGI fanfare.
+const SONG_MENU = 0, SONG_FANFARE = 4;
+const SFX_FULL = 6, SFX_OOM = 7, SFX_TIER = 16, SFX_MOVE = 17, SFX_PICK = 18, SFX_GUST = 19;
 const BUCKET_NAME = ['ELEC', 'GPU', 'CPU', 'RAM'];
 const BUCKET_LETTER = ['E', 'G', 'C', 'R'];
 const PURPLE = 135; // sprite palette 0, color 7, recolored for RAM
@@ -161,6 +165,7 @@ let initials = null; // { chars, pos } while entering initials
 let view = null; // { tab, from, hl } on the leaderboard
 const written = new Int32Array(64).fill(0x7fffffff); // world row held by each map row
 let rng = 1;
+let song = -1; // the song playing, so moving between menus doesn't restart it
 
 function init() {
   color(0, 3, 3, 8); // backdrop, seen on the select screen
@@ -203,18 +208,23 @@ function menu(next) {
   bg(2, { show: false });
   affine(null);
   MODELS.forEach((m, i) => tint(1 + i, m));
+  play(SONG_MENU);
+}
+
+/** Start song n (-1 stops music) unless it's already playing. */
+function play(n) {
+  if (n !== song) music(n);
+  song = n;
 }
 
 /** The title screen: the logo spins in on BG2 (SPEC 10). */
 function title() {
   menu('title');
   bg(2, { show: true, mx: LOGO_MX, my: 0, mw: 8, mh: 8, wrap: false });
-  music(0);
 }
 
 /** Show the model-select screen. */
 function select() {
-  if (state !== 'title') music(0);
   menu('select');
 }
 
@@ -323,7 +333,8 @@ function startStage() {
   result = null;
   written.fill(0x7fffffff);
   streamRows();
-  music(0);
+  song = 1 + round; // each stage has its own song, started fresh
+  music(song);
 }
 
 // --- Course -------------------------------------------------------------------
@@ -523,16 +534,16 @@ function buildCourse() {
 function update() {
   timer++;
   if (state === 'title') {
-    if (timer > 30 && (btnp(START) || btnp(A))) { sfx(9); select(); }
-    else if (timer > 30 && btnp(B)) { sfx(8); ranks('title'); }
+    if (timer > 30 && (btnp(START) || btnp(A))) { sfx(SFX_PICK); select(); }
+    else if (timer > 30 && btnp(B)) { sfx(SFX_MOVE); ranks('title'); }
     return;
   }
   if (state === 'select') {
-    if (btnp(LEFT)) { pick = (pick + MODELS.length - 1) % MODELS.length; sfx(8); }
-    if (btnp(RIGHT)) { pick = (pick + 1) % MODELS.length; sfx(8); }
+    if (btnp(LEFT)) { pick = (pick + MODELS.length - 1) % MODELS.length; sfx(SFX_MOVE); }
+    if (btnp(RIGHT)) { pick = (pick + 1) % MODELS.length; sfx(SFX_MOVE); }
     if (timer > 10 && (btnp(START) || btnp(A))) {
       dset(LAST_MODEL_SLOT, pick);
-      sfx(9);
+      sfx(SFX_PICK);
       newRun();
     } else if (timer > 10 && btnp(B)) title();
     return;
@@ -543,8 +554,8 @@ function update() {
   }
   if (state === 'initials') { enterInitials(); return; }
   if (state === 'ranks') {
-    if (btnp(LEFT)) { view.tab = (view.tab + MODELS.length) % (MODELS.length + 1); sfx(8); }
-    if (btnp(RIGHT)) { view.tab = (view.tab + 1) % (MODELS.length + 1); sfx(8); }
+    if (btnp(LEFT)) { view.tab = (view.tab + MODELS.length) % (MODELS.length + 1); sfx(SFX_MOVE); }
+    if (btnp(RIGHT)) { view.tab = (view.tab + 1) % (MODELS.length + 1); sfx(SFX_MOVE); }
     if (timer < 20) return;
     if (view.from === 'title' && (btnp(START) || btnp(B))) title();
     else if (view.from === 'run' && btnp(START)) newRun();
@@ -646,7 +657,7 @@ function race() {
 /** A wind gust: warning arrows, then a sideways push, then it's spent. */
 function gust(e) {
   e.t++;
-  if (e.t === 1) sfx(8);
+  if (e.t === 1) sfx(SFX_GUST);
   if (e.t > GUST_WARN) p.wind += e.dir * GUST_PUSH;
   if (e.t >= GUST_WARN + GUST_TIME) e.gone = true;
 }
@@ -735,6 +746,7 @@ function collide(e) {
       sfx(e.type);
     } else {
       popup(`${BUCKET_NAME[e.type]} FULL`, 3);
+      sfx(SFX_FULL);
     }
   } else if (e.kind === 'wafer') {
     e.gone = true;
@@ -756,7 +768,7 @@ function collide(e) {
     const lost = -add(o.bucket, -HIT_COST);
     const safe = o.bucket === 3 && active('context');
     popup(safe ? `${o.text} RAM SAFE` : `${o.text} -${lost} ${BUCKET_NAME[o.bucket]}`, safe ? 12 : 6);
-    sfx(5);
+    sfx(o.sfx);
   }
 }
 
@@ -780,12 +792,13 @@ function add(i, n) {
     for (let j = 0; j < 3; j++) {
       if (p.b[j] > cap(j)) { lost += p.b[j] - cap(j); p.b[j] = cap(j); }
     }
-    if (lost > 0) popup(`OUT OF MEMORY -${Math.round(lost)}`, 6, -14);
+    if (lost > 0) { popup(`OUT OF MEMORY -${Math.round(lost)}`, 6, -14); sfx(SFX_OOM); }
   }
   // Chime when a bucket crosses a tier threshold.
   for (const [mark] of TIERS) {
     if (before < mark && p.b[i] >= mark) {
       popup(`${BUCKET_NAME[i]} ${tierOf(p.b[i])[2]}!`, tierOf(p.b[i])[3], -14);
+      sfx(SFX_TIER);
       break;
     }
   }
@@ -817,8 +830,7 @@ function tierOf(v) {
 
 function finish() {
   timer = 0;
-  music(-1);
-  sfx(11);
+  play(-1);
   const b = p.b.map((v) => Math.floor(v));
   const base = b.reduce((s, v) => s + v, 0) * 10;
   const tiers = b.reduce((s, v) => s + tierOf(v)[1], 0);
@@ -827,7 +839,8 @@ function finish() {
   const total = scoreOf(b);
   myRounds.push(total);
   state = allGold ? 'agi' : 'done';
-  if (allGold) sfx(10);
+  if (allGold) play(SONG_FANFARE);
+  else sfx(11);
 
   // Simulate the other models' rounds and rank everyone by run total.
   const board = MODELS.map((m) => {
@@ -857,8 +870,8 @@ function finish() {
 /** Initials entry: UP/DOWN pick a letter, LEFT/RIGHT move, START or A on the last letter confirms. */
 function enterInitials() {
   const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
-  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; sfx(8); }
-  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; sfx(8); }
+  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; sfx(SFX_MOVE); }
+  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; sfx(SFX_MOVE); }
   if (btnp(LEFT)) ini.pos = Math.max(0, ini.pos - 1);
   if (btnp(RIGHT)) ini.pos = Math.min(2, ini.pos + 1);
   const done = btnp(START) || (btnp(A) && ini.pos === 2);
@@ -869,7 +882,7 @@ function enterInitials() {
   dset(INITIALS_SLOT, v);
   dset(TOP_SLOT + result.rank * ENTRY + 6, v);
   if (result.newBest) dset(MODEL_BEST_SLOT + pick * ENTRY + 6, v);
-  sfx(9);
+  sfx(SFX_PICK);
   ranks('run', result.rank);
 }
 

@@ -241,17 +241,34 @@ Top 16 px of the overlay:
 
 ## 11. Audio
 
-**Songs** (Music tab):
+**Songs** (Music tab). Rows are 16th notes; channel 5 carries only each pattern's `Fxx` speed.
 
-| Song | Use | Feel |
-|---|---|---|
-| 0 | Title / select | Upbeat, 120 bpm |
-| 1 | Stage 1 | Driving, pulse lead |
-| 2 | Stage 2 | Faster variant |
-| 3 | Stage 3 | Tense, minor, 150 bpm |
-| 4 | Summit / AGI fanfare | Short, non-looping |
+| Song | Use | Patterns | Feel |
+|---|---|---|---|
+| 0 | Title and menus | 2, speed 8 (~112 bpm) | The main theme over light drums, C major |
+| 1 | Base Camp | 3 (A B A bridge), speed 7 (~128 bpm) | The theme with octave bass and a full kit |
+| 2 | The Treeline | 3, speed 6 (150 bpm) | Base Camp up a whole step and faster, with a brighter lead |
+| 3 | The Summit | 2, speed 6 (150 bpm) | Tense A minor (Am F G E), driving 16th bass and four-on-the-floor kick |
+| 4 | AGI fanfare | 1, speed 3, plays once (3.2 s) | Rising brass arpeggio into a held chord with a crash |
 
-**SFX** (one each): chip pickup per bucket (4, rising pitches), Golden Wafer, bucket full, out of memory, hit (one per obstacle), special activate, countdown beep, GO, tier-up chime, menu move, menu select. Protester chant: a noise-channel rhythm, if it fits.
+- **Arrangement:** pulse 1 lead, pulse 2 chord arpeggios (`047` major, `037` minor), triangle bass, saw pad, noise drums. Music volumes sit about a fifth under the SFX.
+- **Menus** share song 0 without restarting it between screens. Each stage starts its own song. Music stops at the finish line. The fanfare plays over the AGI screen in place of the finish jingle.
+
+**SFX:**
+
+| # | Sound | # | Sound |
+|---|---|---|---|
+| 0–3 | Chip pickups, rising per bucket | 11 | Finish |
+| 4 | Golden Wafer | 12 | Smash (Unfiltered) |
+| 5 | Protest hit: crowd boo | 13 | Red tape hit: rip |
+| 6 | Bucket full: dull bonk | 14 | High prices hit: cha-ching sliding down |
+| 7 | Out of memory: descending glitch | 15 | Legislation hit: gavel thud |
+| 8 | Countdown beep | 16 | Tier-up chime |
+| 9 | GO | 17 | Menu move |
+| 10 | Special activate | 18 | Menu select |
+| | | 19 | Wind gust: rising whoosh |
+
+The songs and SFX are data in `audio.json`, so they can be reworked in the Music and SFX tabs.
 
 ## 12. Persistence (save slots)
 
@@ -285,7 +302,7 @@ Top 16 px of the overlay:
    - Per-model racers and portraits, title lettering, stage scenery and protest signs.
    - The art is tile data in `tiles.txt`, so it can be refined in the Sprites, Map and Palette tabs.
    - Still open: parallax scenery (BG1/BG2) behind the course. The opaque rock walls currently cover the whole screen, so they would need gaps to show it.
-6. **Audio pass:** songs and SFX in the Music and SFX tabs.
+6. **Audio pass:** songs and SFX. First pass done (see 11). The tracks were composed as data, so they're worth a listen and a tune in the Music tab.
 7. **Balance and polish:** tune thresholds so Gold in all four is hard but possible; record replays of good runs (F9/F10); capture a label (F7); export a PNG cart.
 
 Any console bugs or editor gaps found along the way are logged and fixed as separate changes.
