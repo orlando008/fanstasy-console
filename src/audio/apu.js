@@ -36,6 +36,16 @@ export class Apu {
     }
   }
 
+  /** A MediaStream of the APU output, for recording clips; null without audio. */
+  mediaStream() {
+    if (!this.ctx || !this.node) return null;
+    if (!this.dest) {
+      this.dest = this.ctx.createMediaStreamDestination();
+      this.node.connect(this.dest);
+    }
+    return this.dest.stream;
+  }
+
   post(msg) {
     if (this.failed) return;
     if (this.node) this.node.port.postMessage(msg);

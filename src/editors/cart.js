@@ -44,6 +44,27 @@ export class CartPanel {
     this.exportButton = button('Export .nova.png', () => this.app.exportPng(), { class: 'primary' });
     this.measureId = 0;
 
+    // Recording.
+    this.clipVideo = h('video', { class: 'clip-video', controls: true, muted: false, hidden: true });
+    this.clipInfo = h('p', { class: 'hint' }, 'No clip yet. Press F8 while the game runs to start and stop recording.');
+    this.gifScale = h('select', { attrs: { 'aria-label': 'GIF scale' } },
+      [1, 2, 3].map((s) => h('option', { value: s, selected: s === 2 }, `${s}× (${256 * s}×${224 * s})`)));
+    this.gifProgress = h('span', { class: 'hint' });
+    this.clipButtons = h('div', { class: 'button-row', hidden: true },
+      button('Save WebM', () => this.app.saveClip('webm')),
+      button('Save GIF', () => this.saveGif()), this.gifScale, this.gifProgress);
+    this.replayInfo = h('p', { class: 'hint' });
+    this.replayFile = h('input', {
+      type: 'file', accept: '.json,application/json', hidden: true,
+      on: { change: () => { const f = this.replayFile.files[0]; this.replayFile.value = ''; if (f) this.app.loadReplay(f); } },
+    });
+    this.replayButtons = h('div', { class: 'button-row' },
+      button('Record input (F9)', () => this.app.toggleInputRecording()),
+      button('Replay (F10)', () => this.app.replay()),
+      button('Save recording…', () => this.app.saveReplay()),
+      button('Load recording…', () => this.replayFile.click()),
+      this.replayFile);
+
     this.el = h('div', { class: 'cart-panel' },
       h('section', { class: 'panel-section' },
         h('h2', { text: 'Cart' }),
@@ -74,7 +95,44 @@ export class CartPanel {
             h('div', { class: 'button-row' }, this.exportButton),
             h('p', { class: 'hint' },
               'A PNG cart is a picture of a cartridge that holds the whole game. Drop it onto the console ' +
-              'to play it. Share it as a file: sites that recompress images destroy the cart data.')))));
+              'to play it. Share it as a file: sites that recompress images destroy the cart data.')))),
+      h('section', { class: 'panel-section wide' },
+        h('h2', { text: 'Recording' }),
+        h('h3', { text: 'Clips' }),
+        h('div', { class: 'button-row' }, button('Record clip (F8)', () => this.app.toggleClip())),
+        this.clipInfo, this.clipVideo, this.clipButtons,
+        h('h3', { text: 'Input recording' }),
+        h('p', { class: 'hint' },
+          'F9 restarts the cart and records every frame of input; F9 again stops. F10 replays it from ' +
+          'the same random seed and save data, so the game plays out exactly the same way. Record a clip ' +
+          'during a replay for a clean take.'),
+        this.replayInfo, this.replayButtons));
+  }
+
+  /** Show the last clip and input recording. */
+  refreshRecording() {
+    const clip = this.app.lastClip;
+    if (clip) {
+      if (this.clipUrl) URL.revokeObjectURL(this.clipUrl);
+      this.clipUrl = clip.webm ? URL.createObjectURL(clip.webm) : null;
+      this.clipVideo.hidden = !this.clipUrl;
+      if (this.clipUrl) this.clipVideo.src = this.clipUrl;
+      const size = clip.webm ? ` · WebM ${(clip.webm.size / 1e6).toFixed(1)} MB` : ' · video recording unavailable';
+      this.clipInfo.textContent = `Last clip: ${clip.seconds.toFixed(1)} s${size}.`;
+      this.clipButtons.hidden = false;
+    }
+    const log = this.app.inputLog;
+    this.replayInfo.textContent = log && log.length
+      ? `Input recording: ${log.length} frames (${log.seconds.toFixed(1)} s), seed ${log.seed}.`
+      : 'No input recording yet.';
+  }
+
+  async saveGif() {
+    this.gifProgress.textContent = 'Encoding…';
+    await this.app.saveClip('gif', Number(this.gifScale.value), (p) => {
+      this.gifProgress.textContent = `Encoding ${Math.round(p * 100)}%`;
+    });
+    this.gifProgress.textContent = '';
   }
 
   /** Show a (newly loaded) cart. */
@@ -98,6 +156,7 @@ export class CartPanel {
     this.sizeEl.textContent = `Code: ${bytes.toLocaleString('en-US')} of ${CODE_LIMIT.toLocaleString('en-US')} bytes`;
     this.sizeEl.classList.toggle('over', bytes > CODE_LIMIT);
     this.renderLabel();
+    this.refreshRecording();
     if (this.el.isConnected) this.measure(); // only while the Cart tab is showing
   }
 

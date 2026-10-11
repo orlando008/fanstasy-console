@@ -3,11 +3,15 @@
 
 import { Apu } from './audio/apu.js';
 import { Shell } from './editors/shell.js';
-import { exportPng, isPngFile, openCart, readCartFile, saveCart } from './files.js';
+import {
+  cartFileName, exportPng, isPngFile, openCart, readCartFile, saveBlob, saveCart,
+} from './files.js';
 import { cartId, createCart } from './formats/cart.js';
 import { readNova, writeNova } from './formats/nova-json.js';
 import { Input } from './input.js';
 import { Machine } from './machine.js';
+import { CLIP_MAX_SECONDS, ClipRecorder } from './record/clip.js';
+import { InputLog } from './record/replay.js';
 import { loadAutosave, loadSave, storeAutosave, storeSave } from './storage.js';
 
 const AUTOSAVE_MS = 10000;
@@ -35,6 +39,7 @@ function draw() {
 
 const screenEl = document.getElementById('screen');
 const statusEl = document.getElementById('status');
+const recEl = document.getElementById('rec');
 const input = new Input(window);
 const apu = new Apu();
 
@@ -50,7 +55,9 @@ const machine = new Machine(screenEl, input, {
     apu.reset();
     notify('The cart stopped responding (infinite loop?). Esc opens the editor; Ctrl+R restarts.');
   },
-  onSave: (data) => storeSave(app.saveKey, data),
+  // A replay must not change the player's real save data.
+  onSave: (data) => { if (!app.replaying) storeSave(app.saveKey, data); },
+  onFrame: (px) => app.clipFrame(px),
   onAudio: (cmds) => apu.commands(cmds),
 });
 
@@ -97,16 +104,145 @@ const app = {
   },
 
   /** Boot the working cart from scratch. */
-  launch() {
+  launch({ seed, save } = {}) {
     hideStatus();
     shell.clearError();
     this.hasError = false;
     this.saveKey = cartId(this.cart);
     apu.load(this.cart);
     apu.resume();
-    machine.load(this.cart, seedFromUrl() ?? crypto.getRandomValues(new Uint32Array(1))[0], loadSave(this.saveKey));
+    this.seed = seed ?? seedFromUrl() ?? crypto.getRandomValues(new Uint32Array(1))[0];
+    this.startSave = save ?? loadSave(this.saveKey);
+    // Any other launch ends input recording and replay.
+    if (!this.launchingRecord) this.stopInput(false);
+    machine.load(this.cart, this.seed, this.startSave);
+    if (this.clip) machine.streamFrames(true);
     this.launchedRevision = this.revision;
     this.launchedCart = this.cart;
+  },
+
+  // --- Recording (M9) --------------------------------------------------------
+
+  clip: null, // ClipRecorder while a clip records
+  lastClip: null,
+  inputLog: null, // InputLog being recorded, or the last one
+  recordingInput: false,
+  replaying: false,
+
+  /** F8: start or stop recording a clip (WebM and GIF). */
+  async toggleClip() {
+    if (this.clip) {
+      const rec = this.clip;
+      this.clip = null;
+      machine.streamFrames(false);
+      this.lastClip = await rec.stop();
+      updateRecIndicator();
+      shell.recordingChanged();
+      shell.log(`Clip recorded: ${this.lastClip.seconds.toFixed(1)} s. Save it from the Cart tab.`);
+      if (this.mode === 'run') flashStatus('Clip saved to the Cart tab');
+      return;
+    }
+    if (this.mode !== 'run') this.run();
+    this.clip = new ClipRecorder(apu.mediaStream());
+    machine.streamFrames(true);
+    updateRecIndicator();
+  },
+
+  clipFrame(px) {
+    if (!this.clip) return;
+    this.clip.frame(px);
+    if (this.clip.seconds >= CLIP_MAX_SECONDS) this.toggleClip();
+    else if (this.clip.frames % 30 === 0) updateRecIndicator();
+  },
+
+  /** Save the last clip as 'webm' or 'gif'. */
+  async saveClip(kind, scale = 2, onProgress) {
+    const clip = this.lastClip;
+    if (!clip) return;
+    const base = cartFileName(this.cart).replace(/\.nova$/, '');
+    try {
+      if (kind === 'webm') {
+        if (!clip.webm) throw new Error('This browser could not record video');
+        await saveBlob(clip.webm, `${base}.webm`, 'video/webm', '.webm');
+      } else {
+        const gif = await clip.gif(scale, onProgress);
+        await saveBlob(gif, `${base}.gif`, 'image/gif', '.gif');
+      }
+    } catch (e) {
+      notify(`Could not save the clip: ${e.message}`);
+    }
+  },
+
+  /** F9: restart the cart and record its input, or stop recording. */
+  toggleInputRecording() {
+    if (this.recordingInput) {
+      this.stopInput(true);
+      return;
+    }
+    this.launchingRecord = true;
+    this.restart();
+    this.launchingRecord = false;
+    const log = new InputLog({ seed: this.seed, save: this.startSave, title: this.cart.meta.title });
+    machine.onInput = (f, masks) => log.push(masks);
+    this.inputLog = log;
+    this.recordingInput = true;
+    updateRecIndicator();
+  },
+
+  /** F10: restart the cart with the recorded seed and save data, and play the input back. */
+  replay() {
+    const log = this.inputLog;
+    if (!log || !log.length) {
+      notify('Nothing to replay: record input with F9 first, or load a recording.');
+      return;
+    }
+    if (this.recordingInput) this.stopInput(false);
+    setMode('run');
+    this.launchingRecord = true;
+    this.launch({ seed: log.seed, save: log.save });
+    this.launchingRecord = false;
+    this.replaying = true;
+    machine.inputOverride = (f) => {
+      const m = log.get(f);
+      if (m) return m;
+      // The recording has run out: hand control back to the player.
+      queueMicrotask(() => {
+        this.stopInput(false);
+        flashStatus('Replay finished');
+      });
+      return new Uint16Array(4);
+    };
+    updateRecIndicator();
+  },
+
+  /** End input recording or replay. */
+  stopInput(report) {
+    const was = this.recordingInput;
+    machine.onInput = null;
+    machine.inputOverride = null;
+    this.recordingInput = false;
+    this.replaying = false;
+    updateRecIndicator();
+    if (was && report && this.inputLog) {
+      shell.log(`Input recorded: ${this.inputLog.length} frames (${this.inputLog.seconds.toFixed(1)} s). F10 replays it.`);
+      shell.recordingChanged();
+    }
+  },
+
+  async saveReplay() {
+    if (!this.inputLog) return;
+    const name = cartFileName(this.cart).replace(/\.nova$/, '.replay.json');
+    await saveBlob(new Blob([JSON.stringify(this.inputLog)], { type: 'application/json' }), name, 'application/json', '.json');
+  },
+
+  async loadReplay(file) {
+    try {
+      this.inputLog = InputLog.parse(await file.text());
+      shell.recordingChanged();
+      shell.log(`Loaded an input recording of ${this.inputLog.length} frames.`);
+    } catch (e) {
+      notify(`Could not load the recording: ${e.message}`);
+    }
   },
 
   /** F7: make the current frame the cart's label. */
@@ -264,6 +400,16 @@ function flashStatus(text) {
   statusEl.hidden = false;
   clearTimeout(flashTimer);
   flashTimer = setTimeout(hideStatus, 2000);
+}
+
+/** Show what is recording in the corner of the game screen. */
+function updateRecIndicator() {
+  const parts = [];
+  if (app.clip) parts.push(`● REC ${app.clip.seconds.toFixed(0)}s  F8 stops`);
+  if (app.recordingInput) parts.push('● INPUT  F9 stops');
+  if (app.replaying) parts.push('▶ REPLAY');
+  recEl.textContent = parts.join('   ');
+  recEl.hidden = !parts.length;
 }
 
 function hideStatus() {

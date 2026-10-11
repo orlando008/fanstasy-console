@@ -50,6 +50,26 @@ export async function saveCart(cart, handle = null, saveAs = false) {
   return { handle: null, name };
 }
 
+/** Save a blob under a suggested name (File System Access API or a download). */
+export async function saveBlob(blob, name, mime, ext) {
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: name, types: [{ description: name, accept: { [mime]: [ext] } }],
+      });
+      const w = await handle.createWritable();
+      await w.write(blob);
+      await w.close();
+      return handle.name;
+    } catch (e) {
+      if (e.name === 'AbortError') return null;
+      throw e;
+    }
+  }
+  download(blob, name);
+  return name;
+}
+
 /** Export a cart as .nova.png. Returns the file name, or null if cancelled. */
 export async function exportPng(cart) {
   const blob = await encodeNovaPng(cart);

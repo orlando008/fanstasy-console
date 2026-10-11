@@ -18,7 +18,7 @@ limits.
 | M6 Graphics editors: Sprites, Map and Palette tabs | Done |
 | M7 Audio: worklet synth, instruments, SFX, patterns, songs, SFX and Music tabs | Done |
 | M8 Persistence and PNG carts: `dget`/`dset`, label capture, `.nova.png` export and import | Done |
-| M9 Recording: input replay, WebM and GIF capture | Not started |
+| M9 Recording: input recording and replay, WebM and GIF clips | Done |
 
 The full cart API from SPEC section 8 is callable.
 
@@ -60,6 +60,9 @@ Shell shortcuts:
 | Ctrl+S / Ctrl+Shift+S | Save / save as `.nova` |
 | Ctrl+O | Open a `.nova` file or a `.nova.png` PNG cart |
 | F7 | Capture the current frame as the cart's label |
+| F8 | Start or stop recording a clip (saved as WebM or GIF from the Cart tab) |
+| F9 | Restart the cart and record its input; F9 again stops |
+| F10 | Replay the recorded input from the same seed and save data |
 | Ctrl+F | Find in the code editor (Enter / Shift+Enter for next / previous) |
 | Ctrl+Z / Ctrl+Y | Undo / redo in the Sprites, Map and Palette tabs (the code editor uses the browser's own undo) |
 | Ctrl+C / Ctrl+V | Copy / paste pixels (Sprites), a rectangle of map cells (Map) or a sub-palette (Palette) |
@@ -76,6 +79,14 @@ Browsers start audio only after the first click or key press on the page.
 
 The working cart autosaves to this browser every 10 seconds. Save data written
 with `dset` is kept per cart (by title and author) in this browser.
+
+## Recording
+
+F8 records a clip of up to 30 seconds. The Cart tab previews it and saves it
+as WebM (768×672 at 60 fps, with sound) or as a looping GIF (30 fps, 1–3×).
+F9 records every frame of input from a fresh start; F10 replays it, and since
+the console is deterministic the game plays out identically. Input recordings
+can be saved and loaded as `.replay.json` files.
 
 ## PNG carts
 

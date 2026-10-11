@@ -27,7 +27,7 @@ export class Machine {
    * @param {HTMLElement} screenEl element the canvas is placed in
    * @param {import('./input.js').Input} input
    * @param {object} handlers onLog(text), onError({message, line}),
-   *   onHang(), onSave(Int32Array), onAudio(cmds)
+   *   onHang(), onSave(Int32Array), onAudio(cmds), onFrame(Uint32Array)
    */
   constructor(screenEl, input, handlers) {
     this.screenEl = screenEl;
@@ -41,6 +41,10 @@ export class Machine {
     this.last = performance.now();
     this.busySince = 0; // when the in-flight tick was sent, or 0 if idle
     this.frame = 0;
+    // Replay feeds recorded input: (frame) => masks, or null for live input.
+    this.inputOverride = null;
+    // Input recording watches every frame's masks: (frame, masks) => void.
+    this.onInput = null;
     this.queries = new Map(); // pending video-state requests by id
     this.queryId = 0;
     this.loop = this.loop.bind(this);
@@ -82,6 +86,11 @@ export class Machine {
         if (this.queries.delete(id)) resolve(null);
       }, 300);
     });
+  }
+
+  /** Ask the worker to send every rendered frame (for clip recording). */
+  streamFrames(on) {
+    this.worker?.postMessage({ type: 'stream', on });
   }
 
   /** The last rendered frame as RGBA ImageData (256x224), or null. */
@@ -155,6 +164,9 @@ export class Machine {
         resolve?.(Array.isArray(msg.layers) ? msg.layers : null);
         break;
       }
+      case 'rframe':
+        if (msg.data instanceof Uint32Array && msg.data.length === 256 * 224) this.on.onFrame?.(msg.data);
+        break;
       case 'frame': {
         const resolve = this.queries.get(msg.id);
         this.queries.delete(msg.id);
@@ -189,7 +201,10 @@ export class Machine {
     if (this.acc >= FRAME_MS) {
       this.acc -= FRAME_MS;
       this.busySince = now;
-      this.worker.postMessage({ type: 'tick', frame: this.frame++, input: this.input.sample() });
+      const f = this.frame++;
+      const masks = this.inputOverride ? this.inputOverride(f) : this.input.sample();
+      this.onInput?.(f, masks);
+      this.worker.postMessage({ type: 'tick', frame: f, input: masks });
     }
   }
 

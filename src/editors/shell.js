@@ -129,6 +129,15 @@ export class Shell {
     } else if (e.key === 'F7') {
       e.preventDefault();
       this.app.captureLabel();
+    } else if (e.key === 'F8') {
+      e.preventDefault();
+      this.app.toggleClip();
+    } else if (e.key === 'F9') {
+      e.preventDefault();
+      this.app.toggleInputRecording();
+    } else if (e.key === 'F10') {
+      e.preventDefault();
+      this.app.replay();
     } else if (this.mode === 'edit') {
       this.gfxKey(e, mod, key);
     }
@@ -166,6 +175,10 @@ export class Shell {
 
   labelChanged() {
     this.cartPanel.refresh();
+  }
+
+  recordingChanged() {
+    this.cartPanel.refreshRecording();
   }
 
   updateTitle(cart, dirty) {

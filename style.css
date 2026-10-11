@@ -72,6 +72,20 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
   z-index: 1;
 }
 
+#rec {
+  grid-area: 1 / 1;
+  align-self: start;
+  justify-self: end;
+  margin: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ff6b6d;
+  font: bold 13px var(--code-font);
+  z-index: 1;
+  pointer-events: none;
+}
+
 #editor { display: none; }
 
 body[data-mode="edit"] #screen { display: none; }
@@ -523,3 +537,6 @@ select, .num, .hex-input {
 .meter-bar { height: 100%; width: 0; background: var(--accent); }
 .meter-bar.over { background: var(--error); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
+.panel-section.wide { max-width: 860px; }
+.panel-section h3 { font-size: 13px; margin: 16px 0 6px; color: var(--fg); }
+.clip-video { display: block; width: 384px; max-width: 100%; image-rendering: pixelated; background: #000; border: 1px solid var(--line); border-radius: 4px; }
