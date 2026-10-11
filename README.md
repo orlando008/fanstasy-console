@@ -45,7 +45,7 @@ autosaved working cart.
 | `mode7` | Per-line BG2 affine perspective floor and sky gradient |
 | `chiptune` | A six-channel song and five sound effects, all editable in the Music and SFX tabs |
 | `summit-rush` | The first real game, in progress: Base Camp with all seven models and a model-select screen (see docs/carts/summit-rush.md) |
-| `block-wizard` | A music-synced falling-block puzzle, in progress: stage 1 (Tower Gate) with placeholder art and song; SELECT shows the sync check (see docs/carts/block-wizard.md) |
+| `block-wizard` | A music-synced falling-block puzzle, in progress: all eight rooms of the tower plus practice mode, with placeholder art and songs; SELECT in play shows the sync check (see docs/carts/block-wizard.md) |
 
 Keyboard: arrows = d-pad, X = A, Z = B, S = X, A = Y, Q = L, W = R,
 Enter = Start, Shift = Select.

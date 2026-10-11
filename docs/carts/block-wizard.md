@@ -1,7 +1,7 @@
 # Block Wizard: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** In progress: stage 1 vertical slice (placeholder art and song)
+**Status:** In progress: all eight stages playable with practice mode (placeholder art and songs)
 **Cart source:** `carts/src/block-wizard/` → `carts/block-wizard.nova`
 
 ---
@@ -171,10 +171,16 @@ There is no break between stages. On the last frame of a stage:
 - the final sweep is scored and the stage-clear bonus (9.1) is added;
 - the next stage's palettes, backdrop, song, tempo and gravity take over on the next frame;
 - the field, active piece, queue, combo streak and score all carry over;
-- a banner (`STAGE 3 · ALCHEMY LAB` and the bonus) shows for 2 seconds on the overlay.
+- a banner (`3 ALCHEMY LAB` and the bonus) shows for 2 seconds on the overlay.
 
 The field's cells store *light* or *dark*, not a color, so the new stage
 recolors them with a palette swap.
+
+**Two clocks, one boundary.** The cart keeps one run clock across all
+stages. Each stage's song is cued by the run clock, the frame before its
+stage starts (10). The visual handover (palettes, gravity, sweep length and
+the clear bonus) happens when the *timeline* reaches the boundary, `LAG`
+frames later. That way the room changes when the player hears the new song.
 
 ### 8.3 Rooms
 
@@ -243,7 +249,7 @@ The score is a 32-bit signed integer, so there is no risk of overflow.
 The music must line up with the timeline. It's the core of the game, and the
 part most likely to go wrong. The rules:
 
-- **The game clock is the source of truth.** The stage clock counts frames. The cart calls `music(stage − 1)` on the stage's first frame and never reads audio state, so the simulation stays deterministic.
+- **The game clock is the source of truth.** The run clock counts frames from the first song's start. The cart calls `music(stage − 1)` one frame before that stage's first frame, the same way it starts the first song, and never reads audio state, so the simulation stays deterministic.
 - **Tempo.** `music()` resets speed to 6, so every pattern in a song whose speed isn't 6 starts with `Fxx` on row 0. It goes in channel 1's column, which carries no notes (11).
 - **Song shape.** The order list has exactly the stage's pattern count (8.1). The loop point is set to the start, but the next stage always calls `music()` before it is reached. It is only a fallback.
 - **Latency.** Audio commands pass from the worker to the main thread to the worklet, then through the output buffer. `LAG` (frames, −10 to 30, default 0) delays the timeline relative to the stage clock to make up for it. Latency depends on the player's machine and headphones, so it's a setting, not a constant.
@@ -289,13 +295,13 @@ slots are taken.
 
 ## 12. Screens and flow
 
-1. **Title:** the Block Wizard logo, the wizard, PRESS START, the high score. Menu: PLAY, PRACTICE, SCORES.
+1. **Title:** the Block Wizard logo, the wizard, the high score. Menu: PLAY, PRACTICE, SCORES (SCORES is still to come).
 2. **Run:** stages 1–8 back to back (8.2), starting with a 1-second READY over the first piece.
 3. **Pause:** START. The field is hidden. Menu: RESUME, QUIT TO TITLE (quitting ends the run without recording it).
 4. **Results:** GAME OVER or TOWER BEATEN, total score, stage reached, the score for each stage played.
 5. **Initials entry** if the total makes the top 10.
 6. **Scores:** top 10 runs, plus a second page of practice bests per stage.
-7. **Practice:** play one stage from an empty field. Stage 1 is always available, and each other stage opens once you clear it in a run. A practice run ends at the end of the stage or on top-out, shows the score against that stage's best, and never enters the top 10.
+7. **Practice:** play one stage from an empty field. Stage 1 is always available, and each other stage opens once you clear it in a run. A practice run ends at the end of the stage or on top-out, shows the score against that stage's best, and never enters the top 10. Moving through the list previews each room's colors, scenery and song. **Testing aid:** holding L and R together on this screen opens every room for the session, without saving.
 
 ## 13. Persistence (save slots)
 
@@ -315,7 +321,7 @@ slots are taken.
 |---|---|
 | BG0 | Field cells: normal, marked (BG 1, with the merged outline drawn on the overlay) and pending (BG 2); cells falling after an erase |
 | BG1 | Room midground, dimmed behind the field, with the cell grid dots |
-| BG2 | Far backdrop and room effects (scanline gradients, affine rotation) |
+| BG2 | Room scenery: stars (Observatory), eyes (Familiars' Den), rain (Storm Spire), the rune circle on affine (Sanctum). The backdrop gradient and its effects (candlelight, wobble, glints, lightning) are per-line backdrop colors from `scanline()`. |
 | Sprites | Active piece (4 × 16 × 16), next queue (12 × 8 × 8), wizard |
 | Overlay | HUD, timeline line, sweep counter, popups, banners, menus |
 
@@ -327,19 +333,19 @@ per-line limit.
 
 | Asset | Budget |
 |---|---|
-| Code | ≤ 32 KB of the 64 KB limit |
+| Code | ≤ 44 KB of the 64 KB limit (34 KB with all eight stages and practice) |
 | Tiles | ≤ 700 of 1024: blocks and gem ~60 (shared by all stages; colors by palette), HUD ~30, title ~100, rooms ~60 each |
 | Map RAM | Rooms in two 28-row bands (8 × 32 columns each for BG1 and BG2), field 32 × 20, title |
 | Palettes | BG 0 blocks, BG 1 marked, BG 2 pending, BG 3 HUD, overlay colors and grid, BG 4–7 room. Sprites: piece and queue (copy of BG 0), wizard, effects. Each stage loads its own colors. |
 | Sprites on screen | ≤ 30 |
-| Songs / SFX | 8 songs, 64 patterns, about 51 SFX; drum samples in Sample RAM |
+| Songs / SFX | 8 songs, 64 patterns (32 used by the placeholder songs), 48 SFX so far (8 shared + 5 per stage); drum samples in Sample RAM |
 | PNG cart | Must fit the 147 KB `.nova.png` limit |
 
 ## 16. Implementation plan
 
 1. **Vertical slice: stage 1 only.** *(Done.)* Field, bag, movement and rotation, splits, gravity, squares, the timeline, sweep scoring with chains, top-out, pause with resync, the sync check. Placeholder art and a placeholder song at 112.5 bpm with a drum hit on every beat. **Sync:** no clock drift over a full stage (10); `LAG` is set by ear with the sync check.
 2. **Console change** (separate): `music(song, pos, row)` for pause and resume.
-3. **All eight stages:** stage table, transitions, stage-clear bonus, per-stage palettes.
+3. **All eight stages:** *(Done.)* Stage table, transitions, stage-clear bonus, the tower bonus, per-stage palettes, backdrop effects and scenery, a placeholder song and five SFX per stage, and practice mode with unlocks.
 4. **Scoring extras:** wizard gem, single color, all clear.
 5. **Flow:** title, pause, results, initials, scores, practice and unlocks, saves.
 6. **Art pass:** block tiles and glyphs, eight rooms, the wizard, the title, all made in the built-in editors.
@@ -351,7 +357,7 @@ separate changes.
 
 ## 17. Open questions
 
-- **Score tuning:** the `S(n)` steps, the ×8 combo cap and the bonus sizes (9.1) need to be checked against real play. A simple bot that places each piece for adjacency and a low stack scores 100k–155k on stage 1 alone, mostly from holding the ×8 chain. That is well above the totals estimated in 9.2, so the chain is likely too strong, or the estimates too low.
+- **Score tuning:** the `S(n)` steps, the ×8 combo cap and the bonus sizes (9.1) need to be checked against real play. A simple bot that places each piece for adjacency and a low stack scores 100k–155k on stage 1 alone, mostly from holding the ×8 chain. That is well above the totals estimated in 9.2, so the chain is likely too strong, or the estimates too low. Over whole runs (six seeds) the same bot died in stages 2 to 7 with 210k–590k, never beating the tower. Storm Spire is the wall, where it scored almost nothing. Its stage scores fall sharply from stage 5 on, as gravity speeds up.
 - **Gem rate:** one per 16 pieces may be too generous or too rare.
 - **Beat-quantized SFX:** delaying rotate and square-formed sounds to the next 16th note would sound more musical, but makes the game feel less responsive. Try both.
 - **Practice unlocks:** clearing a stage unlocks it (12). Unlocking on *reaching* a stage would let players practice the stage that beat them.
