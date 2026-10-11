@@ -241,18 +241,23 @@ Top 16 px of the overlay:
 
 ## 11. Audio
 
-**Songs** (Music tab). Rows are 16th notes; channel 5 carries only each pattern's `Fxx` speed.
+**Songs** (Music tab). They're built on the music of the *Summit Rush* animated series (`orlando008/summit-rush`, `engine/audio.js`). Its main theme is `hero`, 140 bpm over C–G–Am–F:
+- A 25% pulse lead in a dotted 3-3-4-2-4 rhythm: E5 G5 C6, B5 G5.
+- A root, fifth and octave bass, and 16th-note chord arpeggios on a 12.5% pulse.
+- A kick on 1, the "and" of 2, and 3.
 
-| Song | Use | Patterns | Feel |
-|---|---|---|---|
-| 0 | Title and menus | 2, speed 8 (~112 bpm) | The main theme over light drums, C major |
-| 1 | Base Camp | 3 (A B A bridge), speed 7 (~128 bpm) | The theme with octave bass and a full kit |
-| 2 | The Treeline | 3, speed 6 (150 bpm) | Base Camp up a whole step and faster, with a brighter lead |
-| 3 | The Summit | 2, speed 6 (150 bpm) | Tense A minor (Am F G E), driving 16th bass and four-on-the-floor kick |
-| 4 | AGI fanfare | 1, speed 3, plays once (3.2 s) | Rising brass arpeggio into a held chord with a crash |
+The cart reproduces the series' lead lines, chords, bass, arpeggio and drum patterns step for step. Rows are 16th notes; channel 5 carries only the `Fxx` speed.
 
-- **Arrangement:** pulse 1 lead, pulse 2 chord arpeggios (`047` major, `037` minor), triangle bass, saw pad, noise drums. Music volumes sit about a fifth under the SFX.
-- **Menus** share song 0 without restarting it between screens. Each stage starts its own song. Music stops at the finish line. The fanfare plays over the AGI screen in place of the finish jingle.
+| Song | Use | Order | Tempo | From the series |
+|---|---|---|---|---|
+| 0 | Title and menus | intro, then hero, anthem, hero (loops from hero) | ~82, then ~138 bpm | `intro` (the episode cold open) leading into `hero`, as in episode 1's opening |
+| 1 | Base Camp | hero, hero, anthem, hero | ~138 bpm (speeds 7 and 6 alternate per row) | `hero`, with `anthem` (same chord family) as the B section |
+| 2 | The Treeline | hero in D, race, hero in D, race | 150 bpm | the theme a step up with `race`'s driving bass and drums, alternating with `race` itself |
+| 3 | The Summit | hero in D minor, battle, ×2 | 180 bpm | the theme recast in D minor over `battle`'s chords (Dm Bb C A), with the galloping bass, alternating with `battle` |
+| 4 | AGI fanfare | once, 3.2 s | speed 3 | the hero motif (E G C, B D) on brass, resolving to a held C with a crash |
+
+- **Arrangement:** pulse 1 lead, pulse 2 arpeggios (the series' triangle slow arp moves to a soft pulse, since the triangle carries the bass), triangle bass, saw pad, noise drums. Music volumes sit about a fifth under the SFX.
+- **Menus** share song 0 without restarting it, so the intro plays once at boot. Each stage starts its own song. Music stops at the finish line. The fanfare plays over the AGI screen in place of the finish jingle.
 
 **SFX:**
 
