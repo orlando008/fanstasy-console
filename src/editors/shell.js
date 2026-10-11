@@ -4,6 +4,9 @@
 import { button, h } from '../ui/dom.js';
 import { CartPanel } from './cart.js';
 import { CodeEditor } from './code.js';
+import { MapEditor } from './map.js';
+import { PaletteEditor } from './palette.js';
+import { SpriteEditor } from './sprite.js';
 
 const MAX_LOG = 200;
 
@@ -11,7 +14,7 @@ export class Shell {
   /**
    * @param {HTMLElement} root container for the edit view
    * @param {object} app run(), edit(), restart(), changed(kind), newCart(),
-   *   open(), save(saveAs)
+   *   open(), save(saveAs), videoLayers()
    */
   constructor(root, app) {
     this.app = app;
@@ -25,9 +28,19 @@ export class Shell {
       },
     });
     this.cartPanel = new CartPanel(app);
+    // Graphics editors share an interface: setCart, refresh, undo, redo,
+    // copy, paste and onKey.
+    this.gfx = {
+      sprites: new SpriteEditor(app),
+      map: new MapEditor(app),
+      palette: new PaletteEditor(app),
+    };
 
     this.tabs = [
       { id: 'code', label: 'Code', panel: this.code.el },
+      { id: 'sprites', label: 'Sprites', panel: this.gfx.sprites.el },
+      { id: 'map', label: 'Map', panel: this.gfx.map.el },
+      { id: 'palette', label: 'Palette', panel: this.gfx.palette.el },
       { id: 'cart', label: 'Cart', panel: this.cartPanel.el },
     ];
     this.tabButtons = this.tabs.map((t) => h('button', {
@@ -62,6 +75,7 @@ export class Shell {
     this.mode = mode;
     document.body.dataset.mode = mode;
     if (mode === 'edit' && this.activeTab === 'code') this.code.focus();
+    if (mode === 'edit') this.gfx[this.activeTab]?.refresh();
   }
 
   showTab(id) {
@@ -77,6 +91,7 @@ export class Shell {
       this.code.focus();
     }
     if (id === 'cart') this.cartPanel.refresh();
+    this.gfx[id]?.refresh();
   }
 
   onKey(e) {
@@ -101,6 +116,24 @@ export class Shell {
     } else if (mod && key === 'o') {
       e.preventDefault();
       this.app.open();
+    } else if (this.mode === 'edit') {
+      this.gfxKey(e, mod, key);
+    }
+  }
+
+  /** Route undo, redo, copy, paste and tool keys to the active graphics editor. */
+  gfxKey(e, mod, key) {
+    const ed = this.gfx[this.activeTab];
+    if (!ed || isFormField(e.target)) return;
+    let handled = true;
+    if (mod && key === 'z' && !e.shiftKey) ed.undo();
+    else if (mod && (key === 'y' || (key === 'z' && e.shiftKey))) ed.redo();
+    else if (mod && key === 'c') ed.copy();
+    else if (mod && key === 'v') ed.paste();
+    else handled = !mod && ed.onKey(e);
+    if (handled) {
+      e.preventDefault();
+      e.stopPropagation();
     }
   }
 
@@ -110,6 +143,7 @@ export class Shell {
   setCart(cart, fileName) {
     this.code.setValue(cart.code);
     this.cartPanel.setCart(cart, fileName);
+    for (const ed of Object.values(this.gfx)) ed.setCart(cart);
     this.updateTitle(cart, false);
   }
 
@@ -160,4 +194,8 @@ export class Shell {
   clearLog() {
     this.logList.replaceChildren();
   }
+}
+
+function isFormField(el) {
+  return !!el && (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) || el.isContentEditable);
 }

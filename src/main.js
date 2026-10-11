@@ -58,6 +58,7 @@ const app = {
   autosaveDue: false,
   revision: 0, // bumped on every edit
   launchedRevision: -1, // revision the running cart was started from
+  launchedCart: null, // cart object the running game was started from
   hasError: false,
   saveKey: '',
   mode: 'run',
@@ -98,6 +99,13 @@ const app = {
     this.saveKey = cartId(this.cart);
     machine.load(this.cart, seedFromUrl() ?? crypto.getRandomValues(new Uint32Array(1))[0], loadSave(this.saveKey));
     this.launchedRevision = this.revision;
+    this.launchedCart = this.cart;
+  },
+
+  /** Background layer regions of the loaded game, for the map editor. */
+  videoLayers() {
+    // Only the game built from this cart knows its layer setup.
+    return this.launchedCart === this.cart ? machine.videoLayers() : Promise.resolve(null);
   },
 
   async newCart() {
