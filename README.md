@@ -15,7 +15,8 @@ limits.
 | M3 Backgrounds: Map RAM, BG0-2, scrolling, wrap, tile priority, compositing | Done |
 | M4 Raster effects: `scanline()` hook, BG2 affine mode | Done |
 | M5 Shell and code editor: run/edit modes, error screen, save/load `.nova`, autosave | Done |
-| M6-M9 Graphics editors, audio, PNG carts, recording | Not started |
+| M6 Graphics editors: Sprites, Map and Palette tabs | Done |
+| M7-M9 Audio, PNG carts, recording | Not started |
 
 The full cart API from SPEC section 8 is callable. `sfx`, `music` and `volume`
 queue commands but make no sound until the audio milestone.
@@ -53,6 +54,14 @@ Shell shortcuts:
 | Ctrl+S / Ctrl+Shift+S | Save / save as `.nova` |
 | Ctrl+O | Open a `.nova` file |
 | Ctrl+F | Find in the code editor (Enter / Shift+Enter for next / previous) |
+| Ctrl+Z / Ctrl+Y | Undo / redo in the Sprites, Map and Palette tabs (the code editor uses the browser's own undo) |
+| Ctrl+C / Ctrl+V | Copy / paste pixels (Sprites), a rectangle of map cells (Map) or a sub-palette (Palette) |
+| P, F, L, R, S | Sprites tools: pencil, fill, line, rectangle, select. Map uses P, F and S. |
+| H, V, T, Delete | Sprites: flip horizontally, flip vertically, rotate, clear |
+
+In the Sprites and Map tabs, the left mouse button draws and the right button
+picks a color (Sprites) or erases (Map); Alt+click in the Map picks up a tile.
+Tile 0 is reserved and can't be drawn in.
 
 The working cart autosaves to this browser every 10 seconds.
 

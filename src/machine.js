@@ -41,6 +41,8 @@ export class Machine {
     this.last = performance.now();
     this.busySince = 0; // when the in-flight tick was sent, or 0 if idle
     this.frame = 0;
+    this.queries = new Map(); // pending video-state requests by id
+    this.queryId = 0;
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
   }
@@ -64,6 +66,22 @@ export class Machine {
     this.paused = false;
     this.acc = 0;
     this.last = performance.now();
+  }
+
+  /**
+   * The background layer regions the loaded cart is using, or null if no
+   * cart is loaded or the worker doesn't answer promptly.
+   */
+  videoLayers() {
+    if (!this.worker) return Promise.resolve(null);
+    const id = ++this.queryId;
+    return new Promise((resolve) => {
+      this.queries.set(id, resolve);
+      this.worker.postMessage({ type: 'video', id });
+      setTimeout(() => {
+        if (this.queries.delete(id)) resolve(null);
+      }, 300);
+    });
   }
 
   /** Scale the screen by the largest integer factor that fits its box. */
@@ -118,6 +136,12 @@ export class Machine {
       case 'save':
         if (msg.data instanceof Int32Array && msg.data.length === 256) this.on.onSave?.(msg.data);
         break;
+      case 'video': {
+        const resolve = this.queries.get(msg.id);
+        this.queries.delete(msg.id);
+        resolve?.(Array.isArray(msg.layers) ? msg.layers : null);
+        break;
+      }
       case 'audio':
         if (Array.isArray(msg.cmds)) this.on.onAudio?.(msg.cmds);
         break;

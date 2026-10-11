@@ -472,7 +472,10 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 │   │   ├── music.js
 │   │   └── cart.js
 │   └── ui/                 # Shared widgets (buttons, grids, sliders)
-│       └── dom.js          # Element-building helpers
+│       ├── dom.js          # Element-building helpers
+│       ├── history.js      # Undo/redo storing only changed elements
+│       ├── pixels.js       # RGB555 conversion and tile-sheet drawing
+│       └── sheet-view.js   # Tile-sheet picker shared by Sprites and Map
 ├── carts/                  # Demo and test carts (.nova)
 ├── docs/
 │   ├── SPEC.md             # This document

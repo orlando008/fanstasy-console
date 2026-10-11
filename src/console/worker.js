@@ -55,6 +55,10 @@ self.onmessage = (e) => {
     case 'tick':
       tick(msg.input);
       break;
+    case 'video':
+      // The editors ask for the layer regions the paused game is using.
+      post({ type: 'video', id: msg.id, layers: cart ? ppu.layers.map((l) => ({ ...l })) : null });
+      break;
     case 'pause':
     case 'resume':
       // The main thread stops sending ticks while paused; nothing to do here.
