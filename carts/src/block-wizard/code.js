@@ -18,6 +18,8 @@ const SQUARE_POINTS = 40;
 const CHARGED = 4; // squares a sweep needs to keep the chain going
 const CHAIN_MAX = 8;
 const TOWER_BONUS = 50000;
+const GEM = 4; // flag bit on a cell: it carries a wizard gem (SPEC 7.5)
+const GEM_POINTS = 10; // per cell the gem clears outside any square
 const LAG_MIN = -10, LAG_MAX = 30;
 
 /**
@@ -70,6 +72,7 @@ const DOT = 1; // grid dot
 const BLOCK = [0, 2, 4]; // 16x16 block by cell color: 1 light, 2 dark
 const WIZARD = 6;
 const MINI = [0, 8, 9]; // 8x8 blocks for the next queue
+const GEM_BLOCK = [0, 32, 34], GEM_MINI = [0, 36, 37]; // the same with a rune
 const STAR = 10, STAR2 = 11, RAIN = 12, EYES = 13, CIRCLE = 256; // room tiles; three eye tiles
 const PAL_MARKED = 1, PAL_PENDING = 2, PAL_HUD = 3, PAL_ROOM = 4;
 // Overlay colors, in BG sub-palette 3 (CGRAM 48-63).
@@ -80,7 +83,7 @@ const ROOM = 64; // BG sub-palette 4: 1-2 stars, 3 rain, 4-6 eyes, 7-8 rune circ
  * 11). Negative entries are per stage: each room has its own five, in the
  * key of its song, at 8 + 5 x stage.
  */
-const SFX = { move: 0, start: 1, over: 2, clear: 3, pause: 4, drop: 5, tower: 6, menu: 7, rotate: -1, land: -2, square: -3, erase: -4, chain: -5 };
+const SFX = { move: 0, start: 1, over: 2, clear: 3, pause: 4, drop: 5, tower: 6, menu: 7, gem: 48, rotate: -1, land: -2, square: -3, erase: -4, chain: -5 };
 const SFX_CH = 1;
 
 // --- State --------------------------------------------------------------------
@@ -89,15 +92,15 @@ let state; // 'title', 'rooms' (practice select), 'play', 'over', 'clear'
 let timer; // frames in the current state
 let stage = STAGES[0];
 let beatFrames, sweepFrames, patternFrames, stageFrames, sweeps;
-const grid = new Uint8Array(COLS * ROWS); // settled cells: 0 empty, 1 light, 2 dark
+const grid = new Uint8Array(COLS * ROWS); // settled cells: 0 empty, 1 light, 2 dark; | GEM
 const mark = new Uint8Array(COLS * ROWS); // part of at least one square
-const caught = new Uint8Array(COLS * ROWS); // in a square the timeline caught this sweep
+const caught = new Uint8Array(COLS * ROWS); // caught this sweep: 1 in a square, 2 by a gem only
 const pend = new Uint8Array(COLS * ROWS); // caught and passed by the line: erased with its group
 let squares = []; // top-left index of every square
 let dirty = true; // grid changed since squares were found
 let falling = []; // loose cells settling: { col, y, c, split }
 let piece = null; // { col, y, cells: [tl, tr, bl, br], rest }
-let bag = [], queue = [];
+let bag = [], queue = [], gemAt = -1; // gemAt: which piece left in the bag carries the gem
 let spawnWait = 0;
 // The run: `plan` lists the stages it plays (all eight, or one in practice),
 // `starts` the run-clock frame each begins at, plus the end. `si` is the
@@ -105,7 +108,7 @@ let spawnWait = 0;
 let plan = [0], starts = [0, 0], si = 0, practice = false;
 let rf = 0; // run clock: frames since the first song started
 let lag = 0; // the timeline runs this many frames behind the run clock
-let sweepK = -1, nextCol = 0, sweepN = 0;
+let sweepK = -1, nextCol = 0, sweepN = 0, gemCells = 0;
 let score = 0, streak = 0, hi = 0, bonus = 0, best = 0;
 let stageBase = 0, stageScores = [], towerBonus = 0;
 let paused = false, resync = false, syncView = false;
@@ -153,7 +156,7 @@ function hudPalette() {
 
 /** Load a room's look: block palettes, backdrop gradient and BG2 scenery. */
 function setVisuals(s) {
-  const blocks = (f) => [null, ...shades(f(s.light)), ...shades(f(s.dark))];
+  const blocks = (f) => [null, ...shades(f(s.light)), ...shades(f(s.dark)), f([31, 31, 31])];
   const white = [31, 31, 31];
   setColors(0, blocks((c) => c)); // BG 0: normal
   setColors(16, blocks((c) => mix(mix(c, white, 0.25), s.pulse, 0.2))); // BG 1: marked, lit up
@@ -250,7 +253,7 @@ function start(stages, isPractice) {
   squares = []; falling = []; popups = []; sparks = [];
   bag = []; queue = [deal(), deal(), deal()];
   dirty = true;
-  score = 0; streak = 0; sweepN = 0; stageScores = []; towerBonus = 0;
+  score = 0; streak = 0; sweepN = 0; gemCells = 0; stageScores = []; towerBonus = 0;
   paused = false; resync = false; flash = 0;
   plan = stages;
   practice = isPractice;
@@ -302,9 +305,12 @@ function deal() {
       const j = rndi(0, i);
       [bag[i], bag[j]] = [bag[j], bag[i]];
     }
+    gemAt = rndi(0, 15); // one piece per bag carries a gem
   }
   const bits = bag.pop();
-  return [0, 1, 2, 3].map((k) => ((bits >> k) & 1) + 1);
+  const cells = [0, 1, 2, 3].map((k) => ((bits >> k) & 1) + 1);
+  if (bag.length === gemAt) cells[rndi(0, 3)] |= GEM;
+  return cells;
 }
 
 function spawn() {
@@ -413,8 +419,8 @@ function findSquares() {
   let fresh = false;
   for (let r = 0; r < ROWS - 1; r++) {
     for (let c = 0; c < COLS - 1; c++) {
-      const i = r * COLS + c, v = grid[i];
-      if (!v || grid[i + 1] !== v || grid[i + COLS] !== v || grid[i + COLS + 1] !== v) continue;
+      const i = r * COLS + c, v = grid[i] & 3;
+      if (!v || (grid[i + 1] & 3) !== v || (grid[i + COLS] & 3) !== v || (grid[i + COLS + 1] & 3) !== v) continue;
       found.push(i);
       mark[i] = mark[i + 1] = mark[i + COLS] = mark[i + COLS + 1] = 1;
       if (!squares.includes(i)) fresh = true;
@@ -438,7 +444,10 @@ function sweepColumn(c) {
   for (const i of squares) {
     if (i % COLS !== c) continue;
     sweepN++;
-    caught[i] = caught[i + 1] = caught[i + COLS] = caught[i + COLS + 1] = 1;
+    for (const j of [i, i + 1, i + COLS, i + COLS + 1]) {
+      caught[j] = 1;
+      if (grid[j] & GEM) flood(j);
+    }
   }
   let open = false;
   for (let r = 0; r < ROWS; r++) {
@@ -448,12 +457,40 @@ function sweepColumn(c) {
   if (!open) erase();
 }
 
+/**
+ * A wizard gem was caught (SPEC 7.5): every settled cell of its color joined
+ * to it turns pending now. They count as caught, so the group stays open
+ * until the line passes the far edge of the flood.
+ */
+function flood(start) {
+  const v = grid[start] & 3, todo = [start];
+  let n = 0;
+  while (todo.length) {
+    const i = todo.pop();
+    if (!grid[i] || (grid[i] & 3) !== v || (pend[i] && caught[i])) continue;
+    if (!caught[i]) caught[i] = 2;
+    pend[i] = 1;
+    n++;
+    const c = i % COLS;
+    if (c > 0) todo.push(i - 1);
+    if (c < COLS - 1) todo.push(i + 1);
+    if (i >= COLS) todo.push(i - COLS);
+    if (i + COLS < grid.length) todo.push(i + COLS);
+  }
+  if (n) {
+    snd(SFX.gem);
+    cast = 40;
+    popup('WIZARD GEM!', 128 - 44, FIELD_Y + 26, GOLD);
+  }
+}
+
 /** Erase every pending cell; the cells above them come loose and fall. */
 function erase() {
   let n = 0;
   for (let i = 0; i < grid.length; i++) {
     if (!pend[i]) continue;
     sparks.push({ x: (i % COLS) * CELL, y: FIELD_Y + Math.floor(i / COLS) * CELL, t: 10 });
+    if (caught[i] === 2) gemCells++; // cleared by a gem, outside any square
     grid[i] = pend[i] = caught[i] = 0;
     n++;
   }
@@ -503,12 +540,13 @@ function sweepLine() {
 /** The line reached the right edge: erase what's left and score the sweep. */
 function endSweep() {
   erase();
-  const n = sweepN;
+  const n = sweepN, extra = gemCells;
   sweepN = 0;
+  gemCells = 0;
   if (!n) { streak = 0; return; }
   const charged = n >= CHARGED;
   const mult = charged ? Math.min(CHAIN_MAX, streak + 1) : 1;
-  const pts = SQUARE_POINTS * n * sizeBonus(n) * mult;
+  const pts = (SQUARE_POINTS * n * sizeBonus(n) + GEM_POINTS * extra) * mult;
   score += pts;
   streak = charged ? streak + 1 : 0;
   const text = `+${pts}`;
@@ -668,6 +706,8 @@ function draw() {
   // Marked squares pulse with the beat: bright on it, fading to dim.
   const k = tl < 0 ? 0 : ((tl % beatFrames) * 12) / beatFrames;
   setColors(PULSE, [mix(stage.pulse, [8, 8, 8], k / 16)]);
+  const rune = mix([31, 31, 31], stage.pulse, 0.5 + 0.5 * Math.sin(rf * 0.15));
+  for (const base of [9, 25, 41, 137]) setColors(base, [rune]);
 
   if (showField) {
     drawField();
@@ -717,8 +757,13 @@ function drawRoom(f) {
   }
 }
 
+/** Tile of a block of cell value c, with or without a gem. */
+function blockTile(c) {
+  return (c & GEM ? GEM_BLOCK : BLOCK)[c & 3];
+}
+
 function put(col, tileRow, c, pal) {
-  const n = BLOCK[c], x = col * 2;
+  const n = blockTile(c), x = col * 2;
   mset(x, tileRow, tile(n, pal));
   mset(x + 1, tileRow, tile(n + 1, pal));
   mset(x, tileRow + 1, tile(n + 16, pal));
@@ -737,10 +782,10 @@ function drawField() {
   for (const f of falling) if (f.y >= -4 * 8) put(f.col, 4 + f.y / 8, f.c, 0);
 
   // Outline each one-color marked area as a single block.
-  const same = (c, r, v) => c >= 0 && c < COLS && r >= 0 && r < ROWS && mark[r * COLS + c] && grid[r * COLS + c] === v;
+  const same = (c, r, v) => c >= 0 && c < COLS && r >= 0 && r < ROWS && mark[r * COLS + c] && (grid[r * COLS + c] & 3) === v;
   for (let i = 0; i < grid.length; i++) {
     if (!mark[i]) continue;
-    const c = i % COLS, r = Math.floor(i / COLS), v = grid[i];
+    const c = i % COLS, r = Math.floor(i / COLS), v = grid[i] & 3;
     const x0 = c * CELL, y0 = FIELD_Y + r * CELL, x1 = x0 + CELL - 1, y1 = y0 + CELL - 1;
     if (!same(c, r - 1, v)) line(x0, y0, x1, y0, PULSE);
     if (!same(c, r + 1, v)) line(x0, y1, x1, y1, PULSE);
@@ -757,7 +802,7 @@ function drawField() {
 function drawPiece() {
   if (!piece) return;
   const y = FIELD_Y + Math.floor(piece.y);
-  piece.cells.forEach((c, k) => spr(BLOCK[c], (piece.col + (k & 1)) * CELL, y + (k >> 1) * CELL, { size: 16, prio: 2 }));
+  piece.cells.forEach((c, k) => spr(blockTile(c), (piece.col + (k & 1)) * CELL, y + (k >> 1) * CELL, { size: 16, prio: 2 }));
 }
 
 function drawLine(tl) {
@@ -772,7 +817,7 @@ function drawHud(tl) {
   // Top strip: the next three pieces, this sweep's squares and the chain,
   // score and best. The band below it belongs to the falling piece.
   queue.forEach((cells, q) => {
-    cells.forEach((c, k) => spr(MINI[c], 4 + q * 20 + (k & 1) * 8, (k >> 1) * 8, { size: 8, prio: 3 }));
+    cells.forEach((c, k) => spr((c & GEM ? GEM_MINI : MINI)[c & 3], 4 + q * 20 + (k & 1) * 8, (k >> 1) * 8, { size: 8, prio: 3 }));
   });
   print(`SWEEP ${sweepN}`, 72, 2, sweepN >= CHARGED ? GOLD : DIM);
   // The multiplier the next sweep earns if it's charged.

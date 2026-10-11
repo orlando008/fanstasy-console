@@ -1,7 +1,7 @@
 # Block Wizard: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** In progress: all eight stages playable with practice mode (placeholder art and songs)
+**Status:** In progress: all eight stages playable with practice mode and the wizard gem (placeholder art and songs)
 **Cart source:** `carts/src/block-wizard/` → `carts/block-wizard.nova`
 
 ---
@@ -135,6 +135,8 @@ its first frame.
 - One cell per bag of 16 pieces carries a gem, drawn as a rune on the block.
 - When a square that contains the gem is caught, every cell of the gem's color connected to it (up, down, left or right, through settled cells) also turns pending. All of it is erased with the gem's group.
 - The extra cells (those not in any caught square) score separately (9.1). They don't add to the sweep's square count.
+- The flooded cells count as caught, so the gem's group stays open until the line passes the far edge of the flood, picking up any squares it catches on the way.
+- A gem is a flag on the cell, so it rides through rotation, splits and falls. Its rune is palette color 9 in the block palettes, which twinkles toward the room's outline color. The next queue shows it too. It has its own sound (SFX 48).
 
 ## 8. Stages
 
@@ -346,7 +348,7 @@ per-line limit.
 1. **Vertical slice: stage 1 only.** *(Done.)* Field, bag, movement and rotation, splits, gravity, squares, the timeline, sweep scoring with chains, top-out, pause with resync, the sync check. Placeholder art and a placeholder song at 112.5 bpm with a drum hit on every beat. **Sync:** no clock drift over a full stage (10); `LAG` is set by ear with the sync check.
 2. **Console change** (separate): `music(song, pos, row)` for pause and resume.
 3. **All eight stages:** *(Done.)* Stage table, transitions, stage-clear bonus, the tower bonus, per-stage palettes, backdrop effects and scenery, a placeholder song and five SFX per stage, and practice mode with unlocks.
-4. **Scoring extras:** wizard gem, single color, all clear.
+4. **Scoring extras:** wizard gem *(done)*, single color, all clear.
 5. **Flow:** title, pause, results, initials, scores, practice and unlocks, saves.
 6. **Art pass:** block tiles and glyphs, eight rooms, the wizard, the title, all made in the built-in editors.
 7. **Audio pass:** eight songs and the SFX in the Music and SFX tabs.

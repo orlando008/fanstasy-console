@@ -28312,6 +28312,63 @@
     null,
     null
    ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "D-6",
+     "i": 7
+    },
+    {
+     "n": "A-6",
+     "i": 7
+    },
+    {
+     "n": "F#6",
+     "i": 7
+    },
+    {
+     "n": "D-7",
+     "i": 7
+    },
+    {
+     "n": "A-6",
+     "i": 7
+    },
+    {
+     "n": "D-7",
+     "i": 7
+    },
+    null,
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
   }
  ]
 }
