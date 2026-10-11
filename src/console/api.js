@@ -3,8 +3,14 @@
 
 export const BUTTONS = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'A', 'B', 'X', 'Y', 'L', 'R', 'START', 'SELECT'];
 
-/** Calls allowed inside scanline(); everything else throws there. */
-const SCANLINE_SAFE = new Set(['bgscroll', 'bg', 'affine', 'color', 'palcopy', 't']);
+/**
+ * Calls allowed inside scanline(); everything else throws there. The pure
+ * math helpers are allowed too, as the SPEC 8 example cart relies on flr().
+ */
+const SCANLINE_SAFE = new Set([
+  'bgscroll', 'bg', 'affine', 'color', 'palcopy', 't',
+  'flr', 'ceil', 'abs', 'sgn', 'mid', 'clamp', 'lerp',
+]);
 
 const SPRITE_SIZES = new Set([8, 16, 32]);
 

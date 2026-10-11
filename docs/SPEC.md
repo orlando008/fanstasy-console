@@ -124,7 +124,7 @@ From back to front:
 
 When `draw()` returns, the PPU snapshots all video state, then renders lines 0–223 in order. If the cart defines `scanline(y)`, it is called before line `y` is rendered.
 
-Inside `scanline()`, only these calls are allowed: `bgscroll`, `bg`, `affine`, `color`, `palcopy` and `t`. Anything else throws an error. A change applies from that line onward and is **discarded at the end of the frame**, so every frame starts from the state `draw()` left behind.
+Inside `scanline()`, only these calls are allowed: `bgscroll`, `bg`, `affine`, `color`, `palcopy` and `t`, plus the pure math helpers (`flr`, `ceil`, `abs`, `sgn`, `mid`, `clamp`, `lerp`). Anything else throws an error. A change applies from that line onward and is **discarded at the end of the frame**, so every frame starts from the state `draw()` left behind.
 
 Typical uses are wavy water (`bgscroll` with a sine offset per line), sky gradients (`color(0, ...)` per line) and Mode 7 floors (`affine` per line).
 
