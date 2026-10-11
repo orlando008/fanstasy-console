@@ -6,9 +6,11 @@
 //   meta.json   { "title", "author", "description" }
 //   tiles.txt   tile-sheet rows, one hex digit per pixel ('.' means 0)
 //   palette.txt one entry per line: "index rrggbb" (24-bit, converted to RGB555)
+//   audio.json  instruments, patterns, songs, sfx and samples in .nova layout
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { readAudio } from '../src/formats/audio.js';
 import { SHEET_H, SHEET_W, createCart, rgb24to555 } from '../src/formats/cart.js';
 import { writeNova } from '../src/formats/nova-json.js';
 
@@ -53,6 +55,9 @@ if (palette) {
     if (m) cart.palette[Number(m[1]) & 255] = rgb24to555(parseInt(m[2], 16));
   }
 }
+
+const audio = read('audio.json');
+if (audio) Object.assign(cart, readAudio(JSON.parse(audio)));
 
 writeFileSync(out, writeNova(cart));
 console.log(`wrote ${out}`);

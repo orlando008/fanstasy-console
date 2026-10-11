@@ -16,10 +16,10 @@ limits.
 | M4 Raster effects: `scanline()` hook, BG2 affine mode | Done |
 | M5 Shell and code editor: run/edit modes, error screen, save/load `.nova`, autosave | Done |
 | M6 Graphics editors: Sprites, Map and Palette tabs | Done |
-| M7-M9 Audio, PNG carts, recording | Not started |
+| M7 Audio: worklet synth, instruments, SFX, patterns, songs, SFX and Music tabs | Done |
+| M8-M9 PNG carts and saves, recording | Not started |
 
-The full cart API from SPEC section 8 is callable. `sfx`, `music` and `volume`
-queue commands but make no sound until the audio milestone.
+The full cart API from SPEC section 8 is callable.
 
 ## Running locally
 
@@ -41,6 +41,7 @@ the page. Without `?cart=`, the console reopens your autosaved working cart.
 | `parallax` | Three scrolling background layers, sub-palettes, tile priority |
 | `water` | `scanline()` reflection with per-line wobble and palette swaps |
 | `mode7` | Per-line BG2 affine perspective floor and sky gradient |
+| `chiptune` | A six-channel song and five sound effects, all editable in the Music and SFX tabs |
 
 Keyboard: arrows = d-pad, X = A, Z = B, S = X, A = Y, Q = L, W = R,
 Enter = Start, Shift = Select.
@@ -58,10 +59,14 @@ Shell shortcuts:
 | Ctrl+C / Ctrl+V | Copy / paste pixels (Sprites), a rectangle of map cells (Map) or a sub-palette (Palette) |
 | P, F, L, R, S | Sprites tools: pencil, fill, line, rectangle, select. Map uses P, F and S. |
 | H, V, T, Delete | Sprites: flip horizontally, flip vertically, rotate, clear |
+| Z–M, Q–U | SFX and Music: enter notes from a two-octave piano; 1 enters a note-off, `[` / `]` change octave |
+| Space | SFX and Music: play or stop |
 
 In the Sprites and Map tabs, the left mouse button draws and the right button
 picks a color (Sprites) or erases (Map); Alt+click in the Map picks up a tile.
 Tile 0 is reserved and can't be drawn in.
+
+Browsers start audio only after the first click or key press on the page.
 
 The working cart autosaves to this browser every 10 seconds.
 
@@ -74,8 +79,8 @@ check on every source file:
 find src -name '*.js' -print0 | xargs -0 -n1 node --check
 ```
 
-Demo carts are built from `carts/src/<name>/` (code, metadata and tile art) by
-a Node script:
+Demo carts are built from `carts/src/<name>/` (code, metadata, tile art and
+audio) by a Node script:
 
 ```sh
 node tools/pack.js carts/src/hello carts/hello.nova

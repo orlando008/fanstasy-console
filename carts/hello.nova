@@ -1,7 +1,11 @@
 {
   "format": "nova16-cart",
   "version": 1,
-  "meta": {"title":"Hello NOVA","author":"NOVA-16","description":"M1 boot test: move the box with the d-pad or left stick."},
+  "meta": {
+    "title": "Hello NOVA",
+    "author": "NOVA-16",
+    "description": "M1 boot test: move the box with the d-pad or left stick."
+  },
   "label": null,
   "code": "// Hello NOVA: the M1 boot cart. Move the box with the d-pad, keyboard\n// arrows or a gamepad's left stick. A changes its color, B leaves a trail.\n\nlet box = { x: 120, y: 100, c: 8 };\nlet trail = false;\nlet stars = [];\n\nfunction init() {\n  for (let i = 0; i < 48; i++) {\n    stars.push({ x: rnd(256), y: rnd(224), s: rnd(1.5) + 0.25 });\n  }\n  log('hello from the cart, seed-driven star:', flr(stars[0].x));\n}\n\nfunction update() {\n  const speed = btn(R) ? 3 : 1.5;\n  if (btn(LEFT)) box.x -= speed;\n  if (btn(RIGHT)) box.x += speed;\n  if (btn(UP)) box.y -= speed;\n  if (btn(DOWN)) box.y += speed;\n  box.x = clamp(box.x, 0, 240);\n  box.y = clamp(box.y, 16, 208);\n  if (btnp(A)) box.c = box.c % 15 + 1;\n  if (btnp(B)) trail = !trail;\n\n  for (const s of stars) {\n    s.x -= s.s;\n    if (s.x < 0) { s.x += 256; s.y = rnd(224); }\n  }\n}\n\nfunction draw() {\n  if (!trail) cls();\n  for (const s of stars) pset(s.x, s.y, s.s > 1 ? 15 : 3);\n\n  rectfill(box.x, box.y, 16, 16, box.c);\n  rect(box.x - 1, box.y - 1, 18, 18, 15);\n\n  rectfill(0, 0, 256, 11, 1);\n  print('NOVA-16', 4, 2, 15);\n  print(`FPS ${stat('fps')} CPU ${stat('cpu').toFixed(1)}`, 112, 2, 13);\n\n  // The 16 default colors along the bottom edge.\n  for (let i = 1; i < 16; i++) rectfill(i * 16 - 8, 216, 16, 8, i);\n\n  for (let p = 0; p < 4; p++) {\n    let mask = 0;\n    for (let b = 0; b < 12; b++) if (btn(b, p)) mask |= 1 << b;\n    print(`P${p + 1} ${mask.toString(2).padStart(12, '0')}`, 4, 160 + p * 10, mask ? 14 : 3);\n  }\n  circ(220, 180, 16 + Math.sin(t() / 20) * 4, 9);\n  line(200, 196, 240, 164, 6);\n}\n",
   "palette": [

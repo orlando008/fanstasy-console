@@ -1,10 +1,9 @@
 // .nova source format: JSON laid out for readable diffs (see SPEC 9.1).
 
+import { readAudio, writeAudio } from './audio.js';
 import {
   CART_FORMAT, CART_VERSION, MAP_H, MAP_W, PALETTE_SIZE, SHEET_H, SHEET_W, createCart,
 } from './cart.js';
-
-const AUDIO_KEYS = ['instruments', 'patterns', 'songs', 'sfx', 'samples'];
 
 /** Parse .nova text into a cart object. Throws on malformed input. */
 export function readNova(text) {
@@ -54,9 +53,7 @@ export function readNova(text) {
     });
   }
 
-  for (const k of AUDIO_KEYS) {
-    if (Array.isArray(j[k])) cart[k] = structuredClone(j[k]);
-  }
+  Object.assign(cart, readAudio(j));
   return cart;
 }
 
@@ -75,25 +72,35 @@ export function writeNova(cart, { minify = false } = {}) {
     tiles: trimRows(sheetRows(cart.tiles)),
     map: trimRows(mapRows(cart.map)),
   };
-  for (const k of AUDIO_KEYS) obj[k] = cart[k] || [];
+  Object.assign(obj, writeAudio(cart));
 
   if (minify) return JSON.stringify(obj);
+  return `${pretty(obj, '')}\n`;
+}
 
-  const lines = ['{'];
-  const keys = Object.keys(obj);
-  keys.forEach((k, i) => {
-    const v = obj[k];
-    const comma = i < keys.length - 1 ? ',' : '';
-    if (Array.isArray(v) && v.length) {
-      lines.push(`  ${JSON.stringify(k)}: [`);
-      v.forEach((el, j) => lines.push(`    ${JSON.stringify(el)}${j < v.length - 1 ? ',' : ''}`));
-      lines.push(`  ]${comma}`);
-    } else {
-      lines.push(`  ${JSON.stringify(k)}: ${JSON.stringify(v)}${comma}`);
-    }
-  });
-  lines.push('}', '');
-  return lines.join('\n');
+/**
+ * JSON with one array element or object key per line, except for values
+ * short enough to read on one line. Keeps diffs of carts readable: one tile
+ * row, palette entry or pattern row per line.
+ */
+function pretty(v, indent) {
+  const flat = JSON.stringify(v);
+  if (v === null || typeof v !== 'object' || flat.length <= 100) return flat;
+  // A short array of flat values, such as one pattern row, stays on one line.
+  if (Array.isArray(v) && v.length <= 16 && v.every(isFlat)) return flat;
+  const inner = `${indent}  `;
+  if (Array.isArray(v)) {
+    if (!v.length) return '[]';
+    return `[\n${v.map((el) => inner + pretty(el, inner)).join(',\n')}\n${indent}]`;
+  }
+  const keys = Object.keys(v).filter((k) => v[k] !== undefined);
+  return `{\n${keys.map((k) => `${inner}${JSON.stringify(k)}: ${pretty(v[k], inner)}`).join(',\n')}\n${indent}}`;
+}
+
+/** null, a primitive, or an object whose values are all primitives. */
+function isFlat(v) {
+  if (v === null || typeof v !== 'object') return true;
+  return !Array.isArray(v) && Object.values(v).every((x) => x === null || typeof x !== 'object');
 }
 
 function sheetRows(tiles) {
