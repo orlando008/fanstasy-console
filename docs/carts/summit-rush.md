@@ -44,7 +44,7 @@ summit, and it **modifies your racer** while climbing.
 
 | Bucket | Chip | Color | Effect during the race |
 |---|---|---|---|
-| ⚡ Electricity | Lightning bolt | Yellow | Boost fuel. A spends 2/frame for +60% speed. |
+| ⚡ Electricity | Lightning bolt | Yellow | Boost fuel. A spends 30 per second for +60% speed. |
 | 🎮 GPU | Green chip | Green | Top speed: +0.4% per point (max +40%). |
 | 🧠 CPU | Blue chip | Blue | Steering: acceleration and max lateral speed +0.5% per point. |
 | 💾 RAM | Purple stick | Purple | Shielding: every 25 points absorbs one obstacle hit, which costs 25 RAM. |
@@ -119,7 +119,7 @@ bottom edge costs 3 seconds and respawns you at the center.
 
 - The playfield is the full 256×224 screen with a HUD strip at the top (see 9).
 - The course is bounded by **walls** (BG0 tiles) whose positions vary per row. The course narrows from ~200 px in stage 1 to ~140 px in stage 3.
-- Each stage is an authored map region in Map RAM (32 tiles wide × ~200 tiles tall), scrolled with `bgscroll`. Layout is fixed so runs are comparable on the leaderboard. Pickup and obstacle placement is seeded so every run of a stage is identical.
+- Map RAM is only 128 rows tall, so a stage (~320 rows) is streamed: BG0 views a wrapping 32×64-tile window, and rows are written with `mset` just before they scroll into view. Layout is fixed so runs are comparable on the leaderboard: the course shape comes from a per-stage function and pickup and obstacle placement from a fixed-seed generator, so every run of a stage is identical.
 
 | Layer | Use |
 |---|---|
