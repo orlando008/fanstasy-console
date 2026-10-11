@@ -25,6 +25,11 @@ export class Input {
     this.tapped = new Set();
     this.enabled = true;
     this.masks = new Uint16Array(4);
+    // Gamepad index assigned to each player, or null. A pad joins the first
+    // free player slot when one of its buttons is pressed, so P1 is the first
+    // pad used rather than whatever the browser put in slot 0 (Steam's
+    // virtual pads, a duplicate of the same controller, and so on).
+    this.players = [null, null, null, null];
 
     target.addEventListener('keydown', (e) => {
       if (!this.enabled || isTextField(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -44,8 +49,9 @@ export class Input {
   sample() {
     const masks = new Uint16Array(4);
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    this.assignPads(pads);
     for (let p = 0; p < 4; p++) {
-      const pad = pads[p];
+      const pad = this.players[p] === null ? null : pads[this.players[p]];
       if (!pad || !pad.connected) continue;
       let mask = 0;
       for (const [b, bit] of PAD_BUTTONS) {
@@ -64,6 +70,21 @@ export class Input {
     }
     this.tapped.clear();
     return masks;
+  }
+
+  /** Free the players of disconnected pads and seat pads that press a button. */
+  assignPads(pads) {
+    for (let p = 0; p < 4; p++) {
+      const i = this.players[p];
+      if (i !== null && !pads[i]?.connected) this.players[p] = null;
+    }
+    for (const pad of pads) {
+      if (!pad || !pad.connected || this.players.includes(pad.index)) continue;
+      if (!pad.buttons.some((b) => b.pressed)) continue;
+      const free = this.players.indexOf(null);
+      if (free < 0) return;
+      this.players[free] = pad.index;
+    }
   }
 
   clear() {

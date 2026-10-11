@@ -200,7 +200,7 @@ All synthesis, mixing and sequencing run in an `AudioWorklet`, so timing is samp
 | `START` | Start | Enter | 9 |
 | `SELECT` | Select | Shift | 8 |
 
-- Gamepads 0–3 map to players 0–3. The keyboard always feeds player 0.
+- A gamepad becomes a player the first time one of its buttons is pressed, taking the lowest free player slot (0–3). Players keep their pad until it disconnects. The keyboard always feeds player 0.
 - The left stick acts as a d-pad with a deadzone of 0.4.
 - The main thread samples input once per frame and sends it to the console as a 12-bit mask per pad. Carts never read devices directly, which keeps input deterministic.
 - `btnp` is true on the first frame of a press, then repeats after 15 frames, then every 4 frames.

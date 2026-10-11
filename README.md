@@ -46,6 +46,9 @@ the page. Without `?cart=`, the console reopens your autosaved working cart.
 Keyboard: arrows = d-pad, X = A, Z = B, S = X, A = Y, Q = L, W = R,
 Enter = Start, Shift = Select.
 
+Gamepads join as players in the order you first press a button on them, so
+press a button on a controller after the page loads to make it P1.
+
 Shell shortcuts:
 
 | Key | Action |
