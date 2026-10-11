@@ -44,12 +44,13 @@ summit, and it **modifies your racer** while climbing.
 
 | Bucket | Chip | Color | Effect during the race |
 |---|---|---|---|
-| ⚡ Electricity | Lightning bolt | Yellow | Boost fuel. A spends 30 per second for +60% speed. |
+| ⚡ Electricity | Lightning bolt | Yellow | Boost fuel. A spends 20 per second for +60% speed. |
 | 🎮 GPU | Green chip | Green | Top speed: +0.4% per point (max +40%). |
 | 🧠 CPU | Blue chip | Blue | Steering: acceleration and max lateral speed +0.5% per point. |
-| 💾 RAM | Purple stick | Purple | Shielding: every 25 points absorbs one obstacle hit, which costs 25 RAM. |
+| 💾 RAM | Purple stick | Purple | Shielding: with 15 or more RAM, a hit is absorbed and costs 15 RAM. |
 
 - Each chip pickup adds **+5** to its bucket. A rare **Golden Wafer** adds +5 to all four.
+- Each stage offers every bucket the same number of chips (about 20 in a 30-second stage, plus a few Golden Wafers), so reaching Gold takes collecting roughly half to two-thirds of a bucket's chips over the race, before boosting and shield costs. Chip lines go to whichever bucket has had the fewest chips so far, and each ten stretches of course deal a fixed mix: 5 chip lines, 2 protester groups, 1 red tape with a bait chip, 1 pair of chips on opposite sides, 1 Golden Wafer.
 - Boosting consumes Electricity, so Electricity's final value reflects what you saved rather than what you collected.
 - RAM absorbing hits gives the core trade-off: protecting yourself costs score.
 
@@ -141,7 +142,7 @@ when you are above base speed. A hit slows the scroll and knocks the racer
 | Ice patch (stage 3) | 32×16 | Low traction | Drift; no bucket cost |
 | Wind gust (stage 3) | — | Pushes all racers sideways for 1 s; arrows warn first | — |
 
-- With a RAM shield, any hit is fully absorbed and costs 25 RAM instead.
+- With a RAM shield (15+ RAM), any hit is fully absorbed and costs 15 RAM instead.
 - After a hit, 1 s of invulnerability, shown as sprite flicker.
 
 ## 9. HUD

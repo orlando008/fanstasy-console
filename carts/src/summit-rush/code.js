@@ -12,8 +12,8 @@ const FINISH_Y = -2600; // world y of the finish line (start line is y 0)
 const HUD_H = 20;
 const PAR_SECONDS = 40; // the slice is one stage: a third of the full race's 120 s
 const CHIP_VALUE = 5;
-const SHIELD_COST = 25;
-const BOOST_COST = 0.5; // Electricity per frame (30 per second)
+const SHIELD_COST = 15;
+const BOOST_COST = 1 / 3; // Electricity per frame (20 per second)
 const TIERS = [[80, 2000, 'GOLD', 14], [50, 750, 'SILVER', 10], [25, 250, 'BRONZE', 9]];
 const PLACE_POINTS = [1500, 1000, 600, 300, 150, 50, 0];
 const BEST_SLOT = 10; // save slot holding the best score (SPEC 12)
@@ -117,21 +117,52 @@ function trackRange(y, w = 16) {
   return [l * 8 + 2, rt * 8 - w - 2];
 }
 
+/**
+ * Each new chip goes to the bucket with the fewest chips placed so far (ties
+ * broken at random), so every bucket gets the same share over the course.
+ */
+let placed = [0, 0, 0, 0];
+function nextType() {
+  const low = Math.min(...placed);
+  const ties = [0, 1, 2, 3].filter((t) => placed[t] === low);
+  return ties[Math.floor(rand() * ties.length)];
+}
+
+/**
+ * What fills each stretch of course. Every ten stretches deal this mix in a
+ * shuffled order, so chips and obstacles stay in balance over the stage.
+ */
+const SLOT_MIX = ['chips', 'chips', 'chips', 'chips', 'chips', 'protest', 'protest', 'tape', 'both', 'wafer'];
+let slots = [];
+function nextSlot() {
+  if (!slots.length) {
+    slots = [...SLOT_MIX];
+    for (let i = slots.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [slots[i], slots[j]] = [slots[j], slots[i]];
+    }
+  }
+  return slots.pop();
+}
+
 function buildCourse() {
   rng = 20261011;
+  placed = [0, 0, 0, 0];
+  slots = [];
   const list = [];
   for (let y = -150; y > FINISH_Y + 60; y -= 48 + Math.floor(rand() * 36)) {
-    const k = rand();
-    if (k < 0.48) {
+    const k = nextSlot();
+    if (k === 'chips') {
       // A line or diagonal of one kind of chip.
-      const type = Math.floor(rand() * 4), n = 3 + Math.floor(rand() * 3);
+      const type = nextType(), n = 4;
       const [x0, x1] = trackRange(y);
       const x = x0 + rand() * (x1 - x0), dx = [-14, 0, 14][Math.floor(rand() * 3)];
       for (let i = 0; i < n; i++) {
         const yy = y - i * 22, [a, b] = trackRange(yy);
         list.push({ kind: 'chip', type, x: clamp(x + dx * i, a, b), y: yy });
+        placed[type]++;
       }
-    } else if (k < 0.7) {
+    } else if (k === 'protest') {
       // Protesters walking across the track.
       const n = 2 + Math.floor(rand() * 3), dir = rand() < 0.5 ? -1 : 1;
       const [x0, x1] = trackRange(y);
@@ -140,21 +171,26 @@ function buildCourse() {
         const [a, b] = trackRange(y - i * 4);
         list.push({ kind: 'protester', x: clamp(x + i * 20 * dir, a, b), y: y - i * 4, vx: 0.4 * dir, step: i * 7 });
       }
-    } else if (k < 0.88) {
+    } else if (k === 'tape') {
       // Red tape across part of the track, with a chip as bait beside it.
       const [x0, x1] = trackRange(y, 32);
       const x = x0 + rand() * (x1 - x0);
       list.push({ kind: 'tape', x, y });
       const [a, b] = trackRange(y - 30);
-      list.push({ kind: 'chip', type: Math.floor(rand() * 4), x: clamp(x + 8, a, b), y: y - 30 });
-    } else if (k < 0.94) {
+      const t = nextType();
+      placed[t]++;
+      list.push({ kind: 'chip', type: t, x: clamp(x + 8, a, b), y: y - 30 });
+    } else if (k === 'wafer') {
       const [x0, x1] = trackRange(y);
       list.push({ kind: 'wafer', x: x0 + rand() * (x1 - x0), y });
     } else {
       // Chips on both sides: pick a side.
       const [x0, x1] = trackRange(y);
-      list.push({ kind: 'chip', type: Math.floor(rand() * 4), x: x0, y });
-      list.push({ kind: 'chip', type: Math.floor(rand() * 4), x: x1, y });
+      for (const x of [x0, x1]) {
+        const t = nextType();
+        placed[t]++;
+        list.push({ kind: 'chip', type: t, x, y });
+      }
     }
   }
   return list;
@@ -268,7 +304,7 @@ function collide(e) {
     p.vy = 0;
     if (p.b[3] >= SHIELD_COST) {
       p.b[3] -= SHIELD_COST;
-      popup('SHIELD -25 RAM', PURPLE);
+      popup(`SHIELD -${SHIELD_COST} RAM`, PURPLE);
       sfx(6);
     } else if (e.kind === 'protester') {
       p.slow = 60;
