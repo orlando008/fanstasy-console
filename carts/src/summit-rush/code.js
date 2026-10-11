@@ -51,6 +51,8 @@ const OBSTACLES = {
 const BUCKET_NAME = ['ELEC', 'GPU', 'CPU', 'RAM'];
 const BUCKET_LETTER = ['E', 'G', 'C', 'R'];
 const PURPLE = 135; // sprite palette 0, color 7, recolored for RAM
+const HAZARD_PAL = 1; // sprite palette 1 = CGRAM 144-159
+const HAZARD_OUTLINE = 151; // its color 7
 const BUCKET_COLOR = [14, 11, 13, PURPLE];
 
 // --- State --------------------------------------------------------------------
@@ -69,6 +71,9 @@ let rng = 1;
 
 function init() {
   color(PURPLE, 18, 9, 26);
+  // Hazards draw with their own copy of the sprite palette, whose index 7 is
+  // the pulsing red warning outline (see draw()).
+  palcopy(9, 8);
   bg(0, { mx: 0, my: 0, mw: 32, mh: 64, wrap: true });
   bg(1, { show: false });
   bg(2, { show: false });
@@ -464,6 +469,8 @@ function noise() {
 
 function draw() {
   cls();
+  const k = (Math.sin(t() / 5) + 1) / 2;
+  color(HAZARD_OUTLINE, 31, flr(2 + 8 * k), flr(2 + 8 * k));
   bgscroll(0, 0, ((Math.floor(camY) % 512) + 512) % 512);
 
   for (const e of entities) {
@@ -471,12 +478,14 @@ function draw() {
     const sy = Math.floor(e.y - camY);
     if (sy < -32 || sy > 224) continue;
     const x = Math.floor(e.x);
+    // Pickups bob smoothly; hazards jitter and wear a pulsing red outline.
+    const jx = x + jitter(e);
     if (e.kind === 'chip') spr(SPR.CHIPS[e.type], x, sy + bob(e), { size: 16, prio: 2 });
     else if (e.kind === 'wafer') spr(SPR.WAFER, x, sy + bob(e), { size: 16, prio: 2 });
-    else if (e.kind === 'protester') spr(SPR.PROTEST + (flr(e.step / 12) % 2) * 2, x, sy, { size: 16, fx: e.vx < 0, prio: 2 });
-    else if (e.kind === 'tape') for (let i = 0; i < 4; i++) spr(SPR.TAPE, x + i * 8, sy, { prio: 2 });
-    else if (e.kind === 'price') spr(SPR.PRICE, x, sy + bob(e), { size: 16, prio: 2 });
-    else if (e.kind === 'law') spr(SPR.LAW, x, sy, { size: 16, prio: 2 });
+    else if (e.kind === 'protester') spr(SPR.PROTEST + (flr(e.step / 12) % 2) * 2, x, sy, { size: 16, fx: e.vx < 0, prio: 2, pal: HAZARD_PAL });
+    else if (e.kind === 'tape') for (let i = 0; i < 4; i++) spr(SPR.TAPE, jx + i * 8, sy, { prio: 2, pal: HAZARD_PAL });
+    else if (e.kind === 'price') spr(SPR.PRICE, jx, sy, { size: 16, prio: 2, pal: HAZARD_PAL });
+    else if (e.kind === 'law') spr(SPR.LAW, jx, sy, { size: 16, prio: 2, pal: HAZARD_PAL });
   }
 
   // The player flickers while invulnerable after a hit.
@@ -506,6 +515,11 @@ function label(text, x, y, c) {
   pset(x - 2, y - 2, 0); pset(x + w + 1, y - 2, 0);
   pset(x - 2, y + 8, 0); pset(x + w + 1, y + 8, 0);
   print(text, x, y, c);
+}
+
+/** A nervous 1-pixel shake, out of step between hazards. */
+function jitter(e) {
+  return ((p.frames + flr(e.y)) >> 2) % 3 - 1;
 }
 
 function bob(e) {

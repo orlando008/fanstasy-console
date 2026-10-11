@@ -163,6 +163,7 @@ Each obstacle takes from one bucket, so a hit always reads as a specific loss.
 | Wind gust (stage 3) | — | Pushes the racer sideways for 1 s; arrows warn first | — |
 
 - A hit knocks the racer 16 px down the screen and gives 1 s of invulnerability, shown as sprite flicker.
+- **Hazards must read as bad at a glance.** Every hazard has a red outline that pulses about twice a second. It is color 7 of its own sprite palette (palette 1, a copy of palette 0), so a single CGRAM write animates every hazard. Hazards that don't walk also jitter by ±1 px, while pickups bob smoothly. The rule is: red and shaking means avoid it, smooth bobbing means grab it. If that still isn't enough, the fallback is a "!" marker on hazards as they scroll into view.
 
 ## 9. HUD
 
