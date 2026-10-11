@@ -442,7 +442,9 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 ├── style.css
 ├── package.json            # { "type": "module" } only, for node --check; no dependencies
 ├── src/
-│   ├── main.js             # Boot, frame clock, worker/worklet wiring
+│   ├── main.js             # Boot and wiring: machine, shell, files, autosave
+│   ├── machine.js          # Console worker lifecycle and 60 Hz frame clock
+│   ├── files.js            # .nova save/open (File System Access API, download fallback)
 │   ├── input.js            # Keyboard and gamepad sampling
 │   ├── storage.js          # Save data and autosave
 │   ├── console/            # Runs inside the worker
@@ -462,6 +464,7 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 │   ├── editors/
 │   │   ├── shell.js        # Tabs, run/edit switching
 │   │   ├── code.js
+│   │   ├── highlight.js    # Line-by-line JS syntax highlighting
 │   │   ├── sprite.js
 │   │   ├── map.js
 │   │   ├── palette.js
@@ -469,6 +472,7 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 │   │   ├── music.js
 │   │   └── cart.js
 │   └── ui/                 # Shared widgets (buttons, grids, sliders)
+│       └── dom.js          # Element-building helpers
 ├── carts/                  # Demo and test carts (.nova)
 ├── docs/
 │   ├── SPEC.md             # This document

@@ -263,3 +263,8 @@ function fmt(v) {
     return String(v);
   }
 }
+
+/** Names visible to carts as globals, for the code editor's highlighter. */
+export function apiNames() {
+  return Object.keys(buildApi({}));
+}
