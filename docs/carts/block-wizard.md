@@ -271,9 +271,20 @@ not worked around here.
 
 ## 11. Audio
 
-**Channel plan:** songs use channels 0 and 2–5 (pulse, triangle, saw, noise,
-sample). **Channel 1 (pulse) is reserved for sound effects**, and every SFX
-plays with `sfx(n, 1)` on a pulse instrument, so effects never mute the music.
+**Channel plan:** songs use channels 0 and 2–5: 0 lead (pulse), 2 bass
+(triangle), 3 pad, arpeggio or counter-line (saw), 4 hats, open hats and rolls
+(noise), 5 kick and snare (PCM samples). **Channel 1 (pulse) is reserved for
+sound effects**; it only carries each pattern's tempo effect. Every SFX plays
+with `sfx(n, 1)` on a pulse instrument, so effects never mute the music.
+
+**Samples:** a kick (a sine sweeping 170 → 50 Hz with a beater click) and a
+snare (a 185 Hz tone plus noise), synthesized at 16 kHz: 5,760 bytes of the
+16 KB Sample RAM. The fills play the snare pitched up.
+
+**Song form:** each song has an intro (drums, bass and pad, with a hit on every
+beat), an A theme and its answer, a B theme and a variation with a
+counter-line on the saw and a snare fill, and an ending. That's six patterns
+a song, 48 of 64, arranged in each stage's order list to its exact length.
 
 **Songs:** song `n` is stage `n + 1`, using all 8 slots. The patterns are
 shared, about 8 per song, with the order list repeating them to fill the
@@ -326,7 +337,7 @@ slots are taken.
 | Layer | Use |
 |---|---|
 | BG0 | Field cells: normal, marked (BG 1, with the merged outline drawn on the overlay) and pending (BG 2); cells falling after an erase |
-| BG1 | Room midground, dimmed behind the field, with the cell grid dots |
+| BG1 | The room's art from Map RAM (room k at map (32 × (k mod 4), 32 + 32 × ⌊k / 4⌋), 32 × 28 tiles), in BG palette 5: strong silhouettes in the band above the field, dim structure behind it, the cell grid dots baked in. Flames cycle palette colors 10–12. |
 | BG2 | Room scenery: stars (Observatory), eyes (Familiars' Den), rain (Storm Spire), the rune circle on affine (Sanctum). The backdrop gradient and its effects (candlelight, wobble, glints, lightning) are per-line backdrop colors from `scanline()`. |
 | Sprites | Active piece (4 × 16 × 16), next queue (12 × 8 × 8), wizard |
 | Overlay | HUD, timeline line, sweep counter, popups, banners, menus |
@@ -340,9 +351,9 @@ per-line limit.
 | Asset | Budget |
 |---|---|
 | Code | ≤ 48 KB of the 64 KB limit (44 KB with all eight stages, practice, every scoring rule and the top 10) |
-| Tiles | ≤ 700 of 1024: blocks and gem ~60 (shared by all stages; colors by palette), HUD ~30, title ~100, rooms ~60 each |
-| Map RAM | Rooms in two 28-row bands (8 × 32 columns each for BG1 and BG2), field 32 × 20, title |
-| Palettes | BG 0 blocks, BG 1 marked, BG 2 pending, BG 3 HUD, overlay colors and grid, BG 4–7 room. Sprites: piece and queue (copy of BG 0), wizard, effects. Each stage loads its own colors. |
+| Tiles | ≤ 700 of 1024: blocks, gems and minis ~25, wizard ~25, logo letters 44, rune circle 64, room scenery 6, rooms 502 in all (24–82 each, deduplicated with flips) |
+| Map RAM | Field (BG0) at rows 0–23; room scenery (BG2) at columns 64–95, rows 0–27, written by the cart; the eight rooms (BG1) at rows 32–59 and 64–91, from `map.txt` |
+| Palettes | BG 0 blocks, BG 1 marked, BG 2 pending, BG 3 HUD and overlay colors, BG 4 room scenery, BG 5 room art. Sprites: 0 piece and queue (copy of BG 0), 1 wizard, 2 logo letters. Each stage loads its own colors. |
 | Sprites on screen | ≤ 30 |
 | Songs / SFX | 8 songs, 64 patterns (32 used by the placeholder songs), 48 SFX so far (8 shared + 5 per stage); drum samples in Sample RAM |
 | PNG cart | Must fit the 147 KB `.nova.png` limit |
@@ -354,8 +365,8 @@ per-line limit.
 3. **All eight stages:** *(Done.)* Stage table, transitions, stage-clear bonus, the tower bonus, per-stage palettes, backdrop effects and scenery, a placeholder song and five SFX per stage, and practice mode with unlocks.
 4. **Scoring extras:** *(Done.)* Wizard gem, single color, all clear.
 5. **Flow:** *(Done.)* Title, READY, pause menu, results, initials, scores, practice and unlocks, saves.
-6. **Art pass:** block tiles and glyphs, eight rooms, the wizard, the title, all made in the built-in editors.
-7. **Audio pass:** eight songs and the SFX in the Music and SFX tabs.
+6. **Art pass:** *(First round done.)* Rounded, bevelled blocks with an orb (light) or facet (dark) glyph; a redrawn wizard with idle and casting frames and a 32 × 32 title portrait; the BLOCK WIZARD logo in rippling 16 × 16 letters (the system font at 2×, bevelled); and art for all eight rooms: battlements, torches and a great arch at the Tower Gate, shelves of books and candles in the Library, flasks and a cauldron in the Alchemy Lab, stalactites and crystals in the Crystal Cave, the dome, telescope and tall windows of the Observatory, roots, perches and an owl in the Familiars' Den, storm clouds and spires at the Storm Spire, and drapes, candles and pillars in the Sanctum. Drawn by a script into `tiles.txt` and `map.txt`, both editable in the Sprites and Map tabs.
+7. **Audio pass:** *(First round done.)* Eight songs with written melodies, chord changes and counter-lines, a sampled kick and snare, vibrato fixed (instruments store `[depth, speed]`), and the bass brought down so the kick reads. The songs are generated by a script into `audio.json` and editable in the Music and SFX tabs.
 8. **Balance and polish:** gravity, the score tables and the gem rate; record replays of good runs (F9/F10); capture a label (F7); export a PNG cart.
 
 Any console bugs or editor gaps found along the way are logged and fixed as

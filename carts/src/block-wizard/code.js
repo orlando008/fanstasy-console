@@ -36,28 +36,36 @@ const READY_FRAMES = 60; // the READY lead-in before a run's clock and song star
 const STAGES = [
   { name: 'TOWER GATE', speed: 8, sweepBeats: 8, patterns: 11, gravity: 48, fx: 'dusk',
     light: [24, 23, 21], dark: [9, 18, 8], glow: [20, 26, 31], pulse: [31, 26, 8],
-    sky: [[3, 2, 9], [12, 6, 13]], floor: [[3, 2, 7], [5, 3, 9]] },
+    sky: [[3, 2, 9], [12, 6, 13]], floor: [[3, 2, 7], [5, 3, 9]], flame: true,
+    art: [[7, 4, 11], [4, 3, 8], [5, 4, 9], [5, 4, 7], [5, 4, 10], [7, 5, 12], [6, 5, 11], [18, 14, 10], [12, 8, 5], [31, 12, 2], [31, 20, 4], [31, 29, 12], [7, 6, 13], [10, 8, 16], [14, 10, 18]] },
   { name: 'LIBRARY', speed: 7, sweepBeats: 8, patterns: 12, gravity: 40, fx: 'candle',
     light: [28, 25, 17], dark: [19, 6, 5], glow: [20, 26, 31], pulse: [31, 28, 12],
-    sky: [[5, 3, 2], [15, 8, 4]], floor: [[4, 2, 2], [7, 4, 3]] },
+    sky: [[5, 3, 2], [15, 8, 4]], floor: [[4, 2, 2], [7, 4, 3]], flame: true,
+    art: [[6, 3, 2], [12, 7, 3], [10, 4, 4], [8, 5, 3], [7, 4, 3], [9, 5, 3], [6, 4, 4], [18, 6, 5], [26, 24, 18], [31, 12, 2], [31, 20, 4], [31, 29, 12], [8, 5, 4], [6, 12, 7], [6, 8, 15]] },
   { name: 'ALCHEMY LAB', speed: 6, sweepBeats: 8, patterns: 14, gravity: 34, fx: 'brew',
     light: [16, 29, 15], dark: [21, 10, 4], glow: [26, 24, 31], pulse: [31, 31, 20],
-    sky: [[2, 5, 4], [6, 14, 9]], floor: [[2, 4, 3], [3, 7, 5]] },
+    sky: [[2, 5, 4], [6, 14, 9]], floor: [[2, 4, 3], [3, 7, 5]], flame: true,
+    art: [[2, 4, 3], [8, 9, 7], [12, 12, 9], [3, 5, 4], [4, 7, 5], [3, 6, 4], [5, 9, 6], [24, 16, 4], [28, 31, 26], [6, 20, 10], [14, 28, 12], [26, 31, 20], [4, 8, 6], [16, 8, 22], [24, 6, 8]] },
   { name: 'CRYSTAL CAVE', speed: 9, sweepBeats: 8, patterns: 9, gravity: 28, fx: 'crystal',
     light: [20, 28, 31], dark: [15, 6, 21], glow: [31, 27, 16], pulse: [31, 31, 31],
-    sky: [[3, 2, 9], [10, 8, 20]], floor: [[2, 2, 6], [4, 3, 11]] },
+    sky: [[3, 2, 9], [10, 8, 20]], floor: [[2, 2, 6], [4, 3, 11]],
+    art: [[2, 1, 6], [5, 3, 12], [7, 4, 15], [3, 2, 7], [4, 3, 10], [8, 5, 16], [11, 8, 20], [20, 26, 31], [16, 22, 31], null, null, null, [5, 4, 12], null, null] },
   { name: 'OBSERVATORY', speed: 7, sweepBeats: 4, patterns: 12, gravity: 22, fx: 'stars',
     light: [30, 24, 7], dark: [6, 8, 20], glow: [24, 31, 26], pulse: [31, 31, 31],
-    sky: [[1, 1, 4], [3, 4, 12]], floor: [[1, 1, 4], [2, 2, 7]] },
+    sky: [[1, 1, 4], [3, 4, 12]], floor: [[1, 1, 4], [2, 2, 7]],
+    art: [[1, 1, 3], [5, 6, 12], [4, 4, 9], [2, 2, 5], [3, 3, 8], [4, 4, 10], [3, 3, 8], [24, 18, 6], [18, 14, 6], null, null, null, [3, 3, 8], null, null] },
   { name: "FAMILIARS' DEN", speed: 6, sweepBeats: 4, patterns: 14, gravity: 17, fx: 'eyes',
     light: [30, 19, 6], dark: [6, 14, 7], glow: [22, 26, 31], pulse: [31, 31, 24],
-    sky: [[4, 2, 1], [10, 6, 3]], floor: [[2, 2, 1], [4, 3, 2]] },
+    sky: [[4, 2, 1], [10, 6, 3]], floor: [[2, 2, 1], [4, 3, 2]],
+    art: [[5, 3, 1], [10, 6, 3], [14, 9, 4], [4, 3, 1], [6, 4, 2], [9, 6, 3], [12, 8, 4], [14, 10, 4], [26, 20, 8], null, null, null, [6, 5, 3], [31, 24, 6], null] },
   { name: 'STORM SPIRE', speed: 8, sweepBeats: 8, patterns: 11, gravity: 12, fx: 'storm',
     light: [20, 22, 25], dark: [17, 6, 28], glow: [31, 29, 14], pulse: [31, 31, 12],
-    sky: [[4, 5, 8], [9, 10, 14]], floor: [[2, 3, 5], [4, 4, 7]] },
+    sky: [[4, 5, 8], [9, 10, 14]], floor: [[2, 3, 5], [4, 4, 7]],
+    art: [[3, 3, 6], [6, 6, 9], [2, 2, 4], [3, 3, 5], [4, 5, 8], [10, 10, 6], [5, 5, 8], [12, 12, 14], [28, 24, 10], null, null, null, [4, 5, 8], null, null] },
   { name: "ARCHMAGE'S SANCTUM", short: 'SANCTUM', speed: 5, sweepBeats: 4, patterns: 17, gravity: 8, fx: 'circle',
     light: [30, 28, 18], dark: [21, 3, 7], glow: [20, 26, 31], pulse: [31, 31, 31],
-    sky: [[7, 1, 6], [18, 4, 11]], floor: [[4, 1, 4], [6, 2, 6]] },
+    sky: [[7, 1, 6], [18, 4, 11]], floor: [[4, 1, 4], [6, 2, 6]], flame: true,
+    art: [[5, 1, 4], [12, 2, 6], [9, 1, 5], [5, 1, 4], [6, 2, 6], [8, 3, 8], [7, 2, 7], [28, 22, 8], [28, 26, 22], [31, 12, 2], [31, 20, 4], [31, 29, 12], [6, 2, 7], null, null] },
 ];
 const TITLE_MENU = ['PLAY', 'PRACTICE', 'SCORES'];
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -74,13 +82,14 @@ const PRACTICE_SLOT = 130; // + stage: best practice score
 
 // --- Art ----------------------------------------------------------------------
 
-const DOT = 1; // grid dot
 const BLOCK = [0, 2, 4]; // 16x16 block by cell color: 1 light, 2 dark
-const WIZARD = 6;
+const WIZARD = 6, WIZARD_CAST = 24, PORTRAIT = 104; // 16x16 frames and the 32x32 title portrait
+const LETTER = { B: 64, L: 66, O: 68, C: 70, K: 72, W: 74, I: 76, Z: 78, A: 96, R: 98, D: 100 }; // 16x16 logo letters
+const PAL_ART = 5, ART = 80; // room art: BG sub-palette 5, CGRAM 80-95
 const MINI = [0, 8, 9]; // 8x8 blocks for the next queue
 const GEM_BLOCK = [0, 32, 34], GEM_MINI = [0, 36, 37]; // the same with a rune
 const STAR = 10, STAR2 = 11, RAIN = 12, EYES = 13, CIRCLE = 256; // room tiles; three eye tiles
-const PAL_MARKED = 1, PAL_PENDING = 2, PAL_HUD = 3, PAL_ROOM = 4;
+const PAL_MARKED = 1, PAL_PENDING = 2, PAL_ROOM = 4;
 // Overlay colors, in BG sub-palette 3 (CGRAM 48-63).
 const INK = 50, DIM = 51, GOLD = 52, LINE = 53, GLOW = 54, PULSE = 55, RED = 56, PANEL = 57, CYAN = 58, EDGE = 59, SPELL = 60;
 const ROOM = 64; // BG sub-palette 4: 1-2 stars, 3 rain, 4-6 eyes, 7-8 rune circle
@@ -133,10 +142,6 @@ const LINES = new Uint8Array(224 * 3); // this frame's backdrop, effects applied
 
 function init() {
   bg(0, { mx: 0, my: 0, mw: 32, mh: 24, x: 0, y: -16, wrap: false, show: false });
-  bg(1, { mx: 32, my: 0, mw: 32, mh: 24, x: 0, y: -16, wrap: false });
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) mset(32 + c * 2, 4 + r * 2, tile(DOT, PAL_HUD));
-  }
   hudPalette();
   if (dget(VERSION_SLOT) !== SAVE_VERSION) {
     for (let i = 0; i < 256; i++) dset(i, 0);
@@ -161,7 +166,9 @@ function setColors(base, list) {
 function hudPalette() {
   setColors(48, [null, [7, 7, 14], [30, 30, 28], [15, 15, 20], [31, 26, 8], [31, 31, 31], [14, 20, 31], [31, 26, 8], [28, 8, 8], [2, 2, 6], [12, 28, 30], [10, 9, 18]]);
   // Wizard (sprite palette 1).
-  setColors(144, [null, [3, 2, 7], [11, 6, 20], [18, 11, 27], [28, 21, 16], [29, 29, 30], [17, 10, 5], [31, 28, 8]]);
+  setColors(144, [null, [3, 2, 7], [11, 6, 20], [18, 11, 27], [28, 21, 16], [29, 29, 30], [17, 10, 5], [31, 28, 8], [20, 28, 31], [3, 2, 7]]);
+  // Logo letters (sprite palette 2): outline, shadow, gold, highlight.
+  setColors(160, [null, [6, 3, 1], [22, 12, 2], [30, 24, 6], [31, 31, 22]]);
 }
 
 /** Load a room's look: block palettes, backdrop gradient and BG2 scenery. */
@@ -175,6 +182,11 @@ function setVisuals(s) {
   // Room scenery colors (BG 4).
   setColors(ROOM, [null, mix(s.sky[1], white, 0.3), mix(s.sky[1], white, 0.7), mix(s.floor[1], [16, 20, 28], 0.6),
     [28, 22, 6], [12, 28, 10], [26, 26, 10], mix(s.pulse, s.sky[1], 0.55), mix(s.pulse, s.sky[1], 0.8)]);
+
+  // The room's art on BG1 (SPEC 14), from Map RAM: room k at (32 * (k % 4), 32 + 32 * (k >> 2)).
+  const k = STAGES.indexOf(s);
+  setColors(ART, [null, ...s.art.map((c) => c || [0, 0, 0])]);
+  bg(1, { mx: 32 * (k % 4), my: 32 + 32 * (k >> 2), mw: 32, mh: 28, x: 0, y: 0, wrap: false, show: true });
 
   GRAD = [];
   for (let y = 0; y < 224; y++) {
@@ -930,6 +942,10 @@ function drawRoom(f) {
     LINES[y * 3 + 1] = clamp(Math.round(g), 0, 31);
     LINES[y * 3 + 2] = clamp(Math.round(b), 0, 31);
   }
+  if (stage.flame) {
+    const k = hash(f >> 2) % 3, flames = [[31, 12, 2], [31, 20, 4], [31, 29, 12]];
+    setColors(ART + 10, [0, 1, 2].map((i) => stage.art[9 + ((i + k) % 3)] || flames[i]));
+  }
   if (fx === 'stars') {
     bgscroll(2, f >> 3, 0);
     const tw = (f >> 4) & 1;
@@ -1033,7 +1049,7 @@ function drawHud(tl) {
 
   // The wizard is scenery: the piece passes in front of him.
   const bob = state === 'play' && tl >= 0 && tl % beatFrames < 6 ? 1 : 0;
-  spr(WIZARD, 230, 24 - bob - (cast > 30 ? 3 : 0), { size: 16, pal: 1, prio: 2 });
+  spr(cast > 0 ? WIZARD_CAST : WIZARD, 230, 24 - bob - (cast > 30 ? 3 : 0), { size: 16, pal: 1, prio: 2 });
   if (cast > 0) {
     const r = 12 - Math.floor(cast / 4);
     circ(238, 30, r, cast > 20 ? GOLD : GLOW);
@@ -1090,8 +1106,10 @@ function drawResult() {
 }
 
 function drawTitle() {
-  shadowText('BLOCK WIZARD', 80, 56, GOLD);
-  spr(WIZARD, 120, 30 - (timer % 60 < 30 ? 1 : 0), { size: 16, pal: 1, prio: 3 });
+  spr(PORTRAIT, 112, 12 - (timer % 60 < 30 ? 1 : 0), { size: 32, pal: 1, prio: 3 });
+  [...'BLOCK WIZARD'].forEach((ch, i) => {
+    if (LETTER[ch]) spr(LETTER[ch], 32 + i * 16, 48 + Math.round(2 * Math.sin(timer * 0.08 + i * 0.6)), { size: 16, pal: 2, prio: 3 });
+  });
   print('CLIMB THE 8 ROOMS OF THE TOWER', 8, 72, DIM);
   TITLE_MENU.forEach((s, i) => shadowText(`${menu === i ? '>' : ' '} ${s}`, 92, 96 + i * 14, menu === i ? GOLD : INK));
   const help = ['ARROWS MOVE   A/B ROTATE', 'DOWN FAST     UP DROP', 'SELECT IN PLAY: SYNC CHECK'];
