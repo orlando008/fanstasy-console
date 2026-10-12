@@ -301,8 +301,8 @@ slots are taken.
 ## 12. Screens and flow
 
 1. **Title:** the Block Wizard logo, the wizard, the high score. Menu: PLAY, PRACTICE, SCORES.
-2. **Run:** stages 1–8 back to back (8.2), starting with a 1-second READY over the first piece.
-3. **Pause:** START. The field is hidden. Menu: RESUME, QUIT TO TITLE (quitting ends the run without recording it).
+2. **Run:** stages 1–8 back to back (8.2), starting with a 1-second READY over the first piece. During READY the piece hangs and the run clock and song wait; the song is cued on READY's last frame, the frame before the clock's frame 0 (10). Practice runs start the same way.
+3. **Pause:** START. The field is hidden. Menu: RESUME, QUIT TO TITLE (quitting ends the run without recording it). UP/DOWN picks, START or A confirms, and the cursor starts on RESUME. In practice the second item is QUIT TO ROOMS, back to the room list.
 4. **Results:** GAME OVER or TOWER BEATEN, total score, stage reached, the score for each stage played.
 5. **Initials entry** if the total makes the top 10. The run is saved the moment it ends, under the last initials used, so it counts even if the player leaves before typing. UP/DOWN changes a letter (A–Z, 0–9), LEFT/RIGHT moves, A moves on (or saves on the last letter), START saves. The new initials overwrite that row, and the scores screen opens with it highlighted.
 6. **Scores:** top 10 runs (initials, the room reached or TOWER!, total), plus a second page of practice bests per stage; LEFT/RIGHT switches pages. After a run, START plays again and SELECT goes to the title.
@@ -353,7 +353,7 @@ per-line limit.
 2. **Console change** (separate): `music(song, pos, row)` for pause and resume.
 3. **All eight stages:** *(Done.)* Stage table, transitions, stage-clear bonus, the tower bonus, per-stage palettes, backdrop effects and scenery, a placeholder song and five SFX per stage, and practice mode with unlocks.
 4. **Scoring extras:** *(Done.)* Wizard gem, single color, all clear.
-5. **Flow:** title, pause, results, initials *(done)*, scores *(done)*, practice and unlocks *(done)*, saves. Still to do: the pause menu's QUIT TO TITLE and the READY at the start of a run.
+5. **Flow:** *(Done.)* Title, READY, pause menu, results, initials, scores, practice and unlocks, saves.
 6. **Art pass:** block tiles and glyphs, eight rooms, the wizard, the title, all made in the built-in editors.
 7. **Audio pass:** eight songs and the SFX in the Music and SFX tabs.
 8. **Balance and polish:** gravity, the score tables and the gem rate; record replays of good runs (F9/F10); capture a label (F7); export a PNG cart.

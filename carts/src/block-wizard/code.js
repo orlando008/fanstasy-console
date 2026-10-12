@@ -23,6 +23,7 @@ const GEM_POINTS = 10; // per cell the gem clears outside any square
 const SINGLE_COLOR = 1000, ALL_CLEAR = 5000; // times the stage number (SPEC 9.1)
 const SINGLE_MIN = 8; // cells a single-color field must hold to count
 const LAG_MIN = -10, LAG_MAX = 30;
+const READY_FRAMES = 60; // the READY lead-in before a run's clock and song start
 
 /**
  * The rooms (SPEC 8.1, 8.3). A pattern is 64 rows at 4 rows per beat and
@@ -93,7 +94,7 @@ const SFX_CH = 1;
 
 // --- State --------------------------------------------------------------------
 
-let state; // 'title', 'rooms' (practice select), 'play', 'over', 'clear'
+let state; // 'title', 'rooms' (practice select), 'ready', 'play', 'over', 'clear', 'initials', 'scores'
 let timer; // frames in the current state
 let stage = STAGES[0];
 let beatFrames, sweepFrames, patternFrames, stageFrames, sweeps;
@@ -117,7 +118,7 @@ let lag = 0; // the timeline runs this many frames behind the run clock
 let sweepK = -1, nextCol = 0, sweepN = 0, gemCells = 0;
 let score = 0, streak = 0, hi = 0, bonus = 0, best = 0;
 let stageBase = 0, stageScores = [], towerBonus = 0;
-let paused = false, resync = false, syncView = false;
+let paused = false, resync = false, syncView = false, pauseSel = 0;
 let holdDir = 0, holdT = 0, downArmed = false;
 let popups = [], sparks = [], banner = null;
 let cast = 0; // the wizard's flourish after a charged sweep
@@ -243,6 +244,7 @@ function title() {
 function rooms() {
   state = 'rooms';
   timer = 0;
+  paused = false;
   flash = 0;
   setStage(STAGES[pick]);
   setVisuals(STAGES[pick]);
@@ -271,14 +273,24 @@ function start(stages, isPractice) {
   si = 0;
   enterStage();
   best = practice ? dget(PRACTICE_SLOT + plan[0]) : hi;
-  state = 'play';
+  // READY first: the first piece hangs while the clock and the song wait.
+  state = 'ready';
   timer = 0;
   spawn();
-  // The song starts on the frame before the run clock's frame 0. Every later
-  // song and resync goes out one frame early the same way (see play()).
   rf = -1;
-  music(plan[0]);
+  music(-1);
   snd(SFX.start);
+}
+
+/**
+ * READY is over. The song starts on the frame before the run clock's frame 0;
+ * every later song and resync goes out one frame early the same way (see
+ * cueMusic()).
+ */
+function go() {
+  state = 'play';
+  timer = 0;
+  music(plan[0]);
 }
 
 /** The timeline reached stage si: switch speeds, colors and scenery. */
@@ -754,6 +766,8 @@ function update() {
       timer = 0;
     } else if (timer > 40 && tap(START)) start(plan, practice);
     else if (timer > 40 && tap(SELECT)) { if (practice) rooms(); else title(); }
+  } else if (state === 'ready') {
+    if (timer >= READY_FRAMES) go();
   } else if (state === 'initials') {
     enterInitials();
   } else if (state === 'scores') {
@@ -783,14 +797,16 @@ function pickRoom() {
 
 function play() {
   if (tap(SELECT)) syncView = !syncView;
+  if (paused) { pauseMenu(); return; }
   if (tap(START)) {
-    paused = !paused;
+    paused = true;
+    pauseSel = 0;
     snd(SFX.pause);
     // music() can only start a song at a pattern boundary, so the song stops
     // here and comes back in at the next boundary after the game resumes.
-    if (paused) music(-1); else resync = true;
+    music(-1);
+    return;
   }
-  if (paused) return;
   // One frame of lag per press, and the clock also moves on a frame, so the
   // timeline never steps backwards.
   if (syncView && (tap(L) || tap(R))) {
@@ -817,6 +833,24 @@ function play() {
   flash *= 0.85;
   const tl = rf - lag - starts[si];
   if (stage.fx === 'storm' && tl >= 0 && tl % (beatFrames * 4) === 0 && hash(tl) % 3 === 0) flash = 1;
+}
+
+/**
+ * Paused: RESUME, or QUIT, which ends the run without recording it (back to
+ * the title, or to the room list from practice).
+ */
+function pauseMenu() {
+  if (tap(UP) || tap(DOWN)) { pauseSel = 1 - pauseSel; snd(SFX.menu); }
+  if (!tap(START) && !tap(A)) return;
+  if (pauseSel === 0) {
+    paused = false;
+    resync = true;
+    snd(SFX.pause);
+  } else if (practice) {
+    rooms();
+  } else {
+    title();
+  }
 }
 
 /**
@@ -847,9 +881,10 @@ function scanline(y) {
 
 function draw() {
   cls();
-  const tl = rf - lag - (state === 'play' || state === 'over' || state === 'clear' ? starts[si] : 0);
+  const inRun = state === 'ready' || state === 'play' || state === 'over' || state === 'clear';
+  const tl = rf - lag - (inRun ? starts[si] : 0);
   drawRoom(state === 'play' ? rf : timer);
-  const showField = (state === 'play' || state === 'over' || state === 'clear') && !paused;
+  const showField = inRun && !paused;
   bg(0, { show: showField });
   if (state === 'title') { drawTitle(); return; }
   if (state === 'rooms') { drawRooms(); return; }
@@ -871,10 +906,12 @@ function draw() {
     shadowText(banner.text, 128 - banner.text.length * 4, 100, GOLD);
     if (banner.sub) shadowText(banner.sub, 128 - banner.sub.length * 4, 112, INK);
   }
+  if (state === 'ready' && timer % 20 < 14) shadowText('READY', 108, 136, GOLD); // below the stage banner
   if (paused) {
-    panel(76, 96, 104, 32);
-    print('PAUSED', 104, 104, INK);
-    print('START: RESUME', 76, 116, DIM);
+    const quit = practice ? 'QUIT TO ROOMS' : 'QUIT TO TITLE';
+    panel(52, 84, 152, 56);
+    print('PAUSED', 104, 92, GOLD);
+    ['RESUME', quit].forEach((t, i) => print(`${pauseSel === i ? '>' : ' '} ${t}`, 64, 108 + i * 12, pauseSel === i ? INK : DIM));
   }
   if (state === 'over' || state === 'clear') drawResult();
 }
