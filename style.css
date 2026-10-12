@@ -97,6 +97,99 @@ body[data-mode="edit"] #editor {
   background: var(--panel);
 }
 
+/* --- Library (SPEC 11.1) ---------------------------------------------------- */
+
+#library { display: none; }
+
+body[data-mode="library"] #screen { display: none; }
+body[data-mode="library"] #library {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at top, #241f36, var(--bg) 70%);
+}
+
+.lib-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 16px 24px 4px;
+}
+.lib-logo {
+  margin: 0;
+  font: bold 28px/1 var(--code-font);
+  letter-spacing: 4px;
+  color: #f0eadf;
+  text-shadow: 3px 3px 0 var(--accent);
+}
+.lib-sub { margin: 0; color: var(--dim); }
+
+.lib-shelf {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  align-content: start;
+  gap: 20px;
+  padding: 16px 24px 24px;
+}
+
+.lib-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  transition: transform 0.12s, border-color 0.12s, background 0.12s;
+}
+.lib-card:hover { border-color: transparent; }
+.lib-card.selected {
+  border-color: var(--accent);
+  background: rgba(89, 125, 206, 0.12);
+  transform: translateY(-4px);
+}
+.lib-card:focus-visible { outline: none; }
+.lib-cart { width: 100%; height: auto; }
+.lib-card-name { color: var(--fg); font-weight: 600; text-align: center; }
+.lib-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+  font: bold 12px var(--code-font);
+}
+.lib-action-art {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 3px dashed var(--line);
+  border-radius: 14px;
+  color: var(--dim);
+  font: bold 24px var(--code-font);
+  letter-spacing: 4px;
+}
+.lib-error { grid-column: 1 / -1; color: var(--error); margin: 0; }
+
+.lib-detail {
+  padding: 12px 24px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+  min-height: 108px;
+}
+.lib-detail-title { margin: 0; font-size: 18px; }
+.lib-detail-by { margin: 2px 0 0; color: var(--dim); }
+.lib-detail-text { margin: 6px 0 0; max-width: 72ch; }
+.lib-detail-hint { margin: 6px 0 0; color: var(--accent); font: 13px var(--code-font); }
+
 /* --- Shell ---------------------------------------------------------------- */
 
 .shell-bar {
