@@ -6,13 +6,15 @@
 //   meta.json   { "title", "author", "description" }
 //   tiles.txt   tile-sheet rows, one hex digit per pixel ('.' means 0)
 //   palette.txt one entry per line: "index rrggbb" (24-bit, converted to RGB555)
+//   map.txt     Map RAM rows from the top, one per line: 4 hex digits per entry
+//               from x 0 (as in .nova); short or empty lines leave the rest 0
 //   audio.json  instruments, patterns, songs, sfx and samples in .nova layout
 //   label.png   the cart label: a 256x224 PNG, as captured with F7
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readAudio } from '../src/formats/audio.js';
-import { SHEET_H, SHEET_W, createCart, rgb24to555 } from '../src/formats/cart.js';
+import { MAP_H, MAP_W, SHEET_H, SHEET_W, createCart, rgb24to555 } from '../src/formats/cart.js';
 import { writeNova } from '../src/formats/nova-json.js';
 
 const [dir, out] = process.argv.slice(2);
@@ -46,6 +48,18 @@ if (tiles) {
       if (Number.isNaN(v)) throw new Error(`tiles.txt row ${y + 1}: bad pixel '${ch}'`);
       cart.tiles[y * SHEET_W + x] = v;
     }
+  });
+}
+
+const map = read('map.txt');
+if (map) {
+  const rows = map.split('\n');
+  if (rows.length > MAP_H + 1) throw new Error('map.txt has too many rows');
+  rows.forEach((row, y) => {
+    row = row.trim();
+    if (row.length > MAP_W * 4 || row.length % 4) throw new Error(`map.txt row ${y + 1}: bad length`);
+    if (!/^[0-9a-fA-F]*$/.test(row)) throw new Error(`map.txt row ${y + 1}: not hex`);
+    for (let x = 0; x < row.length / 4; x++) cart.map[y * MAP_W + x] = parseInt(row.slice(x * 4, x * 4 + 4), 16);
   });
 }
 
