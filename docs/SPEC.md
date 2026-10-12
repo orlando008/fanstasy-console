@@ -445,6 +445,39 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 
 **Saving.** Ctrl+S saves a `.nova` file using the File System Access API where available, with a plain download as the fallback. The working cart also autosaves to `localStorage` every 10 seconds.
 
+### 11.1 Library
+
+The **Library** is the console's home page: a shelf of cartridges for every
+cart that ships with it. It is a third shell mode beside Run and Edit,
+built in HTML like the editor, not inside the console.
+
+- **When it shows.** Opening the page without `?cart=` shows the Library;
+  `?cart=<name>` still boots that cart straight away. Backspace in Run mode,
+  holding a gamepad's Select and Start together for about a second, or the
+  Library button in the editor's bar returns to it, pausing the game.
+- **The shelf.** Each cart is drawn as a cartridge, the same picture a
+  `.nova.png` export makes: its label, title and author, or a NO LABEL plate.
+  The selected cart's description shows below the shelf. The first slot is
+  **Your cart**, the autosaved working cart, when there is one; after it come
+  the carts in the manifest. **Open file** and **New cart** sit at the end of
+  the shelf. Dropping a `.nova` or `.nova.png` onto the page still loads and
+  runs it.
+- **Controls.** Arrows or a gamepad's d-pad and left stick move between
+  cartridges; Enter, Space or a gamepad's A, B or Start plays the selected
+  one; the mouse picks and clicks. Choosing the cart that is already loaded
+  resumes it where it was paused.
+- **Opening a cart.** It loads exactly as `?cart=<name>` does, and the address
+  bar changes to match, so a cart's link can be shared and the browser's Back
+  button returns to the Library. Unsaved changes to the working cart are
+  confirmed first, as when opening a file.
+- **The manifest.** The page is static and can't list a folder, so the shelf
+  comes from `carts/index.json`: each cart's file name, title, author,
+  description and label image, and its `.nova.png` if one exists. Labels are
+  copied out of the carts into `carts/labels/<name>.png`, so the shelf loads a
+  few small images rather than every cart. `node tools/library.js` regenerates
+  both from the `.nova` files in `carts/`: released games (carts with a
+  `.nova.png`) first, then the rest, each by title.
+
 ## 12. Repository layout
 
 ```
@@ -453,7 +486,8 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 ├── style.css
 ├── package.json            # { "type": "module" } only, for node --check; no dependencies
 ├── src/
-│   ├── main.js             # Boot and wiring: machine, shell, files, autosave
+│   ├── main.js             # Boot and wiring: machine, shell, library, files, autosave
+│   ├── library.js          # The Library: the home page's shelf of carts (11.1)
 │   ├── machine.js          # Console worker lifecycle and 60 Hz frame clock
 │   ├── files.js            # .nova save/open (File System Access API, download fallback)
 │   ├── input.js            # Keyboard and gamepad sampling
@@ -497,7 +531,10 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 │       ├── tracker.js      # Tracker grid shared by SFX and Music
 │       ├── pixels.js       # RGB555 conversion and tile-sheet drawing
 │       └── sheet-view.js   # Tile-sheet picker shared by Sprites and Map
-├── carts/                  # Demo and test carts (.nova)
+├── carts/                  # Demo and game carts (.nova, .nova.png), index.json and labels/ for the Library
+├── tools/
+│   ├── pack.js             # Builds a .nova from carts/src/<name>/
+│   └── library.js          # Regenerates carts/index.json and carts/labels/
 ├── docs/
 │   ├── SPEC.md             # This document
 │   └── API.md              # Cart-facing API reference

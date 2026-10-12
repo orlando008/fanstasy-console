@@ -31,14 +31,17 @@ the repository root:
 python3 -m http.server 8000
 ```
 
-Then open <http://localhost:8000/>. Pick a demo cart with `?cart=<name>`, and
-pin the random seed with `?seed=<n>`. You can also drop a `.nova` file onto
-the page, or a `.nova.png` PNG cart. Without `?cart=`, the console reopens your
-autosaved working cart.
+Then open <http://localhost:8000/>. The home page is the **Library**: a shelf
+of cartridges for every cart below, led by your autosaved working cart. Pick
+one with the arrows or a gamepad's d-pad and play it with Enter or A. Backspace
+while a cart runs (or holding a gamepad's Select and Start for a second)
+returns to the Library. `?cart=<name>` opens a cart directly, and `?seed=<n>`
+pins the random seed. You can also drop a `.nova` file or a `.nova.png` PNG
+cart onto the page.
 
 | Cart | Shows |
 |---|---|
-| `hello` (default) | Overlay drawing, font, input from keyboard and up to 4 gamepads |
+| `hello` | Overlay drawing, font, input from keyboard and up to 4 gamepads |
 | `sprites` | OAM: sizes, flips, sprite palettes, priorities, 128-entry and 32-per-line limits |
 | `parallax` | Three scrolling background layers, sub-palettes, tile priority |
 | `water` | `scanline()` reflection with per-line wobble and palette swaps |
@@ -57,6 +60,7 @@ Shell shortcuts:
 
 | Key | Action |
 |---|---|
+| Backspace | Back to the Library from a running cart; choosing the same cart there resumes it |
 | Esc | Switch between the game and the editor. Leaving the editor resumes the game, or restarts it if the cart changed. After an error, Esc opens the code at the failing line. |
 | Ctrl+R | Restart the cart with the current code |
 | Ctrl+S / Ctrl+Shift+S | Save / save as `.nova` |
@@ -112,4 +116,11 @@ audio) by a Node script:
 
 ```sh
 node tools/pack.js carts/src/hello carts/hello.nova
+```
+
+After adding or repacking a cart, regenerate the Library's manifest
+(`carts/index.json`) and its label images (`carts/labels/`):
+
+```sh
+node tools/library.js
 ```

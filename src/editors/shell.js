@@ -1,5 +1,6 @@
 // The shell: Run mode shows the game, Edit mode shows the editor tabs. Esc
-// toggles between them, Ctrl+R restarts the cart (SPEC section 11).
+// toggles between them, Ctrl+R restarts the cart (SPEC section 11). Library
+// mode shows the home page (src/library.js); Backspace in Run returns to it.
 
 import { button, h } from '../ui/dom.js';
 import { CartPanel } from './cart.js';
@@ -70,6 +71,7 @@ export class Shell {
         h('nav', { class: 'tabs', role: 'tablist' }, this.tabButtons),
         this.titleEl,
         h('div', { class: 'shell-actions' },
+          button('Library', () => app.library(), { title: 'Backspace while running' }),
           button('Run', () => app.run(), { title: 'Esc', class: 'primary' }),
           button('Restart', () => app.restart(), { title: 'Ctrl+R' }))),
       this.panelHost,
@@ -107,6 +109,19 @@ export class Shell {
   onKey(e) {
     const mod = e.ctrlKey || e.metaKey;
     const key = e.key.toLowerCase();
+    if (this.mode === 'library') {
+      // Only opening a file applies to the home page; the Library handles its own keys.
+      if (mod && key === 'o') {
+        e.preventDefault();
+        this.app.open();
+      }
+      return;
+    }
+    if (this.mode === 'run' && e.key === 'Backspace' && !mod) {
+      e.preventDefault();
+      this.app.library();
+      return;
+    }
     if (e.key === 'Escape') {
       e.preventDefault();
       if (this.mode === 'edit' && this.code.findOpen) {

@@ -9,6 +9,7 @@ import {
 import { cartId, createCart } from './formats/cart.js';
 import { readNova, writeNova } from './formats/nova-json.js';
 import { Input } from './input.js';
+import { Library } from './library.js';
 import { Machine } from './machine.js';
 import { CLIP_MAX_SECONDS, ClipRecorder } from './record/clip.js';
 import { InputLog } from './record/replay.js';
@@ -73,6 +74,7 @@ const app = {
   hasError: false,
   saveKey: '',
   mode: 'run',
+  current: null, // what the Library knows the working cart as: a cart name, 'mine', or null
 
   /** Called by the editors after any change to the working cart. */
   changed(kind) {
@@ -101,6 +103,15 @@ const app = {
   restart() {
     setMode('run');
     this.launch();
+  },
+
+  /** Show the Library, pausing the game (SPEC 11.1). push adds a history entry. */
+  library({ push = true } = {}) {
+    pauseGame();
+    setMode('library');
+    document.title = 'NOVA-16';
+    library.show();
+    if (push && location.search) history.pushState(null, '', location.pathname);
   },
 
   /** Boot the working cart from scratch. */
@@ -332,11 +343,47 @@ const app = {
 
 const shell = new Shell(document.getElementById('editor'), app);
 
+const library = new Library(document.getElementById('library'), {
+  async play(entry) {
+    if (!confirmDiscard()) return;
+    try {
+      if (entry.kind === 'mine') {
+        loadCart(entry.cart, { autosave: true, current: 'mine' });
+        history.pushState(null, '', location.pathname);
+      } else {
+        loadCart(await fetchCart(entry.name), { current: entry.name });
+        history.pushState(null, '', `?cart=${entry.name}`);
+      }
+    } catch (e) {
+      notify(String(e.message || e));
+    }
+  },
+  resume: () => app.run(),
+  openFile: () => app.open(),
+  newCart: () => app.newCart(),
+  back: () => app.library(),
+  mine() {
+    const saved = loadAutosave();
+    if (!saved) return null;
+    try {
+      return readNova(saved);
+    } catch {
+      return null;
+    }
+  },
+  current: () => app.current,
+  mode: () => app.mode,
+});
+
 /**
  * Make a cart the working cart. autosave says whether it should replace the
  * autosaved cart right away; a demo opened by URL only does once edited.
+ * current is what the Library knows it as. A cart loaded from the Library
+ * (picked, opened or dropped) runs at once.
  */
-function loadCart(cart, { fileName = '', handle = null, autosave = false } = {}) {
+function loadCart(cart, { fileName = '', handle = null, autosave = false, current = null } = {}) {
+  if (app.mode === 'library') setMode('run');
+  app.current = current;
   app.cart = cart;
   app.fileHandle = handle;
   app.fileName = fileName;
@@ -362,6 +409,7 @@ function resumeGame() {
 function setMode(mode) {
   app.mode = mode;
   shell.setMode(mode);
+  if (mode !== 'library') library.hide();
   input.enabled = mode === 'run';
   input.clear();
   if (mode === 'run') {
@@ -484,24 +532,25 @@ async function boot() {
   setMode('run');
   const name = new URLSearchParams(location.search).get('cart');
   try {
-    if (name) {
-      loadCart(await fetchCart(name));
-      return;
-    }
-    const saved = loadAutosave();
-    if (saved) {
-      try {
-        loadCart(readNova(saved));
-        shell.log('Restored your autosaved cart.');
-        return;
-      } catch (e) {
-        shell.log(`Autosave could not be read (${e.message}); loading the default cart.`, 'error');
-      }
-    }
-    loadCart(await fetchCart('hello'));
+    if (name) loadCart(await fetchCart(name), { current: name });
+    else app.library({ push: false });
   } catch (e) {
     notify(String(e.message || e));
   }
 }
+
+// Back and Forward: no cart in the address means the Library.
+window.addEventListener('popstate', async () => {
+  const name = new URLSearchParams(location.search).get('cart');
+  if (!name) { app.library({ push: false }); return; }
+  if (name === app.current) { app.run(); return; }
+  if (!confirmDiscard()) return;
+  try {
+    setMode('run');
+    loadCart(await fetchCart(name), { current: name });
+  } catch (e) {
+    notify(String(e.message || e));
+  }
+});
 
 boot();

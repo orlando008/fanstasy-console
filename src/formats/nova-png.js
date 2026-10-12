@@ -40,7 +40,7 @@ export async function encodeNovaPng(cart) {
 
   const canvas = new OffscreenCanvas(PNG_W, PNG_H);
   const ctx = canvas.getContext('2d', { colorSpace: 'srgb' });
-  await drawCartridge(ctx, cart);
+  drawCartridge(ctx, { title: cart.meta.title, author: cart.meta.author, label: await labelBitmap(cart.label) });
   const image = ctx.getImageData(0, 0, PNG_W, PNG_H);
   embed(image.data, data);
   ctx.putImageData(image, 0, 0);
@@ -112,10 +112,29 @@ function extract(px, offset, count) {
 
 // --- Picture -------------------------------------------------------------------
 
-async function drawCartridge(ctx, cart) {
+/** A cart label (base64 PNG) as an ImageBitmap, or null if it has none or it won't decode. */
+export async function labelBitmap(b64) {
+  if (!b64) return null;
+  try {
+    return await createImageBitmap(labelBlob(b64));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Draw the cartridge picture a .nova.png carries (PNG_W x PNG_H): `label` is
+ * an image source for the 256x224 label, or null for the NO LABEL plate. The
+ * Library draws its shelf with this too (SPEC 11.1), without the backdrop.
+ */
+export function drawCartridge(ctx, { title, author, label, backdrop = true }) {
   const body = '#5d5a6a', shade = '#47445a', light = '#77738a', recess = '#2e2b3a';
-  ctx.fillStyle = '#16141d';
-  ctx.fillRect(0, 0, PNG_W, PNG_H);
+  if (backdrop) {
+    ctx.fillStyle = '#16141d';
+    ctx.fillRect(0, 0, PNG_W, PNG_H);
+  } else {
+    ctx.clearRect(0, 0, PNG_W, PNG_H);
+  }
 
   // Body with a narrower connector edge at the bottom.
   ctx.fillStyle = body;
@@ -133,23 +152,18 @@ async function drawCartridge(ctx, cart) {
   ctx.fillStyle = recess;
   roundRect(ctx, LABEL_X - 10, LABEL_Y - 10, 276, 244, 8);
   ctx.fill();
-  if (cart.label) {
-    try {
-      const bmp = await createImageBitmap(labelBlob(cart.label));
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(bmp, LABEL_X, LABEL_Y, 256, 224);
-    } catch {
-      drawNoLabel(ctx);
-    }
+  if (label) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(label, LABEL_X, LABEL_Y, 256, 224);
   } else {
     drawNoLabel(ctx);
   }
 
   // Title and author in the console font, below the label.
-  const title = (cart.meta.title || 'UNTITLED').toUpperCase().slice(0, 26);
-  const author = (cart.meta.author || '').toUpperCase().slice(0, 40);
-  pixelText(ctx, title, PNG_W / 2 - title.length * 8, 290, 2, '#f0eadf');
-  if (author) pixelText(ctx, author, PNG_W / 2 - author.length * 4, 314, 1, '#c8c2d6');
+  const name = (title || 'UNTITLED').toUpperCase().slice(0, 26);
+  const by = (author || '').toUpperCase().slice(0, 40);
+  pixelText(ctx, name, PNG_W / 2 - name.length * 8, 290, 2, '#f0eadf');
+  if (by) pixelText(ctx, by, PNG_W / 2 - by.length * 4, 314, 1, '#c8c2d6');
   pixelText(ctx, 'NOVA-16', 64, 330, 1, light);
 }
 
