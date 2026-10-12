@@ -205,6 +205,7 @@ After race 8 your standing among the eight planets is shown on the final result.
 
 - **Grand Prix score = the sum of the eight race times.** The lowest total wins. Times are in frames and shown as `m:ss.cc`.
 - A race that reaches the time cap counts as 3:00.00.
+- There are no ghosts: no replay of a best run races alongside you.
 - The leaderboard is the **top 10 Grand Prix totals**, each with initials, planet and the eight race times.
 - **Time trial:** pick a track and a planet and drive it alone, with restarts allowed (SELECT). The best 3-lap time and the best single lap are saved per track.
 
@@ -277,7 +278,25 @@ On the overlay:
 
 **Songs:** song `n` plays on track `n + 1`, using all 8 slots. The title and planet
 select play song 0 (Mercury's), and each race starts its own song with the countdown.
-Music is not tied to the gameplay clock, so no sync check is needed.
+Songs loop, and the finish stops the music for the fanfare. Music is not tied to
+the gameplay clock, so no sync check is needed.
+
+**Holst.** Each song follows the character of its planet's movement in Gustav
+Holst's *The Planets*, recast as chiptune racing music: the motif and the mood
+stay, the tempo goes up where the original is slow. Earth isn't in the suite, so
+its song is our own. We write our own arrangements from the notes and use no
+recordings.
+
+| Song | Planet | Holst's movement | Tempo | Feel |
+|---|---|---|---|---|
+| 0 | Mercury | The Winged Messenger | 180 bpm | A swift, flickering scherzo |
+| 1 | Venus | Bringer of Peace | 112.5 bpm | Serene, a gentle cruise |
+| 2 | Earth | (original) | 128.6 bpm | Bright and friendly, in the spirit of the others |
+| 3 | Mars | Bringer of War | 150 bpm | A relentless 5-beat ostinato (a 20-row bar) |
+| 4 | Jupiter | Bringer of Jollity | 128.6 bpm | Big, jovial and heroic |
+| 5 | Saturn | Bringer of Old Age | 112.5 bpm | Slow tolling bass under a driving beat |
+| 6 | Uranus | The Magician | 150 bpm | Heavy brass fanfares, then a mischievous scherzo |
+| 7 | Neptune | The Mystic | 100 bpm | Hushed, spacious and drifting |
 
 **Channel plan:** songs use channels 0 and 2–5 (lead, bass, pad/arpeggio, noise
 percussion, sampled drums), and **channel 1 is kept for sound effects**, as in Block Wizard.
@@ -326,8 +345,7 @@ Any console bugs or editor gaps found along the way are logged and fixed as sepa
 
 ## 16. Open questions
 
-- **Ghosts:** in time trial, a replay of your best run could race alongside you. The deterministic core makes it possible, and a ghost fits in the 1 KB save as sampled positions, but it's not planned for version 1.
-- **Music:** each planet's song could follow the character of its movement in Holst's *The Planets* (Mars, Venus, Mercury, Jupiter, Saturn, Uranus, Neptune; Earth would be our own). The composition is old enough to be public domain, which is worth confirming before we quote any of its melodies; the alternative is original songs in the same spirit.
+- **Holst:** the composition is old enough to be public domain, but confirm that for the countries we care about before shipping. We use no recordings, only our own arrangements of the notes.
 - **Speed feel:** the world scale (a 1,024 px floor and 2.2–3.0 px/frame) comes from the demo and from a 30 s lap. If it feels slow, scale the speeds and the track length together.
 - **Digital steering:** the pad gives only left and right, so the 8-frame steering ramp (3) matters. It may need tuning, or a finer control in drifts.
 - **Standing on a rival:** how strong the bumps should be, so they add drama without making a time depend on luck.
