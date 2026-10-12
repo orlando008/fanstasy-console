@@ -1,7 +1,7 @@
 # Planet Racers: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Specification
+**Version:** 0.2 (draft)
+**Status:** In progress: the vertical slice (15, step 1) is built
 **Cart source:** `carts/src/planet-racers/` → `carts/planet-racers.nova`
 
 ---
@@ -87,9 +87,11 @@ results, simulated for the standings (7.3).
 
 Positions are in world pixels (one pixel of the floor map) and time in frames.
 The simulation runs at 60 Hz with a fixed step. Gameplay trigonometry uses a
-256-step angle and a sine table built at init with integer math, **not**
-`Math.sin`, which can differ in its last bits between browsers and would
-break replays. (The view can use `Math` freely.)
+1,024-step angle and a sine table built at init by a rotation recurrence with
+literal constants, **not** `Math.sin`, which can differ in its last bits between
+browsers and would break replays. Headings from vectors come from a search of the
+table rather than `Math.atan2`. `Math.sqrt` is exact in every browser, so it is
+allowed. (The view can use `Math` freely.)
 
 ### 5.2 Driving
 
@@ -104,19 +106,26 @@ break replays. (The view can use `Math` freely.)
 
 ### 5.4 Surfaces
 
-The surface is read from the **floor tile under the kart** (`mget`), so editing the
-map in the Map tab changes the physics. Tile ids give the surface; each
-track's palette gives it its look.
+The surface is read from the **floor pixel under the kart**: `mget` finds the
+floor tile there and `sget` the pixel's color index, and the index gives the
+surface. So editing the floor tiles in the Sprites tab, or the map in the Map tab,
+changes the physics. The road's edges are drawn by marching-squares tiles (6.2)
+that are part road and part off-road, which is why the surface goes by pixel, not
+by tile. Each track's palette gives the indexes their look.
 
-| Tile ids | Surface | Effect |
+| Color index | Surface | Effect |
 |---|---|---|
-| 8–15 | Road | Full speed and grip |
-| 16–23 | Off-road | Speed capped at 55% of top for the heaviest planet, down to 44% for the lightest |
-| 24–31 | Rough (sulfur, rubble) | Speed capped at 35% |
-| 32–39 | Slick (wet sand, ice) | Grip 0.04, and no cornering help |
-| 40–47 | Pit (crater) | On entry, speed ×0.4 and the planet looks dizzy for 30 frames |
-| 48–55 | Crosswind strip | Pushes sideways 0.06 px/frame², left or right by tile, divided by weight / 3 |
-| 56–57 | Start/finish line | Marks the line; no physics |
+| 1–3 | Road | Full speed and grip |
+| 4–5 | Curb (the road's edge stripes; also the start checker) | As road |
+| 6–9 | Off-road | Speed capped at 55% of top for the heaviest planet, down to 44% for the lightest |
+| 10–11 | Rough (sulfur, rubble) | Speed capped at 35% |
+| 12 | Slick (wet sand, ice) | Grip 0.04, and no cornering help |
+| 13–14 | Pit (crater) | On entry, speed ×0.4 and the planet looks dizzy for 30 frames |
+| 15 | Road | As road |
+
+Crosswind strips (Mars, Jupiter, Neptune) push sideways 0.06 px/frame², divided by
+weight / 3. They are zones in the track data rather than a color, since a gust
+shouldn't need its own look; the floor can still mark them.
 
 **Bumpers** (boulders and ice chunks) are sprites at fixed spots from the
 track's data: a circle 8 world px across. Hitting one bounces the kart and costs 30% of its speed.
@@ -166,6 +175,8 @@ Hazards are few and forgiving: with no restarts, one mistake should cost seconds
 ### 6.2 Building a track
 
 - A track is a **128 × 128-tile floor** (1,024 × 1,024 world px, as in the Mode 7 demo) in Map RAM, the way the `mode7` cart's oval is.
+- The centerline is a closed Catmull-Rom curve through the control points, sampled every 4 px of arc. Each tile corner is on the road when it lies within 20 px of the centerline, and a tile's four corners pick one of 16 **marching-squares tiles**, so the road's edge runs smoothly across tiles, with a curb stripe drawn along it. Whole road and off-road tiles come in three variants each, picked by a hash of the tile's position.
+- Craters are 2 × 2 tiles, placed only where all four tiles are wholly road. The start/finish line is a column of checker tiles at the first sample.
 - A floor fills a full half of Map RAM, so the cart holds **one floor at a time** and **builds each track's floor when its race begins**, behind the track card, while the floor isn't on screen. That's about 16,400 `mset` calls, spread over a few frames.
 - Tracks are defined as data in the cart: control points for the road centerline, its width (about 40 px), hazard zones, the racing line (waypoints for the AI), the 10 gates, orb positions and bumpers. The data is turned into tiles at race start, which keeps the cart small and lets each track's look change just by its palette.
 - Map RAM budget: the floor takes columns 0–127. Columns 128–255 hold the horizon scenery for all eight worlds (BG1: eight strips of 64 × 9 tiles, about 36 rows in all) and any extra backdrop (BG0).
@@ -234,10 +245,13 @@ and the line's world scale is `z / FOCAL`. The demo draws this in about 1.5 ms o
 | BG0 | Optional extra backdrop (planet rings or moons in the sky) |
 | BG1 | Horizon scenery above line 72 (mountains, craters, clouds, ice cliffs per planet), scrolling as the camera turns |
 | BG2 | The Mode 7 floor, from the horizon down |
-| Sprites | Racers, shadows, boost orbs, bumpers |
+| Sprites | Racers and boost orbs (each with its shadow drawn in), bumpers |
 | Overlay | HUD, countdown, minimap, menus |
 
 The sky is a per-line backdrop gradient (`color(0, …)` from `scanline()`) in each planet's colors.
+The sun and stars are drawn on the overlay at fixed headings, so the BG1 ridges can be a
+512 px strip that simply repeats. The ridges and the sky both move 0.785 px per angle unit
+(2π × focal length / 1,024), which matches the floor's turning at the screen's center.
 
 ### 9.3 Racers and objects as sprites
 
@@ -246,10 +260,10 @@ by its depth, using the same formula as the floor so it stands exactly on the gr
 
 - Screen position: `y = HORIZON − 1 + HEIGHT × FOCAL / z`, `x = 128 + lateral × FOCAL / z`, where `lateral` is its distance to the side of the camera's forward line.
 - Size: a 7 px planet appears `7 × FOCAL / z` pixels wide, so it is drawn 32 × 32 when `z < 40`, 16 × 16 when `z < 80` and 8 × 8 when `z < 200`, and not at all beyond that, about 1.2 s of lookahead at top speed. The jump between sizes is the classic Mode 7 "pop".
-- **Planets are spheres, so they need no facing frames**, only the three sizes. They roll: the 32 and 16 sizes have two frames of surface texture, which alternate with speed. Saturn's rings are part of its sprite.
+- **Planets are spheres, so they need no facing frames**, only the three sizes. Each planet sprite carries its own shadow in its bottom rows, and the bottom row is the ground, so a racer costs one sprite. They roll: the 32 and 16 sizes have two frames of surface texture, which alternate with speed. Saturn's rings are part of its sprite.
 - The player's planet is 28 world px ahead of the camera, so by the same rule it is the 32 size, at about line 181, near the bottom of the screen.
 
-Budget: at most 4 racers, 4 shadows, about 12 orbs and bumpers in view, far under
+Budget: at most 4 racers, about 12 orbs and bumpers in view, far under
 the 128-sprite and 32-per-line limits.
 
 ## 10. HUD
@@ -324,7 +338,7 @@ so there is no revving engine. The music and the effects carry the speed.
 | Asset | Budget |
 |---|---|
 | Code | ≤ 48 KB of the 64 KB limit (the track data and the generators are the biggest parts) |
-| Tiles | ≤ 650 of 1,024: floor surfaces ~30, planets 8 × ~41 (three sizes, two rolling frames at 32 and 16), orbs, bumpers and shadows ~20, horizon scenery ~100, title letters ~40 |
+| Tiles | ≤ 650 of 1,024: floor surfaces ~30, planets 8 × ~41 (three sizes, two rolling frames at 32 and 16), orbs and bumpers ~20, horizon scenery ~100, title letters ~40 |
 | Map RAM | The floor in columns 0–127 (128 × 128); the horizon scenery and backdrop in columns 128–255 |
 | Palettes | BG 0–7: each track's floor and scenery colors (a track picks its own). Sprites: the planets share sub-palettes in pairs (7 colors each), so four in all; the other four go to orbs, shadows and bumpers, the logo letters and the HUD |
 | Sprites on screen | ≤ 30, far under the 32-per-line limit |
@@ -333,7 +347,9 @@ so there is no revving engine. The music and the effects carry the speed.
 
 ## 15. Implementation plan
 
-1. **Vertical slice:** one track (Mercury), one planet (Earth), the Mode 7 floor built from track data, driving with the surface tiles, drift, the gates and laps, a lap timer, and placeholder art. **Prove:** the CPU cost with the floor, sprites and physics together (`stat('cpu')`), the feel of the speed, sprites standing on the floor at the three sizes, and replay determinism with the sine table.
+1. **Vertical slice (built):** one track (Mercury), one planet (Earth), the Mode 7 floor built from track data, driving with the surface tiles, drift, the gates and laps, a lap timer, and placeholder art. **Prove:** the CPU cost with the floor, sprites and physics together (`stat('cpu')`), the feel of the speed, sprites standing on the floor at the three sizes, and replay determinism with the sine table.
+   - **Results:** about 2 ms a frame in Chromium with the floor, sprites, physics and HUD (1.6 ms headless), against 16.6 ms. Mercury's centerline is 4,570 px; a simple steering bot laps it in about 28 s (85 s for three laps). The same inputs give an identical race under a different PRNG seed. Objects switch to 8, 16 and 32 px at depths 200, 80 and 40 and stand on the floor line. A crater cuts 2.37 to 0.96 px/frame, and Earth off-road settles at its 1.29 cap.
+   - The slice plays as a time trial: SELECT restarts, START pauses, and the best time and lap are saved in slots 130–131. The CPU readout in the corner is for the slice only. The song and SFX are placeholders.
 2. **Rivals and planets:** the AI on the racing line, bumping, all eight planets' stats, the three-rival draw, orbs and the pace ramp, and the simulated standings.
 3. **All eight tracks and hazards:** the track data and palettes, the five hazard types, and tuning each lap to about 30 s.
 4. **Flow:** title, planet select, track card, results, initials, scores, time trial, pause and saves.
