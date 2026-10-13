@@ -1,7 +1,7 @@
 # Alien Swarm: Cart Specification
 
-**Version:** 0.5 (draft)
-**Status:** In progress: steps 1–4 of the plan (15) are built
+**Version:** 0.6 (draft)
+**Status:** In progress: steps 1–5 of the plan (15) are built
 **Cart source:** `carts/src/alien-swarm/` → `carts/alien-swarm.nova`
 
 ---
@@ -328,6 +328,39 @@ crowd a scanline.
        are for step 7.
      - No errors in the browser.
 5. **Art pass:** the planets' terrain, turrets, aliens, the dome, effects, the title.
+   - **Built:**
+     - **Terrain:** each map is painted as one picture by the art script, in its planet's
+       own look:
+       - Luna: moon dust with small craters, and boulders or craters for rocks.
+       - Frost: an ice sheet with cracks and glints, snow-lipped lanes and ice crystals.
+       - Jungle: moss and grass tufts, mud lanes and glowing alien plants.
+       - The Hive: veined flesh, resin channels and egg sacs.
+       Lanes have edges where they meet the ground. Entries are marked with chevrons
+       and the dome has a beacon. The pictures are cut into de-duplicated tiles: 256
+       for all eight maps.
+     - **Cell kinds:** the kinds (pad, lane, rock, dome, entry) now sit in their own
+       Map RAM region (row 96), since the tiles no longer say what a cell is. Selling
+       a tower copies the map's own painting back.
+     - **Glow:** one colour per planet pulses: the beacons and entry chevrons, and the
+       pods and eggs. Luna's blinks; the others breathe.
+     - **Sprites:** shaded turrets with distinct guns: the Blaster's long barrel, the
+       Cannon's fat one, the Laser's lens, the Missile's twin pods, the Freezer's
+       snowflake.
+     - **Aliens:**
+       - The Crawler is a segmented grub and the Skitter a spider.
+       - The Brute is a horned beetle with a plated shell, in steel blue: brown was lost
+         on the Jungle's mud.
+       - The Drone is a striped wasp with beating wings, and the Splitter a pod-bug
+         with three young inside.
+       - The Queen is crowned.
+     - **Effects:** muzzle flashes, Cannon and Missile bursts with sparks, missile smoke,
+       a splatter in each alien's own colours when it dies, and a red flash round the
+       screen when the dome is hit.
+     - **Title:** a cratered moon's horizon with the colony dome on it.
+   - **Results:** the bot's results on 1-1 and Queen's Nest, the flow script's and the
+     16 mechanics checks are unchanged, so the art changes nothing in play. The worst
+     frame on Queen's Nest is 4.9 ms at 3× with 46 aliens and all the effects. No
+     errors in the browser.
 6. **Audio pass:** five songs and the effects.
 7. **Balance and polish:** a bot with a build plan for each map checks that each
    map can be three-starred with good play and is lost with poor play, and that

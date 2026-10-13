@@ -7,9 +7,13 @@
 
 const CELL = 16, COLS = 16, ROWS = 13, FIELD_Y = 16; // the field: 16 x 13 cells below the HUD
 const PAD = 0, LANE = 1, ROCK = 2, DOME = 3, TOWER = 4; // what a cell is
-const T_GROUND = 16, T_LANE = 18, T_ROCK = 20, T_DOME = 22, T_BASE = 24, T_ENTRY = 26, T_BAND = 12; // 2x2 tile blocks
-const PAL_MAP = 1;
-const MAP_ROW = 64; // map m is stored at Map RAM column 32 * (m % 8), row 64 (SPEC 8)
+const ENTRY = 5; // a lane cell where aliens come in, as stored
+const T_BASE = 24, T_BAND = 12; // the tower base (2x2 tiles, BG palette 3) and the HUD band (BG palette 2)
+const PAL_BAND = 2, PAL_BASE = 3;
+// Map m is painted at Map RAM column 32m, row 64 (32 x 26 tiles); its cell kinds at
+// column 16m, row 96 (SPEC 8).
+const MAP_ROW = 64, KIND_ROW = 96;
+const kindAt = (m, c, r) => mget(16 * m + c, KIND_ROW + r);
 
 // --- Towers and aliens (SPEC 5, 6) ---
 
@@ -41,6 +45,7 @@ const ALIENS = [
   { name: 'QUEEN', hp: 1500, speed: 0.25, bounty: 200, hull: 10, armour: 5, lay: 180, spr: 320, pal: 4, big: true },
 ];
 const CRAWLER = 0, SKITTER = 1, BRUTE = 2, DRONE = 3, SPLITTER = 4, QUEEN = 5;
+const GOO = [[178, 179], [194, 195], [182, 183], [187, 186], [188, 189], [198, 199]]; // each alien's splatter (its own colours)
 const SLOW_SHARE = 0.5;
 const refund = (t) => flr(t.spent * 7 / 10); // 70% back on selling, in whole credits
 
@@ -49,10 +54,10 @@ const refund = (t) => flr(t.spent * 7 / 10); // 70% back on selling, in whole cr
 // Each planet recolours the terrain (BG palette 1, colours 1-7 and 14): dust dark, mid and
 // light, lane dark and mid, rock dark and light, rock body.
 const PLANETS = [
-  { name: 'LUNA OUTPOST', terrain: '3a3a44 58586a 8a8a9c 2a2630 403a48 24242c 7a7a88 4a4652' },
-  { name: 'FROST MOON', terrain: '5a7a98 7a9ab8 c0d8ec 2a3a54 405274 26364a 9ab8d8 52708c' },
-  { name: 'JUNGLE WORLD', terrain: '2a5230 3a6a40 6a9a50 3a2a18 54401f 1a2a1a 5a8a50 2c482c' },
-  { name: 'THE HIVE', terrain: '4a2a4a 5a3460 8a5a8a 2a1020 401a30 200a20 9a5a9a 3a1a3a' },
+  { name: 'LUNA OUTPOST', terrain: '3a3a46 54546a 7c7c90 24222c 34303e 6a6a7c 2a2a34 5a5a6a 9a9aac 8890a0 3070b0 b0e0ff ff5040 802020 18181e' },
+  { name: 'FROST MOON', terrain: '6a8cb0 8eb0d0 d0e8f8 2a3c5c 3c5478 e0f0ff 3a6a9a 7ab8e8 e0f8ff 9098a8 3070b0 b0e0ff 60f0ff 2a6a8a 1a2a40' },
+  { name: 'JUNGLE WORLD', terrain: '1e4224 2e5e30 5a9a44 3a2414 5a3c20 1a3018 2a6a2a 5ab040 a8e070 9098a8 3070b0 b0e0ff f0f060 6a7a20 10200e' },
+  { name: 'THE HIVE', terrain: '3a1838 52284e 7a4474 1e0a1a 2e1228 8a4a80 5a2a20 9a5a30 e0b060 9098a8 3070b0 b0e0ff ff70c0 802a60 140812' },
 ];
 const MAPS = ['LANDING ZONE', 'CRATER RIM', 'ICE SHELF', 'GLACIER PASS', 'OVERGROWTH', 'THE SWAMP', 'HIVE GATE', "QUEEN'S NEST"];
 const HEALTH_STEP = 0.15, HARD_HEALTH = 1.5; // aliens' health: x (1 + 0.15 x the map's index), x 1.5 in hard (SPEC 6)
@@ -131,7 +136,10 @@ let paths = []; // per entry: [{ x, y }] cell centres from just off screen to th
 let towers = []; // { kind, c, r, x, y, level, cool, dir, spent, mode, target, heat, pulse }
 let aliens = []; // { kind, hp, max, s (px along its path), path, x, y, dead, slowT, layT }
 let shots = []; // { x, y, tx, ty, target, dmg, speed, splash }
-let effects = []; // { x, y, r, t, c }
+let effects = []; // rings and flashes: { x, y, r, t, c, fill }
+let parts = []; // particles: { x, y, vx, vy, t, c }
+let hullFlash = 0; // frames of red round the screen after a hit on the dome
+let glow = [0, 0, 0]; // the planet's glow colour, which the cart pulses
 let credits = 0, hull = 0, wave = 0, phase = 'build', count = 0; // phase: 'build' (counting down) or 'wave'
 let spawns = []; // the wave's queue: { kind, at (frame), path }
 let waveT = 0;
@@ -151,7 +159,7 @@ function init() {
     for (let i = 0; i < 256; i++) dset(i, 0);
     dset(VERSION_SLOT, SAVE_VERSION);
   }
-  for (let x = 0; x < 32; x++) for (let y = 0; y < 2; y++) mset(x, y, tile(T_BAND, PAL_MAP));
+  for (let x = 0; x < 32; x++) for (let y = 0; y < 2; y++) mset(x, y, tile(T_BAND, PAL_BAND));
   bg(1, { mx: 0, my: 0, mw: 32, mh: 28 });
   bg(0, { show: false });
   bg(2, { show: false });
@@ -164,8 +172,12 @@ function init() {
 const cellAt = (c, r) => (c >= 0 && c < COLS && r >= 0 && r < ROWS ? grid[r * COLS + c] : ROCK);
 const centreX = (c) => c * CELL + CELL / 2, centreY = (r) => FIELD_Y + r * CELL + CELL / 2;
 
+/** Put a tower base on a cell, or (t < 0) the map's own painting back. */
 function setCell(c, r, t) {
-  for (let k = 0; k < 4; k++) mset(2 * c + (k & 1), 2 + 2 * r + (k >> 1), tile(t + (k & 1) + 16 * (k >> 1), PAL_MAP));
+  for (let k = 0; k < 4; k++) {
+    const x = 2 * c + (k & 1), y = 2 * r + (k >> 1);
+    mset(x, 2 + y, t < 0 ? mget(32 * mapIx + x, MAP_ROW + y) : tile(t + (k & 1) + 16 * (k >> 1), PAL_BASE));
+  }
 }
 
 /** Copy map m from its Map RAM region to the screen, read its cells, and trace its lanes. */
@@ -173,18 +185,18 @@ function loadMap(m) {
   mapIx = m;
   PLANETS[m >> 1].terrain.split(' ').forEach((h, k) => {
     const v = parseInt(h, 16);
-    color(16 + (k < 7 ? k + 1 : 14), v >> 19, (v >> 11) & 31, (v >> 3) & 31);
+    color(17 + k, v >> 19, (v >> 11) & 31, (v >> 3) & 31);
+    if (k === 12) glow = [v >> 19, (v >> 11) & 31, (v >> 3) & 31];
   });
-  const mx = 32 * (m % 8), entries = [];
+  const entries = [];
   let dome = 0;
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      const t = mget(mx + 2 * c, MAP_ROW + 2 * r) & 1023;
-      const k = t === T_LANE || t === T_ENTRY ? LANE : t === T_ROCK ? ROCK : t === T_DOME ? DOME : PAD;
+      const t = kindAt(m, c, r), k = t === ENTRY ? LANE : t;
       grid[r * COLS + c] = k;
-      if (t === T_ENTRY) entries.push(r * COLS + c);
+      if (t === ENTRY) entries.push(r * COLS + c);
       if (k === DOME) dome = r * COLS + c;
-      setCell(c, r, t);
+      setCell(c, r, -1);
     }
   }
   paths = entries.map((e) => tracePath(e, dome));
@@ -235,7 +247,7 @@ function startMap(m, h = hard) {
   hard = h;
   bg(1, { show: true });
   state = 'intro'; timer = 0;
-  towers = []; aliens = []; shots = []; effects = []; spawns = [];
+  towers = []; aliens = []; shots = []; effects = []; parts = []; spawns = []; hullFlash = 0;
   credits = startCredits(m); hull = HULL; wave = 0; calls = 0; seen = 0; result = null;
   phase = 'build'; count = FIRST_COUNT;
   speedUp = 1; menu = null; paused = false; banner = null;
@@ -308,7 +320,7 @@ function sell(t) {
   credits += refund(t);
   towers = towers.filter((o) => o !== t);
   grid[t.r * COLS + t.c] = PAD;
-  setCell(t.c, t.r, T_GROUND);
+  setCell(t.c, t.r, -1);
 }
 
 const towerAt = (c, r) => towers.find((t) => t.c === c && t.r === r);
@@ -331,6 +343,8 @@ function pickTarget(t) {
   return best;
 }
 
+const DIR_STEP = [[1, 0], [0.7, 0.7], [0, 1], [-0.7, 0.7], [-1, 0], [-0.7, -0.7], [0, -1], [0.7, -0.7]];
+
 /** One of 8 turret directions (0 east, then clockwise) towards (dx, dy), without trig. */
 function dirTo(dx, dy) {
   const ax = Math.abs(dx), ay = Math.abs(dy), T = 0.41421356; // tan 22.5 degrees
@@ -351,6 +365,9 @@ function updateTowers() {
     t.dir = dirTo(a.x - t.x, a.y - t.y);
     t.cool = T.rate;
     shots.push({ x: t.x, y: t.y, tx: a.x, ty: a.y, target: T.homing ? a : null, dmg: T.dmg * levelMul(t), speed: T.speed, splash: T.splash, kind: t.kind });
+    // A muzzle flash at the end of the barrel.
+    const [ux, uy] = DIR_STEP[t.dir];
+    effects.push({ x: t.x + 7 * ux, y: t.y + 7 * uy, r: t.kind === CANNON ? 3 : 2, t: 3, c: WHITE, fill: true });
     sfx(t.kind === BLASTER ? SFX.blaster : t.kind === CANNON ? SFX.cannon : SFX.missile, SFX_CH);
   }
 }
@@ -387,7 +404,11 @@ function updateShots() {
   for (const s of shots) {
     if (s.target && !s.target.dead) { s.tx = s.target.x; s.ty = s.target.y; }
     const dx = s.tx - s.x, dy = s.ty - s.y, d = Math.sqrt(dx * dx + dy * dy);
-    if (d > s.speed) { s.x += dx / d * s.speed; s.y += dy / d * s.speed; continue; }
+    if (d > s.speed) {
+      s.x += dx / d * s.speed; s.y += dy / d * s.speed;
+      if (s.kind === MISSILE && clock % 3 === 0) parts.push({ x: s.x, y: s.y, vx: 0, vy: 0, t: 14, c: DIM });
+      continue;
+    }
     s.done = true;
     if (s.splash) {
       const r2 = s.splash * s.splash;
@@ -395,8 +416,10 @@ function updateShots() {
         const ex = a.x - s.tx, ey = a.y - s.ty;
         if (canHit(TOWERS[s.kind], a) && ex * ex + ey * ey <= r2) hit(a, s.dmg);
       }
-      effects.push({ x: s.tx, y: s.ty, r: s.splash, t: 12, c: ORANGE });
+      effects.push({ x: s.tx, y: s.ty, r: 5, t: 4, c: WHITE, fill: true }, { x: s.tx, y: s.ty, r: s.splash, t: 12, c: ORANGE });
+      burst(s.tx, s.ty, 5, [ORANGE, GOLD], 1.2);
     } else if (s.target && !s.target.dead) {
+      if (s.kind === MISSILE) { effects.push({ x: s.tx, y: s.ty, r: 4, t: 4, c: WHITE, fill: true }); burst(s.tx, s.ty, 4, [ORANGE, GOLD], 1); }
       hit(s.target, s.dmg);
     }
   }
@@ -417,7 +440,8 @@ function hit(a, dmg, pierce = false) {
   if (a.hp > 0) return;
   a.dead = true;
   credits += A.bounty;
-  effects.push({ x: a.x, y: a.y, r: A.big ? 16 : 6, t: A.big ? 20 : 10, c: GREEN });
+  effects.push({ x: a.x, y: a.y, r: A.big ? 16 : 6, t: A.big ? 20 : 10, c: GOO[a.kind][1] });
+  burst(a.x, a.y, A.big ? 24 : 7, GOO[a.kind], A.big ? 2.2 : 1.3);
   sfx(A.big ? SFX.boom : SFX.splat, SFX_CH);
   // A Splitter bursts into Skitters, spread back along its path.
   for (let k = 0; k < (A.split || 0); k++) spawn(SKITTER, a.path, Math.max(0, a.s - 6 * k));
@@ -436,6 +460,7 @@ function updateAliens() {
       a.dead = true;
       hull = Math.max(0, hull - A.hull);
       effects.push({ x: a.x, y: a.y, r: 10, t: 16, c: RED });
+      hullFlash = 12;
       sfx(SFX.hull, SFX_CH);
       continue;
     }
@@ -478,6 +503,7 @@ function update() {
     else if (timer > 60 && back) toSelect(mapIx);
   }
   if (state !== 'play') for (const e of effects) e.t--;
+  if (state === 'intro' || state === 'play' || state === 'won' || state === 'lost') pulseGlow();
   prevMask = inputMask;
 }
 
@@ -563,6 +589,22 @@ function towerItems(t) {
   return out;
 }
 
+/** Particles flung out from (x, y), in turns of the given colours. */
+function burst(x, y, n, cols, speed) {
+  for (let k = 0; k < n; k++) {
+    const h = hash(k * 131 + flr(x) * 7 + flr(y) * 13 + clock);
+    const a = (h & 1023) / 1024 * 6.2832, v = speed * (0.4 + ((h >> 10) & 255) / 255);
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 10 + ((h >> 18) & 7), c: cols[k % cols.length] });
+  }
+}
+
+/** The planet's glow (beacons, entry arrows, pods and eggs) pulses (SPEC 12). */
+function pulseGlow() {
+  const k = mapIx >> 1;
+  const f = k === 0 ? (clock % 60 < 30 ? 1 : 0.35) : 0.65 + 0.35 * Math.sin(clock / (k === 3 ? 14 : 20));
+  color(29, flr(glow[0] * f), flr(glow[1] * f), flr(glow[2] * f));
+}
+
 /** One frame of the game world; run up to three times a frame with fast-forward. */
 function tick() {
   if (phase === 'build') {
@@ -576,6 +618,9 @@ function tick() {
   updateShots();
   for (const e of effects) e.t--;
   effects = effects.filter((e) => e.t > 0);
+  for (const q of parts) { q.x += q.vx; q.y += q.vy; q.vx *= 0.9; q.vy *= 0.9; q.t--; }
+  parts = parts.filter((q) => q.t > 0);
+  if (hullFlash > 0) hullFlash--;
   if (banner && --banner.t <= 0) banner = null;
   if (hull <= 0) { state = 'lost'; timer = 0; menu = null; endSel = 0; sfx(SFX.lost, SFX_CH); return; }
   if (phase === 'wave' && !spawns.length && !aliens.length) waveCleared();
@@ -633,7 +678,12 @@ function draw() {
     else if (s.kind === MISSILE) { rectfill(flr(s.x) - 1, flr(s.y) - 1, 3, 3, WHITE); rectfill(flr(s.x) - 1, flr(s.y) + 2, 2, 2, ORANGE); }
     else rectfill(flr(s.x) - 1, flr(s.y) - 1, 2, 2, CYAN);
   }
-  for (const e of effects) circ(flr(e.x), flr(e.y), flr(e.r * (1 - e.t / 20)) + 1, e.c);
+  for (const q of parts) rectfill(flr(q.x), flr(q.y), q.t > 8 ? 2 : 1, q.t > 8 ? 2 : 1, q.c);
+  for (const e of effects) {
+    if (e.fill) circfill(flr(e.x), flr(e.y), e.r, e.c);
+    else circ(flr(e.x), flr(e.y), flr(e.r * (1 - e.t / 20)) + 1, e.c);
+  }
+  if (hullFlash > 0 && hullFlash % 4 < 2) { rect(0, 16, 256, 208, RED); rect(1, 17, 254, 206, RED); }
   drawCursor();
   drawHud();
   if (menu) drawMenu();
@@ -666,8 +716,17 @@ function drawSpace() {
 }
 
 function drawTitle() {
+  // The letters first: big() uses the bottom rows of the overlay as scratch space.
   big('ALIEN', 128, 40, 5, GREEN);
   big('SWARM', 128, 84, 5, GOLD);
+  // A moon's horizon below, cratered and lit from above, with the colony on it.
+  circfill(128, 400, 220, 100);
+  circfill(128, 403, 218, 99);
+  circfill(128, 409, 214, 100);
+  circfill(128, 412, 213, 99);
+  for (const [x, y, r] of [[40, 214, 7], [92, 200, 4], [150, 208, 6], [232, 210, 5], [12, 205, 3]]) { circfill(x, y, r, 100); circfill(x - 1, y - 1, r - 1, 99); circfill(x + 1, y + 1, r - 2, 100); }
+  circfill(196, 189, 9, 102); circfill(196, 189, 8, 117); rectfill(186, 189, 21, 6, 100);
+  pset(193, 185, WHITE); line(203, 179, 203, 185, DIM); pset(203, 178, clock & 32 ? RED : 97);
   // The swarm: Drones in a loose wave, crossing the sky.
   for (let k = 0; k < 9; k++) {
     const x = ((clock * 0.7 + k * 37) % 320) - 32, y = 136 + 10 * Math.sin(clock / 30 + k * 0.9);
@@ -723,12 +782,11 @@ function drawSelect() {
 
 /** Map m's cells at 4 px each, read from its Map RAM region. */
 function drawMiniMap(m, x0, y0) {
-  const mx = 32 * (m % 8);
   rectfill(x0 - 1, y0 - 1, COLS * 4 + 2, ROWS * 4 + 2, PANEL);
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      const t = mget(mx + 2 * c, MAP_ROW + 2 * r) & 1023;
-      const col = t === T_LANE ? DIM : t === T_ENTRY ? RED : t === T_ROCK ? BLACK : t === T_DOME ? CYAN : SHADE;
+      const t = kindAt(m, c, r);
+      const col = t === LANE ? DIM : t === ENTRY ? RED : t === ROCK ? BLACK : t === DOME ? CYAN : SHADE;
       rectfill(x0 + 4 * c, y0 + 4 * r, 4, 4, col);
     }
   }
