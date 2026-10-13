@@ -33,6 +33,14 @@
       "png": "carts/summit-rush.nova.png"
     },
     {
+      "name": "alien-swarm",
+      "title": "Alien Swarm",
+      "author": "NOVA-16",
+      "description": "A space tower defense: hold back the alien swarm with gun towers. Work in progress.",
+      "label": null,
+      "png": null
+    },
+    {
       "name": "chiptune",
       "title": "Chiptune",
       "author": "NOVA-16",

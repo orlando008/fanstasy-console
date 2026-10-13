@@ -1,0 +1,456 @@
+{
+ "instruments": [
+  {
+   "wave": "pulse12",
+   "a": 0,
+   "d": 3,
+   "s": 0,
+   "r": 0,
+   "vol": 7,
+   "vib": [
+    0,
+    0
+   ],
+   "pan": null
+  },
+  {
+   "wave": "pulse50",
+   "a": 0,
+   "d": 6,
+   "s": 5,
+   "r": 6,
+   "vol": 10,
+   "vib": [
+    0,
+    0
+   ],
+   "pan": null
+  },
+  {
+   "wave": "pulse50",
+   "a": 0,
+   "d": 3,
+   "s": 0,
+   "r": 0,
+   "vol": 10,
+   "vib": [
+    0,
+    0
+   ],
+   "pan": null
+  },
+  {
+   "wave": "noise",
+   "a": 0,
+   "d": 6,
+   "s": 0,
+   "r": 0,
+   "vol": 9,
+   "vib": [
+    0,
+    0
+   ],
+   "pan": null
+  },
+  {
+   "wave": "noise-short",
+   "a": 0,
+   "d": 4,
+   "s": 0,
+   "r": 0,
+   "vol": 7,
+   "vib": [
+    0,
+    0
+   ],
+   "pan": null
+  },
+  {
+   "wave": "pulse25",
+   "a": 0,
+   "d": 8,
+   "s": 4,
+   "r": 4,
+   "vol": 11,
+   "vib": [
+    2,
+    10
+   ],
+   "pan": null
+  }
+ ],
+ "patterns": [],
+ "songs": [],
+ "sfx": [
+  {
+   "speed": 1,
+   "rows": [
+    {
+     "n": "A-6",
+     "i": 0
+    },
+    {
+     "n": "E-6",
+     "i": 0
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 1,
+   "rows": [
+    {
+     "n": "C-3",
+     "i": 3
+    },
+    {
+     "n": "G-2",
+     "i": 3
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 1,
+   "rows": [
+    {
+     "n": "C-5",
+     "i": 4
+    },
+    {
+     "n": "G-4",
+     "i": 4
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "E-4",
+     "i": 5
+    },
+    {
+     "n": "C-4",
+     "i": 5
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "C-5",
+     "i": 1
+    },
+    {
+     "n": "G-5",
+     "i": 1
+    },
+    {
+     "n": "C-6",
+     "i": 1
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "C-6",
+     "i": 1
+    },
+    {
+     "n": "G-5",
+     "i": 1
+    },
+    {
+     "n": "C-5",
+     "i": 1
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "C-3",
+     "i": 2
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 6,
+   "rows": [
+    {
+     "n": "G-4",
+     "i": 1
+    },
+    {
+     "n": "E-4",
+     "i": 1
+    },
+    {
+     "n": "C-4",
+     "i": 1
+    },
+    null,
+    {
+     "n": "G-3",
+     "i": 1
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  }
+ ],
+ "samples": []
+}

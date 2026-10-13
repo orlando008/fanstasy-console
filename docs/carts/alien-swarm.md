@@ -1,7 +1,7 @@
 # Alien Swarm: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Proposed
+**Version:** 0.2 (draft)
+**Status:** In progress: step 1 of the plan (15) is built
 **Cart source:** `carts/src/alien-swarm/` → `carts/alien-swarm.nova`
 
 ---
@@ -205,6 +205,31 @@ crowd a scanline.
    the cursor controls feel quick on a pad; a test bot with a fixed build plan wins
    the slice and a weaker plan loses it; the same inputs replay the same game; CPU
    stays low with a full wave on screen.
+   - **Built:**
+     - Map 1-1 is painted from a text grid by the art script. The script checks that
+       the lane runs from its entry (`E`) to the dome.
+     - The cart reads the cells back from Map RAM and traces each lane with a
+       breadth-first search into a list of cell centres. Aliens move by distance
+       along that list, which also orders them for FIRST targeting.
+     - Turrets turn in 8 directions, worked out without trig.
+     - Blaster bolts home in on their target. Cannon shells fly to where the target
+       was and burst there with splash damage.
+     - The build menu draws over the field, so it cuts a see-through hole for each
+       tower icon: the overlay always covers sprites.
+     - The tower menu has SELL only (upgrades are step 2). Fast-forward and calling
+       a wave early work.
+   - **Results:** a test script plays through the real controls: it moves the cursor
+     with the d-pad, opens the build menu, chooses a tower, and runs the waves at 3×.
+     | Build plan | Result |
+     |---|---|
+     | Good: 8 towers | Wins with all 20 hull |
+     | 3 Blasters | Wins with 10 hull |
+     | A Blaster and a Cannon | Wins with 19 hull |
+     | 1 Blaster, far from the lane | Loses on wave 2 |
+
+     The slice's five waves are easy, which is for step 7 to tune. The same inputs
+     replay the same game under another seed. The worst frame is under 2 ms even at
+     3× (Node's garbage collection aside). No errors in the browser.
 2. **All towers and aliens:** the Laser, Freezer and Missile, upgrades and selling,
    targeting modes, Brutes, Drones, Splitters and the Queen.
 3. **All 8 maps and their 15 waves**, the 4 planets, two- and three-lane maps.
