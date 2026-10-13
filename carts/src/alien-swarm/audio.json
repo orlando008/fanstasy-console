@@ -707,6 +707,315 @@
     null,
     null
    ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "C-6",
+     "i": 1
+    },
+    {
+     "n": "G-6",
+     "i": 1
+    },
+    {
+     "n": "C-7",
+     "i": 1
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 3,
+   "rows": [
+    {
+     "n": "G-4",
+     "i": 5
+    },
+    null,
+    {
+     "n": "C-5",
+     "i": 5
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 5,
+   "rows": [
+    {
+     "n": "C-3",
+     "i": 5
+    },
+    {
+     "n": "F#3",
+     "i": 5
+    },
+    {
+     "n": "C-3",
+     "i": 5
+    },
+    {
+     "n": "F#3",
+     "i": 5
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "E-5",
+     "i": 1
+    },
+    {
+     "n": "G-5",
+     "i": 1
+    },
+    {
+     "n": "C-6",
+     "i": 1
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "C-6",
+     "i": 0
+    },
+    {
+     "n": "E-6",
+     "i": 0
+    },
+    {
+     "n": "G-6",
+     "i": 0
+    },
+    {
+     "n": "C-7",
+     "i": 0
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 5,
+   "rows": [
+    {
+     "n": "C-5",
+     "i": 1
+    },
+    {
+     "n": "E-5",
+     "i": 1
+    },
+    {
+     "n": "G-5",
+     "i": 1
+    },
+    {
+     "n": "C-6",
+     "i": 1
+    },
+    null,
+    {
+     "n": "G-5",
+     "i": 1
+    },
+    {
+     "n": "C-6",
+     "i": 1
+    },
+    {
+     "n": "E-6",
+     "i": 1
+    },
+    null,
+    {
+     "n": "G-6",
+     "i": 1
+    },
+    null,
+    null,
+    {
+     "n": "C-7",
+     "i": 1
+    },
+    null,
+    null,
+    null,
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
   }
  ],
  "samples": []

@@ -1,6 +1,7 @@
 // Alien Swarm: a space tower defense (docs/carts/alien-swarm.md).
-// So far: all 8 maps on 4 planets with their 15 waves, the cursor and menus, all
-// five towers with their upgrades and targeting, all six aliens, credits and hull.
+// So far: the title, map select, records and saves; all 8 maps on 4 planets with their
+// 15 waves, in normal and hard; the cursor and menus, all five towers with their upgrades
+// and targeting, all six aliens, credits, hull, stars and scores.
 
 // --- Layout (SPEC 4) ---
 
@@ -54,7 +55,7 @@ const PLANETS = [
   { name: 'THE HIVE', terrain: '4a2a4a 5a3460 8a5a8a 2a1020 401a30 200a20 9a5a9a 3a1a3a' },
 ];
 const MAPS = ['LANDING ZONE', 'CRATER RIM', 'ICE SHELF', 'GLACIER PASS', 'OVERGROWTH', 'THE SWAMP', 'HIVE GATE', "QUEEN'S NEST"];
-const HEALTH_STEP = 0.15; // aliens' health: x (1 + 0.15 x the map's index) (SPEC 6)
+const HEALTH_STEP = 0.15, HARD_HEALTH = 1.5; // aliens' health: x (1 + 0.15 x the map's index), x 1.5 in hard (SPEC 6)
 
 // --- Waves (SPEC 7) ---
 
@@ -112,11 +113,19 @@ const waveBonus = (n) => 25 + 5 * (n + 1);
 // --- Colors (BG palette 7, for the overlay) ---
 
 const BLACK = 113, WHITE = 114, GOLD = 115, RED = 116, CYAN = 117, PANEL = 118, GREEN = 119, DIM = 120, ORANGE = 121, SHADE = 122;
+const SHADES = { [GOLD]: [123, 124], [GREEN]: [125, 119], [CYAN]: [126, 127], [RED]: [97, 98] }; // big letters: [side, shine]
+
+// --- Saves (SPEC 13) ---
+
+const VERSION_SLOT = 0, SAVE_VERSION = 1, UNLOCK_SLOT = 1, STARS_SLOT = 10, BEST_SLOT = 30;
+const starsSlot = (m, hard) => STARS_SLOT + m + (hard ? 8 : 0), bestSlot = (m, hard) => BEST_SLOT + m + (hard ? 8 : 0);
+const unlocked = () => Math.max(1, dget(UNLOCK_SLOT)); // maps open, from 1-1
+const starsFor = (h) => (h >= 18 ? 3 : h >= 10 ? 2 : 1); // a win's stars by hull left (SPEC 9)
 
 // --- State ---
 
-let state; // 'play', 'won', 'lost'
-let mapIx = 0;
+let state; // 'title', 'select', 'records', 'intro', 'play', 'won', 'lost'
+let mapIx = 0, hard = false;
 const grid = new Uint8Array(COLS * ROWS);
 let paths = []; // per entry: [{ x, y }] cell centres from just off screen to the dome
 let towers = []; // { kind, c, r, x, y, level, cool, dir, spent, mode, target, heat, pulse }
@@ -133,13 +142,21 @@ let paused = false, pauseSel = 0;
 let timer = 0, clock = 0;
 let prevMask = 0, inputMask = 0;
 let banner = null; // { text, t }
+let sel = 0, selHard = false, titleSel = 0, endSel = 0; // the title, map select and end-of-map menus
+let calls = 0, seen = 0; // waves called early; bit k: alien k has come this map
+let result = null; // a won map: { stars, score, best }
 
 function init() {
+  if (dget(VERSION_SLOT) !== SAVE_VERSION) {
+    for (let i = 0; i < 256; i++) dset(i, 0);
+    dset(VERSION_SLOT, SAVE_VERSION);
+  }
   for (let x = 0; x < 32; x++) for (let y = 0; y < 2; y++) mset(x, y, tile(T_BAND, PAL_MAP));
   bg(1, { mx: 0, my: 0, mw: 32, mh: 28 });
   bg(0, { show: false });
   bg(2, { show: false });
-  startMap(0);
+  color(0, 1, 1, 4); // deep space behind everything
+  toTitle();
 }
 
 // --- The map ---
@@ -204,15 +221,25 @@ const pathLen = (path) => (path.length - 1) * CELL;
 
 // --- Flow ---
 
-function startMap(m) {
+function toTitle() { state = 'title'; timer = 0; titleSel = 0; bg(1, { show: false }); }
+
+function toSelect(m = sel) {
+  state = 'select'; timer = 0; sel = Math.min(m, unlocked() - 1);
+  if (selHard && !dget(starsSlot(sel, false))) selHard = false;
+  bg(1, { show: false });
+}
+
+/** Load map m and show its intro; the build phase starts after it (SPEC 10). */
+function startMap(m, h = hard) {
   loadMap(m);
-  state = 'play'; timer = 0;
+  hard = h;
+  bg(1, { show: true });
+  state = 'intro'; timer = 0;
   towers = []; aliens = []; shots = []; effects = []; spawns = [];
-  credits = startCredits(m); hull = HULL; wave = 0;
+  credits = startCredits(m); hull = HULL; wave = 0; calls = 0; seen = 0; result = null;
   phase = 'build'; count = FIRST_COUNT;
-  speedUp = 1; menu = null; paused = false;
+  speedUp = 1; menu = null; paused = false; banner = null;
   cx = 7; cy = 6;
-  banner = { text: `${1 + (m >> 1)}-${1 + (m & 1)} ${MAPS[m]}`, t: 120 };
 }
 
 function startWave() {
@@ -221,23 +248,42 @@ function startWave() {
   // Unforced aliens take the lanes in turn.
   let turn = 0;
   spawns = parseWave(WAVES[mapIx][wave]).map((q) => ({ ...q, path: paths[q.lane >= 0 ? q.lane % paths.length : turn++ % paths.length] }));
-  banner = { text: `WAVE ${wave + 1}`, t: 90 };
+  // The banner names an alien the first time it comes on this map (SPEC 10).
+  let fresh = -1;
+  for (const q of spawns) if (!(seen >> q.kind & 1)) { if (fresh < 0 || q.kind === QUEEN) fresh = q.kind; seen |= 1 << q.kind; }
+  const tag = fresh === QUEEN ? 'THE QUEEN!' : fresh >= 0 && wave > 0 ? `${ALIENS[fresh].name}S!` : '';
+  banner = { text: tag ? `WAVE ${wave + 1}: ${tag}` : `WAVE ${wave + 1}`, t: 100, c: tag ? (fresh === QUEEN ? RED : ORANGE) : GOLD };
+  sfx(fresh === QUEEN ? SFX.boss : SFX.wave, SFX_CH);
 }
 
 /** SELECT in the build phase: the wave now, and 2 credits for each second left (SPEC 7). */
 function callEarly() {
   credits += EARLY_PAY * flr(count / 60);
+  calls++;
   startWave();
 }
 
 function waveCleared() {
   credits += waveBonus(wave);
   wave++;
-  if (wave >= WAVE_COUNT) { state = 'won'; timer = 0; menu = null; return; }
+  if (wave >= WAVE_COUNT) { win(); return; }
   phase = 'build'; count = COUNT;
+  sfx(SFX.cleared, SFX_CH);
 }
 
 // --- Towers ---
+
+/** The map is won: stars, score and saves (SPEC 9, 13). */
+function win() {
+  state = 'won'; timer = 0; menu = null; endSel = 0;
+  const stars = starsFor(hull), score = 100 * hull + credits + 50 * calls;
+  const best = dget(bestSlot(mapIx, hard));
+  result = { stars, score, best: score > best };
+  sfx(SFX.victory, SFX_CH);
+  if (score > best) dset(bestSlot(mapIx, hard), score);
+  if (stars > dget(starsSlot(mapIx, hard))) dset(starsSlot(mapIx, hard), stars);
+  if (unlocked() < Math.min(MAPS.length, mapIx + 2)) dset(UNLOCK_SLOT, Math.min(MAPS.length, mapIx + 2));
+}
 
 function build(kind) {
   const T = TOWERS[kind];
@@ -360,7 +406,7 @@ function updateShots() {
 // --- Aliens ---
 
 function spawn(kind, path, s = 0) {
-  const A = ALIENS[kind], [x, y] = along(path, s), hp = A.hp * (1 + HEALTH_STEP * mapIx);
+  const A = ALIENS[kind], [x, y] = along(path, s), hp = A.hp * (1 + HEALTH_STEP * mapIx) * (hard ? HARD_HEALTH : 1);
   aliens.push({ kind, hp, max: hp, s, path, x, y, dead: false, slowT: 0, layT: A.lay || 0 });
 }
 
@@ -411,17 +457,54 @@ const pressed = (b) => (inputMask & BIT(b)) !== 0 && (prevMask & BIT(b)) === 0;
 function update() {
   inputMask = readPad();
   timer++; clock++;
-  if (state === 'play') updatePlay();
-  // Until the map select (step 4): a win goes on to the next map, a loss retries.
-  else if (timer > 60 && (pressed(START) || pressed(A))) startMap(state === 'won' ? (mapIx + 1) % MAPS.length : mapIx);
+  const go = pressed(START) || pressed(A), back = pressed(B);
+  if (state === 'title') {
+    if (btnp(UP) || btnp(DOWN)) { titleSel ^= 1; sfx(SFX.move, SFX_CH); }
+    if (go) { sfx(SFX.select, SFX_CH); if (titleSel === 0) toSelect(unlocked() - 1); else { state = 'records'; timer = 0; } }
+  } else if (state === 'records') {
+    if (go || back) { sfx(SFX.move, SFX_CH); toTitle(); }
+  } else if (state === 'select') {
+    updateSelect(go, back);
+  } else if (state === 'intro') {
+    if (timer >= INTRO_FRAMES || (timer > 20 && go)) { state = 'play'; timer = 0; banner = { text: 'DEFEND THE COLONY!', t: 90, c: GOLD }; }
+  } else if (state === 'play') {
+    updatePlay();
+  } else if (state === 'won') {
+    for (let k = 0; k < result.stars; k++) if (timer === STAR_AT[k]) sfx(SFX.star, SFX_CH);
+    if (timer > WON_FRAMES && go) { sfx(SFX.select, SFX_CH); toSelect(Math.min(mapIx + 1, MAPS.length - 1)); }
+  } else if (state === 'lost') {
+    if (btnp(UP) || btnp(DOWN)) { endSel ^= 1; sfx(SFX.move, SFX_CH); }
+    if (timer > 60 && go) { sfx(SFX.select, SFX_CH); if (endSel === 0) startMap(mapIx); else toSelect(mapIx); }
+    else if (timer > 60 && back) toSelect(mapIx);
+  }
+  if (state !== 'play') for (const e of effects) e.t--;
   prevMask = inputMask;
+}
+
+const INTRO_FRAMES = 180, WON_FRAMES = 150;
+
+/** LEFT/RIGHT: the map (locked ones are skipped); UP/DOWN: normal or hard, once it's beaten. */
+function updateSelect(go, back) {
+  const open = unlocked();
+  if (btnp(LEFT) && sel > 0) { sel--; sfx(SFX.move, SFX_CH); }
+  if (btnp(RIGHT) && sel < open - 1) { sel++; sfx(SFX.move, SFX_CH); }
+  const canHard = dget(starsSlot(sel, false)) > 0;
+  if (!canHard) selHard = false;
+  if ((btnp(UP) || btnp(DOWN)) && canHard) { selHard = !selHard; sfx(SFX.move, SFX_CH); }
+  if (go) { sfx(SFX.select, SFX_CH); startMap(sel, selHard); }
+  else if (back) { sfx(SFX.move, SFX_CH); toTitle(); }
 }
 
 function updatePlay() {
   if (paused) {
-    if (pressed(UP) || pressed(DOWN)) pauseSel ^= 1;
+    if (btnp(UP)) pauseSel = (pauseSel + 2) % 3;
+    if (btnp(DOWN)) pauseSel = (pauseSel + 1) % 3;
     if (pressed(B)) paused = false;
-    else if (pressed(START) || pressed(A)) { if (pauseSel === 0) paused = false; else startMap(mapIx); }
+    else if (pressed(START) || pressed(A)) {
+      if (pauseSel === 0) paused = false;
+      else if (pauseSel === 1) startMap(mapIx);
+      else toSelect(mapIx);
+    }
     return;
   }
   if (pressed(START)) { paused = true; pauseSel = 0; menu = null; return; }
@@ -494,19 +577,25 @@ function tick() {
   for (const e of effects) e.t--;
   effects = effects.filter((e) => e.t > 0);
   if (banner && --banner.t <= 0) banner = null;
-  if (hull <= 0) { state = 'lost'; timer = 0; menu = null; sfx(SFX.lost, SFX_CH); return; }
+  if (hull <= 0) { state = 'lost'; timer = 0; menu = null; endSel = 0; sfx(SFX.lost, SFX_CH); return; }
   if (phase === 'wave' && !spawns.length && !aliens.length) waveCleared();
 }
 
 // --- Sound ---
 
-const SFX = { blaster: 0, cannon: 1, splat: 2, hull: 3, build: 4, sell: 5, no: 6, lost: 7, laser: 8, freeze: 9, missile: 10, boom: 11, move: 12 };
+const SFX = { blaster: 0, cannon: 1, splat: 2, hull: 3, build: 4, sell: 5, no: 6, lost: 7, laser: 8, freeze: 9, missile: 10, boom: 11, move: 12,
+  select: 13, wave: 14, boss: 15, cleared: 16, star: 17, victory: 18 };
 const SFX_CH = 1;
 
 // --- Draw ---
 
 function draw() {
   cls();
+  if (state === 'title' || state === 'select' || state === 'records') {
+    drawSpace();
+    if (state === 'title') drawTitle(); else if (state === 'select') drawSelect(); else drawRecords();
+    return;
+  }
   for (const t of towers) {
     const T = TOWERS[t.kind];
     spr(T.turns ? T.spr + 2 * t.dir : T.spr + (t.pulse ? 2 : 0), t.x - 8, t.y - 8, { size: 16, pal: T.pal, prio: 3 });
@@ -548,14 +637,188 @@ function draw() {
   drawCursor();
   drawHud();
   if (menu) drawMenu();
-  if (banner) ctxt(banner.text, 96, GOLD);
-  if (state === 'won') { panel(48, 80, 160, 56); ctxt('COLONY SAVED!', 92, GREEN); ctxt(`HULL ${hull}/${HULL}`, 108, WHITE); if (timer > 60) ctxt('START: NEXT MAP', 122, DIM); }
-  if (state === 'lost') { panel(48, 80, 160, 56); ctxt('COLONY LOST', 92, RED); ctxt(`WAVE ${wave + 1}`, 108, WHITE); if (timer > 60) ctxt('START: RETRY', 122, DIM); }
-  if (paused) {
-    panel(64, 84, 128, 48);
-    ctxt('PAUSED', 92, GOLD);
-    ['RESUME', 'RESTART MAP'].forEach((s, i) => ctxt(`${pauseSel === i ? '> ' : '  '}${s}`, 106 + i * 12, pauseSel === i ? WHITE : DIM));
+  if (banner && state === 'play') ctxt(banner.text, 96, banner.c || GOLD);
+  if (state === 'intro') drawIntro();
+  if (state === 'won') drawWon();
+  if (state === 'lost') {
+    panel(40, 72, 176, 80);
+    big('COLONY LOST', 128, 80, 2, RED);
+    ctxt(`FELL ON WAVE ${wave + 1}`, 104, WHITE);
+    if (timer > 60) ['RETRY', 'MAP SELECT'].forEach((t, i) => ctxt(`${endSel === i ? '> ' : '  '}${t}  `, 120 + i * 12, endSel === i ? WHITE : DIM));
   }
+  if (paused) {
+    panel(56, 80, 144, 60);
+    ctxt('PAUSED', 88, GOLD);
+    ['RESUME', 'RESTART MAP', 'MAP SELECT'].forEach((t, i) => ctxt(`${pauseSel === i ? '> ' : '  '}${t}  `, 102 + i * 12, pauseSel === i ? WHITE : DIM));
+  }
+}
+
+// --- The screens around a map (SPEC 10) ---
+
+/** Stars drifting left in three layers, twinkling. */
+function drawSpace() {
+  for (let k = 0; k < 80; k++) {
+    const h = hash(k * 977 + 13), layer = k % 3;
+    const x = ((h & 255) - flr(clock * (layer + 1) / 8)) & 255, y = (h >> 8) % 224;
+    const c = layer === 2 ? WHITE : layer === 1 ? (((h >> 16) + (clock >> 3)) % 9 ? DIM : WHITE) : PANEL;
+    pset(x, y, c);
+  }
+}
+
+function drawTitle() {
+  big('ALIEN', 128, 40, 5, GREEN);
+  big('SWARM', 128, 84, 5, GOLD);
+  // The swarm: Drones in a loose wave, crossing the sky.
+  for (let k = 0; k < 9; k++) {
+    const x = ((clock * 0.7 + k * 37) % 320) - 32, y = 136 + 10 * Math.sin(clock / 30 + k * 0.9);
+    spr(ALIENS[DRONE].spr + 2 * ((clock >> 3) & 1), flr(x), flr(y), { size: 16, pal: ALIENS[DRONE].pal, prio: 3 });
+  }
+  ['PLAY', 'RECORDS'].forEach((t, i) => txt(`${titleSel === i ? '>' : ' '} ${t}`, 96, 164 + 14 * i, titleSel === i ? WHITE : DIM));
+  const total = totalStars();
+  if (total) { drawStar(98, 199, true); txt(`${total}/48`, 110, 199, GOLD); }
+}
+
+const totalStars = () => { let n = 0; for (let m = 0; m < 16; m++) n += dget(STARS_SLOT + m); return n; };
+
+/** A 7 x 7 star. */
+const STAR = ['...#...', '..###..', '#######', '.#####.', '..###..', '.##.##.', '##...##'];
+function drawStar(x, y, on) {
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) if (STAR[r][c] === '#') pset(x + c, y + r, on ? GOLD : PANEL);
+}
+function drawStars(x, y, n, gap = 9) { for (let k = 0; k < 3; k++) drawStar(x + gap * k, y, k < n); }
+
+const PLANET_COLS = [[99, 100], [101, 102], [103, 104], [105, 106]]; // overlay: each planet's body and rim
+
+function drawSelect() {
+  ctxt('SELECT MAP', 8, GOLD);
+  const open = unlocked();
+  for (let p = 0; p < 4; p++) {
+    const x = 38 + 60 * p, y = 46, [body, rim] = PLANET_COLS[p], here = sel >> 1 === p;
+    circfill(x, y, here ? 17 : 14, rim);
+    circfill(x - 2, y - 2, here ? 15 : 12, body);
+    for (let k = 0; k < 2; k++) {
+      const m = 2 * p + k, nx = x - 10 + 20 * k, ny = 74;
+      const on = m < open;
+      rectfill(nx - 6, ny - 6, 13, 13, on ? (m === sel ? GOLD : PANEL) : SHADE);
+      print(on ? `${k + 1}` : '-', nx - 3, ny - 3, on ? (m === sel ? BLACK : WHITE) : DIM);
+      if (on) for (let k = 0; k < 3; k++) rectfill(nx - 5 + 4 * k, ny + 9, 3, 3, k < dget(starsSlot(m, false)) ? GOLD : PANEL);
+    }
+  }
+  // The chosen map: its name, a preview of the field, and its records.
+  panel(8, 100, 240, 116);
+  big(MAPS[sel], 128, 106, 2, CYAN);
+  print(`${1 + (sel >> 1)}-${1 + (sel & 1)} ${PLANETS[sel >> 1].name}`, 16, 128, DIM);
+  drawMiniMap(sel, 16, 140);
+  const canHard = dget(starsSlot(sel, false)) > 0;
+  [false, true].forEach((h, i) => {
+    const y = 140 + 26 * i, on = selHard === h;
+    print(`${on ? '>' : ' '}${h ? 'HARD' : 'NORMAL'}`, 96, y, h && !canHard ? SHADE : on ? WHITE : DIM);
+    if (h && !canHard) { print('WIN NORMAL', 112, y + 10, SHADE); return; }
+    drawStars(176, y, dget(starsSlot(sel, h)));
+    const best = dget(bestSlot(sel, h));
+    print(best ? `BEST ${best}` : 'NOT WON', 112, y + 10, best ? GOLD : SHADE);
+  });
+  print('A: DEPLOY  B: BACK', 64, 202, DIM);
+}
+
+/** Map m's cells at 4 px each, read from its Map RAM region. */
+function drawMiniMap(m, x0, y0) {
+  const mx = 32 * (m % 8);
+  rectfill(x0 - 1, y0 - 1, COLS * 4 + 2, ROWS * 4 + 2, PANEL);
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const t = mget(mx + 2 * c, MAP_ROW + 2 * r) & 1023;
+      const col = t === T_LANE ? DIM : t === T_ENTRY ? RED : t === T_ROCK ? BLACK : t === T_DOME ? CYAN : SHADE;
+      rectfill(x0 + 4 * c, y0 + 4 * r, 4, 4, col);
+    }
+  }
+}
+
+function drawRecords() {
+  big('RECORDS', 128, 8, 2, GOLD);
+  print('MAP', 12, 34, DIM); print('NORMAL', 148, 34, DIM); print('HARD', 204, 34, DIM);
+  for (let m = 0; m < MAPS.length; m++) {
+    const y = 48 + 19 * m, open = m < unlocked();
+    print(`${1 + (m >> 1)}-${1 + (m & 1)}`, 12, y, open ? CYAN : SHADE);
+    print(open ? MAPS[m] : '???', 40, y, open ? WHITE : SHADE);
+    for (const h of [false, true]) {
+      const x = h ? 204 : 148, best = dget(bestSlot(m, h));
+      drawStars(x, y - 1, dget(starsSlot(m, h)), 8);
+      if (best) print(`${best}`, x, y + 8, GOLD);
+    }
+  }
+  drawStar(92, 205, true); txt(`${totalStars()}/48`, 104, 205, GOLD);
+}
+
+/** The map's name, then a runner along each lane showing where the swarm will come. */
+function drawIntro() {
+  for (const p of paths) {
+    const len = pathLen(p), s = (timer * 2.5) % (len + 60);
+    for (let k = 0; k < 4; k++) {
+      const q = s - 10 * k;
+      if (q < 0 || q > len) continue;
+      const [x, y] = along(p, q);
+      circfill(flr(x), flr(y), 3 - (k >> 1), k ? ORANGE : RED);
+    }
+  }
+  panel(32, 60, 192, 56);
+  big(MAPS[mapIx], 128, 68, MAPS[mapIx].length > 10 ? 1 : 2, CYAN);
+  ctxt(`${PLANETS[mapIx >> 1].name} ${1 + (mapIx >> 1)}-${1 + (mapIx & 1)}`, 90, DIM);
+  ctxt(hard ? 'HARD' : 'NORMAL', 102, hard ? RED : GREEN);
+  if (timer % 40 < 28) ctxt('A: READY', 124, WHITE);
+}
+
+/** The stars one by one, then the score (SPEC 10). */
+function drawWon() {
+  panel(40, 56, 176, 104);
+  ctxt('COLONY SAVED!', 64, GREEN);
+  for (let k = 0; k < 3; k++) {
+    const shown = timer > STAR_AT[k];
+    const on = shown && k < result.stars;
+    const x = 98 + 22 * k, y = 84;
+    if (!shown) { drawStar(x + 4, y + 4, false); continue; }
+    // A star pops in big, then settles.
+    const pop = Math.max(0, 6 - (timer - STAR_AT[k]));
+    for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++)
+      if (STAR[r][c] === '#') rectfill(x + c * 2 - pop / 2, y + r * 2 - pop / 2, 2 + (pop >> 2), 2 + (pop >> 2), on ? GOLD : PANEL);
+  }
+  if (timer > SCORE_AT) {
+    ctxt(`HULL ${hull}/${HULL}`, 108, WHITE);
+    ctxt(`SCORE ${result.score}`, 120, GOLD);
+    if (result.best && timer % 30 < 20) ctxt('NEW BEST!', 132, CYAN);
+  }
+  if (timer > WON_FRAMES && timer % 40 < 28) ctxt('A: CONTINUE', 146, WHITE);
+}
+const STAR_AT = [30, 55, 80], SCORE_AT = 105;
+
+/**
+ * Big text, centred on cx: the system font scaled up, read back from the overlay.
+ * From scale 2 the letters are chunky blocks: a black outline round a darker side
+ * (extruded down and right), the face, and a shine along top edges.
+ */
+function big(s, cx, y, scale, c) {
+  if (scale < 2) { txt(s, flr(cx - s.length * 4), y, c); return; }
+  const w = s.length * 8, grid8 = new Uint8Array(w * 8);
+  rectfill(0, 216, w, 8, 0);
+  print(s, 0, 216, WHITE);
+  const on = [];
+  for (let gy = 0; gy < 8; gy++) for (let gx = 0; gx < w; gx++) if (pget(gx, 216 + gy)) { on.push(gx, gy); grid8[gy * w + gx] = 1; }
+  rectfill(0, 216, w, 8, 0);
+  const x0 = flr(cx - w * scale / 2), at = (i) => [x0 + on[i] * scale, y + on[i + 1] * scale];
+  const e = scale >= 3 ? 2 : 1, [side, shine] = SHADES[c] || [BLACK, c];
+  for (let i = 0; i < on.length; i += 2) { const [x, yy] = at(i); rectfill(x - 1, yy - 1, scale + 2 + e, scale + 2 + e, BLACK); }
+  for (let i = 0; i < on.length; i += 2) { const [x, yy] = at(i); rectfill(x + 1, yy + 1, scale + e - 1, scale + e - 1, side); }
+  for (let i = 0; i < on.length; i += 2) {
+    const [x, yy] = at(i), gx = on[i], gy = on[i + 1];
+    rectfill(x, yy, scale, scale, c);
+    if (gy === 0 || !grid8[(gy - 1) * w + gx]) rectfill(x, yy, scale, 1, shine);
+  }
+}
+
+function hash(n) {
+  n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d);
+  n = Math.imul(n ^ (n >>> 12), 0x297a2d39);
+  return (n ^ (n >>> 15)) >>> 0;
 }
 
 function drawCursor() {
@@ -609,12 +872,12 @@ function drawMenu() {
 
 function drawHud() {
   print(`$${credits}`, 4, 4, GOLD);
-  print(`HULL ${hull}`, 56, 4, hull > 5 ? CYAN : RED);
-  print(`WAVE ${Math.min(wave + 1, WAVE_COUNT)}/${WAVE_COUNT}`, 124, 4, WHITE);
+  print(`HULL ${hull}`, 48, 4, hull > 5 ? CYAN : RED);
+  print(`WAVE ${Math.min(wave + 1, WAVE_COUNT)}/${WAVE_COUNT}`, 112, 4, WHITE);
   if (speedUp > 1) print(`${speedUp}X`, 236, 4, GOLD);
   if (state === 'play' && phase === 'build') {
     const s = `${Math.ceil(count / 60)}`;
-    print(s, 212 - s.length * 8, 4, clock & 32 ? WHITE : DIM);
+    print(s, 228 - s.length * 8, 4, clock & 32 ? WHITE : DIM);
   }
 }
 

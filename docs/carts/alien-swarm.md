@@ -1,7 +1,7 @@
 # Alien Swarm: Cart Specification
 
-**Version:** 0.4 (draft)
-**Status:** In progress: steps 1–3 of the plan (15) are built
+**Version:** 0.5 (draft)
+**Status:** In progress: steps 1–4 of the plan (15) are built
 **Cart source:** `carts/src/alien-swarm/` → `carts/alien-swarm.nova`
 
 ---
@@ -300,6 +300,33 @@ crowd a scanline.
        game no longer moves, and it neglected short lanes.
 4. **Flow:** title, map select, map intro, wave banners, call early, fast-forward,
    victory and stars, colony lost, records, pause and saves.
+   - **Built:**
+     - **Title:** ALIEN SWARM in chunky letters (as in Smashy Smash) over a starfield
+       in three layers, with a loose wave of Drones crossing it. It shows the stars
+       won so far.
+     - **Map select:** the four planets as globes, each with its two maps (locked
+       ones are greyed) and the stars won.
+       - The panel shows the chosen map: its name, a 4-pixel mini-map read straight
+         from Map RAM, and its NORMAL and HARD stars and best scores.
+       - HARD can be chosen once NORMAL is won.
+     - **Intro:** the map's name, planet and mode, while red runners trace each lane
+       from its entry to the dome.
+     - **Banners:** a wave that brings an alien new to this map names it (`WAVE 4:
+       BRUTES!`). If the Queen is among the new arrivals she takes the banner.
+     - **Victory:** the stars pop in one by one with a chime, then the hull, the
+       score and NEW BEST.
+     - **Colony lost:** RETRY or MAP SELECT.
+     - **Pause:** RESUME, RESTART MAP and MAP SELECT.
+     - **Saves:** stars and best scores are written for normal and hard, and the
+       next map unlocks on a win (13).
+   - **Results:** a flow script runs every screen through the buttons.
+     - A win with 19 hull, 400 credits and 3 waves called early gives 3 stars and a
+       score of 2,350, saves them, and unlocks 1-2.
+     - The swarm breaking through gives COLONY LOST, and RETRY replays the map.
+     - The test bot's normal-mode results are the same as in step 3.
+     - Hard mode wins 1-1 just as easily but falls on wave 4 of Queen's Nest. Both
+       are for step 7.
+     - No errors in the browser.
 5. **Art pass:** the planets' terrain, turrets, aliens, the dome, effects, the title.
 6. **Audio pass:** five songs and the effects.
 7. **Balance and polish:** a bot with a build plan for each map checks that each
