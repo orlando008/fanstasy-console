@@ -45,11 +45,15 @@ const LAUNCH = 5; // a launched ball goes up and to the right, 30 degrees from v
 // Brick kinds, and the tiles that show them (a left and a right tile each).
 const EMPTY = 0, WALL = 1, GLASS = 2, STEEL = 3, GIRDER = 4;
 const T_WALL = 16, T_GLASS = 18, T_STEEL = 20, T_GIRDER = 28; // steel: 20, 22, 24, 26 by dents
+const WALL_TILES = [16, 36, 38, 40]; // each world's wall texture: plank, brick, concrete, stone (stages store 16)
 const T_SIDE = 8, T_TOP = 9, T_CORNER = 10, T_BAND = 11;
-const PADDLE_L = 64, PADDLE_M = 66, PADDLE_R = 72, BALL = 68, NAIL = 69, GUN = 84, CAPSULE = 96; // sprites
+const PADDLE_L = 64, PADDLE_M = 66, PADDLE_R = 72, BALL = 68, NAIL = 69, GUN = 84, STAR = 736; // sprites
+const CAPSULE = [96, 640, 672, 704]; // a capsule's four spin frames, + 2 x its kind
 const PAL_CAPSULE = 1, PAL_GLUE = 2, PAL_HOT = 3; // sprite palettes
 const PAL_IRON = 1; // glass, steel, girders and the frame; walls use sub-palettes 2-5 for their color
 const BLACK = 113, WHITE = 114, GOLD = 115, RED = 116, CYAN = 117, PANEL = 118, GREEN = 119, DIM = 120; // HUD
+const DUST = 121, DUST_DARK = 122, SPARK = 123, SPARK_RED = 124; // debris
+const SHADES = { [GOLD]: [100, 101], [RED]: [102, 99], [GREEN]: [97, 98], [WHITE]: [PANEL, WHITE] }; // big letters: [side, shine]
 
 // --- Worlds and stages (SPEC 8) ---
 
@@ -59,13 +63,13 @@ const BLACK = 113, WHITE = 114, GOLD = 115, RED = 116, CYAN = 117, PANEL = 118, 
  * 4 wall colors' outline, base, light and shadow (BG palettes 2-5), 24-bit hex.
  */
 const WORLDS = [
-  { name: 'THE HOUSE', back: '2a2030 6a4a6a 7e5a7c c8a0c0 5a3a28',
+  { name: 'THE HOUSE', back: '1a1220 4a3450 543c5a 6e5272 3a2418 5e3a24 7c5030 c09040 7a5820 7aa8c8 5a8a48 e8d890 2a1a10 94603a f0f0f0',
     walls: ['1e1612 e8dcc0 fff4e0 b8a888', '1e1612 b07840 d09a60 805028', '1e1612 c05038 e07858 883020', '1e1612 40a0a0 70d0c8 287070'] },
-  { name: 'THE FACTORY', back: '14161a 3a4048 586068 e8b830 202428',
+  { name: 'THE FACTORY', back: '0e1014 2a3036 363e46 1e2228 4e5862 8a5a38 b07a48 5a3820 d8a828 16161a d8d8c8 c03020 ff4020 22282e 3e4650',
     walls: ['1e1612 b04830 d86848 782818', '1e1612 7a3424 9a4c34 4e2014', '1e1612 e8b030 ffd860 a87018', '1e1612 8a8a8a b0b0b0 5a5a5a'] },
-  { name: 'DOWNTOWN', back: '080a1c 101430 283050 f0d070 3a4470',
+  { name: 'DOWNTOWN', back: '05061a 0a0d28 161c48 262e62 d8dcff f0e6b0 c4b884 0c0f2a 1e2446 2c3460 e8c060 7a6436 0e1228 ff3030 262c58',
     walls: ['1e1612 9a9a9a c8c8c8 686868', '1e1612 4060c0 6888e8 283c88', '1e1612 e07830 ffa050 a04818', '1e1612 e0d4b0 fff0d0 a89c80'] },
-  { name: 'THE CASTLE', back: '140e12 3c3036 564648 f0a040 2a2020',
+  { name: 'THE CASTLE', back: '0c0a0e 3a3238 4a4048 221c22 2e282e 8a2028 b03038 c09040 121a36 34467a 5a3a20 ffd060 ff8020 c03010 2a2228',
     walls: ['1e1612 8c8c94 b4b4bc 5c5c64', '1e1612 5c5c68 7c7c88 3c3c44', '1e1612 5a8040 7aa860 3a5828', '1e1612 c8a870 e8c890 907850'] },
 ];
 const STAGE_NAMES = ['FRONT DOOR', 'BOOKSHELVES', 'THE ATTIC', 'CHIMNEY', 'LOADING BAY', 'CONVEYOR', 'BOILER ROOM', 'ASSEMBLY LINE',
@@ -101,7 +105,9 @@ let seed = 1; // the run's own generator, so capsules replay
 let speed = BASE_SPEED, paddleHits = 0, quiet = 0, waitT = 0, stageT = 0;
 let score = 0, hi = 0, lives = LIVES, nextLife = 0;
 let paused = false, pauseSel = 0;
-let debris = [];
+let debris = []; // { x, y, vx, vy, c, t, f: 'chunk', 'dust', 'shard' or 'spark' }
+let stars = []; // impact stars: { x, y, t }
+let clock = 0; // frames since power-on, for animation
 let prevMask = 0, inputMask = 0;
 let menu = 0; // the title menu: PLAY, SCORES
 let smashed = 0; // bricks broken this stage
@@ -161,12 +167,24 @@ function setWorld(w) {
   W.walls.forEach((p, n) => p.split(' ').forEach((h, k) => set((2 + n) * 16 + 1 + k, h)));
 }
 
+/** The backdrops' moving colors: the factory's lamps, the antenna lights, the castle's torches. */
+function animateWorld() {
+  const w = stage >> 2, set = (i, r, g, b) => color(i, r, g, b);
+  if (w === 1) { if (clock % 60 < 30) set(12, 31, 8, 4); else set(12, 10, 3, 2); }
+  else if (w === 2) { if (clock % 90 < 12) set(13, 31, 6, 6); else set(13, 8, 2, 4); }
+  else if (w === 3 && clock % 5 === 0) {
+    // Flicker: shift the three flame colors round by a hashed step.
+    const F = [[31, 26, 12], [31, 16, 4], [24, 6, 2]], k = hash(clock) % 3;
+    for (let n = 0; n < 3; n++) set(11 + n, ...F[(n + (k === 0 ? 0 : 1)) % 3]);
+  }
+}
+
 const steelHits = () => (stage < 8 ? 3 : 4); // tougher from stage 9 (SPEC 6)
 
 function drawBrick(c, r) {
   const i = r * COLS + c, k = kind[i], x = 1 + 2 * c, y = 4 + r;
   let t = 0, pal = PAL_IRON;
-  if (k === WALL) { t = T_WALL; pal = tint[i]; }
+  if (k === WALL) { t = WALL_TILES[stage >> 2]; pal = tint[i]; }
   else if (k === GLASS) t = T_GLASS;
   else if (k === STEEL) t = T_STEEL + 2 * Math.min(3, steelHits() - hp[i]);
   else if (k === GIRDER) t = T_GIRDER;
@@ -177,11 +195,11 @@ function drawBrick(c, r) {
 /** Hit brick i with a ball (or a nail): returns whether the ball bounces off it. */
 function hitBrick(i, nail = false) {
   const k = kind[i], wreck = wreckT > 0 && !nail;
-  if (k === GIRDER) { sfx(SFX.girder, SFX_CH); return true; }
+  if (k === GIRDER) { sfx(SFX.girder, SFX_CH); ring(i); return true; }
   quiet = 0; // only breakable bricks count: a ball can loop between girders forever
   if (k === STEEL) {
     hp[i] = Math.max(0, hp[i] - (wreck ? WRECK_STEEL : 1));
-    if (hp[i] > 0) { drawBrick(i % COLS, flr(i / COLS)); sfx(SFX.dent, SFX_CH); return true; }
+    if (hp[i] > 0) { drawBrick(i % COLS, flr(i / COLS)); sfx(SFX.dent, SFX_CH); ring(i); return true; }
   }
   addScore(k === WALL ? POINTS.wall : k === GLASS ? POINTS.glass : POINTS.steel);
   sfx(k === WALL ? SFX.wall : k === GLASS ? SFX.glass : SFX.steel, SFX_CH);
@@ -337,7 +355,7 @@ function toTitle() {
   state = 'title'; timer = 0; paused = false; menu = 0;
   loadStage(0);
   clearField();
-  balls = []; debris = []; capsule = null; nails = [];
+  balls = []; debris = []; stars = []; capsule = null; nails = [];
 }
 
 /** Empty the playfield, leaving the frame and the backdrop. */
@@ -357,7 +375,7 @@ function startStage(s) {
   state = 'card'; timer = 0; stageT = 0;
   px = flr((FIELD_L + FIELD_R - PADDLE_W) / 2);
   speed = baseSpeed(); paddleHits = 0; quiet = 0; smashed = 0;
-  debris = [];
+  debris = []; stars = [];
   clearPowers();
   newBall();
 }
@@ -493,7 +511,7 @@ function updateTitle() {
     const x = logoX(n % 6), y = LOGO_Y[n < 6 ? 0 : 1] + 30;
     for (let k = 0; k < 6; k++) {
       const h = hash(n * 13 + k);
-      debris.push({ x: x + ((h & 31) - 16), y, vx: ((h >> 5 & 255) / 255 - 0.5) * 2, vy: -((h >> 13) & 255) / 255 * 1.5, c: 21 + k % 3, t: 24 });
+      debris.push({ x: x + ((h & 31) - 16), y, vx: ((h >> 5 & 255) / 255 - 0.5) * 2, vy: -((h >> 13) & 255) / 255 * 1.2, c: DUST, t: 24, f: 'dust' });
     }
     sfx(SFX.steel, SFX_CH);
   }
@@ -515,7 +533,8 @@ const pressed = (b) => (inputMask & BIT(b)) !== 0 && (prevMask & BIT(b)) === 0;
 
 function update() {
   inputMask = readPad();
-  timer++;
+  timer++; clock++;
+  animateWorld();
   if (state === 'title') updateTitle();
   else if (state === 'play') updatePlay();
   else if (state === 'card') { if (timer >= CARD_FRAMES) { state = 'play'; timer = 0; } }
@@ -579,20 +598,53 @@ function updatePlay() {
 
 // --- Effects ---
 
-/** Debris from a broken brick, in its own colors. */
+/** Debris from a broken brick: chunks and dust from walls, shards from glass, sparks and plates from steel. */
 function burst(i, k) {
   const x = FIELD_L + (i % COLS) * BW + BW / 2, y = BRICK_Y + flr(i / COLS) * BH + BH / 2;
   const base = k === WALL ? tint[i] * 16 : 16;
   const cols = k === WALL ? [base + 2, base + 3, base + 4] : k === GLASS ? [18, 19, 20] : [21, 22, 23];
-  for (let n = 0; n < 8; n++) {
-    const h = hash(i * 31 + n * 7 + stageT);
-    debris.push({ x, y, vx: ((h & 255) / 255 - 0.5) * 2.4, vy: -((h >> 8) & 255) / 255 * 2.2, c: cols[n % 3], t: 30 });
+  const n = k === GLASS ? 12 : 8;
+  for (let m = 0; m < n; m++) {
+    const h = hash(i * 31 + m * 7 + stageT), vx = ((h & 255) / 255 - 0.5) * (k === GLASS ? 3.2 : 2.4);
+    debris.push({ x: x + ((h >> 16) % 13) - 6, y, vx, vy: -((h >> 8) & 255) / 255 * 2.2, c: cols[m % 3], t: 30, f: k === GLASS ? 'shard' : 'chunk' });
+  }
+  if (k === WALL) for (let m = 0; m < 3; m++) debris.push({ x: x - 5 + 5 * m, y, vx: (m - 1) * 0.3, vy: -0.3, c: DUST, t: 18, f: 'dust' });
+  if (k === STEEL) sparks(x, y, 6);
+}
+
+function sparks(x, y, n) {
+  for (let m = 0; m < n; m++) {
+    const h = hash(x * 7 + y * 131 + m * 17 + stageT);
+    debris.push({ x, y, vx: ((h & 255) / 255 - 0.5) * 4, vy: (((h >> 8) & 255) / 255 - 0.7) * 3, c: SPARK, t: 8 + (h >> 16) % 6, f: 'spark' });
   }
 }
 
+/** A ball rang off steel or a girder: an impact star and a few sparks. */
+function ring(i) {
+  const x = FIELD_L + (i % COLS) * BW + BW / 2, y = BRICK_Y + flr(i / COLS) * BH + BH / 2;
+  stars.push({ x, y, t: 6 });
+  sparks(x, y, 3);
+}
+
 function updateDebris() {
-  for (const d of debris) { d.x += d.vx; d.y += d.vy; d.vy += 0.15; d.t--; }
+  for (const d of debris) {
+    d.x += d.vx; d.y += d.vy; d.t--;
+    if (d.f === 'dust') { d.vx *= 0.9; d.vy *= 0.9; } else d.vy += d.f === 'spark' ? 0.1 : 0.15;
+  }
   debris = debris.filter((d) => d.t > 0);
+  for (const s of stars) s.t--;
+  stars = stars.filter((s) => s.t > 0);
+}
+
+function drawDebris() {
+  for (const d of debris) {
+    const x = flr(d.x), y = flr(d.y);
+    if (d.f === 'dust') circfill(x, y, d.t > 12 ? 2 + ((24 - d.t) >> 2) : 4, d.t > 8 ? DUST : DUST_DARK);
+    else if (d.f === 'spark') rectfill(x, y, 1, 1, d.t > 5 ? SPARK : SPARK_RED);
+    else if (d.f === 'shard') rectfill(x, y, (d.t >> 2) & 1 ? 2 : 1, 1, (d.t >> 1) & 1 ? WHITE : d.c);
+    else rectfill(x, y, 2, 2, d.c);
+  }
+  for (const s of stars) spr(STAR, s.x - 8, s.y - 8, { size: 16, prio: 3 });
 }
 
 function hash(n) {
@@ -620,9 +672,9 @@ function draw() {
     if (power === NAILS) { spr(GUN, x, PADDLE_Y - 7, { prio: 3 }); spr(GUN, x + w - 8, PADDLE_Y - 7, { prio: 3 }); }
     for (const b of balls) spr(BALL, flr(b.x) - 4, flr(b.y) - 4, { pal: wreckT > 0 ? PAL_HOT : 0, prio: 3 });
     for (const n of nails) spr(NAIL, flr(n.x) - 4, flr(n.y), { prio: 3 });
-    if (capsule) spr(CAPSULE + 2 * capsule.k, flr(capsule.x) - 8, flr(capsule.y) - 8, { size: 16, pal: PAL_CAPSULE, prio: 3 });
+    if (capsule) spr(CAPSULE[(clock >> 3) & 3] + 2 * capsule.k, flr(capsule.x) - 8, flr(capsule.y) - 8, { size: 16, pal: PAL_CAPSULE, prio: 3 });
   }
-  for (const d of debris) rectfill(flr(d.x), flr(d.y), 2, 2, d.c);
+  drawDebris();
   drawHud();
   if (state === 'title') drawTitle();
   else if (state === 'play' && balls.length && balls[0].stuck && balls[0].glueT === undefined) ctxt('A: LAUNCH', 186, WHITE);
@@ -745,15 +797,30 @@ function drawPower() {
 function txt(s, x, y, c) { print(s, x + 1, y + 1, BLACK); print(s, x, y, c); }
 const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
 
-/** Big text, centered on cx: the system font scaled up, read back from the overlay. */
+/**
+ * Big text, centered on cx: the system font scaled up, read back from the overlay.
+ * From scale 2 the letters are chunky cartoon blocks: a black outline round a
+ * darker side (extruded down and right), the face, and a shine along top edges.
+ */
 function big(s, cx, y, scale, c) {
-  const w = s.length * 8;
+  const w = s.length * 8, grid = new Uint8Array(w * 8);
   rectfill(0, 216, w, 8, 0);
   print(s, 0, 216, WHITE);
   const on = [];
-  for (let gy = 0; gy < 8; gy++) for (let gx = 0; gx < w; gx++) if (pget(gx, 216 + gy)) on.push(gx, gy);
+  for (let gy = 0; gy < 8; gy++) for (let gx = 0; gx < w; gx++) if (pget(gx, 216 + gy)) { on.push(gx, gy); grid[gy * w + gx] = 1; }
   rectfill(0, 216, w, 8, 0);
-  const x0 = flr(cx - w * scale / 2);
-  for (let i = 0; i < on.length; i += 2) rectfill(x0 + on[i] * scale + 1, y + on[i + 1] * scale + 1, scale, scale, BLACK);
-  for (let i = 0; i < on.length; i += 2) rectfill(x0 + on[i] * scale, y + on[i + 1] * scale, scale, scale, c);
+  const x0 = flr(cx - w * scale / 2), at = (i) => [x0 + on[i] * scale, y + on[i + 1] * scale];
+  if (scale < 2) {
+    for (let i = 0; i < on.length; i += 2) { const [x, yy] = at(i); rectfill(x + 1, yy + 1, 1, 1, BLACK); }
+    for (let i = 0; i < on.length; i += 2) { const [x, yy] = at(i); rectfill(x, yy, 1, 1, c); }
+    return;
+  }
+  const e = scale >= 3 ? 2 : 1, [side, shine] = SHADES[c] || [BLACK, c];
+  for (let i = 0; i < on.length; i += 2) { const [x, yy] = at(i); rectfill(x - 1, yy - 1, scale + 2 + e, scale + 2 + e, BLACK); }
+  for (let i = 0; i < on.length; i += 2) { const [x, yy] = at(i); rectfill(x + 1, yy + 1, scale + e - 1, scale + e - 1, side); }
+  for (let i = 0; i < on.length; i += 2) {
+    const [x, yy] = at(i), gx = on[i], gy = on[i + 1];
+    rectfill(x, yy, scale, scale, c);
+    if (gy === 0 || !grid[(gy - 1) * w + gx]) rectfill(x, yy, scale, 1, shine);
+  }
 }

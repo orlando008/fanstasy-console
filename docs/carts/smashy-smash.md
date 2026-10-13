@@ -1,7 +1,7 @@
 # Smashy Smash: Cart Specification
 
-**Version:** 0.5 (draft)
-**Status:** In progress: steps 1–4 of the plan (15) are built
+**Version:** 0.6 (draft)
+**Status:** In progress: steps 1–5 of the plan (15) are built
 **Cart source:** `carts/src/smashy-smash/` → `carts/smashy-smash.nova`
 
 ---
@@ -227,8 +227,8 @@ extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
 | BG1 | The bricks, the frame and the HUD band |
 | BG2 | The world's backdrop (wallpaper, factory, skyline, castle), behind BG1 |
 | BG0 | Unused (it would draw in front of the bricks) |
-| Sprites | Paddle, balls, capsules, nails |
-| Overlay | HUD, debris particles, cards and menus |
+| Sprites | Paddle, balls, capsules, nails, impact stars |
+| Overlay | HUD, debris (chunks, dust, glass shards, sparks), the title letters, cards and menus |
 
 ## 13. Persistence (save slots)
 
@@ -274,8 +274,30 @@ extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
      used) and stage reached; the title then shows the best. The bot run, its replay
      and the high-speed check all still pass, and the game runs in the browser
      without errors.
-5. **Art pass:** bricks with cracks and dents, the backdrops, the paddle and ball,
+5. **Art pass (built):** bricks with cracks and dents, the backdrops, the paddle and ball,
    capsules, debris, the title.
+   - **Bricks:** each world has its own wall texture (planks, brick, concrete, stone) in its
+     four colors, with rounded corners. Glass is a window with a mullion and glints.
+     Steel gets a dent per hit and then cracks. Girders are red trusses.
+   - **Frame:** riveted steel sides under a hazard-striped beam.
+   - **Backdrops:** each is painted as a whole picture by the art script and cut into
+     tiles, de-duplicated and mirrored where that saves one. The four use 231 tiles.
+     - The house: wallpaper, two pictures, a dado rail, panelling and a plank floor.
+     - The factory: riveted panels, copper pipes with gauges, two blinking warning
+       lamps, a catwalk and a hazard floor.
+     - Downtown: a night sky with a moon, far and near skylines, lit windows and
+       blinking antenna lights.
+     - The castle: stone walls, arched windows, banners and flickering torches.
+     The blinking and flicker are color changes made by the cart each frame.
+   - **Sprites:** the paddle is construction yellow with hazard-striped ends (green with
+     GLUE), and the ball is dark iron. Capsules spin as their letter rolls round (4
+     frames). An impact star flashes where a ball rings off steel or a girder.
+   - **Debris:** walls throw chunks in their own colors and puffs of dust, glass throws
+     glinting shards, and steel throws sparks.
+   - **Big letters** (the logo, headings) are chunky blocks with a black outline, a
+     darker extruded side and a shine. On the title they land in a puff of dust.
+   - **Results:** with the same seed, the bot run and its replay give the same game as
+     before the art pass. Median CPU is 0.8 ms a frame. No errors in the browser.
 6. **Audio pass:** five songs and the effects.
 7. **Balance and polish:** ball speeds, capsule rates and weights, scoring; a
    label, the PNG cart and the Library.
