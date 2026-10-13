@@ -1,7 +1,7 @@
 # Smashy Smash: Cart Specification
 
-**Version:** 0.6 (draft)
-**Status:** In progress: steps 1–5 of the plan (15) are built
+**Version:** 0.7 (draft)
+**Status:** In progress: steps 1–6 of the plan (15) are built
 **Cart source:** `carts/src/smashy-smash/` → `carts/smashy-smash.nova`
 
 ---
@@ -216,6 +216,18 @@ In the menus START or A goes on and B goes back (A is the game's action button).
 **Songs** (5): the title, and one for each world (8.1), looping. Channel 1 is kept
 for sound effects, as in our other carts.
 
+| Song | Tempo | Style |
+|---|---|---|
+| 0 Title | 150 bpm, C major | A bouncy theme; plays on the title, initials and scores |
+| 1 The House | 150 bpm, F major | A jaunty oom-pah march |
+| 2 The Factory | 129 bpm, E minor | A clanking groove: a 16th-note bass riff and an anvil on the off-beats |
+| 3 Downtown | 129 bpm, A dorian | Funk: slap bass, off-beat chord stabs, 16th hats |
+| 4 The Castle | 150 bpm, D minor, 6/8 | A heroic gallop that ends in D major |
+
+Each stage starts its world's song from the top at its stage card. The song keeps
+playing through a pause, and stops for the stage-clear, game-over and DEMOLITION
+COMPLETE jingles.
+
 **SFX:** launch, paddle hit, wall crumble, glass shatter, steel dent, steel break,
 girder ring, capsule caught, nail fire, glue catch, TRIPLE split, life lost,
 extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
@@ -298,7 +310,16 @@ extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
      darker extruded side and a shine. On the title they land in a puff of dust.
    - **Results:** with the same seed, the bot run and its replay give the same game as
      before the art pass. Median CPU is 0.8 ms a frame. No errors in the browser.
-6. **Audio pass:** five songs and the effects.
+6. **Audio pass (built):** five songs and the effects.
+   - The songs (11) use the Planet Racers song toolkit. A check of every beat finds no
+     semitone or tritone between the tune and the bass or chords (it caught two in
+     the march and some funk stabs ringing into the next chord, now fixed).
+   - New effects: menu move and select, pause, the tally tick, a thud as each logo
+     letter lands, and a DEMOLITION COMPLETE fanfare.
+   - **Results:** rendered offline with the console's synth, the five songs peak at
+     0.31–0.35 with no clipping, level with Planet Racers. The songs, effects and their
+     cues play as described in 11. The bot run replays the same game as before. No
+     errors in the browser.
 7. **Balance and polish:** ball speeds, capsule rates and weights, scoring; a
    label, the PNG cart and the Library.
 
