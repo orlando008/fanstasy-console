@@ -1,7 +1,7 @@
 # Smashy Smash: Cart Specification
 
-**Version:** 0.3 (draft)
-**Status:** In progress: steps 1–2 of the plan (15) are built
+**Version:** 0.4 (draft)
+**Status:** In progress: steps 1–3 of the plan (15) are built
 **Cart source:** `carts/src/smashy-smash/` → `carts/smashy-smash.nova`
 
 ---
@@ -254,8 +254,11 @@ extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
    - Capsules come from the run's own seeded generator, so a replay with the same seed drops the same ones. The paddle is drawn from 16 px pieces (two ends, and a middle for PLANK); it turns green with GLUE and carries nail guns with NAILS, and the ball glows red with WRECKER. The active powers show bottom left, in their capsule's color, with a bar for SLOW and WRECKER.
    - A glued ball launches at the angle of the zone it landed on. TRIPLE adds two balls 15° either side of the moving one. Taking a new paddle power lets go of any glued ball.
    - **Results:** each power checked on its own (PLANK 48 px, nails break bricks, GLUE holds 3 s, three balls, SLOW to 70% for 10 s, WRECKER breaks 7 walls in a second without bouncing, HARD HAT a life). A bot run catches 11 capsules and clears the stage; the ball still never overlaps a brick, and the same seed and inputs replay the same game.
-3. **All 16 stages and the 4 worlds:** the stages in the Map tab, the backdrops and
+3. **All 16 stages and the 4 worlds (built):** the stages in the Map tab, the backdrops and
    palettes, the speed ramp and tougher steel.
+   - The stages are written as text grids in the art script and painted into Map RAM; the script refuses a stage where a breakable brick is sealed in by girders. Each world sets its backdrop region and its backdrop and wall colors (8.1), so the same tiles are plaster and wood in the house, brick in the factory, concrete downtown and stone in the castle. A stage card shows the world and stage before each stage; after stage 16 comes DEMOLITION COMPLETE with the lives bonus (the full screens are step 4).
+   - **Two bugs found by playing all 16:** a ball's step was worked out once a frame, so after a bounce the frame's next step went the old way and a second bounce cancelled the first; against a girder overhead the ball slid sideways at one height for ever. Each step now follows the ball's direction as it is. And the stuck-ball nudge was reset by girder hits and could turn a ball almost vertical; now only breakable bricks reset it (paddle hits don't either), and a nudged ball keeps between 15° and 60° from vertical.
+   - **Results:** a bot that aims at the bricks plays all 16 stages through to DEMOLITION COMPLETE in 40 minutes with the ball never inside a brick. Its stage times run from 34 s to 377 s; the steel-heavy stages (2-3, 4-1, 4-2, 4-4) are the longest and are for step 7 to trim. Typical CPU is 1.2 ms a frame.
 4. **Flow:** title, stage cards, stage clear, game over, the ending, initials,
    scores, pause and saves.
 5. **Art pass:** bricks with cracks and dents, the backdrops, the paddle and ball,
@@ -269,6 +272,7 @@ extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
 - **Capsule rate:** is 1 in 8 walls too generous or too stingy? Tune in play.
 - **Bad capsules:** Arkanoid has none, but a shrinking paddle or a fast ball could
   add risk to catching everything. Left out for now.
-- **Stuck balls:** a ball can loop between girders without touching anything
-  breakable. If it goes 15 s without hitting a brick or the paddle, nudge its
-  angle a little.
+- **Stuck balls (settled):** a ball can loop between girders without touching anything
+  breakable. If it goes 15 s without hitting a breakable brick, its angle is nudged
+  by 0.2 rad, kept between 15° and 60° from vertical. Paddle hits don't reset the
+  count, since the paddle can send a ball round the same loop.

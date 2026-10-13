@@ -1,8 +1,8 @@
 // SMASHY SMASH - a cartoon demolition Breakout.
-// Design: docs/carts/smashy-smash.md. Built so far (SPEC 15, steps 1-2): stage
-// 1-1, read from its region of Map RAM, with the paddle and its dash, the ball
-// and its bounce angles, the four kinds of brick, the power-up capsules,
-// scoring and lives. LEFT/RIGHT move, B dashes, A launches (and fires nails,
+// Design: docs/carts/smashy-smash.md. Built so far (SPEC 15, steps 1-3): the 16
+// stages in 4 worlds, each read from its region of Map RAM, with the paddle and
+// its dash, the ball and its bounce angles, the four kinds of brick, the
+// power-up capsules, scoring and lives. LEFT/RIGHT move, B dashes, A launches (and fires nails,
 // and lets go of a glued ball), START pauses.
 
 // --- Tuning ---
@@ -16,7 +16,7 @@ const LOST_Y = 228; // a ball below this is gone
 const BASE_SPEED = 2.0, STAGE_SPEED = 0.05; // the ball: 2.0 px/frame at stage 1, + 0.05 a stage
 const SPEEDUP = 0.05, SPEEDUP_HITS = 8, SPEEDUP_MAX = 0.6; // and + 0.05 every 8 paddle hits, up to + 0.6
 const AUTO_LAUNCH = 180; // frames before a waiting ball launches by itself
-const NUDGE_FRAMES = 900; // a ball that hits nothing for 15 s is nudged (SPEC 16)
+const NUDGE_FRAMES = 900; // a ball that hits no brick for 15 s is nudged, paddle hits or not (SPEC 16)
 const NUDGE_C = 0.9800665778412416, NUDGE_S = 0.19866933079506122; // by 0.2 rad: literal cos and sin
 const LIVES = 3, MAX_LIVES = 5;
 const EXTRA_LIVES = [20000, 50000]; // then every 50,000 (SPEC 9)
@@ -51,9 +51,30 @@ const PAL_CAPSULE = 1, PAL_GLUE = 2, PAL_HOT = 3; // sprite palettes
 const PAL_IRON = 1; // glass, steel, girders and the frame; walls use sub-palettes 2-5 for their color
 const BLACK = 113, WHITE = 114, GOLD = 115, RED = 116, CYAN = 117, PANEL = 118, GREEN = 119, DIM = 120; // HUD
 
+// --- Worlds and stages (SPEC 8) ---
+
+/**
+ * Each world's backdrop region and colors: `back` is the backdrop's 4 colors
+ * (BG palette 0, with the color behind everything first) and `walls` the
+ * 4 wall colors' outline, base, light and shadow (BG palettes 2-5), 24-bit hex.
+ */
+const WORLDS = [
+  { name: 'THE HOUSE', back: '2a2030 6a4a6a 7e5a7c c8a0c0 5a3a28',
+    walls: ['1e1612 e8dcc0 fff4e0 b8a888', '1e1612 b07840 d09a60 805028', '1e1612 c05038 e07858 883020', '1e1612 40a0a0 70d0c8 287070'] },
+  { name: 'THE FACTORY', back: '14161a 3a4048 586068 e8b830 202428',
+    walls: ['1e1612 b04830 d86848 782818', '1e1612 7a3424 9a4c34 4e2014', '1e1612 e8b030 ffd860 a87018', '1e1612 8a8a8a b0b0b0 5a5a5a'] },
+  { name: 'DOWNTOWN', back: '080a1c 101430 283050 f0d070 3a4470',
+    walls: ['1e1612 9a9a9a c8c8c8 686868', '1e1612 4060c0 6888e8 283c88', '1e1612 e07830 ffa050 a04818', '1e1612 e0d4b0 fff0d0 a89c80'] },
+  { name: 'THE CASTLE', back: '140e12 3c3036 564648 f0a040 2a2020',
+    walls: ['1e1612 8c8c94 b4b4bc 5c5c64', '1e1612 5c5c68 7c7c88 3c3c44', '1e1612 5a8040 7aa860 3a5828', '1e1612 c8a870 e8c890 907850'] },
+];
+const STAGE_NAMES = ['FRONT DOOR', 'BOOKSHELVES', 'THE ATTIC', 'CHIMNEY', 'LOADING BAY', 'CONVEYOR', 'BOILER ROOM', 'ASSEMBLY LINE',
+  'MAIN STREET', 'OFFICE BLOCK', 'BILLBOARD', 'SKYSCRAPER', 'GATEHOUSE', 'THE KEEP', 'CHAPEL', 'THE THRONE ROOM'];
+const STAGES = 16, CARD_FRAMES = 90, LIFE_BONUS = 5000;
+
 // --- Map RAM (SPEC 8.2) ---
 
-// The live screen: BG1 (frame and bricks) at columns 0-31, BG2 (the backdrop) at 32-63.
+// The live screen: BG1 (frame and bricks) at columns 0-31; world w's backdrop (BG2) at 32 + 32w.
 const STAGE_ROW = 64; // stage s is painted at column 30 * (s % 8), row 64 + 14 * (s >> 3)
 
 // --- Save slots (SPEC 13) ---
@@ -62,7 +83,7 @@ const VERSION_SLOT = 0, SAVE_VERSION = 1, TOP_SLOT = 10;
 
 // --- State ---
 
-let state; // 'title', 'play', 'clear', 'over'
+let state; // 'title', 'card', 'play', 'clear', 'done' (all 16 cleared), 'over'
 let timer = 0;
 let stage = 0;
 const kind = new Uint8Array(COLS * ROWS), hp = new Uint8Array(COLS * ROWS), tint = new Uint8Array(COLS * ROWS);
@@ -107,6 +128,7 @@ function buildFrame() {
 /** Read stage s from its region of Map RAM into the playfield (SPEC 8.2). */
 function loadStage(s) {
   stage = s;
+  setWorld(s >> 2);
   const mx = 30 * (s % 8), my = STAGE_ROW + 14 * (s >> 3);
   left = 0;
   for (let r = 0; r < ROWS; r++) {
@@ -119,6 +141,15 @@ function loadStage(s) {
       drawBrick(c, r);
     }
   }
+}
+
+/** A world's look: its backdrop region and colors, and its wall colors. */
+function setWorld(w) {
+  const W = WORLDS[w];
+  bg(2, { mx: 32 + 32 * w, my: 0, mw: 32, mh: 28 });
+  const set = (i, h) => { const v = parseInt(h, 16); color(i, v >> 19, (v >> 11) & 31, (v >> 3) & 31); };
+  W.back.split(' ').forEach((h, k) => set(k, h));
+  W.walls.forEach((p, n) => p.split(' ').forEach((h, k) => set((2 + n) * 16 + 1 + k, h)));
 }
 
 const steelHits = () => (stage < 8 ? 3 : 4); // tougher from stage 9 (SPEC 6)
@@ -138,6 +169,7 @@ function drawBrick(c, r) {
 function hitBrick(i, nail = false) {
   const k = kind[i], wreck = wreckT > 0 && !nail;
   if (k === GIRDER) { sfx(SFX.girder, SFX_CH); return true; }
+  quiet = 0; // only breakable bricks count: a ball can loop between girders forever
   if (k === STEEL) {
     hp[i] = Math.max(0, hp[i] - (wreck ? WRECK_STEEL : 1));
     if (hp[i] > 0) { drawBrick(i % COLS, flr(i / COLS)); sfx(SFX.dent, SFX_CH); return true; }
@@ -183,22 +215,25 @@ const ballSpeed = () => (slowT > 0 ? baseSpeed() * SLOW_SHARE : speed);
 
 /** Move a ball one frame, in steps of at most 1 px so it never skips a brick. */
 function moveBall(b) {
-  const v = ballSpeed(), n = Math.ceil(v), sx = b.ux * v / n, sy = b.uy * v / n;
+  const v = ballSpeed(), n = Math.ceil(v);
   for (let s = 0; s < n; s++) {
+    // Each step follows the ball's direction as it is now: a step after a bounce must
+    // go the new way, or a second bounce in the same frame would undo the first.
+    const sx = b.ux * v / n;
     // Across: the side walls, then bricks.
     b.x += sx;
     if (b.x - BALL_R < FIELD_L) { b.x = FIELD_L + BALL_R; b.ux = Math.abs(b.ux); bounce(); }
     if (b.x + BALL_R > FIELD_R) { b.x = FIELD_R - BALL_R; b.ux = -Math.abs(b.ux); bounce(); }
     let hit = bricksAt(b.x, b.y), off = false;
     for (const i of hit) off = hitBrick(i) || off;
-    if (off) { b.x -= sx; b.ux = -b.ux; quiet = 0; }
+    if (off) { b.x -= sx; b.ux = -b.ux; }
     // Down: the top wall, bricks and the paddle.
+    const sy = b.uy * v / n;
     b.y += sy;
     if (b.y - BALL_R < FIELD_TOP) { b.y = FIELD_TOP + BALL_R; b.uy = Math.abs(b.uy); bounce(); }
     hit = bricksAt(b.x, b.y); off = false;
     for (const i of hit) off = hitBrick(i) || off;
-    if (off) { b.y -= sy; b.uy = -b.uy; quiet = 0; }
-    if (hit.length) quiet = 0;
+    if (off) { b.y -= sy; b.uy = -b.uy; }
     if (b.uy > 0 && b.y + BALL_R >= PADDLE_Y && b.y + BALL_R - sy < PADDLE_Y + 1 &&
         b.x + BALL_R >= px && b.x - BALL_R <= px + paddleW()) { paddleBounce(b); if (b.stuck) return; }
   }
@@ -210,7 +245,6 @@ function paddleBounce(b) {
   [b.ux, b.uy] = [DIRS[zone][0], -DIRS[zone][1]];
   b.y = PADDLE_Y - BALL_R;
   if (power === GLUE) { b.stuck = true; b.at = b.x - px; b.dir = zone; b.glueT = 0; sfx(SFX.glue, SFX_CH); }
-  quiet = 0;
   if (++paddleHits % SPEEDUP_HITS === 0) speed = Math.min(baseSpeed() + SPEEDUP_MAX, speed + SPEEDUP);
   sfx(SFX.paddle, SFX_CH);
 }
@@ -305,7 +339,7 @@ function startRun() {
 
 function startStage(s) {
   loadStage(s);
-  state = 'play'; timer = 0; stageT = 0;
+  state = 'card'; timer = 0; stageT = 0;
   px = flr((FIELD_L + FIELD_R - PADDLE_W) / 2);
   speed = baseSpeed(); paddleHits = 0; quiet = 0;
   debris = [];
@@ -330,6 +364,14 @@ function loseLife() {
   newBall();
 }
 
+function nextStage() {
+  if (stage + 1 < STAGES) { startStage(stage + 1); return; }
+  // DEMOLITION COMPLETE: a bonus for every life left (SPEC 9).
+  state = 'done'; timer = 0;
+  addScore(LIFE_BONUS * lives);
+  sfx(SFX.clear, SFX_CH);
+}
+
 function gameOver() {
   state = 'over'; timer = 0; balls = [];
   if (score > hi) { hi = score; dset(TOP_SLOT, score); }
@@ -337,7 +379,7 @@ function gameOver() {
 }
 
 function stageClear() {
-  state = 'clear'; timer = 0; balls = [];
+  state = 'clear'; timer = 0; balls = []; capsule = null; nails = [];
   addScore(1000 * (1 + (stage >> 2)) + flr(TIME_BONUS * Math.max(0, 1 - stageT / TIME_BONUS_FRAMES)));
   sfx(SFX.clear, SFX_CH);
 }
@@ -357,7 +399,9 @@ function update() {
   timer++;
   if (state === 'title') { if (pressed(START) || pressed(A)) startRun(); }
   else if (state === 'play') updatePlay();
-  else if (state === 'clear') { if (timer > 120) startStage(stage); } // the slice has one stage
+  else if (state === 'card') { if (timer >= CARD_FRAMES) { state = 'play'; timer = 0; } }
+  else if (state === 'clear') { if (timer > 120) nextStage(); }
+  else if (state === 'done') { if (timer > 120 && (pressed(START) || pressed(A))) gameOver(); }
   else if (state === 'over') { if (timer > 60 && (pressed(START) || pressed(A))) toTitle(); }
   updateDebris();
   prevMask = inputMask;
@@ -393,10 +437,15 @@ function updatePlay() {
   if (fire && !launched && power === NAILS) fireNails();
   updateNails();
   updateCapsule();
-  // A ball that hits nothing for a long time, looping between girders, is nudged.
+  // A ball that hits no brick for a long time, looping the same path, is nudged onto another.
   if (balls.some((b) => !b.stuck) && ++quiet >= NUDGE_FRAMES) {
     quiet = 0;
-    for (const b of balls) [b.ux, b.uy] = [b.ux * NUDGE_C - b.uy * NUDGE_S, b.ux * NUDGE_S + b.uy * NUDGE_C];
+    for (const b of balls) {
+      [b.ux, b.uy] = [b.ux * NUDGE_C - b.uy * NUDGE_S, b.ux * NUDGE_S + b.uy * NUDGE_C];
+      // Never steeper than 15 degrees from vertical, nor flatter than 60.
+      const sx = b.ux < 0 ? -1 : 1, sy = b.uy < 0 ? -1 : 1, ax = mid(S15, Math.abs(b.ux), C30);
+      b.ux = sx * ax; b.uy = sy * Math.sqrt(1 - ax * ax);
+    }
   }
   balls = balls.filter((b) => b.y - BALL_R < LOST_Y);
   if (!balls.length) loseLife();
@@ -455,7 +504,14 @@ function draw() {
     if (timer % 60 < 40) ctxt('PRESS START', 170, WHITE);
   } else if (state === 'play' && balls.length && balls[0].stuck && balls[0].glueT === undefined) ctxt('A: LAUNCH', 186, WHITE);
   if (state === 'play') drawPower();
+  if (state === 'card') {
+    rectfill(20, 76, 216, 64, BLACK); rect(20, 76, 216, 64, PANEL);
+    ctxt(`WORLD ${1 + (stage >> 2)}-${1 + (stage & 3)}  ${WORLDS[stage >> 2].name}`, 86, DIM);
+    big(STAGE_NAMES[stage], 128, 100, STAGE_NAMES[stage].length > 10 ? 1 : 2, GOLD);
+    if (timer % 30 < 20) ctxt('READY', 124, WHITE);
+  }
   if (state === 'clear') big('STAGE CLEAR!', 128, 100, 2, GREEN);
+  if (state === 'done') { big('DEMOLITION', 128, 80, 3, GOLD); big('COMPLETE!', 128, 108, 3, GOLD); ctxt(`LIVES BONUS ${LIFE_BONUS * lives}`, 144, WHITE); }
   if (state === 'over') big('GAME OVER', 128, 100, 3, RED);
   if (paused) {
     rectfill(72, 84, 112, 48, BLACK); rect(72, 84, 112, 48, PANEL);
