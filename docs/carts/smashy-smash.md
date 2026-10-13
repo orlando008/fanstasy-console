@@ -1,7 +1,7 @@
 # Smashy Smash: Cart Specification
 
-**Version:** 0.2 (draft)
-**Status:** In progress: the vertical slice (15, step 1) is built
+**Version:** 0.3 (draft)
+**Status:** In progress: steps 1–2 of the plan (15) are built
 **Cart source:** `carts/src/smashy-smash/` → `carts/smashy-smash.nova`
 
 ---
@@ -250,7 +250,10 @@ extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
    speed, the bounce feels right with a digital pad, and the same inputs replay
    the same game.
    - **Results:** a simple paddle bot clears stage 1-1 in 132 s without losing a life. Checked after every frame, the ball never overlaps a standing brick, even forced to 3.4 px a frame (above the 2.8 + 0.6 top speed). The same inputs under another PRNG seed replay the same game. The bounce feel needs a human with a pad. Placeholder sound effects; no music yet.
-2. **Power-ups:** the capsules, all seven powers, the nail gun and glue, TRIPLE balls.
+2. **Power-ups (built):** the capsules, all seven powers, the nail gun and glue, TRIPLE balls.
+   - Capsules come from the run's own seeded generator, so a replay with the same seed drops the same ones. The paddle is drawn from 16 px pieces (two ends, and a middle for PLANK); it turns green with GLUE and carries nail guns with NAILS, and the ball glows red with WRECKER. The active powers show bottom left, in their capsule's color, with a bar for SLOW and WRECKER.
+   - A glued ball launches at the angle of the zone it landed on. TRIPLE adds two balls 15° either side of the moving one. Taking a new paddle power lets go of any glued ball.
+   - **Results:** each power checked on its own (PLANK 48 px, nails break bricks, GLUE holds 3 s, three balls, SLOW to 70% for 10 s, WRECKER breaks 7 walls in a second without bouncing, HARD HAT a life). A bot run catches 11 capsules and clears the stage; the ball still never overlaps a brick, and the same seed and inputs replay the same game.
 3. **All 16 stages and the 4 worlds:** the stages in the Map tab, the backdrops and
    palettes, the speed ramp and tougher steel.
 4. **Flow:** title, stage cards, stage clear, game over, the ending, initials,

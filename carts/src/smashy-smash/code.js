@@ -1,14 +1,15 @@
 // SMASHY SMASH - a cartoon demolition Breakout.
-// Design: docs/carts/smashy-smash.md. This is the first slice (SPEC 15, step 1):
-// stage 1-1, read from its region of Map RAM, with the paddle and its dash, the
-// ball and its bounce angles, the four kinds of brick, scoring and lives.
-// LEFT/RIGHT move, B dashes, A launches, START pauses.
+// Design: docs/carts/smashy-smash.md. Built so far (SPEC 15, steps 1-2): stage
+// 1-1, read from its region of Map RAM, with the paddle and its dash, the ball
+// and its bounce angles, the four kinds of brick, the power-up capsules,
+// scoring and lives. LEFT/RIGHT move, B dashes, A launches (and fires nails,
+// and lets go of a glued ball), START pauses.
 
 // --- Tuning ---
 
 const FIELD_L = 8, FIELD_R = 248, FIELD_TOP = 24; // the playfield inside the frame (SPEC 4)
 const COLS = 15, ROWS = 14, BW = 16, BH = 8, BRICK_Y = 32; // bricks: 15 x 14 of 16 x 8 px
-const PADDLE_Y = 200, PADDLE_W = 32, PADDLE_H = 6;
+const PADDLE_Y = 200, PADDLE_W = 32, PLANK_W = 48, PADDLE_H = 6;
 const PADDLE_SPEED = 2.5, DASH_SPEED = 4.5;
 const BALL_R = 3; // the ball's half-size, for bounces
 const LOST_Y = 228; // a ball below this is gone
@@ -21,6 +22,14 @@ const LIVES = 3, MAX_LIVES = 5;
 const EXTRA_LIVES = [20000, 50000]; // then every 50,000 (SPEC 9)
 const POINTS = { wall: 50, glass: 80, steel: 150 };
 const TIME_BONUS = 5000, TIME_BONUS_FRAMES = 3 * 60 * 60;
+// Power-ups (SPEC 7).
+const CAPSULE_CHANCE = 8, CAPSULE_FALL = 1, CAPSULE_POINTS = 500; // 1 wall in 8 drops one
+const PLANK = 0, NAILS = 1, GLUE = 2, TRIPLE = 3, SLOW = 4, WRECKER = 5, HARDHAT = 6;
+const POWER_NAMES = ['PLANK', 'NAILS', 'GLUE', 'TRIPLE', 'SLOW', 'WRECKER', 'HARD HAT'];
+const WEIGHTS = [20, 15, 15, 15, 15, 7, 3];
+const SLOW_FRAMES = 600, SLOW_SHARE = 0.7, WRECK_FRAMES = 480, WRECK_STEEL = 2;
+const NAIL_SPEED = 4, NAIL_MAX = 4; // nails in the air at once
+const GLUE_HOLD = 180; // a glued ball lets go by itself after 3 s
 
 /**
  * Bounce directions off the paddle's 8 zones, outside in: 60, 45, 30 and 15
@@ -37,7 +46,8 @@ const LAUNCH = 5; // a launched ball goes up and to the right, 30 degrees from v
 const EMPTY = 0, WALL = 1, GLASS = 2, STEEL = 3, GIRDER = 4;
 const T_WALL = 16, T_GLASS = 18, T_STEEL = 20, T_GIRDER = 28; // steel: 20, 22, 24, 26 by dents
 const T_SIDE = 8, T_TOP = 9, T_CORNER = 10, T_BAND = 11;
-const PADDLE = 64, BALL = 68; // sprites
+const PADDLE_L = 64, PADDLE_M = 66, PADDLE_R = 72, BALL = 68, NAIL = 69, GUN = 84, CAPSULE = 96; // sprites
+const PAL_CAPSULE = 1, PAL_GLUE = 2, PAL_HOT = 3; // sprite palettes
 const PAL_IRON = 1; // glass, steel, girders and the frame; walls use sub-palettes 2-5 for their color
 const BLACK = 113, WHITE = 114, GOLD = 115, RED = 116, CYAN = 117, PANEL = 118, GREEN = 119, DIM = 120; // HUD
 
@@ -58,7 +68,12 @@ let stage = 0;
 const kind = new Uint8Array(COLS * ROWS), hp = new Uint8Array(COLS * ROWS), tint = new Uint8Array(COLS * ROWS);
 let left = 0; // breakable bricks still standing
 let px = 0; // the paddle's left edge
-let balls = []; // { x, y, ux, uy, stuck }
+let balls = []; // { x, y, ux, uy, stuck, at (its place on the paddle), dir (its launch direction) }
+let power = -1; // the paddle power: PLANK, NAILS or GLUE, or -1
+let slowT = 0, wreckT = 0; // frames left of SLOW and WRECKER
+let capsule = null; // the falling capsule: { x, y, k }
+let nails = []; // { x, y }
+let seed = 1; // the run's own generator, so capsules replay
 let speed = BASE_SPEED, paddleHits = 0, quiet = 0, waitT = 0, stageT = 0;
 let score = 0, hi = 0, lives = LIVES, nextLife = 0;
 let paused = false, pauseSel = 0;
@@ -119,18 +134,23 @@ function drawBrick(c, r) {
   mset(x + 1, y, t ? tile(t + 1, pal) : 0);
 }
 
-/** Hit brick i: returns whether the ball bounces off it. */
-function hitBrick(i) {
-  const k = kind[i];
+/** Hit brick i with a ball (or a nail): returns whether the ball bounces off it. */
+function hitBrick(i, nail = false) {
+  const k = kind[i], wreck = wreckT > 0 && !nail;
   if (k === GIRDER) { sfx(SFX.girder, SFX_CH); return true; }
-  if (k === STEEL && --hp[i] > 0) { drawBrick(i % COLS, flr(i / COLS)); sfx(SFX.dent, SFX_CH); return true; }
+  if (k === STEEL) {
+    hp[i] = Math.max(0, hp[i] - (wreck ? WRECK_STEEL : 1));
+    if (hp[i] > 0) { drawBrick(i % COLS, flr(i / COLS)); sfx(SFX.dent, SFX_CH); return true; }
+  }
   addScore(k === WALL ? POINTS.wall : k === GLASS ? POINTS.glass : POINTS.steel);
   sfx(k === WALL ? SFX.wall : k === GLASS ? SFX.glass : SFX.steel, SFX_CH);
   burst(i, k);
   kind[i] = EMPTY;
   drawBrick(i % COLS, flr(i / COLS));
   left--;
-  return k !== GLASS; // the ball flies straight through glass
+  if (k === WALL) dropCapsule(i);
+  // The ball flies straight through glass, and with WRECKER through walls too; steel always bounces.
+  return k === STEEL || (k === WALL && !wreck);
 }
 
 /** The bricks a ball at (x, y) overlaps, as indices. */
@@ -147,19 +167,23 @@ function bricksAt(x, y) {
 // --- The ball (SPEC 5) ---
 
 function newBall() {
-  balls = [{ x: px + PADDLE_W / 2, y: PADDLE_Y - BALL_R, ux: 0, uy: 0, stuck: true }];
+  balls = [{ x: px + paddleW() / 2, y: PADDLE_Y - BALL_R, ux: 0, uy: 0, stuck: true, at: paddleW() / 2, dir: LAUNCH }];
   waitT = 0;
 }
 
 function launch(b) {
   b.stuck = false;
-  [b.ux, b.uy] = [DIRS[LAUNCH][0], -DIRS[LAUNCH][1]];
+  [b.ux, b.uy] = [DIRS[b.dir][0], -DIRS[b.dir][1]];
   sfx(SFX.launch, SFX_CH);
 }
 
+const paddleW = () => (power === PLANK ? PLANK_W : PADDLE_W);
+/** The ball's speed now: SLOW holds it at 70% of the stage's base. */
+const ballSpeed = () => (slowT > 0 ? baseSpeed() * SLOW_SHARE : speed);
+
 /** Move a ball one frame, in steps of at most 1 px so it never skips a brick. */
 function moveBall(b) {
-  const n = Math.ceil(speed), sx = b.ux * speed / n, sy = b.uy * speed / n;
+  const v = ballSpeed(), n = Math.ceil(v), sx = b.ux * v / n, sy = b.uy * v / n;
   for (let s = 0; s < n; s++) {
     // Across: the side walls, then bricks.
     b.x += sx;
@@ -176,21 +200,92 @@ function moveBall(b) {
     if (off) { b.y -= sy; b.uy = -b.uy; quiet = 0; }
     if (hit.length) quiet = 0;
     if (b.uy > 0 && b.y + BALL_R >= PADDLE_Y && b.y + BALL_R - sy < PADDLE_Y + 1 &&
-        b.x + BALL_R >= px && b.x - BALL_R <= px + PADDLE_W) paddleBounce(b);
+        b.x + BALL_R >= px && b.x - BALL_R <= px + paddleW()) { paddleBounce(b); if (b.stuck) return; }
   }
 }
 
 /** Off the paddle: its zone sets the angle (SPEC 5.2). */
 function paddleBounce(b) {
-  const zone = mid(0, flr((b.x - px) / (PADDLE_W / 8)), 7);
+  const zone = mid(0, flr((b.x - px) / (paddleW() / 8)), 7);
   [b.ux, b.uy] = [DIRS[zone][0], -DIRS[zone][1]];
   b.y = PADDLE_Y - BALL_R;
+  if (power === GLUE) { b.stuck = true; b.at = b.x - px; b.dir = zone; b.glueT = 0; sfx(SFX.glue, SFX_CH); }
   quiet = 0;
   if (++paddleHits % SPEEDUP_HITS === 0) speed = Math.min(baseSpeed() + SPEEDUP_MAX, speed + SPEEDUP);
   sfx(SFX.paddle, SFX_CH);
 }
 
 const baseSpeed = () => BASE_SPEED + STAGE_SPEED * stage;
+
+// --- Power-ups (SPEC 7) ---
+
+/** The run's generator: xorshift32, so the same inputs drop the same capsules. */
+function rng() {
+  seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
+  return (seed >>> 0) / 4294967296;
+}
+
+/** A broken wall may drop a capsule: one at a time, and none while TRIPLE balls are out. */
+function dropCapsule(i) {
+  if (capsule || balls.length > 1 || rng() * CAPSULE_CHANCE >= 1) return;
+  let r = rng() * WEIGHTS.reduce((a, b) => a + b, 0), k = 0;
+  while (r >= WEIGHTS[k]) r -= WEIGHTS[k++];
+  capsule = { x: FIELD_L + (i % COLS) * BW + BW / 2, y: BRICK_Y + flr(i / COLS) * BH + BH / 2, k };
+}
+
+function updateCapsule() {
+  if (!capsule) return;
+  capsule.y += CAPSULE_FALL;
+  if (capsule.y + 4 >= PADDLE_Y && capsule.y - 4 <= PADDLE_Y + PADDLE_H && capsule.x + 7 >= px && capsule.x - 7 <= px + paddleW()) {
+    takePower(capsule.k);
+    capsule = null;
+  } else if (capsule.y > LOST_Y) capsule = null;
+}
+
+function takePower(k) {
+  addScore(CAPSULE_POINTS);
+  sfx(SFX.capsule, SFX_CH);
+  if (k <= GLUE) {
+    // A paddle power replaces the last one; the paddle keeps its middle when it changes width.
+    const mid0 = px + paddleW() / 2;
+    if (power === GLUE) for (const b of balls) if (b.stuck) b.glueT = GLUE_HOLD; // let go of glued balls
+    power = k;
+    px = mid(FIELD_L, mid0 - paddleW() / 2, FIELD_R - paddleW());
+  } else if (k === TRIPLE) {
+    const b = balls.find((o) => !o.stuck) || balls[0];
+    if (!b.stuck) {
+      // Two more balls, 15 degrees either side of this one.
+      for (const s of [S15, -S15]) balls.push({ ...b, ux: b.ux * C15 - b.uy * s, uy: b.ux * s + b.uy * C15 });
+      sfx(SFX.triple, SFX_CH);
+    }
+  } else if (k === SLOW) slowT = SLOW_FRAMES;
+  else if (k === WRECKER) wreckT = WRECK_FRAMES;
+  else if (k === HARDHAT && lives < MAX_LIVES) { lives++; sfx(SFX.oneUp, SFX_CH); }
+}
+
+/** NAILS: A fires a nail from each end of the paddle. */
+function fireNails() {
+  if (nails.length > NAIL_MAX - 2) return;
+  nails.push({ x: px + 4, y: PADDLE_Y - 2 }, { x: px + paddleW() - 4, y: PADDLE_Y - 2 });
+  sfx(SFX.nail, SFX_CH);
+}
+
+function updateNails() {
+  for (const n of nails) {
+    for (let s = 0; s < NAIL_SPEED && !n.done; s++) {
+      n.y--;
+      if (n.y < FIELD_TOP) { n.done = true; break; }
+      const c = flr((n.x - FIELD_L) / BW), r = flr((n.y - BRICK_Y) / BH);
+      if (r >= 0 && r < ROWS && c >= 0 && c < COLS && kind[r * COLS + c]) { hitBrick(r * COLS + c, true); n.done = true; }
+    }
+  }
+  nails = nails.filter((n) => !n.done);
+}
+
+/** Losing a ball loses the powers too, and a new stage starts without them. */
+function clearPowers() {
+  power = -1; slowT = 0; wreckT = 0; capsule = null; nails = [];
+}
 function bounce() { sfx(SFX.wallBounce, SFX_CH); }
 
 // --- Flow ---
@@ -204,6 +299,7 @@ function toTitle() {
 
 function startRun() {
   score = 0; lives = LIVES; nextLife = 0;
+  seed = rndi(1, 0x7fffffff);
   startStage(0);
 }
 
@@ -213,6 +309,7 @@ function startStage(s) {
   px = flr((FIELD_L + FIELD_R - PADDLE_W) / 2);
   speed = baseSpeed(); paddleHits = 0; quiet = 0;
   debris = [];
+  clearPowers();
   newBall();
 }
 
@@ -227,6 +324,7 @@ function addScore(n) {
 
 function loseLife() {
   sfx(SFX.lost, SFX_CH);
+  clearPowers();
   if (--lives <= 0) { gameOver(); return; }
   speed = baseSpeed(); paddleHits = 0;
   newBall();
@@ -277,16 +375,24 @@ function updatePlay() {
   const v = inputMask & BIT(B) ? DASH_SPEED : PADDLE_SPEED;
   if (inputMask & BIT(LEFT)) px -= v;
   if (inputMask & BIT(RIGHT)) px += v;
-  px = mid(FIELD_L, px, FIELD_R - PADDLE_W);
-  // The balls.
+  px = mid(FIELD_L, px, FIELD_R - paddleW());
+  if (slowT > 0) slowT--;
+  if (wreckT > 0) wreckT--;
+  // The balls: a waiting or glued ball rides the paddle until A (or its time runs out).
+  const fire = pressed(A);
+  let launched = false;
   for (const b of balls) {
     if (b.stuck) {
-      b.x = px + PADDLE_W / 2; b.y = PADDLE_Y - BALL_R;
-      if (pressed(A) || ++waitT >= AUTO_LAUNCH) launch(b);
+      b.x = px + mid(BALL_R, b.at, paddleW() - BALL_R); b.y = PADDLE_Y - BALL_R;
+      const due = b.glueT !== undefined ? ++b.glueT >= GLUE_HOLD : ++waitT >= AUTO_LAUNCH;
+      if (fire || due) { launch(b); launched = true; delete b.glueT; }
       continue;
     }
     moveBall(b);
   }
+  if (fire && !launched && power === NAILS) fireNails();
+  updateNails();
+  updateCapsule();
   // A ball that hits nothing for a long time, looping between girders, is nudged.
   if (balls.some((b) => !b.stuck) && ++quiet >= NUDGE_FRAMES) {
     quiet = 0;
@@ -323,7 +429,7 @@ function hash(n) {
 
 // --- Sound ---
 
-const SFX = { launch: 0, paddle: 1, wallBounce: 2, wall: 3, glass: 4, dent: 5, steel: 6, girder: 7, lost: 8, oneUp: 9, clear: 10, over: 11 };
+const SFX = { launch: 0, paddle: 1, wallBounce: 2, wall: 3, glass: 4, dent: 5, steel: 6, girder: 7, lost: 8, oneUp: 9, clear: 10, over: 11, capsule: 12, nail: 13, glue: 14, triple: 15 };
 const SFX_CH = 1;
 
 // --- Draw ---
@@ -331,8 +437,15 @@ const SFX_CH = 1;
 function draw() {
   cls();
   if (state !== 'title') {
-    spr(PADDLE, flr(px), PADDLE_Y, { size: 32, prio: 3 });
-    for (const b of balls) spr(BALL, flr(b.x) - 4, flr(b.y) - 4, { prio: 3 });
+    // The paddle: its two ends, with a middle piece when it's a PLANK; green with GLUE, nail guns with NAILS.
+    const x = flr(px), pal = power === GLUE ? PAL_GLUE : 0, w = paddleW();
+    spr(PADDLE_L, x, PADDLE_Y, { size: 16, pal, prio: 3 });
+    if (w > PADDLE_W) spr(PADDLE_M, x + 16, PADDLE_Y, { size: 16, pal, prio: 3 });
+    spr(PADDLE_R, x + w - 16, PADDLE_Y, { size: 16, pal, prio: 3 });
+    if (power === NAILS) { spr(GUN, x, PADDLE_Y - 7, { prio: 3 }); spr(GUN, x + w - 8, PADDLE_Y - 7, { prio: 3 }); }
+    for (const b of balls) spr(BALL, flr(b.x) - 4, flr(b.y) - 4, { pal: wreckT > 0 ? PAL_HOT : 0, prio: 3 });
+    for (const n of nails) spr(NAIL, flr(n.x) - 4, flr(n.y), { prio: 3 });
+    if (capsule) spr(CAPSULE + 2 * capsule.k, flr(capsule.x) - 8, flr(capsule.y) - 8, { size: 16, pal: PAL_CAPSULE, prio: 3 });
   }
   for (const d of debris) rectfill(flr(d.x), flr(d.y), 2, 2, d.c);
   drawHud();
@@ -340,7 +453,8 @@ function draw() {
     big('SMASHY', 128, 80, 4, GOLD);
     big('SMASH!', 128, 116, 4, RED);
     if (timer % 60 < 40) ctxt('PRESS START', 170, WHITE);
-  } else if (state === 'play' && balls.length && balls[0].stuck) ctxt('A: LAUNCH', 186, WHITE);
+  } else if (state === 'play' && balls.length && balls[0].stuck && balls[0].glueT === undefined) ctxt('A: LAUNCH', 186, WHITE);
+  if (state === 'play') drawPower();
   if (state === 'clear') big('STAGE CLEAR!', 128, 100, 2, GREEN);
   if (state === 'over') big('GAME OVER', 128, 100, 3, RED);
   if (paused) {
@@ -355,6 +469,20 @@ function drawHud() {
   print(`HI ${String(Math.max(hi, score)).padStart(6, '0')}`, 108, 4, DIM);
   for (let i = 0; i < lives - 1; i++) circfill(186 + i * 8, 7, 2, CYAN);
   print(`${1 + (stage >> 2)}-${1 + (stage & 3)}`, 226, 4, GOLD);
+}
+
+/** The active powers, bottom left: the paddle power, and bars for SLOW and WRECKER. */
+function drawPower() {
+  let x = 10;
+  const tag = (k, frac) => {
+    const s = POWER_NAMES[k], c = 148 + k; // the capsule's own color
+    txt(s, x, 213, c);
+    if (frac !== undefined) { rect(x, 222, s.length * 8, 2, PANEL); rectfill(x, 222, flr(s.length * 8 * frac), 2, c); }
+    x += s.length * 8 + 10;
+  };
+  if (power >= 0) tag(power);
+  if (slowT > 0) tag(SLOW, slowT / SLOW_FRAMES);
+  if (wreckT > 0) tag(WRECKER, wreckT / WRECK_FRAMES);
 }
 
 function txt(s, x, y, c) { print(s, x + 1, y + 1, BLACK); print(s, x, y, c); }
