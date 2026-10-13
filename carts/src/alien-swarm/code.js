@@ -1,6 +1,6 @@
 // Alien Swarm: a space tower defense (docs/carts/alien-swarm.md).
-// Step 1, the vertical slice: map 1-1, the cursor and build menu, the Blaster
-// and the Cannon, Crawlers and Skitters, five waves, credits and hull.
+// So far: map 1-1, the cursor and menus, all five towers with their upgrades and
+// targeting, all six aliens, credits and hull.
 
 // --- Layout (SPEC 4) ---
 
@@ -12,18 +12,36 @@ const MAP_ROW = 64; // map m is stored at Map RAM column 32 * (m % 8), row 64 (S
 
 // --- Towers and aliens (SPEC 5, 6) ---
 
+// Level 1 stats; each upgrade adds 50% damage (or freeze time) and 10% range (SPEC 5).
 // rate: frames between shots; speed: the shot's px/frame; homing shots follow their target,
-// the others fly to where it was and burst there (splash: radius).
+// the others fly to where it was and burst there (splash: radius). air: can hit flyers;
+// airFirst: prefers them. The Laser's beam does dmg a frame, rising by ramp a frame on one
+// target up to max; the Freezer's pulse slows for slow frames.
 const TOWERS = [
-  { name: 'BLASTER', cost: 50, range: 40, rate: 15, dmg: 4, speed: 5, splash: 0, homing: true, spr: 128, pal: 1 },
-  { name: 'CANNON', cost: 80, range: 48, rate: 50, dmg: 12, speed: 3, splash: 16, homing: false, spr: 160, pal: 2 },
+  { name: 'BLASTER', cost: 50, ups: [40, 80], range: 40, rate: 15, dmg: 4, speed: 5, splash: 0, homing: true, air: true, spr: 128, pal: 1, turns: true },
+  { name: 'CANNON', cost: 80, ups: [60, 120], range: 48, rate: 50, dmg: 12, speed: 3, splash: 16, homing: false, air: false, spr: 160, pal: 2, turns: true },
+  { name: 'LASER', cost: 120, ups: [90, 160], range: 44, beam: true, dmg: 0.1, ramp: 0.004, max: 0.5, air: true, spr: 256, pal: 5, turns: true },
+  { name: 'FREEZER', cost: 70, ups: [50, 100], range: 32, rate: 60, slow: 120, chip: [0, 0, 2], air: false, spr: 228, pal: 6, turns: false },
+  { name: 'MISSILE', cost: 150, ups: [110, 180], range: 80, rate: 90, dmg: 30, speed: 2.5, splash: 0, homing: true, air: true, airFirst: true, spr: 288, pal: 7, turns: true },
 ];
+const BLASTER = 0, CANNON = 1, LASER = 2, FREEZER = 3, MISSILE = 4;
+const MAX_LEVEL = 2;
+const levelMul = (t) => [1, 1.5, 2.25][t.level];
+const rangeOf = (t) => TOWERS[t.kind].range * (1 + 0.1 * t.level);
+const TARGETS = ['FIRST', 'STRONG', 'NEAR'];
+// armour: taken off each hit (at least 1 gets through) except the Laser's; fly: only towers with
+// air reach it; split: Skitters it bursts into; lay: frames between the Crawlers it lays.
 const ALIENS = [
   { name: 'CRAWLER', hp: 20, speed: 0.5, bounty: 5, hull: 1, spr: 192, pal: 3 },
   { name: 'SKITTER', hp: 10, speed: 1.0, bounty: 4, hull: 1, spr: 196, pal: 4 },
+  { name: 'BRUTE', hp: 80, speed: 0.35, bounty: 15, hull: 2, armour: 3, spr: 200, pal: 3 },
+  { name: 'DRONE', hp: 25, speed: 0.7, bounty: 8, hull: 1, fly: true, spr: 204, pal: 3 },
+  { name: 'SPLITTER', hp: 40, speed: 0.45, bounty: 10, hull: 1, split: 3, spr: 224, pal: 3 },
+  { name: 'QUEEN', hp: 1500, speed: 0.25, bounty: 200, hull: 10, armour: 5, lay: 180, spr: 320, pal: 4, big: true },
 ];
-const CRAWLER = 0, SKITTER = 1;
-const SELL_SHARE = 0.7;
+const CRAWLER = 0, SKITTER = 1, BRUTE = 2, DRONE = 3, SPLITTER = 4, QUEEN = 5;
+const SLOW_SHARE = 0.5;
+const refund = (t) => flr(t.spent * 7 / 10); // 70% back on selling, in whole credits
 
 // --- Waves (SPEC 7): each a list of groups [alien, count, frames apart, frames before the first] ---
 
@@ -31,8 +49,13 @@ const WAVES = [
   [[CRAWLER, 8, 45, 0]],
   [[CRAWLER, 12, 35, 0]],
   [[SKITTER, 10, 25, 0]],
-  [[CRAWLER, 10, 30, 0], [SKITTER, 10, 20, 150]],
-  [[CRAWLER, 20, 20, 0], [SKITTER, 15, 15, 200]],
+  [[BRUTE, 5, 70, 0]],
+  [[CRAWLER, 10, 30, 0], [DRONE, 8, 40, 120]],
+  [[SPLITTER, 6, 60, 0], [SKITTER, 8, 25, 200]],
+  [[BRUTE, 8, 50, 0], [DRONE, 10, 35, 100]],
+  [[CRAWLER, 15, 25, 0], [SPLITTER, 6, 50, 100], [BRUTE, 6, 60, 300]],
+  [[DRONE, 12, 30, 0], [SKITTER, 15, 18, 60], [BRUTE, 6, 60, 200]],
+  [[QUEEN, 1, 0, 0], [CRAWLER, 12, 40, 60]],
 ];
 const START_CREDITS = 200, HULL = 20;
 const FIRST_COUNT = 20 * 60, COUNT = 12 * 60, EARLY_PAY = 2; // countdowns; credits a second called early
@@ -48,8 +71,8 @@ let state; // 'play', 'won', 'lost'
 let mapIx = 0;
 const grid = new Uint8Array(COLS * ROWS);
 let paths = []; // per entry: [{ x, y }] cell centres from just off screen to the dome
-let towers = []; // { kind, c, r, x, y, level, cool, dir, spent }
-let aliens = []; // { kind, hp, max, s (px along its path), path, x, y, dead }
+let towers = []; // { kind, c, r, x, y, level, cool, dir, spent, mode, target, heat, pulse }
+let aliens = []; // { kind, hp, max, s (px along its path), path, x, y, dead, slowT, layT }
 let shots = []; // { x, y, tx, ty, target, dmg, speed, splash }
 let effects = []; // { x, y, r, t, c }
 let credits = 0, hull = 0, wave = 0, phase = 'build', count = 0; // phase: 'build' (counting down) or 'wave'
@@ -57,7 +80,7 @@ let spawns = []; // the wave's queue: { kind, at (frame), path }
 let waveT = 0;
 let speedUp = 1; // the game speed: 1, 2 or 3
 let cx = 0, cy = 0; // the cursor's cell
-let menu = null; // { kind: 'build' | 'tower', sel }
+let menu = null; // { kind: 'build' | 'tower', sel, items }
 let paused = false, pauseSel = 0;
 let timer = 0, clock = 0;
 let prevMask = 0, inputMask = 0;
@@ -171,27 +194,42 @@ function build(kind) {
   credits -= T.cost;
   grid[cy * COLS + cx] = TOWER;
   setCell(cx, cy, T_BASE);
-  towers.push({ kind, c: cx, r: cy, x: centreX(cx), y: centreY(cy), level: 0, cool: 0, dir: 0, spent: T.cost });
+  towers.push({ kind, c: cx, r: cy, x: centreX(cx), y: centreY(cy), level: 0, cool: 0, dir: 0, spent: T.cost, mode: 0, target: null, heat: 0, pulse: 0 });
+  return true;
+}
+
+const upgradeCost = (t) => (t.level < MAX_LEVEL ? TOWERS[t.kind].ups[t.level] : 0);
+
+function upgrade(t) {
+  const c = upgradeCost(t);
+  if (!c || credits < c) return false;
+  credits -= c; t.spent += c; t.level++;
   return true;
 }
 
 function sell(t) {
-  credits += flr(t.spent * SELL_SHARE);
+  credits += refund(t);
   towers = towers.filter((o) => o !== t);
   grid[t.r * COLS + t.c] = PAD;
   setCell(t.c, t.r, T_GROUND);
 }
 
 const towerAt = (c, r) => towers.find((t) => t.c === c && t.r === r);
+const canHit = (T, a) => !a.dead && (T.air || !ALIENS[a.kind].fly);
 
-/** FIRST: the alien in range furthest along its path (SPEC 5). */
+/** The tower's target by its mode: FIRST (furthest along), STRONG (most health) or NEAR (SPEC 5). */
 function pickTarget(t) {
-  const R = TOWERS[t.kind].range, r2 = R * R;
-  let best = null;
+  const T = TOWERS[t.kind], R = rangeOf(t), r2 = R * R;
+  let best = null, bestV = 0, bestAir = false;
   for (const a of aliens) {
-    if (a.dead) continue;
-    const dx = a.x - t.x, dy = a.y - t.y;
-    if (dx * dx + dy * dy <= r2 && (!best || a.s > best.s)) best = a;
+    if (!canHit(T, a)) continue;
+    const dx = a.x - t.x, dy = a.y - t.y, d2 = dx * dx + dy * dy;
+    if (d2 > r2) continue;
+    const air = !!ALIENS[a.kind].fly;
+    // The Missile takes any flyer before anything on the ground.
+    if (T.airFirst && bestAir && !air) continue;
+    const v = t.mode === 0 ? a.s : t.mode === 1 ? a.hp : -d2;
+    if (!best || v > bestV || (T.airFirst && air && !bestAir)) { best = a; bestV = v; bestAir = air; }
   }
   return best;
 }
@@ -206,15 +244,46 @@ function dirTo(dx, dy) {
 
 function updateTowers() {
   for (const t of towers) {
+    const T = TOWERS[t.kind];
+    if (t.pulse > 0) t.pulse--;
+    if (T.beam) { updateBeam(t, T); continue; }
     if (t.cool > 0) { t.cool--; continue; }
+    if (t.kind === FREEZER) { freezePulse(t, T); continue; }
     const a = pickTarget(t);
     if (!a) continue;
-    const T = TOWERS[t.kind];
     t.dir = dirTo(a.x - t.x, a.y - t.y);
     t.cool = T.rate;
-    shots.push({ x: t.x, y: t.y, tx: a.x, ty: a.y, target: T.homing ? a : null, dmg: T.dmg, speed: T.speed, splash: T.splash, kind: t.kind });
-    sfx(t.kind === 0 ? SFX.blaster : SFX.cannon, SFX_CH);
+    shots.push({ x: t.x, y: t.y, tx: a.x, ty: a.y, target: T.homing ? a : null, dmg: T.dmg * levelMul(t), speed: T.speed, splash: T.splash, kind: t.kind });
+    sfx(t.kind === BLASTER ? SFX.blaster : t.kind === CANNON ? SFX.cannon : SFX.missile, SFX_CH);
   }
+}
+
+/** The Laser holds one target while it can, its beam growing hotter (SPEC 5). */
+function updateBeam(t, T) {
+  const a = t.target, R = rangeOf(t);
+  const keep = a && !a.dead && (a.x - t.x) ** 2 + (a.y - t.y) ** 2 <= R * R;
+  if (!keep) { t.target = pickTarget(t); t.heat = 0; }
+  if (!t.target) return;
+  t.dir = dirTo(t.target.x - t.x, t.target.y - t.y);
+  t.heat++;
+  hit(t.target, Math.min(T.max, T.dmg + T.ramp * t.heat) * levelMul(t), true);
+  if (t.heat % 24 === 1) sfx(SFX.laser, SFX_CH);
+}
+
+/** The Freezer pulses only when something on the ground is in range. */
+function freezePulse(t, T) {
+  const R = rangeOf(t), r2 = R * R, slow = T.slow * levelMul(t), chip = T.chip[t.level];
+  let any = false;
+  for (const a of aliens) {
+    if (!canHit(T, a) || (a.x - t.x) ** 2 + (a.y - t.y) ** 2 > r2) continue;
+    any = true;
+    a.slowT = Math.max(a.slowT, slow);
+    if (chip) hit(a, chip, true);
+  }
+  if (!any) return;
+  t.cool = T.rate; t.pulse = 12;
+  effects.push({ x: t.x, y: t.y, r: R, t: 14, c: CYAN });
+  sfx(SFX.freeze, SFX_CH);
 }
 
 function updateShots() {
@@ -225,9 +294,9 @@ function updateShots() {
     s.done = true;
     if (s.splash) {
       const r2 = s.splash * s.splash;
-      for (const a of aliens) {
+      for (const a of aliens.slice()) { // a snapshot: Skitters from a Splitter it kills aren't in the blast
         const ex = a.x - s.tx, ey = a.y - s.ty;
-        if (!a.dead && ex * ex + ey * ey <= r2) hit(a, s.dmg);
+        if (canHit(TOWERS[s.kind], a) && ex * ex + ey * ey <= r2) hit(a, s.dmg);
       }
       effects.push({ x: s.tx, y: s.ty, r: s.splash, t: 12, c: ORANGE });
     } else if (s.target && !s.target.dead) {
@@ -239,28 +308,36 @@ function updateShots() {
 
 // --- Aliens ---
 
-function spawn(kind, path) {
-  const A = ALIENS[kind];
-  aliens.push({ kind, hp: A.hp, max: A.hp, s: 0, path, x: path[0].x, y: path[0].y, dead: false });
+function spawn(kind, path, s = 0) {
+  const A = ALIENS[kind], [x, y] = along(path, s);
+  aliens.push({ kind, hp: A.hp, max: A.hp, s, path, x, y, dead: false, slowT: 0, layT: A.lay || 0 });
 }
 
-function hit(a, dmg) {
-  a.hp -= dmg;
+/** Damage an alien; armour takes some off each hit except a piercing one (SPEC 6). */
+function hit(a, dmg, pierce = false) {
+  const A = ALIENS[a.kind];
+  a.hp -= pierce || !A.armour ? dmg : Math.max(1, dmg - A.armour);
   if (a.hp > 0) return;
   a.dead = true;
-  credits += ALIENS[a.kind].bounty;
-  effects.push({ x: a.x, y: a.y, r: 6, t: 10, c: GREEN });
-  sfx(SFX.splat, SFX_CH);
+  credits += A.bounty;
+  effects.push({ x: a.x, y: a.y, r: A.big ? 16 : 6, t: A.big ? 20 : 10, c: GREEN });
+  sfx(A.big ? SFX.boom : SFX.splat, SFX_CH);
+  // A Splitter bursts into Skitters, spread back along its path.
+  for (let k = 0; k < (A.split || 0); k++) spawn(SKITTER, a.path, Math.max(0, a.s - 6 * k));
 }
 
 function updateAliens() {
   for (const a of aliens) {
     if (a.dead) continue;
-    a.s += ALIENS[a.kind].speed;
+    const A = ALIENS[a.kind];
+    let v = A.speed;
+    if (a.slowT > 0) { a.slowT--; v *= SLOW_SHARE; }
+    a.s += v;
+    if (A.lay && --a.layT <= 0) { a.layT = A.lay; spawn(CRAWLER, a.path, Math.max(0, a.s - 8)); }
     if (a.s >= pathLen(a.path)) {
       // Into the dome.
       a.dead = true;
-      hull = Math.max(0, hull - ALIENS[a.kind].hull);
+      hull = Math.max(0, hull - A.hull);
       effects.push({ x: a.x, y: a.y, r: 10, t: 16, c: RED });
       sfx(SFX.hull, SFX_CH);
       continue;
@@ -312,8 +389,16 @@ function handleInput() {
   }
   if (menu && menu.kind === 'tower') {
     const t = towerAt(cx, cy);
-    if (pressed(A) && t) { sell(t); menu = null; sfx(SFX.sell, SFX_CH); }
-    else if (pressed(B)) menu = null;
+    if (!t) { menu = null; return; }
+    const items = towerItems(t);
+    if (btnp(UP)) menu.sel = (menu.sel + items.length - 1) % items.length;
+    if (btnp(DOWN)) menu.sel = (menu.sel + 1) % items.length;
+    const item = items[menu.sel];
+    if (pressed(A)) {
+      if (item === 'UPGRADE') sfx(upgrade(t) ? SFX.build : SFX.no, SFX_CH);
+      else if (item === 'TARGET') { t.mode = (t.mode + 1) % TARGETS.length; t.target = null; sfx(SFX.move, SFX_CH); }
+      else { sell(t); menu = null; sfx(SFX.sell, SFX_CH); }
+    } else if (pressed(B)) menu = null;
     return;
   }
   if (btnp(LEFT)) cx = Math.max(0, cx - 1);
@@ -332,6 +417,15 @@ function handleInput() {
     cx = next % COLS; cy = flr(next / COLS);
   }
   if (pressed(SELECT) && phase === 'build') callEarly();
+}
+
+/** The tower menu's lines: UPGRADE while a level is left, TARGET for towers that aim, SELL. */
+function towerItems(t) {
+  const out = [];
+  if (t.level < MAX_LEVEL) out.push('UPGRADE');
+  if (TOWERS[t.kind].turns) out.push('TARGET');
+  out.push('SELL');
+  return out;
 }
 
 /** One frame of the game world; run up to three times a frame with fast-forward. */
@@ -354,27 +448,48 @@ function tick() {
 
 // --- Sound ---
 
-const SFX = { blaster: 0, cannon: 1, splat: 2, hull: 3, build: 4, sell: 5, no: 6, lost: 7 };
+const SFX = { blaster: 0, cannon: 1, splat: 2, hull: 3, build: 4, sell: 5, no: 6, lost: 7, laser: 8, freeze: 9, missile: 10, boom: 11, move: 12 };
 const SFX_CH = 1;
 
 // --- Draw ---
 
 function draw() {
   cls();
-  for (const t of towers) spr(TOWERS[t.kind].spr + 2 * t.dir, t.x - 8, t.y - 8, { size: 16, pal: TOWERS[t.kind].pal, prio: 3 });
-  for (const a of aliens) {
-    const A = ALIENS[a.kind];
-    const [nx] = along(a.path, a.s + 2);
-    spr(A.spr + 2 * ((clock >> 3) & 1), flr(a.x) - 8, flr(a.y) - 8, { size: 16, pal: A.pal, fx: nx < a.x - 0.01, prio: 3 });
+  for (const t of towers) {
+    const T = TOWERS[t.kind];
+    spr(T.turns ? T.spr + 2 * t.dir : T.spr + (t.pulse ? 2 : 0), t.x - 8, t.y - 8, { size: 16, pal: T.pal, prio: 3 });
   }
+  // Flyers last, so they pass over the walkers.
+  for (const fly of [false, true]) {
+    for (const a of aliens) {
+      const A = ALIENS[a.kind];
+      if (!!A.fly !== fly) continue;
+      const [nx] = along(a.path, a.s + 2), h = A.big ? 16 : 8;
+      const frame = (clock >> (a.slowT > 0 ? 4 : 3)) & 1;
+      spr(A.spr + (A.big ? 4 : 2) * frame, flr(a.x) - h, flr(a.y) - h - (A.fly ? 4 : 0), { size: A.big ? 32 : 16, pal: A.pal, fx: nx < a.x - 0.01, prio: 3 });
+    }
+  }
+  for (const t of towers) {
+    // The beam: a bright core in a coloured glow that flickers.
+    if (TOWERS[t.kind].beam && t.target && !t.target.dead) {
+      const tx = flr(t.target.x), ty = flr(t.target.y) - (ALIENS[t.target.kind].fly ? 4 : 0);
+      line(t.x, t.y, tx, ty, clock & 2 ? RED : ORANGE);
+      line(t.x + 1, t.y, tx + 1, ty, WHITE);
+    }
+    // Upgrade pips under the tower.
+    for (let i = 0; i < t.level; i++) rectfill(t.x - 4 + 6 * i + (t.level === 1 ? 3 : 0), t.y + 6, 2, 2, GOLD);
+  }
+  for (const a of aliens) if (a.slowT > 0 && (clock + a.s) % 8 < 4) rectfill(flr(a.x) - 1, flr(a.y) - 3, 2, 2, CYAN);
   for (const a of aliens) {
     if (a.hp >= a.max) continue;
-    const w = Math.max(1, flr(12 * a.hp / a.max));
-    rectfill(flr(a.x) - 6, flr(a.y) - 10, 12, 2, SHADE);
-    rectfill(flr(a.x) - 6, flr(a.y) - 10, w, 2, a.hp > a.max / 3 ? GREEN : RED);
+    const A = ALIENS[a.kind], bw = A.big ? 24 : 12, y = flr(a.y) - (A.big ? 19 : A.fly ? 14 : 10);
+    const w = Math.max(1, flr(bw * a.hp / a.max));
+    rectfill(flr(a.x) - bw / 2, y, bw, 2, SHADE);
+    rectfill(flr(a.x) - bw / 2, y, w, 2, a.hp > a.max / 3 ? GREEN : RED);
   }
   for (const s of shots) {
     if (s.splash) rectfill(flr(s.x) - 1, flr(s.y) - 1, 3, 3, ORANGE);
+    else if (s.kind === MISSILE) { rectfill(flr(s.x) - 1, flr(s.y) - 1, 3, 3, WHITE); rectfill(flr(s.x) - 1, flr(s.y) + 2, 2, 2, ORANGE); }
     else rectfill(flr(s.x) - 1, flr(s.y) - 1, 2, 2, CYAN);
   }
   for (const e of effects) circ(flr(e.x), flr(e.y), flr(e.r * (1 - e.t / 20)) + 1, e.c);
@@ -401,31 +516,42 @@ function drawCursor() {
     line(x + ox, y + oy, x + ox, y + oy + 3 * sy, c);
   }
   const t = towerAt(cx, cy);
-  const showRange = menu?.kind === 'build' ? TOWERS[menu.sel].range : t ? TOWERS[t.kind].range : 0;
+  const showRange = menu?.kind === 'build' ? TOWERS[menu.sel].range : t ? rangeOf(t) : 0;
   if (showRange) circ(x + 8, y + 8, showRange, c);
-  if (btn(L)) for (const o of towers) circ(o.x, o.y, TOWERS[o.kind].range, DIM);
+  if (btn(L)) for (const o of towers) circ(o.x, o.y, rangeOf(o), DIM);
 }
 
 function drawMenu() {
   // Above the cursor, or below it near the top.
-  const y = cy < 4 ? FIELD_Y + (cy + 1) * CELL + 2 : FIELD_Y + cy * CELL - 30;
   if (menu.kind === 'build') {
-    const w = TOWERS.length * 56 + 8, x = mid(4, cx * CELL + 8 - w / 2, 252 - w);
-    panel(x, y, w, 28);
-    TOWERS.forEach((T, i) => {
-      const tx = x + 6 + i * 56, on = i === menu.sel, ok = credits >= T.cost;
-      if (on) rect(tx - 2, y + 2, 54, 24, GOLD);
-      rectfill(tx, y + 6, 16, 16, 0); // a hole in the panel: the overlay covers sprites
-      spr(T.spr, tx, y + 6, { size: 16, pal: T.pal, prio: 3 });
-      print(T.name.slice(0, 4), tx + 18, y + 6, on ? WHITE : DIM);
-      print(`$${T.cost}`, tx + 18, y + 16, ok ? GOLD : RED);
+    const w = TOWERS.length * 40 + 8, h = 46, x = mid(4, cx * CELL + 8 - w / 2, 252 - w);
+    const y = cy < 5 ? FIELD_Y + (cy + 1) * CELL + 2 : FIELD_Y + cy * CELL - h - 2;
+    panel(x, y, w, h);
+    const T = TOWERS[menu.sel];
+    print(T.name, x + 6, y + 4, WHITE);
+    const tag = T.air ? 'GND+AIR' : 'GROUND';
+    print(tag, x + w - 6 - tag.length * 8, y + 4, T.air ? CYAN : DIM);
+    TOWERS.forEach((U, i) => {
+      const tx = x + 4 + i * 40, on = i === menu.sel, ok = credits >= U.cost;
+      if (on) rect(tx, y + 14, 40, 30, GOLD);
+      rectfill(tx + 12, y + 16, 16, 16, 0); // a hole in the panel: the overlay covers sprites
+      spr(U.spr, tx + 12, y + 16, { size: 16, pal: U.pal, prio: 3 });
+      const c = `$${U.cost}`;
+      print(c, tx + 20 - c.length * 4, y + 34, ok ? GOLD : RED);
     });
   } else {
-    const t = towerAt(cx, cy), w = 96, x = mid(4, cx * CELL + 8 - w / 2, 252 - w);
+    const t = towerAt(cx, cy);
     if (!t) return;
-    panel(x, y, w, 28);
-    print(TOWERS[t.kind].name, x + 6, y + 5, WHITE);
-    print(`> SELL $${flr(t.spent * SELL_SHARE)}`, x + 6, y + 16, GOLD);
+    const items = towerItems(t), w = 120, h = 16 + 11 * items.length, x = mid(4, cx * CELL + 8 - w / 2, 252 - w);
+    const y = cy < 5 ? FIELD_Y + (cy + 1) * CELL + 2 : FIELD_Y + cy * CELL - h - 2;
+    panel(x, y, w, h);
+    print(`${TOWERS[t.kind].name} L${t.level + 1}`, x + 6, y + 4, WHITE);
+    items.forEach((it, i) => {
+      const on = i === menu.sel, yy = y + 15 + 11 * i;
+      const label = it === 'UPGRADE' ? `UPGRADE $${upgradeCost(t)}` : it === 'TARGET' ? `TARGET ${TARGETS[t.mode]}` : `SELL $${refund(t)}`;
+      const c = it === 'UPGRADE' && credits < upgradeCost(t) ? RED : on ? GOLD : DIM;
+      print(`${on ? '>' : ' '}${label}`, x + 4, yy, c);
+    });
   }
 }
 

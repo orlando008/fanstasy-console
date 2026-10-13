@@ -1,7 +1,7 @@
 # Alien Swarm: Cart Specification
 
-**Version:** 0.2 (draft)
-**Status:** In progress: step 1 of the plan (15) is built
+**Version:** 0.3 (draft)
+**Status:** In progress: steps 1–2 of the plan (15) are built
 **Cart source:** `carts/src/alien-swarm/` → `carts/alien-swarm.nova`
 
 ---
@@ -232,6 +232,42 @@ crowd a scanline.
      3× (Node's garbage collection aside). No errors in the browser.
 2. **All towers and aliens:** the Laser, Freezer and Missile, upgrades and selling,
    targeting modes, Brutes, Drones, Splitters and the Queen.
+   - **Built:**
+     - Tower stats come from a level multiplier, so the numbers in 5 are the
+       level 1 values.
+     - The Laser keeps its target while it can and heats up on it: 0.1 damage a
+       frame, rising to 0.5.
+     - The Freezer pulses only when something on the ground is in range. Its
+       sprite has a pulse frame, and slowed aliens show frost and walk more slowly.
+     - Flyers are drawn after walkers, 4 px higher, and only towers that can hit
+       air target them. The Cannon's splash passes under them too.
+     - A Splitter's Skitters spawn spread back along its path, and miss the blast
+       that killed it.
+     - The Queen is a 32 × 32 sprite with a long health bar.
+     - The tower menu lists UPGRADE (while a level is left), TARGET (for towers
+       that aim) and SELL. Gold pips under a tower show its upgrades.
+     - The build menu shows all five towers, with costs, the chosen tower's name
+       and whether it hits air.
+     - Map 1-1 has ten test waves that bring in every alien, with the Queen last.
+       Step 3 writes the real 15 waves for each map.
+   - **Results:**
+     - 16 checks, one per mechanic, all pass: armour, the Laser piercing it and
+       its ramp, the Splitter's burst, the Queen's eggs, which towers can target
+       Drones, the Missile preferring flyers, the three targeting modes, the
+       Freezer slowing walkers but not flyers, upgrade costs and range, and the
+       70% refund. The refund check found a rounding error: 170 × 0.7 gave
+       118.99, rounded down to 118. Refunds now use whole numbers.
+     - Whole games played through the menus:
+
+       | Build plan | Result |
+       |---|---|
+       | Strong: all five towers, upgraded | Wins with all 20 hull |
+       | Blasters and Cannons only | Wins with 7 |
+       | Three Blasters | Lose on wave 5 |
+
+       The same inputs replay the same game under other seeds. At most 24 aliens
+       are on screen, and the worst frame stays under 5 ms at 3×. No errors in
+       the browser.
 3. **All 8 maps and their 15 waves**, the 4 planets, two- and three-lane maps.
 4. **Flow:** title, map select, map intro, wave banners, call early, fast-forward,
    victory and stars, colony lost, records, pause and saves.
