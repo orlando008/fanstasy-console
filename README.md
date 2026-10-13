@@ -49,6 +49,7 @@ cart onto the page.
 | `chiptune` | A six-channel song and five sound effects, all editable in the Music and SFX tabs |
 | `summit-rush` | The first real game: race one of seven AI models up three stages, with a title screen, a top-10 leaderboard, and music from the Summit Rush series. Also released as the PNG cart `summit-rush.nova.png` (see docs/carts/summit-rush.md) |
 | `block-wizard` | A music-synced falling-block puzzle: climb the eight rooms of a wizard's tower, each with its own art and song, with the wizard gem, practice mode and a top-10 table; SELECT in play shows the sync check. Also released as the PNG cart `block-wizard.nova.png` (see docs/carts/block-wizard.md) |
+| `planet-racers` | A Mode 7 Grand Prix where the racers are the eight planets: eight tracks, each with its own hazards (craters, acid pools, wet sand, crosswinds, ice chunks, ice sheets) and its own song after Holst's *The Planets*, three AI rivals a race, championship standings, a top-10 table with initials and a time trial; drift with L or R. Also released as the PNG cart `planet-racers.nova.png` (see docs/carts/planet-racers.md) |
 
 Keyboard: arrows = d-pad, X = A, Z = B, S = X, A = Y, Q = L, W = R,
 Enter = Start, Shift = Select.
