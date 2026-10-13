@@ -57,6 +57,14 @@
       "png": null
     },
     {
+      "name": "smashy-smash",
+      "title": "Smashy Smash",
+      "author": "NOVA-16",
+      "description": "A cartoon demolition Breakout. Work in progress: stage 1-1.",
+      "label": null,
+      "png": null
+    },
+    {
       "name": "sprites",
       "title": "Sprite Test",
       "author": "NOVA-16",

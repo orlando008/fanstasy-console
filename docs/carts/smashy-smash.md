@@ -1,7 +1,7 @@
 # Smashy Smash: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Specification
+**Version:** 0.2 (draft)
+**Status:** In progress: the vertical slice (15, step 1) is built
 **Cart source:** `carts/src/smashy-smash/` → `carts/smashy-smash.nova`
 
 ---
@@ -150,7 +150,7 @@ changed without touching the code.
 
 - The 16 stages sit in rows 64–127 of Map RAM: 8 regions across (240 cells)
   and 2 down (28 rows), with room to spare.
-- The live playfield and the world backdrops use rows 0–63.
+- The live playfield (BG1) is columns 0–31 and the backdrop (BG2) columns 32–63, rows 0–27.
 
 ### 8.3 The 16 stages
 
@@ -217,8 +217,9 @@ extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
 
 | Layer | Use |
 |---|---|
-| BG0 | The world's backdrop (wallpaper, factory, skyline, castle) |
-| BG1 | The bricks and the frame |
+| BG1 | The bricks, the frame and the HUD band |
+| BG2 | The world's backdrop (wallpaper, factory, skyline, castle), behind BG1 |
+| BG0 | Unused (it would draw in front of the bricks) |
 | Sprites | Paddle, balls, capsules, nails |
 | Overlay | HUD, debris particles, cards and menus |
 
@@ -243,11 +244,12 @@ extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
 
 ## 15. Implementation plan
 
-1. **Vertical slice:** stage 1-1 from the Map tab, the paddle with dash, the ball
+1. **Vertical slice (built):** stage 1-1 from the Map tab, the paddle with dash, the ball
    and its bounce angles, all four kinds of brick, scoring, lives and the HUD,
    placeholder art. **Prove:** the ball never passes through a brick at top
    speed, the bounce feels right with a digital pad, and the same inputs replay
    the same game.
+   - **Results:** a simple paddle bot clears stage 1-1 in 132 s without losing a life. Checked after every frame, the ball never overlaps a standing brick, even forced to 3.4 px a frame (above the 2.8 + 0.6 top speed). The same inputs under another PRNG seed replay the same game. The bounce feel needs a human with a pad. Placeholder sound effects; no music yet.
 2. **Power-ups:** the capsules, all seven powers, the nail gun and glue, TRIPLE balls.
 3. **All 16 stages and the 4 worlds:** the stages in the Map tab, the backdrops and
    palettes, the speed ramp and tougher steel.
