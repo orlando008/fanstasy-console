@@ -1,0 +1,225 @@
+# Alien Swarm: Cart Specification
+
+**Version:** 0.1 (draft)
+**Status:** Proposed
+**Cart source:** `carts/src/alien-swarm/` → `carts/alien-swarm.nova`
+
+---
+
+## 1. Concept
+
+A space tower defense game. An alien swarm pours along fixed lanes towards a
+human colony dome, and you stop it by building gun towers beside the lanes.
+Kills pay credits; credits buy more towers and upgrades. Each alien that reaches
+the dome cracks its hull, and when the hull is gone, the colony falls.
+
+- **Genre:** fixed-path tower defense.
+- **Campaign:** 8 maps on 4 planets, 15 waves a map, unlocked in order. A map
+  takes about 8–12 minutes at normal speed.
+- **Players:** 1.
+- **Scoring:** 1–3 stars a map by the hull left, saved, and a hard mode for each
+  map once it is beaten.
+- **Tone:** bright pulp sci-fi. Chunky turrets, gooey bugs, beams and explosions.
+
+## 2. Core loop
+
+1. **Title:** PLAY or RECORDS.
+2. **Map select:** the four planets with their two maps each, the stars won and the
+   locks. Choose a map, and NORMAL or HARD once it is beaten.
+3. **Build phase:** a countdown to the next wave. Build, upgrade and sell, or
+   **call the wave early** for a bonus.
+4. **Wave:** the aliens come along the lanes and the towers fire by themselves. You
+   keep building during waves. **Fast-forward** runs the game at 2× or 3×.
+5. **Waves 1–15**, with a boss on wave 15. Clear wave 15 with hull left and the map
+   is won: stars, a score, and the next map unlocks. Lose all the hull and the
+   colony falls: retry or quit.
+
+## 3. Controls
+
+There is no mouse, so a cursor jumps from cell to cell.
+
+| Button | Action |
+|---|---|
+| D-pad | Move the cursor one cell (held: repeats) |
+| A | On an empty pad: the build menu. On a tower: the tower menu |
+| B | Close a menu; with no menu open, jump the cursor to the next tower |
+| L (held) | Show every tower's range |
+| R | Game speed: 1×, 2×, 3× |
+| SELECT | Call the next wave now (in the build phase) |
+| START | Pause: RESUME, RESTART MAP or QUIT TO MAP SELECT |
+
+**Build menu:** a strip of the five towers above or below the cursor, each with
+its cost (greyed if you can't afford it). LEFT/RIGHT choose, A builds, B closes.
+The chosen tower's range is drawn round the cursor.
+
+**Tower menu:** UPGRADE (with its cost, while there is a level left), SELL (with
+the refund) and TARGET (FIRST, STRONG, NEAR). UP/DOWN choose, A acts, B closes.
+
+## 4. Screen layout
+
+The screen is 256 × 224, in 16 × 16 cells.
+
+| Area | Where | Contents |
+|---|---|---|
+| HUD | y 0–15 | Credits, hull, `WAVE 7/15`, game speed, the countdown or `CALL` hint |
+| Field | y 16–223 | 16 × 13 cells: lanes, build pads, rocks and craters, the dome |
+
+The lanes enter from a screen edge and end at the dome. Every cell that isn't
+lane, rock or dome is a build pad.
+
+## 5. Towers
+
+Each tower has 3 levels: building it gives level 1, and two upgrades follow.
+Selling refunds 70% of everything spent on it. Ranges are in pixels from the
+tower's centre. Damage and fire rate are starting values, for step 7 to tune.
+
+| Tower | Cost | Hits | Level 1 | Upgrades (cost) | Idea |
+|---|---|---|---|---|---|
+| **Blaster** | 50 | Ground and air | 4 dmg every 15 frames, range 40 | 40, 80 | Cheap, fast, all-round |
+| **Cannon** | 80 | Ground | 12 dmg, splash radius 16, every 50 frames, range 48 | 60, 120 | Crowds |
+| **Laser** | 120 | Ground and air | A beam: damage builds up the longer it holds one target, range 44 | 90, 160 | Ignores armour; for tough aliens |
+| **Freezer** | 70 | Ground | A pulse every 60 frames slows aliens in range to 50% for 2 s, range 32 | 50, 100 | Support; level 3 also chips 2 dmg |
+| **Missile** | 150 | Air first, then ground | 30 dmg homing missile every 90 frames, range 80 | 110, 180 | Long range; the answer to flyers |
+
+Each upgrade adds about 50% damage (or slow time for the Freezer) and 10% range.
+A tower's turret turns to face its target (8 directions).
+
+**Targeting:** FIRST (furthest along the lane, the default), STRONG (most health)
+or NEAR (closest to the tower).
+
+## 6. Aliens
+
+| Alien | Health | Speed (px/frame) | Bounty | Hull damage | Notes |
+|---|---|---|---|---|---|
+| **Crawler** | 20 | 0.5 | 5 | 1 | The basic bug |
+| **Skitter** | 10 | 1.0 | 4 | 1 | Fast and weak; comes in packs |
+| **Brute** | 80 | 0.35 | 15 | 2 | Armour 3: each hit does 3 less (min 1), except the Laser |
+| **Drone** | 25 | 0.7 | 8 | 1 | Flies: only the Blaster, Laser and Missile can hit it. Follows the lane |
+| **Splitter** | 40 | 0.45 | 10 | 1 | Bursts into 3 Skitters when killed |
+| **Queen** | 1,500 | 0.25 | 200 | 10 | Wave 15's boss; armour 5; lays a Crawler every 3 s |
+
+Health scales with the map: × (1 + 0.15 × map index), and × 1.5 in hard mode.
+
+## 7. Waves and economy
+
+- **Credits:** 200 at the start of a map. Each kill pays its bounty, and each wave
+  cleared pays 25 + 5 × the wave number.
+- **Countdown:** 20 s before wave 1, then 12 s between waves. **Calling a wave
+  early** pays 2 credits for every second left on the countdown.
+- **Waves** are tables in the code: groups of an alien type, a count, a spacing and
+  a lane, for each of the 15 waves on each map. A new alien type is introduced on
+  its own before it appears in mixes.
+- **Hull:** 20. It doesn't come back between waves.
+- No randomness affects play: the same moves give the same game.
+
+## 8. Planets and maps
+
+| Planet | Maps | Look | Lanes | Song |
+|---|---|---|---|---|
+| 1 **Luna Outpost** | 1-1 Landing Zone, 1-2 Crater Rim | Grey moon dust, craters, Earth in the sky | One winding lane | A bright space-age march |
+| 2 **Frost Moon** | 2-1 Ice Shelf, 2-2 Glacier Pass | Ice sheets, crystals, a blue haze | One lane, then two that merge | A cool, chiming groove |
+| 3 **Jungle World** | 3-1 Overgrowth, 3-2 The Swamp | Alien plants, glowing pools | Two lanes | A tense percussive pulse |
+| 4 **The Hive** | 4-1 Hive Gate, 4-2 Queen's Nest | Organic walls, pulsing egg sacs | Two or three lanes | A heroic last stand |
+
+Maps are painted in the Map tab, one 32 × 26 tile region each (16 × 13 cells).
+The art script reads each map's grid from text (`.` pad, `=` lane, `#` rock,
+`D` dome, `E` an entry), traces the lanes into waypoint lists for the cart, and
+refuses a map whose lane doesn't run unbroken from an entry to the dome.
+
+## 9. Stars and score
+
+| Result | Stars |
+|---|---|
+| Won with 18–20 hull | ★★★ |
+| Won with 10–17 hull | ★★ |
+| Won with 1–9 hull | ★ |
+
+**Score** for a won map: 100 × hull left + the credits in hand + 50 × each wave
+called early. The best score and the stars are saved for each map, for normal
+and hard separately. The next map unlocks with any win.
+
+## 10. Screens and flow
+
+In the menus START or A goes on and B goes back, as in Smashy Smash.
+
+1. **Title:** ALIEN SWARM over a starfield, with swarming silhouettes. Menu: PLAY,
+   RECORDS.
+2. **Map select:** the planets in a row, the chosen map's name, its stars and best
+   score for normal and hard.
+3. **Map intro:** the map name and a preview of the lanes, then the build phase.
+4. **Play** (3–7), with a banner for each wave (`WAVE 7: DRONES!` the first time a
+   type appears).
+5. **Victory:** the stars appear one by one, then the score and NEW BEST. Or
+   **colony lost:** RETRY or QUIT.
+6. **Records:** every map's stars and best scores, and the total stars (of 48).
+7. **Pause** (START): RESUME, RESTART MAP or QUIT TO MAP SELECT.
+
+## 11. Audio
+
+**Songs** (5): the title, and one for each planet (8), looping. Channel 1 is kept
+for sound effects.
+
+**SFX:** cursor move, build, upgrade, sell, can't afford, each tower's shot (5),
+alien hit, alien death (small, big), splitter burst, hull hit, wave start, wave
+clear, call early, boss arrives, victory, colony lost, star, menu move and select.
+
+## 12. Video layers
+
+| Layer | Use |
+|---|---|
+| BG1 | The map: ground, lanes, rocks, the dome, and the tower bases (drawn with `mset`) |
+| BG2 | The sky strip and slow parallax details behind gaps (stars, Earth, haze) |
+| BG0 | Unused |
+| Sprites | Turrets (8 directions), aliens (16 × 16, the Queen 32 × 32), missiles |
+| Overlay | HUD, menus, the cursor, range circles, blaster bolts, laser beams, explosions, health bars |
+
+**Sprite budget:** 128 sprites, 32 to a scanline. A wave keeps at most 48 aliens on
+screen, and turrets use one sprite each (up to 40 towers fit the pads). Bolts,
+beams and explosions go on the overlay, so they use no sprites. Lanes are
+designed so long stretches don't run along one row of the screen, which would
+crowd a scanline.
+
+## 13. Persistence (save slots)
+
+| Slots | Contents |
+|---|---|
+| 0 | Format version |
+| 1 | Maps unlocked |
+| 10–25 | Stars per map: normal (10–17), hard (18–25) |
+| 30–45 | Best score per map: normal (30–37), hard (38–45) |
+| 46–255 | Reserved |
+
+## 14. Asset budget
+
+| Asset | Budget |
+|---|---|
+| Code | ≤ 45 KB of the 64 KB limit; the maps live in Map RAM, the waves in compact tables |
+| Tiles | 4 planets' ground, lanes, rocks and domes (~300); turrets in 8 directions × 5 towers × 3 levels (~240 8 × 8 tiles); 6 aliens with 2-frame walks (~60); the title |
+| Map RAM | 8 maps of 32 × 26 tiles in rows 0–51 and 64–115; live screen and backdrops elsewhere |
+| Songs / SFX | 5 songs, ~25 SFX |
+
+## 15. Implementation plan
+
+1. **Vertical slice:** map 1-1, the cursor and build menu, the Blaster and Cannon,
+   Crawlers and Skitters, five waves, credits, hull, placeholder art. **Prove:**
+   the cursor controls feel quick on a pad; a test bot with a fixed build plan wins
+   the slice and a weaker plan loses it; the same inputs replay the same game; CPU
+   stays low with a full wave on screen.
+2. **All towers and aliens:** the Laser, Freezer and Missile, upgrades and selling,
+   targeting modes, Brutes, Drones, Splitters and the Queen.
+3. **All 8 maps and their 15 waves**, the 4 planets, two- and three-lane maps.
+4. **Flow:** title, map select, map intro, wave banners, call early, fast-forward,
+   victory and stars, colony lost, records, pause and saves.
+5. **Art pass:** the planets' terrain, turrets, aliens, the dome, effects, the title.
+6. **Audio pass:** five songs and the effects.
+7. **Balance and polish:** a bot with a build plan for each map checks that each
+   map can be three-starred with good play and is lost with poor play, and that
+   hard mode is tough but fair; a label, the PNG cart and the Library.
+
+## 16. Open questions
+
+- **Cursor speed:** one cell per press, repeating when held. Is a faster jump (e.g.
+  B + d-pad moves 3 cells) needed on a 16 × 13 field? Try it in the slice.
+- **Air lanes:** Drones follow the ground lane for now. Shortcut flight paths would
+  make them more distinct but are harder to read.
+- **Endless mode:** a possible extra after the campaign, for a high score.
