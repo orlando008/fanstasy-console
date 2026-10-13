@@ -1,11 +1,11 @@
 // PLANET RACERS - a Mode 7 Grand Prix where the racers are the eight planets.
-// Design: docs/carts/planet-racers.md. Built so far (SPEC 15, steps 1-3):
-// the eight tracks with their hazards, raced against three rivals drawn from
-// the other seven planets, or alone as a time trial. Each floor is built from
-// its track's centerline when the track loads, the physics read the surface
-// from the floor pixel under each kart, and a lap counts after 10 gates in
-// order. B accelerates, A brakes, L or R drifts, START pauses, SELECT
-// restarts a time trial.
+// Design: docs/carts/planet-racers.md. Built so far (SPEC 15, steps 1-4): the
+// Grand Prix of eight races against three rivals a race, with championship
+// standings and a top 10, and a time trial on any track. Each floor is built
+// from its track's centerline when the track loads (the track table is in Map
+// RAM, from tracks.json), the physics read the surface from the floor pixel
+// under each kart, and a lap counts after 10 gates in order. B accelerates, A
+// brakes, L or R drifts, START pauses, SELECT restarts a time trial.
 
 // --- Tuning -------------------------------------------------------------------
 
@@ -76,70 +76,34 @@ function statsOf(p) {
 const simOffset = (p) => (3 - p.speed) * 0.03 + (3 - p.handling) * 0.03;
 
 /**
- * Tracks (SPEC 6), in Grand Prix order. `points` are the centerline's
- * Catmull-Rom control points, four base-32 digits each (x then y, 0-1023),
- * starting at the start/finish line and running in race order. Hazards and
- * orbs are placed by [position along the lap in thousandths, offset to the
- * right of the centerline in px]: craters (pits) and pools (rough) as 2x2
- * tiles; slick zones as [from, to, lat from, lat to]; wind as [from, to,
- * direction] (1 pushes right); bumpers as sprites. `par` is a rival's 3-lap
- * time at the track's pace, in frames, for the simulated results. The look:
- * a horizon style (0 ridges, 1 clouds, 2 hills, 3 ice spires), the sky's
- * 5-bit [r, g, b] top and bottom, stars, the sun and a moon as [azimuth in
- * angle units, y, radius], Saturn's rings, and `pal`: floor colors 1-15, then
- * horizon 1-4, sun core, disc and glow, and the moon's three (24-bit hex).
+ * Tracks (SPEC 6), in Grand Prix order, read at init from Map RAM, where
+ * build-tracks.mjs stores tracks.json (SPEC 6.2). Each has `points`, the
+ * centerline's Catmull-Rom control points in world px, starting at the
+ * start/finish line and running in race order. Hazards and orbs are placed by
+ * [position along the lap in thousandths, offset to the right of the
+ * centerline in px]: craters (pits) and pools (rough) as 2x2 tiles; slick
+ * zones as [from, to, lat from, lat to]; wind as [from, to, direction] (1
+ * pushes right), in gusts where `gust` is set; bumpers as sprites. `par` is a
+ * rival's 3-lap time at the track's pace, in frames, for the simulated
+ * results. The look: a horizon style (0 ridges, 1 clouds, 2 hills, 3 ice
+ * spires), the sky's 5-bit [r, g, b] top and bottom, stars, the sun and a moon
+ * as [azimuth in angle units, y, radius], Saturn's rings, and `pal`: floor
+ * colors 1-15, then horizon 1-4, sun core, disc and glow, and the moon's three
+ * (24-bit hex).
  */
-const TRACKS = [
-  { name: 'CALORIS CIRCUIT', planet: 'MERCURY', par: 5778,
-    points: '9cs4hgsop0s4t2p0tckkq8i4lsiohgl8d4kkb8hgdoemiof0n4deoma0so7qtm3ep01ik02ggs5kde92928e6i4m2g501iaa50de7qg86sk02qls26pu50se',
-    craters: [[55, -10], [250, 10], [390, 10], [630, -10], [830, 10]],
-    orbs: [[25, 0], [80, 10], [270, -8], [400, 8], [455, 0], [560, -10], [640, 10], [750, 0], [845, -10], [960, 0]],
-    horizon: 0, sky: [[0, 0, 1], [11, 7, 5]], stars: 1, sun: [300, 38, 8],
-    pal: '4a4650 56525c 6c6872 d8702c ece4d4 5a4034 7e5c46 946e52 b08a68 8a7a40 a89450 9ab8d0 1e1820 342a32 ffffff 2e262c 4a3c3c 6a5248 b47a4c fff6dc ffd88a c87a3c 000000 000000 000000' },
-  { name: 'CLOUD DECK RUN', planet: 'VENUS', par: 5598,
-    points: 'rah5r8juremorjperos4q8tin1trlgsiljpoljn3lgkjk1j8h7j1ejipc5ifaqjsagn2aaq4a6t38oub60tr4is54dp94amm47ka48hk4eeh60d18vd2bmd5e5d8h0dck9dgloc8lf9kjt88h384eg83c286ai6o9u3sba28en1tht20ks2eng2mpm2mr03prd5vrj8hrkbfrgeb',
-    pools: [[181, -10], [247, -10], [695, -10], [816, -10], [844, -10], [877, -10], [924, 10], [957, -10]],
-    orbs: [[150, 0], [222, 0], [294, 0], [327, 9], [415, 0], [447, -9], [480, -9], [532, 0], [564, 9], [597, 0]],
-    horizon: 1, sky: [[22, 12, 3], [31, 25, 12]], stars: 0, sun: [500, 30, 10],
-    pal: '5a4a3a 6a5844 7c6850 e8e0c0 c87830 9a7a20 b89428 d0ac38 e8c858 8ab830 c8e860 9ab8d0 2a2018 3a2e22 ffffff a86a20 c88a30 e0aa48 f8d070 fff4d0 f8d890 e8b860 000000 000000 000000' },
-  { name: 'BLUE MARBLE SPEEDWAY', planet: 'EARTH', par: 6431,
-    points: '4eb54n8a4q5l4o36601v8j21a23daf62ae8ua0bva4euaohob1kbaumkc6nvesoag4n5g2kffthlfoemfibqfd91gq7ljr7nlg8ulrbbndcoq7d4rmeprohmqcj0niimlujtlkmin2o6qcomrrqcrht6puuan4tokathhgtkerttc9ub9iub6ltu59se5epr5ana4tkr4khr4dea',
-    slick: [[464, 505, 4, 22], [500, 541, -22, -4], [575, 615, 4, 22], [610, 652, 4, 22], [652, 694, -22, -4], [849, 890, -22, -4]],
-    orbs: [[121, -9], [154, -9], [187, 9], [220, 0], [311, 9], [344, -9], [377, 0], [727, 0], [760, -9], [793, 9]],
-    horizon: 2, sky: [[6, 13, 27], [19, 26, 31]], stars: 0, sun: [200, 22, 7], moon: [700, 30, 5],
-    pal: '3a3c44 484a54 5a5c66 e83838 f4f4f4 2a7a2e 3a9a3a 52b44a 78cc5a 8a7a40 a89450 a88e5c 202020 303030 e8dcb4 5a86a8 2a6a30 3a8a3a 6ab45a fffbe0 fff0a0 f8d060 f0f0f8 c8c8d4 9898a8' },
-  { name: 'OLYMPUS RALLY', planet: 'MARS', par: 5717,
-    points: 'i4e8i6biia90h07nea7pd69cdmcgdvf8e2hmcnita0j08ekc80n26go73sns2nmc30jm34h231eg48d66qd782bq81916m7l3v7n2k6k2l4d4534752q9o2pbt32ed37h639k036mr2so849o77cpd8rrq8nt49otbbvs1d0p6ctnkeendhknck6njm6nmoenmqvmis8k8s9j0r0iqogihm0i7jki2h1',
-    wind: [[98, 141, -1], [486, 547, 1], [777, 838, 1], [914, 975, -1]],
-    orbs: [[102, 0], [135, 0], [283, 0], [489, 0], [523, 9], [556, 9], [589, 0], [781, 9], [814, -9], [847, 9]],
-    horizon: 0, sky: [[10, 5, 4], [29, 19, 12]], stars: 0, sun: [420, 34, 5], moon: [120, 20, 3],
-    pal: '4a2a22 5a342a 6c4032 f0e0d0 b83820 8a3a1c a84a24 c05c2e d8784a 7a4a30 9a6040 9ab8d0 2a1410 3a1c16 ffffff 5a2014 7a2c1a a03c22 d06a3c f8f0e0 e8d8b0 c0a080 9a8a80 7a6a60 5a4a40' },
-  { name: 'SPOT CHASER', planet: 'JUPITER', par: 5898,
-    points: 'fb2kgd2khh2mio2qk130ld37md3mn14cnb5an86enj7aob7upg88r18bs68ost9ft7aht3busmcurudjqtdrpidnojdunvehnoffntgoo9hootieppisqtivrpjcsek2srl1t2m9sqn7s5nqr3o3pjo2ofobnoovncptner5n5s3misnlmt1kht0jkslj2rvipquippkieolhno2gknsf5o1dpo5cgo6bao6a6o392o27to16mo25go44hnp3rn23elt3akc3gj842ih4vi767ib7gie8riga7ihbkiid0iiebijfmijguiihui8ijhjiugkivfcj0e1ivcliub8is9qih8nhs80gt7kfm7kec7md07rbj81a48a928p8e9e88aa8fbd89c77ncr6nd75adb48d53gcj32bn2uag2s992r812q6q2s5j364l3q414o3m5u3l783i8j3ea137bg30ct2qe62m',
-    wind: [[416, 466, 1], [554, 604, -1], [662, 700, 1], [734, 773, -1], [865, 896, 1], [929, 979, -1]],
-    orbs: [[419, 0], [452, 9], [557, -9], [590, -9], [622, -9], [665, -9], [738, 9], [869, -9], [932, -9], [965, 0]],
-    horizon: 1, sky: [[7, 3, 2], [25, 15, 8]], stars: 1, sun: [60, 28, 4], moon: [320, 26, 6],
-    pal: '5a3c2c 6a4836 7c5640 f4e8d8 c0602c c8a880 dcc098 ecd4b0 f8e8cc 8a7a40 a89450 9ab8d0 2a1a10 3a2618 ffffff 8a4a2a b86a3a d8a070 f0d4a8 f8f0d0 e0c890 b09060 f8ec70 d8b830 a88820' },
-  { name: 'RING ROAD', planet: 'SATURN', par: 5776,
-    points: 'gd3dhl3ciu3ak936lm30n22uoe2upq32r738s63oso4gsu5ism6tsh85sf9aseadshbesjchsldnsmevsogbsghbruhvr3i7pui4p2hpogh6o7gbo6f8o5e3o2csnubjnqa8nc96ml8flm81kd7sj47shq7uge85f18ee18vdc9md4ajd9bodbctdbe3d9fbd6gjcohjc2iab2ip9oiv8rjc8bk087kq8gls8vml9kn6aengbgngclnhdunhfbnhgtnhi0nsimoiitpkinr1i8s1hiskgksqfdsje5sfcssebgsga3sl8nsp7bsr61ss4osq3ose32rn2mqk2kp72inq2hmf2gl62hju2iin2khg2ogb2tf63bec44dr56dl6ido7hdf83co88bj7va27h8u6s88627v5085477v3l7d3a6g36583e4a403m4t3c643e7d3e8m3ea03ebc3ccl3cdu3cf63c',
-    bumpers: [[90, -10], [181, -10], [208, -10], [283, 10], [344, -10], [391, 0], [451, 0], [518, 10], [777, 10], [854, -10], [930, 10], [968, 10]],
-    orbs: [[110, 9], [142, 0], [235, 0], [303, 0], [372, 0], [493, 0], [594, 9], [627, 0], [659, -9], [703, -9]],
-    horizon: 3, sky: [[3, 4, 9], [26, 24, 18]], stars: 0, sun: [150, 26, 6], moon: [0, 0, 0], rings: 1,
-    pal: '5a6070 6a7282 7c8696 ffffff d8b860 b8a060 ccb478 dcc890 ecdcac 8a7a40 a89450 9ab8d0 2a2a30 3a3a44 ffffff a08a50 c0a868 dcc488 f4e4b0 f8f4e0 e8e0b0 c8b880 f0d488 c09850 806838' },
-  { name: 'TILT-A-WHIRL', planet: 'URANUS', par: 6684,
-    points: 'gpnsf8noe4o0dfokd7pkddr0d6s0cgsjbesp9usk8ss689rf84qh8dpa8jo38lms8jlm8dke7ujh74is60ig4jid3hi12shb2kgb2of236e53tdk4udf69dm7adh82cu8gbv8lak8e9h7q8n6r875f7v4d7h3k6s35612u4v35443n3f4n31622p7d2k8n2ia02jb82mc632cq3od44md55tdf6re47ef27ogc7phb7gi170id67ig55is4cjh3skg3kln3mmn40nd4jns5fo16kof7gp483q28cr68ds18msi97spa2smb5sac2rlcnqod6phddoadjn0dnlmdok9doj0dnhodmgkdlfhdkendte6egdsfddrgke3hjeki8feilghiphmiriuirk8ipljilmuijo8ikpgimqnisrmj8sdjtsrkpt2lusrmqs6ner5nqpmntoao0n1o2lro3koo2jho1i7nv',
-    slick: [[181, 216, -22, 22], [211, 246, -22, 22], [320, 374, -22, 22], [598, 658, -22, 22], [892, 928, -22, 22]],
-    orbs: [[112, 9], [379, 9], [660, 0], [694, -9], [794, -9], [828, 0], [932, -9], [965, 0]],
-    horizon: 3, sky: [[3, 11, 13], [15, 27, 29]], stars: 0, sun: [260, 24, 4],
-    pal: '4a6a74 587a86 6a8c98 ffffff 40a8c0 9ad0d8 b0e0e6 c8eef0 e0f8fa 8a7a40 a89450 74c8e4 1a2a30 2a3c44 f4ffff 4a8a9a 6aaab8 8ccad4 c0ecf0 ffffff d0f0f8 a0d0e0 000000 000000 000000' },
-  { name: 'DEEP BLUE DERBY', planet: 'NEPTUNE', par: 5699, gust: 1,
-    points: 'skklsolnsrmrsto1stpasrqmshrorushr3t0pvt6p3svogsbo4rao2prnmoon2o0m5njkvnik2nsjeohj2piiur0ihs2hrsqgst7fjtaekt0dtsadgr7ddpocvokc8nrb8nc9una90nj8foa8apd8iqs8cs07qsp6st65gt64fst3nsa39rd36q534os35nh39m53fkm3ujj4kir5kie6sib84i99di7ali5bui2crhnddh2djg4deeucve2c7dhb5db9pdg8pda83cp7pbu7qam879o9091a58jbm8ed38bec8bfh8egh8khc8di07oif6nin58j644jr3bkm2sln2omr2no02pp82uqi35ri3ls74dsi5esk6msb7kro86qs8dpn8aop8ho393nka0neb7mvc6m8crl8d7k1d9j4dlijebiefaijgjj2hgjqi2kri9m5i4ndi3oji5pnibqqilrkj4s8jq',
-    wind: [[7, 41, -1], [375, 413, 1], [448, 484, -1], [612, 649, 1]],
-    bumpers: [[85, -9], [139, 0], [178, -9], [224, 0], [422, 0], [497, 9], [554, -9], [867, 0]],
-    orbs: [[378, 9], [452, -9], [616, 0], [723, -9], [943, 0]],
-    horizon: 1, sky: [[0, 0, 4], [5, 7, 18]], stars: 1, sun: [380, 30, 3], moon: [90, 24, 5],
-    pal: '242c58 2c3668 384278 80e0ff ffffff 142070 1a2a88 2238a0 3048b8 8a7a40 a89450 9ab8d0 080c20 101838 ffffff 101c50 1c2c70 2c4090 4a64b8 e8f0ff a0b8e8 6080c0 d8c8c0 a89890 786860' },
-];
+let TRACKS = [];
+const TRACK_ROW = 18; // the table's first Map RAM row, from column 128
+
+/** The track table: JSON text, two characters per Map RAM entry, ended by a 0 entry. */
+function readTracks() {
+  let s = '';
+  for (let i = 0; ; i++) {
+    const v = mget(128 + (i & 127), TRACK_ROW + (i >> 7));
+    if (!v) break;
+    s += String.fromCharCode(v >> 8, v & 255);
+  }
+  return JSON.parse(s);
+}
 
 // --- Tiles, palettes, sound ------------------------------------------------------
 
@@ -162,19 +126,25 @@ const SUN = [21, 22, 23], MOON = [24, 25, 26]; // core, disc and glow (BG palett
 const SFX = { beep: 0, go: 1, orb: 2, lap: 3, final: 4, finish: 5, pit: 6, move: 7, select: 8, drift: 9, boostEnd: 10, wall: 11, bump: 12 };
 const SFX_CH = 1;
 const ORD = ['1ST', '2ND', '3RD', '4TH', '5TH', '6TH', '7TH', '8TH'];
-const MODES = ['RACE', 'TIME TRIAL'];
+const MENU = ['GRAND PRIX', 'TIME TRIAL', 'SCORES'];
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const CARD_AUTO = 300; // frames before the track card starts the race by itself
 
 // --- Save slots (SPEC 13) ----------------------------------------------------------
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1, PLANET_SLOT = 1;
+const VERSION_SLOT = 0, SAVE_VERSION = 1, PLANET_SLOT = 1, INITIALS_SLOT = 2;
+const TOP_SLOT = 10, TOP_N = 10, ENTRY = 12; // the top 10 Grand Prix runs: total, planet, 8 race times, initials, spare
 const TRIAL_SLOT = 130; // + 3 * track: best 3-lap time, best lap, planet
 
 // --- State -------------------------------------------------------------------------
 
-let state; // 'title', 'race', 'finish'
+let state; // 'title', 'select' (planet), 'tracks' (time trial), 'card', 'race', 'finish', 'gp' (its result), 'initials', 'scores'
 let timer = 0; // frames in the current state
-let mode = 0; // 0 a race against three rivals, 1 a time trial
-let track = TRACKS[0], tix = 0, pick = 2;
+let mode = 0; // 0 the Grand Prix, 1 a time trial
+let gp = null; // the Grand Prix run: { race, rivals, times, points, total, standing, rank }
+let initials = null; // { chars, pos } while entering initials
+let view = null; // the scores screen: { page, hl }
+let track = null, tix = 0, pick = 2;
 let N = 0; // centerline samples
 let SX, SY, TX, TY, RAD; // sample positions, unit tangents and corner radii
 let CORNER; // per sample: 1 or -1 where a right or left corner starts, else 0
@@ -190,13 +160,13 @@ let record = { time: false, lap: false };
 let best = { time: 0, lap: 0 };
 let result = null; // after the race: { order, table } (SPEC 7.3)
 let page = 0; // the finish screens: 0 the race result, 1 the standings
-let paused = false, pauseSel = 0, menu = 0, row = 0; // title: the mode, and the row being changed
+let paused = false, pauseSel = 0, menu = 0; // menu: the title's choice
 let banner = null; // { text, until, color }
 let bumpQuiet = 0; // frames until the bump sound may play again
 let prevMask = 0, inputMask = 0;
 let attract = 0; // the title camera's place along the centerline, in samples
 let slide = 0, sparks = []; // the drift's look: the planet's slide and the sparks off it
-let seed = 1; // the race's own generator state (rivals, mistakes, simulated times)
+let seed = 1; // the run's own generator state (rivals, mistakes, simulated times)
 const cam = { x: 0, y: 0, h: 0 }; // h in angle units
 let FX = 1, FY = 0, RX = 0, RY = 1; // camera forward and right vectors this frame
 const SKY = [];
@@ -246,6 +216,7 @@ function init() {
     dset(PLANET_SLOT, 2);
   }
   pick = mid(0, dget(PLANET_SLOT), 7);
+  TRACKS = readTracks();
   for (let i = 0; i < 40; i++) STARS.push([rndi(0, ANG - 1), rndi(2, 50), rndi(0, 2)]);
   loadTrack(0);
   toTitle();
@@ -253,9 +224,7 @@ function init() {
 
 function loadTrack(i) {
   tix = i; track = TRACKS[i];
-  const P = [];
-  for (let k = 0; k < track.points.length; k += 4) P.push([parseInt(track.points.substr(k, 2), 32), parseInt(track.points.substr(k + 2, 2), 32)]);
-  sampleCenterline(P);
+  sampleCenterline(track.points);
   buildFloor(track);
   // The track's colors: floor 1-15 in BG palette 0, then horizon, sun and moon in BG palette 1.
   track.pal.split(' ').forEach((h, k) => {
@@ -420,9 +389,35 @@ function hash(n) {
 // --- Flow ------------------------------------------------------------------------------
 
 function toTitle() {
-  state = 'title'; timer = 0; paused = false; banner = null;
-  karts = []; player = null; attract = 0;
+  go('title');
+  paused = false; gp = null;
   music(0);
+}
+
+/** Change screen. Off the track there are no karts, and the camera glides round the track. */
+function go(s) {
+  state = s; timer = 0;
+  if (s !== 'race' && s !== 'finish') { karts = []; player = null; banner = null; }
+}
+
+/** A new Grand Prix (SPEC 2): eight races in order, its own seed for every draw. */
+function startGP() {
+  mode = 0;
+  seed = rndi(1, 0x7fffffff);
+  gp = { race: 0, rivals: [], times: [], points: new Array(8).fill(0), rank: -1 };
+  toCard(0);
+}
+
+/** The track card (SPEC 11): the track and your rivals, READY while the floor builds. */
+function toCard(t) {
+  loadTrack(t);
+  go('card');
+  attract = 0;
+  if (mode === 0) {
+    // Three rivals drawn from the seven planets you aren't (SPEC 4.3).
+    const others = [0, 1, 2, 3, 4, 5, 6, 7].filter((p) => p !== pick);
+    gp.rivals = [0, 1, 2].map(() => others.splice(flr(rng() * others.length), 1)[0]);
+  }
 }
 
 /** A kart for planet p on grid slot `slot` (0 is pole). */
@@ -445,21 +440,18 @@ function startRace() {
   state = 'race'; timer = 0; raceF = 0; paused = false; banner = null; page = 0; result = null;
   slide = 0; sparks = [];
   record = { time: false, lap: false };
-  seed = rndi(1, 0x7fffffff);
-  // You start last of four (SPEC 5.7); three rivals are drawn from the other seven.
+  // You start last of four (SPEC 5.7), behind the three rivals on the card.
   karts = [];
   if (mode === 0) {
-    const others = [0, 1, 2, 3, 4, 5, 6, 7].filter((p) => p !== pick);
-    for (let s = 0; s < 3; s++) {
-      const k = newKart(others.splice(flr(rng() * others.length), 1)[0], s, true);
+    gp.rivals.forEach((p, s) => {
+      const k = newKart(p, s, true);
       k.lane = (rng() * 2 - 1) * 8;
       karts.push(k);
-    }
+    });
   }
   player = newKart(pick, 3, false);
   karts.push(player);
   cam.h = player.h;
-  dset(PLANET_SLOT, pick);
   music(0);
 }
 
@@ -597,6 +589,9 @@ function bump() {
       const wa = a.st.weight, wb = b.st.weight, ka = wb / (wa + wb), kb = wa / (wa + wb);
       a.x -= nx * o * ka; a.y -= ny * o * ka;
       b.x += nx * o * kb; b.y += ny * o * kb;
+      // Speed is lost only when they close on each other, not every frame they touch,
+      // so a kart pressed against a slower one isn't dragged down to a crawl.
+      if ((b.vx - a.vx) * nx + (b.vy - a.vy) * ny >= 0) continue;
       a.sp *= 1 - BUMP_LOSS * ka; b.sp *= 1 - BUMP_LOSS * kb;
       if ((a === player || b === player) && bumpQuiet === 0) { sfx(SFX.bump, SFX_CH); bumpQuiet = 12; }
     }
@@ -661,6 +656,12 @@ function aiInput(k) {
   let lat = k.lane;
   if (k.mistake > 0) { k.mistake--; lat += k.wide; }
   else {
+    // Pass a kart just ahead on its line, on the side away from it.
+    for (const o of karts) {
+      if (o === k) continue;
+      const ahead = (o.si - k.si + N) % N, olat = (o.x - SX[o.si]) * -TY[o.si] + (o.y - SY[o.si]) * TX[o.si];
+      if (ahead > 0 && ahead < 6 && Math.abs(olat - lat) < 8) lat = mid(7 - ROAD, olat + (olat > 0 ? -9 : 9), ROAD - 7);
+    }
     // Steer round craters, pools and bumpers on the line ahead.
     for (const hz of hazards) {
       const ahead = (hz.i - k.si + N) % N, gap = hz.r + KART_R + 2;
@@ -713,6 +714,57 @@ function finish() {
   if (p.laps.length && (!best.lap || lap < best.lap)) { best.lap = lap; record.lap = true; dset(slot + 1, lap); }
 }
 
+/** The championship so far: all eight planets by points, ties by this race's places. */
+function champ() {
+  return result.table.map((r, i) => ({ ...r, total: gp.points[r.p], i })).sort((a, b) => b.total - a.total || a.i - b.i);
+}
+
+/** After race 8: the total, the standing, and the run saved if it makes the top 10. */
+function gpResult() {
+  gp.total = gp.times.reduce((a, b) => a + b, 0);
+  gp.standing = champ().findIndex((r) => r.p === pick);
+  // Saved now under the last initials, so the run counts even if the player
+  // never reaches the initials screen; entering new ones writes over them.
+  gp.rank = insertTop({ total: gp.total, planet: pick, times: gp.times, initials: lastInitials() });
+  go('gp');
+  music(0);
+}
+
+// --- Top 10 (SPEC 13) -------------------------------------------------------------
+
+function readEntry(i) {
+  const s = TOP_SLOT + i * ENTRY;
+  return { total: dget(s), planet: dget(s + 1), times: TRACKS.map((_, k) => dget(s + 2 + k)), initials: unpackInitials(dget(s + 10)) };
+}
+
+function writeEntry(i, e) {
+  const s = TOP_SLOT + i * ENTRY;
+  dset(s, e.total); dset(s + 1, e.planet);
+  e.times.forEach((v, k) => dset(s + 2 + k, v));
+  dset(s + 10, packInitials(e.initials));
+}
+
+const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
+
+/** Put a run into the top 10 (lowest total first) if it makes it. Returns its row, or -1. */
+function insertTop(e) {
+  const list = topTen(), at = list.findIndex((x) => !x.total || e.total < x.total);
+  if (at < 0) return -1;
+  list.splice(at, 0, e);
+  for (let i = at; i < TOP_N; i++) writeEntry(i, list[i]);
+  return at;
+}
+
+/** Three characters, 8 bits each. */
+const packInitials = (s) => (s.charCodeAt(0) << 16) | (s.charCodeAt(1) << 8) | s.charCodeAt(2);
+const unpackInitials = (v) => (v ? String.fromCharCode((v >> 16) & 255, (v >> 8) & 255, v & 255) : '---');
+const lastInitials = () => (dget(INITIALS_SLOT) ? unpackInitials(dget(INITIALS_SLOT)) : 'AAA');
+
+function scores(hl) {
+  go('scores');
+  view = { page: 0, hl };
+}
+
 /** Places on the track: finishers by time, then the rest by distance covered. */
 function order() {
   return [...karts].sort((a, b) => (a.finish && b.finish ? a.finish - b.finish : a.finish ? -1 : b.finish ? 1 : b.dist - a.dist));
@@ -745,25 +797,50 @@ const pressed = (b) => (inputMask & BIT(b)) !== 0 && (prevMask & BIT(b)) === 0;
 
 function update() {
   inputMask = readPad();
-  if (state === 'title') updateTitle();
-  else if (state === 'race') updateRace();
-  else if (state === 'finish') updateFinish();
+  if (!player) attract = (attract + 0.35) % N;
+  ({ title: updateTitle, select: updateSelect, tracks: updateTracks, card: updateCard, race: updateRace,
+    finish: updateFinish, gp: updateGP, initials: updateInitials, scores: updateScores })[state]();
   prevMask = inputMask;
 }
 
+const ok = () => pressed(START) || pressed(B); // menus: START or B to go on, A to go back
+const lr = () => (pressed(LEFT) ? -1 : pressed(RIGHT) ? 1 : 0);
+const beep = (n) => sfx(n, SFX_CH);
+
 function updateTitle() {
   timer++;
-  attract = (attract + 0.35) % N;
-  // Rows: the mode, the track, the planet. LEFT/RIGHT changes the row's value.
-  if (pressed(UP) || pressed(DOWN)) { row = (row + (pressed(UP) ? 2 : 1)) % 3; sfx(SFX.move, SFX_CH); }
-  const d = pressed(LEFT) ? -1 : pressed(RIGHT) ? 1 : 0;
-  if (d) {
-    sfx(SFX.move, SFX_CH);
-    if (row === 0) menu ^= 1;
-    else if (row === 1) { loadTrack((tix + d + TRACKS.length) % TRACKS.length); attract = 0; }
-    else pick = (pick + d + 8) % 8;
-  }
-  if (pressed(START) || pressed(B)) { mode = menu; sfx(SFX.select, SFX_CH); startRace(); }
+  if (pressed(UP) || pressed(DOWN)) { menu = (menu + (pressed(UP) ? 2 : 1)) % 3; beep(SFX.move); }
+  if (!ok()) return;
+  beep(SFX.select);
+  if (menu === 2) scores(-1);
+  else { mode = menu; go('select'); }
+}
+
+/** Planet select (SPEC 11): LEFT/RIGHT along the row of eight; the last pick is remembered. */
+function updateSelect() {
+  timer++;
+  const d = lr();
+  if (d) { pick = (pick + d + 8) % 8; beep(SFX.move); }
+  if (pressed(A)) { beep(SFX.move); toTitle(); return; }
+  if (!ok()) return;
+  beep(SFX.select);
+  dset(PLANET_SLOT, pick);
+  if (mode === 0) startGP();
+  else { go('tracks'); attract = 0; }
+}
+
+/** Time trial: any of the eight tracks, with its best times. */
+function updateTracks() {
+  timer++;
+  const d = lr();
+  if (d) { loadTrack((tix + d + TRACKS.length) % TRACKS.length); attract = 0; beep(SFX.move); }
+  if (pressed(A)) { beep(SFX.move); go('select'); return; }
+  if (ok()) { beep(SFX.select); toCard(tix); }
+}
+
+function updateCard() {
+  timer++;
+  if ((timer > 30 && ok()) || timer >= CARD_AUTO) { beep(SFX.select); startRace(); }
 }
 
 function updateRace() {
@@ -771,7 +848,7 @@ function updateRace() {
     if (pressed(UP) || pressed(DOWN)) { pauseSel ^= 1; sfx(SFX.move, SFX_CH); }
     if (pressed(START) || pressed(B)) {
       sfx(SFX.select, SFX_CH);
-      if (pauseSel === 0) paused = false; else toTitle();
+      if (pauseSel === 0) paused = false; else toTitle(); // quitting abandons a Grand Prix
     }
     return;
   }
@@ -795,14 +872,51 @@ function updateFinish() {
     else if (pressed(SELECT)) { sfx(SFX.select, SFX_CH); toTitle(); }
     return;
   }
-  if (!pressed(START) && !pressed(B)) return;
-  sfx(SFX.select, SFX_CH);
+  if (!ok()) return;
+  beep(SFX.select);
   if (page === 0) {
     // Rivals still racing are run to the line at once (SPEC 5.7: the result is taken then).
     while (karts.some((k) => !k.finish)) stepRace();
     result = { order: order(), table: standings() };
+    result.table.forEach((r) => { gp.points[r.p] += r.points; });
+    gp.times.push(player.finish); // the cap counts as 3:00 (SPEC 8)
     page = 1;
-  } else toTitle();
+  } else if (gp.race < TRACKS.length - 1) toCard(++gp.race);
+  else gpResult();
+}
+
+function updateGP() {
+  timer++;
+  if (timer < 60 || !ok()) return;
+  beep(SFX.select);
+  if (gp.rank < 0) { scores(-1); return; }
+  initials = { chars: lastInitials().split(''), pos: 0 };
+  go('initials');
+}
+
+/** UP/DOWN pick a letter, LEFT/RIGHT move, B moves on (saving on the last), START saves. */
+function updateInitials() {
+  timer++;
+  const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
+  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; beep(SFX.move); }
+  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; beep(SFX.move); }
+  const d = lr();
+  if (d) ini.pos = mid(0, ini.pos + d, 2);
+  const done = pressed(START) || (pressed(B) && ini.pos === 2);
+  if (pressed(B) && ini.pos < 2) ini.pos++;
+  if (!done || timer < 20) return;
+  const v = packInitials(ini.chars.join(''));
+  dset(INITIALS_SLOT, v);
+  dset(TOP_SLOT + gp.rank * ENTRY + 10, v);
+  beep(SFX.select);
+  scores(gp.rank);
+}
+
+/** The top 10 Grand Prix runs, and a page of time-trial bests (LEFT/RIGHT). */
+function updateScores() {
+  timer++;
+  if (lr()) { view.page ^= 1; beep(SFX.move); }
+  if (timer > 20 && (ok() || pressed(A))) { beep(SFX.select); toTitle(); }
 }
 
 // --- Draw ---------------------------------------------------------------------------------
@@ -819,10 +933,11 @@ function draw() {
   affine({ a: 1, b: 0, c: 0, d: 1, cx: 0, cy: 0 });
   drawSky();
   drawObjects();
-  if (state !== 'title') { drawSparks(); drawWind(); }
-
-  if (state === 'title') drawTitle();
-  else {
+  if (!player) {
+    ({ title: drawTitle, select: drawSelect, tracks: drawTracks, card: drawCard, gp: drawGP, initials: drawInitials, scores: drawScores })[state]();
+  } else {
+    drawSparks();
+    drawWind();
     drawHud();
     if (state === 'race' && timer <= COUNT) big(String(3 - flr((timer - 1) / 60)), 128, 64, 5, GOLD);
     else if (state === 'race' && banner && timer < banner.until) big(banner.text, 128, 70, 3, banner.color);
@@ -833,8 +948,8 @@ function draw() {
 }
 
 function placeCamera() {
-  if (state === 'title') {
-    // The title camera glides along the centerline.
+  if (!player) {
+    // Off the track, the camera glides along the centerline.
     const i = flr(attract), j = (i + 12) % N;
     const target = angleOf(SX[j] - SX[i], SY[j] - SY[i]);
     cam.h = wrapU(cam.h + diffU(target, cam.h) * 0.05);
@@ -889,7 +1004,7 @@ function drawObjects() {
     if (sx < -size || sx > 256 + size) return;
     list.push({ z, sx, sy, size, n: tiles[size === 32 ? 0 : size === 16 ? 1 : 2], pal, ...extra });
   };
-  if (state !== 'title') {
+  if (player) {
     orbs.forEach((o, i) => { if (!player.taken[i]) add(o.x, o.y, ORB, ORB_PAL, { fx: t() % 16 < 8 }); });
     for (const b of bumpers) add(b.x, b.y, BUMPER, ORB_PAL);
     // In a drift the planet slides out to the side its velocity carries it, away from where it points.
@@ -1011,26 +1126,154 @@ function drawHud() {
   print(cpu, 254 - cpu.length * 8, 214, DIM);
 }
 
-function drawTitle() {
-  big('PLANET', 128, 14, 4, CYAN);
-  big('RACERS', 128, 48, 4, GOLD);
-  const opt = (s, y, r) => ctxt(row === r ? `< ${s} >` : s, y, row === r ? GOLD : WHITE);
-  opt(MODES[menu], 90, 0);
-  opt(`${tix + 1} ${track.planet}`, 104, 1);
-  ctxt(track.name, 114, DIM);
-  // The planet you race as, its stars and its character.
-  const P = PLANETS[pick];
-  opt(P.name, 132, 2);
-  spr(planetTile(pick, 32, flr(t() / 12) & 1), 112, 142, { size: 32, pal: pick >> 1, prio: 3 });
+function panel(x, y, w, h) {
+  rectfill(x, y, w, h, BLACK);
+  rect(x, y, w, h, PANEL);
+}
+
+/** A planet sprite on a panel: the overlay covers sprites, so cut a window for it first. */
+function planetOn(p, size, x, y, f = 0) {
+  rectfill(x - 2, y - 2, size + 4, size + 4, 0);
+  rect(x - 3, y - 3, size + 6, size + 6, PANEL);
+  spr(planetTile(p, size, f), x, y, { size, pal: p >> 1, prio: 3 });
+}
+
+/** Big letters that ripple, one wave along the word (SPEC 11). */
+function wave(s, y, scale, c) {
+  const w = 8 * scale, x0 = 128 - s.length * w / 2;
+  for (let i = 0; i < s.length; i++) big(s[i], x0 + i * w + w / 2, y + flr(3 * Math.sin(t() * 0.08 - i * 0.7)), scale, c);
+}
+
+/** A planet's four stars as bars: two columns from x, y. */
+function stars(P, y) {
   [['SPD', P.speed], ['ACC', P.accel], ['HND', P.handling], ['WGT', P.weight]].forEach(([s, v], i) => {
-    const x = i < 2 ? 22 : 154, y = 146 + (i % 2) * 11;
-    txt(s, x, y, DIM);
-    for (let k = 0; k < 5; k++) rectfill(x + 28 + k * 9, y, 7, 7, k < v ? GOLD : PANEL);
+    const x = i < 2 ? 22 : 154, yy = y + (i % 2) * 11;
+    txt(s, x, yy, DIM);
+    for (let k = 0; k < 5; k++) rectfill(x + 28 + k * 9, yy, 7, 7, k < v ? GOLD : PANEL);
   });
-  ctxt(P.note, 180, WHITE);
-  if (menu === 1 && best.time) ctxt(`BEST ${fmt(best.time)}  LAP ${fmt(best.lap)}`, 192, DIM);
-  else if (t() % 60 < 40) ctxt('PRESS START', 192, WHITE);
+}
+
+function drawTitle() {
+  wave('PLANET', 18, 4, CYAN);
+  wave('RACERS', 54, 4, GOLD);
+  MENU.forEach((s, i) => ctxt(menu === i ? `> ${s} <` : s, 112 + i * 14, menu === i ? WHITE : DIM));
+  const top = readEntry(0);
+  if (top.total) ctxt(`BEST GRAND PRIX ${fmt(top.total)} ${top.initials}`, 170, GOLD);
+  if (t() % 60 < 40) ctxt('START OR B TO CHOOSE', 190, WHITE);
   ctxt('B GAS  A BRAKE  L/R DRIFT', 206, DIM);
+}
+
+/** Planet select: the eight in a row, and the chosen one's stars and character. */
+function drawSelect() {
+  panel(8, 8, 240, 208);
+  ctxt(mode === 0 ? 'GRAND PRIX' : 'TIME TRIAL', 16, DIM);
+  ctxt('CHOOSE YOUR PLANET', 28, GOLD);
+  const P = PLANETS[pick];
+  planetOn(pick, 32, 112, 44, flr(t() / 12) & 1);
+  big(P.name, 128, 82, 2, WHITE);
+  stars(P, 104);
+  ctxt(P.note, 132, CYAN);
+  for (let p = 0; p < 8; p++) {
+    const x = 13 + p * 30;
+    planetOn(p, 16, x, 152);
+    if (p === pick) rect(x - 4, 148, 24, 24, t() % 30 < 20 ? GOLD : WHITE);
+  }
+  ctxt('LEFT/RIGHT CHOOSE', 182, DIM);
+  ctxt('B OK   A BACK', 196, DIM);
+}
+
+/** Time trial: the track, and its bests. */
+function drawTracks() {
+  panel(24, 96, 208, 112);
+  ctxt('TIME TRIAL', 104, DIM);
+  big(`< ${tix + 1} ${track.planet} >`, 128, 118, 2, GOLD);
+  ctxt(track.name, 140, WHITE);
+  if (best.time) {
+    const who = dget(TRIAL_SLOT + 3 * tix + 2);
+    ctxt(`BEST ${fmt(best.time)}  LAP ${fmt(best.lap)}`, 158, WHITE);
+    ctxt(`BY ${PLANETS[who].name}`, 170, planetColor(who));
+  } else ctxt('NO TIME YET', 158, DIM);
+  ctxt('B OK   A BACK', 190, DIM);
+}
+
+/** The track card: the race, the track, and who you race. */
+function drawCard() {
+  panel(24, 40, 208, 144);
+  ctxt(mode === 0 ? `RACE ${gp.race + 1} OF ${TRACKS.length}` : 'TIME TRIAL', 50, DIM);
+  big(track.planet, 128, 64, 3, GOLD);
+  ctxt(track.name, 92, WHITE);
+  if (mode === 0) {
+    ctxt('YOUR RIVALS', 108, DIM);
+    gp.rivals.forEach((p, i) => {
+      const x = 44 + i * 64;
+      planetOn(p, 16, x + 16, 120);
+      txt(PLANETS[p].name, x + 24 - PLANETS[p].name.length * 4, 140, planetColor(p));
+    });
+  } else if (best.time) ctxt(`BEST ${fmt(best.time)}`, 120, DIM);
+  ctxt(timer < 30 || t() % 40 < 26 ? (timer < 30 ? 'READY' : 'PRESS START') : '', 164, WHITE);
+}
+
+/** After race 8: the total, the eight races and your championship place. */
+function drawGP() {
+  panel(16, 12, 224, 200);
+  ctxt('GRAND PRIX COMPLETE', 22, GOLD);
+  gp.times.forEach((f, i) => {
+    const y = 40 + i * 13;
+    txt(`${i + 1} ${TRACKS[i].planet}`, 40, y, DIM);
+    txt(f >= CAP ? '3:00.00' : fmt(f), 152, y, f >= CAP ? RED : WHITE);
+  });
+  txt('TOTAL', 40, 150, WHITE);
+  txt(fmt(gp.total), 152, 150, GOLD);
+  ctxt(`CHAMPIONSHIP: ${ORD[gp.standing]}`, 168, gp.standing === 0 ? GOLD : WHITE);
+  if (gp.rank >= 0) ctxt(gp.rank === 0 ? 'NEW BEST GRAND PRIX!' : `TOP 10: #${gp.rank + 1}`, 182, t() % 30 < 20 ? GOLD : WHITE);
+  if (timer >= 60) ctxt('START', 198, DIM);
+}
+
+/** Three initials for the top 10. */
+function drawInitials() {
+  const ini = initials;
+  panel(24, 32, 208, 160);
+  ctxt(gp.rank === 0 ? 'NEW BEST GRAND PRIX!' : `TOP 10: #${gp.rank + 1}`, 44, GOLD);
+  ctxt(fmt(gp.total), 58, WHITE);
+  ctxt('ENTER YOUR INITIALS', 90, DIM);
+  for (let i = 0; i < 3; i++) {
+    const x = 128 - 36 + i * 28, on = i === ini.pos;
+    rect(x - 4, 106, 16, 18, on ? GOLD : PANEL);
+    print(ini.chars[i], x, 111, on ? GOLD : WHITE);
+    if (on && timer % 30 < 20) { line(x + 1, 102, x + 6, 102, GOLD); line(x + 1, 127, x + 6, 127, GOLD); }
+  }
+  ctxt('UP/DOWN    LETTER', 140, DIM);
+  ctxt('LEFT/RIGHT MOVE  ', 150, DIM);
+  if (timer % 60 < 40) ctxt('START: SAVE', 166, WHITE);
+}
+
+/** The top 10 Grand Prix totals, and the time-trial bests (LEFT/RIGHT). */
+function drawScores() {
+  panel(4, 4, 248, 216);
+  ctxt(view.page === 0 ? '< TOP 10 GRAND PRIX >' : '< TIME TRIAL BESTS >', 12, GOLD);
+  if (view.page === 0) {
+    topTen().forEach((e, i) => {
+      const y = 32 + i * 16, hl = i === view.hl;
+      if (hl && timer % 40 < 30) rectfill(6, y - 4, 244, 15, PANEL);
+      txt(String(i + 1).padStart(2), 16, y, i === 0 ? GOLD : DIM);
+      if (!e.total) { txt('---', 48, y, DIM); return; }
+      txt(e.initials, 48, y, hl ? GOLD : WHITE);
+      rectfill(88, y, 7, 7, planetColor(e.planet));
+      txt(PLANETS[e.planet].name, 100, y, DIM);
+      txt(fmt(e.total), 176, y, i === 0 ? GOLD : WHITE);
+    });
+  } else {
+    txt('TRACK      3 LAPS     LAP', 16, 28, DIM);
+    TRACKS.forEach((tr, i) => {
+      const y = 44 + i * 18, s = TRIAL_SLOT + 3 * i, v = dget(s);
+      txt(`${i + 1} ${tr.planet}`, 16, y, v ? WHITE : DIM);
+      if (!v) { txt('-:--.--', 104, y, DIM); return; }
+      rectfill(94, y, 5, 7, planetColor(dget(s + 2)));
+      txt(fmt(v), 104, y, WHITE);
+      txt(fmt(dget(s + 1)), 184, y, DIM);
+    });
+  }
+  if (timer % 60 < 40) ctxt('START: TITLE', 204, WHITE);
 }
 
 function drawFinish() {
@@ -1040,8 +1283,7 @@ function drawFinish() {
     if (mode === 0) big(ORD[order().indexOf(p)], 128, 92, 3, WHITE);
     return;
   }
-  rectfill(24, 44, 208, 128, BLACK);
-  rect(24, 44, 208, 128, PANEL);
+  panel(page === 1 ? 20 : 24, 44, page === 1 ? 228 : 208, 132);
   if (mode === 1) {
     ctxt('TIME TRIAL', 52, GOLD);
     const fast = Math.min(...p.laps);
@@ -1068,16 +1310,19 @@ function drawFinish() {
     ctxt('START: STANDINGS', 156, DIM);
     return;
   }
-  ctxt('STANDINGS', 52, GOLD);
-  result.table.forEach((r, i) => {
-    const y = 66 + i * 11, me = r.p === p.p, c = me ? WHITE : r.onTrack ? CYAN : DIM; // on the track, or simulated
-    txt(ORD[i], 34, y, me ? GOLD : c);
-    rectfill(68, y, 7, 7, planetColor(r.p));
-    txt(PLANETS[r.p].name, 80, y, c);
-    txt(fmt(r.time), 144, y, c);
-    txt(`${r.points < 10 ? ' ' : ''}${r.points}`, 210, y, c);
+  // The championship: this race's time and points, and the running total.
+  ctxt(`CHAMPIONSHIP AFTER ${gp.race + 1}/${TRACKS.length}`, 50, GOLD);
+  txt('RACE', 136, 62, DIM); txt('PTS', 184, 62, DIM); txt('ALL', 216, 62, DIM);
+  champ().forEach((r, i) => {
+    const y = 74 + i * 11, me = r.p === p.p, c = me ? WHITE : r.onTrack ? CYAN : DIM; // on the track, or simulated
+    txt(ORD[i], 24, y, me ? GOLD : c);
+    rectfill(54, y, 7, 7, planetColor(r.p));
+    txt(PLANETS[r.p].name, 64, y, c);
+    txt(fmt(r.time), 124, y, c);
+    txt(`+${r.points}`.padStart(3), 182, y, c);
+    txt(String(r.total).padStart(3), 214, y, me ? GOLD : c);
   });
-  ctxt('START: TITLE', 160, DIM);
+  ctxt(gp.race < TRACKS.length - 1 ? 'START: NEXT RACE' : 'START: FINAL RESULT', 164, DIM);
 }
 
 function drawPause() {

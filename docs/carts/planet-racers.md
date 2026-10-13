@@ -1,7 +1,7 @@
 # Planet Racers: Cart Specification
 
-**Version:** 0.4 (draft)
-**Status:** In progress: steps 1–3 of the plan (15) are built
+**Version:** 0.5 (draft)
+**Status:** In progress: steps 1–4 of the plan (15) are built
 **Cart source:** `carts/src/planet-racers/` → `carts/planet-racers.nova`
 
 ---
@@ -148,7 +148,9 @@ The edge of the floor is a soft wall: reaching it stops the kart and nudges it b
 
 Karts are circles 7 world px across. When two overlap they are pushed apart in
 proportion to their weights, and the lighter one loses a little more speed: a bump
-costs 12% of speed in all, split between the two by weight. The
+costs 12% of speed in all, split between the two by weight. Speed is lost only when
+the two are closing on each other, not on every frame they touch; otherwise a kart
+pressed against a slower one was dragged down to a crawl with it. The
 simulation is deterministic, so a replay bumps the same way.
 
 ### 5.7 Laps and checkpoints
@@ -193,7 +195,7 @@ Hazards are few and forgiving: with no restarts, one mistake should cost seconds
 - A track is a **128 × 128-tile floor** (1,024 × 1,024 world px, as in the Mode 7 demo) in Map RAM, the way the `mode7` cart's oval is.
 - The centerline is a closed Catmull-Rom curve through the control points, sampled every 4 px of arc. Each tile corner is on the road when it lies within 20 px of the centerline, and a tile's four corners pick one of 16 **marching-squares tiles**, so the road's edge runs smoothly across tiles, with a curb stripe drawn along it. Whole road and off-road tiles come in three variants each, picked by a hash of the tile's position.
 - Craters and acid pools are 2 × 2 tiles, placed at the nearest spot within a tile of the one asked for where all four tiles are wholly road. Slick zones turn the whole road tiles they cover into slick tiles. The start/finish line is a line of checker tiles across the road at the first sample: a column where the road runs across the map, a row where it runs up or down. No hazard is placed within 2 tiles of it.
-- In the cart, each track's control points are packed four base-32 digits apiece (x then y, 0–1023) to keep the data small.
+- **The track table lives in Map RAM, not in the code.** `carts/src/planet-racers/tracks.json` is the readable source: per track, its control points, hazards, orbs, par and look. `build-tracks.mjs` stores it in `map.txt` as JSON text, two characters per map entry (high byte first), from column 128 of row 18 across and down, ended by a 0 entry; the cart reads it back with `mget` and `JSON.parse` at init. That keeps about 7 KB of data out of the 64 KB code limit. After editing `tracks.json`, run `node carts/src/planet-racers/build-tracks.mjs`, then pack the cart.
 - A floor fills a full half of Map RAM, so the cart holds **one floor at a time** and **builds each track's floor when its race begins**, behind the track card, while the floor isn't on screen. That's about 16,400 `mset` calls, spread over a few frames.
 - Tracks are defined as data in the cart: control points for the road centerline, its width (about 40 px), hazard zones, the racing line (waypoints for the AI), the 10 gates, orb positions and bumpers. The data is turned into tiles at race start, which keeps the cart small and lets each track's look change just by its palette.
 - Map RAM budget: the floor takes columns 0–127. Columns 128–255 hold the horizon scenery (BG1): four styles of 64 × 9 tiles, each a 512 px strip that repeats, shared by the eight worlds through their palettes: rocky ridges (Mercury, Mars), clouds (Venus, Jupiter, Neptune), hills (Earth) and ice spires (Saturn, Uranus). Style `s` sits at column 128 + 64 × (s & 1), row 9 × (s >> 1). Each track sets its floor colors (BG palette 0), its horizon, sun and moon colors (BG palette 1) and its sky gradient when it loads.
@@ -206,6 +208,7 @@ Hazards are few and forgiving: with no restarts, one mistake should cost seconds
 - It steers with the same buttons you have. It starts a turn when the line is more than a small angle off, and holds it until the line is dead ahead, so its steering ramp (3) isn't restarted every few frames.
 - Its target speed is the lower of its top speed × the pace factor `p` (7.2) and 0.86 × the tightest corner in the next 96 px, where a corner allows the planet's turn rate × the radius × 1.1. The radius is measured through the centerline 64 px either side, so a long hairpin reads as tight and a short kink, which it can cut across, as gentle. The pace applies to top speed only: when it scaled the corners too, the faster tracks' rivals ran wide. With these values no planet's AI leaves the road on any track. It uses the same driving model as you (5.2), with the planet's own stats.
 - It steers round craters, pools and bumpers on its line ahead, and takes corners on slick ground at 60% of its usual speed.
+- It passes a kart just ahead on its line (within 24 px) on the side away from it.
 - It doesn't drift in version 1, but it does collect its own boost orbs, and it keeps a boost unless a corner ahead forbids the speed.
 - **Mistakes:** where a corner starts (the radius drops under 140 px), a seeded roll with the track's chance (7.2) makes it run 14 px wide at 93% of its target speed for 40 frames.
 - **No rubber-banding.** A rival doesn't slow down because you are behind, or speed up because you are ahead.
@@ -297,16 +300,18 @@ On the overlay:
 
 ## 11. Screens and flow
 
-1. **Title:** PLANET RACERS in rippling letters over a Mode 7 floor that slowly circles. Menu: GRAND PRIX, TIME TRIAL, SCORES.
-2. **Planet select:** the eight planets in a row. LEFT/RIGHT picks; the chosen planet shows its face, its four stat bars and a one-line character note. The last planet picked is remembered.
-3. **Track card:** the track's name and planet, its three rivals, and READY while the floor builds. Then 3-2-1-GO.
+In the menus START or B goes on and A goes back.
+
+1. **Title:** PLANET RACERS in rippling letters over a Mode 7 floor, the camera gliding round the last track loaded. Menu: GRAND PRIX, TIME TRIAL, SCORES, and the best Grand Prix total with its initials.
+2. **Planet select:** the eight planets in a row. LEFT/RIGHT picks; the chosen planet shows its face, its four stat bars and a one-line character note. The last planet picked is remembered. (The overlay draws over sprites, so panels cut a window where a planet sits.)
+3. **Track card:** the race number (RACE 3 OF 8), the track's planet and name, its three rivals, and READY while the floor builds, then PRESS START. It starts the race by itself after 5 s. Then 3-2-1-GO.
 4. **Race:** three laps (5).
-5. **Race result:** your time and place, the three rivals' places, and the championship table.
+5. **Race result:** the four on the track by place and time, then the championship: all eight planets by their running points, with this race's time and points (the four not on the track simulated, 7.3).
 6. **Grand Prix result:** the total time, the eight race times and your standing among the eight planets.
 7. **Initials entry** if the total makes the top 10: UP/DOWN changes a letter, LEFT/RIGHT moves, START saves, as in Block Wizard.
 8. **Scores:** the top 10 Grand Prix totals, plus a page of time-trial bests per track.
 9. **Pause** (START): RESUME or QUIT TO TITLE. Quitting abandons the run without recording it. There is no restart in the Grand Prix.
-10. **Time trial:** choose a track (all eight are open from the start) and a planet, then drive alone. SELECT restarts the run. A finished run shows the time against the best.
+10. **Time trial:** choose a planet, then a track (all eight are open from the start; LEFT/RIGHT shows each one's best time, best lap and who set them, and loads it behind the menu), then drive alone. SELECT restarts the run. A finished run shows its laps and the time against the best; START races again, SELECT goes to the title.
 
 ## 12. Audio
 
@@ -357,9 +362,9 @@ so there is no revving engine. The music and the effects carry the speed.
 
 | Asset | Budget |
 |---|---|
-| Code | ≤ 48 KB of the 64 KB limit planned; 52 KB after step 3 (the track data and the generators are the biggest parts) |
+| Code | ≤ 48 KB of the 64 KB limit planned; 56 KB after step 4, with the track table moved out to Map RAM (6.2) |
 | Tiles | About 830 of 1,024 so far: floor surfaces 38, planets 8 × 41 (three sizes, two rolling frames at 32 and 16), orbs and bumpers 30, horizon scenery 396 (four styles, deduplicated with flips); title letters ~40 still to come |
-| Map RAM | The floor in columns 0–127 (128 × 128); the horizon scenery and backdrop in columns 128–255 |
+| Map RAM | The floor in columns 0–127 (128 × 128); in columns 128–255, the four horizon styles in rows 0–17 and the track table (JSON) from row 18 (rows 18–59 now) |
 | Palettes | BG 0–7: each track's floor and scenery colors (a track picks its own). Sprites: the planets share sub-palettes in pairs (7 colors each), so four in all; the other four go to orbs, shadows and bumpers, the logo letters and the HUD |
 | Sprites on screen | ≤ 30, far under the 32-per-line limit |
 | Songs / SFX | 8 songs (~48 patterns), ~20 SFX, drum samples in Sample RAM |
@@ -376,7 +381,9 @@ so there is no revving engine. The music and the effects carry the speed.
 3. **All eight tracks and hazards (built):** the track data and palettes, the five hazard types, and tuning each lap to about 30 s.
    - **Results:** every planet's AI finishes every track without leaving the road; a race costs about 1.5 ms a frame headless, 2 ms in Chromium, and still replays exactly. The code is 52 KB (the track data 7 KB), over the 48 KB budget but well under the 64 KB limit. Until step 4, the title also has a TRACK row, and changing it rebuilds the floor so the title camera glides round the chosen track.
    - **For balance (step 7):** Jupiter's 1★ handling makes it the slowest planet by far on the twisty tracks (its AI takes 128–160 s where most take 85–107 s). Its turn rate, 0.020 rad/frame, may need raising.
-4. **Flow:** title, planet select, track card, results, initials, scores, time trial, pause and saves.
+4. **Flow (built):** title, planet select, track card, results, initials, scores, time trial, pause and saves.
+   - **Results:** a whole Grand Prix runs headless from the title through eight track cards and races (a simple bot driving), results and championship pages, the Grand Prix result, initials and the scores, and the run is saved in the top 10. The time trial path, pause and QUIT TO TITLE work too. The first full run found a bug: a bump cost speed on every frame two karts touched, so the bot was dragged to a crawl behind a rival and hit the 3:00 cap; it costs speed only when they close now, and the AI passes a kart ahead.
+   - The code reached 62.8 KB with the screens, so the track table moved to Map RAM (6.2), bringing it to 56 KB.
 5. **Art pass:** the planets' faces and expressions, the floor tiles, the horizon scenery and the title, made in the built-in editors.
 6. **Audio pass:** eight songs and the effects in the Music and SFX tabs.
 7. **Balance and polish:** stats, pace ramp, hazard strength and par times; record replays (F9/F10); capture a label (F7); export a PNG cart; regenerate the Library (`node tools/library.js`).
