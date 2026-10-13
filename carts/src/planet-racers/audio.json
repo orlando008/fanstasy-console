@@ -3732,6 +3732,51 @@
     null,
     null
    ]
+  },
+  {
+   "speed": 1,
+   "rows": [
+    {
+     "n": "G-3",
+     "i": 8
+    },
+    {
+     "n": "D-4",
+     "i": 8
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
   }
  ],
  "samples": [

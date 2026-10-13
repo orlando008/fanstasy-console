@@ -1,7 +1,7 @@
 # Planet Racers: Cart Specification
 
-**Version:** 0.2 (draft)
-**Status:** In progress: the vertical slice (15, step 1) is built
+**Version:** 0.3 (draft)
+**Status:** In progress: steps 1–2 of the plan (15) are built
 **Cart source:** `carts/src/planet-racers/` → `carts/planet-racers.nova`
 
 ---
@@ -141,14 +141,15 @@ The edge of the floor is a soft wall: reaching it stops the kart and nudges it b
 ### 5.6 Bumping
 
 Karts are circles 7 world px across. When two overlap they are pushed apart in
-proportion to their weights, and the lighter one loses a little more speed. The
+proportion to their weights, and the lighter one loses a little more speed: a bump
+costs 12% of speed in all, split between the two by weight. The
 simulation is deterministic, so a replay bumps the same way.
 
 ### 5.7 Laps and checkpoints
 
 - Each track has 10 **gates**, in order, and a start/finish line. A lap counts when you cross the line after passing every gate in order, so cutting a corner across grass doesn't count.
 - Driving against the track for more than a second shows WRONG WAY.
-- The race ends when you finish lap 3. The other racers keep driving to the line, and the result is taken then.
+- The race ends when you finish lap 3. The other racers keep driving to the line, and the result is taken then. Your planet drives itself on, by the AI, while they finish. Pressing START on the result skips ahead: the racers still out are run to the line at once.
 - **Time cap:** a race ends at 3:00. Reaching the cap records exactly 3:00 for that race and the Grand Prix goes on, so one disaster costs a lot but doesn't strand the run.
 - **The grid:** you always start last of the four, so every run starts the same and you have rivals to overtake.
 
@@ -185,9 +186,11 @@ Hazards are few and forgiving: with no restarts, one mistake should cost seconds
 
 ### 7.1 The AI
 
-- Each rival follows its track's **racing line**, a list of waypoints, steering toward a point about 40 px ahead.
-- Its target speed comes from the corner ahead and its planet's speed stat, times a pace factor `p` (7.2). It uses the same driving model as you (5.2), with the planet's own stats.
-- It doesn't drift in version 1, but it does collect its own boost orbs.
+- Each rival follows its track's **racing line**, steering toward a point 40 px (10 samples) ahead. For now the racing line is the centerline, and each rival keeps to its own lane, a seeded offset of up to 8 px either side.
+- It steers with the same buttons you have. It starts a turn when the line is more than a small angle off, and holds it until the line is dead ahead, so its steering ramp (3) isn't restarted every few frames.
+- Its target speed comes from the corner ahead and its planet's speed stat, times a pace factor `p` (7.2): the lower of its top speed and the tightest corner in the next 96 px, where a corner allows the planet's turn rate × the radius × 1.35. (The 1.35 is because it cuts across a 40 px road rather than following the centerline. With it, every planet's AI stays on the road.) It uses the same driving model as you (5.2), with the planet's own stats.
+- It doesn't drift in version 1, but it does collect its own boost orbs, and it keeps a boost unless a corner ahead forbids the speed.
+- **Mistakes:** where a corner starts (the radius drops under 140 px), a seeded roll with the track's chance (7.2) makes it run 14 px wide at 93% of its target speed for 40 frames.
 - **No rubber-banding.** A rival doesn't slow down because you are behind, or speed up because you are ahead.
 
 ### 7.2 Difficulty
@@ -207,7 +210,7 @@ starting values, to be tuned in play.
 The standings are flavor, with no effect on your score. After each race:
 
 - the three on-track rivals and you place by finishing order;
-- the other four planets get **simulated** times: the track's par × (1 + a planet pace offset) with seeded noise, the same way Summit Rush simulates its rivals;
+- the other four planets get **simulated** times: the track's par × (1 + a planet pace offset) with ±2% seeded noise, the same way Summit Rush simulates its rivals. Par is the mean of the eight planets' AI times on the track at its pace (Mercury: 5,900 frames, 98 s). The offset is (3 − Speed) × 0.03 + (3 − Handling) × 0.03, so fast or nimble planets simulate a little quicker;
 - all eight planets score points by place: 10, 8, 6, 5, 4, 3, 2, 1, and a table ranks them by running total.
 
 After race 8 your standing among the eight planets is shown on the final result.
@@ -350,7 +353,9 @@ so there is no revving engine. The music and the effects carry the speed.
 1. **Vertical slice (built):** one track (Mercury), one planet (Earth), the Mode 7 floor built from track data, driving with the surface tiles, drift, the gates and laps, a lap timer, and placeholder art. **Prove:** the CPU cost with the floor, sprites and physics together (`stat('cpu')`), the feel of the speed, sprites standing on the floor at the three sizes, and replay determinism with the sine table.
    - **Results:** about 2 ms a frame in Chromium with the floor, sprites, physics and HUD (1.6 ms headless), against 16.6 ms. Mercury's centerline is 4,570 px; a simple steering bot laps it in about 28 s (85 s for three laps). The same inputs give an identical race under a different PRNG seed. Objects switch to 8, 16 and 32 px at depths 200, 80 and 40 and stand on the floor line. A crater cuts 2.37 to 0.96 px/frame, and Earth off-road settles at its 1.29 cap.
    - The slice plays as a time trial: SELECT restarts, START pauses, and the best time and lap are saved in slots 130–131. The CPU readout in the corner is for the slice only. The song and SFX are placeholders.
-2. **Rivals and planets:** the AI on the racing line, bumping, all eight planets' stats, the three-rival draw, orbs and the pace ramp, and the simulated standings.
+2. **Rivals and planets (built):** the AI on the racing line, bumping, all eight planets' stats, the three-rival draw, orbs and the pace ramp, and the simulated standings.
+   - **Results:** on Mercury at pace 0.86, the AI's 3-lap times are 92 s (Neptune) to 108 s (Jupiter), most planets 96 s, against 85 s for a simple bot driving Earth flat out. No planet's AI leaves the road but Jupiter's, for a frame. A race with four karts costs about 2 ms a frame in Chromium (1.5 ms headless), and the same seed and inputs replay the same race, rivals included.
+   - Placeholder sprites for all eight planets (the surface texture, Saturn's rings, no faces yet). Until the flow (step 4) is built, the title has RACE (against three rivals) and TIME TRIAL, and LEFT/RIGHT picks the planet, showing its stars.
 3. **All eight tracks and hazards:** the track data and palettes, the five hazard types, and tuning each lap to about 30 s.
 4. **Flow:** title, planet select, track card, results, initials, scores, time trial, pause and saves.
 5. **Art pass:** the planets' faces and expressions, the floor tiles, the horizon scenery and the title, made in the built-in editors.
