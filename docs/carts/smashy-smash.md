@@ -1,7 +1,7 @@
 # Smashy Smash: Cart Specification
 
-**Version:** 0.7 (draft)
-**Status:** In progress: steps 1–6 of the plan (15) are built
+**Version:** 1.0
+**Status:** Released: all 7 steps of the plan (15) are built; also as the PNG cart `carts/smashy-smash.nova.png`
 **Cart source:** `carts/src/smashy-smash/` → `carts/smashy-smash.nova`
 
 ---
@@ -174,7 +174,7 @@ the last is a set piece:
 | 4-1 | Gatehouse | A wall with a steel gate in the middle |
 | 4-2 | The Keep | A stone square inside a girder ring |
 | 4-3 | Chapel | Stained-glass windows in stone |
-| 4-4 | The Throne Room | A fortress: a steel crown, girders and a glass throne |
+| 4-4 | The Throne Room | A fortress: girder battlements, steel guards and a glass throne |
 
 ## 9. Scoring
 
@@ -320,12 +320,33 @@ extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
      0.31–0.35 with no clipping, level with Planet Racers. The songs, effects and their
      cues play as described in 11. The bot run replays the same game as before. No
      errors in the browser.
-7. **Balance and polish:** ball speeds, capsule rates and weights, scoring; a
+7. **Balance and polish (built):** ball speeds, capsule rates and weights, scoring; a
    label, the PNG cart and the Library.
+   - **Stage lengths:** single bot runs proved too noisy to judge a stage by: a change
+     to one stage shifts the capsule draws on all the later ones. So each stage is
+     timed on its own from a fresh start, over five seeds, and the median is used.
+     On that measure the 16 stages took 39.5 minutes, against the 20–30 aimed for.
+   - Almost all the excess was steel, which takes 4 hits from world 3 on, and bricks
+     in slots or pockets fenced off by girders, where the ball has to find a gap one
+     brick wide.
+     - Steel was cut on 1-1, 2-2, 2-3 (a boiler with steel caps), 3-2 (steel ledges),
+       4-1 and 4-4.
+     - 1-4's chimney is shorter, and 4-2's girder ring has gaps.
+     - 4-4's crown is now girder battlements with nothing between them.
+     - 2-2 and 3-3 each lose rows.
+   - **Results:** the run now takes about 29.6 minutes on the same measure. Most stages
+     take 1–2.5 minutes, and the finale about 3.5. A human loses balls and the bot
+     hardly ever does, but the bot also takes longer than a player to find the last
+     bricks.
+   - Ball speeds, capsule rates and scoring are left as specified: the bot's runs
+     catch a capsule every 20–30 s or so, and a full run scores about 200,000.
+   - The label is the title screen (F7). The cart is released as
+     `smashy-smash.nova.png`, which decodes to exactly the packed `.nova`, and the
+     Library lists it with the released games.
 
 ## 16. Open questions
 
-- **Capsule rate:** is 1 in 8 walls too generous or too stingy? Tune in play.
+- **Capsule rate:** 1 in 8 walls feels right in bot runs; worth a check with people playing.
 - **Bad capsules:** Arkanoid has none, but a shrinking paddle or a fast ball could
   add risk to catching everything. Left out for now.
 - **Stuck balls (settled):** a ball can loop between girders without touching anything

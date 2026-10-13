@@ -17,6 +17,14 @@
       "png": "carts/planet-racers.nova.png"
     },
     {
+      "name": "smashy-smash",
+      "title": "Smashy Smash",
+      "author": "NOVA-16",
+      "description": "A cartoon demolition Breakout: knock down 16 stages in 4 worlds, from the house to the castle, with walls, glass, dented steel and girders, seven power-up capsules, a song for every world and a top 10.",
+      "label": "carts/labels/smashy-smash.png",
+      "png": "carts/smashy-smash.nova.png"
+    },
+    {
       "name": "summit-rush",
       "title": "Summit Rush",
       "author": "NOVA-16",
@@ -54,14 +62,6 @@
       "author": "NOVA-16",
       "description": "M3 test: three background layers scrolling at different speeds, sub-palettes and tile priority.",
       "label": "carts/labels/parallax.png",
-      "png": null
-    },
-    {
-      "name": "smashy-smash",
-      "title": "Smashy Smash",
-      "author": "NOVA-16",
-      "description": "A cartoon demolition Breakout: knock down 16 stages in 4 worlds, from the house to the castle, with walls, glass, dented steel and girders, seven power-up capsules, a song for every world and a top 10.",
-      "label": null,
       "png": null
     },
     {
