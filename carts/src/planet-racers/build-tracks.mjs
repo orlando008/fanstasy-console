@@ -7,6 +7,19 @@
 //   node carts/src/planet-racers/build-tracks.mjs
 //
 // Run it after editing tracks.json, then pack the cart.
+//
+// The table, in Grand Prix order. Each track has `points`, the centerline's
+// Catmull-Rom control points in world px, starting at the start/finish line
+// and running in race order. Hazards and orbs are placed by [position along
+// the lap in thousandths, offset to the right of the centerline in px]:
+// craters (pits) and pools (rough) as 2x2 tiles; slick zones as [from, to,
+// lat from, lat to]; wind as [from, to, direction] (1 pushes right), in gusts
+// where `gust` is set; bumpers as sprites. `par` is a rival's 3-lap time at
+// the track's pace, in frames, for the simulated results. The look: a horizon
+// style (0 ridges, 1 clouds, 2 hills, 3 ice spires), the sky's 5-bit [r, g, b]
+// top and bottom, stars, the sun and a moon as [azimuth in angle units, y,
+// radius], Saturn's rings, and `pal`: floor colors 1-15, then horizon 1-4, sun
+// core, disc and glow, and the moon's three (24-bit hex).
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

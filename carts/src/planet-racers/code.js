@@ -1,5 +1,5 @@
 // PLANET RACERS - a Mode 7 Grand Prix where the racers are the eight planets.
-// Design: docs/carts/planet-racers.md. Built so far (SPEC 15, steps 1-4): the
+// Design: docs/carts/planet-racers.md. Built so far (SPEC 15, steps 1-5): the
 // Grand Prix of eight races against three rivals a race, with championship
 // standings and a top 10, and a time trial on any track. Each floor is built
 // from its track's centerline when the track loads (the track table is in Map
@@ -7,7 +7,7 @@
 // under each kart, and a lap counts after 10 gates in order. B accelerates, A
 // brakes, L or R drifts, START pauses, SELECT restarts a time trial.
 
-// --- Tuning -------------------------------------------------------------------
+// --- Tuning ---
 
 const HORIZON = 72, FOCAL = 128, HEIGHT = 24; // the view (SPEC 9.1)
 const CAM_BACK = 28; // camera distance behind the player
@@ -75,22 +75,7 @@ function statsOf(p) {
 /** A simulated planet's pace offset from par (SPEC 7.3): faster stats, a lower time. */
 const simOffset = (p) => (3 - p.speed) * 0.03 + (3 - p.handling) * 0.03;
 
-/**
- * Tracks (SPEC 6), in Grand Prix order, read at init from Map RAM, where
- * build-tracks.mjs stores tracks.json (SPEC 6.2). Each has `points`, the
- * centerline's Catmull-Rom control points in world px, starting at the
- * start/finish line and running in race order. Hazards and orbs are placed by
- * [position along the lap in thousandths, offset to the right of the
- * centerline in px]: craters (pits) and pools (rough) as 2x2 tiles; slick
- * zones as [from, to, lat from, lat to]; wind as [from, to, direction] (1
- * pushes right), in gusts where `gust` is set; bumpers as sprites. `par` is a
- * rival's 3-lap time at the track's pace, in frames, for the simulated
- * results. The look: a horizon style (0 ridges, 1 clouds, 2 hills, 3 ice
- * spires), the sky's 5-bit [r, g, b] top and bottom, stars, the sun and a moon
- * as [azimuth in angle units, y, radius], Saturn's rings, and `pal`: floor
- * colors 1-15, then horizon 1-4, sun core, disc and glow, and the moon's three
- * (24-bit hex).
- */
+/** Tracks (SPEC 6), in Grand Prix order: read at init from Map RAM. Their format is in build-tracks.mjs. */
 let TRACKS = [];
 const TRACK_ROW = 18; // the table's first Map RAM row, from column 128
 
@@ -105,9 +90,9 @@ function readTracks() {
   return JSON.parse(s);
 }
 
-// --- Tiles, palettes, sound ------------------------------------------------------
+// --- Tiles, palettes, sound ---
 
-const T_ROAD = 1, T_OFF = 4, T_START = 7, T_EDGE = 16, T_CRATER = 32, T_POOL = 34, T_SLICK = 36; // floor tiles
+const T_ROAD = 1, T_OFF = 4, T_START = 7, T_DECO = 8, T_EDGE = 16, T_CRATER = 32, T_POOL = 34, T_SLICK = 36; // floor tiles
 const ORB = [196, 142, 141], ORB_PAL = 4; // boost orb at 32, 16 and 8 px
 const BUMPER = [200, 204, 206]; // ice chunk at 32, 16 and 8 px, in the orb's palette
 /** Planet p's sprite at a size and rolling frame; the planets share palettes in pairs. */
@@ -122,6 +107,22 @@ const planetColor = (p) => 128 + 16 * (p >> 1) + 3 + 6 * (p & 1); // its base co
 const S_ROAD = 0, S_OFF = 1, S_ROUGH = 2, S_SLICK = 3, S_PIT = 4;
 const SURF = [S_OFF, S_ROAD, S_ROAD, S_ROAD, S_ROAD, S_ROAD, S_OFF, S_OFF, S_OFF, S_OFF, S_ROUGH, S_ROUGH, S_SLICK, S_PIT, S_PIT, S_ROAD];
 const BLACK = 113, WHITE = 114, GOLD = 115, RED = 116, CYAN = 117, PANEL = 118, GREEN = 119, DIM = 120; // HUD (BG palette 7)
+const CHEEK = 121, LOGO = [[122, 123, 124], [125, GOLD, 126]], LOGO_EDGE = 127; // faces and the title (BG palette 7)
+/**
+ * Each planet's look for its face (SPEC 4.1): [brows (1 cross, -1 worried),
+ * lids (1 half, 2 closed and smiling), glance (-1 left, 1 right), mouth (0
+ * smile, 1 flat, 2 frown, 3 smirk, 4 grin)].
+ */
+const ATTITUDE = [
+  [0, 0, 0, 4], // Mercury: hyper, a wide grin
+  [-1, 1, 0, 1], // Venus: moody, heavy-lidded
+  [0, 0, 0, 0], // Earth: friendly
+  [1, 0, 0, 3], // Mars: scrappy, a cross smirk
+  [1, 1, 0, 2], // Jupiter: grumpy
+  [0, 2, 0, 0], // Saturn: serene, eyes closed in a smile
+  [1, 0, 1, 3], // Uranus: a show-off, glancing sideways
+  [0, 1, -1, 1], // Neptune: cool, looking away
+];
 const SUN = [21, 22, 23], MOON = [24, 25, 26]; // core, disc and glow (BG palette 1)
 const SFX = { beep: 0, go: 1, orb: 2, lap: 3, final: 4, finish: 5, pit: 6, move: 7, select: 8, drift: 9, boostEnd: 10, wall: 11, bump: 12 };
 const SFX_CH = 1;
@@ -130,13 +131,13 @@ const MENU = ['GRAND PRIX', 'TIME TRIAL', 'SCORES'];
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const CARD_AUTO = 300; // frames before the track card starts the race by itself
 
-// --- Save slots (SPEC 13) ----------------------------------------------------------
+// --- Save slots (SPEC 13) ---
 
 const VERSION_SLOT = 0, SAVE_VERSION = 1, PLANET_SLOT = 1, INITIALS_SLOT = 2;
 const TOP_SLOT = 10, TOP_N = 10, ENTRY = 12; // the top 10 Grand Prix runs: total, planet, 8 race times, initials, spare
 const TRIAL_SLOT = 130; // + 3 * track: best 3-lap time, best lap, planet
 
-// --- State -------------------------------------------------------------------------
+// --- State ---
 
 let state; // 'title', 'select' (planet), 'tracks' (time trial), 'card', 'race', 'finish', 'gp' (its result), 'initials', 'scores'
 let timer = 0; // frames in the current state
@@ -207,7 +208,7 @@ function rng() {
   return (seed >>> 0) / 4294967296;
 }
 
-// --- Setup ---------------------------------------------------------------------------
+// --- Setup ---
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) {
@@ -328,8 +329,10 @@ function buildFloor(tr) {
   const caseAt = (tx, ty) => on(tx, ty) * 8 + on(tx + 1, ty) * 4 + on(tx + 1, ty + 1) * 2 + on(tx, ty + 1);
   for (let ty = 0; ty < 128; ty++) {
     for (let tx = 0; tx < 128; tx++) {
-      const c = caseAt(tx, ty), v = hash(tx * 131 + ty * 7) % 3;
-      mset(tx, ty, tile(c === 15 ? T_ROAD + v : c === 0 ? T_OFF + v : T_EDGE + c));
+      const c = caseAt(tx, ty), hv = hash(tx * 131 + ty * 7), v = hv % 3;
+      // Off the road, one tile in 12 is a rock, a little crater or pebbles.
+      const off = (hv >> 8) % 12 === 0 ? T_DECO + v : T_OFF + v;
+      mset(tx, ty, tile(c === 15 ? T_ROAD + v : c === 0 ? off : T_EDGE + c));
     }
   }
   // Start/finish: a line of checker tiles at sample 0 across the road: a column
@@ -386,7 +389,7 @@ function hash(n) {
   return (n ^ (n >>> 15)) >>> 0;
 }
 
-// --- Flow ------------------------------------------------------------------------------
+// --- Flow ---
 
 function toTitle() {
   go('title');
@@ -455,7 +458,7 @@ function startRace() {
   music(0);
 }
 
-// --- Driving (SPEC 5) -----------------------------------------------------------------------
+// --- Driving (SPEC 5) ---
 
 /** The surface class of the floor pixel at world (x, y). */
 function surfaceAt(x, y) {
@@ -730,7 +733,7 @@ function gpResult() {
   music(0);
 }
 
-// --- Top 10 (SPEC 13) -------------------------------------------------------------
+// --- Top 10 (SPEC 13) ---
 
 function readEntry(i) {
   const s = TOP_SLOT + i * ENTRY;
@@ -786,7 +789,7 @@ function standings() {
   return rows;
 }
 
-// --- Update ------------------------------------------------------------------------------
+// --- Update ---
 
 function readPad() {
   let m = 0;
@@ -919,7 +922,7 @@ function updateScores() {
   if (timer > 20 && (ok() || pressed(A))) { beep(SFX.select); toTitle(); }
 }
 
-// --- Draw ---------------------------------------------------------------------------------
+// --- Draw ---
 
 function draw() {
   cls();
@@ -1052,7 +1055,7 @@ function drawWind() {
   if (t() % 30 < 22) ctxt(dir > 0 ? 'WIND >>' : '<< WIND', 30, CYAN);
 }
 
-// --- Scanline: the sky gradient, then the Mode 7 floor -------------------------------------------
+// --- Scanline: the sky gradient, then the Mode 7 floor ---
 
 function scanline(y) {
   if (y < HORIZON) {
@@ -1073,7 +1076,7 @@ function scanline(y) {
   bgscroll(2, 0, 1 - y);
 }
 
-// --- HUD and screens ---------------------------------------------------------------------------
+// --- HUD and screens ---
 
 /** m:ss.cc from frames. */
 function fmt(f) {
@@ -1090,15 +1093,77 @@ const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
 
 /** Big text, centered on cx: the system font scaled up, read back from the overlay. */
 function big(s, cx, y, scale, c) {
-  const w = s.length * 8;
-  rectfill(0, 216, w, 8, 0);
-  print(s, 0, 216, WHITE);
-  const on = [];
-  for (let gy = 0; gy < 8; gy++) for (let gx = 0; gx < w; gx++) if (pget(gx, 216 + gy)) on.push(gx, gy);
-  rectfill(0, 216, w, 8, 0);
-  const x0 = flr(cx - w * scale / 2);
+  const w = s.length * 8, on = glyphs(s), x0 = flr(cx - w * scale / 2);
   for (let i = 0; i < on.length; i += 2) rectfill(x0 + on[i] * scale + 1, y + on[i + 1] * scale + 1, scale, scale, BLACK);
   for (let i = 0; i < on.length; i += 2) rectfill(x0 + on[i] * scale, y + on[i + 1] * scale, scale, scale, c);
+}
+
+/** The lit pixels of s in the system font, as x, y pairs: printed, read back, cleared. */
+function glyphs(s) {
+  const w = s.length * 8, on = [];
+  rectfill(0, 216, w, 8, 0);
+  print(s, 0, 216, WHITE);
+  for (let gy = 0; gy < 8; gy++) for (let gx = 0; gx < w; gx++) if (pget(gx, 216 + gy)) on.push(gx, gy);
+  rectfill(0, 216, w, 8, 0);
+  return on;
+}
+
+/** The title's letters (SPEC 11): outlined, shaded light to dark down each letter, rippling. */
+function logo(s, y, scale, cols) {
+  const on = glyphs(s), x0 = flr(128 - s.length * 4 * scale);
+  const yy = (gx) => y + flr(3 * Math.sin(t() * 0.08 - (gx >> 3) * 0.7));
+  for (let i = 0; i < on.length; i += 2) rectfill(x0 + on[i] * scale - 2, yy(on[i]) + on[i + 1] * scale - 2, scale + 4, scale + 5, LOGO_EDGE);
+  for (let i = 0; i < on.length; i += 2) {
+    const gy = on[i + 1];
+    rectfill(x0 + on[i] * scale, yy(on[i]) + gy * scale, scale, scale, cols[gy < 2 ? 0 : gy < 5 ? 1 : 2]);
+  }
+}
+
+/**
+ * A planet's face, drawn on the overlay over its sprite, so every planet has
+ * every mood without more tiles (SPEC 4.1). Moods: 0 its usual look, 1
+ * excited (a boost, a win), 2 straining (off the road, drifting, bumped), 3
+ * dizzy. At 16 px it is just eyes and a mouth.
+ */
+function face(p, size, x, y, mood) {
+  const k = (size / 32) * (p === 5 ? 0.75 : 1); // Saturn's ball is smaller, inside its rings
+  const cx = x + size / 2, cy = y + size / 2 + (p === 5 ? 1 : 0);
+  const at = (dx, dy) => [flr(cx + dx * k), flr(cy + dy * k)];
+  let [brow, lids, glance, mouth] = ATTITUDE[p];
+  if (mood === 1) { lids = 0; mouth = 5; }
+  if (mood === 2) { brow = 1; lids = 3; mouth = 6; }
+  const lid = 128 + 16 * (p >> 1) + 2 + 6 * (p & 1); // the planet's darkest color
+  const small = size < 32;
+  for (const side of [-1, 1]) {
+    const [ex, ey] = at(side * 5, -3);
+    if (mood === 3) { line(ex - 1, ey - 1, ex + 1, ey + 1, BLACK); line(ex - 1, ey + 1, ex + 1, ey - 1, BLACK); continue; }
+    if (small) { rectfill(ex, ey - 1, 1, lids >= 1 ? 1 : 2, BLACK); continue; }
+    if (lids === 2) { pset(ex - 1, ey, BLACK); pset(ex, ey - 1, BLACK); pset(ex + 1, ey, BLACK); continue; }
+    rectfill(ex - 2, ey - 2, 4, 5, WHITE);
+    rectfill(ex - 1 + glance, ey, 2, 2, BLACK);
+    if (lids) rectfill(ex - 2, ey - 2, 4, 2, lid);
+    if (lids === 3) rectfill(ex - 2, ey + 2, 4, 1, lid);
+    if (brow) line(side < 0 ? ex - 2 : ex + 1, ey - 5, side < 0 ? ex + 1 : ex - 2, ey - 5 + brow, BLACK);
+    if (mood < 2) rectfill(ex - 1 + side, ey + 4, 2, 1, CHEEK);
+  }
+  const [mx, my] = at(0, 5);
+  if (small) { if (mood === 1) rectfill(mx - 1, my - 1, 2, 2, BLACK); else line(mx - 1, my, mx + 1, my, BLACK); return; }
+  if (mood === 3) { for (let i = -3; i <= 3; i++) pset(mx + i, my + (i & 1), BLACK); return; }
+  if (mouth === 0) { line(mx - 2, my + 1, mx + 2, my + 1, BLACK); pset(mx - 3, my, BLACK); pset(mx + 3, my, BLACK); }
+  else if (mouth === 1) line(mx - 2, my, mx + 2, my, BLACK);
+  else if (mouth === 2) { line(mx - 2, my, mx + 2, my, BLACK); pset(mx - 3, my + 1, BLACK); pset(mx + 3, my + 1, BLACK); }
+  else if (mouth === 3) { line(mx - 2, my + 1, mx + 1, my + 1, BLACK); pset(mx + 2, my, BLACK); pset(mx + 3, my - 1, BLACK); }
+  else if (mouth === 4) { rectfill(mx - 3, my - 1, 7, 3, BLACK); line(mx - 2, my - 1, mx + 2, my - 1, WHITE); }
+  else if (mouth === 5) { rectfill(mx - 2, my - 1, 5, 4, BLACK); line(mx - 1, my + 1, mx + 1, my + 1, RED); }
+  else { rect(mx - 4, my - 2, 9, 5, BLACK); rectfill(mx - 3, my - 1, 7, 3, WHITE); line(mx, my - 1, mx, my + 1, BLACK); }
+}
+
+/** Your planet's mood in the race, for the HUD portrait. */
+function moodOf(k) {
+  if (k.finish) return mode === 0 && order().indexOf(k) === 0 ? 1 : 0;
+  if (k.dizzy > 0) return 3;
+  if (k.boost > 0) return 1;
+  return k.drift || k.surf !== S_ROAD || bumpQuiet > 0 ? 2 : 0;
 }
 
 function drawHud() {
@@ -1122,6 +1187,8 @@ function drawHud() {
     rect(88, 206, 80, 6, BLACK);
     rectfill(89, 207, flr(78 * p.boost / BOOST_FRAMES), 4, GOLD);
   }
+  // Your portrait, its face showing how the race is going.
+  planetOn(p.p, 32, 10, 182, flr(p.roll / 10) & 1, moodOf(p));
   const cpu = `CPU ${stat('cpu').toFixed(1)}MS`;
   print(cpu, 254 - cpu.length * 8, 214, DIM);
 }
@@ -1132,16 +1199,11 @@ function panel(x, y, w, h) {
 }
 
 /** A planet sprite on a panel: the overlay covers sprites, so cut a window for it first. */
-function planetOn(p, size, x, y, f = 0) {
+function planetOn(p, size, x, y, f = 0, mood = 0) {
   rectfill(x - 2, y - 2, size + 4, size + 4, 0);
   rect(x - 3, y - 3, size + 6, size + 6, PANEL);
   spr(planetTile(p, size, f), x, y, { size, pal: p >> 1, prio: 3 });
-}
-
-/** Big letters that ripple, one wave along the word (SPEC 11). */
-function wave(s, y, scale, c) {
-  const w = 8 * scale, x0 = 128 - s.length * w / 2;
-  for (let i = 0; i < s.length; i++) big(s[i], x0 + i * w + w / 2, y + flr(3 * Math.sin(t() * 0.08 - i * 0.7)), scale, c);
+  face(p, size, x, y, mood);
 }
 
 /** A planet's four stars as bars: two columns from x, y. */
@@ -1154,9 +1216,15 @@ function stars(P, y) {
 }
 
 function drawTitle() {
-  wave('PLANET', 18, 4, CYAN);
-  wave('RACERS', 54, 4, GOLD);
-  MENU.forEach((s, i) => ctxt(menu === i ? `> ${s} <` : s, 112 + i * 14, menu === i ? WHITE : DIM));
+  logo('PLANET', 14, 4, LOGO[0]);
+  logo('RACERS', 50, 4, LOGO[1]);
+  // The eight racers, bobbing along under the title.
+  for (let p = 0; p < 8; p++) {
+    const x = 36 + p * 24, y = 88 + flr(2 * Math.sin(t() * 0.12 + p));
+    spr(planetTile(p, 16, flr(t() / 10) & 1), x, y, { size: 16, pal: p >> 1, prio: 3 });
+    face(p, 16, x, y, 0);
+  }
+  MENU.forEach((s, i) => ctxt(menu === i ? `> ${s} <` : s, 116 + i * 14, menu === i ? WHITE : DIM));
   const top = readEntry(0);
   if (top.total) ctxt(`BEST GRAND PRIX ${fmt(top.total)} ${top.initials}`, 170, GOLD);
   if (t() % 60 < 40) ctxt('START OR B TO CHOOSE', 190, WHITE);
@@ -1169,7 +1237,7 @@ function drawSelect() {
   ctxt(mode === 0 ? 'GRAND PRIX' : 'TIME TRIAL', 16, DIM);
   ctxt('CHOOSE YOUR PLANET', 28, GOLD);
   const P = PLANETS[pick];
-  planetOn(pick, 32, 112, 44, flr(t() / 12) & 1);
+  planetOn(pick, 32, 112, 44, flr(t() / 12) & 1, timer % 120 < 20 ? 1 : 0);
   big(P.name, 128, 82, 2, WHITE);
   stars(P, 104);
   ctxt(P.note, 132, CYAN);
@@ -1203,14 +1271,14 @@ function drawCard() {
   big(track.planet, 128, 64, 3, GOLD);
   ctxt(track.name, 92, WHITE);
   if (mode === 0) {
-    ctxt('YOUR RIVALS', 108, DIM);
+    ctxt('YOUR RIVALS', 104, DIM);
     gp.rivals.forEach((p, i) => {
       const x = 44 + i * 64;
-      planetOn(p, 16, x + 16, 120);
-      txt(PLANETS[p].name, x + 24 - PLANETS[p].name.length * 4, 140, planetColor(p));
+      planetOn(p, 32, x + 8, 118);
+      txt(PLANETS[p].name, x + 24 - PLANETS[p].name.length * 4, 154, planetColor(p));
     });
   } else if (best.time) ctxt(`BEST ${fmt(best.time)}`, 120, DIM);
-  ctxt(timer < 30 || t() % 40 < 26 ? (timer < 30 ? 'READY' : 'PRESS START') : '', 164, WHITE);
+  ctxt(timer < 30 || t() % 40 < 26 ? (timer < 30 ? 'READY' : 'PRESS START') : '', 170, WHITE);
 }
 
 /** After race 8: the total, the eight races and your championship place. */

@@ -1,7 +1,7 @@
 # Planet Racers: Cart Specification
 
-**Version:** 0.5 (draft)
-**Status:** In progress: steps 1–4 of the plan (15) are built
+**Version:** 0.6 (draft)
+**Status:** In progress: steps 1–5 of the plan (15) are built
 **Cart source:** `carts/src/planet-racers/` → `carts/planet-racers.nova`
 
 ---
@@ -49,7 +49,8 @@ lowest total tops the leaderboard.
 ### 4.1 Roster
 
 Real planets, drawn as characters: a round body with eyes and an expression
-that changes with the race (happy, straining, dizzy after a pit). Each planet
+that changes with the race (happy, excited, straining, dizzy after a pit),
+shown on the menus and in your HUD portrait (10; 15, step 5). Each planet
 has four stats from 1 to 5 stars, and **every planet's stars add up to 12**, so
 no planet is better overall; the choice is about style.
 
@@ -295,7 +296,7 @@ On the overlay:
 
 - **Top:** `LAP 2/3`, the race time and the lap time, and your place among the four on the track (`1ST` to `4TH`).
 - **Right:** a **minimap** in the corner, drawn from the track's racing-line data: the circuit as a line, with a dot for each racer.
-- **Bottom:** a boost bar that fills while a boost lasts.
+- **Bottom:** a boost bar that fills while a boost lasts, and in the left corner your planet's **portrait**, its face showing how the race is going (4.1).
 - Banners: `FINAL LAP`, `WRONG WAY`, the countdown and `GO!`.
 
 ## 11. Screens and flow
@@ -362,8 +363,8 @@ so there is no revving engine. The music and the effects carry the speed.
 
 | Asset | Budget |
 |---|---|
-| Code | ≤ 48 KB of the 64 KB limit planned; 56 KB after step 4, with the track table moved out to Map RAM (6.2) |
-| Tiles | About 830 of 1,024 so far: floor surfaces 38, planets 8 × 41 (three sizes, two rolling frames at 32 and 16), orbs and bumpers 30, horizon scenery 396 (four styles, deduplicated with flips); title letters ~40 still to come |
+| Code | ≤ 48 KB of the 64 KB limit planned; 59.8 KB after step 5, with the track table moved out to Map RAM (6.2) |
+| Tiles | About 900 of 1,024: floor surfaces 41 (with three decorations), planets 8 × 41 (three sizes, two rolling frames at 32 and 16), orbs and bumpers 30, horizon scenery 476 (four styles, deduplicated with flips); the title and the faces are drawn on the overlay and take none. 124 are free |
 | Map RAM | The floor in columns 0–127 (128 × 128); in columns 128–255, the four horizon styles in rows 0–17 and the track table (JSON) from row 18 (rows 18–59 now) |
 | Palettes | BG 0–7: each track's floor and scenery colors (a track picks its own). Sprites: the planets share sub-palettes in pairs (7 colors each), so four in all; the other four go to orbs, shadows and bumpers, the logo letters and the HUD |
 | Sprites on screen | ≤ 30, far under the 32-per-line limit |
@@ -384,7 +385,12 @@ so there is no revving engine. The music and the effects carry the speed.
 4. **Flow (built):** title, planet select, track card, results, initials, scores, time trial, pause and saves.
    - **Results:** a whole Grand Prix runs headless from the title through eight track cards and races (a simple bot driving), results and championship pages, the Grand Prix result, initials and the scores, and the run is saved in the top 10. The time trial path, pause and QUIT TO TITLE work too. The first full run found a bug: a bump cost speed on every frame two karts touched, so the bot was dragged to a crawl behind a rival and hit the 3:00 cap; it costs speed only when they close now, and the AI passes a kart ahead.
    - The code reached 62.8 KB with the screens, so the track table moved to Map RAM (6.2), bringing it to 56 KB.
-5. **Art pass:** the planets' faces and expressions, the floor tiles, the horizon scenery and the title, made in the built-in editors.
+5. **Art pass (built):** the planets' faces and expressions, the floor tiles, the horizon scenery and the title.
+   - **Faces** are drawn on the overlay, over the planet sprites, rather than painted into tiles: eight planets × four moods as 32 px sprites would have needed about 500 tiles, and the sheet had about 190 left. Each planet keeps an attitude (brows, lids, glance and mouth): Mercury grins wide-eyed, Venus is heavy-lidded, Earth smiles, Mars smirks under cross brows, Jupiter frowns, Saturn smiles with its eyes closed, Uranus smirks with a sideways glance, Neptune looks coolly away. The moods are its usual look, excited (a boost, leading at the finish), straining (off the road, drifting, bumped) and dizzy (crossed-out eyes after a pit). At 16 px a face is just eyes and a mouth. The race view still shows the planets from behind; the faces are on the menus, the track card and your HUD portrait.
+   - **Title:** the logo is the system font at 4×, outlined and shaded light to dark down each letter (three colors per word), rippling, with the eight planets bobbing along under it.
+   - **Floor:** the textures come in 2 × 2 clumps instead of single pixels, which shimmer less far away, and one off-road tile in 12 is a rock, a little crater or pebbles (off-road colors, so scenery, not a hazard).
+   - **Horizons:** the ridges and hills have a darker far range behind them, ridges shade their faces by slope, the hills carry rows of trees and striped fields, the spires are lit on one side with snow at the tips, and the clouds are banded at the base.
+   - The code passed 61 KB with the faces, so the track-format notes moved to `build-tracks.mjs` and the section dividers got shorter: 59.8 KB.
 6. **Audio pass:** eight songs and the effects in the Music and SFX tabs.
 7. **Balance and polish:** stats, pace ramp, hazard strength and par times; record replays (F9/F10); capture a label (F7); export a PNG cart; regenerate the Library (`node tools/library.js`).
 
@@ -396,5 +402,5 @@ Any console bugs or editor gaps found along the way are logged and fixed as sepa
 - **Speed feel:** the world scale (a 1,024 px floor and 2.2–3.0 px/frame) comes from the demo and from a 30 s lap. If it feels slow, scale the speeds and the track length together.
 - **Digital steering:** the pad gives only left and right, so the 8-frame steering ramp (3) matters. It may need tuning, or a finer control in drifts.
 - **Standing on a rival:** how strong the bumps should be, so they add drama without making a time depend on luck.
-- **Planet faces:** a face that reads from behind at three sizes is a challenge; the 8 × 8 size may have to be a plain dot of the planet's color.
+- **Planet faces (settled):** the race view shows the planets from behind, without faces; the faces live on the menus, the track card and the HUD portrait (15, step 5).
 - **Tuning:** the stat values, the pace ramp and the hazard strengths are all starting points.
