@@ -165,16 +165,16 @@ the last is a set piece:
 | 1-4 | Chimney | A tall brick chimney flanked by girders |
 | 2-1 | Loading Bay | Steel crates in a grid |
 | 2-2 | Conveyor | Rows offset like a conveyor, girder rails |
-| 2-3 | Boiler Room | A round boiler of steel with a glass gauge |
+| 2-3 | Boiler Room | A round boiler with steel caps and a glass gauge |
 | 2-4 | Assembly Line | A maze of girders hiding walls |
 | 3-1 | Main Street | Three short towers of glass |
-| 3-2 | Office Block | Window grids, steel floors between them |
+| 3-2 | Office Block | Window grids on steel ledges |
 | 3-3 | Billboard | A big picture made of bricks |
 | 3-4 | Skyscraper | One tall tower, steel at its base |
 | 4-1 | Gatehouse | A wall with a steel gate in the middle |
 | 4-2 | The Keep | A stone square inside a girder ring |
 | 4-3 | Chapel | Stained-glass windows in stone |
-| 4-4 | The Throne Room | A fortress: steel, girders and a long final stretch |
+| 4-4 | The Throne Room | A fortress: a steel crown, girders and a glass throne |
 
 ## 9. Scoring
 
