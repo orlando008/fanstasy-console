@@ -1,6 +1,6 @@
 // Alien Swarm: a space tower defense (docs/carts/alien-swarm.md).
-// So far: map 1-1, the cursor and menus, all five towers with their upgrades and
-// targeting, all six aliens, credits and hull.
+// So far: all 8 maps on 4 planets with their 15 waves, the cursor and menus, all
+// five towers with their upgrades and targeting, all six aliens, credits and hull.
 
 // --- Layout (SPEC 4) ---
 
@@ -43,21 +43,69 @@ const CRAWLER = 0, SKITTER = 1, BRUTE = 2, DRONE = 3, SPLITTER = 4, QUEEN = 5;
 const SLOW_SHARE = 0.5;
 const refund = (t) => flr(t.spent * 7 / 10); // 70% back on selling, in whole credits
 
-// --- Waves (SPEC 7): each a list of groups [alien, count, frames apart, frames before the first] ---
+// --- Planets and maps (SPEC 8) ---
 
-const WAVES = [
-  [[CRAWLER, 8, 45, 0]],
-  [[CRAWLER, 12, 35, 0]],
-  [[SKITTER, 10, 25, 0]],
-  [[BRUTE, 5, 70, 0]],
-  [[CRAWLER, 10, 30, 0], [DRONE, 8, 40, 120]],
-  [[SPLITTER, 6, 60, 0], [SKITTER, 8, 25, 200]],
-  [[BRUTE, 8, 50, 0], [DRONE, 10, 35, 100]],
-  [[CRAWLER, 15, 25, 0], [SPLITTER, 6, 50, 100], [BRUTE, 6, 60, 300]],
-  [[DRONE, 12, 30, 0], [SKITTER, 15, 18, 60], [BRUTE, 6, 60, 200]],
-  [[QUEEN, 1, 0, 0], [CRAWLER, 12, 40, 60]],
+// Each planet recolours the terrain (BG palette 1, colours 1-7 and 14): dust dark, mid and
+// light, lane dark and mid, rock dark and light, rock body.
+const PLANETS = [
+  { name: 'LUNA OUTPOST', terrain: '3a3a44 58586a 8a8a9c 2a2630 403a48 24242c 7a7a88 4a4652' },
+  { name: 'FROST MOON', terrain: '5a7a98 7a9ab8 c0d8ec 2a3a54 405274 26364a 9ab8d8 52708c' },
+  { name: 'JUNGLE WORLD', terrain: '2a5230 3a6a40 6a9a50 3a2a18 54401f 1a2a1a 5a8a50 2c482c' },
+  { name: 'THE HIVE', terrain: '4a2a4a 5a3460 8a5a8a 2a1020 401a30 200a20 9a5a9a 3a1a3a' },
 ];
-const START_CREDITS = 200, HULL = 20;
+const MAPS = ['LANDING ZONE', 'CRATER RIM', 'ICE SHELF', 'GLACIER PASS', 'OVERGROWTH', 'THE SWAMP', 'HIVE GATE', "QUEEN'S NEST"];
+const HEALTH_STEP = 0.15; // aliens' health: x (1 + 0.15 x the map's index) (SPEC 6)
+
+// --- Waves (SPEC 7) ---
+
+// A wave is groups written as `K<count>[:gap][>lane]`: K is the alien's letter, gap the frames
+// between them (else the alien's own spacing), lane forces one lane (else they take turns).
+// A group starts a second after the one before has all come in, or with it if marked `&`.
+const CODES = 'CSBDPQ', GAPS = [40, 24, 70, 45, 60, 0];
+const WAVES = [
+  [ // 1-1 Landing Zone: Crawlers and Skitters
+    'C8', 'C12', 'S10', 'C10 &S8', 'C16:30', 'S16:18', 'C12 S12', 'C20:25',
+    'S20:16', 'C15 &S15', 'C24:22', 'S24:15', 'C20 &S20', 'C30:18 &S20', 'Q1 &C10:60'],
+  [ // 1-2 Crater Rim: Brutes arrive
+    'C10', 'S12', 'B4', 'C12 &S10', 'B6', 'C15 B4', 'S20:18', 'B8 &C10',
+    'C20 &S15', 'B10:55', 'C20 B6 S15', 'S25:15 &B6', 'B12:50 &C15', 'C25 &S20 &B8', 'Q1 &B6:120'],
+  [ // 2-1 Ice Shelf: Drones arrive
+    'C12', 'D6', 'S15 &D4', 'B6', 'D10:35', 'C15 &D8', 'B8 &S12', 'D14:30',
+    'C20 &B6', 'D12 &S16', 'B10 &D10', 'C25 &D12', 'S25 &B10', 'D20:25 &B8', 'Q1 &D12:60'],
+  [ // 2-2 Glacier Pass: Splitters arrive; two lanes
+    'C14', 'P4', 'S16 &D6', 'P6 &C10', 'B8', 'D12 &P4', 'C20 &S16', 'P10:45',
+    'B10 &D10', 'P8 &S20', 'C24 &B8', 'D16 &P8', 'B12 &S24', 'P12 &D14 &C16', 'Q1 &P8:90 &D10:70'],
+  [ // 3-1 Overgrowth
+    'C16', 'S20', 'B8 &D8', 'P8 &C12', 'D16:30', 'B12 &S16', 'C24 &P8', 'D18 &B8',
+    'S30:14 &P6', 'B14 &D12', 'C30 &P10', 'D20 &S24', 'B16 &P10', 'C30 &D20 &B10', 'Q2:400 &C16'],
+  [ // 3-2 The Swamp
+    'C18', 'D10', 'S24 &B6', 'P10 &D8', 'B14:50', 'C24 &S20', 'D20 &P8', 'B16 &C16',
+    'P14 &D12', 'S30 &B12', 'D24 &P10', 'B18 &S24', 'C30 &D20 &P10', 'B20 &D20 &S20', 'Q2:300 &P10 &D12'],
+  [ // 4-1 Hive Gate
+    'C20 &S10', 'B10', 'D16', 'P12 &S16', 'B14 &D10', 'C30 &P10', 'D22 &B10', 'S36:12 &P10',
+    'B20 &D16', 'P16 &C24', 'D26 &B14', 'S36 &P14', 'B24 &D20', 'C36 &P16 &D20 &B12', 'Q2:300 &B12 &D16'],
+  [ // 4-2 Queen's Nest: three lanes
+    'C24', 'S30 &D8', 'B12 &P8', 'D20 &C20', 'P16 &B10', 'S36 &D16', 'B20 &P12', 'C36 &D20',
+    'P18 &B16', 'D28 &S30', 'B24 &P16', 'C40 &D24 &S24', 'B26 &P18 &D20', 'C40 &S40 &B20 &D24 &P16', 'Q3:300 &B16 &D20 &P12'],
+];
+const WAVE_COUNT = 15;
+
+/** A wave's spawns, in order: { kind, at (frame), lane }. */
+function parseWave(text) {
+  const out = [];
+  let start = 0, end = 0;
+  for (const tok of text.split(' ')) {
+    const m = tok.match(/^(&?)([A-Z])(\d+)(?::(\d+))?(?:>(\d))?$/);
+    const kind = CODES.indexOf(m[2]), n = +m[3], gap = m[4] ? +m[4] : GAPS[kind];
+    if (!m[1]) start = end;
+    for (let k = 0; k < n; k++) out.push({ kind, at: start + k * gap, lane: m[5] !== undefined ? +m[5] : -1 });
+    end = Math.max(end, start + (n - 1) * gap + 60);
+  }
+  return out.sort((a, b) => a.at - b.at);
+}
+
+const HULL = 20;
+const startCredits = (m) => 200 + 100 * m; // later maps' tougher aliens need a bigger start
 const FIRST_COUNT = 20 * 60, COUNT = 12 * 60, EARLY_PAY = 2; // countdowns; credits a second called early
 const waveBonus = (n) => 25 + 5 * (n + 1);
 
@@ -106,6 +154,10 @@ function setCell(c, r, t) {
 /** Copy map m from its Map RAM region to the screen, read its cells, and trace its lanes. */
 function loadMap(m) {
   mapIx = m;
+  PLANETS[m >> 1].terrain.split(' ').forEach((h, k) => {
+    const v = parseInt(h, 16);
+    color(16 + (k < 7 ? k + 1 : 14), v >> 19, (v >> 11) & 31, (v >> 3) & 31);
+  });
   const mx = 32 * (m % 8), entries = [];
   let dome = 0;
   for (let r = 0; r < ROWS; r++) {
@@ -156,20 +208,19 @@ function startMap(m) {
   loadMap(m);
   state = 'play'; timer = 0;
   towers = []; aliens = []; shots = []; effects = []; spawns = [];
-  credits = START_CREDITS; hull = HULL; wave = 0;
+  credits = startCredits(m); hull = HULL; wave = 0;
   phase = 'build'; count = FIRST_COUNT;
   speedUp = 1; menu = null; paused = false;
   cx = 7; cy = 6;
-  banner = { text: 'DEFEND THE COLONY!', t: 120 };
+  banner = { text: `${1 + (m >> 1)}-${1 + (m & 1)} ${MAPS[m]}`, t: 120 };
 }
 
 function startWave() {
   phase = 'wave'; waveT = 0;
   spawns = [];
-  for (const [kind, n, gap, delay] of WAVES[wave]) {
-    for (let k = 0; k < n; k++) spawns.push({ kind, at: delay + k * gap, path: paths[k % paths.length] });
-  }
-  spawns.sort((a, b) => a.at - b.at);
+  // Unforced aliens take the lanes in turn.
+  let turn = 0;
+  spawns = parseWave(WAVES[mapIx][wave]).map((q) => ({ ...q, path: paths[q.lane >= 0 ? q.lane % paths.length : turn++ % paths.length] }));
   banner = { text: `WAVE ${wave + 1}`, t: 90 };
 }
 
@@ -182,7 +233,7 @@ function callEarly() {
 function waveCleared() {
   credits += waveBonus(wave);
   wave++;
-  if (wave >= WAVES.length) { state = 'won'; timer = 0; menu = null; return; }
+  if (wave >= WAVE_COUNT) { state = 'won'; timer = 0; menu = null; return; }
   phase = 'build'; count = COUNT;
 }
 
@@ -309,8 +360,8 @@ function updateShots() {
 // --- Aliens ---
 
 function spawn(kind, path, s = 0) {
-  const A = ALIENS[kind], [x, y] = along(path, s);
-  aliens.push({ kind, hp: A.hp, max: A.hp, s, path, x, y, dead: false, slowT: 0, layT: A.lay || 0 });
+  const A = ALIENS[kind], [x, y] = along(path, s), hp = A.hp * (1 + HEALTH_STEP * mapIx);
+  aliens.push({ kind, hp, max: hp, s, path, x, y, dead: false, slowT: 0, layT: A.lay || 0 });
 }
 
 /** Damage an alien; armour takes some off each hit except a piercing one (SPEC 6). */
@@ -361,7 +412,8 @@ function update() {
   inputMask = readPad();
   timer++; clock++;
   if (state === 'play') updatePlay();
-  else if (timer > 60 && (pressed(START) || pressed(A))) startMap(mapIx);
+  // Until the map select (step 4): a win goes on to the next map, a loss retries.
+  else if (timer > 60 && (pressed(START) || pressed(A))) startMap(state === 'won' ? (mapIx + 1) % MAPS.length : mapIx);
   prevMask = inputMask;
 }
 
@@ -497,7 +549,7 @@ function draw() {
   drawHud();
   if (menu) drawMenu();
   if (banner) ctxt(banner.text, 96, GOLD);
-  if (state === 'won') { panel(48, 80, 160, 56); ctxt('COLONY SAVED!', 92, GREEN); ctxt(`HULL ${hull}/${HULL}`, 108, WHITE); if (timer > 60) ctxt('START: AGAIN', 122, DIM); }
+  if (state === 'won') { panel(48, 80, 160, 56); ctxt('COLONY SAVED!', 92, GREEN); ctxt(`HULL ${hull}/${HULL}`, 108, WHITE); if (timer > 60) ctxt('START: NEXT MAP', 122, DIM); }
   if (state === 'lost') { panel(48, 80, 160, 56); ctxt('COLONY LOST', 92, RED); ctxt(`WAVE ${wave + 1}`, 108, WHITE); if (timer > 60) ctxt('START: RETRY', 122, DIM); }
   if (paused) {
     panel(64, 84, 128, 48);
@@ -558,7 +610,7 @@ function drawMenu() {
 function drawHud() {
   print(`$${credits}`, 4, 4, GOLD);
   print(`HULL ${hull}`, 56, 4, hull > 5 ? CYAN : RED);
-  print(`WAVE ${Math.min(wave + 1, WAVES.length)}/${WAVES.length}`, 124, 4, WHITE);
+  print(`WAVE ${Math.min(wave + 1, WAVE_COUNT)}/${WAVE_COUNT}`, 124, 4, WHITE);
   if (speedUp > 1) print(`${speedUp}X`, 236, 4, GOLD);
   if (state === 'play' && phase === 'build') {
     const s = `${Math.ceil(count / 60)}`;

@@ -1,7 +1,7 @@
 # Alien Swarm: Cart Specification
 
-**Version:** 0.3 (draft)
-**Status:** In progress: steps 1–2 of the plan (15) are built
+**Version:** 0.4 (draft)
+**Status:** In progress: steps 1–3 of the plan (15) are built
 **Cart source:** `carts/src/alien-swarm/` → `carts/alien-swarm.nova`
 
 ---
@@ -102,12 +102,16 @@ Health scales with the map: × (1 + 0.15 × map index), and × 1.5 in hard mode.
 
 ## 7. Waves and economy
 
-- **Credits:** 200 at the start of a map. Each kill pays its bounty, and each wave
+- **Credits:** 200 at the start of map 1-1, and 100 more on each map after it (aliens
+  get tougher map by map). Each kill pays its bounty, and each wave
   cleared pays 25 + 5 × the wave number.
 - **Countdown:** 20 s before wave 1, then 12 s between waves. **Calling a wave
   early** pays 2 credits for every second left on the countdown.
 - **Waves** are tables in the code: groups of an alien type, a count, a spacing and
-  a lane, for each of the 15 waves on each map. A new alien type is introduced on
+  a lane, for each of the 15 waves on each map. Each wave is written compactly, as
+  in `C20 &S10:18`: twenty Crawlers, then (`&`: at the same time) ten Skitters 18
+  frames apart. A group can be sent down one lane with `>n`; otherwise the aliens
+  take the lanes in turn. A new alien type is introduced on
   its own before it appears in mixes.
 - **Hull:** 20. It doesn't come back between waves.
 - No randomness affects play: the same moves give the same game.
@@ -269,6 +273,31 @@ crowd a scanline.
        are on screen, and the worst frame stays under 5 ms at 3×. No errors in
        the browser.
 3. **All 8 maps and their 15 waves**, the 4 planets, two- and three-lane maps.
+   - **Built:**
+     - The eight maps are text grids in the art script. It now also requires every
+       lane cell to lie on an entry's shortest route to the dome, which catches
+       stray cells and lanes side by side that aliens could cut across.
+     - Lanes run 14 to 45 cells. The 3-2 and 4-2 short cuts were first 8 cells long,
+       and were lengthened after they overran every defence in the first waves.
+     - Each planet recolours the terrain, and each map shows its name as it starts.
+     - Waves bring in a new alien on its own before mixing it in (Brutes on 1-2,
+       Drones on 2-1, Splitters on 2-2). Every map ends with the Queen: two on the
+       Jungle and Hive Gate maps, three on Queen's Nest.
+     - Winning a map goes on to the next one, until the map select in step 4.
+   - **Results:** an automatic bot reads each map, picks the pads that cover the
+     most lane (each lane weighted equally), and builds and upgrades all five
+     towers through the menus.
+     - The strong version wins all eight maps: seven with all 20 hull, and Queen's
+       Nest with 4.
+     - A weak version (three Blasters) wins only 1-1, with 8 hull. It falls on wave
+       12 of 1-2, and earlier on each later map, down to wave 2 on Queen's Nest.
+     - A map takes 6–9½ minutes at normal speed.
+     - At most 46 aliens are on screen, and the busiest scanline has 18 sprites (the
+       limit is 32).
+     - The worst frame on Queen's Nest is 7 ms at 3× speed (three game frames a
+       frame).
+     - Two bugs in the test bot: it could wait forever for a cursor that a finished
+       game no longer moves, and it neglected short lanes.
 4. **Flow:** title, map select, map intro, wave banners, call early, fast-forward,
    victory and stars, colony lost, records, pause and saves.
 5. **Art pass:** the planets' terrain, turrets, aliens, the dome, effects, the title.
