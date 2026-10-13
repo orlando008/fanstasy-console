@@ -338,7 +338,7 @@ recordings.
 | 0 | Mercury | The Winged Messenger | 180 bpm | 6/8 | 12 | 64 s | Arpeggios flicker between B-flat and E major, a tritone apart as in Holst; a light skipping tune; a counter-line flickering against the lead |
 | 1 | Venus | Bringer of Peace | 112.5 bpm | 4/4 | 6 | 51 s | A soft horn melody in F over pads, gentle drums, a glassy second theme |
 | 2 | Earth | (original) | 128.6 bpm | 4/4 | 7 | 52 s | A bright G major tune over bouncing bass and arpeggios, a fanfare reprise |
-| 3 | Mars | Bringer of War | 150 bpm | 5/4 | 5 | 32 s | The ostinato hammering G (a 20-row bar), a growling drone, brass climbing to a grinding D-flat |
+| 3 | Mars | Bringer of War | 150 bpm | 5/4 | 5 | 32 s | The ostinato hammering the chord's root (a 20-row bar), a growling drone, brass climbing through G minor. The first version kept Holst's tritones and semitone clashes over a fixed G; on these voices they sounded sour, so the harmony now stays in the key and the bass moves with it |
 | 4 | Jupiter | Bringer of Jollity | 128.6 bpm | 4/4, 3/4 | 5 | 51 s | A syncopated jolly fanfare, then a broad hymn tune in 3/4 on the horn |
 | 5 | Saturn | Bringer of Old Age | 112.5 bpm | 4/4 | 4 | 34 s | Two notes rocking like a clock over a bass walking down, a slow march over a driving beat |
 | 6 | Uranus | The Magician | 150 bpm | 4/4, 6/8 | 7 | 45 s | The brass motto G, E-flat, A, B (Holst's initials in German note names), then a staccato 6/8 scherzo, the motto again, and the scherzo an octave up |
