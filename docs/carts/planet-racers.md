@@ -103,6 +103,7 @@ allowed. (The view can use `Math` freely.)
 
 - Hold L or R while steering to drift. The turn rate is ×1.5 and grip drops to 0.08, so the kart slides through the corner on a wider arc than it points.
 - A drift costs 1% of speed a frame. The skill is where to drift and when to straighten out. There is **no mini-boost to charge**: boosts come from orbs only.
+- **You can see and hear it.** Because the camera follows where the planet points and a ball looks the same from every side, the slide itself would be invisible, so the view shows it: the planet slides out to the side its velocity carries it (14 screen px per px/frame of sideways speed, eased), it throws sparks from its outside edge (dust off the road), and a skid sound plays every 10 frames. At full speed Earth turns a 59 px circle normally and a 45 px one drifting, sliding up to 34° off its heading.
 
 ### 5.4 Surfaces
 

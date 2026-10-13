@@ -31,6 +31,8 @@ const PIT_SLOW = 0.4, DIZZY = 30;
 const KART_R = 3.5, ORB_R = 3;
 const BUMP_LOSS = 0.12; // share of speed a bump costs, split by weight
 const WRONG_FRAMES = 60;
+const SLIDE_PX = 14; // screen px the planet slides out per px/frame of sideways speed in a drift
+const SKID_EVERY = 10; // frames between skid sounds in a drift
 const EDGE = 6; // the soft wall's distance from the floor's edge
 const GRID_GAP = 4, GRID_LAT = 8; // grid slots: samples apart, px either side
 // The AI (SPEC 7.1): it steers at the racing line AI_LOOK samples ahead and
@@ -136,6 +138,7 @@ let banner = null; // { text, until, color }
 let bumpQuiet = 0; // frames until the bump sound may play again
 let prevMask = 0, inputMask = 0;
 let attract = 0; // the title camera's place along the centerline, in samples
+let slide = 0, sparks = []; // the drift's look: the planet's slide and the sparks off it
 let seed = 1; // the race's own generator state (rivals, mistakes, simulated times)
 const cam = { x: 0, y: 0, h: 0 }; // h in angle units
 let FX = 1, FY = 0, RX = 0, RY = 1; // camera forward and right vectors this frame
@@ -336,12 +339,13 @@ function newKart(p, slot, ai) {
     steerDir: 0, steerT: 0, drift: false, boost: 0, dizzy: 0, surf: S_ROAD,
     si: i, dist: i - N, gate: GATES, crossings: 0, wrong: 0, roll: 0,
     taken: new Uint8Array(orbs.length), laps: [], lapStart: 0, finish: 0, capped: false,
-    lane: 0, mistake: 0, wide: 0, aiDir: 0,
+    lane: 0, mistake: 0, wide: 0, aiDir: 0, skid: 0,
   };
 }
 
 function startRace() {
   state = 'race'; timer = 0; raceF = 0; paused = false; banner = null; page = 0; result = null;
+  slide = 0; sparks = [];
   record = { time: false, lap: false };
   seed = rndi(1, 0x7fffffff);
   // You start last of four (SPEC 5.7); three rivals are drawn from the other seven.
@@ -381,9 +385,9 @@ function drive(k, m) {
 
   const surf = k.surf;
   let sp = k.sp;
-  const wasDrift = k.drift;
   k.drift = !k.rev && dir !== 0 && (m & (BIT(L) | BIT(R))) !== 0 && sp > DRIFT_MIN;
-  if (k.drift && !wasDrift && me) sfx(SFX.drift, SFX_CH);
+  k.skid = k.drift ? k.skid + 1 : 0;
+  if (me && k.drift && k.skid % SKID_EVERY === 1) sfx(SFX.drift, SFX_CH);
 
   // Steering: full rate after the ramp, scaled down at low speed, reversed in reverse.
   let rate = st.turn * k.steerT / STEER_RAMP * Math.min(1, sp / TURN_FULL);
@@ -675,6 +679,7 @@ function draw() {
   affine({ a: 1, b: 0, c: 0, d: 1, cx: 0, cy: 0 });
   drawSky();
   drawObjects();
+  if (state !== 'title') drawSparks();
 
   if (state === 'title') drawTitle();
   else {
@@ -735,16 +740,36 @@ function drawObjects() {
   };
   if (state !== 'title') {
     orbs.forEach((o, i) => { if (!player.taken[i]) add(o.x, o.y, ORB, ORB_PAL, { fx: t() % 16 < 8 }); });
+    // In a drift the planet slides out to the side its velocity carries it, away from where it points.
+    const slip = player.vy * cosU(player.h) - player.vx * sinU(player.h); // sideways speed, + to the right
+    if (!paused) slide += ((player.drift ? slip * SLIDE_PX : 0) - slide) * 0.25;
     for (const k of karts) {
       const f = flr(k.roll / 10) & 1, dizzy = k.dizzy > 0;
       add(k.x, k.y, [planetTile(k.p, 32, f), planetTile(k.p, 16, f), planetTile(k.p, 8, 0)], k.p >> 1,
-        { fx: dizzy && t() % 8 < 4, shake: dizzy ? (t() % 4 < 2 ? 1 : -1) : 0 });
+        { fx: dizzy && t() % 8 < 4, shake: (dizzy ? (t() % 4 < 2 ? 1 : -1) : 0) + (k === player ? flr(slide) : 0) });
     }
   }
   list.sort((a, b) => a.z - b.z);
   for (const o of list) {
     spr(o.n, flr(o.sx - o.size / 2) + (o.shake || 0), flr(o.sy) - o.size + 1, { size: o.size, pal: o.pal, fx: o.fx, prio: 3 });
   }
+}
+
+/** Sparks (on the road) or dust (off it) thrown from the planet's outside edge in a drift. */
+function drawSparks() {
+  if (!paused) {
+    if (player.drift && !player.finish) {
+      const side = slide < 0 ? -1 : 1, road = player.surf === S_ROAD;
+      for (let i = 0; i < 3; i++) {
+        const r = hash(t() * 4 + i);
+        sparks.push({ x: 128 + slide + side * (10 + (r & 3)), y: 178 + ((r >> 2) & 3), vx: side * (0.6 + ((r >> 4) & 7) / 6),
+          vy: -1.2 - ((r >> 7) & 7) / 5, life: 10 + ((r >> 10) & 7), c: road ? ((r >> 13) & 1 ? GOLD : WHITE) : (r >> 13) & 1 ? 9 : 5 });
+      }
+    }
+    for (const p of sparks) { p.x += p.vx; p.y += p.vy; p.vy += 0.22; p.life--; }
+    sparks = sparks.filter((p) => p.life > 0);
+  }
+  for (const p of sparks) { const w = p.life > 8 ? 3 : 2; rectfill(flr(p.x), flr(p.y), w, w, p.c); }
 }
 
 // --- Scanline: the sky gradient, then the Mode 7 floor -------------------------------------------
