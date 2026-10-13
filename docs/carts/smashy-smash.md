@@ -1,7 +1,7 @@
 # Smashy Smash: Cart Specification
 
-**Version:** 0.4 (draft)
-**Status:** In progress: steps 1–3 of the plan (15) are built
+**Version:** 0.5 (draft)
+**Status:** In progress: steps 1–4 of the plan (15) are built
 **Cart source:** `carts/src/smashy-smash/` → `carts/smashy-smash.nova`
 
 ---
@@ -191,18 +191,25 @@ the last is a set piece:
 
 ## 10. Screens and flow
 
-In the menus START or B goes on and A goes back.
+In the menus START or A goes on and B goes back (A is the game's action button).
 
-1. **Title:** SMASHY SMASH in chunky cartoon letters that crack and settle, over
-   the first world's backdrop. Menu: PLAY, SCORES, and the high score.
+1. **Title:** SMASHY SMASH in chunky cartoon letters that drop in one by one and land
+   with a thud and a puff of dust, over the first world's backdrop (START or A skips
+   the drop). Then the best score with its initials, and the menu: PLAY, SCORES.
 2. **Stage card:** `WORLD 1-1`, the world and stage names, READY. The stage builds
    behind it.
 3. **Play** (5–7). The ball waits on the paddle; A launches it (or after 3 s).
-4. **Stage clear:** the tally and the bonus, then the next card.
-5. **Game over** or **DEMOLITION COMPLETE**, then **initials** if the score makes
-   the top 10 (UP/DOWN letter, LEFT/RIGHT move, START saves, as in Block Wizard).
-6. **Scores:** the top 10: initials, score and the stage reached.
-7. **Pause** (START): RESUME or QUIT TO TITLE. Quitting abandons the run.
+4. **Stage clear:** the tally: bricks smashed, clear time, stage bonus and time bonus
+   come up one by one, then the bonus counts into the score. START or A pays it at
+   once, and again goes on to the next card.
+5. **Game over** or **DEMOLITION COMPLETE**: the score and its place. The run goes into
+   the top 10 at once, under the last initials used, so it counts even if the
+   player switches off. If it made the top 10, START goes to **initials** (UP/DOWN
+   letter, LEFT/RIGHT move, A next letter, B back, START saves, as in Block Wizard),
+   then to the scores with the new row lit; otherwise back to the title.
+6. **Scores:** the top 10: initials, the stage reached (`2-3`, or `ALL!` for a full
+   clear) and the score.
+7. **Pause** (START): RESUME or QUIT TO TITLE (B also resumes). Quitting abandons the run.
 
 ## 11. Audio
 
@@ -229,7 +236,7 @@ extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
 |---|---|
 | 0 | Format version |
 | 1 | Last initials entered (packed 3 × 8 bits) |
-| 10–129 | Top 10 runs, 12 slots each: score, stage reached, initials, 9 spare |
+| 10–129 | Top 10 runs, best first, 12 slots each: score, stage reached (1–16, 17 for all), initials, 9 spare. The first score is the high score |
 | 130–255 | Reserved |
 
 ## 14. Asset budget
@@ -259,8 +266,14 @@ extra life, stage clear, game over, DEMOLITION COMPLETE, menu move and select.
    - The stages are written as text grids in the art script and painted into Map RAM; the script refuses a stage where a breakable brick is sealed in by girders. Each world sets its backdrop region and its backdrop and wall colors (8.1), so the same tiles are plaster and wood in the house, brick in the factory, concrete downtown and stone in the castle. A stage card shows the world and stage before each stage; after stage 16 comes DEMOLITION COMPLETE with the lives bonus (the full screens are step 4).
    - **Two bugs found by playing all 16:** a ball's step was worked out once a frame, so after a bounce the frame's next step went the old way and a second bounce cancelled the first; against a girder overhead the ball slid sideways at one height for ever. Each step now follows the ball's direction as it is. And the stuck-ball nudge was reset by girder hits and could turn a ball almost vertical; now only breakable bricks reset it (paddle hits don't either), and a nudged ball keeps between 15° and 60° from vertical.
    - **Results:** a bot that aims at the bricks plays all 16 stages through to DEMOLITION COMPLETE in 40 minutes with the ball never inside a brick. Its stage times run from 34 s to 377 s; the steel-heavy stages (2-3, 4-1, 4-2, 4-4) are the longest and are for step 7 to trim. Typical CPU is 1.2 ms a frame.
-4. **Flow:** title, stage cards, stage clear, game over, the ending, initials,
+4. **Flow (built):** title, stage cards, stage clear, game over, the ending, initials,
    scores, pause and saves.
+   - The screens are as in 10. Menu sounds borrow the game's effects until the audio pass.
+   - **Results:** three runs in a row, each ended at a set score, go into the table in
+     order, with the right initials (each run's entry starts from the last initials
+     used) and stage reached; the title then shows the best. The bot run, its replay
+     and the high-speed check all still pass, and the game runs in the browser
+     without errors.
 5. **Art pass:** bricks with cracks and dents, the backdrops, the paddle and ball,
    capsules, debris, the title.
 6. **Audio pass:** five songs and the effects.

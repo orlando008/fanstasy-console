@@ -79,11 +79,14 @@ const STAGE_ROW = 64; // stage s is painted at column 30 * (s % 8), row 64 + 14 
 
 // --- Save slots (SPEC 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1, TOP_SLOT = 10;
+const VERSION_SLOT = 0, SAVE_VERSION = 1;
+const INITIALS_SLOT = 1; // the last initials entered, packed
+const TOP_SLOT = 10, TOP_N = 10, ENTRY = 12; // the top 10 runs, best first: score, stage reached (17: all), initials
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 // --- State ---
 
-let state; // 'title', 'card', 'play', 'clear', 'done' (all 16 cleared), 'over'
+let state; // 'title', 'card', 'play', 'clear' (the tally), 'done' (all 16 cleared), 'over', 'initials', 'scores'
 let timer = 0;
 let stage = 0;
 const kind = new Uint8Array(COLS * ROWS), hp = new Uint8Array(COLS * ROWS), tint = new Uint8Array(COLS * ROWS);
@@ -100,6 +103,12 @@ let score = 0, hi = 0, lives = LIVES, nextLife = 0;
 let paused = false, pauseSel = 0;
 let debris = [];
 let prevMask = 0, inputMask = 0;
+let menu = 0; // the title menu: PLAY, SCORES
+let smashed = 0; // bricks broken this stage
+let lifeBonus = 0; // paid at DEMOLITION COMPLETE
+let tally = null; // the stage-clear tally: { rows, owed, clock }
+let rank = -1, hl = -1; // this run's top-10 row; the row the scores screen highlights
+let initials = null; // { chars, pos } while entering initials
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) {
@@ -179,7 +188,7 @@ function hitBrick(i, nail = false) {
   burst(i, k);
   kind[i] = EMPTY;
   drawBrick(i % COLS, flr(i / COLS));
-  left--;
+  left--; smashed++;
   if (k === WALL) dropCapsule(i);
   // The ball flies straight through glass, and with WRECKER through walls too; steel always bounces.
   return k === STEEL || (k === WALL && !wreck);
@@ -325,10 +334,16 @@ function bounce() { sfx(SFX.wallBounce, SFX_CH); }
 // --- Flow ---
 
 function toTitle() {
-  state = 'title'; timer = 0; paused = false;
-  for (let i = 0; i < COLS * ROWS; i++) kind[i] = EMPTY;
+  state = 'title'; timer = 0; paused = false; menu = 0;
   loadStage(0);
-  balls = []; debris = [];
+  clearField();
+  balls = []; debris = []; capsule = null; nails = [];
+}
+
+/** Empty the playfield, leaving the frame and the backdrop. */
+function clearField() {
+  for (let i = 0; i < COLS * ROWS; i++) { kind[i] = EMPTY; drawBrick(i % COLS, flr(i / COLS)); }
+  left = 0;
 }
 
 function startRun() {
@@ -341,7 +356,7 @@ function startStage(s) {
   loadStage(s);
   state = 'card'; timer = 0; stageT = 0;
   px = flr((FIELD_L + FIELD_R - PADDLE_W) / 2);
-  speed = baseSpeed(); paddleHits = 0; quiet = 0;
+  speed = baseSpeed(); paddleHits = 0; quiet = 0; smashed = 0;
   debris = [];
   clearPowers();
   newBall();
@@ -368,20 +383,124 @@ function nextStage() {
   if (stage + 1 < STAGES) { startStage(stage + 1); return; }
   // DEMOLITION COMPLETE: a bonus for every life left (SPEC 9).
   state = 'done'; timer = 0;
-  addScore(LIFE_BONUS * lives);
+  lifeBonus = LIFE_BONUS * lives; // kept: the bonus itself can earn a life
+  addScore(lifeBonus);
   sfx(SFX.clear, SFX_CH);
+  finish(STAGES + 1);
 }
 
 function gameOver() {
   state = 'over'; timer = 0; balls = [];
-  if (score > hi) { hi = score; dset(TOP_SLOT, score); }
   sfx(SFX.over, SFX_CH);
+  finish(stage + 1);
 }
 
+/**
+ * The run is over: it goes into the top 10 now, under the last initials used,
+ * so it counts even if the player never reaches the initials screen.
+ */
+function finish(reached) {
+  rank = insertTop({ score, reached, initials: lastInitials() });
+  hi = dget(TOP_SLOT);
+}
+
+/** The tally (SPEC 10): its rows come up one by one, then the bonus counts into the score. */
 function stageClear() {
   state = 'clear'; timer = 0; balls = []; capsule = null; nails = [];
-  addScore(1000 * (1 + (stage >> 2)) + flr(TIME_BONUS * Math.max(0, 1 - stageT / TIME_BONUS_FRAMES)));
+  const bonus = 1000 * (1 + (stage >> 2)), time = flr(TIME_BONUS * Math.max(0, 1 - stageT / TIME_BONUS_FRAMES));
+  const sec = flr(stageT / 60), clock = `${flr(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+  tally = { rows: [['BRICKS SMASHED', smashed], ['CLEAR TIME', clock], ['STAGE BONUS', bonus], ['TIME BONUS', time]], owed: bonus + time };
   sfx(SFX.clear, SFX_CH);
+}
+
+const TALLY_ROW = 15, TALLY_PAY = 90, TALLY_STEP = 100; // frames per row; the frame the bonus starts paying
+
+function updateTally() {
+  const go = pressed(START) || pressed(A);
+  if (tally.owed > 0 && (go || timer >= TALLY_PAY)) {
+    // A or START pays the lot at once.
+    const pay = go ? tally.owed : Math.min(tally.owed, TALLY_STEP);
+    addScore(pay); tally.owed -= pay;
+    if (go) timer = Math.max(timer, TALLY_PAY);
+    if (timer % 4 === 0 || !tally.owed) sfx(SFX.wallBounce, SFX_CH);
+    tally.paidAt = timer;
+  } else if (!tally.owed && (go || timer >= tally.paidAt + 60)) nextStage();
+}
+
+// --- Top 10 (SPEC 13) ---
+
+function readEntry(i) {
+  const slot = TOP_SLOT + i * ENTRY;
+  return { score: dget(slot), reached: dget(slot + 1), initials: unpackInitials(dget(slot + 2)) };
+}
+
+function writeEntry(i, e) {
+  const slot = TOP_SLOT + i * ENTRY;
+  dset(slot, e.score); dset(slot + 1, e.reached); dset(slot + 2, packInitials(e.initials));
+}
+
+const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
+
+/** Put a run into the top 10 if it makes it. Returns its row, or -1. */
+function insertTop(e) {
+  if (!e.score) return -1;
+  const list = topTen(), at = list.findIndex((x) => e.score > x.score);
+  if (at < 0) return -1;
+  list.splice(at, 0, e);
+  for (let i = at; i < TOP_N; i++) writeEntry(i, list[i]);
+  return at;
+}
+
+/** Three characters, 8 bits each. */
+const packInitials = (str) => (str.charCodeAt(0) << 16) | (str.charCodeAt(1) << 8) | str.charCodeAt(2);
+const unpackInitials = (v) => (v ? String.fromCharCode((v >> 16) & 255, (v >> 8) & 255, v & 255) : '---');
+const lastInitials = () => (dget(INITIALS_SLOT) ? unpackInitials(dget(INITIALS_SLOT)) : 'AAA');
+
+/** UP/DOWN pick a letter, LEFT/RIGHT (or A and B) move, START saves (as does A on the last). */
+function enterInitials() {
+  const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
+  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; sfx(SFX.wallBounce, SFX_CH); }
+  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; sfx(SFX.wallBounce, SFX_CH); }
+  if (pressed(LEFT) || pressed(B)) ini.pos = Math.max(0, ini.pos - 1);
+  if (pressed(RIGHT)) ini.pos = Math.min(2, ini.pos + 1);
+  const done = pressed(START) || (pressed(A) && ini.pos === 2);
+  if (pressed(A) && ini.pos < 2) ini.pos++;
+  if (!done || timer < 20) return;
+  const v = packInitials(ini.chars.join(''));
+  dset(INITIALS_SLOT, v);
+  dset(TOP_SLOT + rank * ENTRY + 2, v);
+  sfx(SFX.capsule, SFX_CH);
+  showScores(rank);
+}
+
+function showScores(row) {
+  state = 'scores'; timer = 0; hl = row; balls = [];
+  clearField();
+}
+
+// --- The title ---
+
+// The logo: two rows of letters that drop in one by one and land with a thud.
+const LOGO = ['SMASHY', 'SMASH!'], LOGO_Y = [52, 88], LOGO_GAP = 5, LOGO_FALL = 14, LOGO_BOUNCE = 10;
+const LOGO_DONE = 8 + 11 * LOGO_GAP + LOGO_FALL + LOGO_BOUNCE;
+const logoLand = (n) => 8 + n * LOGO_GAP + LOGO_FALL; // the frame letter n lands
+const logoX = (i) => 128 + (i - 2.5) * 32;
+const TITLE_MENU = ['PLAY', 'SCORES'];
+
+function updateTitle() {
+  for (let n = 0; n < 12; n++) {
+    if (timer !== logoLand(n)) continue;
+    const x = logoX(n % 6), y = LOGO_Y[n < 6 ? 0 : 1] + 30;
+    for (let k = 0; k < 6; k++) {
+      const h = hash(n * 13 + k);
+      debris.push({ x: x + ((h & 31) - 16), y, vx: ((h >> 5 & 255) / 255 - 0.5) * 2, vy: -((h >> 13) & 255) / 255 * 1.5, c: 21 + k % 3, t: 24 });
+    }
+    sfx(SFX.steel, SFX_CH);
+  }
+  const go = pressed(START) || pressed(A);
+  if (timer < LOGO_DONE) { if (go) timer = LOGO_DONE; return; }
+  if (pressed(UP) || pressed(DOWN)) { menu ^= 1; sfx(SFX.wallBounce, SFX_CH); }
+  if (go) { if (menu === 0) startRun(); else showScores(-1); }
 }
 
 // --- Update ---
@@ -397,12 +516,17 @@ const pressed = (b) => (inputMask & BIT(b)) !== 0 && (prevMask & BIT(b)) === 0;
 function update() {
   inputMask = readPad();
   timer++;
-  if (state === 'title') { if (pressed(START) || pressed(A)) startRun(); }
+  if (state === 'title') updateTitle();
   else if (state === 'play') updatePlay();
   else if (state === 'card') { if (timer >= CARD_FRAMES) { state = 'play'; timer = 0; } }
-  else if (state === 'clear') { if (timer > 120) nextStage(); }
-  else if (state === 'done') { if (timer > 120 && (pressed(START) || pressed(A))) gameOver(); }
-  else if (state === 'over') { if (timer > 60 && (pressed(START) || pressed(A))) toTitle(); }
+  else if (state === 'clear') updateTally();
+  else if (state === 'over' || state === 'done') {
+    if (timer > 60 && (pressed(START) || pressed(A))) {
+      if (rank >= 0) { state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0 }; }
+      else toTitle();
+    }
+  } else if (state === 'initials') enterInitials();
+  else if (state === 'scores') { if (pressed(START) || pressed(A) || pressed(B)) toTitle(); }
   updateDebris();
   prevMask = inputMask;
 }
@@ -410,7 +534,8 @@ function update() {
 function updatePlay() {
   if (paused) {
     if (pressed(UP) || pressed(DOWN)) pauseSel ^= 1;
-    if (pressed(START) || pressed(A)) { if (pauseSel === 0) paused = false; else toTitle(); }
+    if (pressed(B)) paused = false;
+    else if (pressed(START) || pressed(A)) { if (pauseSel === 0) paused = false; else toTitle(); }
     return;
   }
   if (pressed(START)) { paused = true; pauseSel = 0; return; }
@@ -485,7 +610,8 @@ const SFX_CH = 1;
 
 function draw() {
   cls();
-  if (state !== 'title') {
+  const inRun = state === 'card' || state === 'play' || state === 'clear' || state === 'done' || state === 'over';
+  if (inRun) {
     // The paddle: its two ends, with a middle piece when it's a PLANK; green with GLUE, nail guns with NAILS.
     const x = flr(px), pal = power === GLUE ? PAL_GLUE : 0, w = paddleW();
     spr(PADDLE_L, x, PADDLE_Y, { size: 16, pal, prio: 3 });
@@ -498,26 +624,101 @@ function draw() {
   }
   for (const d of debris) rectfill(flr(d.x), flr(d.y), 2, 2, d.c);
   drawHud();
-  if (state === 'title') {
-    big('SMASHY', 128, 80, 4, GOLD);
-    big('SMASH!', 128, 116, 4, RED);
-    if (timer % 60 < 40) ctxt('PRESS START', 170, WHITE);
-  } else if (state === 'play' && balls.length && balls[0].stuck && balls[0].glueT === undefined) ctxt('A: LAUNCH', 186, WHITE);
+  if (state === 'title') drawTitle();
+  else if (state === 'play' && balls.length && balls[0].stuck && balls[0].glueT === undefined) ctxt('A: LAUNCH', 186, WHITE);
   if (state === 'play') drawPower();
   if (state === 'card') {
-    rectfill(20, 76, 216, 64, BLACK); rect(20, 76, 216, 64, PANEL);
+    panel(20, 76, 216, 64);
     ctxt(`WORLD ${1 + (stage >> 2)}-${1 + (stage & 3)}  ${WORLDS[stage >> 2].name}`, 86, DIM);
     big(STAGE_NAMES[stage], 128, 100, STAGE_NAMES[stage].length > 10 ? 1 : 2, GOLD);
     if (timer % 30 < 20) ctxt('READY', 124, WHITE);
   }
-  if (state === 'clear') big('STAGE CLEAR!', 128, 100, 2, GREEN);
-  if (state === 'done') { big('DEMOLITION', 128, 80, 3, GOLD); big('COMPLETE!', 128, 108, 3, GOLD); ctxt(`LIVES BONUS ${LIFE_BONUS * lives}`, 144, WHITE); }
-  if (state === 'over') big('GAME OVER', 128, 100, 3, RED);
+  if (state === 'clear') drawTally();
+  if (state === 'done') { big('DEMOLITION', 128, 48, 3, GOLD); big('COMPLETE!', 128, 76, 3, GOLD); panel(40, 112, 176, 80); ctxt(`LIVES BONUS ${lifeBonus}`, 122, WHITE); drawResult(140); }
+  if (state === 'over') { panel(24, 68, 208, 104); big('GAME OVER', 128, 80, 3, RED); drawResult(116); }
+  if (state === 'initials') drawInitials();
+  if (state === 'scores') drawScores();
   if (paused) {
-    rectfill(72, 84, 112, 48, BLACK); rect(72, 84, 112, 48, PANEL);
+    panel(72, 84, 112, 48);
     ctxt('PAUSED', 92, GOLD);
     ['RESUME', 'QUIT TO TITLE'].forEach((s, i) => ctxt(`${pauseSel === i ? '> ' : '  '}${s}`, 106 + i * 12, pauseSel === i ? WHITE : DIM));
   }
+}
+
+function panel(x, y, w, h) { rectfill(x, y, w, h, BLACK); rect(x, y, w, h, PANEL); }
+const pad = (n) => String(n).padStart(6, '0');
+const reachedName = (r) => (r > STAGES ? 'ALL!' : r ? `${1 + ((r - 1) >> 2)}-${1 + ((r - 1) & 3)}` : '-');
+
+function drawTitle() {
+  // Each letter falls, lands, and bounces once (a parabola, so no trig).
+  clip(0, 16, 256, 208); // falling letters stay under the HUD (big() works at y 216, inside this)
+  for (let n = 0; n < 12; n++) {
+    const t = timer - (logoLand(n) - LOGO_FALL);
+    if (t < 0) continue;
+    let dy = 0;
+    if (t < LOGO_FALL) dy = -flr(140 * ((LOGO_FALL - t) / LOGO_FALL) ** 2);
+    else if (t < LOGO_FALL + LOGO_BOUNCE) { const u = t - LOGO_FALL; dy = -flr(u * (LOGO_BOUNCE - u) * 0.25); }
+    const r = n < 6 ? 0 : 1;
+    big(LOGO[r][n % 6], logoX(n % 6), LOGO_Y[r] + dy, 4, r ? RED : GOLD);
+  }
+  clip();
+  if (timer < LOGO_DONE) return;
+  const top = readEntry(0);
+  if (top.score) ctxt(`BEST ${pad(top.score)} ${top.initials}`, 136, CYAN);
+  TITLE_MENU.forEach((s, i) => txt(`${menu === i ? '>' : ' '} ${s}`, 100, 156 + i * 14, menu === i ? WHITE : DIM));
+  ctxt('A OR START', 196, timer % 60 < 40 ? GOLD : DIM);
+}
+
+function drawTally() {
+  panel(16, 56, 224, 124);
+  big('STAGE CLEAR!', 128, 66, 2, GREEN);
+  tally.rows.forEach(([name, v], i) => {
+    if (timer < 30 + i * TALLY_ROW) return;
+    txt(name, 48, 96 + i * 14, i < 2 ? DIM : WHITE);
+    const sv = String(v);
+    txt(sv, 208 - sv.length * 8, 96 + i * 14, i < 2 ? WHITE : GOLD);
+  });
+  if (timer >= TALLY_PAY && tally.owed) ctxt(`+${tally.owed}`, 160, GOLD);
+}
+
+/** Under GAME OVER or DEMOLITION COMPLETE: the score and where it ranks. */
+function drawResult(y) {
+  ctxt(`SCORE ${pad(score)}`, y, WHITE);
+  if (rank === 0) ctxt('NEW HIGH SCORE!', y + 14, timer % 20 < 14 ? GOLD : RED);
+  else if (rank > 0) ctxt(`TOP 10: #${rank + 1}`, y + 14, GOLD);
+  if (timer > 60 && timer % 60 < 40) ctxt('PRESS START', y + 34, WHITE);
+}
+
+function drawInitials() {
+  const ini = initials;
+  panel(24, 32, 208, 168);
+  ctxt(rank === 0 ? 'NEW HIGH SCORE!' : `TOP 10: #${rank + 1}`, 44, GOLD);
+  ctxt(pad(score), 60, WHITE);
+  ctxt('ENTER YOUR INITIALS', 90, DIM);
+  for (let i = 0; i < 3; i++) {
+    const on = i === ini.pos, x = 128 - 44 + i * 32;
+    rect(x - 2, 106, 28, 28, on ? GOLD : PANEL);
+    big(ini.chars[i], x + 12, 110, 3, on ? GOLD : WHITE);
+    if (on && timer % 30 < 20) { line(x + 8, 102, x + 15, 102, GOLD); line(x + 8, 137, x + 15, 137, GOLD); }
+  }
+  txt('UP/DOWN    LETTER', 60, 152, DIM);
+  txt('LEFT/RIGHT MOVE', 60, 164, DIM);
+  if (timer % 60 < 40) ctxt('START: SAVE', 182, WHITE);
+}
+
+function drawScores() {
+  panel(16, 24, 224, 184);
+  big('TOP WRECKERS', 128, 32, 2, GOLD);
+  txt('    NAME  STAGE      SCORE', 24, 56, DIM);
+  topTen().forEach((e, i) => {
+    const y = 70 + i * 13, on = i === hl;
+    if (on && timer % 40 < 30) rectfill(18, y - 3, 220, 13, PANEL);
+    txt(String(i + 1).padStart(2), 28, y, i === 0 ? GOLD : DIM);
+    if (!e.score) { txt('---', 56, y, DIM); return; }
+    txt(e.initials, 56, y, on ? GOLD : WHITE);
+    txt(reachedName(e.reached), 104, y, e.reached > STAGES ? GOLD : DIM);
+    txt(pad(e.score), 176, y, i === 0 ? GOLD : WHITE);
+  });
 }
 
 function drawHud() {
