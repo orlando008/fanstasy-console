@@ -1,7 +1,7 @@
 # Planet Racers: Cart Specification
 
-**Version:** 0.3 (draft)
-**Status:** In progress: steps 1–2 of the plan (15) are built
+**Version:** 0.4 (draft)
+**Status:** In progress: steps 1–3 of the plan (15) are built
 **Cart source:** `carts/src/planet-racers/` → `carts/planet-racers.nova`
 
 ---
@@ -119,17 +119,22 @@ by tile. Each track's palette gives the indexes their look.
 | 1–3 | Road | Full speed and grip |
 | 4–5 | Curb (the road's edge stripes; also the start checker) | As road |
 | 6–9 | Off-road | Speed capped at 55% of top for the heaviest planet, down to 44% for the lightest |
-| 10–11 | Rough (sulfur, rubble) | Speed capped at 35% |
-| 12 | Slick (wet sand, ice) | Grip 0.04, and no cornering help |
+| 10–11 | Rough (acid pools) | Speed capped at 35% |
+| 12, 15 | Slick (wet sand, ice; 15 is its glint) | Grip 0.04, and no cornering help |
 | 13–14 | Pit (crater) | On entry, speed ×0.4 and the planet looks dizzy for 30 frames |
-| 15 | Road | As road |
 
-Crosswind strips (Mars, Jupiter, Neptune) push sideways 0.06 px/frame², divided by
-weight / 3. They are zones in the track data rather than a color, since a gust
-shouldn't need its own look; the floor can still mark them.
+**Crosswind** (Mars, Jupiter, Neptune) comes from zones in the track data rather
+than a color, since a gust shouldn't need its own look. In a zone the kart is
+pushed across the track at 0.04 px/frame² × 6 / (weight + 3): ×1.5 for the
+lightest planet, ×0.75 for the heaviest. The push builds a sideways drift that
+fades by 10% a frame, so it settles at about 0.4 px/frame for a middling planet
+and you steer into it. Neptune's wind blows in gusts, 90 frames in every 180.
+(The first draft's 0.06 divided by weight / 3 blew the lightest planets off the
+road and into the time cap.) While you are in the wind, streaks blow across the
+view and a `<< WIND` or `WIND >>` sign shows which way.
 
 **Bumpers** (boulders and ice chunks) are sprites at fixed spots from the
-track's data: a circle 8 world px across. Hitting one bounces the kart and costs 30% of its speed.
+track's data: a circle 8 world px across. Hitting one bounces the kart off it (its velocity reflects) and costs 30% of its speed.
 
 The edge of the floor is a soft wall: reaching it stops the kart and nudges it back.
 
@@ -158,19 +163,28 @@ simulation is deterministic, so a replay bumps the same way.
 
 ### 6.1 The eight tracks
 
-Each track is a closed circuit about 4,800 world px long, a 3-lap race of about 90 s
-at mid speed. The Grand Prix runs in order, from the sun outward.
+Each track is a closed circuit of 4,270–4,570 world px, a 3-lap race of about 90 s:
+a simple bot driving Earth flat out laps each one in 28–31 s. The Grand Prix runs in
+order, from the sun outward.
 
-| # | Planet | Track | Look | Hazards |
-|---|---|---|---|---|
-| 1 | Mercury | Caloris Circuit | Gray and orange rock, black sky | Craters (pits) |
-| 2 | Venus | Cloud Deck Run | Yellow clouds, sulfur ground | Acid pools (rough) |
-| 3 | Earth | Blue Marble Speedway | Coast, green fields and sea | Wet sand (slick) |
-| 4 | Mars | Olympus Rally | Red dust and dunes | Dust-storm gusts (crosswind) |
-| 5 | Jupiter | Spot Chaser | Cream and rust storm bands | Alternating crosswind bands |
-| 6 | Saturn | Ring Road | Gold ice rings, pale sky | Ice chunks (bumpers) |
-| 7 | Uranus | Tilt-a-Whirl | Pale cyan ice | Wide ice sheets (slick) |
-| 8 | Neptune | Deep Blue Derby | Dark blue storm world | Gusts and hail chunks |
+| # | Planet | Track | Length | Look | Hazards | Par |
+|---|---|---|---|---|---|---|
+| 1 | Mercury | Caloris Circuit | 4,568 | Gray road, orange rock, black sky, a huge sun | 5 craters (pits) | 96.3 s |
+| 2 | Venus | Cloud Deck Run | 4,380 | Sulfur ground, orange haze, cloud banks | 6 acid pools (rough) | 93.3 s |
+| 3 | Earth | Blue Marble Speedway | 4,348 | Asphalt, red and white curbs, green fields, blue sky, sun and moon | Wet sand on 6 corners' outsides (slick) | 107.2 s |
+| 4 | Mars | Olympus Rally | 4,320 | Red dust and ridges, butterscotch sky, Phobos | 4 dust-storm gusts on the straights (crosswind) | 95.3 s |
+| 5 | Jupiter | Spot Chaser | 4,444 | Cream and rust, storm-cloud banks, Io | Crosswind on every straight, alternating sides | 98.3 s |
+| 6 | Saturn | Ring Road | 4,464 | Gray-blue road, gold plains, ice spires, the rings across the sky | 12 ice chunks (bumpers) | 96.3 s |
+| 7 | Uranus | Tilt-a-Whirl | 4,272 | Teal road, cyan snow, ice spires | Ice sheets right across 5 corners (slick) | 111.4 s |
+| 8 | Neptune | Deep Blue Derby | 4,300 | Deep blue, storm clouds, stars, Triton | 4 gusting crosswinds and 8 hail chunks (bumpers) | 95.0 s |
+
+Par is the mean of the eight planets' AI times at the track's pace (7.3). The
+layouts were found by a search: a loop grown at random on a coarse grid of cells,
+its corners rounded by corner cutting, kept when it was long enough, its tightest
+radius at least 46 px and its stretches of road at least 92 px apart. The start is
+put on the straightest stretch, and the orbs and hazards are placed by rule on the
+straights and corners. Earth's speedway and Uranus's ice are the slowest for the AI,
+which takes slick corners carefully.
 
 Hazards are few and forgiving: with no restarts, one mistake should cost seconds, not the run.
 
@@ -178,10 +192,11 @@ Hazards are few and forgiving: with no restarts, one mistake should cost seconds
 
 - A track is a **128 × 128-tile floor** (1,024 × 1,024 world px, as in the Mode 7 demo) in Map RAM, the way the `mode7` cart's oval is.
 - The centerline is a closed Catmull-Rom curve through the control points, sampled every 4 px of arc. Each tile corner is on the road when it lies within 20 px of the centerline, and a tile's four corners pick one of 16 **marching-squares tiles**, so the road's edge runs smoothly across tiles, with a curb stripe drawn along it. Whole road and off-road tiles come in three variants each, picked by a hash of the tile's position.
-- Craters are 2 × 2 tiles, placed only where all four tiles are wholly road. The start/finish line is a column of checker tiles at the first sample.
+- Craters and acid pools are 2 × 2 tiles, placed at the nearest spot within a tile of the one asked for where all four tiles are wholly road. Slick zones turn the whole road tiles they cover into slick tiles. The start/finish line is a line of checker tiles across the road at the first sample: a column where the road runs across the map, a row where it runs up or down. No hazard is placed within 2 tiles of it.
+- In the cart, each track's control points are packed four base-32 digits apiece (x then y, 0–1023) to keep the data small.
 - A floor fills a full half of Map RAM, so the cart holds **one floor at a time** and **builds each track's floor when its race begins**, behind the track card, while the floor isn't on screen. That's about 16,400 `mset` calls, spread over a few frames.
 - Tracks are defined as data in the cart: control points for the road centerline, its width (about 40 px), hazard zones, the racing line (waypoints for the AI), the 10 gates, orb positions and bumpers. The data is turned into tiles at race start, which keeps the cart small and lets each track's look change just by its palette.
-- Map RAM budget: the floor takes columns 0–127. Columns 128–255 hold the horizon scenery for all eight worlds (BG1: eight strips of 64 × 9 tiles, about 36 rows in all) and any extra backdrop (BG0).
+- Map RAM budget: the floor takes columns 0–127. Columns 128–255 hold the horizon scenery (BG1): four styles of 64 × 9 tiles, each a 512 px strip that repeats, shared by the eight worlds through their palettes: rocky ridges (Mercury, Mars), clouds (Venus, Jupiter, Neptune), hills (Earth) and ice spires (Saturn, Uranus). Style `s` sits at column 128 + 64 × (s & 1), row 9 × (s >> 1). Each track sets its floor colors (BG palette 0), its horizon, sun and moon colors (BG palette 1) and its sky gradient when it loads.
 
 ## 7. Rivals and standings
 
@@ -189,7 +204,8 @@ Hazards are few and forgiving: with no restarts, one mistake should cost seconds
 
 - Each rival follows its track's **racing line**, steering toward a point 40 px (10 samples) ahead. For now the racing line is the centerline, and each rival keeps to its own lane, a seeded offset of up to 8 px either side.
 - It steers with the same buttons you have. It starts a turn when the line is more than a small angle off, and holds it until the line is dead ahead, so its steering ramp (3) isn't restarted every few frames.
-- Its target speed comes from the corner ahead and its planet's speed stat, times a pace factor `p` (7.2): the lower of its top speed and the tightest corner in the next 96 px, where a corner allows the planet's turn rate × the radius × 1.35. (The 1.35 is because it cuts across a 40 px road rather than following the centerline. With it, every planet's AI stays on the road.) It uses the same driving model as you (5.2), with the planet's own stats.
+- Its target speed is the lower of its top speed × the pace factor `p` (7.2) and 0.86 × the tightest corner in the next 96 px, where a corner allows the planet's turn rate × the radius × 1.1. The radius is measured through the centerline 64 px either side, so a long hairpin reads as tight and a short kink, which it can cut across, as gentle. The pace applies to top speed only: when it scaled the corners too, the faster tracks' rivals ran wide. With these values no planet's AI leaves the road on any track. It uses the same driving model as you (5.2), with the planet's own stats.
+- It steers round craters, pools and bumpers on its line ahead, and takes corners on slick ground at 60% of its usual speed.
 - It doesn't drift in version 1, but it does collect its own boost orbs, and it keeps a boost unless a corner ahead forbids the speed.
 - **Mistakes:** where a corner starts (the radius drops under 140 px), a seeded roll with the track's chance (7.2) makes it run 14 px wide at 93% of its target speed for 40 frames.
 - **No rubber-banding.** A rival doesn't slow down because you are behind, or speed up because you are ahead.
@@ -341,8 +357,8 @@ so there is no revving engine. The music and the effects carry the speed.
 
 | Asset | Budget |
 |---|---|
-| Code | ≤ 48 KB of the 64 KB limit (the track data and the generators are the biggest parts) |
-| Tiles | ≤ 650 of 1,024: floor surfaces ~30, planets 8 × ~41 (three sizes, two rolling frames at 32 and 16), orbs and bumpers ~20, horizon scenery ~100, title letters ~40 |
+| Code | ≤ 48 KB of the 64 KB limit planned; 52 KB after step 3 (the track data and the generators are the biggest parts) |
+| Tiles | About 830 of 1,024 so far: floor surfaces 38, planets 8 × 41 (three sizes, two rolling frames at 32 and 16), orbs and bumpers 30, horizon scenery 396 (four styles, deduplicated with flips); title letters ~40 still to come |
 | Map RAM | The floor in columns 0–127 (128 × 128); the horizon scenery and backdrop in columns 128–255 |
 | Palettes | BG 0–7: each track's floor and scenery colors (a track picks its own). Sprites: the planets share sub-palettes in pairs (7 colors each), so four in all; the other four go to orbs, shadows and bumpers, the logo letters and the HUD |
 | Sprites on screen | ≤ 30, far under the 32-per-line limit |
@@ -357,7 +373,9 @@ so there is no revving engine. The music and the effects carry the speed.
 2. **Rivals and planets (built):** the AI on the racing line, bumping, all eight planets' stats, the three-rival draw, orbs and the pace ramp, and the simulated standings.
    - **Results:** on Mercury at pace 0.86, the AI's 3-lap times are 92 s (Neptune) to 108 s (Jupiter), most planets 96 s, against 85 s for a simple bot driving Earth flat out. No planet's AI leaves the road but Jupiter's, for a frame. A race with four karts costs about 2 ms a frame in Chromium (1.5 ms headless), and the same seed and inputs replay the same race, rivals included.
    - Placeholder sprites for all eight planets (the surface texture, Saturn's rings, no faces yet). Until the flow (step 4) is built, the title has RACE (against three rivals) and TIME TRIAL, and LEFT/RIGHT picks the planet, showing its stars.
-3. **All eight tracks and hazards:** the track data and palettes, the five hazard types, and tuning each lap to about 30 s.
+3. **All eight tracks and hazards (built):** the track data and palettes, the five hazard types, and tuning each lap to about 30 s.
+   - **Results:** every planet's AI finishes every track without leaving the road; a race costs about 1.5 ms a frame headless, 2 ms in Chromium, and still replays exactly. The code is 52 KB (the track data 7 KB), over the 48 KB budget but well under the 64 KB limit. Until step 4, the title also has a TRACK row, and changing it rebuilds the floor so the title camera glides round the chosen track.
+   - **For balance (step 7):** Jupiter's 1★ handling makes it the slowest planet by far on the twisty tracks (its AI takes 128–160 s where most take 85–107 s). Its turn rate, 0.020 rad/frame, may need raising.
 4. **Flow:** title, planet select, track card, results, initials, scores, time trial, pause and saves.
 5. **Art pass:** the planets' faces and expressions, the floor tiles, the horizon scenery and the title, made in the built-in editors.
 6. **Audio pass:** eight songs and the effects in the Music and SFX tabs.

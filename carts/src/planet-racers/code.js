@@ -1,10 +1,11 @@
 // PLANET RACERS - a Mode 7 Grand Prix where the racers are the eight planets.
-// Design: docs/carts/planet-racers.md. Built so far (SPEC 15, steps 1-2):
-// Mercury's Caloris Circuit, raced against three rivals drawn from the other
-// seven planets, or alone as a time trial. The floor is built from the track's
-// centerline at init, the physics read the surface from the floor pixel under
-// each kart, and a lap counts after 10 gates in order. B accelerates, A
-// brakes, L or R drifts, START pauses, SELECT restarts a time trial.
+// Design: docs/carts/planet-racers.md. Built so far (SPEC 15, steps 1-3):
+// the eight tracks with their hazards, raced against three rivals drawn from
+// the other seven planets, or alone as a time trial. Each floor is built from
+// its track's centerline when the track loads, the physics read the surface
+// from the floor pixel under each kart, and a lap counts after 10 gates in
+// order. B accelerates, A brakes, L or R drifts, START pauses, SELECT
+// restarts a time trial.
 
 // --- Tuning -------------------------------------------------------------------
 
@@ -30,6 +31,10 @@ const BOOST_FRAMES = 45, BOOST = 1.45;
 const PIT_SLOW = 0.4, DIZZY = 30;
 const KART_R = 3.5, ORB_R = 3;
 const BUMP_LOSS = 0.12; // share of speed a bump costs, split by weight
+const BUMPER_R = 4, BUMPER_LOSS = 0.3; // bumpers: 8 px across, and the speed a hit costs (SPEC 5.4)
+const WIND = 0.04, WIND_DECAY = 0.9; // crosswind push (px/frame² at weight 3) and how fast its drift fades
+const GUST_ON = 90, GUST_CYCLE = 180; // Neptune's gusts blow for 90 frames in every 180
+const SLICK_SLOW = 0.6; // the AI takes corners on slick ground at this share of its usual speed
 const WRONG_FRAMES = 60;
 const SLIDE_PX = 14; // screen px the planet slides out per px/frame of sideways speed in a drift
 const SKID_EVERY = 10; // frames between skid sounds in a drift
@@ -37,7 +42,8 @@ const EDGE = 6; // the soft wall's distance from the floor's edge
 const GRID_GAP = 4, GRID_LAT = 8; // grid slots: samples apart, px either side
 // The AI (SPEC 7.1): it steers at the racing line AI_LOOK samples ahead and
 // sets its speed by the tightest corner in the next AI_BRAKE samples.
-const AI_LOOK = 10, AI_BRAKE = 24, AI_DEAD = 0.05, CORNER_K = 1.35;
+const AI_LOOK = 10, AI_BRAKE = 24, AI_DEAD = 0.05, AI_SPAN = 16, CORNER_K = 1.1;
+const CORNER_PACE = 0.86; // corners are taken at this share of their limit on every track; the pace ramp is for top speed
 const CORNER_R = 140; // a radius under this starts a corner (for mistakes)
 const MISTAKE_FRAMES = 40, MISTAKE_WIDE = 14, MISTAKE_SLOW = 0.93;
 const PACE = [0.86, 0.88, 0.90, 0.92, 0.94, 0.96, 0.98, 1.00]; // SPEC 7.2, by track
@@ -70,29 +76,76 @@ function statsOf(p) {
 const simOffset = (p) => (3 - p.speed) * 0.03 + (3 - p.handling) * 0.03;
 
 /**
- * Tracks (SPEC 6). `points` are the centerline's Catmull-Rom control points in
- * world px, starting at the start/finish line and running in race order.
- * Craters and orbs are [position along the lap in thousandths, offset to the
- * right of the centerline in px]. `par` is a rival's 3-lap time at the track's
- * pace, in frames, for the simulated results. Colors are 5-bit [r, g, b].
+ * Tracks (SPEC 6), in Grand Prix order. `points` are the centerline's
+ * Catmull-Rom control points, four base-32 digits each (x then y, 0-1023),
+ * starting at the start/finish line and running in race order. Hazards and
+ * orbs are placed by [position along the lap in thousandths, offset to the
+ * right of the centerline in px]: craters (pits) and pools (rough) as 2x2
+ * tiles; slick zones as [from, to, lat from, lat to]; wind as [from, to,
+ * direction] (1 pushes right); bumpers as sprites. `par` is a rival's 3-lap
+ * time at the track's pace, in frames, for the simulated results. The look:
+ * a horizon style (0 ridges, 1 clouds, 2 hills, 3 ice spires), the sky's
+ * 5-bit [r, g, b] top and bottom, stars, the sun and a moon as [azimuth in
+ * angle units, y, radius], Saturn's rings, and `pal`: floor colors 1-15, then
+ * horizon 1-4, sun core, disc and glow, and the moon's three (24-bit hex).
  */
-const TRACKS = [{
-  name: 'CALORIS CIRCUIT', planet: 'MERCURY', par: 5900,
-  points: [[300, 900], [560, 920], [800, 900], [930, 800], [940, 660], [840, 580], [700, 600],
-    [560, 680], [420, 660], [360, 560], [440, 470], [600, 480], [740, 430], [790, 320],
-    [920, 250], [950, 110], [800, 50], [640, 80], [540, 180], [430, 290], [290, 270],
-    [210, 150], [80, 160], [50, 330], [160, 430], [250, 520], [220, 640], [90, 700],
-    [70, 830], [160, 910]],
-  craters: [[55, -10], [250, 10], [390, 10], [630, -10], [830, 10]],
-  orbs: [[25, 0], [80, 10], [270, -8], [400, 8], [455, 0], [560, -10], [640, 10], [750, 0], [845, -10], [960, 0]],
-  sky: [[0, 0, 1], [11, 7, 5]],
-  sun: { az: 300, y: 38, r: 8 },
-}];
+const TRACKS = [
+  { name: 'CALORIS CIRCUIT', planet: 'MERCURY', par: 5778,
+    points: '9cs4hgsop0s4t2p0tckkq8i4lsiohgl8d4kkb8hgdoemiof0n4deoma0so7qtm3ep01ik02ggs5kde92928e6i4m2g501iaa50de7qg86sk02qls26pu50se',
+    craters: [[55, -10], [250, 10], [390, 10], [630, -10], [830, 10]],
+    orbs: [[25, 0], [80, 10], [270, -8], [400, 8], [455, 0], [560, -10], [640, 10], [750, 0], [845, -10], [960, 0]],
+    horizon: 0, sky: [[0, 0, 1], [11, 7, 5]], stars: 1, sun: [300, 38, 8],
+    pal: '4a4650 56525c 6c6872 d8702c ece4d4 5a4034 7e5c46 946e52 b08a68 8a7a40 a89450 9ab8d0 1e1820 342a32 ffffff 2e262c 4a3c3c 6a5248 b47a4c fff6dc ffd88a c87a3c 000000 000000 000000' },
+  { name: 'CLOUD DECK RUN', planet: 'VENUS', par: 5598,
+    points: 'rah5r8juremorjperos4q8tin1trlgsiljpoljn3lgkjk1j8h7j1ejipc5ifaqjsagn2aaq4a6t38oub60tr4is54dp94amm47ka48hk4eeh60d18vd2bmd5e5d8h0dck9dgloc8lf9kjt88h384eg83c286ai6o9u3sba28en1tht20ks2eng2mpm2mr03prd5vrj8hrkbfrgeb',
+    pools: [[181, -10], [247, -10], [695, -10], [816, -10], [844, -10], [877, -10], [924, 10], [957, -10]],
+    orbs: [[150, 0], [222, 0], [294, 0], [327, 9], [415, 0], [447, -9], [480, -9], [532, 0], [564, 9], [597, 0]],
+    horizon: 1, sky: [[22, 12, 3], [31, 25, 12]], stars: 0, sun: [500, 30, 10],
+    pal: '5a4a3a 6a5844 7c6850 e8e0c0 c87830 9a7a20 b89428 d0ac38 e8c858 8ab830 c8e860 9ab8d0 2a2018 3a2e22 ffffff a86a20 c88a30 e0aa48 f8d070 fff4d0 f8d890 e8b860 000000 000000 000000' },
+  { name: 'BLUE MARBLE SPEEDWAY', planet: 'EARTH', par: 6431,
+    points: '4eb54n8a4q5l4o36601v8j21a23daf62ae8ua0bva4euaohob1kbaumkc6nvesoag4n5g2kffthlfoemfibqfd91gq7ljr7nlg8ulrbbndcoq7d4rmeprohmqcj0niimlujtlkmin2o6qcomrrqcrht6puuan4tokathhgtkerttc9ub9iub6ltu59se5epr5ana4tkr4khr4dea',
+    slick: [[464, 505, 4, 22], [500, 541, -22, -4], [575, 615, 4, 22], [610, 652, 4, 22], [652, 694, -22, -4], [849, 890, -22, -4]],
+    orbs: [[121, -9], [154, -9], [187, 9], [220, 0], [311, 9], [344, -9], [377, 0], [727, 0], [760, -9], [793, 9]],
+    horizon: 2, sky: [[6, 13, 27], [19, 26, 31]], stars: 0, sun: [200, 22, 7], moon: [700, 30, 5],
+    pal: '3a3c44 484a54 5a5c66 e83838 f4f4f4 2a7a2e 3a9a3a 52b44a 78cc5a 8a7a40 a89450 a88e5c 202020 303030 e8dcb4 5a86a8 2a6a30 3a8a3a 6ab45a fffbe0 fff0a0 f8d060 f0f0f8 c8c8d4 9898a8' },
+  { name: 'OLYMPUS RALLY', planet: 'MARS', par: 5717,
+    points: 'i4e8i6biia90h07nea7pd69cdmcgdvf8e2hmcnita0j08ekc80n26go73sns2nmc30jm34h231eg48d66qd782bq81916m7l3v7n2k6k2l4d4534752q9o2pbt32ed37h639k036mr2so849o77cpd8rrq8nt49otbbvs1d0p6ctnkeendhknck6njm6nmoenmqvmis8k8s9j0r0iqogihm0i7jki2h1',
+    wind: [[98, 141, -1], [486, 547, 1], [777, 838, 1], [914, 975, -1]],
+    orbs: [[102, 0], [135, 0], [283, 0], [489, 0], [523, 9], [556, 9], [589, 0], [781, 9], [814, -9], [847, 9]],
+    horizon: 0, sky: [[10, 5, 4], [29, 19, 12]], stars: 0, sun: [420, 34, 5], moon: [120, 20, 3],
+    pal: '4a2a22 5a342a 6c4032 f0e0d0 b83820 8a3a1c a84a24 c05c2e d8784a 7a4a30 9a6040 9ab8d0 2a1410 3a1c16 ffffff 5a2014 7a2c1a a03c22 d06a3c f8f0e0 e8d8b0 c0a080 9a8a80 7a6a60 5a4a40' },
+  { name: 'SPOT CHASER', planet: 'JUPITER', par: 5898,
+    points: 'fb2kgd2khh2mio2qk130ld37md3mn14cnb5an86enj7aob7upg88r18bs68ost9ft7aht3busmcurudjqtdrpidnojdunvehnoffntgoo9hootieppisqtivrpjcsek2srl1t2m9sqn7s5nqr3o3pjo2ofobnoovncptner5n5s3misnlmt1kht0jkslj2rvipquippkieolhno2gknsf5o1dpo5cgo6bao6a6o392o27to16mo25go44hnp3rn23elt3akc3gj842ih4vi767ib7gie8riga7ihbkiid0iiebijfmijguiihui8ijhjiugkivfcj0e1ivcliub8is9qih8nhs80gt7kfm7kec7md07rbj81a48a928p8e9e88aa8fbd89c77ncr6nd75adb48d53gcj32bn2uag2s992r812q6q2s5j364l3q414o3m5u3l783i8j3ea137bg30ct2qe62m',
+    wind: [[416, 466, 1], [554, 604, -1], [662, 700, 1], [734, 773, -1], [865, 896, 1], [929, 979, -1]],
+    orbs: [[419, 0], [452, 9], [557, -9], [590, -9], [622, -9], [665, -9], [738, 9], [869, -9], [932, -9], [965, 0]],
+    horizon: 1, sky: [[7, 3, 2], [25, 15, 8]], stars: 1, sun: [60, 28, 4], moon: [320, 26, 6],
+    pal: '5a3c2c 6a4836 7c5640 f4e8d8 c0602c c8a880 dcc098 ecd4b0 f8e8cc 8a7a40 a89450 9ab8d0 2a1a10 3a2618 ffffff 8a4a2a b86a3a d8a070 f0d4a8 f8f0d0 e0c890 b09060 f8ec70 d8b830 a88820' },
+  { name: 'RING ROAD', planet: 'SATURN', par: 5776,
+    points: 'gd3dhl3ciu3ak936lm30n22uoe2upq32r738s63oso4gsu5ism6tsh85sf9aseadshbesjchsldnsmevsogbsghbruhvr3i7pui4p2hpogh6o7gbo6f8o5e3o2csnubjnqa8nc96ml8flm81kd7sj47shq7uge85f18ee18vdc9md4ajd9bodbctdbe3d9fbd6gjcohjc2iab2ip9oiv8rjc8bk087kq8gls8vml9kn6aengbgngclnhdunhfbnhgtnhi0nsimoiitpkinr1i8s1hiskgksqfdsje5sfcssebgsga3sl8nsp7bsr61ss4osq3ose32rn2mqk2kp72inq2hmf2gl62hju2iin2khg2ogb2tf63bec44dr56dl6ido7hdf83co88bj7va27h8u6s88627v5085477v3l7d3a6g36583e4a403m4t3c643e7d3e8m3ea03ebc3ccl3cdu3cf63c',
+    bumpers: [[90, -10], [181, -10], [208, -10], [283, 10], [344, -10], [391, 0], [451, 0], [518, 10], [777, 10], [854, -10], [930, 10], [968, 10]],
+    orbs: [[110, 9], [142, 0], [235, 0], [303, 0], [372, 0], [493, 0], [594, 9], [627, 0], [659, -9], [703, -9]],
+    horizon: 3, sky: [[3, 4, 9], [26, 24, 18]], stars: 0, sun: [150, 26, 6], moon: [0, 0, 0], rings: 1,
+    pal: '5a6070 6a7282 7c8696 ffffff d8b860 b8a060 ccb478 dcc890 ecdcac 8a7a40 a89450 9ab8d0 2a2a30 3a3a44 ffffff a08a50 c0a868 dcc488 f4e4b0 f8f4e0 e8e0b0 c8b880 f0d488 c09850 806838' },
+  { name: 'TILT-A-WHIRL', planet: 'URANUS', par: 6684,
+    points: 'gpnsf8noe4o0dfokd7pkddr0d6s0cgsjbesp9usk8ss689rf84qh8dpa8jo38lms8jlm8dke7ujh74is60ig4jid3hi12shb2kgb2of236e53tdk4udf69dm7adh82cu8gbv8lak8e9h7q8n6r875f7v4d7h3k6s35612u4v35443n3f4n31622p7d2k8n2ia02jb82mc632cq3od44md55tdf6re47ef27ogc7phb7gi170id67ig55is4cjh3skg3kln3mmn40nd4jns5fo16kof7gp483q28cr68ds18msi97spa2smb5sac2rlcnqod6phddoadjn0dnlmdok9doj0dnhodmgkdlfhdkendte6egdsfddrgke3hjeki8feilghiphmiriuirk8ipljilmuijo8ikpgimqnisrmj8sdjtsrkpt2lusrmqs6ner5nqpmntoao0n1o2lro3koo2jho1i7nv',
+    slick: [[181, 216, -22, 22], [211, 246, -22, 22], [320, 374, -22, 22], [598, 658, -22, 22], [892, 928, -22, 22]],
+    orbs: [[112, 9], [379, 9], [660, 0], [694, -9], [794, -9], [828, 0], [932, -9], [965, 0]],
+    horizon: 3, sky: [[3, 11, 13], [15, 27, 29]], stars: 0, sun: [260, 24, 4],
+    pal: '4a6a74 587a86 6a8c98 ffffff 40a8c0 9ad0d8 b0e0e6 c8eef0 e0f8fa 8a7a40 a89450 74c8e4 1a2a30 2a3c44 f4ffff 4a8a9a 6aaab8 8ccad4 c0ecf0 ffffff d0f0f8 a0d0e0 000000 000000 000000' },
+  { name: 'DEEP BLUE DERBY', planet: 'NEPTUNE', par: 5699, gust: 1,
+    points: 'skklsolnsrmrsto1stpasrqmshrorushr3t0pvt6p3svogsbo4rao2prnmoon2o0m5njkvnik2nsjeohj2piiur0ihs2hrsqgst7fjtaekt0dtsadgr7ddpocvokc8nrb8nc9una90nj8foa8apd8iqs8cs07qsp6st65gt64fst3nsa39rd36q534os35nh39m53fkm3ujj4kir5kie6sib84i99di7ali5bui2crhnddh2djg4deeucve2c7dhb5db9pdg8pda83cp7pbu7qam879o9091a58jbm8ed38bec8bfh8egh8khc8di07oif6nin58j644jr3bkm2sln2omr2no02pp82uqi35ri3ls74dsi5esk6msb7kro86qs8dpn8aop8ho393nka0neb7mvc6m8crl8d7k1d9j4dlijebiefaijgjj2hgjqi2kri9m5i4ndi3oji5pnibqqilrkj4s8jq',
+    wind: [[7, 41, -1], [375, 413, 1], [448, 484, -1], [612, 649, 1]],
+    bumpers: [[85, -9], [139, 0], [178, -9], [224, 0], [422, 0], [497, 9], [554, -9], [867, 0]],
+    orbs: [[378, 9], [452, -9], [616, 0], [723, -9], [943, 0]],
+    horizon: 1, sky: [[0, 0, 4], [5, 7, 18]], stars: 1, sun: [380, 30, 3], moon: [90, 24, 5],
+    pal: '242c58 2c3668 384278 80e0ff ffffff 142070 1a2a88 2238a0 3048b8 8a7a40 a89450 9ab8d0 080c20 101838 ffffff 101c50 1c2c70 2c4090 4a64b8 e8f0ff a0b8e8 6080c0 d8c8c0 a89890 786860' },
+];
 
 // --- Tiles, palettes, sound ------------------------------------------------------
 
-const T_ROAD = 1, T_OFF = 4, T_START = 7, T_EDGE = 16, T_CRATER = 32; // floor tiles
+const T_ROAD = 1, T_OFF = 4, T_START = 7, T_EDGE = 16, T_CRATER = 32, T_POOL = 34, T_SLICK = 36; // floor tiles
 const ORB = [196, 142, 141], ORB_PAL = 4; // boost orb at 32, 16 and 8 px
+const BUMPER = [200, 204, 206]; // ice chunk at 32, 16 and 8 px, in the orb's palette
 /** Planet p's sprite at a size and rolling frame; the planets share palettes in pairs. */
 function planetTile(p, size, f) {
   if (size === 32) return 384 + (p >> 1) * 64 + (p & 1) * 8 + 4 * f;
@@ -105,7 +158,7 @@ const planetColor = (p) => 128 + 16 * (p >> 1) + 3 + 6 * (p & 1); // its base co
 const S_ROAD = 0, S_OFF = 1, S_ROUGH = 2, S_SLICK = 3, S_PIT = 4;
 const SURF = [S_OFF, S_ROAD, S_ROAD, S_ROAD, S_ROAD, S_ROAD, S_OFF, S_OFF, S_OFF, S_OFF, S_ROUGH, S_ROUGH, S_SLICK, S_PIT, S_PIT, S_ROAD];
 const BLACK = 113, WHITE = 114, GOLD = 115, RED = 116, CYAN = 117, PANEL = 118, GREEN = 119, DIM = 120; // HUD (BG palette 7)
-const SUN = [21, 22, 23]; // core, disc and glow (BG palette 1)
+const SUN = [21, 22, 23], MOON = [24, 25, 26]; // core, disc and glow (BG palette 1)
 const SFX = { beep: 0, go: 1, orb: 2, lap: 3, final: 4, finish: 5, pit: 6, move: 7, select: 8, drift: 9, boostEnd: 10, wall: 11, bump: 12 };
 const SFX_CH = 1;
 const ORD = ['1ST', '2ND', '3RD', '4TH', '5TH', '6TH', '7TH', '8TH'];
@@ -125,6 +178,10 @@ let track = TRACKS[0], tix = 0, pick = 2;
 let N = 0; // centerline samples
 let SX, SY, TX, TY, RAD; // sample positions, unit tangents and corner radii
 let CORNER; // per sample: 1 or -1 where a right or left corner starts, else 0
+let WINDS; // per sample: the crosswind's direction (1 right, -1 left), or 0
+let SLICKS; // per sample: 1 where a slick zone crosses the road
+let bumpers = []; // { x, y }
+let hazards = []; // what the AI steers round: { i (sample), lat, r }
 let GATE = []; // sample index of each gate
 let orbs = []; // { x, y }; each kart keeps its own taken flags
 let karts = [], player = null;
@@ -133,7 +190,7 @@ let record = { time: false, lap: false };
 let best = { time: 0, lap: 0 };
 let result = null; // after the race: { order, table } (SPEC 7.3)
 let page = 0; // the finish screens: 0 the race result, 1 the standings
-let paused = false, pauseSel = 0, menu = 0;
+let paused = false, pauseSel = 0, menu = 0, row = 0; // title: the mode, and the row being changed
 let banner = null; // { text, until, color }
 let bumpQuiet = 0; // frames until the bump sound may play again
 let prevMask = 0, inputMask = 0;
@@ -196,10 +253,17 @@ function init() {
 
 function loadTrack(i) {
   tix = i; track = TRACKS[i];
-  sampleCenterline(track.points);
+  const P = [];
+  for (let k = 0; k < track.points.length; k += 4) P.push([parseInt(track.points.substr(k, 2), 32), parseInt(track.points.substr(k + 2, 2), 32)]);
+  sampleCenterline(P);
   buildFloor(track);
+  // The track's colors: floor 1-15 in BG palette 0, then horizon, sun and moon in BG palette 1.
+  track.pal.split(' ').forEach((h, k) => {
+    const v = parseInt(h, 16);
+    color(k < 15 ? k + 1 : k + 2, v >> 19, (v >> 11) & 31, (v >> 3) & 31);
+  });
   bg(2, { mx: 0, my: 0, mw: 128, mh: 128, wrap: true });
-  bg(1, { mx: 128, my: 0, mw: 64, mh: 9, wrap: true });
+  bg(1, { mx: 128 + 64 * (track.horizon & 1), my: 9 * (track.horizon >> 1), mw: 64, mh: 9, wrap: true });
   bg(0, { show: false });
   for (let y = 0; y < HORIZON; y++) {
     const k = y / (HORIZON - 1), [a, b] = track.sky;
@@ -246,9 +310,10 @@ function sampleCenterline(P) {
     const dx = SX[j] - SX[h], dy = SY[j] - SY[h], m = Math.sqrt(dx * dx + dy * dy);
     TX[i] = dx / m; TY[i] = dy / m;
   }
-  // Corner radius through the samples 8 either side, and where corners start.
+  // Corner radius through the samples AI_SPAN either side (64 px): a long hairpin
+  // reads as tight, a short kink the AI can cut across as gentle. Then where corners start.
   for (let i = 0; i < N; i++) {
-    const a = (i + N - 8) % N, c = (i + 8) % N;
+    const a = (i + N - AI_SPAN) % N, c = (i + AI_SPAN) % N;
     const ab = Math.sqrt((SX[i] - SX[a]) ** 2 + (SY[i] - SY[a]) ** 2);
     const bc = Math.sqrt((SX[c] - SX[i]) ** 2 + (SY[c] - SY[i]) ** 2);
     const ca = Math.sqrt((SX[a] - SX[c]) ** 2 + (SY[a] - SY[c]) ** 2);
@@ -298,18 +363,51 @@ function buildFloor(tr) {
       mset(tx, ty, tile(c === 15 ? T_ROAD + v : c === 0 ? T_OFF + v : T_EDGE + c));
     }
   }
-  // Start/finish: a column of checker tiles at sample 0, across the road.
-  const sx = flr(SX[0] / 8);
-  for (let ty = 0; ty < 128; ty++) if (caseAt(sx, ty) === 15) mset(sx, ty, tile(T_START));
-  // Craters: 2x2 tiles, only where all four sit wholly on the road.
-  for (const [pm, lat] of tr.craters) {
-    const [x, y] = along(pm, lat);
-    const tx = flr(x / 8 - 0.5), ty = flr(y / 8 - 0.5);
-    if (Math.abs(tx - sx) < 3) continue;
-    if ([0, 1].every((a) => [0, 1].every((b) => caseAt(tx + a, ty + b) === 15))) {
-      for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) mset(tx + a, ty + b, tile(T_CRATER + a + b * 16));
+  // Start/finish: a line of checker tiles at sample 0 across the road: a column
+  // where the road runs across the map, a row where it runs up or down.
+  const across = Math.abs(TX[0]) > Math.abs(TY[0]), sx = flr(SX[0] / 8), sy = flr(SY[0] / 8);
+  for (let k = 0; k < 128; k++) {
+    const tx = across ? sx : k, ty = across ? k : sy;
+    if (caseAt(tx, ty) === 15) mset(tx, ty, tile(T_START));
+  }
+  const nearLine = (tx, ty) => (across ? Math.abs(tx - sx) : Math.abs(ty - sy)) <= 2;
+  // Slick zones: whole road tiles the zone covers.
+  SLICKS = new Uint8Array(N);
+  for (const [a, b, l0, l1] of tr.slick || []) {
+    for (let i = flr(a * N / 1000); i <= flr(b * N / 1000); i++) {
+      SLICKS[i % N] = 1;
+      for (let lat = l0; lat <= l1; lat += 3) {
+        const [x, y] = at(i % N, lat), tx = flr(x / 8), ty = flr(y / 8);
+        if (caseAt(tx, ty) === 15 && !nearLine(tx, ty)) mset(tx, ty, tile(T_SLICK + ((tx + ty) & 1)));
+      }
     }
   }
+  // Craters (pits) and pools (rough): 2x2 tiles, only where all four sit wholly on the road.
+  hazards = [];
+  const stamp = (list, t0) => {
+    for (const [pm, lat] of list || []) {
+      const [x, y, i] = along(pm, lat);
+      // The nearest 2x2 spot that sits wholly on the road, within a tile of the asked one.
+      let bx = 0, by = 0, bd = Infinity;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const tx = flr(x / 8 - 0.5) + dx, ty = flr(y / 8 - 0.5) + dy;
+          const d = (tx * 8 + 8 - x) ** 2 + (ty * 8 + 8 - y) ** 2;
+          if (d < bd && !nearLine(tx, ty) && !nearLine(tx + 1, ty + 1) && [0, 1].every((a) => [0, 1].every((b) => caseAt(tx + a, ty + b) === 15))) { bd = d; bx = tx; by = ty; }
+        }
+      }
+      if (bd === Infinity) continue;
+      for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) mset(bx + a, by + b, tile(t0 + a + b * 16));
+      // Where it ended up, as the AI sees it: its offset from the centerline.
+      const cx = bx * 8 + 8 - SX[i], cy = by * 8 + 8 - SY[i];
+      hazards.push({ i, lat: -TY[i] * cx + TX[i] * cy, r: 8 });
+    }
+  };
+  stamp(tr.craters, T_CRATER);
+  stamp(tr.pools, T_POOL);
+  WINDS = new Int8Array(N);
+  for (const [a, b, dir] of tr.wind || []) for (let i = flr(a * N / 1000); i <= flr(b * N / 1000); i++) WINDS[i % N] = dir;
+  bumpers = (tr.bumpers || []).map(([pm, lat]) => { const [x, y, i] = along(pm, lat); hazards.push({ i, lat, r: BUMPER_R + 1 }); return { x, y }; });
   orbs = tr.orbs.map(([pm, lat]) => { const [x, y] = along(pm, lat); return { x, y }; });
 }
 
@@ -333,9 +431,9 @@ function newKart(p, slot, ai) {
   const [x, y, i] = at((N - GRID_GAP * (slot + 1) + 1) % N, slot % 2 ? GRID_LAT : -GRID_LAT);
   const turnRad = st.turn * TAU / ANG;
   const cornerV = new Float64Array(N);
-  for (let s = 0; s < N; s++) cornerV[s] = turnRad * RAD[s] * CORNER_K;
+  for (let s = 0; s < N; s++) cornerV[s] = turnRad * RAD[s] * CORNER_K * (SLICKS[s] ? SLICK_SLOW : 1);
   return {
-    p, st, ai, cornerV, x, y, vx: 0, vy: 0, h: angleOf(TX[i], TY[i]), sp: 0, rev: false,
+    p, st, ai, cornerV, x, y, vx: 0, vy: 0, wx: 0, wy: 0, h: angleOf(TX[i], TY[i]), sp: 0, rev: false,
     steerDir: 0, steerT: 0, drift: false, boost: 0, dizzy: 0, surf: S_ROAD,
     si: i, dist: i - N, gate: GATES, crossings: 0, wrong: 0, roll: 0,
     taken: new Uint8Array(orbs.length), laps: [], lapStart: 0, finish: 0, capped: false,
@@ -429,6 +527,12 @@ function drive(k, m) {
   k.x += k.vx; k.y += k.vy;
   k.roll += sp;
 
+  // Crosswind (SPEC 5.4) pushes across the track, less on heavier planets; the drift fades after.
+  const w = windAt(k.si);
+  if (w) { const a = WIND * w * 6 / (st.weight + 3); k.wx -= TY[k.si] * a; k.wy += TX[k.si] * a; } // x1.5 at weight 1, x0.75 at 5
+  k.wx *= WIND_DECAY; k.wy *= WIND_DECAY;
+  k.x += k.wx; k.y += k.wy;
+
   // The floor's edge is a soft wall.
   if (k.x < EDGE || k.x > 1024 - EDGE || k.y < EDGE || k.y > 1024 - EDGE) {
     k.x = mid(EDGE, k.x, 1024 - EDGE); k.y = mid(EDGE, k.y, 1024 - EDGE);
@@ -443,6 +547,26 @@ function drive(k, m) {
     if (me) sfx(SFX.pit, SFX_CH);
   }
   k.surf = now;
+}
+
+/** The crosswind at sample i now: its direction, or 0. Neptune's blows in gusts. */
+function windAt(i) {
+  return WINDS[i] && (!track.gust || raceF % GUST_CYCLE < GUST_ON) ? WINDS[i] : 0;
+}
+
+/** Bumpers (SPEC 5.4): the kart bounces off and loses 30% of its speed. */
+function hitBumpers(k) {
+  const r = KART_R + BUMPER_R;
+  for (const b of bumpers) {
+    const dx = k.x - b.x, dy = k.y - b.y, d2 = dx * dx + dy * dy;
+    if (d2 >= r * r || d2 < 1e-9) continue;
+    const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, vn = k.vx * nx + k.vy * ny;
+    k.x = b.x + nx * r; k.y = b.y + ny * r;
+    if (vn >= 0) continue;
+    k.vx -= 2 * vn * nx; k.vy -= 2 * vn * ny;
+    k.sp *= 1 - BUMPER_LOSS;
+    if (k === player) sfx(SFX.bump, SFX_CH);
+  }
 }
 
 /** Boost orbs are personal: each kart takes its own, and they return each lap (SPEC 5.5). */
@@ -536,6 +660,15 @@ function crossLine(k) {
 function aiInput(k) {
   let lat = k.lane;
   if (k.mistake > 0) { k.mistake--; lat += k.wide; }
+  else {
+    // Steer round craters, pools and bumpers on the line ahead.
+    for (const hz of hazards) {
+      const ahead = (hz.i - k.si + N) % N, gap = hz.r + KART_R + 2;
+      if (ahead > 0 && ahead < AI_LOOK + 14 && Math.abs(hz.lat - lat) < gap) {
+        lat = mid(7 - ROAD, hz.lat + (hz.lat > 0 || (hz.lat === 0 && k.lane < 0) ? -1 : 1) * (gap + 1), ROAD - 7);
+      }
+    }
+  }
   const [tx, ty] = at((k.si + AI_LOOK) % N, lat);
   const dx = tx - k.x, dy = ty - k.y, m = Math.sqrt(dx * dx + dy * dy) || 1;
   const cross = (cosU(k.h) * dy - sinU(k.h) * dx) / m;
@@ -546,7 +679,7 @@ function aiInput(k) {
   // Speed: the tightest corner ahead, then the pace; a boost is kept unless a corner forbids it.
   let lim = Infinity;
   for (let d = 0; d < AI_BRAKE; d += 2) lim = Math.min(lim, k.cornerV[(k.si + d) % N]);
-  const target = Math.min(k.st.top, lim) * PACE[tix] * (k.mistake > 0 ? MISTAKE_SLOW : 1);
+  const target = Math.min(k.st.top * PACE[tix], lim * CORNER_PACE) * (k.mistake > 0 ? MISTAKE_SLOW : 1);
   if (k.boost > 0 ? k.sp < lim : k.sp < target) mask |= BIT(B);
   else if (k.sp > (k.boost > 0 ? lim : target) + 0.15) mask |= BIT(A);
   return mask;
@@ -562,6 +695,7 @@ function stepRace() {
     follow(k);
   }
   bump();
+  for (const k of karts) hitBumpers(k);
   if (raceF >= CAP) {
     for (const k of karts) if (!k.finish) { k.finish = CAP; k.capped = true; if (k === player) finish(); }
   }
@@ -620,9 +754,15 @@ function update() {
 function updateTitle() {
   timer++;
   attract = (attract + 0.35) % N;
-  if (pressed(UP) || pressed(DOWN)) { menu ^= 1; sfx(SFX.move, SFX_CH); }
-  if (pressed(LEFT)) { pick = (pick + 7) % 8; sfx(SFX.move, SFX_CH); }
-  if (pressed(RIGHT)) { pick = (pick + 1) % 8; sfx(SFX.move, SFX_CH); }
+  // Rows: the mode, the track, the planet. LEFT/RIGHT changes the row's value.
+  if (pressed(UP) || pressed(DOWN)) { row = (row + (pressed(UP) ? 2 : 1)) % 3; sfx(SFX.move, SFX_CH); }
+  const d = pressed(LEFT) ? -1 : pressed(RIGHT) ? 1 : 0;
+  if (d) {
+    sfx(SFX.move, SFX_CH);
+    if (row === 0) menu ^= 1;
+    else if (row === 1) { loadTrack((tix + d + TRACKS.length) % TRACKS.length); attract = 0; }
+    else pick = (pick + d + 8) % 8;
+  }
   if (pressed(START) || pressed(B)) { mode = menu; sfx(SFX.select, SFX_CH); startRace(); }
 }
 
@@ -679,7 +819,7 @@ function draw() {
   affine({ a: 1, b: 0, c: 0, d: 1, cx: 0, cy: 0 });
   drawSky();
   drawObjects();
-  if (state !== 'title') drawSparks();
+  if (state !== 'title') { drawSparks(); drawWind(); }
 
   if (state === 'title') drawTitle();
   else {
@@ -707,19 +847,30 @@ function placeCamera() {
   cam.y = player.y - Math.sin(ca) * CAM_BACK;
 }
 
-/** The sun and stars, on the overlay, where the camera's heading puts them. */
+/** Stars, the sun, a moon and Saturn's rings, on the overlay, where the camera's heading puts them. */
 function drawSky() {
   const az = (a) => 128 + diffU(a, cam.h) * SCENERY;
-  for (const [a, y, k] of STARS) {
-    const x = az(a);
-    if (x >= 0 && x < 256) pset(x, y, k ? DIM : WHITE);
+  if (track.stars) {
+    for (const [a, y, k] of STARS) {
+      const x = az(a);
+      if (x >= 0 && x < 256) pset(x, y, k ? DIM : WHITE);
+    }
   }
-  const s = track.sun, x = az(s.az);
-  if (x > -s.r - 4 && x < 256 + s.r + 4) {
-    circfill(x, s.y, s.r + 2, SUN[2]);
-    circfill(x, s.y, s.r, SUN[1]);
-    circfill(x, s.y, s.r - 3, SUN[0]);
+  if (track.rings) {
+    // A tilted ring across the whole sky: its height follows the azimuth.
+    for (let x = 0; x < 256; x++) {
+      const y = flr(24 + 14 * sinU(cam.h + (x - 128) / SCENERY));
+      pset(x, y, MOON[0]); pset(x, y + 1, MOON[0]); pset(x, y + 2, MOON[1]); pset(x, y + 4, MOON[2]); pset(x, y + 5, MOON[2]);
+    }
   }
+  [[track.sun, SUN], [track.moon, MOON]].forEach(([d, c]) => {
+    if (!d || !d[2]) return;
+    const [a, y, r] = d, x = az(a);
+    if (x < -r - 4 || x > 256 + r + 4) return;
+    circfill(x, y, r + 2, c[2]);
+    circfill(x, y, r, c[1]);
+    if (r > 3) circfill(x - 1, y - 1, r - 3, c[0]);
+  });
 }
 
 /**
@@ -740,6 +891,7 @@ function drawObjects() {
   };
   if (state !== 'title') {
     orbs.forEach((o, i) => { if (!player.taken[i]) add(o.x, o.y, ORB, ORB_PAL, { fx: t() % 16 < 8 }); });
+    for (const b of bumpers) add(b.x, b.y, BUMPER, ORB_PAL);
     // In a drift the planet slides out to the side its velocity carries it, away from where it points.
     const slip = player.vy * cosU(player.h) - player.vx * sinU(player.h); // sideways speed, + to the right
     if (!paused) slide += ((player.drift ? slip * SLIDE_PX : 0) - slide) * 0.25;
@@ -770,6 +922,19 @@ function drawSparks() {
     sparks = sparks.filter((p) => p.life > 0);
   }
   for (const p of sparks) { const w = p.life > 8 ? 3 : 2; rectfill(flr(p.x), flr(p.y), w, w, p.c); }
+}
+
+/** In a crosswind: streaks blowing across the view, and a WIND sign pointing the way. */
+function drawWind() {
+  const w = windAt(player.si);
+  if (!w || player.finish) return;
+  const dir = (-TY[player.si] * RX + TX[player.si] * RY) * w < 0 ? -1 : 1; // on screen
+  for (let i = 0; i < 14; i++) {
+    const r = hash(i * 977 + 5), y = 84 + r % 110, v = 3 + (r >> 8) % 4;
+    const x = (((r >> 4) % 300 + t() * v * dir) % 300 + 300) % 300 - 22;
+    line(x, y, x + 10, y, i % 3 ? DIM : WHITE);
+  }
+  if (t() % 30 < 22) ctxt(dir > 0 ? 'WIND >>' : '<< WIND', 30, CYAN);
 }
 
 // --- Scanline: the sky gradient, then the Mode 7 floor -------------------------------------------
@@ -849,11 +1014,13 @@ function drawHud() {
 function drawTitle() {
   big('PLANET', 128, 14, 4, CYAN);
   big('RACERS', 128, 48, 4, GOLD);
-  ctxt(`${track.planet} - ${track.name}`, 88, WHITE);
-  MODES.forEach((s, i) => ctxt(menu === i ? `> ${s} <` : s, 104 + i * 11, menu === i ? WHITE : DIM));
+  const opt = (s, y, r) => ctxt(row === r ? `< ${s} >` : s, y, row === r ? GOLD : WHITE);
+  opt(MODES[menu], 90, 0);
+  opt(`${tix + 1} ${track.planet}`, 104, 1);
+  ctxt(track.name, 114, DIM);
   // The planet you race as, its stars and its character.
   const P = PLANETS[pick];
-  ctxt(`< ${P.name} >`, 134, GOLD);
+  opt(P.name, 132, 2);
   spr(planetTile(pick, 32, flr(t() / 12) & 1), 112, 142, { size: 32, pal: pick >> 1, prio: 3 });
   [['SPD', P.speed], ['ACC', P.accel], ['HND', P.handling], ['WGT', P.weight]].forEach(([s, v], i) => {
     const x = i < 2 ? 22 : 154, y = 146 + (i % 2) * 11;
