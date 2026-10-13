@@ -1,5 +1,5 @@
 // PLANET RACERS - a Mode 7 Grand Prix where the racers are the eight planets.
-// Design: docs/carts/planet-racers.md. Built so far (SPEC 15, steps 1-5): the
+// Design: docs/carts/planet-racers.md. Built so far (SPEC 15, steps 1-6): the
 // Grand Prix of eight races against three rivals a race, with championship
 // standings and a top 10, and a time trial on any track. Each floor is built
 // from its track's centerline when the track loads (the track table is in Map
@@ -124,7 +124,7 @@ const ATTITUDE = [
   [0, 1, -1, 1], // Neptune: cool, looking away
 ];
 const SUN = [21, 22, 23], MOON = [24, 25, 26]; // core, disc and glow (BG palette 1)
-const SFX = { beep: 0, go: 1, orb: 2, lap: 3, final: 4, finish: 5, pit: 6, move: 7, select: 8, drift: 9, boostEnd: 10, wall: 11, bump: 12 };
+const SFX = { beep: 0, go: 1, orb: 2, lap: 3, final: 4, finish: 5, pit: 6, move: 7, select: 8, drift: 9, boostEnd: 10, wall: 11, bump: 12, bumper: 13, lose: 14 };
 const SFX_CH = 1;
 const ORD = ['1ST', '2ND', '3RD', '4TH', '5TH', '6TH', '7TH', '8TH'];
 const MENU = ['GRAND PRIX', 'TIME TRIAL', 'SCORES'];
@@ -455,7 +455,7 @@ function startRace() {
   player = newKart(pick, 3, false);
   karts.push(player);
   cam.h = player.h;
-  music(0);
+  music(tix); // each track's own song, from the countdown (SPEC 12)
 }
 
 // --- Driving (SPEC 5) ---
@@ -560,7 +560,7 @@ function hitBumpers(k) {
     if (vn >= 0) continue;
     k.vx -= 2 * vn * nx; k.vy -= 2 * vn * ny;
     k.sp *= 1 - BUMPER_LOSS;
-    if (k === player) sfx(SFX.bump, SFX_CH);
+    if (k === player) sfx(SFX.bumper, SFX_CH);
   }
 }
 
@@ -707,14 +707,14 @@ function stepRace() {
 
 function finish() {
   state = 'finish'; timer = 0; page = 0;
-  music(-1);
-  sfx(SFX.finish, SFX_CH);
+  music(-1); // the fanfare: a winner's for first place or a record, the other for the rest (SPEC 12)
   const p = player;
-  if (mode !== 1) return;
+  if (mode !== 1) { sfx(order().indexOf(p) === 0 ? SFX.finish : SFX.lose, SFX_CH); return; }
   const slot = TRIAL_SLOT + 3 * tix;
   if (!p.capped && (!best.time || p.finish < best.time)) { best.time = p.finish; record.time = true; dset(slot, p.finish); dset(slot + 2, pick); }
   const lap = Math.min(...p.laps);
   if (p.laps.length && (!best.lap || lap < best.lap)) { best.lap = lap; record.lap = true; dset(slot + 1, lap); }
+  sfx(record.time || record.lap ? SFX.finish : SFX.lose, SFX_CH);
 }
 
 /** The championship so far: all eight planets by points, ties by this race's places. */

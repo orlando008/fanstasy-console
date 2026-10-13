@@ -1,7 +1,7 @@
 # Planet Racers: Cart Specification
 
-**Version:** 0.6 (draft)
-**Status:** In progress: steps 1–5 of the plan (15) are built
+**Version:** 0.7 (draft)
+**Status:** In progress: steps 1–6 of the plan (15) are built
 **Cart source:** `carts/src/planet-racers/` → `carts/planet-racers.nova`
 
 ---
@@ -327,23 +327,28 @@ stay, the tempo goes up where the original is slow. Earth isn't in the suite, so
 its song is our own. We write our own arrangements from the notes and use no
 recordings.
 
-| Song | Planet | Holst's movement | Tempo | Feel |
-|---|---|---|---|---|
-| 0 | Mercury | The Winged Messenger | 180 bpm | A swift, flickering scherzo |
-| 1 | Venus | Bringer of Peace | 112.5 bpm | Serene, a gentle cruise |
-| 2 | Earth | (original) | 128.6 bpm | Bright and friendly, in the spirit of the others |
-| 3 | Mars | Bringer of War | 150 bpm | A relentless 5-beat ostinato (a 20-row bar) |
-| 4 | Jupiter | Bringer of Jollity | 128.6 bpm | Big, jovial and heroic |
-| 5 | Saturn | Bringer of Old Age | 112.5 bpm | Slow tolling bass under a driving beat |
-| 6 | Uranus | The Magician | 150 bpm | Heavy brass fanfares, then a mischievous scherzo |
-| 7 | Neptune | The Mystic | 100 bpm | Hushed, spacious and drifting |
+| Song | Planet | Holst's movement | Tempo | Meter | Patterns | Loop | As built |
+|---|---|---|---|---|---|---|---|
+| 0 | Mercury | The Winged Messenger | 180 bpm | 6/8 | 12 | 64 s | Arpeggios flicker between B-flat and E major, a tritone apart as in Holst; a light skipping tune; a counter-line flickering against the lead |
+| 1 | Venus | Bringer of Peace | 112.5 bpm | 4/4 | 6 | 51 s | A soft horn melody in F over pads, gentle drums, a glassy second theme |
+| 2 | Earth | (original) | 128.6 bpm | 4/4 | 7 | 52 s | A bright G major tune over bouncing bass and arpeggios, a fanfare reprise |
+| 3 | Mars | Bringer of War | 150 bpm | 5/4 | 5 | 32 s | The ostinato hammering G (a 20-row bar), a growling drone, brass climbing to a grinding D-flat |
+| 4 | Jupiter | Bringer of Jollity | 128.6 bpm | 4/4, 3/4 | 5 | 51 s | A syncopated jolly fanfare, then a broad hymn tune in 3/4 on the horn |
+| 5 | Saturn | Bringer of Old Age | 112.5 bpm | 4/4 | 4 | 34 s | Two notes rocking like a clock over a bass walking down, a slow march over a driving beat |
+| 6 | Uranus | The Magician | 150 bpm | 4/4, 6/8 | 7 | 45 s | The brass motto G, E-flat, A, B (Holst's initials in German note names), then a staccato 6/8 scherzo, the motto again, and the scherzo an octave up |
+| 7 | Neptune | The Mystic | 100 bpm | 5/4 | 5 | 48 s | E minor and G-sharp minor swaying under celesta arpeggios and wordless voices, almost no drums |
+
+**Odd meters.** Patterns are 64 rows and have no break, so a song is written bar by
+bar as one stream of rows and cut into patterns: 16 bars of 6/8 or 3/4 (12 rows) are 3
+patterns, 16 bars of 5/4 (20 rows) are 5. Identical patterns are stored once.
 
 **Channel plan:** songs use channels 0 and 2–5 (lead, bass, pad/arpeggio, noise
 percussion, sampled drums), and **channel 1 is kept for sound effects**, as in Block Wizard.
 
-**SFX:** boost orb, boost running out, bump, bumper hit, pit, drift start, lap
-complete, final lap, countdown beeps and GO, finish fanfare (a winner's and a loser's
-version), menu move and select.
+**SFX** (15, on channel 1): countdown beep, GO, boost orb, lap, final lap, the
+finish fanfare (a winner's, for first place in a race or a time-trial record, and a
+gentler one otherwise), pit, menu move, select, drift skid (repeating), boost running
+out, the floor's edge, a bump between karts, and a bumper hit.
 
 **No engine sound.** The cart API can't change a sound's pitch while it plays,
 so there is no revving engine. The music and the effects carry the speed.
@@ -368,7 +373,7 @@ so there is no revving engine. The music and the effects carry the speed.
 | Map RAM | The floor in columns 0–127 (128 × 128); in columns 128–255, the four horizon styles in rows 0–17 and the track table (JSON) from row 18 (rows 18–59 now) |
 | Palettes | BG 0–7: each track's floor and scenery colors (a track picks its own). Sprites: the planets share sub-palettes in pairs (7 colors each), so four in all; the other four go to orbs, shadows and bumpers, the logo letters and the HUD |
 | Sprites on screen | ≤ 30, far under the 32-per-line limit |
-| Songs / SFX | 8 songs (~48 patterns), ~20 SFX, drum samples in Sample RAM |
+| Songs / SFX | 8 songs in 43 patterns, 24 instruments, 15 SFX; a kick and a snare in Sample RAM (5.8 KB) |
 | PNG cart | Must fit the 147 KB `.nova.png` limit |
 
 ## 15. Implementation plan
@@ -391,14 +396,15 @@ so there is no revving engine. The music and the effects carry the speed.
    - **Floor:** the textures come in 2 × 2 clumps instead of single pixels, which shimmer less far away, and one off-road tile in 12 is a rock, a little crater or pebbles (off-road colors, so scenery, not a hazard).
    - **Horizons:** the ridges and hills have a darker far range behind them, ridges shade their faces by slope, the hills carry rows of trees and striped fields, the spires are lit on one side with snow at the tips, and the clouds are banded at the base.
    - The code passed 61 KB with the faces, so the track-format notes moved to `build-tracks.mjs` and the section dividers got shorter: 59.8 KB.
-6. **Audio pass:** eight songs and the effects in the Music and SFX tabs.
+6. **Audio pass (built):** eight songs and the effects (12).
+   - The songs and effects are written by a script, like Block Wizard's, as the Music and SFX tabs' own data, so they can be edited there. Rendered offline with the console's synth, the eight songs sit at a similar level (RMS 0.08–0.11, peaks 0.24–0.40) with no clipping.
 7. **Balance and polish:** stats, pace ramp, hazard strength and par times; record replays (F9/F10); capture a label (F7); export a PNG cart; regenerate the Library (`node tools/library.js`).
 
 Any console bugs or editor gaps found along the way are logged and fixed as separate changes.
 
 ## 16. Open questions
 
-- **Holst:** the composition is old enough to be public domain, but confirm that for the countries we care about before shipping. We use no recordings, only our own arrangements of the notes.
+- **Holst:** Holst died in 1934 and *The Planets* was published in 1921, so it is old enough to be public domain in the US and in life + 70 countries, but confirm that for any other country we care about before shipping. We use no recordings, only our own arrangements of the notes.
 - **Speed feel:** the world scale (a 1,024 px floor and 2.2–3.0 px/frame) comes from the demo and from a 30 s lap. If it feels slow, scale the speeds and the track length together.
 - **Digital steering:** the pad gives only left and right, so the 8-frame steering ramp (3) matters. It may need tuning, or a finer control in drifts.
 - **Standing on a rival:** how strong the bumps should be, so they add drama without making a time depend on luck.
