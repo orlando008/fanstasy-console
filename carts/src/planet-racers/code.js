@@ -1,11 +1,11 @@
 // PLANET RACERS - a Mode 7 Grand Prix where the racers are the eight planets.
-// Design: docs/carts/planet-racers.md. Built so far (SPEC 15, steps 1-6): the
-// Grand Prix of eight races against three rivals a race, with championship
-// standings and a top 10, and a time trial on any track. Each floor is built
-// from its track's centerline when the track loads (the track table is in Map
-// RAM, from tracks.json), the physics read the surface from the floor pixel
-// under each kart, and a lap counts after 10 gates in order. B accelerates, A
-// brakes, L or R drifts, START pauses, SELECT restarts a time trial.
+// Design: docs/carts/planet-racers.md. A Grand Prix of eight races against
+// three rivals a race, with championship standings and a top 10, and a time
+// trial on any track. Each floor is built from its track's centerline when the
+// track loads (the track table is in Map RAM, from tracks.json), the physics
+// read the surface from the floor pixel under each kart, and a lap counts after
+// 10 gates in order. B accelerates, A brakes, L or R drifts, START pauses,
+// SELECT restarts a time trial.
 
 // --- Tuning ---
 
@@ -34,7 +34,7 @@ const BUMP_LOSS = 0.12; // share of speed a bump costs, split by weight
 const BUMPER_R = 4, BUMPER_LOSS = 0.3; // bumpers: 8 px across, and the speed a hit costs (SPEC 5.4)
 const WIND = 0.04, WIND_DECAY = 0.9; // crosswind push (px/frame² at weight 3) and how fast its drift fades
 const GUST_ON = 90, GUST_CYCLE = 180; // Neptune's gusts blow for 90 frames in every 180
-const SLICK_SLOW = 0.6; // the AI takes corners on slick ground at this share of its usual speed
+const SLICK_SLOW = 0.8; // the AI takes corners on slick ground at this share of its usual speed
 const WRONG_FRAMES = 60;
 const SLIDE_PX = 14; // screen px the planet slides out per px/frame of sideways speed in a drift
 const SKID_EVERY = 10; // frames between skid sounds in a drift
@@ -43,13 +43,16 @@ const GRID_GAP = 4, GRID_LAT = 8; // grid slots: samples apart, px either side
 // The AI (SPEC 7.1): it steers at the racing line AI_LOOK samples ahead and
 // sets its speed by the tightest corner in the next AI_BRAKE samples.
 const AI_LOOK = 10, AI_BRAKE = 24, AI_DEAD = 0.05, AI_SPAN = 16, CORNER_K = 1.1;
-const CORNER_PACE = 0.86; // corners are taken at this share of their limit on every track; the pace ramp is for top speed
 const CORNER_R = 140; // a radius under this starts a corner (for mistakes)
 const MISTAKE_FRAMES = 40, MISTAKE_WIDE = 14, MISTAKE_SLOW = 0.93;
-const PACE = [0.86, 0.88, 0.90, 0.92, 0.94, 0.96, 0.98, 1.00]; // SPEC 7.2, by track
+// By track (SPEC 7.2), calibrated so Earth's rival takes 10% longer than a steady
+// flat-out driver on Mercury, falling evenly to level on Neptune: the share of top
+// speed, and of each corner's limit (0.86 + (pace - 0.86) / 2).
+const PACE = [0.88, 0.85, 0.89, 0.85, 0.90, 0.96, 0.99, 0.94];
+const CORNER_PACE = [0.87, 0.855, 0.875, 0.855, 0.88, 0.91, 0.925, 0.90];
 const MISTAKE = [0.06, 0.05, 0.04, 0.03, 0.02, 0.02, 0.01, 0.01];
 const POINTS = [10, 8, 6, 5, 4, 3, 2, 1]; // championship points by place (SPEC 7.3)
-const SIM_NOISE = 0.02; // simulated times: par x (1 + offset +- this)
+const SIM_NOISE = 0.02; // simulated times: par x (1 +- this)
 
 /** The roster (SPEC 4.1): stars from 1 to 5, adding up to 12. */
 const PLANETS = [
@@ -65,15 +68,18 @@ const PLANETS = [
 /** Stars to driving values (SPEC 4.2). */
 function statsOf(p) {
   return {
-    top: 2.2 + (p.speed - 1) * 0.2,
+    top: 2.3 + (p.speed - 1) * 0.175,
     accel: 0.012 + (p.accel - 1) * 0.007,
-    turn: (0.020 + (p.handling - 1) * 0.00625) * ANG / TAU, // rad to angle units
+    turn: (0.033 + (p.handling - 1) * 0.00175) * ANG / TAU, // rad to angle units
     offCap: 0.44 + (p.weight - 1) * 0.0275,
     weight: p.weight,
   };
 }
-/** A simulated planet's pace offset from par (SPEC 7.3): faster stats, a lower time. */
-const simOffset = (p) => (3 - p.speed) * 0.03 + (3 - p.handling) * 0.03;
+/**
+ * Each planet's rival target speed is trimmed by this, so every rival averages par over
+ * the eight tracks: a pace that is a share of top speed favors the fastest planets.
+ */
+const AI_TRIM = [1.045, 1.008, 1.002, 0.996, 1.004, 0.997, 0.992, 0.957];
 
 /** Tracks (SPEC 6), in Grand Prix order: read at init from Map RAM. Their format is in build-tracks.mjs. */
 let TRACKS = [];
@@ -683,7 +689,7 @@ function aiInput(k) {
   // Speed: the tightest corner ahead, then the pace; a boost is kept unless a corner forbids it.
   let lim = Infinity;
   for (let d = 0; d < AI_BRAKE; d += 2) lim = Math.min(lim, k.cornerV[(k.si + d) % N]);
-  const target = Math.min(k.st.top * PACE[tix], lim * CORNER_PACE) * (k.mistake > 0 ? MISTAKE_SLOW : 1);
+  const target = Math.min(k.st.top * PACE[tix] * AI_TRIM[k.p], lim * CORNER_PACE[tix]) * (k.mistake > 0 ? MISTAKE_SLOW : 1);
   if (k.boost > 0 ? k.sp < lim : k.sp < target) mask |= BIT(B);
   else if (k.sp > (k.boost > 0 ? lim : target) + 0.15) mask |= BIT(A);
   return mask;
@@ -781,7 +787,7 @@ function standings() {
   const rows = [];
   for (let p = 0; p < 8; p++) {
     const k = karts.find((c) => c.p === p);
-    const time = k ? k.finish : flr(track.par * (1 + simOffset(PLANETS[p]) + (rng() * 2 - 1) * SIM_NOISE));
+    const time = k ? k.finish : flr(track.par * (1 + (rng() * 2 - 1) * SIM_NOISE));
     rows.push({ p, time, onTrack: !!k });
   }
   rows.sort((a, b) => a.time - b.time || a.p - b.p);
@@ -1189,8 +1195,6 @@ function drawHud() {
   }
   // Your portrait, its face showing how the race is going.
   planetOn(p.p, 32, 10, 182, flr(p.roll / 10) & 1, moodOf(p));
-  const cpu = `CPU ${stat('cpu').toFixed(1)}MS`;
-  print(cpu, 254 - cpu.length * 8, 214, DIM);
 }
 
 function panel(x, y, w, h) {

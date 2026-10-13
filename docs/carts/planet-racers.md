@@ -1,7 +1,7 @@
 # Planet Racers: Cart Specification
 
-**Version:** 0.7 (draft)
-**Status:** In progress: steps 1–6 of the plan (15) are built
+**Version:** 1.0
+**Status:** Complete: all seven steps of the plan (15) are built, and the cart is released as `carts/planet-racers.nova.png`
 **Cart source:** `carts/src/planet-racers/` → `carts/planet-racers.nova`
 
 ---
@@ -67,13 +67,13 @@ no planet is better overall; the choice is about style.
 
 ### 4.2 What the stats do
 
-Values are starting points, to be tuned in play.
+Balanced in step 7 (15) so every planet is as quick overall:
 
 | Stat | 1★ → 5★ |
 |---|---|
-| Speed | Top speed 2.2 → 3.0 world px per frame |
+| Speed | Top speed 2.3 → 3.0 world px per frame |
 | Accel | Gain 0.012 → 0.040 px/frame² (roughly 4 s down to 1 s to reach top speed) |
-| Handling | Full-steer turn rate 0.020 → 0.045 rad/frame |
+| Handling | Full-steer turn rate 0.033 → 0.040 rad/frame |
 | Weight | Bump push, crosswind push and off-road slowdown (5.4, 5.6). Heavier planets shove lighter ones aside, are pushed less by gusts and lose less speed off the track |
 
 ### 4.3 Rivals on the track
@@ -172,14 +172,14 @@ order, from the sun outward.
 
 | # | Planet | Track | Length | Look | Hazards | Par |
 |---|---|---|---|---|---|---|
-| 1 | Mercury | Caloris Circuit | 4,568 | Gray road, orange rock, black sky, a huge sun | 5 craters (pits) | 96.3 s |
-| 2 | Venus | Cloud Deck Run | 4,380 | Sulfur ground, orange haze, cloud banks | 6 acid pools (rough) | 93.3 s |
-| 3 | Earth | Blue Marble Speedway | 4,348 | Asphalt, red and white curbs, green fields, blue sky, sun and moon | Wet sand on 6 corners' outsides (slick) | 107.2 s |
-| 4 | Mars | Olympus Rally | 4,320 | Red dust and ridges, butterscotch sky, Phobos | 4 dust-storm gusts on the straights (crosswind) | 95.3 s |
-| 5 | Jupiter | Spot Chaser | 4,444 | Cream and rust, storm-cloud banks, Io | Crosswind on every straight, alternating sides | 98.3 s |
-| 6 | Saturn | Ring Road | 4,464 | Gray-blue road, gold plains, ice spires, the rings across the sky | 12 ice chunks (bumpers) | 96.3 s |
-| 7 | Uranus | Tilt-a-Whirl | 4,272 | Teal road, cyan snow, ice spires | Ice sheets right across 5 corners (slick) | 111.4 s |
-| 8 | Neptune | Deep Blue Derby | 4,300 | Deep blue, storm clouds, stars, Triton | 4 gusting crosswinds and 8 hail chunks (bumpers) | 95.0 s |
+| 1 | Mercury | Caloris Circuit | 4,568 | Gray road, orange rock, black sky, a huge sun | 5 craters (pits) | 89.5 s |
+| 2 | Venus | Cloud Deck Run | 4,380 | Sulfur ground, orange haze, cloud banks | 6 acid pools (rough) | 88.2 s |
+| 3 | Earth | Blue Marble Speedway | 4,348 | Asphalt, red and white curbs, green fields, blue sky, sun and moon | Wet sand on 6 corners' outsides (slick) | 90.5 s |
+| 4 | Mars | Olympus Rally | 4,320 | Red dust and ridges, butterscotch sky, Phobos | 4 dust-storm gusts on the straights (crosswind) | 88.7 s |
+| 5 | Jupiter | Spot Chaser | 4,444 | Cream and rust, storm-cloud banks, Io | Crosswind on every straight, alternating sides | 88.7 s |
+| 6 | Saturn | Ring Road | 4,464 | Gray-blue road, gold plains, ice spires, the rings across the sky | 12 ice chunks (bumpers) | 85.2 s |
+| 7 | Uranus | Tilt-a-Whirl | 4,272 | Teal road, cyan snow, ice spires | Ice sheets right across 5 corners (slick) | 87.5 s |
+| 8 | Neptune | Deep Blue Derby | 4,300 | Deep blue, storm clouds, stars, Triton | 4 gusting crosswinds and 8 hail chunks (bumpers) | 84.8 s |
 
 Par is the mean of the eight planets' AI times at the track's pace (7.3). The
 layouts were found by a search: a loop grown at random on a coarse grid of cells,
@@ -216,22 +216,28 @@ Hazards are few and forgiving: with no restarts, one mistake should cost seconds
 
 ### 7.2 Difficulty
 
-One difficulty that **rises across the tracks**, so every leaderboard time is comparable:
+One difficulty that **rises across the tracks**, so every leaderboard time is comparable.
+The pace was calibrated per track (a binary search with the console's own simulation)
+so that Earth's rival takes 10% longer than a steady flat-out driver on Mercury,
+falling evenly to level on Neptune. Since the tracks differ, the paces aren't a
+straight ramp; corners are taken at 0.86 + (p − 0.86) / 2 of their limit.
 
 | Track | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 |---|---|---|---|---|---|---|---|---|
-| Pace `p` (of the planet's top speed) | 0.86 | 0.88 | 0.90 | 0.92 | 0.94 | 0.96 | 0.98 | 1.00 |
+| Pace `p` (of the planet's top speed) | 0.88 | 0.85 | 0.89 | 0.85 | 0.90 | 0.96 | 0.99 | 0.94 |
 | Chance of a mistake per corner | 6% | 5% | 4% | 3% | 2% | 2% | 1% | 1% |
 
-A mistake runs wide for a moment and loses a few percent of speed. These are
-starting values, to be tuned in play.
+A mistake runs wide for a moment and loses a few percent of speed. Because a pace
+that is a share of top speed favors the fastest planets, each planet's rival is
+trimmed by a measured factor (Mercury ×1.045 up to Neptune ×0.957) so every rival
+averages par over the Grand Prix; they still drive with their own stats.
 
 ### 7.3 The championship standings
 
 The standings are flavor, with no effect on your score. After each race:
 
 - the three on-track rivals and you place by finishing order;
-- the other four planets get **simulated** times: the track's par × (1 + a planet pace offset) with ±2% seeded noise, the same way Summit Rush simulates its rivals. Par is the mean of the eight planets' AI times on the track at its pace (Mercury: 5,900 frames, 98 s). The offset is (3 − Speed) × 0.03 + (3 − Handling) × 0.03, so fast or nimble planets simulate a little quicker;
+- the other four planets get **simulated** times: the track's par with ±2% seeded noise, the same way Summit Rush simulates its rivals. Par is the mean of the eight planets' AI times on the track at its pace, and the rivals are trimmed to average it (7.2), so any planet can win;
 - all eight planets score points by place: 10, 8, 6, 5, 4, 3, 2, 1, and a table ranks them by running total.
 
 After race 8 your standing among the eight planets is shown on the final result.
@@ -368,7 +374,7 @@ so there is no revving engine. The music and the effects carry the speed.
 
 | Asset | Budget |
 |---|---|
-| Code | ≤ 48 KB of the 64 KB limit planned; 59.8 KB after step 5, with the track table moved out to Map RAM (6.2) |
+| Code | ≤ 48 KB of the 64 KB limit planned; 60.1 KB at release, with the track table moved out to Map RAM (6.2) |
 | Tiles | About 900 of 1,024: floor surfaces 41 (with three decorations), planets 8 × 41 (three sizes, two rolling frames at 32 and 16), orbs and bumpers 30, horizon scenery 476 (four styles, deduplicated with flips); the title and the faces are drawn on the overlay and take none. 124 are free |
 | Map RAM | The floor in columns 0–127 (128 × 128); in columns 128–255, the four horizon styles in rows 0–17 and the track table (JSON) from row 18 (rows 18–59 now) |
 | Palettes | BG 0–7: each track's floor and scenery colors (a track picks its own). Sprites: the planets share sub-palettes in pairs (7 colors each), so four in all; the other four go to orbs, shadows and bumpers, the logo letters and the HUD |
@@ -386,7 +392,7 @@ so there is no revving engine. The music and the effects carry the speed.
    - Placeholder sprites for all eight planets (the surface texture, Saturn's rings, no faces yet). Until the flow (step 4) is built, the title has RACE (against three rivals) and TIME TRIAL, and LEFT/RIGHT picks the planet, showing its stars.
 3. **All eight tracks and hazards (built):** the track data and palettes, the five hazard types, and tuning each lap to about 30 s.
    - **Results:** every planet's AI finishes every track without leaving the road; a race costs about 1.5 ms a frame headless, 2 ms in Chromium, and still replays exactly. The code is 52 KB (the track data 7 KB), over the 48 KB budget but well under the 64 KB limit. Until step 4, the title also has a TRACK row, and changing it rebuilds the floor so the title camera glides round the chosen track.
-   - **For balance (step 7):** Jupiter's 1★ handling makes it the slowest planet by far on the twisty tracks (its AI takes 128–160 s where most take 85–107 s). Its turn rate, 0.020 rad/frame, may need raising.
+   - **For balance (step 7):** Jupiter's 1★ handling made it the slowest planet by far on the twisty tracks (its AI took 128–160 s where most took 85–107 s). Step 7 narrowed the handling range.
 4. **Flow (built):** title, planet select, track card, results, initials, scores, time trial, pause and saves.
    - **Results:** a whole Grand Prix runs headless from the title through eight track cards and races (a simple bot driving), results and championship pages, the Grand Prix result, initials and the scores, and the run is saved in the top 10. The time trial path, pause and QUIT TO TITLE work too. The first full run found a bug: a bump cost speed on every frame two karts touched, so the bot was dragged to a crawl behind a rival and hit the 3:00 cap; it costs speed only when they close now, and the AI passes a kart ahead.
    - The code reached 62.8 KB with the screens, so the track table moved to Map RAM (6.2), bringing it to 56 KB.
@@ -398,7 +404,11 @@ so there is no revving engine. The music and the effects carry the speed.
    - The code passed 61 KB with the faces, so the track-format notes moved to `build-tracks.mjs` and the section dividers got shorter: 59.8 KB.
 6. **Audio pass (built):** eight songs and the effects (12).
    - The songs and effects are written by a script, like Block Wizard's, as the Music and SFX tabs' own data, so they can be edited there. Rendered offline with the console's synth, the eight songs sit at a similar level (RMS 0.08–0.11, peaks 0.24–0.40) with no clipping.
-7. **Balance and polish:** stats, pace ramp, hazard strength and par times; record replays (F9/F10); capture a label (F7); export a PNG cart; regenerate the Library (`node tools/library.js`).
+7. **Balance and polish (built):** stats, pace ramp, hazard strength and par times; capture a label (F7); export a PNG cart; regenerate the Library (`node tools/library.js`).
+   - **Stats:** with every planet's AI at full pace on five tracks, the first stats were 51% apart (Jupiter 127 s against Uranus 84 s): on these winding tracks handling decides most. Narrowing handling to 0.033–0.040 rad/frame and raising the slowest top speed to 2.3 brings them within 5% (Neptune 83.4 s to Jupiter 87.8 s), and Jupiter is still the hardest to turn. The AI doesn't drift, which would help the low-handling planets most.
+   - **Difficulty:** the pace per track is calibrated (7.2), the AI takes slick corners at 80% of its usual speed (was 60%, too cautious), and the rivals are trimmed per planet. A full Grand Prix driven by a simple bot now has race wins spread over several planets and a close championship.
+   - **Hazards** stay as tuned in step 3. **Replays** are checked headless instead of with F9/F10: the same seed and inputs give the same race.
+   - **Polish:** the CPU readout is gone from the HUD. The label is the title screen, captured with F7; the PNG cart's payload is 50 KB of its 147 KB, and it decodes to exactly the packed `.nova`. The code ends at 60.1 KB.
 
 Any console bugs or editor gaps found along the way are logged and fixed as separate changes.
 

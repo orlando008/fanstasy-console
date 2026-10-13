@@ -9,6 +9,14 @@
       "png": "carts/block-wizard.nova.png"
     },
     {
+      "name": "planet-racers",
+      "title": "Planet Racers",
+      "author": "NOVA-16",
+      "description": "A Mode 7 Grand Prix where the racers are the eight planets: eight tracks, each with its own hazards and its own song after Holst's The Planets, three rivals a race and a championship.",
+      "label": "carts/labels/planet-racers.png",
+      "png": "carts/planet-racers.nova.png"
+    },
+    {
       "name": "summit-rush",
       "title": "Summit Rush",
       "author": "NOVA-16",
@@ -46,14 +54,6 @@
       "author": "NOVA-16",
       "description": "M3 test: three background layers scrolling at different speeds, sub-palettes and tile priority.",
       "label": "carts/labels/parallax.png",
-      "png": null
-    },
-    {
-      "name": "planet-racers",
-      "title": "Planet Racers",
-      "author": "NOVA-16",
-      "description": "A Mode 7 Grand Prix where the racers are the eight planets: eight tracks, each with its own hazards and its own song after Holst's The Planets, three rivals a race and a championship.",
-      "label": null,
       "png": null
     },
     {
