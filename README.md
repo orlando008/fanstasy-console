@@ -151,6 +151,8 @@ node tools/devkit/smoke.mjs <name>                               # the cart in t
 node tools/devkit/sweep.mjs <name> --seeds 8                     # the cart's bot over many seeds: balance, stuck states
 node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300   # screenshots without a browser
 node tools/devkit/tiles.mjs carts/<name>.nova out.png --from 0   # a contact sheet of tiles with their numbers
+node tools/devkit/art/sprites.mjs carts/<name>.nova out.png      # the cart's sprites at their real sizes; art/scene.mjs shows a map region
+python3 carts/src/<name>/art.py carts/src/<name>                 # a cart's tiles, palette and map, made in code with tools/devkit/art/kit.py
 node tools/devkit/music/loud.mjs carts/<name>.nova --check       # each song's level, and the lead's loudness and entrance
 ```
 

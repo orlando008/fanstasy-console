@@ -7,7 +7,8 @@
 //   node tools/verify.js --base main        compare against another base
 //
 // For each cart, in order (the first problem is reported, the rest still run):
-//   1. audio.py regenerates exactly the audio.json in the source folder (if the cart has an audio script)
+//   1. audio.py regenerates exactly the audio.json in the source folder (if the cart has an audio script), and art.py exactly
+//      its tiles.txt, palette.txt, map.txt, art.json and the ART block of code.js (if it has an art script)
 //   2. the source packs to exactly the committed carts/<name>.nova (it is repacked, so a failure here is fixed
 //      in your tree: commit it)
 //   3. tools/check.js: limits, voices, the PNG cart holding exactly the packed cart, the spec
@@ -20,7 +21,7 @@
 // regenerate the label and PNG cart.
 
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -78,6 +79,17 @@ for (const name of [...carts].sort()) {
       if (r.status) return { ok: false, text: r.stderr };
       return readFileSync(join(tmp, 'a.json'), 'utf8') === readFileSync(join(src, 'audio.json'), 'utf8')
         ? { ok: true } : { ok: false, text: `audio.py makes a different audio.json from the one in carts/src/${name}: run python3 carts/src/${name}/audio.py carts/src/${name}/audio.json` };
+    } finally { rmSync(tmp, { recursive: true, force: true }); }
+  });
+
+  if (existsSync(join(src, 'art.py'))) step('art.py regenerates the art files', () => {
+    const tmp = mkdtempSync(join(tmpdir(), 'verify-')); try {
+      cpSync(src, join(tmp, 'src'), { recursive: true });
+      const r = spawnSync('python3', [join(src, 'art.py'), join(tmp, 'src')], { cwd: ROOT, encoding: 'utf8' });
+      if (r.status) return { ok: false, text: r.stderr };
+      const read = (f) => (existsSync(f) ? readFileSync(f, 'utf8') : null);
+      const differ = ['tiles.txt', 'palette.txt', 'map.txt', 'art.json', 'code.js'].filter((f) => read(join(src, f)) !== read(join(tmp, 'src', f)));
+      return differ.length ? { ok: false, text: `art.py makes different ${differ.join(', ')} from the ones in carts/src/${name}: run python3 carts/src/${name}/art.py carts/src/${name}` } : { ok: true };
     } finally { rmSync(tmp, { recursive: true, force: true }); }
   });
 

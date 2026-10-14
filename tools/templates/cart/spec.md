@@ -65,7 +65,8 @@ carts/{{NAME}}.nova --check`; playbook section 5).
 
 ## 12. Video layers
 
-TODO.
+TODO: what is on BG0 to BG2, the sprites and the overlay. The art is made in code by `carts/src/{{NAME}}/art.py` (the art toolkit,
+`tools/devkit/art/kit.py`); give the tile and sprite budget in section 14.
 
 ## 13. Persistence (save slots)
 

@@ -8,10 +8,10 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 ## Quick start
 
 ```sh
-node tools/new-cart.js my-game "My Game"      # a working cart, tests, audio script and spec template
-# write docs/carts/my-game.md, then replace updatePlay/drawPlay in carts/src/my-game/code.js
+node tools/new-cart.js my-game "My Game"      # a working cart, art and audio scripts, tests and spec template
+# write docs/carts/my-game.md, then replace updatePlay/drawPlay in carts/src/my-game/code.js, and the art in art.py
 node tools/pack.js carts/src/my-game carts/my-game.nova
-node tools/verify.js --fast                   # audio script, pack, checks, soak, music levels (add the tests: leave out --fast)
+node tools/verify.js --fast                   # audio and art scripts, pack, checks, soak, music levels (add the tests: leave out --fast)
 node tools/devkit/smoke.mjs my-game           # the real console, headless
 node tools/devkit/sweep.mjs my-game           # the bot over many seeds (once tests/carts/my-game/bot.mjs is real)
 node tools/release.js my-game                 # when finished: label, .nova.png, Library, README row
@@ -21,19 +21,19 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 
 | Path | What |
 |---|---|
-| `carts/src/<name>/` | A cart's source: `code.js`, `meta.json`, `tiles.txt`, `palette.txt`, `map.txt`, `audio.json` (made by `audio.py` if there is one), `label.png` |
+| `carts/src/<name>/` | A cart's source: `code.js`, `meta.json`, `tiles.txt`, `palette.txt`, `map.txt` and `art.json` (made by `art.py`), `audio.json` (made by `audio.py`), `label.png` |
 | `carts/<name>.nova`, `.nova.png`, `labels/`, `index.json` | What `pack.js`, `release.js` and `library.js` build from the source: commit them with it |
 | `tests/carts/<name>/` | `lib.mjs` (boots the cart with its variables exposed), `NN-*.mjs` (check scripts, one per build step), `bot.mjs` (the bot for `sweep.mjs`) |
 | `tests/console/` | Checks of the console itself in headless Chromium (the player's volume keys); not part of a cart build |
 | `docs/carts/<name>.md` | The game's spec, with each step's **Built** and **Results** notes |
 | `tools/` | `pack`, `library`, `new-cart`, `verify`, `check`, `test`, `release`, `check-docs` (section 2) |
-| `tools/devkit/` | The headless harness, soak, smoke, sweep, shots, tiles, voices, the random player, and `music/`: the song toolkit, loudness checks, effect levels and lead lowering |
+| `tools/devkit/` | The headless harness, soak, smoke, sweep, shots, tiles, voices, the random player; `music/`: the song toolkit, loudness checks, effect levels and lead lowering; `art/`: the art toolkit and the scene and sprite viewers |
 | `tools/templates/cart/` | The starter's files |
 | `CLAUDE.md`, `docs/dev/playbook.md` | Notes for agents (short) and this guide |
 
 ## 1. The shape of a game build
 
-0. **Start from the starter**: `node tools/new-cart.js <name> "Title"` creates the cart, its tests, its audio script and
+0. **Start from the starter**: `node tools/new-cart.js <name> "Title"` creates the cart, its tests, its art and audio scripts and
    the spec template (section 2). Do not copy another game's code to begin with.
 1. **Write the spec first** (`docs/carts/<name>.md`, scaffolded): concept, controls, screen layout, the rules with
    numbers, scoring, screens and flow, audio, video layers, save slots, asset budget, and a numbered
@@ -57,7 +57,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 
 | Command | What it does |
 |---|---|
-| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--selftest` checks the starter itself (CI does) |
+| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an art script (a field, a ship and a gem, drawn with the art kit), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--selftest` checks the starter itself (CI does) |
 | `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder |
 | `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the music levels (`loud.mjs --check`), the docs check, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
 | `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser), the spec (header, TODOs in a released cart, code size in the budget table), label and description |
@@ -73,12 +73,16 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `node tools/devkit/smoke.mjs <name> [--seconds 12] [--shot f.png]` | **Smoke test in the real console** (headless Chromium): loads the cart, plays with random keys, and reports page and console errors, the cart's logged errors (a cart that throws is stopped), fps, and a frozen or blank screen. Catches what the Node harness cannot |
 | `tools/devkit/harness.mjs` | The headless console for tests (see its header comment); `pad.mjs` is the random player |
 
-**See it**
+**Make and see the art** (`tools/devkit/art/`; section 6)
 
 | Command | What it does |
 |---|---|
+| `python3 carts/src/<name>/art.py carts/src/<name>` | Regenerate the cart's `tiles.txt`, `palette.txt`, `map.txt`, `art.json` and the `ART` block of its `code.js` from its art script, written with the toolkit in `tools/devkit/art/kit.py` (its header lists what it checks) |
+| `node tools/devkit/art/sprites.mjs carts/<name>.nova out.png [--names a,b]` | The cart's sprites (from `art.json`) at their real sizes in their sprite palettes, with names, scaled up; or one with `--tile n --size 16 --pal 0` (open the PNG with the Read tool) |
+| `node tools/devkit/art/scene.mjs carts/<name>.nova out.png --scene field [--holes]` | A Map RAM region as the map places it (palettes, flips); `--rect x,y,w,h` for any region; `--holes` paints empty cells magenta |
+| `node tools/devkit/tiles.mjs carts/<name>.nova out.png --from 640 --count 64 --pal 0 [--sprite] [--skip-empty]` | A contact sheet of tiles with their numbers in a palette. `--ascii <n>` prints one tile as `tiles.txt` rows; `--palette out.png` shows all 256 entries |
 | `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons, `--extra "skipTitle = true;"`) |
-| `node tools/devkit/tiles.mjs carts/<name>.nova out.png --from 640 --count 64 --pal 0 [--sprite] [--skip-empty]` | A contact sheet of tiles with their numbers in a palette (open the PNG with the Read tool). `--ascii <n>` prints one tile as `tiles.txt` rows; `--palette out.png` shows all 256 entries |
+| `python3 tools/devkit/art/selftest.py` | The kit's own checks (CI runs it) |
 
 **Hear it** (measure it: you cannot listen)
 
@@ -202,15 +206,49 @@ You cannot hear the result, so measure it, and follow the rules that keep player
 
 ## 6. Art
 
-- Draw from the palette and tile vocabulary of the game, with a tile budget in the spec (Moto Crosser used 196 of
-  320 tiles for three settings by designing a tile-aligned vocabulary, after an image-based approach overflowed).
-- Scenery that moves (a waving crowd, twinkling stars) is a palette change or a switch between two pictures in
-  Map RAM, not a rewrite of the map.
-- Count sprites per scanline in a test of a busy scene (the harness exposes `vm.ppu.oamCount`, and layers and
-  palettes), and cap the particles.
-- **Look at the art**: `tiles.mjs` shows the tiles you wrote with their numbers (a hex-digit `tiles.txt` cannot be judged
-  by reading it), and `shots.mjs` shows them in place. Do both after every art change: a tile-aligned scene is easy to
-  get slightly wrong (a transparent tile showing a gap).
+Write the art as code, in `carts/src/<name>/art.py`, with the toolkit (`tools/devkit/art/kit.py`: read its header). The
+starter has a small `art.py` (a field, a ship, a gem) to start from. A cart's art script owns `tiles.txt`, `palette.txt`,
+`map.txt` and `art.json`, and the `ART` block in `code.js`; `verify.js` fails if they are not what it makes.
+
+```python
+art = Art(); art.region('bg', 1, 255); art.region('spr', 256, 1023)
+field = art.palette(1, {'dark': '2c5a1e', 'mid': '346524'})          # BG palette 1: roles by name, never bare numbers
+ship = art.sprite_palette(0, {'edge': '140c1c', 'hull': '597dce'})
+art.sprite('player', Img.from_rows(['.......oo.......', ...], key={'o': ship.edge, 'b': ship.hull}), pal=ship, region='spr')
+art.scene('field', Img.make(256, 224, lambda x, y: field.mid), pal=field, at=(0, 0), solid=True)
+art.write(sys.argv[1])
+```
+
+```js
+// in code.js, from the generated ART block:
+bg(0, { mx: ART.scenes.field.mx, my: ART.scenes.field.my, mw: ART.scenes.field.w, mh: ART.scenes.field.h, show: true });
+sprite(ART.sprites.player, x, y);          // spr(tile, x, y, { size, pal, prio: 3 })
+```
+
+What the kit does for you (each was a bug or a lost hour in a real game):
+- **Palettes by role.** `field.mid` is an index; entry 0 of a sub-palette is always transparent, so an artist who means
+  opaque black and draws 0 gets a hole: the kit has no way to draw "black" except as a role. A picture that uses a colour
+  its palette does not define is an error (it would show a default colour).
+- **Tiles are shared**, identical or flipped (the map and `spr` flip for free), so a 256 x 224 picture costs only its distinct
+  tiles. **Sprites are placed** where the console expects them (a 16 px sprite at tile n uses n, n+1, n+16, n+17), at an aligned,
+  free spot. **Regions** keep BG tiles and sprites apart, and a full region is an error that names it.
+- **`solid=True`** on a scene refuses a transparent cell: a hole in ground or sky, from a tile left empty, is caught at
+  build time. `scene.mjs --holes` shows them for art you did not build this way.
+- **BG palette 0 is the overlay's** (it shares CGRAM entries 1 to 15 with `print` and `rectfill`'s colours): use palettes
+  1 to 7, or give the overlay its own colours with `art.color(113, 'ffffff', 'WHITE')`, as Moto Crosser does.
+- Scenery that moves (a waving crowd, twinkling stars) is a palette change or a switch between two pictures in Map RAM,
+  not a rewrite of the map.
+
+**The first games' art has no script.** Only their generated `tiles.txt`, `palette.txt` and `map.txt` were kept (the scripts that
+made them were lost with a scratch directory), so those games cannot be regenerated: to change a picture, edit the file,
+or redraw just that piece with the kit and paste its `tiles.txt` rows in. The kit is for new games and new pieces. To look at
+such a game's art, use `tiles.mjs`, `scene.mjs --rect x,y,w,h` and `sprites.mjs --tile n --size s --pal p` (no manifest needed).
+
+**Look at the art, always.** `sprites.mjs` (every sprite at its real size, in its palette), `scene.mjs` (a map region, with
+`--holes`), `tiles.mjs` (the sheet with numbers) and `shots.mjs` (the game in place) all make PNGs to open with the Read tool.
+Do it after every change; a tile-aligned scene is easy to get slightly wrong. Count sprites per scanline in a test of a busy
+scene (`vm.ppu.oamCount`, `oamY`, `oamSize`), cap particles, and give the budget in the spec (Moto Crosser used 196 of 320
+tiles for three settings by designing a tile-aligned vocabulary, after an image-based approach overflowed).
 
 ## 7. Tooling traps
 
