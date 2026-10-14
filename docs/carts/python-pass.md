@@ -390,7 +390,7 @@ it, the gate's glow and the Temple's lava cycle colours.
        held only a high score, and is wiped).
      - Menu sounds, a thud for each landing letter and a fanfare for the ending are
        placeholders for the audio pass.
-   - **Results:** a script of 24 checks of the flow all pass.
+   - **Results:** a script of 26 checks of the flow all pass.
      - It runs from the title through a pause, a tally, three hazard banners, game over
        and the initials, to the scores and back, and through the ending.
      - After runs ending at 23,456, 12,000 and 99,999 the saved table is in order, each
