@@ -1,7 +1,7 @@
 # Moto Crosser: Cart Specification
 
-**Version:** 0.4 (draft)
-**Status:** In progress: steps 1 to 3 of the plan (15) are built
+**Version:** 0.5 (draft)
+**Status:** In progress: steps 1 to 4 of the plan (15) are built
 **Cart source:** `carts/src/moto-crosser/` → `carts/moto-crosser.nova`
 
 ---
@@ -140,7 +140,7 @@ same table.
 
 | # | Name | Length | Look | What it teaches |
 |---|---|---|---|---|
-| 1 | Stadium Dirt | 9,600 px (about 55 s) | A floodlit dirt stadium: red clay, tyre walls, a cheering crowd | Ramps, a few hurdles, one mud patch |
+| 1 | Stadium Dirt | 9,600 px (about 55 s) | A floodlit dirt stadium: red clay, tyre walls, a cheering crowd | Ramps, a few hurdles, one mud patch, a hill, and bumps to learn the jumps on |
 | 2 | Desert Run | 12,000 px (about 70 s) | Sand, cacti, red rock and a hot sun | Long hills, more mud, arrow strips, cooling pads placed to be tempting |
 | 3 | Night Mountain | 14,400 px (about 80 s) | A mountain road at night, with floodlights and stars | Everything together: tight jump combinations, hurdles after landings, scarce cooling pads |
 
@@ -359,6 +359,60 @@ the landing.
        errors in the browser.
 4. **The three tracks:** the track authoring script and the streaming of the map, the
    three tracks. **Prove:** each track's checks pass and the bot finishes each.
+   - **Built:**
+     - **The authoring script** (`tracks.py`) lays each track out as a list of beats: a jump
+       (a ramp), a table-top (a ramp, a gap and a down ramp), a double (a small ramp then
+       a medium one), a jump with a wall of hurdles after it, a wall, a lone hurdle, bumps,
+       a hill, mud, an arrow strip, a cooling pad. It spaces the beats evenly from 520 px after
+       the start to 380 px before the finish, then checks the track and writes the table
+       into the code. It refuses a track that fails any of these checks:
+       - every thing is on a column (arrow strips and pads on an even one), at least 400 px from
+         the gate and 250 from the finish, and nothing touches another thing in its lane;
+       - a down ramp follows a ramp of the same size;
+       - at every stretch at least one lane has no hurdle, mud or down ramp;
+       - every wall of hurdles has a way through within **two lanes of any lane** (a lane
+         change takes 20 frames, and a wall is only seen about 55 frames ahead, so
+         a way through three lanes off is not fair), and the time between one wall's way through and
+         the next allows for the lane changes (72 px a lane and 100 px to see it);
+       - every jump has room to land: no hurdle in its lane within 16 px of the lip, or in
+         the landing zone from 30 px short of where a bike at cruising speed comes down to 24 px
+         past where one at turbo speed does (found by flying the bike with the cart's own rules).
+     - **Track 1, Stadium Dirt:** 41 things (4.3 a 1,000 px): 9 ramps (a small, 4 medium, 4 large, two
+       of the large with a down ramp), 10 bumps, a hill, 4 arrow strips, 2 cooling pads, one
+       mud patch and 6 walls and lone hurdles. 214 px between beats, so there is time to look.
+       **Track 2, Desert Run:** 61 things (5.1 a 1,000 px): 7 hills, 6 mud patches, 7 arrow strips, 4 pads,
+       9 ramps and 18 hurdles; 170 px between beats. **Track 3, Night Mountain:** 99 things (6.9 a
+       1,000 px): 24 ramps (with doubles and jumps followed by walls), 40 hurdles, 7 mud
+       patches, 8 arrow strips, 3 cooling pads; 98 px between beats.
+     - **The look:** each track recolours the palette when it starts: the desert's warm sky and
+       sandy ground, and the night's dark sky with everything else dimmed (the arrows, pads and
+       ramps are kept bright). The tiles are still the stadium's; the art pass (step 6) draws the
+       rest.
+     - **Rivals' ratings** are set by track: 0.92 to 1.02 on the first, 0.93 to 1.03 on the second
+       and 0.94 to 1.04 on the third.
+     - **Choosing a track:** until the title and the track select come in step 5, LEFT and
+       RIGHT on the finished results card pick the next track and START races it. The card
+       before the race shows the track's number and name.
+     - **Fixes found on the way:** (1) a bike changing lane into a hill had its height jump to
+       the hill's, which threw it 700 px up. The ground under a bike is now the mix of the two
+       lanes' heights it is between. (2) In the lane-change rule, a bike counts as in a lane
+       within 0.6 of it, not 0.75, so one that has got 60% of the way out of a lane is clear of it.
+       (3) With the rival AI looking only 40 px plus 45 times its speed ahead it often hit walls
+       it could have gone round; it now looks 60 plus 75 times its speed ahead and thinks every 4 frames.
+   - **Results:** a script of 41 checks passes (and the 37, 46 and 38 from steps 1 to 3).
+     - The data: the three tracks' names, lengths and ratings, on a column, clear of the ends,
+       nothing touching, every wall with a way through within two lanes.
+     - The stream: every visible tile right along the whole of each track (the ring wrapping 4 to 7
+       times) and the finish line at the end.
+     - Races with five rivals and a bot player on each track: everyone finishes, the winner
+       takes 52, 65 and 77 seconds, there are almost no crashes (0 to 2 among the six riders), nobody
+       flies higher than a big ramp can throw them, and the same seed repeats exactly.
+     - Over 4 races on each track by a bot player (skill 1.0), it wins 1 in 4: the rivals are
+       close to it. Mean times (bot first, then red, yellow, green, blue, purple): 3206 3205 3290
+       3400 3163 3483 frames on track 1, 4006 3937 4074 4164 3944 4225 on track 2, 4809 4762 4896
+       4965 4759 5107 on track 3.
+     - Each track's look; choosing the next track; a frame averages 1.6 ms on the busiest
+       track.
 5. **Flow:** title, track select, the two modes, qualifying, the podium, saved times and the
    top 10, pause.
 6. **Art pass:** the three settings, the riders, dust and mud, the crowd, parallax.
