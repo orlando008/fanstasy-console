@@ -257,10 +257,9 @@ the landing.
 - **Engine sound:** whether a held note can have its pitch changed from the cart while it
   plays. If not, the engine is a short loop restarted a few times a second at one of
   about 6 pitches.
-- **The start grid:** six bikes on four lanes means a second row. The plan is four in front
-  and two a bike length behind, in the two outer lanes, and the player's spot is chosen
-  by the rivals' skill (the player starts in the front row in Quick Race, and the second row
-  after a retry in the Championship is not needed).
+- **The start grid:** six bikes on four lanes means a second row: four in front, one per
+  lane, and two a bike length behind in the two middle lanes. The player always starts in the
+  front row, in lane 3 (the second from the top).
 - **Track length:** 55 to 80 seconds is short; it is as in the original, and the
   championship only takes about 4 minutes if you qualify each time. More tracks could be
   added later.
