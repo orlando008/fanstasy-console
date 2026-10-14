@@ -29,7 +29,9 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 |---|---|
 | `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder (`code.js`, `tiles.txt`, `palette.txt`, `map.txt`, `audio.json`, `meta.json`, `label.png`) |
 | `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an audio script, tests and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--selftest` checks the starter itself |
-| `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, a stale `.nova`, missing label or description |
+| `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): audio script regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
+| `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser needed), the spec (header, TODOs in a released cart, code size in the budget table), missing label or description |
+| `node tools/devkit/sweep.mjs <name> --seeds 8 --set skill=0.9,1` | **Run the cart's bot** (`tests/carts/<name>/bot.mjs`) over many seeds and variants and summarise (win rates, times, crashes); fails on an exception, a frozen screen, a run that never finishes, or a problem the bot reports (a rival stuck). How balance is checked |
 | `node tools/test.js <name> [filter] [-v]` | Run `tests/carts/<name>/NN-*.mjs` one at a time (about 3 minutes for Moto Crosser: run it in the background) |
 | `node tools/release.js <name> [--keep-label]` | Pack, capture the F7 label in headless Chromium, export `.nova.png`, verify it decodes to the packed cart, rebuild the Library index, run the checks |
 | `node tools/library.js` | Rebuild `carts/index.json` and `carts/labels/` (release.js does it) |
@@ -77,10 +79,12 @@ Build the cart with these in mind from the start:
 - a **`skipTitle`** variable that `init` checks, so a test lands in the game;
 - one **state variable** and one function per state (`updateTitle`, `updateRace`...), driven by `update()`;
 - a **pause** that stops the world but not the audio command stream, and a **restart** that keeps the seed;
-- **an automatic player** (`setAuto`) that drives the same code as a rival or the player, so a whole run can be
-  played in a test: it finds stuck states, balance problems and crashes that no hand-written test would. The
-  Moto Crosser bot found a rider that sat on a bump for ever (it could not climb a steep slope from a
-  standstill: the same thing could have happened to a player).
+- **an automatic player**, in `tests/carts/<name>/bot.mjs` (the starter has one; Moto Crosser's drives the rivals' AI
+  for the player): it drives the same code as a rival or a player, so a whole run is played by `sweep.mjs` over
+  many seeds. It finds stuck states, balance problems and crashes that no hand-written test would. The Moto
+  Crosser bot found a rider that sat on a bump for ever (it could not climb a steep slope from a standstill: the
+  same thing could have happened to a player). Give the bot a skill option and sweep it (`--set skill=0.9,1`):
+  a perfect run should win most races and a player 5% off the pace should place mid-field, not last;
 
 Checks that proved their worth:
 - one `PASS`/`FAIL` line per behaviour, written as a sentence a designer would say ("a crash has its sound");
@@ -94,7 +98,7 @@ Checks that proved their worth:
 
 ### Soak and smoke
 
-Run both before you call a step done, and again after the art and audio passes:
+`node tools/verify.js` runs the checks, the soak and the tests for the carts you changed. Run the soak and the smoke test before you call a step done, and again after the art and audio passes:
 
 - `soak.mjs` is quick (seconds) and runs in CI. A **frozen screen** failure is the generic form of "a rival sat
   on a bump for ever": the random player pressed buttons for 15 s and the picture never changed. Give the cart

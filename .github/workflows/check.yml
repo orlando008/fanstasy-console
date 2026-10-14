@@ -21,3 +21,14 @@ jobs:
       - run: node tools/new-cart.js --selftest
       # Random play for 3,000 frames on every cart: exceptions, wrong-voice effects, soft locks, frame time
       - run: node tools/devkit/soak.mjs --all
+  verify:
+    # The carts a pull request changes: audio script, packed cart, checks, soak and the cart's own tests.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: git fetch origin ${{ github.base_ref }}
+      - run: node tools/verify.js --base origin/${{ github.base_ref }}

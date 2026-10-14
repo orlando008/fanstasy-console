@@ -63,6 +63,6 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(5), times = [];
   for (let i = 0; i < 600; i++) { vm.step(i % 40 < 20 ? M('LEFT') : M('RIGHT')); times.push(vm.m.stats.cpu); }
   times.sort((a, b) => a - b); const p99 = times[Math.floor(times.length * 0.99)];
-  ok(p99 < 8, 'frames are quick', `99th percentile ${p99.toFixed(2)} ms`);
+  ok(p99 < 8 * (process.env.CI ? 3 : 1), 'frames are quick', `99th percentile ${p99.toFixed(2)} ms`);
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

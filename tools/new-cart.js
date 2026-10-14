@@ -7,7 +7,7 @@
 // a saved top 10 with initials, a records screen, sound and music cues, a skipTitle hook, save slots):
 //   carts/src/<name>/code.js, meta.json, audio.py (and the audio.json it makes)
 //   carts/<name>.nova                the packed cart
-//   tests/carts/<name>/lib.mjs, 01-flow.mjs
+//   tests/carts/<name>/lib.mjs, 01-flow.mjs, bot.mjs (a bot for tools/devkit/sweep.mjs)
 //   docs/carts/<name>.md             the spec template, with the implementation plan
 // Then: write the spec, replace the placeholder game in updatePlay and drawPlay, and build step by step
 // (docs/dev/playbook.md). The template files are plain text with {{NAME}}, {{TITLE}} and {{TITLE_UPPER}}.
@@ -39,12 +39,13 @@ function scaffold(name, title) {
   put('spec.md', dirs.spec);
   put('lib.mjs', join(dirs.tests, 'lib.mjs'));
   put('01-flow.mjs', join(dirs.tests, '01-flow.mjs'));
+  put('bot.mjs', join(dirs.tests, 'bot.mjs'));
   run('python3', join(dirs.src, 'audio.py'), join(dirs.src, 'audio.json'));
   run('node', 'tools/pack.js', `carts/src/${name}`, `carts/${name}.nova`);
   console.log(`Created ${title} (${name}):
   carts/src/${name}/       code.js, meta.json, audio.py, audio.json
   carts/${name}.nova       packed
-  tests/carts/${name}/     lib.mjs, 01-flow.mjs
+  tests/carts/${name}/     lib.mjs, 01-flow.mjs, bot.mjs (for node tools/devkit/sweep.mjs ${name})
   docs/carts/${name}.md    the spec to fill in
 
 Next:
@@ -52,8 +53,9 @@ Next:
   2. Replace the placeholder game: updatePlay and drawPlay in code.js (and the SFX, SONG tables, audio.py).
   3. node tools/pack.js carts/src/${name} carts/${name}.nova && node tools/check.js ${name} && node tools/test.js ${name}
   4. node tools/devkit/soak.mjs carts/${name}.nova (random play) and node tools/devkit/smoke.mjs ${name} (the real console)
-  5. Play it yourself: serve the repo (python3 -m http.server) and open /?cart=${name}
-  6. Commit and push after each step; when it is finished: node tools/release.js ${name}, the README row.`);
+  5. node tools/devkit/sweep.mjs ${name}: the bot in tests/carts/${name}/bot.mjs over many seeds (balance, stuck states)
+  6. Play it yourself: serve the repo (python3 -m http.server) and open /?cart=${name}
+  7. Commit and push after each step; when it is finished: node tools/release.js ${name}, the README row.`);
 }
 
 async function selftest() {
@@ -66,7 +68,8 @@ async function selftest() {
     console.log(run('node', 'tools/check.js', name));
     console.log(run('node', 'tools/test.js', name));
     console.log(run('node', 'tools/devkit/soak.mjs', `carts/${name}.nova`, '--frames', '3000', '--seeds', '1'));
-    console.log('\nthe starter scaffolds, packs, passes its checks, its tests and a soak run');
+    console.log(run('node', 'tools/devkit/sweep.mjs', name, '--seeds', '3'));
+    console.log('\nthe starter scaffolds, packs, passes its checks, its tests, a soak run and a sweep');
     return 0;
   } catch (e) {
     console.error(String(e.stdout || ''), String(e.stderr || ''), e.message);

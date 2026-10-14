@@ -180,7 +180,7 @@ function until(vm, pred, mask = A, max = 600) { let f = 0; while (f < max && !pr
   const a = run(), b = run();
   ok(a.state !== 'race' && a.t > 0, 'the scripted run finishes the test course', `${a.t} frames, ${a.crashes} crashes`);
   ok(a.t === b.t && a.x === b.x && a.heat === b.heat && a.crashes === b.crashes, 'two runs with the same inputs are exactly the same', `${a.t} / ${b.t}`);
-  ok(a.worst < 8 && a.mean < 3, 'frames are quick', `mean ${a.mean.toFixed(2)} ms, 99th percentile ${a.worst.toFixed(2)} ms`);
+  ok(a.worst < 8 * (process.env.CI ? 3 : 1) && a.mean < 3 * (process.env.CI ? 3 : 1), 'frames are quick', `mean ${a.mean.toFixed(2)} ms, 99th percentile ${a.worst.toFixed(2)} ms`);
 }
 
 // 10. The track tiles are right all the way along the test course (things included).

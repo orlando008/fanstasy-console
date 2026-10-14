@@ -4,10 +4,10 @@
 //   node tools/check.js --all                 every cart in carts/ that has a source folder
 //   node tools/check.js --all --skip=a,b      ... except these (carts with known problems)
 //
-// Errors (exit code 1): code over 64 KB, a syntax error, audio over its limits, an instrument whose wave does
+// Errors (exit code 1): a .nova.png that does not hold exactly the packed cart (decoded here, no browser), code over 64 KB, a syntax error, audio over its limits, an instrument whose wave does
 // not suit the channel it is on in a song, a note out of range, an SFX that mixes voices, or a PNG cart that
-// would not fit. Warnings: code over 90% of the limit, a built .nova that is older than its source, an SFX
-// that would sound wrong through the cart's SFX_CH (unless the code routes them: a table named SFX_VOICE_CH, or a comment "sfx-voice-routed"), a description that still says "work in progress", no label.
+// would not fit. Warnings: code over 90% of the limit, a built .nova that is not what its source packs to, an SFX
+// that would sound wrong through the cart's SFX_CH (unless the code routes them: a table named SFX_VOICE_CH, or a comment "sfx-voice-routed"), a description that still says "work in progress", no label, a spec that is missing, has no Version/Status header, still has TODOs in a released cart, or states a code size more than 2 KB off.
 // Numbers worth knowing are printed for every cart (code size, tiles, sprites per scanline are a run-time limit:
 // see docs/dev/playbook.md for the harness check).
 
@@ -21,6 +21,7 @@ import { CHANNEL_VOICES, INSTRUMENTS, NOTE_COUNT, PATTERNS, SAMPLE_RAM, SAMPLE_S
 import { CODE_LIMIT, SHEET_W, codeBytes } from '../src/formats/cart.js';
 import { readNova } from '../src/formats/nova-json.js';
 import { MAX_PAYLOAD, cartPayload } from '../src/formats/nova-png.js';
+import { readPngCart } from './devkit/pngcart.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const args = process.argv.slice(2);
@@ -120,6 +121,26 @@ async function checkCart(arg) {
   if (!cart.label) warn('no label (F7 in the console, or node tools/release.js)');
   if (/work in progress/i.test(desc)) warn('the description still says it is a work in progress');
   if (!desc) warn('no description in meta.json');
+  // The spec: present, with a header, no TODOs once released, and a code budget that matches the code.
+  const specFile = join(ROOT, 'docs', 'carts', `${name}.md`), released = existsSync(join(ROOT, 'carts', `${name}.nova.png`));
+  if (!existsSync(specFile)) { if (released) warn(`no spec: docs/carts/${name}.md`); }
+  else {
+    const spec = readFileSync(specFile, 'utf8');
+    if (!/^\*\*Version:\*\*/m.test(spec) || !/^\*\*Status:\*\*/m.test(spec)) warn(`docs/carts/${name}.md has no Version and Status header lines`);
+    const todos = (spec.match(/\bTODO\b/g) || []).length;
+    if (todos && released) warn(`docs/carts/${name}.md still has ${todos} TODO(s) and the cart is released`);
+    const m = /\|\s*Code\s*\|\s*([\d.]+)\s*KB\b/.exec(spec);
+    if (m) {
+      const said = Number(m[1]), actualKB = bytes / 1000, actualKiB = bytes / 1024;
+      if (Math.abs(said - actualKB) > 2 && Math.abs(said - actualKiB) > 2) warn(`docs/carts/${name}.md says the code is ${said} KB; it is ${actualKB.toFixed(1)} KB (update the asset budget table)`);
+    }
+  }
   const png = join(ROOT, 'carts', `${name}.nova.png`);
-  if (existsSync(png) && existsSync(file) && statSync(png).mtimeMs < statSync(file).mtimeMs - 60_000) warn(`carts/${name}.nova.png is older than the cart: run node tools/release.js ${name}`);
+  if (existsSync(png)) { // the PNG cart must carry exactly the packed cart (it holds a copy of everything)
+    try {
+      const held = readPngCart(readFileSync(png));
+      if (held.nova !== readFileSync(file, 'utf8')) err(`carts/${name}.nova.png holds an older or different cart than carts/${name}.nova: run node tools/release.js ${name} --keep-label`);
+      else console.log('  png     decodes to exactly the packed cart');
+    } catch (e) { err(`carts/${name}.nova.png cannot be read: ${e.message}`); }
+  }
 }
