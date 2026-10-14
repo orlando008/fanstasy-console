@@ -122,6 +122,14 @@ export class Shell {
       this.app.library();
       return;
     }
+    if (this.mode === 'run' && !mod && !e.altKey) { // the player's volume
+      const vol = { '-': 'down', _: 'down', '=': 'up', '+': 'up', m: 'mute', M: 'mute' }[e.key];
+      if (vol && !(vol === 'mute' && e.repeat)) {
+        e.preventDefault();
+        this.app.volume(vol);
+        return;
+      }
+    }
     if (e.key === 'Escape') {
       e.preventDefault();
       if (this.mode === 'edit' && this.code.findOpen) {

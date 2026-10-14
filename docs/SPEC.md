@@ -431,7 +431,7 @@ Cart code runs in a dedicated worker with no DOM, no cookies and no `localStorag
 
 ## 11. Built-in tools
 
-The shell has two modes. **Run** shows the game full-screen. **Edit** shows the tabs below. Esc toggles between them, and Ctrl+R restarts the cart.
+The shell has two modes. **Run** shows the game full-screen. **Edit** shows the tabs below. Esc toggles between them, and Ctrl+R restarts the cart. In Run mode the player has a volume control of their own: `-` and `=` (or `+`) step it down and up in tenths, `M` mutes and restores it, and the level is remembered in the browser. It is a square-law gain after the whole APU (so every game is covered with no cart code), separate from the cart's `volume(v)`; clip recordings are taken before it. It does nothing in the editor.
 
 | Tab | Features |
 |---|---|
@@ -534,6 +534,7 @@ built in HTML like the editor, not inside the console.
 ├── carts/                  # Demo and game carts (.nova, .nova.png), index.json and labels/ for the Library
 │   └── src/<name>/         # A cart's source: code.js, meta.json, tiles.txt, palette.txt, map.txt, audio.json (made
 │                           #   by audio.py where there is one), label.png
+├── tests/console/          # Checks of the console itself in headless Chromium (node tests/console/volume.mjs)
 ├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs), its lib.mjs and its bot.mjs for the sweep tool
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/

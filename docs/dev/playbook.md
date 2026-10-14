@@ -24,6 +24,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `carts/src/<name>/` | A cart's source: `code.js`, `meta.json`, `tiles.txt`, `palette.txt`, `map.txt`, `audio.json` (made by `audio.py` if there is one), `label.png` |
 | `carts/<name>.nova`, `.nova.png`, `labels/`, `index.json` | What `pack.js`, `release.js` and `library.js` build from the source: commit them with it |
 | `tests/carts/<name>/` | `lib.mjs` (boots the cart with its variables exposed), `NN-*.mjs` (check scripts, one per build step), `bot.mjs` (the bot for `sweep.mjs`) |
+| `tests/console/` | Checks of the console itself in headless Chromium (the player's volume keys); not part of a cart build |
 | `docs/carts/<name>.md` | The game's spec, with each step's **Built** and **Results** notes |
 | `tools/` | `pack`, `library`, `new-cart`, `verify`, `check`, `test`, `release`, `check-docs` (section 2) |
 | `tools/devkit/` | The headless harness, soak, smoke, sweep, shots, tiles, voices, the random player, and `music/`: the song toolkit, loudness checks, effect levels and lead lowering |
@@ -188,6 +189,8 @@ You cannot hear the result, so measure it, and follow the rules that keep player
   The first games' leads were as loud as that first version, and were brought down in the same way with
   `lower-leads.mjs` (no vibrato; volumes lowered until each song's lead is at most 0.05 RMS). Only the `chiptune` demo is
   over the limits (a loud sound test, so `verify.js` only warns for it).
+- **The player can turn the volume down** (`-` and `=`, `M` mutes: a console feature, so no cart code), but do not rely on it:
+  keep the levels within the limits above.
 - **A held note cannot change pitch** (no API for it). A pitch that follows a value (an engine) is a short loop
   restarted at one of 5 or 6 pitches, changed only after the new pitch has held a few frames.
 - **Effect levels**: a song is about 0.06 to 0.08 RMS; effects 0.01 to 0.06; a looping sound 0.02 to 0.03.
