@@ -928,6 +928,213 @@
     null,
     null
    ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "C-3",
+     "i": 7
+    },
+    {
+     "n": "G-2",
+     "i": 7
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 1,
+   "rows": [
+    {
+     "n": "C-7",
+     "i": 4
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 5,
+   "rows": [
+    {
+     "n": "C-5",
+     "i": 2
+    },
+    {
+     "n": "E-5",
+     "i": 2
+    },
+    {
+     "n": "G-5",
+     "i": 2
+    },
+    {
+     "n": "C-6",
+     "i": 2
+    },
+    null,
+    {
+     "n": "G-5",
+     "i": 2
+    },
+    {
+     "n": "C-6",
+     "i": 2
+    },
+    {
+     "n": "E-6",
+     "i": 2
+    },
+    null,
+    {
+     "n": "G-6",
+     "i": 2
+    },
+    null,
+    null,
+    {
+     "n": "C-7",
+     "i": 2
+    },
+    null,
+    null,
+    null,
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 6,
+   "rows": [
+    {
+     "n": "G-4",
+     "i": 2
+    },
+    {
+     "n": "E-4",
+     "i": 2
+    },
+    {
+     "n": "C-4",
+     "i": 2
+    },
+    null,
+    {
+     "n": "D-4",
+     "i": 2
+    },
+    null,
+    {
+     "n": "C-4",
+     "i": 2
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
   }
  ],
  "samples": []

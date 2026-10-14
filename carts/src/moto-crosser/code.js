@@ -1,8 +1,7 @@
 // Moto Crosser: a dirt-bike racer in the style of Excitebike (docs/carts/moto-crosser.md).
-// So far (steps 1-3): a four-lane test course that scrolls past a camera that keeps the bike a third
-// of the way across, the bike with gas, turbo and lane changes, ramps, bumps and hills with jumps and
-// landings, hurdles, mud, arrow strips, cooling pads and the engine's heat, five CPU riders, the starting
-// lights and gate, places, a timer, the finish line, a results card with the standings and a pause.
+// The whole game (steps 1-5): a title, QUICK RACE and CHAMPIONSHIP on three four-lane tracks with the
+// bike's gas, turbo, lane changes, jumps, landings and overheating engine, hurdles, mud, arrow strips and
+// cooling pads, five CPU rivals, places, points, the podium, initials, saved best times and a top 10, and a pause.
 
 // --- Layout (SPEC 4) ---
 
@@ -46,13 +45,25 @@ const SHADES = { [GOLD]: [123, 124], [GREEN]: [125, 119], [RED]: [97, 98], [WHIT
 
 // --- Sound ---
 
-const SFX = { beep: 0, go: 1, finish: 2, buzz: 3, select: 4, move: 5, pause: 6, takeoff: 7, land: 8, rough: 9, crash: 10, mud: 11, arrow: 12, cool: 13, overheat: 14, restart: 15, bump: 16 };
+const SFX = { beep: 0, go: 1, finish: 2, buzz: 3, select: 4, move: 5, pause: 6, takeoff: 7, land: 8, rough: 9, crash: 10, mud: 11, arrow: 12, cool: 13, overheat: 14, restart: 15, bump: 16, thud: 17, tick: 18, fanfare: 19, over: 20 };
+
+// --- Save slots (SPEC 13) and points (SPEC 9) ---
+
+const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1, TIME_SLOT = 2; // best times: slots 2 to 4
+const TOP_SLOT = 10, TOP_N = 10, ENTRY = 4; // the top 10 championship scores, best first: score, how far (1-3: the track it ended on; 4: all), initials, a spare
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const PLACE_POINTS = [10000, 7000, 5000, 3000, 2000, 1000], TIME_BONUS = 100, CLEAN_BONUS = 1000, QUALIFY_PLACE = 3; // a point value for each place; a bonus for each second under par; and for a race without a crash
 const SFX_CH = 1;
 function fx(n) { sfx(n, SFX_CH); }
 
 // --- State ---
 
-let state; // 'card', 'grid' (the lights), 'race', 'finish' (coasting over the line), 'results'
+let state; // 'title', 'select', 'records', 'card', 'grid' (the lights), 'race', 'finish' (coasting over the line), 'results', 'points', 'dnq', 'podium', 'initials'
+let mode = 'quick'; // 'quick' or 'champ'
+let champ = null; // the championship in progress: { race, retries, score, pts (each rider's place points), res (each race's result), over, done }
+let lastRes = null, newBest = false; // the last race's points; whether its time was a best
+let titleSel = 0, selTrack = 0, rank = -1, hl = -1, initials = null, skipTitle = false;
+let scene = null; // the rider on the title's track
 let timer = 0, clock = 0;
 let raceT = 0; // frames since GO
 let finishT = 0; // the race time in frames, once over the line
@@ -81,10 +92,14 @@ function newRider(x, lane, pal) {
 }
 
 function init() {
+  if (dget(VERSION_SLOT) !== SAVE_VERSION) {
+    for (let i = 0; i < 256; i++) dset(i, 0);
+    dset(VERSION_SLOT, SAVE_VERSION);
+  }
   bg(0, { mx: 0, my: 0, mw: RING, mh: 28, wrap: true, show: true });
   bg(1, { mx: 0, my: 28, mw: 64, mh: 28, wrap: true, show: true });
   bg(2, { mx: 0, my: 56, mw: 32, mh: 28, wrap: true, show: true });
-  startRace(true);
+  if (skipTitle) startRace(true); else toTitle();
 }
 
 // --- The things on the track (SPEC 6) ---
@@ -104,14 +119,19 @@ const TRACKS = [
   { name: "NIGHT MOUNTAIN", len: 14400, par: 4800, skills: [1.02, 0.99, 0.96, 1.04, 0.94], look: {"dim": 0.42, "set": {"0": "0a1030", "1": "101c40", "2": "404c78", "3": "18283a", "4": "24405a", "5": "1c2c48", "9": "2a1408", "10": "a07048", "11": "e0b078", "12": "785030", "26": "f8d838", "27": "906010", "28": "a8e0ff", "29": "4890d8", "30": "ffffff"}}, objs: [["rampM",1,640],["rampS",2,960],["rampM",2,1160],["arrow",1,1472,2],["hurdle",0,1600],["hurdle",1,1600],["hurdle",3,1600],["mud",3,1712,8],["rampL",0,1872],["hurdle",2,2224],["hurdle",3,2224],["hill",2,2336],["arrow",3,2576,3],["rampS",0,2720],["rampM",0,2920],["hurdle",0,3232],["hurdle",2,3232],["hurdle",3,3232],["rampL",1,3344],["downL",1,3488],["mud",2,3744,10],["cool",2,3920,2],["bump",0,4064],["bump",0,4112],["bump",0,4160],["bump",0,4208],["rampM",3,4352],["hurdle",0,4656],["hurdle",1,4656],["arrow",1,4768,3],["hill",2,4912],["hill",3,4944],["hurdle",2,5168],["hurdle",3,5168],["rampS",1,5280],["rampM",1,5480],["mud",3,5792,12],["hurdle",0,5984],["hurdle",1,5984],["rampL",1,6112],["hurdle",0,6496],["hurdle",3,6496],["arrow",2,6608,2],["rampL",0,6736],["downL",0,6880],["mud",1,7136,8],["hurdle",0,7296],["hurdle",1,7296],["hurdle",3,7296],["rampS",3,7408],["rampM",3,7608],["hill",1,7936],["arrow",0,8160,3],["hurdle",2,8304],["hurdle",3,8304],["rampM",2,8416],["hurdle",0,8736],["hurdle",1,8736],["cool",1,8848,2],["mud",2,8976,12],["hurdle",0,9168],["hurdle",2,9168],["hurdle",3,9168],["rampL",3,9280],["downL",3,9424],["bump",2,9696],["bump",2,9744],["bump",2,9792],["arrow",3,9936,2],["rampS",1,10064],["rampM",1,10264],["hurdle",0,10576],["hurdle",1,10576],["rampL",0,10688],["hurdle",2,11072],["hurdle",3,11072],["mud",1,11184,10],["hurdle",0,11376],["hurdle",1,11376],["hurdle",3,11376],["hill",0,11488],["hill",1,11520],["arrow",2,11744,3],["rampM",2,11888],["downM",2,12016],["hurdle",0,12256],["hurdle",2,12256],["hurdle",3,12256],["rampL",3,12368],["hurdle",0,12720],["hurdle",1,12720],["cool",0,12832,2],["rampS",2,12976],["rampM",2,13176],["hurdle",2,13488],["hurdle",3,13488],["mud",3,13600,8],["arrow",1,13760,3],["rampL",2,13904]] },
 ];
 // END TRACKS
-let track = 0, nextTrack = 0; // the track being raced; the one chosen for the next race
+let track = 0; // the track being raced
 const lanes = [[], [], [], []]; // each lane's things, in order
 const colTiles = new Map(); // track column -> { row: map entry } for the things on it
 
 /** Set up a track: its length and finish, its things (in the lanes and as map tiles) and its colours. */
 function setTrack(i) {
   track = i;
-  const t = TRACKS[i];
+  loadTrack(TRACKS[i]);
+}
+
+/** The menus' backdrop: a long flat run of the stadium, with the first track's colours. */
+const SCENE = { len: 100000, objs: [], look: {} };
+function loadTrack(t) {
   TRACK_LEN = t.len; FINISH_X = START_X + TRACK_LEN; FIN_COL = FINISH_X >> 3;
   buildCourse(t.objs);
   applyLook(t.look);
@@ -236,7 +256,7 @@ function startRace(withCard, newSeed = true, t = track) {
   standings();
   camX = START_X - CAM_OFF;
   filled = -1; streamTo((camX >> 3) + 40);
-  state = withCard ? 'card' : 'grid'; timer = 0; nextTrack = track;
+  state = withCard ? 'card' : 'grid'; timer = 0; newBest = false;
   music(-1);
 }
 
@@ -372,11 +392,18 @@ function update() {
   inputMask = readPad();
   clock++;
   if (paused) updatePause();
+  else if (state === 'title') updateTitle();
+  else if (state === 'select') updateSelect();
+  else if (state === 'records') updateRecords();
   else if (state === 'card') { if (++timer >= CARD_FRAMES) { state = 'grid'; timer = 0; } }
   else if (state === 'grid') updateGrid();
   else if (state === 'race') updateRace();
   else if (state === 'finish') updateFinish();
   else if (state === 'results') updateResults();
+  else if (state === 'points') updatePoints();
+  else if (state === 'dnq') updateDnq();
+  else if (state === 'podium') updatePodium();
+  else if (state === 'initials') updateInitials();
   prevMask = inputMask;
 }
 
@@ -412,10 +439,175 @@ const isFinal = () => riders.every((r) => r.fin) || timer >= SETTLE_FRAMES;
 function updateResults() {
   raceStep(); timer++;
   if (!isFinal()) return;
-  // (Until the title and the track select come in step 5: LEFT and RIGHT choose the next track.)
-  if (pressed(RIGHT)) { nextTrack = (nextTrack + 1) % TRACKS.length; fx(SFX.move); }
-  if (pressed(LEFT)) { nextTrack = (nextTrack + TRACKS.length - 1) % TRACKS.length; fx(SFX.move); }
-  if (pressed(START) || pressed(A)) { fx(SFX.select); startRace(false, true, nextTrack); }
+  const go = pressed(START) || pressed(A);
+  if (mode === 'quick') {
+    if (pressed(B)) { fx(SFX.select); toScene(); state = 'select'; selTrack = track; timer = 0; }
+    else if (go) { fx(SFX.select); startRace(false, true, track); }
+  } else if (go) { fx(SFX.select); afterRace(); }
+}
+
+// --- The championship (SPEC 8) ---
+
+function startChampionship() {
+  mode = 'champ';
+  champ = { race: 0, retries: 1, score: 0, pts: [0, 0, 0, 0, 0, 0], res: [], over: false, done: false };
+  startRace(true, true, 0);
+}
+
+/** The player's points for the race just finished: the place, the seconds under par, and a clean race. */
+function raceResult() {
+  const place = placeOf(0), under = Math.max(0, flr((TRACKS[track].par - finishT) / 60));
+  const pts = PLACE_POINTS[place - 1], timeB = under * TIME_BONUS, clean = riders[0].crashes === 0 ? CLEAN_BONUS : 0;
+  return { place, pts, under, timeB, clean, total: pts + timeB + clean };
+}
+
+/** After a championship race: through to the next track in the top 3; otherwise a retry (once), then the end. */
+function afterRace() {
+  lastRes = raceResult();
+  const accept = () => { champ.score += lastRes.total; order.forEach((i, k) => { champ.pts[i] += PLACE_POINTS[k]; }); champ.res.push(lastRes); };
+  if (lastRes.place <= QUALIFY_PLACE) { accept(); state = 'points'; }
+  else if (champ.retries > 0) state = 'dnq';
+  else { accept(); champ.over = true; state = 'dnq'; fx(SFX.over); }
+  timer = 0;
+}
+
+function updatePoints() {
+  timer++;
+  if (timer < 150 && timer % 25 === 0) fx(SFX.tick);
+  if ((pressed(START) || pressed(A)) && timer > 30) {
+    fx(SFX.select);
+    if (champ.race < TRACKS.length - 1) { champ.race++; startRace(true, true, champ.race); }
+    else { champ.done = true; toScene(); state = 'podium'; timer = 0; fx(SFX.fanfare); }
+  }
+}
+
+function updateDnq() {
+  timer++;
+  if (!(pressed(START) || pressed(A)) || timer < 30) return;
+  fx(SFX.select);
+  if (champ.over) endChampionship();
+  else { champ.retries--; startRace(true, true, champ.race); }
+}
+
+function updatePodium() {
+  sceneStep();
+  if ((pressed(START) || pressed(A)) && timer > 40) { fx(SFX.select); endChampionship(); }
+}
+
+/** The championship is over: its score goes into the top 10 (under the last initials) and the player can name it. */
+function endChampionship() {
+  toScene();
+  rank = insertTop({ score: champ.score, reached: champ.done ? TRACKS.length + 1 : champ.race + 1, initials: lastInitials() });
+  if (rank >= 0) { state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0 }; }
+  else toTitle();
+}
+
+// --- Best times and the top 10 (SPEC 13) ---
+
+function recordTime() {
+  const slot = TIME_SLOT + track, old = dget(slot);
+  if (old && finishT >= old) return false;
+  dset(slot, finishT);
+  return true;
+}
+
+function readEntry(i) {
+  const slot = TOP_SLOT + i * ENTRY;
+  return { score: dget(slot), reached: dget(slot + 1), initials: unpackInitials(dget(slot + 2)) };
+}
+function writeEntry(i, e) {
+  const slot = TOP_SLOT + i * ENTRY;
+  dset(slot, e.score); dset(slot + 1, e.reached); dset(slot + 2, packInitials(e.initials));
+}
+const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
+
+/** Put a score into the top 10 if it makes it. Returns its row, or -1. */
+function insertTop(e) {
+  if (!e.score) return -1;
+  const list = topTen(), at = list.findIndex((x) => e.score > x.score);
+  if (at < 0) return -1;
+  list.splice(at, 0, e);
+  for (let i = at; i < TOP_N; i++) writeEntry(i, list[i]);
+  return at;
+}
+
+/** Three characters, 8 bits each. */
+const packInitials = (str) => (str.charCodeAt(0) << 16) | (str.charCodeAt(1) << 8) | str.charCodeAt(2);
+const unpackInitials = (v) => (v ? String.fromCharCode((v >> 16) & 255, (v >> 8) & 255, v & 255) : '---');
+const lastInitials = () => (dget(INITIALS_SLOT) ? unpackInitials(dget(INITIALS_SLOT)) : 'AAA');
+const reachedName = (r) => (r > TRACKS.length ? 'ALL' : r ? `TRACK ${r}` : '-');
+
+/** UP/DOWN pick a letter, LEFT/RIGHT (or A and B) move, START saves (as does A on the last letter). */
+function updateInitials() {
+  sceneStep();
+  const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
+  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; fx(SFX.move); }
+  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; fx(SFX.move); }
+  if (pressed(LEFT) || pressed(B)) ini.pos = Math.max(0, ini.pos - 1);
+  if (pressed(RIGHT)) ini.pos = Math.min(2, ini.pos + 1);
+  const done = pressed(START) || (pressed(A) && ini.pos === 2);
+  if (pressed(A) && ini.pos < 2) ini.pos++;
+  if (!done || timer < 20) return;
+  const v = packInitials(ini.chars.join(''));
+  dset(INITIALS_SLOT, v);
+  dset(TOP_SLOT + rank * ENTRY + 2, v);
+  fx(SFX.select);
+  state = 'records'; hl = rank; timer = 0;
+}
+
+// --- The menus (SPEC 10) ---
+
+/** The menus' backdrop: the stadium scrolling past a bike doing a wheelie. */
+function toScene() {
+  loadTrack(SCENE);
+  riders = [newRider(100, 2, 0)]; scene = riders[0];
+  order = [0]; parts = []; paused = false; gateDown = true;
+  camX = 0; filled = -1; streamTo(40);
+}
+function sceneStep() {
+  timer++;
+  scene.x += 2.4; scene.v = 2.4; scene.pitch = 3; scene.z = 0; scene.air = false;
+  camX = flr(scene.x) - 100;
+  streamTo((camX >> 3) + 40);
+  emitDust(scene); moveParts();
+}
+
+function toTitle() {
+  toScene();
+  state = 'title'; timer = 0; titleSel = 0; mode = 'quick'; champ = null;
+  music(-1);
+}
+
+/** The logo's letters drop in one by one and bounce once; then the menu. */
+const LOGO = ['MOTO', 'CROSSER'], LOGO_Y = [30, 74], LOGO_SCALE = [4, 3], LOGO_GAP = 5, LOGO_FALL = 14, LOGO_BOUNCE = 10;
+const logoLand = (n) => 8 + n * LOGO_GAP + LOGO_FALL;
+const LOGO_DONE = logoLand(10) + LOGO_BOUNCE;
+
+function updateTitle() {
+  sceneStep();
+  for (let n = 0; n < 11; n++) if (timer === logoLand(n)) fx(SFX.thud);
+  const go = pressed(START) || pressed(A);
+  if (timer < LOGO_DONE) { if (go) timer = LOGO_DONE; return; }
+  if (pressed(UP)) { titleSel = (titleSel + 2) % 3; fx(SFX.move); }
+  if (pressed(DOWN)) { titleSel = (titleSel + 1) % 3; fx(SFX.move); }
+  if (!go) return;
+  fx(SFX.select);
+  if (titleSel === 0) { mode = 'quick'; state = 'select'; timer = 0; }
+  else if (titleSel === 1) startChampionship();
+  else { state = 'records'; hl = -1; timer = 0; }
+}
+
+function updateSelect() {
+  sceneStep();
+  if (pressed(LEFT) || pressed(UP)) { selTrack = (selTrack + TRACKS.length - 1) % TRACKS.length; fx(SFX.move); }
+  if (pressed(RIGHT) || pressed(DOWN)) { selTrack = (selTrack + 1) % TRACKS.length; fx(SFX.move); }
+  if (pressed(B)) { fx(SFX.select); state = 'title'; timer = LOGO_DONE; return; }
+  if (pressed(A) || pressed(START)) { fx(SFX.select); mode = 'quick'; startRace(true, true, selTrack); }
+}
+
+function updateRecords() {
+  sceneStep();
+  if ((pressed(START) || pressed(A) || pressed(B)) && timer > 20) { fx(SFX.select); state = 'title'; timer = LOGO_DONE; }
 }
 
 /** One frame of the race: every rider (the player by the pad, the rest by their own judgement), then contact, places and the camera. */
@@ -435,7 +627,7 @@ function raceStep() {
     if (r.fin) r.v = Math.max(0, r.v - 0.03);
     else if (r.x + BIKE_HALF >= FINISH_X) {
       r.fin = true; r.finishT = raceT;
-      if (i === 0) { finishT = raceT; state = 'finish'; timer = 0; fx(SFX.finish); }
+      if (i === 0) { finishT = raceT; state = 'finish'; timer = 0; fx(SFX.finish); newBest = recordTime(); }
     }
   });
   contacts();
@@ -559,12 +751,14 @@ function burst(x, y, n, c) {
 }
 
 function updatePause() {
-  if (pressed(UP)) { pauseSel = (pauseSel + 1) % 2; fx(SFX.move); }
-  if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 2; fx(SFX.move); }
-  if (pressed(B) || pressed(START) && pauseSel === 0) { paused = false; fx(SFX.pause); }
+  if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
+  if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
+  if (pressed(B) || (pressed(START) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
   else if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (pauseSel === 0) paused = false; else startRace(false, false); // the same race again
+    if (pauseSel === 0) paused = false;
+    else if (pauseSel === 1) startRace(false, false); // the same race again
+    else toTitle(); // quitting abandons the race, and a championship
   }
 }
 
@@ -575,25 +769,40 @@ function draw() {
   bgscroll(0, camX & (RING * 8 - 1), 0);
   bgscroll(1, (camX >> 1) & 511, 0);
   bgscroll(2, (camX >> 2) & 255, 0);
+  if (state === 'title') { drawRider(scene); drawParts(); drawTitle(); return; }
+  if (state === 'select') { drawParts(); drawSelect(); return; }
+  if (state === 'records') { drawRecords(); return; }
+  if (state === 'podium') { drawPodium(); return; }
+  if (state === 'initials') { drawInitials(); return; }
   // Bikes in the lower lanes draw on top of those above them, and each bike on top of its shadow.
   for (const r of [...riders].sort((a, b) => b.lane - a.lane || (a.pal === 0 ? -1 : b.pal === 0 ? 1 : 0))) if (r.x > camX - 40 && r.x < camX + 296) drawRider(r);
-  for (const q of parts) rectfill(flr(q.x - camX), flr(q.y), q.t > 8 ? 2 : 1, q.t > 8 ? 2 : 1, q.c);
+  drawParts();
   drawHud();
   if (state === 'card') {
-    panel(40, 84, 176, 52);
-    ctxt(`TRACK ${track + 1}`, 92, DIM);
-    ctxt(TRACKS[track].name, 108, GOLD);
-    ctxt('GET READY', 122, WHITE);
+    const ch = mode === 'champ';
+    panel(32, ch ? 72 : 78, 192, ch ? 76 : 54);
+    if (ch) ctxt(`CHAMPIONSHIP  ${champ.race + 1} OF ${TRACKS.length}`, 80, CYAN);
+    ctxt(`TRACK ${track + 1}`, ch ? 94 : 86, DIM);
+    ctxt(TRACKS[track].name, ch ? 108 : 100, GOLD);
+    ctxt(ch ? (champ.retries ? 'TOP 3 GO ON. 1 RETRY' : 'TOP 3 GO ON. NO RETRY') : `BEST ${bestName(track)}`, ch ? 122 : 114, DIM);
+    ctxt('GET READY', ch ? 134 : 124, WHITE);
   }
   if (state === 'grid' || (state === 'race' && raceT < 50)) drawLights();
   if (state === 'race' && riders[0].push && clock % 24 < 16) ctxt('ENGINE OVERHEATED!', 70, RED);
   if (state === 'results') drawResults();
+  if (state === 'points') drawPoints();
+  if (state === 'dnq') drawDnq();
   if (paused) {
-    panel(72, 80, 112, 64);
-    ctxt('PAUSED', 86, GOLD);
-    ['RESUME', 'RESTART RACE'].forEach((t, i) => txt(`${pauseSel === i ? '>' : ' '} ${t}`, 84, 106 + 14 * i, pauseSel === i ? WHITE : DIM));
+    panel(64, 76, 128, 70);
+    ctxt('PAUSED', 82, GOLD);
+    ['RESUME', 'RESTART RACE', 'QUIT TO TITLE'].forEach((t, i) => txt(`${pauseSel === i ? '>' : ' '} ${t}`, 76, 98 + 14 * i, pauseSel === i ? WHITE : DIM));
   }
 }
+
+function drawParts() { for (const q of parts) rectfill(flr(q.x - camX), flr(q.y), q.t > 8 ? 2 : 1, q.t > 8 ? 2 : 1, q.c); }
+const commas = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const bestName = (t) => (dget(TIME_SLOT + t) ? fmtTime(dget(TIME_SLOT + t)) : '--:--.--');
+const ordinal = (p) => `${p}${['ST', 'ND', 'RD'][p - 1] || 'TH'}`;
 
 function drawRider(r) {
   const y = baseY(r), x = flr(r.x) - camX - 16;
@@ -651,19 +860,146 @@ function drawResults() {
   panel(24, 54, 208, 146);
   big('FINISH!', 128, 60, 2, GOLD);
   const p = placeOf(0), fin = isFinal();
-  ctxt(`YOU WERE ${p}${['ST', 'ND', 'RD'][p - 1] || 'TH'}   ${fmtTime(finishT)}`, 82, WHITE);
+  ctxt(`YOU WERE ${ordinal(p)}   ${fmtTime(finishT)}`, 80, WHITE);
+  if (newBest && timer % 40 < 30) ctxt('NEW BEST TIME!', 89, GOLD);
   order.forEach((i, k) => {
-    const q = riders[i], y = 98 + k * 11;
+    const q = riders[i], y = 99 + k * 11;
     if (i === 0) rectfill(36, y - 1, 184, 10, PANEL);
     print(`${k + 1}`, 40, y, i === 0 ? GOLD : DIM);
     rectfill(56, y + 1, 8, 6, RIDER_COLOURS[q.pal]);
     print(RIVAL_NAMES[i], 72, y, WHITE);
     print(q.fin ? fmtTime(q.finishT) : fin ? '-----' : '...', 152, y, q.fin ? WHITE : DIM);
   });
-  if (fin) {
-    ctxt(`< TRACK ${nextTrack + 1}  ${TRACKS[nextTrack].name} >`, 172, DIM);
-    if (timer % 60 < 40) ctxt('START: RACE', 185, GOLD);
+  if (!fin) return;
+  if (mode === 'quick') {
+    if (timer % 60 < 40) ctxt('START: RACE AGAIN', 172, GOLD);
+    ctxt('B: TRACK SELECT', 185, DIM);
+  } else {
+    ctxt(p <= QUALIFY_PLACE ? 'QUALIFIED!' : 'DID NOT QUALIFY', 172, p <= QUALIFY_PLACE ? GREEN : RED);
+    if (timer % 60 < 40) ctxt('START: CONTINUE', 185, GOLD);
   }
+}
+
+/** A championship race's points, counted up one row at a time. */
+function drawPoints() {
+  panel(24, 44, 208, 156);
+  ctxt(`RACE ${champ.race + 1} OF ${TRACKS.length}  ${TRACKS[champ.race].name}`, 50, DIM);
+  big('QUALIFIED!', 128, 62, 2, GREEN);
+  const r = lastRes, rows = [
+    [`${ordinal(r.place)} PLACE`, r.pts],
+    [`${r.under} S UNDER PAR`, r.timeB],
+    [r.clean ? 'CLEAN RACE' : `${riders[0].crashes} CRASH${riders[0].crashes > 1 ? 'ES' : ''}`, r.clean],
+    ['RACE TOTAL', r.total],
+    ['SCORE SO FAR', champ.score],
+  ];
+  rows.forEach(([name, v], i) => {
+    if (timer < 20 + i * 25) return;
+    const y = 90 + i * 14 + (i > 2 ? 4 : 0), c = i >= 3 ? GOLD : WHITE, sv = i === 4 ? commas(v) : `+${commas(v)}`;
+    txt(name, 36, y, i >= 3 ? GOLD : DIM);
+    txt(sv, 220 - sv.length * 8, y, c);
+  });
+  if (timer > 150 && timer % 60 < 40) ctxt(champ.race < TRACKS.length - 1 ? 'START: NEXT TRACK' : 'START: PODIUM', 182, GOLD);
+}
+
+/** Out of the top 3: one retry for the whole championship, and then it is over. */
+function drawDnq() {
+  panel(24, 54, 208, 130);
+  big('DID NOT', 128, 62, 3, RED); big('QUALIFY', 128, 90, 3, RED);
+  ctxt(`YOU WERE ${ordinal(placeOf(0))}`, 122, WHITE);
+  ctxt('THE TOP 3 GO ON', 134, DIM);
+  if (champ.over) {
+    ctxt('CHAMPIONSHIP OVER', 148, GOLD);
+    ctxt(`SCORE ${commas(champ.score)}`, 160, WHITE);
+  } else ctxt('ONE RETRY LEFT', 148, GOLD);
+  if (timer > 30 && timer % 60 < 40) ctxt(champ.over ? 'START: CONTINUE' : 'START: TRY AGAIN', 172, GOLD);
+}
+
+function drawTitle() {
+  // Each letter falls, lands and bounces once (a parabola, so no trig).
+  clip(0, 24, 256, 200);
+  let n = 0;
+  for (let r = 0; r < 2; r++) {
+    const len = LOGO[r].length, sc = LOGO_SCALE[r];
+    for (let i = 0; i < len; i++, n++) {
+      const t = timer - (logoLand(n) - LOGO_FALL);
+      if (t < 0) continue;
+      let dy = 0;
+      if (t < LOGO_FALL) dy = -flr(140 * ((LOGO_FALL - t) / LOGO_FALL) ** 2);
+      else if (t < LOGO_FALL + LOGO_BOUNCE) { const u = t - LOGO_FALL; dy = -flr(u * (LOGO_BOUNCE - u) * 0.25); }
+      big(LOGO[r][i], 128 + (i - (len - 1) / 2) * 8 * sc, LOGO_Y[r] + dy, sc, r ? GOLD : GREEN);
+    }
+  }
+  clip();
+  if (timer < LOGO_DONE) return;
+  panel(64, 120, 128, 52);
+  ['QUICK RACE', 'CHAMPIONSHIP', 'RECORDS'].forEach((t, i) => txt(`${titleSel === i ? '>' : ' '} ${t}`, 76, 128 + 14 * i, titleSel === i ? WHITE : DIM));
+  const top = readEntry(0);
+  if (top.score) ctxt(`BEST ${commas(top.score)} ${top.initials}`, 180, CYAN);
+}
+
+function drawSelect() {
+  panel(24, 32, 208, 168);
+  big('TRACKS', 128, 38, 2, GOLD);
+  const hard = ['EASY', 'MEDIUM', 'HARD'];
+  TRACKS.forEach((t, i) => {
+    const y = 64 + i * 38, on = i === selTrack;
+    if (on) rectfill(30, y - 3, 196, 34, PANEL);
+    txt(`${on ? '>' : ' '} ${i + 1}  ${t.name}`, 36, y, on ? GOLD : WHITE);
+    txt(`${commas(t.len)} PX  ${hard[i]}`, 60, y + 11, DIM);
+    txt(`BEST ${bestName(i)}`, 60, y + 21, on ? WHITE : DIM);
+  });
+  if (timer % 60 < 40) ctxt('A: RACE    B: BACK', 184, WHITE);
+}
+
+function drawRecords() {
+  panel(8, 20, 240, 196);
+  big('RECORDS', 128, 24, 2, GOLD);
+  txt('BEST TIMES', 20, 46, DIM);
+  TRACKS.forEach((t, i) => { txt(`${i + 1} ${t.name}`, 24, 57 + i * 10, WHITE); txt(bestName(i), 168, 57 + i * 10, dget(TIME_SLOT + i) ? GOLD : DIM); });
+  txt('TOP 10 CHAMPIONSHIPS', 20, 92, DIM);
+  topTen().forEach((e, i) => {
+    const y = 104 + i * 10, on = i === hl;
+    if (on && timer % 40 < 30) rectfill(12, y - 1, 232, 10, PANEL);
+    txt(String(i + 1).padStart(2), 18, y, i === 0 ? GOLD : DIM);
+    if (!e.score) { txt('---', 48, y, DIM); return; }
+    txt(e.initials, 48, y, on ? GOLD : WHITE);
+    txt(reachedName(e.reached), 88, y, e.reached > TRACKS.length ? GOLD : DIM);
+    txt(commas(e.score).padStart(9), 168, y, i === 0 ? GOLD : WHITE);
+  });
+}
+
+function drawInitials() {
+  const ini = initials;
+  panel(24, 32, 208, 168);
+  ctxt(rank === 0 ? 'NEW HIGH SCORE!' : `TOP 10: #${rank + 1}`, 44, GOLD);
+  ctxt(commas(champ.score), 60, WHITE);
+  ctxt('ENTER YOUR INITIALS', 90, DIM);
+  for (let i = 0; i < 3; i++) {
+    const on = i === ini.pos, x = 128 - 44 + i * 32;
+    rect(x - 2, 106, 28, 28, on ? GOLD : PANEL);
+    big(ini.chars[i], x + 12, 110, 3, on ? GOLD : WHITE);
+    if (on && timer % 30 < 20) { line(x + 8, 102, x + 15, 102, GOLD); line(x + 8, 137, x + 15, 137, GOLD); }
+  }
+  txt('UP/DOWN    LETTER', 60, 152, DIM);
+  txt('LEFT/RIGHT MOVE', 60, 164, DIM);
+  if (timer % 60 < 40) ctxt('START: SAVE', 182, WHITE);
+}
+
+/** The championship's podium: the three with the most place points, the player's place and score. */
+function drawPodium() {
+  const ranked = [0, 1, 2, 3, 4, 5].sort((a, b) => champ.pts[b] - champ.pts[a] || a - b), me = ranked.indexOf(0);
+  big(me === 0 ? 'CHAMPION!' : 'PODIUM', 128, 30, 3, me === 0 ? GOLD : WHITE);
+  for (const [pos, cx, top, w] of [[0, 128, 124, 64], [1, 76, 142, 52], [2, 180, 152, 52]]) { // first in the middle, second on the left, third on the right
+    const q = ranked[pos];
+    rectfill(cx - w / 2, top, w, 192 - top, PANEL); rect(cx - w / 2, top, w, 192 - top, BLACK);
+    rectfill(cx - w / 2, top, w, 3, WHITE);
+    big(String(pos + 1), cx, top + 8, 2, pos === 0 ? GOLD : WHITE);
+    const [dx, dy] = BIKE_OFF[6];
+    spr(bikeTile(6 + ((clock >> 4) & 1)), cx - 16 + dx, top - 32 + dy, { size: 32, pal: q, prio: 3 });
+    txt(RIVAL_NAMES[q], cx - RIVAL_NAMES[q].length * 4, top + 28, q === 0 ? GOLD : WHITE);
+  }
+  ctxt(`YOU WERE ${ordinal(me + 1)}   SCORE ${commas(champ.score)}`, 198, WHITE);
+  if (timer > 40 && timer % 60 < 40) ctxt('START: CONTINUE', 210, DIM);
 }
 
 function panel(x, y, w, h) { rectfill(x, y, w, h, BLACK); rect(x, y, w, h, PANEL); }

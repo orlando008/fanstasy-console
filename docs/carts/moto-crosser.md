@@ -1,7 +1,7 @@
 # Moto Crosser: Cart Specification
 
-**Version:** 0.5 (draft)
-**Status:** In progress: steps 1 to 4 of the plan (15) are built
+**Version:** 0.6 (draft)
+**Status:** In progress: steps 1 to 5 of the plan (15) are built
 **Cart source:** `carts/src/moto-crosser/` → `carts/moto-crosser.nova`
 
 ---
@@ -172,7 +172,7 @@ crashes it.
 | Event | Points |
 |---|---|
 | Place in a race | 1st 10,000; 2nd 7,000; 3rd 5,000; 4th 3,000; 5th 2,000; 6th 1,000 |
-| Time bonus | 20 for every second under the track's par time |
+| Time bonus | 100 for every second under the track's par time (par is 53, 67 and 80 seconds; it was 20, which was too little to matter beside the places) |
 | Clean race | 1,000 for a race without a crash |
 
 The championship score is the sum over the races. **Records** shows each track's best
@@ -226,7 +226,7 @@ the landing.
 
 | Asset | Budget |
 |---|---|
-| Code | ≤ 45 KB of the 64 KB limit; the tracks are tables in the code |
+| Code | ≤ 60 KB of the 64 KB limit; the tracks are tables in the code, about 19 KB of it |
 | Tiles | Track pieces per track (~60), the stands, crowd and sky for each of 3 settings (~250), HUD and title letters (~80) |
 | Sprites | Bikes: 7 pitch steps × a few frames, push, tumble (~25 sprites of 32 × 32), in 6 colour palettes; dust, mud, shadow, spectators |
 | Songs / SFX | 5 songs, ~25 SFX plus the engine |
@@ -415,6 +415,47 @@ the landing.
        track.
 5. **Flow:** title, track select, the two modes, qualifying, the podium, saved times and the
    top 10, pause.
+   - **Built:**
+     - **Title:** the stadium scrolls past a bike doing a wheelie, and the letters of MOTO
+       CROSSER drop in one at a time with a thud each (START skips the drop). The menu is QUICK RACE,
+       CHAMPIONSHIP and RECORDS, with the best championship score under it. The track select, the
+       records, the podium and the initials screen use the same scrolling backdrop.
+     - **Quick race:** QUICK RACE opens the track select (name, length, EASY, MEDIUM or HARD,
+       and your best time for each). A races; the card shows the track and your best time. The
+       results card has the places and a NEW BEST TIME flash; START races the same track again
+       (a new seed), and B goes back to the track select.
+     - **Best times:** every finish is compared with the saved best for the track, and kept if
+       faster (slots 2 to 4), in either mode.
+     - **Championship:** tracks 1 to 3 in order; the card says which race it is and whether the
+       retry is still there. The results card says QUALIFIED! or DID NOT QUALIFY. In the top 3 the
+       points screen counts the race up (the place's points, 100 for each second under par, 1,000
+       for a clean race), then START goes on. Outside the top 3 the first miss is a DID NOT
+       QUALIFY screen with one retry left (the same track again, and the missed race counts for
+       nothing); a second miss ends the championship, and that race's points count.
+     - **The podium** after track 3: the three with the most place points over the three
+       races (the rivals' places count too: 10,000 down to 1,000 each race) stand on blocks 1, 2 and 3
+       with their bikes; the screen says CHAMPION! if you are first.
+     - **The score** goes into the top 10 at once under the last initials (a championship that
+       ends on track 2 is "TRACK 2", one that is completed is "ALL"); if it ranks, the player
+       types initials with UP and DOWN to change a letter, LEFT and RIGHT to move and START to save,
+       then the records screen lights the new row. The records screen lists the three best times and
+       the ten best championships.
+     - **Pause:** RESUME, RESTART RACE (the same race, with the same seed) and QUIT TO TITLE (which
+       abandons the race and a championship, and records nothing).
+     - **Saves** are as in section 13. The format version is 1: a save with another version is wiped.
+   - **Results:** a script of 48 checks passes (and the 37, 46, 38 and 41 from steps 1 to 4).
+     - The title's eleven thuds in step, the wheelie, the menu, the track select and going
+       back; a quick race on the chosen track, the results, a new seed on racing again, B back to
+       the select; best times kept and not replaced by slower ones, one for each track.
+     - A whole championship forced through the game (the places set by making riders cross the
+       line first): 2nd on track 1 is 7,000 plus 5,200 for 52 s under par plus 1,000 clean; 3rd
+       with two crashes gets no clean bonus; a win is 10,000; the podium, the initials, and the
+       score saved with "all" tracks cleared and the initials as typed.
+     - Missing the top 3: DID NOT QUALIFY with the retry, the retry on the same track, the second miss
+       ending it with that race's points, and the entry as "TRACK 1".
+     - The top 10: order, a low score refused, a new one slotting in, and a score of nothing not kept.
+     - Quitting from the pause: back to the title, nothing recorded; and the save version.
+     - A browser run through the title and track select into a race shows no errors.
 6. **Art pass:** the three settings, the riders, dust and mud, the crowd, parallax.
 7. **Audio pass:** five songs, the engine and the effects.
 8. **Balance and polish:** speeds, rival skills, heat rates, track layouts, checked with
