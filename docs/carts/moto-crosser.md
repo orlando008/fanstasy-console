@@ -1,7 +1,7 @@
 # Moto Crosser: Cart Specification
 
-**Version:** 0.7 (draft)
-**Status:** In progress: steps 1 to 6 of the plan (15) are built
+**Version:** 0.8 (draft)
+**Status:** In progress: steps 1 to 7 of the plan (15) are built
 **Cart source:** `carts/src/moto-crosser/` → `carts/moto-crosser.nova`
 
 ---
@@ -190,14 +190,42 @@ time and the top 10 championship scores.
 
 ## 11. Audio
 
-**Songs** (5): the title, one for each track, and the podium. Channel 1 is kept for
-sound effects and channel 4 for the engine, so the songs use the lead, bass, arpeggio
-and drum channels only (hats are a short drum sample).
+**Channels.** 0 is the lead, 1 is kept for sound effects (it is a pulse channel, and the songs
+only use it for the tempo), 2 the bass, 3 the saw (arpeggios and off-beat chords), 4 the engine
+and the noisy effects, and 5 the drums. The kick, snare and both hi-hats are samples (4 samples,
+7 KB of the 16 KB Sample RAM), so the songs never touch channel 4.
 
-**Engine:** a low rasp whose pitch rises with speed, with a higher note for turbo, cut when the
-engine overheats. **SFX:** gate lights and GO, ramp lip, landing (clean, rough), crash, hurdle
-smash, mud splash, arrow boost, cooling pad, engine overheat and restart, a rival passing,
-finish line, menu move and select, pause.
+**Songs** (5), each about 25 seconds and looping, with a quiet, steady lead (pulse at volume 5 to 7,
+no vibrato) that comes in after a bar-length intro of bass, arpeggio and drums:
+
+| Song | Where | Key and tempo |
+|---|---|---|
+| 0 | Title, track select, the records, the results and the points | A minor, 150 bpm: a revving build, drum fills at the end |
+| 1 | Stadium Dirt | D major, 150 bpm: bright and bouncy, staccato lead, off-beat chords |
+| 2 | Desert Run | A minor, 150 bpm, in 6/8: a gallop over the Andalusian cadence (Am, G, F, E) |
+| 3 | Night Mountain | C# minor, 180 bpm: a driving bass pulse and a soft brass lead |
+| 4 | The podium | C major, 128 bpm: proud, 8 bars |
+
+A song starts with the race card, plays through the lights and GO, and stops at the line (the finish
+fanfare plays instead). The title tune returns with the results. DID NOT QUALIFY is silent but for
+its jingle. Quitting to the title, or the end of a championship, brings the title tune back.
+
+**Engine.** The API cannot change the pitch of a note that is playing, so the engine is a short
+looping effect (about 30 frames) on the noise channel, restarted every 28 frames at one of six
+pitches: idle (on the grid), slow (under 1.5), cruising (under 2.4), fast, turbo and "revving" in
+the air. Each step up is a lower, rougher rumble becoming a higher, faster buzz: the notes retrigger
+every 4, 3, 2 and then 1 frame, and turbo uses the metallic noise mode. A change of pitch is
+made only once it has held for 4 frames, so a flickering turbo button does not chatter. The engine
+is silent when the bike crashes, when it overheats and the rider pushes, in the pause menu and in
+the menus, and it comes back on its own. It sits at about a third of the music's level.
+
+**Effects** (30). Effects with noise in them (the take-off whoosh, a rough landing, a crash, mud,
+a hurdle smash, the engine overheating, a false start) go on the noise channel and cut the engine
+for their length; the rest are on channel 1: gate lights and GO, landing (clean), arrow boost,
+cooling pad, engine restart, a bump, menu move and select, pause, the finish and podium fanfares,
+the tally tick, the logo's thuds, **a rival passed** (a rising three-note blip) and **a rival
+passing you** (a falling thud), with 90 frames between the two so that bikes side by side do not
+chatter. Sounds from rivals are heard only within 130 px of the player.
 
 ## 12. Video layers
 
@@ -226,10 +254,10 @@ the landing.
 
 | Asset | Budget |
 |---|---|
-| Code | 58.5 KB of the 64 KB limit; the tracks are tables in the code, about 19 KB of it |
+| Code | 61 KB of the 64 KB limit; the tracks are tables in the code, about 19 KB of it |
 | Tiles | Used: the things on the track (73), the stadium (about 130), the desert and night (196 more), banners, particles |
 | Sprites | Bikes: 7 pitch steps × a few frames, push, tumble (~25 sprites of 32 × 32), in 6 colour palettes; dust, mud, shadow, spectators |
-| Songs / SFX | 5 songs, ~25 SFX plus the engine |
+| Songs / SFX | 5 songs (17 patterns), 30 SFX including the six engine loops, 28 of 32 instruments, 4 drum samples (7 KB) |
 
 ## 15. Implementation plan
 
@@ -500,14 +528,47 @@ the landing.
        line (the limit is 32); frames average 1.7 ms.
      - No errors in the browser.
 7. **Audio pass:** five songs, the engine and the effects.
+   - **Built:**
+     - **Five songs** (section 11), written with the same toolkit as the earlier games: a small
+       Python script that turns bars of chords, a lead line, a bass line, an arpeggio and a drum
+       pattern into patterns, and checks that the lead does not clash with the bass or arpeggio on the
+       beat. The hats are samples on the drum channel (only on rows where there is no kick or snare),
+       and the kick and snare are shorter than before so that a hat on the next row does not cut them
+       short. The leads are all the quiet, vibrato-free instruments from Python Pass.
+     - **The engine** (`engineSound`, every frame): the pitch for the player's bike from its state,
+       restarted every 28 frames or when the pitch has changed and held for 4 frames; stopped on a
+       crash, a push, the pause and in every state but the lights and the race.
+     - **Noisy effects** go through `fx()` to the noise channel and hold the engine off for their
+       length (a table of lengths), because channel 1 cannot make noise.
+     - **New sounds:** the mud splash on entering mud, the hurdle smash (a hurdle crash now sounds
+       different from a crash after a landing), and overtaking and being overtaken.
+     - **Music cues** with `play()`, which does not restart a song that is already playing.
+   - **Results:** a script of 45 checks passes (and the 37, 46, 38, 41, 48 and 31 from steps 1 to 6;
+     one step 2 check now expects the hurdle's smash instead of the crash sound).
+     - The audio data: 5 songs, 30 effects, 28 instruments, 17 patterns, samples at 7 KB; no song
+       note on channel 4 and nothing on channel 1 but the tempo; every lead instrument has volume 7
+       or less and no vibrato; each engine loop lasts 28 to 36 frames.
+     - The cues: the title tune on the title and the track select, each track's own song from its
+       card through GO (not restarted), silence at the line, the title tune back with the results,
+       silence for DID NOT QUALIFY and the track song again on a retry, and the title tune after quitting.
+     - The engine: idling on the grid and restarted every 28 frames; 22, 23 and 24 in turn as the bike
+       speeds up; turbo is 25 and not 25/24 over and over when the button flickers; 26 in the air; a
+       hurdle gives the smash and then silence, and the engine returns after the rider remounts; overheating gives
+       the dying sound and then silence while the rider pushes, and the restart brings it back;
+       the pause silences it and resuming brings it back.
+     - Mud splashes once; passing a rival gives the rising blip, and not once for every frame.
+     - Levels, measured by rendering with the console's own synth: each song between 0.04 and
+       0.11 RMS, steady from section to section (the Night Mountain's intro is quieter on purpose),
+       with no peak over 0.35; the engine between 0.02 and 0.03, under the music; no effect over
+       0.07.
 8. **Balance and polish:** speeds, rival skills, heat rates, track layouts, checked with
    the automatic player; a label, the PNG cart and the Library.
 
 ## 16. Open questions
 
-- **Engine sound:** whether a held note can have its pitch changed from the cart while it
-  plays. If not, the engine is a short loop restarted a few times a second at one of
-  about 6 pitches.
+- **Engine sound:** answered in step 7: a held note's pitch cannot be changed, so the engine
+  is a short loop restarted at one of six pitches (section 11). If it is too much in a long
+  race, a later version could add a sound on/off setting to the pause menu.
 - **The start grid:** six bikes on four lanes means a second row: four in front, one per
   lane, and two a bike length behind in the two middle lanes. The player always starts in the
   front row, in lane 3 (the second from the top).

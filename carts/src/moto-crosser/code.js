@@ -46,7 +46,8 @@ const SHADES = { [GOLD]: [123, 124], [GREEN]: [125, 119], [RED]: [97, 98], [WHIT
 
 // --- Sound ---
 
-const SFX = { beep: 0, go: 1, finish: 2, buzz: 3, select: 4, move: 5, pause: 6, takeoff: 7, land: 8, rough: 9, crash: 10, mud: 11, arrow: 12, cool: 13, overheat: 14, restart: 15, bump: 16, thud: 17, tick: 18, fanfare: 19, over: 20 };
+const SFX = { beep: 0, go: 1, finish: 2, buzz: 3, select: 4, move: 5, pause: 6, takeoff: 7, land: 8, rough: 9, crash: 10, mud: 11, arrow: 12, cool: 13, overheat: 14, restart: 15, bump: 16, thud: 17, tick: 18, fanfare: 19, over: 20, engine: 21, passing: 27, passed: 28, smash: 29 }; // engine: six pitches, 21 to 26
+const SONG = { title: 0, track: 1, podium: 4 }; // track songs are 1 to 3, one for each track
 
 // --- Save slots (SPEC 13) and points (SPEC 9) ---
 
@@ -55,7 +56,39 @@ const TOP_SLOT = 10, TOP_N = 10, ENTRY = 4; // the top 10 championship scores, b
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const PLACE_POINTS = [10000, 7000, 5000, 3000, 2000, 1000], TIME_BONUS = 100, CLEAN_BONUS = 1000, QUALIFY_PLACE = 3; // a point value for each place; a bonus for each second under par; and for a race without a crash
 const SFX_CH = 1;
-function fx(n) { sfx(n, SFX_CH); }
+// Effects with noise in them go on the noise channel (channel 1 is a pulse), which is also the engine's: they cut it, and it starts again when they end.
+const ENGINE_CH = 4, NOISE_FRAMES = { [SFX.buzz]: 16, [SFX.takeoff]: 8, [SFX.rough]: 12, [SFX.crash]: 15, [SFX.mud]: 9, [SFX.overheat]: 20, [SFX.smash]: 15 };
+let noiseT = 0;
+function fx(n) {
+  if (NOISE_FRAMES[n]) { sfx(n, ENGINE_CH); noiseT = NOISE_FRAMES[n]; engineBucket = -1; } else sfx(n, SFX_CH);
+}
+
+// Music: a song is only started if it is not already playing.
+let playing = -1;
+function play(song) {
+  if (song === playing) return;
+  playing = song; music(song);
+}
+
+// The engine is a short looping effect on the noise channel, restarted at one of six pitches: idle, three speeds, turbo and revving in the air. It is silent when crashed, pushing or in a menu.
+const ENGINE_FRAMES = 28, ENGINE_HOLD = 4;
+let engineBucket = -1, engineT = 0, engineWant = -1, engineWantT = 0;
+function engineFor(r) {
+  if (r.crash > 0 || r.push) return -1;
+  if (r.air) return 5;
+  if (r.turbo) return 4;
+  return r.v < 0.2 ? 0 : r.v < 1.5 ? 1 : r.v < 2.4 ? 2 : 3;
+}
+/** Called every frame: the engine follows the player's bike, and changes pitch only once the new pitch has held for a few frames. */
+function engineSound() {
+  if (noiseT > 0) { noiseT--; return; }
+  const want = !paused && (state === 'grid' || state === 'race') ? engineFor(riders[0]) : -1;
+  if (want !== engineWant) { engineWant = want; engineWantT = 0; } else engineWantT++;
+  if (want < 0) { if (engineBucket >= 0) { sfx(-1, ENGINE_CH); engineBucket = -1; } return; }
+  if (engineBucket < 0 || ++engineT >= ENGINE_FRAMES || want !== engineBucket && engineWantT >= ENGINE_HOLD) {
+    engineBucket = want; engineT = 0; sfx(SFX.engine + want, ENGINE_CH);
+  }
+}
 
 // --- State ---
 
@@ -289,8 +322,8 @@ function startRace(withCard, newSeed = true, t = track) {
   standings();
   camX = START_X - CAM_OFF;
   filled = -1; streamTo((camX >> 3) + 40);
-  state = withCard ? 'card' : 'grid'; timer = 0; newBest = false;
-  music(-1);
+  state = withCard ? 'card' : 'grid'; timer = 0; newBest = false; placeCool = 0;
+  play(SONG.track + t);
 }
 
 // --- The bike (SPEC 5) ---
@@ -311,7 +344,9 @@ function updateRider(r, inp) {
   if (r.boost > 0) r.boost--;
   r.turbo = false;
   if (!r.air) {
-    r.mud = !!inThing(lane, r.x, 'mud');
+    const mud = !!inThing(lane, r.x, 'mud');
+    if (mud && !r.mud) rfx(r, SFX.mud);
+    r.mud = mud;
     if (r.push) pushBike(r);
     else rideOnGround(r, inp, lane);
   }
@@ -390,14 +425,14 @@ function hurdles(r) {
   if (r.z >= HURDLE_H - 1) return;
   for (let k = 0; k < LANES; k++) {
     if (Math.abs(k - r.lane) >= 0.6) continue;
-    for (const o of lanes[k]) if (o.kind === 'hurdle' && r.x + HURDLE_HALF > o.x0 && r.x - HURDLE_HALF < o.x1) { crash(r); return; }
+    for (const o of lanes[k]) if (o.kind === 'hurdle' && r.x + HURDLE_HALF > o.x0 && r.x - HURDLE_HALF < o.x1) { crash(r, SFX.smash); return; }
   }
 }
 
-function crash(r) {
+function crash(r, snd = SFX.crash) {
   r.crash = CRASH_FRAMES; r.crashes++; r.boost = 0; r.push = false; r.turbo = false;
   burst(r.x, baseY(r) - 6, 10, DUST);
-  rfx(r, SFX.crash);
+  rfx(r, snd);
 }
 
 /** The bike slides and tumbles to a stop; then the rider remounts where it lies, at a standstill. */
@@ -438,6 +473,7 @@ function update() {
   else if (state === 'dnq') updateDnq();
   else if (state === 'podium') updatePodium();
   else if (state === 'initials') updateInitials();
+  engineSound();
   prevMask = inputMask;
 }
 
@@ -465,7 +501,7 @@ function updateRace() {
 /** Over the line: the bike coasts to a stop on its own, then the results; the other riders race on. */
 function updateFinish() {
   raceStep();
-  if (++timer >= FINISH_COAST) state = 'results';
+  if (++timer >= FINISH_COAST) { state = 'results'; play(SONG.title); }
 }
 
 /** The results come up with the places so far; they are final when every rider is over the line, or 10 seconds after the player. */
@@ -475,7 +511,7 @@ function updateResults() {
   if (!isFinal()) return;
   const go = pressed(START) || pressed(A);
   if (mode === 'quick') {
-    if (pressed(B)) { fx(SFX.select); toScene(); state = 'select'; selTrack = track; timer = 0; }
+    if (pressed(B)) { fx(SFX.select); toScene(); state = 'select'; selTrack = track; timer = 0; play(SONG.title); }
     else if (go) { fx(SFX.select); startRace(false, true, track); }
   } else if (go) { fx(SFX.select); afterRace(); }
 }
@@ -502,6 +538,7 @@ function afterRace() {
   if (lastRes.place <= QUALIFY_PLACE) { accept(); state = 'points'; }
   else if (champ.retries > 0) state = 'dnq';
   else { accept(); champ.over = true; state = 'dnq'; fx(SFX.over); }
+  if (state === 'dnq') play(-1);
   timer = 0;
 }
 
@@ -511,7 +548,7 @@ function updatePoints() {
   if ((pressed(START) || pressed(A)) && timer > 30) {
     fx(SFX.select);
     if (champ.race < TRACKS.length - 1) { champ.race++; startRace(true, true, champ.race); }
-    else { champ.done = true; toScene(); state = 'podium'; timer = 0; fx(SFX.fanfare); }
+    else { champ.done = true; toScene(); state = 'podium'; timer = 0; fx(SFX.fanfare); play(SONG.podium); }
   }
 }
 
@@ -530,7 +567,7 @@ function updatePodium() {
 
 /** The championship is over: its score goes into the top 10 (under the last initials) and the player can name it. */
 function endChampionship() {
-  toScene();
+  toScene(); play(SONG.title);
   rank = insertTop({ score: champ.score, reached: champ.done ? TRACKS.length + 1 : champ.race + 1, initials: lastInitials() });
   if (rank >= 0) { state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0 }; }
   else toTitle();
@@ -614,7 +651,7 @@ function sceneStep() {
 function toTitle() {
   toScene();
   state = 'title'; timer = 0; titleSel = 0; mode = 'quick'; champ = null;
-  music(-1);
+  play(SONG.title);
 }
 
 /** The logo's letters drop in one by one and bounce once; then the menu. */
@@ -650,6 +687,7 @@ function updateRecords() {
 }
 
 /** One frame of the race: every rider (the player by the pad, the rest by their own judgement), then contact, places and the camera. */
+let placeCool = 0; // frames before another overtaking sound
 function raceStep() {
   raceT++;
   const leaderX = Math.max(...riders.map((r) => r.x));
@@ -666,11 +704,14 @@ function raceStep() {
     if (r.fin) r.v = Math.max(0, r.v - 0.03);
     else if (r.x + BIKE_HALF >= FINISH_X) {
       r.fin = true; r.finishT = raceT;
-      if (i === 0) { finishT = raceT; state = 'finish'; timer = 0; fx(SFX.finish); newBest = recordTime(); }
+      if (i === 0) { finishT = raceT; state = 'finish'; timer = 0; fx(SFX.finish); newBest = recordTime(); play(-1); }
     }
   });
   contacts();
+  const was = placeOf(0);
   standings();
+  if (placeCool > 0) placeCool--;
+  else if (state === 'race' && riders[0].crash === 0 && placeOf(0) !== was) { fx(placeOf(0) < was ? SFX.passing : SFX.passed); placeCool = 90; }
   follow(riders[0]);
   for (const r of riders) emitDust(r);
   moveParts();
