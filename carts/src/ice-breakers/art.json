@@ -1,0 +1,138 @@
+{
+ "colors": {},
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "edge": 6,
+    "night": 1,
+    "night2": 2,
+    "panel": 4,
+    "panel2": 5,
+    "shade": 7,
+    "star": 3
+   }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "dark": 2,
+    "edge": 1,
+    "light": 4,
+    "mid": 3,
+    "shine": 5
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "dark": 2,
+    "edge": 1,
+    "light": 4,
+    "mid": 3,
+    "shine": 5
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "dark": 2,
+    "edge": 1,
+    "light": 4,
+    "mid": 3,
+    "shine": 5
+   }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "dark": 2,
+    "edge": 1,
+    "light": 4,
+    "mid": 3,
+    "shine": 5
+   }
+  },
+  "spr4": {
+   "base": 192,
+   "colors": {
+    "dark": 2,
+    "edge": 1,
+    "light": 4,
+    "mid": 3,
+    "shine": 5
+   }
+  },
+  "spr5": {
+   "base": 208,
+   "colors": {
+    "dark": 2,
+    "edge": 1,
+    "light": 4,
+    "mid": 3,
+    "shine": 5
+   }
+  },
+  "spr6": {
+   "base": 224,
+   "colors": {
+    "c": 1
+   }
+  },
+  "spr7": {
+   "base": 240,
+   "colors": {
+    "c": 1
+   }
+  }
+ },
+ "scenes": {
+  "board": {
+   "h": 28,
+   "mx": 0,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  }
+ },
+ "sprites": {
+  "cursor": {
+   "pal": 6,
+   "size": 16,
+   "tile": 268
+  },
+  "gem0": {
+   "pal": 0,
+   "size": 16,
+   "tile": 256
+  },
+  "gem1": {
+   "pal": 1,
+   "size": 16,
+   "tile": 258
+  },
+  "gem2": {
+   "pal": 2,
+   "size": 16,
+   "tile": 260
+  },
+  "gem3": {
+   "pal": 3,
+   "size": 16,
+   "tile": 262
+  },
+  "gem4": {
+   "pal": 4,
+   "size": 16,
+   "tile": 264
+  },
+  "gem5": {
+   "pal": 5,
+   "size": 16,
+   "tile": 266
+  }
+ },
+ "tiles": {},
+ "used": 66,
+ "version": 1
+}
