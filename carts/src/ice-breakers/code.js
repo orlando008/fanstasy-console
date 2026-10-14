@@ -75,7 +75,7 @@ const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) ===
 // --- The board: rules as plain functions on an array of gem types (0 to KINDS-1, -1 for empty), row by row ---
 
 const COLS = 8, ROWS = 8, CELL = 16, BX = 64, BY = 64, KINDS = 6; // the board's size, its cells in px, its top left corner
-const POP_FRAMES = 14, WIN_FRAMES = 100, FALL = 4; // a match's flash, the level-clear banner, a gem's speed in px a frame
+const POP_FRAMES = 14, WIN_FRAMES = 100, INTRO_FRAMES = 120, FALL = 4; // a match's flash, the level-clear banner, a level's opening banner, a gem's speed in px a frame
 
 /** The runs of three or more equal gems, across or down: an array of arrays of cell numbers. */
 function findRuns(t) {
@@ -128,6 +128,7 @@ const ring = () => Array.from({ length: COLS * ROWS }, (_, i) => i).filter((i) =
   const r = flr(i / COLS), c = i % COLS, corner = [0, COLS - 1, (ROWS - 1) * COLS, ROWS * COLS - 1].includes(i);
   return (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1) && !corner;
 });
+const GEM_NAMES = ['RED', 'ORANGE', 'YELLOW', 'GREEN', 'BLUE', 'PURPLE']; // the kinds of gem, in the order art.py draws them
 const LEVELS = [
   { goal: ICE_GOAL, moves: 20, ice: [0, 7, 56, 63] },
   { goal: POINTS_GOAL, n: 600, moves: 20, ice: [] },
@@ -151,7 +152,7 @@ let cursor = 0, sel = -1; // the cursor's cell; the picked-up gem's cell, or -1
 let sw = [0, 0];          // the two cells of the swap being shown
 let popCells = [], popT = 0, winT = 0, chain = 0;
 let score = 0, levelPts = 0, moves = 0, level = 1, lev = LEVELS[0]; // the total score; the points earned in this level; moves left; the level; its entry in LEVELS
-let ice = [], gemsGot = 0, won = false; // the ice on each cell (true: iced); the gems of the goal's kind cleared in this level; the game is won
+let ice = [], gemsGot = 0, won = false, introT = 0; // the ice on each cell (true: iced); the gems of the goal's kind cleared in this level; the game is won; frames left of the level's opening banner
 
 const cellX = (i) => BX + (i % COLS) * CELL, cellY = (i) => BY + flr(i / COLS) * CELL;
 const typesNow = () => grid.map((g) => (g ? g.t : -1));
@@ -170,9 +171,13 @@ function breakIce(cells) { for (const i of cells) for (const j of nbrs(i)) ice[j
 const goalMet = () => (lev.goal === ICE_GOAL ? iceCount() === 0 : lev.goal === GEMS_GOAL ? gemsGot >= lev.n : levelPts >= lev.n);
 /** How far the player is towards the goal, from 0 to 1 (the bar). */
 const progress = () => (lev.goal === ICE_GOAL ? 1 - iceCount() / lev.ice.length : lev.goal === GEMS_GOAL ? gemsGot / lev.n : levelPts / lev.n);
-/** Start level n: its goal, its moves and its ice, and a new board dropping in. */
+/** The goal and the progress to it, short enough for the HUD (14 characters at most). */
+const goalText = () => (lev.goal === ICE_GOAL ? `ICE LEFT ${iceCount()}` : lev.goal === GEMS_GOAL ? `${GEM_NAMES[lev.kind]} ${gemsGot}/${lev.n}` : `GOAL ${levelPts}/${lev.n}`);
+/** What the level asks, in words (the opening banner). */
+const goalWords = () => (lev.goal === ICE_GOAL ? 'BREAK ALL THE ICE' : lev.goal === GEMS_GOAL ? `COLLECT ${lev.n} ${GEM_NAMES[lev.kind]}` : `EARN ${lev.n} POINTS`);
+/** Start level n: its goal, its moves and its ice, and a new board dropping in under the level's opening banner. */
 function startLevel(n) {
-  level = n; lev = LEVELS[n - 1]; moves = lev.moves; levelPts = 0; gemsGot = 0; chain = 0; sel = -1;
+  level = n; lev = LEVELS[n - 1]; moves = lev.moves; levelPts = 0; gemsGot = 0; chain = 0; sel = -1; introT = INTRO_FRAMES;
   ice = Array(COLS * ROWS).fill(false);
   for (const i of lev.ice) ice[i] = true;
   dealBoard();
@@ -253,8 +258,10 @@ function updateTitle() {
 /** One frame of play: the pad in `idle`, otherwise the machine waits for the gems to settle, then takes its next step. */
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  const intro = introT > 0; // the opening banner: the pad waits for it (A skips it)
+  if (intro) introT = pressed(A) ? 0 : introT - 1;
   const moving = moveGems();
-  if (phase === 'idle') idleInput();
+  if (phase === 'idle') { if (!intro) idleInput(); }
   else if (phase === 'pop') { if (--popT <= 0) afterPop(); }
   else if (phase === 'win') { if (--winT <= 0) afterWin(); }
   else if (!moving) {
@@ -327,7 +334,7 @@ function afterWin() {
 }
 
 function gameOver() {
-  state = 'over'; timer = 0; play(-1); fx(SFX.over); phase = 'idle'; sel = -1;
+  state = 'over'; timer = 0; play(-1); fx(SFX.over); phase = 'idle'; sel = -1; introT = 0;
   rank = insertTop({ score, initials: lastInitials(), level });
 }
 
@@ -378,7 +385,14 @@ function draw() {
   else if (state === 'title') drawTitle();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  if (state === 'over') { panel(48, 80, 160, 64); ctxt(won ? 'YOU WON!' : 'GAME OVER', 92, won ? GOLD : RED); ctxt(`SCORE ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
+  if (state === 'over') {
+    panel(48, 68, 160, 88);
+    ctxt(won ? 'YOU WON!' : 'GAME OVER', 76, won ? GOLD : RED);
+    ctxt(won ? 'ALL LEVELS CLEARED' : `LEVEL ${level}`, 92, WHITE);
+    if (!won) ctxt(goalText(), 104, DIM); // what the level asked for, and how far the player got
+    ctxt(`SCORE ${score}`, 120, WHITE);
+    if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 138, DIM);
+  }
   if (paused) drawPause();
 }
 
@@ -395,11 +409,12 @@ function drawPlay() {
   }
   txt(`SCORE ${score}`, 8, 8, WHITE);
   txt(`LEVEL ${level}`, 8, 20, GOLD);
-  txt(lev.goal === ICE_GOAL ? `ICE ${iceCount()}` : lev.goal === GEMS_GOAL ? `GEMS ${gemsGot}/${lev.n}` : `GOAL ${levelPts}/${lev.n}`, 136, 8, WHITE);
+  txt(goalText(), 136, 8, WHITE);
   txt(`MOVES ${moves}`, 168, 20, moves <= 3 ? RED : GREEN);
   const bar = mid(0, 1, progress()); // progress to the goal
   rectfill(8, 36, 240, 6, SHADOW); rectfill(8, 36, flr(240 * bar), 6, bar >= 1 ? GOLD : CYAN);
   if (chain > 1 && phase !== 'idle') ctxt(`CHAIN x${chain}`, 202, GOLD);
+  if (introT > 0 && state === 'play') { panel(32, 84, 192, 56); ctxt(`LEVEL ${level}`, 92, GOLD); ctxt(goalWords(), 106, WHITE); ctxt(`IN ${lev.moves} MOVES`, 120, DIM); }
   if (phase === 'win') { panel(40, 86, 176, 48); ctxt(`LEVEL ${level} CLEAR!`, 96, GOLD); ctxt(`BONUS ${moves * 50}`, 112, WHITE); }
 }
 

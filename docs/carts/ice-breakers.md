@@ -1,7 +1,7 @@
 # Ice Breakers: Cart Specification
 
 **Version:** 0.2 (draft)
-**Status:** Step 1 built (the ice, the three goals, the twelve levels); the balance is step 3. The art and the sound are still the starter's.
+**Status:** Steps 1 and 2 built (the ice, the three goals, the twelve levels, the level banner, the game over that names the goal); the balance is step 3. The art and the sound are still the starter's.
 **Cart source:** `carts/src/ice-breakers/` → `carts/ice-breakers.nova`
 
 ---
@@ -34,7 +34,8 @@ the game is over.
 ## 4. Screen layout
 
 256 × 224. Top (y 0 to 42): the score and the level (left); the level's goal and the moves left (right); a progress bar
-for the goal. The board is 8 × 8 cells of 16 px at (64, 64) to (192, 192). Below it: the chain counter and messages.
+for the goal. The goal reads `ICE LEFT 4`, `YELLOW 3/12` (a GEMS goal names its kind of gem by its colour: RED, ORANGE,
+YELLOW, GREEN, BLUE, PURPLE) or `GOAL 410/600`. The board is 8 × 8 cells of 16 px at (64, 64) to (192, 192). Below it: the chain counter and messages.
 BG0 is the starfield and the board's panel (`art.py`, scene `board`); the ice is a layer over the board (BG1, section 12);
 the gems and the cursor are 16 px sprites; the text is the overlay.
 
@@ -96,8 +97,8 @@ initials and the level reached (save slots 10 to 39).
 
 1. **Title:** PLAY, RECORDS.
 2. **Play**, with a **Pause** (START): RESUME, RESTART, QUIT TO TITLE. The play state is a machine: idle → swap → (unswap | pop → fall → pop ...) → idle, win (banner, then the next level) or game over.
-3. **Level banner** at the start of each level: its number and goal, for about 2 seconds.
-4. **Game over** (or **Won**), then **initials** if the score is in the top 10, then the **records**.
+3. **Level banner** at the start of each level (2 seconds, over the board while the gems drop in): `LEVEL n`, what the level asks (`BREAK ALL THE ICE`, `COLLECT 12 YELLOW`, `EARN 600 POINTS`) and its moves. The pad waits for it; A skips it; it waits while the game is paused.
+4. **Game over** names the level and the goal with how far the player got (`LEVEL 3`, `YELLOW 7/12`), then the score; or **Won** (`YOU WON!`, `ALL LEVELS CLEARED`). Then **initials** if the score is in the top 10, then the **records**.
 
 ## 11. Audio
 
@@ -128,7 +129,7 @@ The gems are 16 px sprites, each kind in its own sprite palette (0 to 5); the cu
 
 | Asset | Budget |
 |---|---|
-| Code | 21 KB (`node tools/check.js ice-breakers`); the levels and the ice added 3 KB |
+| Code | 22.6 KB (`node tools/check.js ice-breakers`); the levels, the ice and the banner added 4.5 KB to the starter's 18 |
 | Tiles | about 66 of 1,023 now (the background 38, the gems and cursor 28); the ice adds a few |
 | Sprites | 65 on the board (128 in OAM, 32 per scanline) |
 | Songs / SFX | 2 songs, 14 SFX; the ice crack makes 15 |
@@ -143,6 +144,9 @@ Step 0 is done: the spec, the scaffold (the match-3 starter with placeholder num
    **Results:** 93 checks pass (`01-flow` 22, `02-art` 11, `03-rules` 60; section 11 of `03-rules` is the ice); `verify.js --fast` passes; the screenshot shows the four corners outlined and `ICE 4` in the HUD.
    The sweep (6 seeds each, `sweep.mjs`): no crash, no stuck run. The level reached: skill 1 8.7 on average (1 to 12), skill 0.5 3.7 (1 to 9). The spread is for step 3 to tune.
 2. **The goals and the level flow:** the GEMS and POINTS goals, the level banner, the next level, the win after level 12 and the game over that names the goal. Tests in `01-flow.mjs`. The old points rule (`goalFor`) goes.
+
+   **Built:** (the goals, the next level, the win after level 12 and the end of `goalFor` came with step 1.) The opening banner (`introT`, `INTRO_FRAMES` 120): it covers the board while the gems drop in, the pad waits for it, A skips it, and it waits while paused. `goalText` (the HUD and the game-over panel) and `goalWords` (the banner). A GEMS goal names its gem by colour (`GEM_NAMES`), because the overlay is always on top of the sprites, so a gem picture cannot sit on the banner; step 5 adds icons to the HUD. The game over shows the level, the goal and how far the player got, and the won game shows `YOU WON!`. The bot skips banners with A.
+   **Results:** 107 checks pass (`01-flow` 35, `02-art` 12, `03-rules` 60: the banner, its skip and pause, the text of every goal kind, game over naming the goal, and the banner's pixels on the screen); `verify.js --fast` passes; `smoke.mjs` passes in the real console; the sweep is as in step 1 (the banner changes timing, not the dealing); the banner and the game-over panel looked right in screenshots.
 3. **Balance:** the bot (`bot.mjs`) plays for the goal of each level (it prefers swaps that break ice or gather the goal's gem). `node tools/devkit/sweep.mjs ice-breakers`: skill 1 wins most levels within the moves; skill 0.5 wins about half of them. Tune the moves and the targets in `LEVELS` and this table together.
 4. **Hint and feel:** after about 6 seconds with no move, the board shows one swap that makes a run (or that breaks ice).
 5. **Art pass:** `art.py`: the ice tiles on BG1 (a palette for the ice), the level banner, the goal icons in the HUD, a clear effect for the ice.

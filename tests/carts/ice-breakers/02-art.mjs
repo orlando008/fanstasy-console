@@ -42,4 +42,12 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
   p.setTypes(Array.from({ length: 64 }, () => 0)); vm.step(0); // a whole board: the picture's colours are in the board's region
   ok(has(vm, color('bg1', 'panel'), p.BX, p.BY, p.BX + 128, p.BY + 128) && has(vm, color('bg1', 'panel2'), p.BX, p.BY, p.BX + 128, p.BY + 128), 'the board\'s two panel colours show round the gems');
 }
+// 3. The level banner is drawn over the board when a level opens, and is gone after.
+{
+  const vm = newGame(1), p = vm.probe();
+  const covered = () => { const want = rgb(vm, 1); let n = 0; for (let y = 86; y < 138; y++) for (let x = 34; x < 60; x++) if ((vm.out32[y * 256 + x] >>> 0) === want) n++; return n; };   // the banner panel's margin, in the overlay's shadow colour (entry 1)
+  vm.run(60); const on = covered();
+  vm.run(p.INTRO_FRAMES); const off = covered();
+  ok(on === 26 * 52 && off === 0, 'the banner\'s panel is on the screen while a level opens, and gone afterwards', `${on} then ${off} of ${26 * 52} pixels`);
+}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

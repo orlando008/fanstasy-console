@@ -68,4 +68,36 @@ const THREE = DEAD.slice(); THREE[56] = 0; THREE[57] = 0; THREE[50] = 0; THREE[5
   times.sort((a, b) => a - b); const p99 = times[Math.floor(times.length * 0.99)];
   ok(p99 < 8 * (process.env.CI ? 3 : 1), 'frames are quick', `99th percentile ${p99.toFixed(2)} ms`);
 }
+// 6. The level's opening banner: it says what the level asks, the pad waits for it, and A skips it.
+{
+  const vm = newGame(8), p = vm.probe();
+  ok(p.introT === p.INTRO_FRAMES && p.goalWords() === 'BREAK ALL THE ICE', 'a level opens with its banner, which says what the level asks');
+  vm.run(60);
+  ok(p.phase === 'idle' && p.introT === p.INTRO_FRAMES - 60, 'the gems are down before the banner is gone', `phase ${p.phase} introT ${p.introT}`);
+  tap(vm, 'RIGHT'); ok(p.cursor === 27, 'the pad waits for the banner: the cursor does not move');
+  tap(vm, 'A'); ok(p.introT === 0 && p.sel === -1 && p.cursor === 27, 'A skips the banner, and is not also a pick-up');
+  tap(vm, 'RIGHT'); ok(p.cursor === 28, 'then the pad works');
+  const v2 = newGame(9), q = v2.probe(); v2.run(p.INTRO_FRAMES + 2);
+  ok(q.introT === 0, 'left alone, the banner goes by itself');
+  const v3 = newGame(10), r = v3.probe(); v3.run(10); tap(v3, 'START'); v3.run(30); tap(v3, 'START');
+  ok(r.introT > r.INTRO_FRAMES - 20, 'it waits while the game is paused', `introT ${r.introT}`);
+}
+
+// 7. What each kind of goal says: in the HUD, and in the banner.
+{
+  const vm = newGame(11), p = vm.probe();
+  const says = (n) => { p.startLevel(n); return [p.goalText(), p.goalWords()]; };
+  ok(says(1).join(' | ') === 'ICE LEFT 4 | BREAK ALL THE ICE', 'an ICE level: the ice left, and "break all the ice"', says(1).join(' | '));
+  ok(says(2).join(' | ') === 'GOAL 0/600 | EARN 600 POINTS', 'a POINTS level: the points and the target', says(2).join(' | '));
+  ok(says(3).join(' | ') === 'YELLOW 0/12 | COLLECT 12 YELLOW', 'a GEMS level names the kind of gem by its colour', says(3).join(' | '));
+  ok(p.LEVELS.filter((l) => l.goal === 'gems').every((l) => p.GEM_NAMES[l.kind]) && p.GEM_NAMES.length === p.KINDS, 'every kind of gem has a name');
+  ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].every((n) => says(n)[0].length <= 14), 'and the HUD text never runs off the right of the screen (14 characters at most)');
+}
+
+// 8. Game over names the goal that was missed.
+{
+  const vm = newGame(12), p = vm.probe(); rest(vm, p); p.startLevel(3); p.setTypes(THREE); p.moves = 1; p.cursor = 50;
+  tap(vm, 'A'); tap(vm, 'DOWN'); rest(vm, p, 400);
+  ok(p.state === 'over' && p.introT === 0 && p.goalText() === 'YELLOW 0/12', 'out of moves on a GEMS level: the game is over, and the goal still says how far it got', `${p.state} ${p.goalText()}`);
+}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

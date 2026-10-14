@@ -44,6 +44,7 @@ function options(p) {
 export function pad(vm, p, frame, opts) {
   if (frame & 1) return 0; // release between presses, so every press is a new one
   if (p.state !== 'play' || p.phase !== 'idle') { plan = null; return 0; }
+  if (p.introT > 0) return M('A');   // skip the level's opening banner
   if (!plan) {
     // Best first: the most worth to the goal, then the lowest on the board (gems that fall in from above set off more runs).
     const o = options(p).sort((a, b) => b.n - a.n || b.row - a.row);
