@@ -539,13 +539,14 @@ built in HTML like the editor, not inside the console.
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/
 │   ├── library.js          # Regenerates carts/index.json and carts/labels/
-│   ├── new-cart.js         # Scaffolds a new cart (code, art.py, audio.py, tests, spec) from templates/cart/ (--selftest checks the starter)
+│   ├── new-cart.js         # Scaffolds a new cart (code, art.py, audio.py, tests, spec) from templates/cart/ or a kind in templates/kinds/ (--selftest checks them)
 │   ├── verify.js           # Verifies the carts changed since origin/main: audio, pack, checks, soak, tests
 │   ├── check.js            # Limits and common mistakes in a cart; the .nova.png must hold the packed cart
 │   ├── test.js             # Runs a cart's check scripts one at a time
 │   ├── release.js          # Label (F7), .nova.png export, Library index and checks in headless Chromium
 │   ├── check-docs.js       # Documentation may only mention files that exist
 │   ├── templates/cart/     # The starter's files ({{NAME}}, {{TITLE}} placeholders)
+│   ├── templates/kinds/    # A whole game for a kind of game (puzzle); --kind <kind> on new-cart.js
 │   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader; music/: song toolkit, loudness, lead lowering; art/: art toolkit, scene and sprite viewers
 ├── docs/
 │   ├── SPEC.md             # This document (the cart-facing API is section 8)
@@ -553,7 +554,7 @@ built in HTML like the editor, not inside the console.
 │   └── dev/playbook.md     # How to build a cart: workflow, tools, limits, audio rules, traps
 ├── CLAUDE.md               # Short notes for agents, pointing to the playbook
 └── .github/workflows/
-    └── check.yml           # Syntax, cart checks, the starter's self-test, soak runs; verify on pull requests
+    └── check.yml           # Syntax, cart checks, the starters' self-test, soak runs; verify on pull requests
 ```
 
 ## 13. Development conventions
@@ -571,7 +572,7 @@ name: check
 on: [push, pull_request]
 jobs:
   syntax:   # node --check on src/, tools/ and tests/; the documentation's file references
-  carts:    # check.js --all, the starter's self-test, soak.mjs --all
+  carts:    # check.js --all, the starters' self-test, soak.mjs --all
   verify:   # pull requests only: tools/verify.js for the carts the PR changes
 ```
 
