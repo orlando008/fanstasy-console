@@ -9,6 +9,7 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 
 ```sh
 node tools/new-cart.js my-game "My Game"      # a working cart, art and audio scripts, tests and spec template
+# for a puzzle game, start from a whole match-3 game instead:  node tools/new-cart.js my-game "My Game" --kind puzzle
 # write docs/carts/my-game.md, then replace updatePlay/drawPlay in carts/src/my-game/code.js, and the art in art.py
 node tools/pack.js carts/src/my-game carts/my-game.nova
 node tools/verify.js --fast                   # audio and art scripts, pack, checks, soak, music levels (add the tests: leave out --fast)
@@ -29,12 +30,14 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `tools/` | `pack`, `library`, `new-cart`, `verify`, `check`, `test`, `release`, `check-docs` (section 2) |
 | `tools/devkit/` | The headless harness, soak, smoke, sweep, shots, tiles, voices, the random player; `music/`: the song toolkit, loudness checks, effect levels and lead lowering; `art/`: the art toolkit and the scene and sprite viewers |
 | `tools/templates/cart/` | The starter's files |
+| `tools/templates/kinds/<kind>/` | A whole game for a kind of game (`--kind`) |
 | `CLAUDE.md`, `docs/dev/playbook.md` | Notes for agents (short) and this guide |
 
 ## 1. The shape of a game build
 
 0. **Start from the starter**: `node tools/new-cart.js <name> "Title"` creates the cart, its tests, its art and audio scripts and
-   the spec template (section 2). Do not copy another game's code to begin with.
+   the spec template (section 2). Do not copy another game's code to begin with. If the game is of a kind that has a
+   starter (`--kind`, below), start from that: it is a whole small game of that type, to change into yours.
 1. **Write the spec first** (`docs/carts/<name>.md`, scaffolded): concept, controls, screen layout, the rules with
    numbers, scoring, screens and flow, audio, video layers, save slots, asset budget, and a numbered
    **implementation plan** of about 8 steps. Ask the user the few design questions that really change the
@@ -57,7 +60,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 
 | Command | What it does |
 |---|---|
-| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an art script (a field, a ship and a gem, drawn with the art kit), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--selftest` checks the starter itself (CI does) |
+| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an art script (a field, a ship and a gem, drawn with the art kit), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--kind puzzle` starts from a whole match-3 game instead (see "Starters by kind"). `--selftest` checks every starter (CI does) |
 | `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder |
 | `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the music levels (`loud.mjs --check`), the docs check, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
 | `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser), the spec (header, TODOs in a released cart, code size in the budget table), label and description |
@@ -104,7 +107,16 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `node tools/library.js` | Rebuild `carts/index.json` and `carts/labels/` (release.js does it) |
 
 The starter's template is `tools/templates/cart/` (`code.js` is the frame to build on; its `01-flow.mjs` is the
-first test file and its `bot.mjs` the first bot). Examples of a full build: `tests/carts/moto-crosser/` (seven
+first test file and its `bot.mjs` the first bot).
+
+**Starters by kind.** `node tools/new-cart.js <name> "Title" --kind <kind>` scaffolds a whole small game of that type on
+the same frame, with its own art, sound, rules tests, bot and spec; any file a kind does not have comes from the generic
+starter. Its files are in `tools/templates/kinds/<kind>/`. Change it into your game (the spec says where), keep the
+tests green as you go, and delete what you do not use. The kinds so far:
+
+| Kind | The game | What it gives you |
+| --- | --- | --- |
+| `puzzle` | A match-3 board (8 × 8, six gems, swap two neighbours, runs of three or more pop, the gems above fall, chains) with moves, a goal and levels | The board rules as pure functions (`findRuns`, `matched`, `swapped`, `hasMoves`) with tests; a cursor, pick-and-push input; pop, fall and chain scoring; a stuck board dealt again; six gems in six shapes and palettes; sound for every action; a bot (`skill`) whose sweep tunes the goals | Examples of a full build: `tests/carts/moto-crosser/` (seven
 suites, a `lib.mjs` and a bot) and `carts/src/moto-crosser/audio.py` (songs and effects with the kit).
 
 **CI** (`.github/workflows/check.yml`): syntax of `src/`, `tools/` and `tests/`; the docs check; `check.js --all`; the

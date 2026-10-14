@@ -5,7 +5,7 @@
 - **Read `docs/dev/playbook.md` before building or changing a cart.** It has the workflow, the tools, the limits and
   the mistakes that have already cost time.
 - Start a new game with `node tools/new-cart.js <name> "Title"` (a working frame, tests, bot, art and audio scripts
-  and spec template). Build a cart from `carts/src/<name>/` with `node tools/pack.js carts/src/<name> carts/<name>.nova`.
+  and spec template; `--kind puzzle` for a whole match-3 game to change into yours, see the playbook). Build a cart from `carts/src/<name>/` with `node tools/pack.js carts/src/<name> carts/<name>.nova`.
 - Before you commit a cart change: `node tools/verify.js` (the carts you changed: audio script, packed cart, checks, soak,
   docs and the cart's tests; add `--fast` to skip the tests, which take minutes, or run them in the background), then
   `node tools/devkit/smoke.mjs <name>` (the real console). After a change to the rules, the physics or the AI:

@@ -114,7 +114,7 @@ destroy the data.
 Pure ES modules, no build step and no runtime dependencies (the dev tools use Node 20 or later; the release and
 smoke tools use Playwright with Chromium, and the audio scripts use Python 3). CI (`.github/workflows/check.yml`)
 runs a syntax check on the console, the dev tools and the tests; checks that the documentation only mentions
-files that exist; checks every cart against the console's limits; runs the cart starter's self-test and a
+files that exist; checks every cart against the console's limits; runs the starters' self-test and a
 random-play soak run on every cart; and, on pull requests, verifies the carts the PR changes.
 
 ```sh
@@ -141,6 +141,7 @@ measure the audio, how to see the art, and the traps. Agents start with `CLAUDE.
 
 ```sh
 node tools/new-cart.js <name> "Title"      # a new cart: a working frame, tests, bot, audio script, spec template
+node tools/new-cart.js <name> "Title" --kind puzzle   # or a whole small game of a kind (puzzle: match-3) to change into yours
 node tools/verify.js                       # the carts you changed: audio, pack, checks, soak, docs, tests
 node tools/check.js <name>                 # limits and common mistakes (--all for every cart)
 node tools/test.js <name>                  # a cart's check scripts in tests/carts/<name>/
