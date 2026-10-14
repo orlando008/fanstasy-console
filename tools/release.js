@@ -22,10 +22,9 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { createServer } from 'node:http';
-import { createRequire } from 'node:module';
-import { extname, join, normalize } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { playwright, serve } from './devkit/browser.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const argv = process.argv.slice(2);
@@ -37,26 +36,9 @@ const src = join(ROOT, 'carts', 'src', name), nova = join(ROOT, 'carts', `${name
 if (!existsSync(join(src, 'code.js'))) { console.error(`no source folder carts/src/${name}`); process.exit(1); }
 const node = (...a) => execFileSync('node', a.map((x) => String(x)), { cwd: ROOT, stdio: 'pipe' }).toString().trim();
 
-function playwright() {
-  const require = createRequire(import.meta.url);
-  for (const base of ['', `${execFileSync('npm', ['root', '-g']).toString().trim()}/`]) {
-    try { return require(`${base}playwright`); } catch { /* try the next place */ }
-  }
-  throw new Error('Playwright is not installed (npm i -g playwright; then npx playwright install chromium)');
-}
-
 console.log('1. pack'); console.log(`   ${node('tools/pack.js', `carts/src/${name}`, `carts/${name}.nova`)}`);
 
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.nova': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
-const server = createServer((req, res) => {
-  const p = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '');
-  const f = join(ROOT, p.endsWith('/') ? `${p}index.html` : p);
-  if (!f.startsWith(ROOT) || !existsSync(f)) { res.writeHead(404); res.end(); return; }
-  res.writeHead(200, { 'content-type': TYPES[extname(f)] || 'application/octet-stream' });
-  res.end(readFileSync(f));
-});
-await new Promise((ok) => server.listen(0, '127.0.0.1', ok));
-const base = `http://127.0.0.1:${server.address().port}`;
+const { base, close } = await serve();
 
 const { chromium } = playwright();
 const browser = await chromium.launch();
@@ -88,7 +70,7 @@ try {
   if (!decoded.label) throw new Error('the exported cart has no label (run without --keep-label to capture one)');
   if (errors.length) console.log(`   page errors: ${errors.join('; ')}`);
   console.log(`   ${name}.nova.png: ${readFileSync(png).length.toLocaleString('en-US')} bytes`);
-} finally { await browser.close(); server.close(); }
+} finally { await browser.close(); close(); }
 
 console.log('3. label'); writeFileSync(join(src, 'label.png'), Buffer.from(decoded.label, 'base64'));
 console.log(`   carts/src/${name}/label.png (${Buffer.from(decoded.label, 'base64').length.toLocaleString('en-US')} bytes); ${node('tools/pack.js', `carts/src/${name}`, `carts/${name}.nova`)}`);

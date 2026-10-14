@@ -7,19 +7,12 @@
 // It also lists which effects were never played, a hint of states the random player did not reach.
 import { CHANNEL_VOICES, waveVoice } from '../../src/formats/audio.js';
 import { boot } from './harness.mjs';
+import { makePad } from './pad.mjs';
 const [path, frames = '6000', seed = '1'] = process.argv.slice(2);
 if (!path) { console.error('usage: node tools/devkit/voices.mjs <cart.nova> [frames] [seed]'); process.exit(1); }
 const vm = boot(path, { seed: Number(seed) });
-let r = Number(seed) * 2654435761 >>> 0;
-const rnd = () => { r = (r * 1664525 + 1013904223) >>> 0; return r / 4294967296; };
-let mask = 0;
-for (let f = 0; f < Number(frames); f++) {
-  if (f % 8 === 0) { // change the pad now and then; START and A more often at the start, to get into the game
-    mask = 0;
-    for (let b = 0; b < 12; b++) if (rnd() < (b === 10 ? 0.06 : b === 4 ? 0.5 : 0.25)) mask |= 1 << b;
-  }
-  vm.step(mask);
-}
+const pad = makePad(seed);
+for (let f = 0; f < Number(frames); f++) vm.step(pad(f));
 const bad = new Map(), played = new Set();
 for (const [, kind, n, ch] of vm.audioLog) {
   if (kind !== 'sfx' || n < 0) continue;

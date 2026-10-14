@@ -6,7 +6,9 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 
 ## 1. The shape of a game build
 
-1. **Write the spec first** (`docs/carts/<name>.md`): concept, controls, screen layout, the rules with
+0. **Start from the starter**: `node tools/new-cart.js <name> "Title"` creates the cart, its tests, its audio script and
+   the spec template (section 2). Do not copy another game's code to begin with.
+1. **Write the spec first** (`docs/carts/<name>.md`, scaffolded): concept, controls, screen layout, the rules with
    numbers, scoring, screens and flow, audio, video layers, save slots, asset budget, and a numbered
    **implementation plan** of about 8 steps. Ask the user the few design questions that really change the
    game (modes, number of levels, features); choose sensible defaults for the rest.
@@ -26,6 +28,7 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 | Command | What it does |
 |---|---|
 | `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder (`code.js`, `tiles.txt`, `palette.txt`, `map.txt`, `audio.json`, `meta.json`, `label.png`) |
+| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an audio script, tests and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--selftest` checks the starter itself |
 | `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, a stale `.nova`, missing label or description |
 | `node tools/test.js <name> [filter] [-v]` | Run `tests/carts/<name>/NN-*.mjs` one at a time (about 3 minutes for Moto Crosser: run it in the background) |
 | `node tools/release.js <name> [--keep-label]` | Pack, capture the F7 label in headless Chromium, export `.nova.png`, verify it decodes to the packed cart, rebuild the Library index, run the checks |
@@ -36,10 +39,13 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level and pitch (centroid) of effects, on the channel the game uses |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and saw on the beat |
 | `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons) |
-| `node tools/devkit/voices.mjs carts/<name>.nova [frames] [seed]` | Plays the cart with random presses and reports any effect sent to a channel whose voice does not suit it |
+| `node tools/devkit/soak.mjs carts/<name>.nova [--frames 20000] [--seeds 3]` | **Soak test**: random play in the harness for a long time. Fails on an exception, an effect on the wrong voice's channel, or a frozen screen (a soft lock, with the state named); reports frame times, sprites (OAM and per scanline), the states reached and the effects and songs never played. `--all` does every cart (CI) |
+| `node tools/devkit/smoke.mjs <name> [--seconds 12] [--shot f.png]` | **Smoke test in the real console** (headless Chromium): loads the cart, plays with random keys, and reports page and console errors, the cart's logged errors (a cart that throws is stopped), fps, and a frozen or blank screen. Catches what the Node harness cannot |
+| `node tools/devkit/voices.mjs carts/<name>.nova [frames] [seed]` | Just the wrong-voice check (soak does this too) |
 | `tools/devkit/harness.mjs` | The headless console for tests (see its header comment) |
 
-Examples to copy: `tests/carts/moto-crosser/` (a full test suite with a `lib.mjs`), `carts/src/moto-crosser/audio.py`
+The starter's template is `tools/templates/cart/` (`code.js` is the frame to build on, and its `01-flow.mjs` is the
+first test file). Examples of a full build: `tests/carts/moto-crosser/` (a full test suite with a `lib.mjs`), `carts/src/moto-crosser/audio.py`
 (songs and effects with the kit).
 
 ## 3. Limits and rules of the console
@@ -85,6 +91,18 @@ Checks that proved their worth:
   another process spoils one frame); and one suite at a time (`tools/test.js` does this);
 - **audio cues** from `vm.audioLog` (which song and which SFX on which channel, when), not by ear;
 - **a test that fails without the fix**: after fixing a bug, put the fix back out and check the new test fails.
+
+### Soak and smoke
+
+Run both before you call a step done, and again after the art and audio passes:
+
+- `soak.mjs` is quick (seconds) and runs in CI. A **frozen screen** failure is the generic form of "a rival sat
+  on a bump for ever": the random player pressed buttons for 15 s and the picture never changed. Give the cart
+  a `state` variable and the failure names the state. The "never played" lists show what random play cannot reach;
+  cover those with a test or a bot (a bot is a function that returns the pad each frame: `makePad` in
+  `tools/devkit/pad.mjs` is the random one; a game's own auto-player should drive the same code as a human).
+- `smoke.mjs` takes about 15 s and needs Playwright with Chromium (not in CI). It is the only check that runs the
+  cart in the real worker and page. Use `--keys Enter:300,Enter:300` to get past a title, and `--shot` to look.
 
 ## 5. Audio
 

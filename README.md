@@ -136,12 +136,14 @@ node tools/library.js
 measure the audio, the traps). The tools:
 
 ```sh
+node tools/new-cart.js <name> "Title"      # a new cart: a working frame, tests, audio script, spec template
 node tools/check.js <name>                 # limits and common mistakes (--all for every cart)
 node tools/test.js <name>                  # a cart's check scripts in tests/carts/<name>/
 node tools/release.js <name>               # label, .nova.png, Library entry, checks
 node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300   # screenshots without a browser
 node tools/devkit/music/loud.mjs carts/<name>.nova               # loudness of each song
-node tools/devkit/voices.mjs carts/<name>.nova                   # effects sent to a channel of the wrong voice
+node tools/devkit/soak.mjs carts/<name>.nova                     # random play: exceptions, soft locks, frame time, wrong-voice effects
+node tools/devkit/smoke.mjs <name>                               # the cart in the real console (headless Chromium)
 ```
 
 The song toolkit (`tools/devkit/music/kit.py`) and the headless test harness
