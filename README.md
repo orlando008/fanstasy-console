@@ -136,6 +136,7 @@ node tools/library.js
 measure the audio, the traps). The tools:
 
 ```sh
+node tools/new-cart.js <name> "Title"      # a new cart: a working frame, tests, audio script, spec template
 node tools/check.js <name>                 # limits and common mistakes (--all for every cart)
 node tools/test.js <name>                  # a cart's check scripts in tests/carts/<name>/
 node tools/release.js <name>               # label, .nova.png, Library entry, checks

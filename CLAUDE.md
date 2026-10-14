@@ -3,6 +3,7 @@
 - The console is in `src/`; the spec is `docs/SPEC.md`; each game has a spec in `docs/carts/<name>.md`.
 - **Read `docs/dev/playbook.md` before building or changing a cart.** It has the workflow, the tools and the
   mistakes that have already cost time.
+- Start a new game with `node tools/new-cart.js <name> "Title"` (a working frame, tests, audio script and spec template).
 - Build a cart from `carts/src/<name>/` with `node tools/pack.js carts/src/<name> carts/<name>.nova`.
 - Before you commit a cart change: `node tools/check.js <name>`, then its tests (`node tools/test.js <name>`,
   slow: run it in the background), then, if you changed the code or art of a released game,

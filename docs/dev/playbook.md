@@ -6,7 +6,9 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 
 ## 1. The shape of a game build
 
-1. **Write the spec first** (`docs/carts/<name>.md`): concept, controls, screen layout, the rules with
+0. **Start from the starter**: `node tools/new-cart.js <name> "Title"` creates the cart, its tests, its audio script and
+   the spec template (section 2). Do not copy another game's code to begin with.
+1. **Write the spec first** (`docs/carts/<name>.md`, scaffolded): concept, controls, screen layout, the rules with
    numbers, scoring, screens and flow, audio, video layers, save slots, asset budget, and a numbered
    **implementation plan** of about 8 steps. Ask the user the few design questions that really change the
    game (modes, number of levels, features); choose sensible defaults for the rest.
@@ -26,6 +28,7 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 | Command | What it does |
 |---|---|
 | `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder (`code.js`, `tiles.txt`, `palette.txt`, `map.txt`, `audio.json`, `meta.json`, `label.png`) |
+| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an audio script, tests and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--selftest` checks the starter itself |
 | `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, a stale `.nova`, missing label or description |
 | `node tools/test.js <name> [filter] [-v]` | Run `tests/carts/<name>/NN-*.mjs` one at a time (about 3 minutes for Moto Crosser: run it in the background) |
 | `node tools/release.js <name> [--keep-label]` | Pack, capture the F7 label in headless Chromium, export `.nova.png`, verify it decodes to the packed cart, rebuild the Library index, run the checks |
@@ -39,7 +42,8 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 | `node tools/devkit/voices.mjs carts/<name>.nova [frames] [seed]` | Plays the cart with random presses and reports any effect sent to a channel whose voice does not suit it |
 | `tools/devkit/harness.mjs` | The headless console for tests (see its header comment) |
 
-Examples to copy: `tests/carts/moto-crosser/` (a full test suite with a `lib.mjs`), `carts/src/moto-crosser/audio.py`
+The starter's template is `tools/templates/cart/` (`code.js` is the frame to build on, and its `01-flow.mjs` is the
+first test file). Examples of a full build: `tests/carts/moto-crosser/` (a full test suite with a `lib.mjs`), `carts/src/moto-crosser/audio.py`
 (songs and effects with the kit).
 
 ## 3. Limits and rules of the console

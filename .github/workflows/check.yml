@@ -17,3 +17,5 @@ jobs:
         with: { node-version: 20 }
       # Limits and the mistakes in docs/dev/playbook.md
       - run: node tools/check.js --all
+      # The starter: scaffolds a throwaway cart, packs, checks and tests it, and deletes it
+      - run: node tools/new-cart.js --selftest
