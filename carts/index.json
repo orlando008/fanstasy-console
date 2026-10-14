@@ -25,6 +25,14 @@
       "png": "carts/planet-racers.nova.png"
     },
     {
+      "name": "python-pass",
+      "title": "Python Pass",
+      "author": "NOVA-16",
+      "description": "A snake game through a jungle and into a lost temple: 16 levels in 4 zones, with fruit, five power-ups, rolling boulders, scorpions and falling rocks, a song for every zone and a top 10.",
+      "label": "carts/labels/python-pass.png",
+      "png": "carts/python-pass.nova.png"
+    },
+    {
       "name": "smashy-smash",
       "title": "Smashy Smash",
       "author": "NOVA-16",
@@ -70,14 +78,6 @@
       "author": "NOVA-16",
       "description": "M3 test: three background layers scrolling at different speeds, sub-palettes and tile priority.",
       "label": "carts/labels/parallax.png",
-      "png": null
-    },
-    {
-      "name": "python-pass",
-      "title": "Python Pass",
-      "author": "NOVA-16",
-      "description": "A snake game through a jungle and into a lost temple. Work in progress.",
-      "label": null,
       "png": null
     },
     {

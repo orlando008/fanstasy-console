@@ -1,7 +1,7 @@
 # Python Pass: Cart Specification
 
-**Version:** 0.7 (draft)
-**Status:** In progress: steps 1–6 of the plan (15) are built; step 3's balance work is not finished
+**Version:** 1.0
+**Status:** Released: all 7 steps of the plan (15) are built, and the cart is also released as the PNG cart `python-pass.nova.png`
 **Cart source:** `carts/src/python-pass/` → `carts/python-pass.nova`
 
 ---
@@ -161,16 +161,16 @@ a set piece:
 | 1-3 | Boulder Run | A corridor with the first rolling boulder |
 | 1-4 | Crossroads | A cross-shaped clearing with two boulders |
 | 2-1 | Stepping Stones | Islands linked by one-cell bridges |
-| 2-2 | The Rapids | A long channel with logs rolling down it |
+| 2-2 | The Rapids | A wide stream with rocks in it and logs rolling across it |
 | 2-3 | Scorpion Beach | A scorpion circling an island of fruit |
-| 2-4 | Waterfall | A climb past boulders and scorpions |
+| 2-4 | Waterfall | A climb up four ledges past a boulder and two scorpions |
 | 3-1 | Fallen Columns | Pillars to weave between, and the first rocks |
 | 3-2 | The Colonnade | Rows of pillars, with a patroller between them |
 | 3-3 | Statue Garden | Stone statues make a maze |
 | 3-4 | Collapse | A narrow hall where the ceiling falls |
 | 4-1 | The Gate | A wide hall with a boulder beat across it |
 | 4-2 | Torch Hall | Rows of fire bowls, with scorpions between |
-| 4-3 | The Gauntlet | Every hazard in a long run |
+| 4-3 | The Gauntlet | Every hazard in a long run: a patroller, then rocks, then two boulders |
 | 4-4 | The Idol's Chamber | The finale: a round chamber with all hazards and the biggest quota |
 
 ## 9. Scoring
@@ -186,8 +186,8 @@ a set piece:
 **Combo:** a fruit eaten within 4 seconds of the last raises the multiplier by 1, up
 to ×4. A longer gap, or losing a life, resets it to ×1. DOUBLE doubles it again.
 
-**Extra lives** at 2,500 and 8,000 points, then every 8,000, up to 5 lives. (Both
-numbers are for step 7 to tune.)
+**Extra lives** at 5,000, 12,000 and 20,000 points, then every 8,000, up to 5 lives. (Step 7
+moved the first two from 2,500 and 8,000: the automatic player reached 5 lives by level 2-3.)
 
 ## 10. Screens and flow
 
@@ -452,6 +452,34 @@ it, the gate's glow and the Temple's lava cycle colours.
      songs' feel needs your ears.
 7. **Balance and polish:** speeds, quotas, hazard rates, power-up weights and scoring,
    checked with the automatic player; a label, the PNG cart and the Library.
+   - **Built:**
+     - **A rule for boulders:** a snake crossing a boulder's lane keeps a cell busy from its
+       head's arrival to its tail's leaving (its length × the step time, about 100 frames
+       at 12 segments), and a boulder bouncing along a short lane is back in that cell too soon.
+       So the art script now insists that every lane is at least 8 cells (it was 4), which
+       leaves a gap at each end of the lane to cross in.
+     - **Levels changed to match:** 2-2 became a wider stream (11 cells tall, with rocks in
+       it and three 11-cell lanes), 2-4 swapped its two short boulder lanes for one running
+       along a ledge, and 4-3 swapped its three short ones for two running along the top
+       ledge. The 12-cell snake in 2-4's band could not cross them; the bot stalled there
+       or died.
+     - **Lives:** extra lives at 5,000, 12,000 and 20,000 (see 9).
+     - **The label:** the title screen, taken with F7 and kept in the cart; the PNG cart
+       `carts/python-pass.nova.png` is the same cart exported from the editor, and the
+       Library lists it.
+   - **Results:**
+     - **Each level alone** (the bot, five seeds): every level is cleared in at least four of
+       five runs. The long ones are 1-2 (about 75 s), 2-4 (about 65 s) and 4-3 (about 65 s);
+       most are 25–55 s. Deaths are uncommon except on 4-4 (one to two a run, and one run lost all 3 lives there).
+     - **Whole runs** (the bot, three seeds, title to ending): 11.0 to 13.0 minutes, 21,000 to
+       27,000 points. One cleared all 16 levels with 3 lives left; two died on 4-4. A person
+       takes longer than the bot for each level, so a run is about 20 minutes, as aimed for.
+     - **Checks:** all of the earlier scripts still pass (24, 43, 26, 4 and 10 checks), the
+       worst frame is under 7 ms, the code is 43 KB, and the browser shows no errors.
+     - **Not measured:** how it feels to a person. The bot does not slip or wait for a gap,
+       and a person will not look 90 steps ahead; 4-4 and 4-3 are where I would expect play to
+       be hardest.
+
 
 ## 16. Open questions
 
