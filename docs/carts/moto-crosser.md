@@ -379,7 +379,7 @@ the landing.
          past where one at turbo speed does (found by flying the bike with the cart's own rules).
      - **Track 1, Stadium Dirt:** 41 things (4.3 a 1,000 px): 9 ramps (a small, 4 medium, 4 large, two
        of the large with a down ramp), 10 bumps, a hill, 4 arrow strips, 2 cooling pads, one
-       mud patch and 6 walls and lone hurdles. 214 px between beats, so there is time to look.
+       mud patch and 12 hurdles in 7 groups. 214 px between beats, so there is time to look.
        **Track 2, Desert Run:** 61 things (5.1 a 1,000 px): 7 hills, 6 mud patches, 7 arrow strips, 4 pads,
        9 ramps and 18 hurdles; 170 px between beats. **Track 3, Night Mountain:** 99 things (6.9 a
        1,000 px): 24 ramps (with doubles and jumps followed by walls), 40 hurdles, 7 mud
@@ -405,7 +405,7 @@ the landing.
      - The stream: every visible tile right along the whole of each track (the ring wrapping 4 to 7
        times) and the finish line at the end.
      - Races with five rivals and a bot player on each track: everyone finishes, the winner
-       takes 52, 65 and 77 seconds, there are almost no crashes (0 to 2 among the six riders), nobody
+       takes about 52, 64 and 76 seconds, there are almost no crashes (0 to 2 among the six riders), nobody
        flies higher than a big ramp can throw them, and the same seed repeats exactly.
      - Over 4 races on each track by a bot player (skill 1.0), it wins 1 in 4: the rivals are
        close to it. Mean times (bot first, then red, yellow, green, blue, purple): 3206 3205 3290
