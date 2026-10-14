@@ -3,7 +3,7 @@
 For agents (and people) building games for the NOVA-16 fantasy console. It collects what the first
 seven games taught us, so the next one starts from a working kit instead of rebuilding it.
 The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/carts/<name>.md`.
-`node tools/check-docs.js` keeps every file this document mentions real: if you move a tool, fix the docs.
+`node tools/check-docs.js` keeps every file and tool flag this document mentions real: if you move a tool, fix the docs.
 
 ## Quick start
 
@@ -11,7 +11,7 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 node tools/new-cart.js my-game "My Game"      # a working cart, tests, audio script and spec template
 # write docs/carts/my-game.md, then replace updatePlay/drawPlay in carts/src/my-game/code.js
 node tools/pack.js carts/src/my-game carts/my-game.nova
-node tools/verify.js --fast                   # audio script, pack, checks, soak (add the tests: leave out --fast)
+node tools/verify.js --fast                   # audio script, pack, checks, soak, music levels (add the tests: leave out --fast)
 node tools/devkit/smoke.mjs my-game           # the real console, headless
 node tools/devkit/sweep.mjs my-game           # the bot over many seeds (once tests/carts/my-game/bot.mjs is real)
 node tools/release.js my-game                 # when finished: label, .nova.png, Library, README row
@@ -26,7 +26,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `tests/carts/<name>/` | `lib.mjs` (boots the cart with its variables exposed), `NN-*.mjs` (check scripts, one per build step), `bot.mjs` (the bot for `sweep.mjs`) |
 | `docs/carts/<name>.md` | The game's spec, with each step's **Built** and **Results** notes |
 | `tools/` | `pack`, `library`, `new-cart`, `verify`, `check`, `test`, `release`, `check-docs` (section 2) |
-| `tools/devkit/` | The headless harness, soak, smoke, sweep, shots, tiles, voices, the random player and the song toolkit (`music/`) |
+| `tools/devkit/` | The headless harness, soak, smoke, sweep, shots, tiles, voices, the random player, and `music/`: the song toolkit, loudness checks, effect levels and lead lowering |
 | `tools/templates/cart/` | The starter's files |
 | `CLAUDE.md`, `docs/dev/playbook.md` | Notes for agents (short) and this guide |
 
@@ -58,10 +58,10 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 |---|---|
 | `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--selftest` checks the starter itself (CI does) |
 | `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder |
-| `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the docs check, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
+| `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the music levels (`loud.mjs --check`), the docs check, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
 | `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser), the spec (header, TODOs in a released cart, code size in the budget table), label and description |
 | `node tools/test.js <name> [filter] [-v]` | Run `tests/carts/<name>/NN-*.mjs` one at a time (about 3 minutes for Moto Crosser: run it in the background) |
-| `node tools/check-docs.js` | Every `tools/`, `tests/`, `carts/`, `docs/` and `src/` path the documentation mentions must exist (placeholders like `<name>` are skipped) |
+| `node tools/check-docs.js` | Every `tools/`, `tests/`, `carts/`, `docs/` and `src/` path the documentation mentions must exist (placeholders like `<name>` are skipped), and every `--flag` on a documented `node tools/...` command must exist in that tool |
 
 **Play it, automatically**
 
@@ -84,7 +84,8 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | Command | What it does |
 |---|---|
 | `python3 carts/src/<name>/audio.py carts/src/<name>/audio.json` | Regenerate a game's audio from its script, with the song toolkit in `tools/devkit/music/kit.py` (its header explains `bar()`) |
-| `node tools/devkit/music/loud.mjs carts/<name>.nova` | Per-section loudness of every song |
+| `node tools/devkit/music/loud.mjs carts/<name>.nova [--check]` | Per-section loudness of every song, surges, peak, and **the lead alone**: its RMS, its share of the mix and how much the mix jumps when it enters. `--check` fails on the limits in section 5 (`verify.js` runs it) |
+| `node tools/devkit/music/lower-leads.mjs carts/src/<name>/audio.json [--write]` | For songs with no audio script: remove the leads' vibrato and lower their volumes until each song's lead is at most 0.05 RMS (instruments shared with effects are copied first) |
 | `node tools/devkit/music/render.mjs carts/<name>.nova out/` | WAV files of the songs, with level and clipping |
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level and pitch (centroid) of effects, on the channel the game uses |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and saw on the beat |
@@ -177,9 +178,16 @@ You cannot hear the result, so measure it, and follow the rules that keep player
 - **Reserve channels**: channel 1 for SFX (songs only carry the tempo `F0x` on row 0 of each pattern on it),
   and channel 4 for an engine or other continuous sound. Hats then become short samples on channel 5, on rows
   with no kick or snare (the kit does this).
-- **No wobbly or loud leads.** Players complained about vibrato and sudden jumps in level. Leads are
-  `pulse25` or `pulse50` at volume 5 to 7 with no vibrato; kick 12, snare 10. Check `loud.mjs`: sections
-  within about 15% of the median, loudest at most 1.5x the median, peak under about 0.35. An intro may be quieter.
+- **No wobbly or loud leads.** Players complained about vibrato, sudden jumps in level and a lead that "blew out my
+  ears". Leads are `pulse25` or `pulse50` at volume 4 to 6 with no vibrato; kick 12, snare 10. `loud.mjs --check`
+  turns the complaint into numbers (for songs of 12 s or more): the lead alone at most 0.07 RMS and at most 0.75 of the
+  mix, the mix at most 1.5x louder in the section where the lead enters, no section over 1.6x the song's median, the
+  loudest 250 ms at most 2.2x the median, the peak at most 0.45, the median level 0.03 to 0.15. Python Pass's first
+  version (lead 0.08 to 0.13, 0.8 to 0.9 of the mix, entering up to 2.4x) was what players called blaring; its fixed
+  songs are 0.04 to 0.05 and 0.5 to 0.7. A pulse50 lead is louder than a pulse25 at the same volume.
+  The first games' leads were as loud as that first version, and were brought down in the same way with
+  `lower-leads.mjs` (no vibrato; volumes lowered until each song's lead is at most 0.05 RMS). Only the `chiptune` demo is
+  over the limits (a loud sound test, so `verify.js` only warns for it).
 - **A held note cannot change pitch** (no API for it). A pitch that follows a value (an engine) is a short loop
   restarted at one of 5 or 6 pitches, changed only after the new pitch has held a few frames.
 - **Effect levels**: a song is about 0.06 to 0.08 RMS; effects 0.01 to 0.06; a looping sound 0.02 to 0.03.
@@ -226,13 +234,20 @@ You cannot hear the result, so measure it, and follow the rules that keep player
 
 ## 9. Fixed in the first games
 
-`check.js` and `voices.mjs` found two mistakes in the first games, both from the rule that the channel decides
-the voice. They are fixed, so the sound of those games changed a little:
+`check.js`, `soak.mjs` and `loud.mjs` found two kinds of mistake in the first games. Both are fixed, so those games
+sound a little different:
 
 - **Noise (and saw) effects played through the pulse effects channel** (Alien Swarm, Planet Racers, Python
-  Pass, Smashy Smash): they sounded like pulse tones. Each cart now has a table, `SFX_VOICE_CH`, and plays those
-  effects on channel 4 (noise) or 3 (saw) through `sfxv()`; the rest still use `SFX_CH = 1`. A noise effect
-  briefly mutes the music's channel 4 (the hats) while it plays. Noise is somewhat louder than a pulse at the
-  same volume (RMS 1.3 to 1.5 times), still well under the music.
+  Pass, Smashy Smash): the channel decides the voice, so they sounded like pulse tones. Each cart now has a table,
+  `SFX_VOICE_CH`, and plays those effects on channel 4 (noise) or 3 (saw) through `sfxv()`; the rest still use
+  `SFX_CH = 1`. A noise effect briefly mutes the music's channel 4 (the hats) while it plays. Noise is somewhat
+  louder than a pulse at the same volume (RMS 1.3 to 1.5 times), still well under the music.
 - **Smashy Smash, song 2** had an instrument declared as `pulse12` on the saw channel (it always played as a
   saw, with a fast vibrato). Its wave is now `saw`, so the sound is as it was.
+- **Loud, wobbly leads** (Alien Swarm, Block Wizard, Planet Racers, Smashy Smash, Summit Rush; Python Pass was
+  fixed earlier after two rounds of feedback, which is where the limits came from): leads had vibrato and sat at
+  up to 0.13 RMS, 0.7 to 0.9 of the mix. `lower-leads.mjs` removed the vibrato and lowered the volumes so each
+  song's lead is at most 0.05 RMS (about half the mix); instruments shared with effects were copied first, so the
+  effects did not change.
+- **Moto Crosser's Night Mountain** was the first song the lead check flagged (0.76 of the mix, entering 1.53x): its
+  brass lead went from volume 5 to 4.

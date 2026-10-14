@@ -213,6 +213,12 @@ In the menus START or A goes on and B goes back, as in Smashy Smash.
 **Songs** (5): the title, and one for each zone (8.1), looping. Channel 1 is kept for
 sound effects. The effect numbers are in `SFX` in the code.
 
+**Lead levels** (after two rounds of player feedback: a louder, wobbly section of notes, then the title's lead at
+8 s): the leads are quiet pulses with no vibrato and soft entrances (pulse25 at volume 5 or 6, pulse50 at 5), and the kick
+and snare are 12 and 10. The lead alone is 0.04 to 0.05 RMS, about 0.5 to 0.7 of the mix, entering up to 1.2x
+(1.4x in the temple); the first version was 0.08 to 0.13, 0.8 to 0.9 of the mix, up to 2.4x. These numbers became the limits of
+`tools/devkit/music/loud.mjs --check`.
+
 **Effects on a channel with their voice** (v1.1): the channel decides the voice, so an effect with noise in it
 sounds like noise only on a noise channel. The shield break (11), the rock landing (14), the scorpion's skitter (22) and each step's tick (23) play on channel 4 (noise) through the `SFX_VOICE_CH` table and `sfxv()` in the code; every other effect plays on
 channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sounded like pulse tones. A noise effect

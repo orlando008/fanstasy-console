@@ -11,7 +11,8 @@
 //   2. the source packs to exactly the committed carts/<name>.nova (it is repacked, so a failure here is fixed
 //      in your tree: commit it)
 //   3. tools/check.js: limits, voices, the PNG cart holding exactly the packed cart, the spec
-//   4. tools/devkit/soak.mjs: 3,000 frames of random play
+//   4. tools/devkit/soak.mjs: 3,000 frames of random play; and tools/devkit/music/loud.mjs --check: the songs' levels, the
+//      lead's loudness and entrance (a warning only for the carts listed in LEGACY_LOUD: the chiptune demo)
 //   5. tools/test.js: the cart's test scripts, if tests/carts/<name>/ exists (skipped by --fast)
 // and once, first: tools/check-docs.js (the documentation mentions only files that exist)
 // A change under src/ (the console itself) or tools/devkit/ selects every cart. CI runs this on pull requests.
@@ -54,6 +55,9 @@ console.log(`${docs.status ? 'FAIL' : 'ok  '} tools/check-docs.js (the documenta
 if (docs.status) console.log(docs.stdout.trim().split('\n').map((l) => `       ${l}`).join('\n'));
 if (!carts.size) { console.log('Nothing more to verify.'); process.exit(docs.status ? 1 : 0); }
 
+// Carts whose songs are over the limits in tools/devkit/music/loud.mjs and are left as they are (the chiptune demo is
+// a loud sound test), so for them the check only warns. The games were brought within the limits by lower-leads.mjs.
+const LEGACY_LOUD = ['chiptune'];
 const node = (...a) => spawnSync('node', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 });
 let failed = 0;
 const report = [];
@@ -87,6 +91,12 @@ for (const name of [...carts].sort()) {
 
   step('tools/check.js', () => { const r = node('tools/check.js', name); return { ok: !r.status, text: r.stdout.split('\n').filter((l) => /ERROR|warning/.test(l)).join('\n') || r.stderr, note: `${(r.stdout.match(/warning/g) || []).length} warnings` }; });
   step('soak (3,000 frames of random play)', () => { const r = node('tools/devkit/soak.mjs', `carts/${name}.nova`, '--frames', '3000', '--seeds', '1'); return { ok: !r.status, text: r.stdout + r.stderr }; });
+  step('music levels (loud.mjs --check)', () => {
+    const r = node('tools/devkit/music/loud.mjs', `carts/${name}.nova`, '--check');
+    const text = r.stdout.split('\n').filter((l) => /<--|over the limits/.test(l)).join('\n') || r.stderr;
+    if (r.status && LEGACY_LOUD.includes(name)) return { ok: true, note: 'legacy audio over the limits: warning only', text };
+    return { ok: !r.status, text };
+  });
   if (existsSync(join(ROOT, 'tests', 'carts', name))) {
     if (fast) console.log('skip tests (--fast)');
     else step('tools/test.js', () => { const r = node('tools/test.js', name); return { ok: !r.status, text: r.stdout + r.stderr, note: (r.stdout.match(/\((\d+) checks\)/) || [])[1] + ' checks' }; });

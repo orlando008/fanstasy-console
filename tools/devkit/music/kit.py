@@ -22,8 +22,9 @@ Pitch names are 'A4', 'C#5', 'Bb4'; in effects they are 'C-5' style as in the ed
 in a line ('1', '3', '5', '8', with ' for an octave up) is a chord tone of that bar's chord.
 
 Level rules learned the hard way (a lead that is loud, wobbly or sharp is what players complain about):
-leads are pulse25 or pulse50 at volume 5 to 7 with no vibrato; drums kick 12 and snare 10 of 15; check
-the result with loud.mjs and clash.py.
+leads are pulse25 or pulse50 at volume 4 to 6 with no vibrato; drums kick 12 and snare 10 of 15; check
+the result with `loud.mjs --check` (the lead alone at most 0.07 RMS and 0.75 of the mix, no jump of more than 1.5x where
+it enters) and clash.py.
 """
 import base64, json, math, random, sys
 

@@ -834,7 +834,7 @@
     {"wave":"sample","sample":0,"a":0,"d":0,"s":15,"r":0,"vol":12,"vib":[0,0],"pan":null},
     {"wave":"sample","sample":1,"a":0,"d":0,"s":15,"r":0,"vol":10,"vib":[0,0],"pan":null},
     {"wave":"saw","a":1,"d":10,"s":6,"r":8,"vol":5,"vib":[1,5],"pan":0.3},
-    {"wave":"pulse50","a":3,"d":16,"s":12,"r":10,"vol":5,"vib":[0,0],"pan":null},
+    {"wave":"pulse50","a":3,"d":16,"s":12,"r":10,"vol":4,"vib":[0,0],"pan":null},
     {"wave":"pulse25","a":0,"d":6,"s":10,"r":6,"vol":5,"vib":[0,0],"pan":-0.1},
     {"wave":"pulse25","a":6,"d":20,"s":10,"r":12,"vol":6,"vib":[0,0],"pan":-0.15},
     {"wave":"saw","a":0,"d":3,"s":2,"r":1,"vol":5,"vib":[0,0],"pan":0.25},

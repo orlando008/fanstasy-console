@@ -1,6 +1,6 @@
 # Planet Racers: Cart Specification
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Complete: all seven steps of the plan (15) are built, and the cart is released as `carts/planet-racers.nova.png`
 **Cart source:** `carts/src/planet-racers/` → `carts/planet-racers.nova`
 
@@ -361,6 +361,11 @@ sounds like noise only on a noise channel. The drift skid (9) plays on channel 4
 channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sounded like pulse tones. A noise effect
 briefly mutes the music's channel 4 while it plays. (`tools/check.js` and `tools/devkit/soak.mjs` check this; see
 `docs/dev/playbook.md`, section 5.)
+
+**Lead levels** (v1.2, after players found the leads loud and wobbly): the lead instruments have no vibrato and their
+volumes were lowered so that the lead alone is at most 0.05 RMS in its loudest section (it was 0.061 to 0.122), which is
+about half the mix (it was 0.7 to 0.9), with the mix rising no more than 1.4x where the lead comes in. One lead instrument was also used by an effect, so it was copied (instrument 24) and the effect did not change. Done with
+`tools/devkit/music/lower-leads.mjs` (the games have no audio script); `tools/devkit/music/loud.mjs --check` holds the limits.
 
 **No engine sound.** The cart API can't change a sound's pitch while it plays,
 so there is no revving engine. The music and the effects carry the speed.

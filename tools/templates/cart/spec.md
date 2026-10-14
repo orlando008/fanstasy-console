@@ -59,7 +59,9 @@ TODO.
 ## 11. Audio
 
 Songs: 0 the title, 1 the game. Channel 1 is for effects (the songs only carry the tempo on it); effects with noise
-play on channel 4. TODO: the rest of the songs and effects, the cues (which song where), the levels (playbook section 5).
+play on channel 4. TODO: the rest of the songs and effects, the cues (which song where). Levels: the lead alone at most
+0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x where it enters (`node tools/devkit/music/loud.mjs
+carts/{{NAME}}.nova --check`; playbook section 5).
 
 ## 12. Video layers
 

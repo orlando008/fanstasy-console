@@ -545,7 +545,7 @@ built in HTML like the editor, not inside the console.
 │   ├── release.js          # Label (F7), .nova.png export, Library index and checks in headless Chromium
 │   ├── check-docs.js       # Documentation may only mention files that exist
 │   ├── templates/cart/     # The starter's files ({{NAME}}, {{TITLE}} placeholders)
-│   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader, song toolkit (music/)
+│   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader; music/: song toolkit, loudness, lead lowering
 ├── docs/
 │   ├── SPEC.md             # This document (the cart-facing API is section 8)
 │   ├── carts/<name>.md     # Each game's specification, with its build notes
@@ -563,7 +563,7 @@ built in HTML like the editor, not inside the console.
 - The console itself is validated by syntax only: CI runs `node --check` on every `.js` file in `src/`.
 - Carts are validated by tools (docs/dev/playbook.md): `tools/check.js` (limits, voices, the PNG cart, the spec),
   `tools/devkit/soak.mjs` (random play), `tools/new-cart.js --selftest` and `tools/verify.js` (the carts a pull request
-  changes, with their tests). `tools/check-docs.js` keeps the documentation's file references true.
+  changes, with their tests). `tools/check-docs.js` keeps the documentation's file and tool-flag references true.
 
 ```yaml
 name: check

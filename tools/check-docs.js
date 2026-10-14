@@ -1,11 +1,12 @@
-// Dev tool: check that the documentation refers only to files that exist, so it does not rot.
+// Dev tool: check that the documentation refers only to files and tool flags that exist, so it does not rot.
 //
 //   node tools/check-docs.js
 //
 // Scans README.md, CLAUDE.md, docs/**/*.md and the header comments of tools/**/*.{js,mjs,py} for paths that start
 // with tools/, tests/, carts/, docs/ or src/ (in backticks or plain text) and reports the ones that do not exist.
 // A path with a placeholder (<name>, {{NAME}}, a glob, "...") is skipped, and so are a few names used as examples
-// (see EXAMPLES). CI runs it; verify.js runs it too.
+// (see EXAMPLES). On a line of a .md file that runs `node tools/<tool>`, every --flag must also appear in that tool's
+// source. CI runs it; verify.js runs it too.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -45,5 +46,17 @@ for (const file of files) {
     bad++;
   }
 }
-console.log(bad ? `\n${bad} reference(s) to files that do not exist` : `ok: ${files.length} files, every path they mention exists`);
+// Flags: on a line that runs `node tools/<tool>`, every --flag must appear in that tool's source.
+const sources = new Map();
+for (const file of files.filter((f) => f.endsWith('.md'))) {
+  readFileSync(file, 'utf8').split('\n').forEach((line, n) => {
+    const m = /node (tools\/[A-Za-z0-9_./-]+\.(?:js|mjs))/.exec(line);
+    if (!m || !existsSync(join(ROOT, m[1]))) return;
+    if (!sources.has(m[1])) sources.set(m[1], readFileSync(join(ROOT, m[1]), 'utf8'));
+    for (const f of line.slice(m.index).matchAll(/(?<![\w-])(--[a-z][a-z-]*)/g)) {
+      if (!sources.get(m[1]).includes(f[1])) { console.log(`${relative(ROOT, file)}:${n + 1}: ${m[1]} has no flag ${f[1]}`); bad++; }
+    }
+  });
+}
+console.log(bad ? `\n${bad} problem(s) in the documentation` : `ok: ${files.length} files, every path and every tool flag they mention exists`);
 process.exit(bad ? 1 : 0);

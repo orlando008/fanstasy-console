@@ -3,7 +3,8 @@
 # Two songs (0 the title, 1 the game) and the effects numbered as SFX in code.js. Written with the song
 # toolkit (tools/devkit/music/kit.py; its header explains the bar() arguments). Rules (playbook section 5):
 # leads are quiet pulses with no vibrato; channel 1 is for effects; the drums are samples on channel 5.
-# After a change: node tools/devkit/music/loud.mjs carts/{{NAME}}.nova and clash.py on the json.
+# After a change: node tools/devkit/music/loud.mjs carts/{{NAME}}.nova --check (levels; the lead alone must stay at most
+# 0.07 RMS and 0.75 of the mix) and python3 tools/devkit/music/clash.py on the json.
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/music'))
 from kit import *

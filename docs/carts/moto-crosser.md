@@ -196,7 +196,7 @@ only use it for the tempo), 2 the bass, 3 the saw (arpeggios and off-beat chords
 and the noisy effects, and 5 the drums. The kick, snare and both hi-hats are samples (4 samples,
 7 KB of the 16 KB Sample RAM), so the songs never touch channel 4.
 
-**Songs** (5), each about 25 seconds and looping, with a quiet, steady lead (pulse at volume 5 to 7,
+**Songs** (5), each about 25 seconds and looping, with a quiet, steady lead (pulse at volume 4 to 7,
 no vibrato) that comes in after a bar-length intro of bass, arpeggio and drums:
 
 | Song | Where | Key and tempo |
@@ -584,6 +584,10 @@ the landing.
        console; **PNG cart** `carts/moto-crosser.nova.png` (the cart and its label in one image,
        exported from the console and decoded again to check that it is identical to the packed cart);
        the Library entry (`node tools/library.js`) and a row in the README.
+     - **Music levels** (after the lead check was added to `tools/devkit/music/loud.mjs`): Night Mountain's lead
+       was the loudest of the five (0.054 RMS, 0.76 of the mix, the mix jumping 1.53x where it enters, against 0.65
+       and 1.2 to 1.3x for the others), so its BRASS instrument went from volume 5 to 4: 0.043, 0.68 and 1.38x. All
+       five songs are now within the limits (`node tools/devkit/music/loud.mjs carts/moto-crosser.nova --check`).
    - **Results:** a bot player over 8 to 12 seeds for each track at skills 0.95 to 1.0 finishes
      every race with every rival over the line (none stuck), the 0.97 bot averages 3rd (track 1),
      4th (track 2) and 3rd (track 3), and a 0.9 bot is 4th or worse; the checks from steps 1 to 7

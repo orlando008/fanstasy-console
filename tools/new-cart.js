@@ -53,7 +53,7 @@ Next:
   2. Replace the placeholder game: updatePlay and drawPlay in code.js (and the SFX, SONG tables, audio.py).
   3. node tools/pack.js carts/src/${name} carts/${name}.nova, then node tools/verify.js (checks, soak, tests; --fast skips the tests)
   4. node tools/devkit/smoke.mjs ${name} (the real console), node tools/devkit/sweep.mjs ${name} (the bot over many seeds)
-  5. node tools/devkit/tiles.mjs / shots.mjs to look at your art; node tools/devkit/music/loud.mjs to measure your music
+  5. node tools/devkit/tiles.mjs / shots.mjs to look at your art; node tools/devkit/music/loud.mjs --check to measure your music (the lead's level)
   6. Play it yourself: serve the repo (python3 -m http.server) and open /?cart=${name}
   7. Commit and push after each step; when it is finished: node tools/release.js ${name}, the README row.`);
 }
@@ -69,7 +69,8 @@ async function selftest() {
     console.log(run('node', 'tools/test.js', name));
     console.log(run('node', 'tools/devkit/soak.mjs', `carts/${name}.nova`, '--frames', '3000', '--seeds', '1'));
     console.log(run('node', 'tools/devkit/sweep.mjs', name, '--seeds', '3'));
-    console.log('\nthe starter scaffolds, packs, passes its checks, its tests, a soak run and a sweep');
+    console.log(run('node', 'tools/devkit/music/loud.mjs', `carts/${name}.nova`, '--check').split('\n').slice(-2).join('\n'));
+    console.log('\nthe starter scaffolds, packs, passes its checks, its tests, a soak run, a sweep and the music levels');
     return 0;
   } catch (e) {
     console.error(String(e.stdout || ''), String(e.stderr || ''), e.message);

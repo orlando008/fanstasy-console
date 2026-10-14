@@ -149,7 +149,7 @@ node tools/devkit/smoke.mjs <name>                               # the cart in t
 node tools/devkit/sweep.mjs <name> --seeds 8                     # the cart's bot over many seeds: balance, stuck states
 node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300   # screenshots without a browser
 node tools/devkit/tiles.mjs carts/<name>.nova out.png --from 0   # a contact sheet of tiles with their numbers
-node tools/devkit/music/loud.mjs carts/<name>.nova               # loudness of each song
+node tools/devkit/music/loud.mjs carts/<name>.nova --check       # each song's level, and the lead's loudness and entrance
 ```
 
 The song toolkit (`tools/devkit/music/kit.py`) and the headless test harness (`tools/devkit/harness.mjs`) are

@@ -241,6 +241,11 @@ Top 16 px of the overlay:
 
 ## 11. Audio
 
+**Lead levels** (v1.2, after players found the leads loud and wobbly): the lead instruments have no vibrato and their
+volumes were lowered so that the lead alone is at most 0.05 RMS in its loudest section (it was 0.080 to 0.087 (the short last song included)), which is
+about half the mix (it was 0.7 to 0.9), with the mix rising no more than 1.4x where the lead comes in. The second lead instrument was only in the short last song. Done with
+`tools/devkit/music/lower-leads.mjs` (the games have no audio script); `tools/devkit/music/loud.mjs --check` holds the limits.
+
 **Songs** (Music tab). They're built on the music of the *Summit Rush* animated series (`orlando008/summit-rush`, `engine/audio.js`). Its main theme is `hero`, 140 bpm over C–G–Am–F:
 - A 25% pulse lead in a dotted 3-3-4-2-4 rhythm: E5 G5 C6, B5 G5.
 - A root, fifth and octave bass, and 16th-note chord arpeggios on a 12.5% pulse.
