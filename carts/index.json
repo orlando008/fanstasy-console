@@ -17,6 +17,14 @@
       "png": "carts/block-wizard.nova.png"
     },
     {
+      "name": "moto-crosser",
+      "title": "Moto Crosser",
+      "author": "NOVA-16",
+      "description": "An Excitebike-style dirt-bike racer: race five rivals down four lanes over ramps, hurdles, mud, arrows and cooling pads, hold the turbo without overheating the engine, and win the three-track Championship with a song for every track.",
+      "label": "carts/labels/moto-crosser.png",
+      "png": "carts/moto-crosser.nova.png"
+    },
+    {
       "name": "planet-racers",
       "title": "Planet Racers",
       "author": "NOVA-16",

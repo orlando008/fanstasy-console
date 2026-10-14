@@ -1,7 +1,7 @@
 # Moto Crosser: Cart Specification
 
-**Version:** 0.8 (draft)
-**Status:** In progress: steps 1 to 7 of the plan (15) are built
+**Version:** 1.0
+**Status:** Complete: all 8 steps of the plan (15) are built; released as the PNG cart `carts/moto-crosser.nova.png`
 **Cart source:** `carts/src/moto-crosser/` → `carts/moto-crosser.nova`
 
 ---
@@ -147,8 +147,9 @@ same table.
 ## 7. Rivals
 
 Five CPU riders (red, yellow, green, blue and purple; the player is white). Each has a
-skill for each track, so the field is spread from about 92% to 102% of the speed a clean
-player can hold without turbo. They:
+skill for each track, so the field is spread from about 90% to 100% of the speed a clean
+player can hold without turbo on the first track, rising to 92.5% to 102.5% on the third
+(see step 8). They:
 
 - Pick a lane that is clear of hurdles and mud ahead of them, and change when it is not.
 - Take ramps, and land well or badly by their skill, so that now and again a rival crashes.
@@ -172,7 +173,7 @@ crashes it.
 | Event | Points |
 |---|---|
 | Place in a race | 1st 10,000; 2nd 7,000; 3rd 5,000; 4th 3,000; 5th 2,000; 6th 1,000 |
-| Time bonus | 100 for every second under the track's par time (par is 53, 67 and 80 seconds; it was 20, which was too little to matter beside the places) |
+| Time bonus | 100 for every second under the track's par time (par is 58, 72 and 87 seconds, a little over the best a clean run manages; it was 20 seconds, which was too little to matter beside the places) |
 | Clean race | 1,000 for a race without a crash |
 
 The championship score is the sum over the races. **Records** shows each track's best
@@ -563,6 +564,30 @@ the landing.
        0.07.
 8. **Balance and polish:** speeds, rival skills, heat rates, track layouts, checked with
    the automatic player; a label, the PNG cart and the Library.
+   - **Built:**
+     - **A bug found by the bot:** a rival that crashed on the third bump of the first track sat there
+       for ever. A bike held at a standstill on a slope as steep as 0.39 (the bump's middle, the large
+       ramp's face) could not climb it, because the pull of the slope (0.08 times the slope) was
+       more than the gas (0.029 a frame). This could happen to the player too, after a crash.
+       Now a bike with the gas held and under 0.5 px a frame is pulled back by at most 60% of its
+       acceleration, so it always creeps up and over.
+     - **Rivals** are a little slower: ratings are now 0.985, 0.955, 0.925, 1.005 and 0.905 on the
+       first track, 0.995 to 0.915 on the second and 1.005 to 0.925 on the third (they were 0.02 to
+       0.03 higher). A perfect run now wins most races on the first track and about half on the
+       third; a player 3% off the pace is usually 3rd to 4th, which is the cut for the
+       Championship. The ratings also set how often a rival misjudges a landing, so the slower
+       ones crash a little more.
+     - **Par times** are 3,500, 4,300 and 5,200 frames (58, 72 and 87 s), so a clean win earns a
+       few hundred points in time bonus, where it used to earn none.
+     - **Label:** the title screen (the logo, the menu and the bikes riding along), by F7 in the
+       console; **PNG cart** `carts/moto-crosser.nova.png` (the cart and its label in one image,
+       exported from the console and decoded again to check that it is identical to the packed cart);
+       the Library entry (`node tools/library.js`) and a row in the README.
+   - **Results:** a bot player over 8 to 12 seeds for each track at skills 0.95 to 1.0 finishes
+     every race with every rival over the line (none stuck), the 0.97 bot averages 3rd (track 1),
+     4th (track 2) and 3rd (track 3), and a 0.9 bot is 4th or worse; the checks from steps 1 to 7
+     all pass, with a check added that a bike at a standstill on the steepest part of a bump, hill,
+     medium ramp and large ramp gets going (it fails without the fix, on the bump and the large ramp).
 
 ## 16. Open questions
 
