@@ -1,7 +1,7 @@
 # Moto Crosser: Cart Specification
 
-**Version:** 0.3 (draft)
-**Status:** In progress: steps 1 and 2 of the plan (15) are built
+**Version:** 0.4 (draft)
+**Status:** In progress: steps 1 to 3 of the plan (15) are built
 **Cart source:** `carts/src/moto-crosser/` → `carts/moto-crosser.nova`
 
 ---
@@ -316,6 +316,47 @@ the landing.
 3. **Rivals and races:** five CPU riders (lanes, jumps, turbo, contact), places, the progress
    strip, the finish and results. **Prove:** with a fixed seed a race is repeatable, rivals
    crash now and then and finish in a spread, and a bot player can win and lose.
+   - **Built:**
+     - **The field:** five rivals, red, yellow, green, blue and purple, with speed ratings
+       of 1.00, 0.97, 0.94, 1.02 and 0.92 (the rating scales their cruising and turbo speeds).
+       The grid has the player (white) in lane 2 of the front row, blue, red and yellow in the other
+       three lanes there, and green and purple a bike length (36 px) behind, so the
+       quicker riders start in front. Each rival has its own start delay of 4 to 19 frames after GO.
+     - **How a rival rides:** it looks ahead 40 px plus 45 times its speed and gives each lane a
+       cost: a hurdle 600, mud 90, a down ramp 200, a ramp 40 (or −15 for a daring rival, one
+       in four), an arrow −50, a cooling pad −45 (if hot), a slower bike in the way 35, and 15 for
+       each lane to move. Every 6 frames it steps toward the cheapest lane. It uses turbo
+       when it is not cooling, in mud or on a slope, stops at 85% heat, and starts again at 55%.
+       Off a ramp it works out where it will land, then, by its skill, tilts to land clean (most
+       of the time), rough (2 steps off) or in a crash (3 steps off): a crash chance of
+       10% for the weakest and 1% for the best, a rough one of 25% and 5%.
+     - **Catching up:** a rival 1,000 px or more behind the leader goes 4% faster. Nobody slows
+       down for the leader.
+     - **Contact:** a bike within 24 px behind another in its lane loses 30% of its speed, at most
+       every 20 frames, and the bike ahead is shoved into a free neighbouring lane if there is
+       one (if not, the rear bike stays held up). A bike that lands on another crashes it.
+       Bikes in the air (over 6 px up) do not touch.
+     - **Places and the finish:** first place is the first over the line, then the others by
+       distance. When the player crosses, the bike coasts for 2½ seconds and the results card
+       comes up with the standings so far. Rivals still riding keep going, and the places are final
+       when all are over the line or 10 seconds after the player. START works only then, and
+       starts a new race with a new seed (RESTART RACE in the pause keeps the seed, for the
+       same race again).
+     - **HUD and sound:** `POS 3/6`, and the progress strip has a mark for each rider in their
+       colour (the player's is the big white one). A rival is only heard when it is within 130 px
+       of the player.
+   - **Results:** a script of 38 checks passes; the 37 and 46 from steps 1 and 2 still pass.
+     - The grid, nobody moving before GO, the rivals getting away within a second; the
+       same seed giving the same race to the frame and another seed a different one, and the
+       pause's restart keeping the seed; over 6 races by a bot player the rivals finish in
+       order of their skill (rank correlation 0.9), spread from 7% to 13% from first to last of them,
+       with 4 crashes among them, and everyone finishing.
+     - A strong bot player (skill 1.06) won all 3 races; a weak one (0.82) was 5th or 6th in 3.
+     - Contact, shoving, landing on a bike; places by distance and by finish; the results
+       staying provisional until final, 10 seconds after the player; the strip's marks in the right
+       colours at the right places; rivals only heard near the player.
+     - With six riders a frame takes 1.5 ms on average and 3.2 ms at the 99th percentile. No
+       errors in the browser.
 4. **The three tracks:** the track authoring script and the streaming of the map, the
    three tracks. **Prove:** each track's checks pass and the bot finishes each.
 5. **Flow:** title, track select, the two modes, qualifying, the podium, saved times and the

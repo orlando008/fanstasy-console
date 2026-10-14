@@ -1,8 +1,8 @@
 // Moto Crosser: a dirt-bike racer in the style of Excitebike (docs/carts/moto-crosser.md).
-// So far (steps 1-2): a four-lane test course that scrolls past a camera that keeps the bike a third
+// So far (steps 1-3): a four-lane test course that scrolls past a camera that keeps the bike a third
 // of the way across, the bike with gas, turbo and lane changes, ramps, bumps and hills with jumps and
-// landings, hurdles, mud, arrow strips, cooling pads and the engine's heat, the starting lights and
-// gate, a timer, the finish line, a results card and a pause.
+// landings, hurdles, mud, arrow strips, cooling pads and the engine's heat, five CPU riders, the starting
+// lights and gate, places, a timer, the finish line, a results card with the standings and a pause.
 
 // --- Layout (SPEC 4) ---
 
@@ -30,15 +30,24 @@ const START_X = 120, GATE_COL = 18, TRACK_LEN = 4000; // the bike's centre on th
 const FINISH_X = START_X + TRACK_LEN, FIN_COL = FINISH_X >> 3;
 const CARD_FRAMES = 120, LIGHTS = [30, 70, 110], GO_FRAME = 150, STALL = 30, FINISH_COAST = 150;
 const BIKE_HALF = 16; // half the bike's width, for the finish
+const ROW_GAP = 36; // the second row of the grid is this far behind
+const SKILLS = [1.00, 0.97, 0.94, 1.02, 0.92]; // the rivals' speed ratings (red, yellow, green, blue, purple): how fast they hold the speed targets
+const RIVAL_NAMES = ['YOU', 'RED', 'YELLOW', 'GREEN', 'BLUE', 'PURPLE'];
+const GRID = [[2, 0], [3, 0], [1, 1], [0, 0], [2, 1]]; // the rivals' starting [lane, row], red to purple; the player is in lane 1 of the front row, and the quicker riders start in front
+const CATCH_UP_DIST = 1000, CATCH_UP = 1.04; // a rival this far behind the leader goes 4% faster
+const CONTACT_DX = 24, CONTACT_HIT = 20, CONTACT_SLOW = 0.7; // bikes touch when this close; the rear one keeps 70% of its speed
+const SETTLE_FRAMES = 600; // riders who haven't finished 10 s after the player are placed by distance
+const AI_LOOK = 40, AI_LOOK_V = 45; // how far ahead a rival looks: this plus this times its speed
 
 // --- Colours (BG palette 7, for the overlay) ---
 
-const BLACK = 113, WHITE = 114, GOLD = 115, RED = 116, CYAN = 117, PANEL = 118, GREEN = 119, DIM = 120, ORANGE = 121, DUST = 126, DUST2 = 127;
+const BLACK = 113, WHITE = 114, GOLD = 115, RED = 116, CYAN = 117, PANEL = 118, GREEN = 119, DIM = 120, ORANGE = 121, DUST = 126, DUST2 = 127, PURPLE = 99;
+const RIDER_COLOURS = [WHITE, RED, GOLD, GREEN, CYAN, PURPLE]; // each rider's colour in the HUD, as on the track
 const SHADES = { [GOLD]: [123, 124], [GREEN]: [125, 119], [RED]: [97, 98], [WHITE]: [PANEL, WHITE] }; // [side, shine]
 
 // --- Sound ---
 
-const SFX = { beep: 0, go: 1, finish: 2, buzz: 3, select: 4, move: 5, pause: 6, takeoff: 7, land: 8, rough: 9, crash: 10, mud: 11, arrow: 12, cool: 13, overheat: 14, restart: 15 };
+const SFX = { beep: 0, go: 1, finish: 2, buzz: 3, select: 4, move: 5, pause: 6, takeoff: 7, land: 8, rough: 9, crash: 10, mud: 11, arrow: 12, cool: 13, overheat: 14, restart: 15, bump: 16 };
 const SFX_CH = 1;
 function fx(n) { sfx(n, SFX_CH); }
 
@@ -55,9 +64,21 @@ let riders = []; // the player is riders[0]
 let parts = []; // dust
 let paused = false, pauseSel = 0;
 let prevMask = 0, inputMask = 0;
+let seed = 1, raceSeed = 1; // the race's own generator, so a race can be replayed
+let order = []; // the riders' indexes, first place first
+let autoPlayer = false; // the player's bike rides itself (for tests)
 
-function newRider(x, lane) {
-  return { x, lane, tl: lane, v: 0, z: 0, vz: 0, air: false, pitch: 0, pt: 0, heat: 0, push: false, boost: 0, noHeat: 0, crash: 0, crashes: 0, pad: null, turbo: false, mud: false };
+function rng() {
+  seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
+  return seed >>> 0;
+}
+
+function newRider(x, lane, pal) {
+  const skill = pal ? SKILLS[pal - 1] : 1;
+  return {
+    x, lane, tl: lane, v: 0, z: 0, vz: 0, air: false, pitch: 0, pt: 0, heat: 0, push: false, boost: 0, noHeat: 0, crash: 0, crashes: 0, pad: null, turbo: false, mud: false,
+    pal, skill, k: skill, delay: pal ? 4 + (rng() & 15) : 0, fin: false, finishT: 0, hit: 0, cool: false, aiAir: false, aiPitch: 0, daring: pal ? (rng() & 3) === 0 : false,
+  };
 }
 
 function init() {
@@ -184,9 +205,13 @@ function streamTo(last) {
 
 // --- Starting a race ---
 
-function startRace(withCard) {
-  riders = [newRider(START_X, 1)];
+function startRace(withCard, newSeed = true) {
+  if (newSeed) raceSeed = rndi(1, 0x7fffffff);
+  seed = raceSeed;
+  riders = [newRider(START_X, 1, 0)];
+  GRID.forEach(([lane, row], k) => riders.push(newRider(START_X - row * ROW_GAP, lane, k + 1)));
   raceT = 0; finishT = 0; falseStart = false; stall = 0; gateDown = false; parts = []; paused = false;
+  standings();
   camX = START_X - CAM_OFF;
   filled = -1; streamTo((camX >> 3) + 40);
   state = withCard ? 'card' : 'grid'; timer = 0;
@@ -196,7 +221,10 @@ function startRace(withCard) {
 // --- The bike (SPEC 5) ---
 
 /** One frame for a bike: lane changes, then speed and heat on the ground (or the air's pitch), then movement and the ground. inp: { gas, turbo, up, down, left, right }. */
+const rfx = (r, n) => { if (r === riders[0] || Math.abs(r.x - riders[0].x) < 130) fx(n); }; // a rival is only heard when it is near the player
+
 function updateRider(r, inp) {
+  if (r.hit > 0) r.hit--;
   if (r.crash === 0) {
     if (inp.up) r.tl = Math.max(0, r.tl - 1);
     if (inp.down) r.tl = Math.min(LANES - 1, r.tl + 1);
@@ -218,7 +246,7 @@ function updateRider(r, inp) {
     const zf = r.z + r.vz - G; // where the bike would be if it flew on
     if (r.v > 0.3 && h < zf - TAKEOFF_EPS) { // the ground fell away: take off
       r.air = true; r.z = zf; r.vz -= G; r.pitch = slopeStep(r.vz / Math.max(0.1, r.v)); r.pt = PITCH_FRAMES - 1;
-      fx(SFX.takeoff);
+      rfx(r, SFX.takeoff);
     } else {
       r.vz = h - r.z; r.z = h; r.pitch = slopeStep(slopeAt(lane, r.x));
       pickUp(r, lane);
@@ -237,7 +265,7 @@ function updateRider(r, inp) {
 function rideOnGround(r, inp, lane) {
   const gas = inp.gas, turbo = gas && inp.turbo && !r.mud;
   r.turbo = turbo;
-  let target = gas ? (turbo ? TURBO : CRUISE) : 0;
+  let target = gas ? (turbo ? TURBO : CRUISE) * r.k : 0;
   if (r.boost > 0) target = Math.max(target, BOOST);
   if (r.mud) target = Math.min(target, MUD_CAP);
   const fast = turbo || r.boost > 0;
@@ -251,14 +279,14 @@ function rideOnGround(r, inp, lane) {
   if (turbo) { if (r.noHeat === 0) r.heat = Math.min(100, r.heat + HEAT_RATE); }
   else r.heat = Math.max(0, r.heat - COOL_RATE);
   if (r.noHeat > 0) r.noHeat--;
-  if (r.heat >= 100) { r.push = true; r.boost = 0; r.v = Math.min(r.v, 1.5); fx(SFX.overheat); }
+  if (r.heat >= 100) { r.push = true; r.boost = 0; r.v = Math.min(r.v, 1.5); rfx(r, SFX.overheat); }
 }
 
 /** The engine is dead: the rider pushes the bike, which cools until the engine can start again. */
 function pushBike(r) {
   r.v += (PUSH_SPEED - r.v) * 0.2;
   r.heat = Math.max(0, r.heat - PUSH_COOL);
-  if (r.heat <= RESUME_HEAT) { r.push = false; fx(SFX.restart); }
+  if (r.heat <= RESUME_HEAT) { r.push = false; rfx(r, SFX.restart); }
 }
 
 /** Arrow strips give a boost, and cooling pads cool the engine (once as the bike goes over them). */
@@ -267,8 +295,8 @@ function pickUp(r, lane) {
   if (!o) { r.pad = null; return; }
   if (r.pad === o) return;
   r.pad = o;
-  if (o.kind === 'arrow') { r.boost = BOOST_FRAMES; fx(SFX.arrow); }
-  else { r.heat = Math.max(0, r.heat - PAD_COOL); r.noHeat = PAD_LOCK; fx(SFX.cool); }
+  if (o.kind === 'arrow') { r.boost = BOOST_FRAMES; rfx(r, SFX.arrow); }
+  else { r.heat = Math.max(0, r.heat - PAD_COOL); r.noHeat = PAD_LOCK; rfx(r, SFX.cool); }
 }
 
 /** Landing: the bike's pitch against the ground's slope decides a clean landing, a rough one or a crash (SPEC 5.3). */
@@ -276,9 +304,10 @@ function land(r, lane, h) {
   const want = slopeStep(slopeAt(lane, r.x)), diff = Math.abs(r.pitch - want);
   r.air = false; r.z = h; r.vz = slopeAt(lane, r.x) * r.v; r.pitch = want; r.pt = 0;
   burst(r.x, baseY(r) - 2, diff >= 3 ? 12 : 6, DUST);
+  for (const b of riders) if (b !== r && b.crash === 0 && !b.air && Math.abs(b.lane - r.lane) < 0.6 && Math.abs(b.x - r.x) < 20) crash(b); // landing on a bike crashes it
   if (diff >= 3) crash(r);
-  else if (diff === 2) { r.v *= 0.75; fx(SFX.rough); }
-  else fx(SFX.land);
+  else if (diff === 2) { r.v *= 0.75; rfx(r, SFX.rough); }
+  else rfx(r, SFX.land);
 }
 
 /** Hitting a hurdle on or near the ground is a crash, in either lane while changing between them. */
@@ -293,7 +322,7 @@ function hurdles(r) {
 function crash(r) {
   r.crash = CRASH_FRAMES; r.crashes++; r.boost = 0; r.push = false; r.turbo = false;
   burst(r.x, baseY(r) - 6, 10, DUST);
-  fx(SFX.crash);
+  rfx(r, SFX.crash);
 }
 
 /** The bike slides and tumbles to a stop; then the rider remounts where it lies, at a standstill. */
@@ -325,7 +354,7 @@ function update() {
   else if (state === 'grid') updateGrid();
   else if (state === 'race') updateRace();
   else if (state === 'finish') updateFinish();
-  else if (state === 'results') { if (pressed(START) || pressed(A)) { fx(SFX.select); startRace(false); } }
+  else if (state === 'results') updateResults();
   prevMask = inputMask;
 }
 
@@ -343,25 +372,135 @@ function updateGrid() {
   }
 }
 
+const IDLE = { gas: false, turbo: false, up: false, down: false, left: false, right: false };
+
 function updateRace() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  const r = riders[0];
-  const gas = stall > 0 ? false : btn(A);
-  if (stall > 0) stall--;
-  updateRider(r, { gas, turbo: btn(B), up: pressed(UP), down: pressed(DOWN), left: btn(LEFT), right: btn(RIGHT) });
-  raceT++;
-  if (r.x + BIKE_HALF >= FINISH_X) { finishT = raceT; state = 'finish'; timer = 0; fx(SFX.finish); }
-  follow(r);
-  dust(r, gas);
+  raceStep();
 }
 
-/** Over the line: the bike coasts to a stop on its own, then the results. */
+/** Over the line: the bike coasts to a stop on its own, then the results; the other riders race on. */
 function updateFinish() {
-  const r = riders[0];
-  updateRider(r, { gas: false, turbo: false, up: false, down: false, left: false, right: false });
-  r.v = Math.max(0, r.v - 0.03);
-  follow(r); dust(r, false);
-  if (++timer >= FINISH_COAST) { state = 'results'; timer = 0; }
+  raceStep();
+  if (++timer >= FINISH_COAST) state = 'results';
+}
+
+/** The results come up with the places so far; they are final when every rider is over the line, or 10 seconds after the player. */
+const isFinal = () => riders.every((r) => r.fin) || timer >= SETTLE_FRAMES;
+function updateResults() {
+  raceStep(); timer++;
+  if (isFinal() && (pressed(START) || pressed(A))) { fx(SFX.select); startRace(false, true); }
+}
+
+/** One frame of the race: every rider (the player by the pad, the rest by their own judgement), then contact, places and the camera. */
+function raceStep() {
+  raceT++;
+  const leaderX = Math.max(...riders.map((r) => r.x));
+  riders.forEach((r, i) => {
+    let inp;
+    if (r.fin) inp = IDLE;
+    else if (i === 0 && !autoPlayer) {
+      const gas = stall > 0 ? false : btn(A);
+      if (stall > 0) stall--;
+      inp = { gas, turbo: btn(B), up: pressed(UP), down: pressed(DOWN), left: btn(LEFT), right: btn(RIGHT) };
+    } else inp = aiInput(r, i);
+    r.k = r.skill * (i > 0 && leaderX - r.x >= CATCH_UP_DIST ? CATCH_UP : 1);
+    updateRider(r, inp);
+    if (r.fin) r.v = Math.max(0, r.v - 0.03);
+    else if (r.x + BIKE_HALF >= FINISH_X) {
+      r.fin = true; r.finishT = raceT;
+      if (i === 0) { finishT = raceT; state = 'finish'; timer = 0; fx(SFX.finish); }
+    }
+  });
+  contacts();
+  standings();
+  follow(riders[0]);
+  for (const r of riders) emitDust(r);
+  moveParts();
+}
+
+/** First place first: riders over the line by their time, then the rest by how far they have got. */
+function standings() {
+  order = riders.map((_, i) => i).sort((i, j) => {
+    const a = riders[i], b = riders[j];
+    if (a.fin !== b.fin) return a.fin ? -1 : 1;
+    return (a.fin ? a.finishT - b.finishT : b.x - a.x) || i - j;
+  });
+}
+const placeOf = (i) => order.indexOf(i) + 1;
+
+/** A bike that catches the one ahead in its lane loses 30% of its speed, and the one ahead is shoved aside if it can be (SPEC 7). */
+function contacts() {
+  for (let i = 0; i < riders.length; i++) {
+    for (let j = i + 1; j < riders.length; j++) {
+      const a = riders[i], b = riders[j];
+      if (a.crash || b.crash || a.z > 6 || b.z > 6 || Math.abs(a.lane - b.lane) > 0.6) continue;
+      const rear = a.x < b.x ? a : b, front = rear === a ? b : a;
+      if (front.x - rear.x >= CONTACT_DX || rear.hit > 0) continue;
+      rear.hit = CONTACT_HIT; rear.v *= CONTACT_SLOW;
+      const free = [front.tl - 1, front.tl + 1].filter((L) => L >= 0 && L < LANES && !riders.some((q) => q !== front && q.tl === L && Math.abs(q.x - front.x) < 30));
+      if (free.length) front.tl = free.length > 1 ? free[rng() & 1] : free[0];
+      if (i === 0) fx(SFX.bump);
+    }
+  }
+}
+
+// --- The rivals (SPEC 7) ---
+
+/** How bad a lane looks to a rival: what is in it for a way ahead, and who is in the way. */
+function laneCost(r, L) {
+  const x0 = r.x - 12, x1 = r.x + AI_LOOK + r.v * AI_LOOK_V;
+  let c = Math.abs(L - r.tl) * 15;
+  for (const o of lanes[L]) {
+    if (o.x1 < x0 || o.x0 > x1) continue;
+    if (o.kind === 'hurdle') c += 600;
+    else if (o.kind === 'mud') c += 90;
+    else if (o.kind.startsWith('ramp')) c += r.daring ? -15 : 40;
+    else if (o.kind.startsWith('down')) c += 200;
+    else if (o.kind === 'arrow') c -= 50;
+    else if (o.kind === 'cool') c -= r.heat > 50 ? 45 : 0;
+    else c += 5;
+  }
+  for (const b of riders) if (b !== r && b.tl === L && b.x > r.x && b.x - r.x < 60 && b.v <= r.v + 0.2) c += 35;
+  return c;
+}
+
+/** Where a bike in the air will come down, by flying it on. */
+function predictLanding(r) {
+  const lane = Math.round(r.lane);
+  let x = r.x, z = r.z, vz = r.vz;
+  for (let t = 0; t < 200; t++) {
+    x += r.v; vz -= G; z += vz;
+    if (z <= groundH(lane, x) && vz <= 0) break;
+  }
+  return slopeStep(slopeAt(lane, x));
+}
+
+/** The pad presses for a rival this frame: gas, the turbo when the engine can take it, the lane with least in it, and the landing it means to make. */
+function aiInput(r, i) {
+  const inp = { gas: raceT >= r.delay, turbo: false, up: false, down: false, left: false, right: false };
+  if (r.crash > 0) return inp;
+  if (r.air) {
+    if (!r.aiAir) { // just took off: decide how well to land, by skill
+      r.aiAir = true;
+      const s01 = Math.max(0, Math.min(1, (r.skill - 0.92) / 0.1)), u = rng() / 4294967296;
+      const err = u < 0.10 - 0.09 * s01 ? 3 : u < 0.35 - 0.29 * s01 ? 2 : 0;
+      r.aiPitch = Math.max(-3, Math.min(3, predictLanding(r) + (rng() & 1 ? err : -err)));
+    }
+    if (r.pitch < r.aiPitch) inp.left = true; else if (r.pitch > r.aiPitch) inp.right = true;
+    return inp;
+  }
+  r.aiAir = false;
+  if (r.push) return inp;
+  if ((raceT + i * 2) % 6 === 0) { // look at the lanes ahead
+    let best = r.tl, bestC = laneCost(r, r.tl) - 12;
+    for (let L = 0; L < LANES; L++) { const c = laneCost(r, L); if (c < bestC) { bestC = c; best = L; } }
+    if (best < r.tl) inp.up = true; else if (best > r.tl) inp.down = true;
+  }
+  if (r.cool && r.heat < 55) r.cool = false;
+  if (!r.cool && r.heat >= 85) r.cool = true;
+  inp.turbo = !r.cool && !r.mud && Math.abs(slopeAt(Math.round(r.lane), r.x)) < 0.1;
+  return inp;
 }
 
 /** The camera keeps the bike a third of the way across; the track is written ahead of it. */
@@ -371,14 +510,17 @@ function follow(r) {
 }
 
 /** Dust kicked up behind a moving bike, mud thrown up in a patch, and the turbo's exhaust. */
-function dust(r, gas) {
-  const h = hash(clock * 31 + 7);
+function emitDust(r) {
+  const h = hash(clock * 31 + 7 + r.pal * 977);
   const on = !r.air && r.crash === 0 && r.v > 0.8;
-  if (on && (clock & 3) === 0) puff(r.x - 12, baseY(r) - 3 - (h & 3), -r.v * 0.4 - ((h >> 4) & 7) * 0.05, -0.25 - ((h >> 8) & 7) * 0.06, 12 + ((h >> 12) & 7), r.mud ? DUST2 : DUST);
+  if (on && ((clock + r.pal) & 3) === 0) puff(r.x - 12, baseY(r) - 3 - (h & 3), -r.v * 0.4 - ((h >> 4) & 7) * 0.05, -0.25 - ((h >> 8) & 7) * 0.06, 12 + ((h >> 12) & 7), r.mud ? DUST2 : DUST);
   if (on && r.mud && (clock & 1) === 0) puff(r.x - 8, baseY(r) - 5, -0.6 - ((h >> 4) & 3) * 0.1, -0.9 - ((h >> 8) & 3) * 0.15, 14, DUST2);
   if (r.turbo && (clock & 1) === 0) puff(r.x - 15, baseY(r) - 6 - r.z, -r.v * 0.5, -0.1 - ((h >> 6) & 3) * 0.04, 8, ORANGE);
+}
+function moveParts() {
   for (const q of parts) { q.x += q.vx; q.y += q.vy; q.vy += 0.03; q.t--; }
   parts = parts.filter((q) => q.t > 0);
+  if (parts.length > 150) parts.splice(0, parts.length - 150);
 }
 const puff = (x, y, vx, vy, t, c) => parts.push({ x, y, vx, vy, t, c });
 /** n specks thrown out in all directions, for a landing or a crash. */
@@ -396,7 +538,7 @@ function updatePause() {
   if (pressed(B) || pressed(START) && pauseSel === 0) { paused = false; fx(SFX.pause); }
   else if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (pauseSel === 0) paused = false; else startRace(false);
+    if (pauseSel === 0) paused = false; else startRace(false, false); // the same race again
   }
 }
 
@@ -408,7 +550,7 @@ function draw() {
   bgscroll(1, (camX >> 1) & 511, 0);
   bgscroll(2, (camX >> 2) & 255, 0);
   // Bikes in the lower lanes draw on top of those above them, and each bike on top of its shadow.
-  for (const r of [...riders].sort((a, b) => b.lane - a.lane)) drawRider(r);
+  for (const r of [...riders].sort((a, b) => b.lane - a.lane || (a.pal === 0 ? -1 : b.pal === 0 ? 1 : 0))) if (r.x > camX - 40 && r.x < camX + 296) drawRider(r);
   for (const q of parts) rectfill(flr(q.x - camX), flr(q.y), q.t > 8 ? 2 : 1, q.t > 8 ? 2 : 1, q.c);
   drawHud();
   if (state === 'card') {
@@ -419,12 +561,7 @@ function draw() {
   }
   if (state === 'grid' || (state === 'race' && raceT < 50)) drawLights();
   if (state === 'race' && riders[0].push && clock % 24 < 16) ctxt('ENGINE OVERHEATED!', 70, RED);
-  if (state === 'results') {
-    panel(48, 76, 160, 76);
-    big('FINISH!', 128, 82, 2, GOLD);
-    ctxt(`TIME ${fmtTime(finishT)}`, 108, WHITE);
-    if (timer % 60 < 40) ctxt('START: RACE AGAIN', 130, DIM);
-  }
+  if (state === 'results') drawResults();
   if (paused) {
     panel(72, 80, 112, 64);
     ctxt('PAUSED', 86, GOLD);
@@ -439,7 +576,7 @@ function drawRider(r) {
   else if (r.push) n = 20 + ((clock >> 3) & 1);
   else n = (r.pitch + 3) * 2 + (flr(r.x / 6) & 1);
   const [dx, dy] = BIKE_OFF[n];
-  spr(bikeTile(n), x + dx, y - 32 - flr(r.z) + dy, { size: 32, pal: 0, prio: 3 });
+  spr(bikeTile(n), x + dx, y - 32 - flr(r.z) + dy, { size: 32, pal: r.pal, prio: 3 });
   spr(bikeTile(14), x, y - 32, { size: 32, pal: 6, prio: 2 });
 }
 
@@ -456,18 +593,17 @@ function drawLights() {
 
 const fmtTime = (f) => `${flr(f / 3600)}:${String(flr(f / 60) % 60).padStart(2, '0')}.${String(flr((f % 60) * 100 / 60)).padStart(2, '0')}`;
 
-/** Time and speed, what the bike is doing, the engine's heat, and a strip showing how far along the course the bike is. */
+/** Time, speed and place, what the bike is doing, the engine's heat, and a strip showing how far along the course each rider is. */
 function drawHud() {
   const r = riders[0];
   print('TIME', 8, 3, DIM);
   print(fmtTime(state === 'race' ? raceT : finishT || 0), 48, 3, WHITE);
-  print('SPEED', 128, 3, DIM);
-  print(String(flr(r.v * 40)).padStart(3, ' '), 176, 3, WHITE);
-  if (r.crash > 0) print('CRASH', 208, 3, RED);
-  else if (r.push) { if (clock % 20 < 12) print('PUSH', 208, 3, RED); }
-  else if (r.turbo) print('TURBO', 208, 3, CYAN);
-  else if (r.boost > 0) print('BOOST', 208, 3, GOLD);
-  else if (r.mud) print('MUD', 208, 3, ORANGE);
+  print('SPD', 128, 3, DIM);
+  print(String(flr(r.v * 40)).padStart(3, ' '), 156, 3, WHITE);
+  print('POS', 192, 3, DIM);
+  print(`${placeOf(0)}/${riders.length}`, 224, 3, placeOf(0) === 1 ? GOLD : WHITE);
+  const word = r.crash > 0 ? ['CRASH', RED] : r.push ? (clock % 20 < 12 ? ['PUSH', RED] : null) : r.turbo ? ['TURBO', CYAN] : r.boost > 0 ? ['BOOST', GOLD] : r.mud ? ['MUD', ORANGE] : null;
+  if (word) txt(word[0], 8, 26, word[1]);
   // The engine's heat: green, then yellow from 60%, then red from 85%.
   print('TEMP', 8, 12, DIM);
   rect(44, 11, 100, 9, BLACK);
@@ -475,10 +611,30 @@ function drawHud() {
   const col = r.push || r.heat >= 85 ? (clock % 10 < 5 ? RED : ORANGE) : r.heat >= 60 ? GOLD : GREEN;
   rectfill(45, 12, flr(r.heat * 0.98), 7, col);
   rectfill(45 + 59, 12, 1, 7, BLACK); rectfill(45 + 83, 12, 1, 7, BLACK);
-  // How far along the course.
+  // How far along the course each rider is: the player's mark is the big one, on top.
   rectfill(152, 14, 96, 3, PANEL);
-  const f = Math.max(0, Math.min(1, (r.x - START_X) / TRACK_LEN));
-  rectfill(152 + flr(f * 91), 12, 5, 7, WHITE);
+  for (let k = riders.length - 1; k >= 0; k--) {
+    const q = riders[k], f = Math.max(0, Math.min(1, (q.x - START_X) / TRACK_LEN));
+    if (k === 0) { rectfill(152 + flr(f * 91), 12, 5, 7, BLACK); rectfill(153 + flr(f * 91), 13, 3, 5, WHITE); }
+    else rectfill(153 + flr(f * 91), 13, 3, 5, RIDER_COLOURS[q.pal]);
+  }
+}
+
+/** The finish card: your place and time, and the standings, which settle as the others cross the line. */
+function drawResults() {
+  panel(24, 54, 208, 146);
+  big('FINISH!', 128, 60, 2, GOLD);
+  const p = placeOf(0), fin = isFinal();
+  ctxt(`YOU WERE ${p}${['ST', 'ND', 'RD'][p - 1] || 'TH'}   ${fmtTime(finishT)}`, 82, WHITE);
+  order.forEach((i, k) => {
+    const q = riders[i], y = 98 + k * 11;
+    if (i === 0) rectfill(36, y - 1, 184, 10, PANEL);
+    print(`${k + 1}`, 40, y, i === 0 ? GOLD : DIM);
+    rectfill(56, y + 1, 8, 6, RIDER_COLOURS[q.pal]);
+    print(RIVAL_NAMES[i], 72, y, WHITE);
+    print(q.fin ? fmtTime(q.finishT) : fin ? '-----' : '...', 152, y, q.fin ? WHITE : DIM);
+  });
+  if (fin) { if (timer % 60 < 40) ctxt('START: RACE AGAIN', 184, GOLD); }
 }
 
 function panel(x, y, w, h) { rectfill(x, y, w, h, BLACK); rect(x, y, w, h, PANEL); }
