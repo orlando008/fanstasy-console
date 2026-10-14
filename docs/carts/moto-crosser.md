@@ -1,6 +1,6 @@
 # Moto Crosser: Cart Specification
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Complete: all 8 steps of the plan (15) are built; released as the PNG cart `carts/moto-crosser.nova.png`
 **Cart source:** `carts/src/moto-crosser/` → `carts/moto-crosser.nova`
 
@@ -601,3 +601,24 @@ the landing.
 - **Track length:** 55 to 80 seconds is short; it is as in the original, and the
   championship only takes about 4 minutes if you qualify each time. More tracks could be
   added later.
+
+## 17. Checking this cart
+
+Everything below runs from the repository root; `docs/dev/playbook.md` explains each tool.
+
+| What | Command |
+|---|---|
+| Everything changed, in one go | `node tools/verify.js moto-crosser` (`--fast` leaves out the tests) |
+| Limits, voices, the PNG cart, this spec | `node tools/check.js moto-crosser` |
+| The test scripts (about 3 minutes) | `node tools/test.js moto-crosser` |
+| Random play for exceptions, soft locks, frame time | `node tools/devkit/soak.mjs carts/moto-crosser.nova` |
+| In the real console | `node tools/devkit/smoke.mjs moto-crosser --keys Enter:300,Enter:300` |
+| Balance: the bot over many seeds | `node tools/devkit/sweep.mjs moto-crosser --seeds 8 --set track=1,2,3,skill=0.95,1` |
+| Rebuild the audio | `python3 carts/src/moto-crosser/audio.py carts/src/moto-crosser/audio.json` |
+| Release again after a code or art change | `node tools/release.js moto-crosser --keep-label` |
+
+The test scripts are in `tests/carts/moto-crosser/`, one for each build step: `01-slice.mjs` (37 checks), `02-physics.mjs` (46),
+`03-rivals.mjs` (38), `04-tracks.mjs` (40), `05-flow.mjs` (48), `06-art.mjs` (31) and `07-audio.mjs` (48, including the
+standstill-on-a-slope check from step 8). `lib.mjs` boots the cart with its variables exposed; `bot.mjs` is the
+automatic player for the sweep (the rivals' AI drives the player's bike; `skill` is the player's speed rating).
+The audio comes from `carts/src/moto-crosser/audio.py` with the song toolkit in `tools/devkit/music/kit.py`.

@@ -1,6 +1,6 @@
 # Smashy Smash: Cart Specification
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Released: all 7 steps of the plan (15) are built; also as the PNG cart `carts/smashy-smash.nova.png`
 **Cart source:** `carts/src/smashy-smash/` → `carts/smashy-smash.nova`
 
@@ -215,6 +215,13 @@ In the menus START or A goes on and B goes back (A is the game's action button).
 
 **Songs** (5): the title, and one for each world (8.1), looping. Channel 1 is kept
 for sound effects, as in our other carts.
+
+**Effects on a channel with their voice** (v1.1): the channel decides the voice, so an effect with noise in it
+sounds like noise only on a noise channel. The wall (3) and glass (4) hits play on channel 4 (noise) through the `SFX_VOICE_CH` table and `sfxv()` in the code; every other effect plays on
+channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sounded like pulse tones. A noise effect
+briefly mutes the music's channel 4 while it plays. (`tools/check.js` and `tools/devkit/soak.mjs` check this; see
+`docs/dev/playbook.md`, section 5.) Also in v1.1: the wave of instrument 27 in song 2 was declared as a pulse but sits
+on the saw channel, where it always sounded as a saw; it is now declared as a saw (the sound is unchanged).
 
 | Song | Tempo | Style |
 |---|---|---|

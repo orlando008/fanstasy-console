@@ -532,34 +532,46 @@ built in HTML like the editor, not inside the console.
 │       ├── pixels.js       # RGB555 conversion and tile-sheet drawing
 │       └── sheet-view.js   # Tile-sheet picker shared by Sprites and Map
 ├── carts/                  # Demo and game carts (.nova, .nova.png), index.json and labels/ for the Library
-├── tools/
+│   └── src/<name>/         # A cart's source: code.js, meta.json, tiles.txt, palette.txt, map.txt, audio.json (made
+│                           #   by audio.py where there is one), label.png
+├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs), its lib.mjs and its bot.mjs for the sweep tool
+├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/
-│   └── library.js          # Regenerates carts/index.json and carts/labels/
+│   ├── library.js          # Regenerates carts/index.json and carts/labels/
+│   ├── new-cart.js         # Scaffolds a new cart from templates/cart/ (--selftest checks the starter)
+│   ├── verify.js           # Verifies the carts changed since origin/main: audio, pack, checks, soak, tests
+│   ├── check.js            # Limits and common mistakes in a cart; the .nova.png must hold the packed cart
+│   ├── test.js             # Runs a cart's check scripts one at a time
+│   ├── release.js          # Label (F7), .nova.png export, Library index and checks in headless Chromium
+│   ├── check-docs.js       # Documentation may only mention files that exist
+│   ├── templates/cart/     # The starter's files ({{NAME}}, {{TITLE}} placeholders)
+│   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader, song toolkit (music/)
 ├── docs/
-│   ├── SPEC.md             # This document
-│   └── API.md              # Cart-facing API reference
+│   ├── SPEC.md             # This document (the cart-facing API is section 8)
+│   ├── carts/<name>.md     # Each game's specification, with its build notes
+│   └── dev/playbook.md     # How to build a cart: workflow, tools, limits, audio rules, traps
+├── CLAUDE.md               # Short notes for agents, pointing to the playbook
 └── .github/workflows/
-    └── check.yml           # Syntax validation
+    └── check.yml           # Syntax, cart checks, the starter's self-test, soak runs; verify on pull requests
 ```
 
 ## 13. Development conventions
 
 - Use native ES modules everywhere. Module workers and AudioWorklets need HTTP, so `file://` will not work. Serve locally with `python3 -m http.server` or any static server.
 - Deploy with GitHub Pages from the repository root on `main`.
-- Keep modules small and single-purpose. Every cart-facing API function has a JSDoc comment, and `docs/API.md` is generated or maintained from those.
-- Validation is syntax-only. CI runs `node --check` on every `.js` file:
+- Keep modules small and single-purpose. Every cart-facing API function has a JSDoc comment; the cart-facing API reference is section 8 of this document.
+- The console itself is validated by syntax only: CI runs `node --check` on every `.js` file in `src/`.
+- Carts are validated by tools (docs/dev/playbook.md): `tools/check.js` (limits, voices, the PNG cart, the spec),
+  `tools/devkit/soak.mjs` (random play), `tools/new-cart.js --selftest` and `tools/verify.js` (the carts a pull request
+  changes, with their tests). `tools/check-docs.js` keeps the documentation's file references true.
 
 ```yaml
 name: check
 on: [push, pull_request]
 jobs:
-  syntax:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20 }
-      - run: find src -name '*.js' -print0 | xargs -0 -n1 node --check
+  syntax:   # node --check on src/, tools/ and tests/; the documentation's file references
+  carts:    # check.js --all, the starter's self-test, soak.mjs --all
+  verify:   # pull requests only: tools/verify.js for the carts the PR changes
 ```
 
 ## 14. Milestones

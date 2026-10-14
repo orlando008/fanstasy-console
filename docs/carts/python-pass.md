@@ -1,6 +1,6 @@
 # Python Pass: Cart Specification
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Released: all 7 steps of the plan (15) are built, and the cart is also released as the PNG cart `python-pass.nova.png`
 **Cart source:** `carts/src/python-pass/` → `carts/python-pass.nova`
 
@@ -212,6 +212,12 @@ In the menus START or A goes on and B goes back, as in Smashy Smash.
 
 **Songs** (5): the title, and one for each zone (8.1), looping. Channel 1 is kept for
 sound effects. The effect numbers are in `SFX` in the code.
+
+**Effects on a channel with their voice** (v1.1): the channel decides the voice, so an effect with noise in it
+sounds like noise only on a noise channel. The shield break (11), the rock landing (14), the scorpion's skitter (22) and each step's tick (23) play on channel 4 (noise) through the `SFX_VOICE_CH` table and `sfxv()` in the code; every other effect plays on
+channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sounded like pulse tones. A noise effect
+briefly mutes the music's channel 4 while it plays. (`tools/check.js` and `tools/devkit/soak.mjs` check this; see
+`docs/dev/playbook.md`, section 5.)
 
 **SFX:** each step's soft tick (very quiet), fruit eaten (rising
 with the combo), golden fruit, power-up taken and ended, shield break, gate opens, level

@@ -109,22 +109,24 @@ destroy the data.
 
 ## Development
 
-Pure ES modules, no build step and no runtime dependencies. CI runs a syntax
-check on every source file:
+Pure ES modules, no build step and no runtime dependencies (the dev tools use Node 20 or later; the release and
+smoke tools use Playwright with Chromium, and the audio scripts use Python 3). CI (`.github/workflows/check.yml`)
+runs a syntax check on the console, the dev tools and the tests; checks that the documentation only mentions
+files that exist; checks every cart against the console's limits; runs the cart starter's self-test and a
+random-play soak run on every cart; and, on pull requests, verifies the carts the PR changes.
 
 ```sh
-find src -name '*.js' -print0 | xargs -0 -n1 node --check
+find src -name '*.js' -print0 | xargs -0 -n1 node --check    # the console's syntax check
 ```
 
-Demo carts are built from `carts/src/<name>/` (code, metadata, tile art and
-audio) by a Node script:
+Carts are built from `carts/src/<name>/` (code, metadata, tile art, audio and label) by a Node script:
 
 ```sh
 node tools/pack.js carts/src/hello carts/hello.nova
 ```
 
-After adding or repacking a cart, regenerate the Library's manifest
-(`carts/index.json`) and its label images (`carts/labels/`):
+After adding or repacking a cart, regenerate the Library's manifest (`carts/index.json`) and its label images
+(`carts/labels/`):
 
 ```sh
 node tools/library.js
@@ -132,20 +134,23 @@ node tools/library.js
 
 ### Making a cart
 
-`docs/dev/playbook.md` is the guide to building a game (the workflow, the limits, how to test and
-measure the audio, the traps). The tools:
+`docs/dev/playbook.md` is the guide to building a game: the workflow, the console's limits, how to test and
+measure the audio, how to see the art, and the traps. Agents start with `CLAUDE.md`. The tools:
 
 ```sh
-node tools/new-cart.js <name> "Title"      # a new cart: a working frame, tests, audio script, spec template
+node tools/new-cart.js <name> "Title"      # a new cart: a working frame, tests, bot, audio script, spec template
+node tools/verify.js                       # the carts you changed: audio, pack, checks, soak, docs, tests
 node tools/check.js <name>                 # limits and common mistakes (--all for every cart)
 node tools/test.js <name>                  # a cart's check scripts in tests/carts/<name>/
 node tools/release.js <name>               # label, .nova.png, Library entry, checks
-node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300   # screenshots without a browser
-node tools/devkit/music/loud.mjs carts/<name>.nova               # loudness of each song
+node tools/check-docs.js                   # the documentation mentions only files that exist
 node tools/devkit/soak.mjs carts/<name>.nova                     # random play: exceptions, soft locks, frame time, wrong-voice effects
 node tools/devkit/smoke.mjs <name>                               # the cart in the real console (headless Chromium)
+node tools/devkit/sweep.mjs <name> --seeds 8                     # the cart's bot over many seeds: balance, stuck states
+node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300   # screenshots without a browser
+node tools/devkit/tiles.mjs carts/<name>.nova out.png --from 0   # a contact sheet of tiles with their numbers
+node tools/devkit/music/loud.mjs carts/<name>.nova               # loudness of each song
 ```
 
-The song toolkit (`tools/devkit/music/kit.py`) and the headless test harness
-(`tools/devkit/harness.mjs`) are used by `carts/src/moto-crosser/audio.py` and
-`tests/carts/moto-crosser/`, which are the examples to start from.
+The song toolkit (`tools/devkit/music/kit.py`) and the headless test harness (`tools/devkit/harness.mjs`) are
+used by `carts/src/moto-crosser/audio.py` and `tests/carts/moto-crosser/`, which are the examples to start from.

@@ -1,6 +1,6 @@
 # Planet Racers: Cart Specification
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Complete: all seven steps of the plan (15) are built, and the cart is released as `carts/planet-racers.nova.png`
 **Cart source:** `carts/src/planet-racers/` → `carts/planet-racers.nova`
 
@@ -355,6 +355,12 @@ percussion, sampled drums), and **channel 1 is kept for sound effects**, as in B
 finish fanfare (a winner's, for first place in a race or a time-trial record, and a
 gentler one otherwise), pit, menu move, select, drift skid (repeating), boost running
 out, the floor's edge, a bump between karts, and a bumper hit.
+
+**Effects on a channel with their voice** (v1.1): the channel decides the voice, so an effect with noise in it
+sounds like noise only on a noise channel. The drift skid (9) plays on channel 4 (noise) through the `SFX_VOICE_CH` table and `sfxv()` in the code; every other effect plays on
+channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sounded like pulse tones. A noise effect
+briefly mutes the music's channel 4 while it plays. (`tools/check.js` and `tools/devkit/soak.mjs` check this; see
+`docs/dev/playbook.md`, section 5.)
 
 **No engine sound.** The cart API can't change a sound's pitch while it plays,
 so there is no revving engine. The music and the effects carry the speed.
