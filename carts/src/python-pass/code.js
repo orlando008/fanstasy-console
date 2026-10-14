@@ -172,6 +172,7 @@ function titleScene() {
 function startLevel(l, card = true) {
   level = l;
   const L = LEVELS[l];
+  play(1 + (l >> 2));
   loadScene(l);
   gate = L.gate[1] * COLS + L.gate[0]; gateOpen = false; quota = L.quota;
   // Open ground the snake can get to, found by flooding from its start (SPEC 6).
@@ -267,7 +268,7 @@ function updateHazards() {
     if (++b.t < BOULDER_TICKS) continue;
     b.t = 0; b.prev = b.c;
     let n = b.c + DX[b.dir] + DY[b.dir] * COLS;
-    if (wall[n]) { b.dir = (b.dir + 2) % 4; n = b.c + DX[b.dir] + DY[b.dir] * COLS; sfx(SFX.bounce, SFX_CH); }
+    if (wall[n]) { b.dir = (b.dir + 2) % 4; n = b.c + DX[b.dir] + DY[b.dir] * COLS; fx(SFX.bounce); }
     if (!wall[n]) b.c = n;
     if (occ[b.c] && invuln === 0 && hit()) return;
   }
@@ -277,19 +278,20 @@ function updateHazards() {
     if (s.mode === 'ring') s.i = (s.i + 1) % s.path.length;
     else { if (s.i + s.step < 0 || s.i + s.step >= s.path.length) s.step = -s.step; s.i += s.step; }
     s.c = s.path[s.i];
+    if (clock - lastFx > 20 && Math.abs(s.c % COLS - body[0] % COLS) + Math.abs(flr(s.c / COLS) - flr(body[0] / COLS)) <= 6) fx(SFX.skitter);
     if (occ[s.c] && invuln === 0 && hit()) return;
   }
   // Rocks: a shadow flashes, then the rock lands on whatever is there.
   if (rockArea && --rockT <= 0) {
     rockT = rand(ROCK_GAP[0], ROCK_GAP[1]);
-    if (rockArea.cells.length) { rocks.push({ c: rockArea.cells[rng() % rockArea.cells.length], t: ROCK_SHADOW }); sfx(SFX.shadow, SFX_CH); }
+    if (rockArea.cells.length) { rocks.push({ c: rockArea.cells[rng() % rockArea.cells.length], t: ROCK_SHADOW }); fx(SFX.shadow); }
   }
   for (const r of rocks) r.t--;
   const landed = rocks.filter((r) => r.t <= 0);
   rocks = rocks.filter((r) => r.t > 0);
   for (const r of landed) {
     burst((r.c % COLS) * 8 + 4, FIELD_Y + flr(r.c / COLS) * 8 + 4, 8, [DIM, WHITE, ORANGE], 1.3);
-    sfx(SFX.rock, SFX_CH);
+    fx(SFX.rock);
     if (occ[r.c] && invuln === 0 && hit()) return;
   }
 }
@@ -386,6 +388,7 @@ function step() {
   if (grow > 0) grow--;
   else { popped = body.pop(); occSub(popped); }
   body.unshift(n); occAdd(n);
+  if (clock - lastFx > 20) sfx(SFX.step, SFX_CH); // a very quiet tick, unless an effect is playing (and it never counts as one)
   if (popped >= 0 && !occ[popped]) clearCell(popped);
   if (ovl > 0 || power === GHOST) repaintAll();
   else { paintSeg(0); paintSeg(1); paintSeg(body.length - 1); }
@@ -393,7 +396,7 @@ function step() {
 
 function addScore(n) {
   score += n;
-  while (score >= EXTRA_LIFE(nextLife)) { nextLife++; if (lives < MAX_LIVES) { lives++; sfx(SFX.oneUp, SFX_CH); } }
+  while (score >= EXTRA_LIFE(nextLife)) { nextLife++; if (lives < MAX_LIVES) { lives++; fx(SFX.oneUp); } }
 }
 
 /** Eating a fruit: 10 points (a golden one 50), times the combo, doubled by DOUBLE (SPEC 9). */
@@ -402,13 +405,13 @@ function eatFruit(isGold) {
   comboT = 0;
   addScore((isGold ? GOLDEN_POINTS : FRUIT_POINTS) * combo * (power === DOUBLE ? 2 : 1));
   burst(body[0] % COLS * 8 + 4 + DX[dir] * 8, FIELD_Y + flr(body[0] / COLS) * 8 + 4 + DY[dir] * 8, isGold ? 10 : 5, isGold ? [GOLD, WHITE] : [RED, WHITE], 1);
-  if (isGold) { grow += GOLDEN_GROW; golden = -1; golds++; sfx(SFX.golden, SFX_CH); return; }
+  if (isGold) { grow += GOLDEN_GROW; golden = -1; golds++; fx(SFX.golden); return; }
   grow++; fed++;
-  sfx(SFX.eat[combo - 1], SFX_CH);
+  fx(SFX.eat[combo - 1]);
   if (fed >= quota) {
     fruit = -1; gateOpen = true;
     mset(gate % COLS, 2 + flr(gate / COLS), tile(T_GATE_OPEN, PAL_WALL));
-    sfx(SFX.gate, SFX_CH);
+    fx(SFX.gate);
   } else spawnFruit();
 }
 
@@ -417,7 +420,7 @@ function takePickup() {
   addScore(POWER_POINTS);
   const k = pickupKind;
   pickup = -1; pickupNext = rand(PICKUP_GAP[0], PICKUP_GAP[1]);
-  sfx(SFX.power, SFX_CH);
+  fx(SFX.power);
   if (k === SHRINK) { shrink(); return; }
   power = k; powerT = POWER_FRAMES[k];
 }
@@ -438,7 +441,7 @@ function hit() {
   if (power === SHIELD) {
     power = -1; invuln = INVULN;
     burst(body[0] % COLS * 8 + 4, FIELD_Y + flr(body[0] / COLS) * 8 + 4, 10, [GOLD, WHITE], 1.5);
-    sfx(SFX.shield, SFX_CH);
+    fx(SFX.shield);
     return false;
   }
   die();
@@ -448,7 +451,7 @@ function hit() {
 function die() {
   lives--;
   state = 'dying'; timer = 0;
-  sfx(SFX.die, SFX_CH);
+  fx(SFX.die);
 }
 
 /** Particles flung out from (x, y) in turns of the colours given. */
@@ -496,14 +499,14 @@ function update() {
     updateTally(go);
   } else if (state === 'done' || state === 'over') {
     if (timer > 60 && go) {
-      sfx(SFX.select, SFX_CH);
+      fx(SFX.select);
       if (rank >= 0) { state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0 }; }
       else toTitle();
     }
   } else if (state === 'initials') {
     enterInitials();
   } else if (state === 'scores') {
-    if (go || pressed(B)) { sfx(SFX.select, SFX_CH); toTitle(); }
+    if (go || pressed(B)) { fx(SFX.select); toTitle(); }
   }
   for (const q of parts) { q.x += q.vx; q.y += q.vy; q.vx *= 0.9; q.vy *= 0.9; q.t--; }
   parts = parts.filter((q) => q.t > 0);
@@ -513,18 +516,18 @@ function update() {
 
 function updatePlay() {
   if (paused) {
-    if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; sfx(SFX.move, SFX_CH); }
-    if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; sfx(SFX.move, SFX_CH); }
-    if (pressed(B)) { paused = false; sfx(SFX.pause, SFX_CH); }
+    if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
+    if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
+    if (pressed(B)) { paused = false; fx(SFX.pause); }
     else if (pressed(START) || pressed(A)) {
-      sfx(pauseSel === 0 ? SFX.pause : SFX.select, SFX_CH);
+      fx(pauseSel === 0 ? SFX.pause : SFX.select);
       paused = false;
       if (pauseSel === 1) { score = levelScore; startLevel(level); }
       else if (pauseSel === 2) toTitle(); // quitting abandons the run
     }
     return;
   }
-  if (pressed(START)) { paused = true; pauseSel = 0; sfx(SFX.pause, SFX_CH); return; }
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   for (const [b, d] of [[RIGHT, 0], [DOWN, 1], [LEFT, 2], [UP, 3]]) if (pressed(b)) enqueue(d);
   if (readyT > 0) { readyT--; return; }
   levelT++; comboT++;
@@ -532,7 +535,7 @@ function updatePlay() {
   if (comboT > COMBO_FRAMES) combo = 0;
   if (invuln > 0) invuln--;
   // Power-ups and the things that come and go, on the clock (SPEC 7.2).
-  if (power >= 0 && --powerT <= 0 && !(power === GHOST && occ[body[0]] > 1)) power = -1; // a GHOST waits until its head is clear
+  if (power >= 0 && --powerT <= 0 && !(power === GHOST && occ[body[0]] > 1)) { power = -1; fx(SFX.powerEnd); } // a GHOST waits until its head is clear
   if (golden >= 0 && --goldenT <= 0) golden = -1;
   if (pickup >= 0) { if (--pickupT <= 0) { pickup = -1; pickupNext = rand(PICKUP_GAP[0], PICKUP_GAP[1]); } }
   else if (--pickupNext <= 0) spawnPickup();
@@ -553,7 +556,7 @@ function announceHazard() {
   const bit = fresh & -fresh;
   seenHz |= bit;
   banner = { text: bit === 1 ? 'WATCH OUT: BOULDERS!' : bit === 2 ? 'WATCH OUT: SCORPIONS!' : 'WATCH OUT: FALLING ROCKS!', t: 150 };
-  sfx(SFX.shadow, SFX_CH);
+  fx(SFX.shadow);
 }
 
 // --- Flow (SPEC 10) ---
@@ -561,6 +564,7 @@ function announceHazard() {
 function toTitle() {
   state = 'title'; timer = 0; titleSel = 0; paused = false; banner = null;
   titleScene();
+  play(SONG_TITLE);
 }
 
 function startRun() {
@@ -575,7 +579,7 @@ const logoLand = (n) => 8 + n * LOGO_GAP + LOGO_FALL;
 const LOGO_DONE = logoLand(9) + LOGO_BOUNCE;
 
 function updateTitle(go) {
-  for (let n = 0; n < 10; n++) if (timer === logoLand(n)) sfx(SFX.thud, SFX_CH);
+  for (let n = 0; n < 10; n++) if (timer === logoLand(n)) fx(SFX.thud);
   // The snake slithers along the bottom, a cell every five frames, and slides off the right edge.
   if (timer % 5 === 0) {
     const ti = flr(timer / 5) % (TITLE_PATH.length + 14);
@@ -585,13 +589,14 @@ function updateTitle(go) {
     if (body.length > 1) repaintAll();
   }
   if (timer < LOGO_DONE) { if (go) timer = LOGO_DONE; return; }
-  if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; sfx(SFX.move, SFX_CH); }
-  if (go) { sfx(SFX.select, SFX_CH); if (titleSel === 0) startRun(); else showScores(-1); }
+  if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
+  if (go) { fx(SFX.select); if (titleSel === 0) startRun(); else showScores(-1); }
 }
 
 function showScores(row) {
   state = 'scores'; timer = 0; hl = row;
   titleScene();
+  play(SONG_TITLE);
 }
 
 /** The tally (SPEC 10): its rows come up one by one, then the bonus counts into the score. */
@@ -600,7 +605,7 @@ function levelClear() {
   const sec = flr(levelT / 60);
   tally = { rows: [['FRUIT EATEN', fed], ['GOLDEN FRUIT', golds], ['CLEAR TIME', `${flr(sec / 60)}:${String(sec % 60).padStart(2, '0')}`], ['LEVEL BONUS', lb], ['TIME BONUS', tb]], owed: lb + tb, paidAt: 0 };
   state = 'clear'; timer = 0;
-  sfx(SFX.clear, SFX_CH);
+  fx(SFX.clear);
 }
 
 const TALLY_ROW = 15, TALLY_PAY = 100, TALLY_STEP = 80; // frames per row; when the bonus starts paying; points a frame
@@ -611,7 +616,7 @@ function updateTally(go) {
     const pay = go ? tally.owed : Math.min(tally.owed, TALLY_STEP);
     addScore(pay); tally.owed -= pay;
     if (go) timer = Math.max(timer, TALLY_PAY);
-    if (timer % 4 === 0 || !tally.owed) sfx(SFX.tick, SFX_CH);
+    if (timer % 4 === 0 || !tally.owed) fx(SFX.tick);
     tally.paidAt = timer;
   } else if (!tally.owed && (go || timer >= tally.paidAt + 60)) nextLevel();
 }
@@ -620,15 +625,17 @@ function nextLevel() {
   if (level + 1 < LEVELS.length) { startLevel(level + 1); return; }
   // TEMPLE CLEARED: a bonus for every life left (SPEC 9).
   state = 'done'; timer = 0;
+  play(-1);
   lifeBonus = LIFE_BONUS * lives;
   addScore(lifeBonus);
-  sfx(SFX.temple, SFX_CH);
+  fx(SFX.temple);
   finish(LEVELS.length + 1);
 }
 
 function gameOver() {
   state = 'over'; timer = 0;
-  sfx(SFX.over, SFX_CH);
+  play(-1);
+  fx(SFX.over);
   finish(level + 1);
 }
 
@@ -671,8 +678,8 @@ const reachedName = (r) => (r > LEVELS.length ? 'ALL' : r ? `${1 + ((r - 1) >> 2
 /** UP/DOWN pick a letter, LEFT/RIGHT (or A and B) move, START saves (as does A on the last letter). */
 function enterInitials() {
   const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
-  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; sfx(SFX.move, SFX_CH); }
-  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; sfx(SFX.move, SFX_CH); }
+  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; fx(SFX.move); }
+  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; fx(SFX.move); }
   if (pressed(LEFT) || pressed(B)) ini.pos = Math.max(0, ini.pos - 1);
   if (pressed(RIGHT)) ini.pos = Math.min(2, ini.pos + 1);
   const done = pressed(START) || (pressed(A) && ini.pos === 2);
@@ -681,15 +688,27 @@ function enterInitials() {
   const v = packInitials(ini.chars.join(''));
   dset(INITIALS_SLOT, v);
   dset(TOP_SLOT + rank * ENTRY + 2, v);
-  sfx(SFX.select, SFX_CH);
+  fx(SFX.select);
   showScores(rank);
 }
 
 // --- Sound ---
 
 const SFX = { eat: [0, 5, 6, 7], die: 1, gate: 2, clear: 3, over: 4, golden: 8, power: 9, oneUp: 10, shield: 11, bounce: 12, shadow: 13, rock: 14,
-  move: 15, select: 16, pause: 17, tick: 18, temple: 19, thud: 20 };
-const SFX_CH = 1;
+  move: 15, select: 16, pause: 17, tick: 18, temple: 19, thud: 20, powerEnd: 21, skitter: 22, step: 23 };
+const SFX_CH = 1; // effects share one channel; the songs leave it free
+const SONG_TITLE = 0; // then 1 + zone while playing (SPEC 11)
+let song = -1, lastFx = -99; // the song playing; the frame of the last effect
+
+/** An effect on the effects channel. */
+function fx(n) { lastFx = clock; sfx(n, SFX_CH); }
+
+/** Start a song unless it is already playing; -1 stops the music. */
+function play(n) {
+  if (n === song) return;
+  song = n;
+  music(n);
+}
 
 // --- Draw ---
 

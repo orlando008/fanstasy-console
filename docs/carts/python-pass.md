@@ -1,7 +1,7 @@
 # Python Pass: Cart Specification
 
-**Version:** 0.6 (draft)
-**Status:** In progress: steps 1–5 of the plan (15) are built; step 3's balance work is not finished
+**Version:** 0.7 (draft)
+**Status:** In progress: steps 1–6 of the plan (15) are built; step 3's balance work is not finished
 **Cart source:** `carts/src/python-pass/` → `carts/python-pass.nova`
 
 ---
@@ -211,7 +211,7 @@ In the menus START or A goes on and B goes back, as in Smashy Smash.
 ## 11. Audio
 
 **Songs** (5): the title, and one for each zone (8.1), looping. Channel 1 is kept for
-sound effects.
+sound effects. The effect numbers are in `SFX` in the code.
 
 **SFX:** each step's soft tick (very quiet), fruit eaten (rising
 with the combo), golden fruit, power-up taken and ended, shield break, gate opens, level
@@ -426,6 +426,30 @@ it, the gate's glow and the Temple's lava cycle colours.
      and gate tiles, each wall's mask matches its open neighbours, and the head's three
      variants show with the snake's tiles still joined. No errors in the browser.
 6. **Audio pass:** five songs and the effects.
+   - **Built:** the songs use the toolkit from Alien Swarm (`music.py`: a lead, a triangle
+     bass, a saw chord or arpeggio, hats, and a kick and snare as samples; channel 1 only
+     carries the tempo so effects have it). 19 patterns in all.
+     - **Title and scores:** 112 bpm, E minor: wary at first, then a horn, then a fanfare
+       with a drum fill.
+     - **The Jungle:** 129 bpm, G major: a bouncy, staccato tune with off-beat chords.
+     - **The Riverbank:** 150 bpm in 12/8, F major: a flowing groove with bell arpeggios.
+     - **The Ruins:** 112 bpm, B minor: glassy and horn leads, with a bell line that echoes
+       each phrase a beat later.
+     - **The Temple:** 150 bpm, C minor: a driving eighth-note bass, brass lead, heavy drums.
+     - **Playing:** the title song plays on the title and scores screens, each zone's song from
+       its first level on (carrying on across the zone's four levels, and restarting a level
+       does not restart it), and the music stops for GAME OVER and TEMPLE CLEARED.
+     - **Effects:** 24 now: the 21 from step 1 plus a power-up running out, a scorpion's
+       skitter (when one steps within 6 cells of the head, at most once per 20 frames) and the
+       step tick. The tick plays on a step only if no effect played in the last 20 frames, and
+       never counts as one, so it cannot cut a sound short.
+   - **Results:** a script of 10 checks passes: the title plays song 0 once, a run plays the
+     Jungle song, levels 5, 9 and 13 start songs 2, 3 and 4, the song carries on through a
+     zone, the tick plays on ordinary steps but not after an effect, and game over stops the
+     music. The harmony check (lead against bass and chords on the beat) finds only
+     passing notes where a short chord stab decays into the next bar. Peaks are 0.29–0.35 with
+     no clipping. No errors in the browser. I haven't heard it: the checks are numbers, so the
+     songs' feel needs your ears.
 7. **Balance and polish:** speeds, quotas, hazard rates, power-up weights and scoring,
    checked with the automatic player; a label, the PNG cart and the Library.
 
