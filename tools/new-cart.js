@@ -51,8 +51,9 @@ Next:
   1. Write the spec (docs/carts/${name}.md) and agree the design questions with the user.
   2. Replace the placeholder game: updatePlay and drawPlay in code.js (and the SFX, SONG tables, audio.py).
   3. node tools/pack.js carts/src/${name} carts/${name}.nova && node tools/check.js ${name} && node tools/test.js ${name}
-  4. Play it in the console: serve the repo (python3 -m http.server) and open /?cart=${name}
-  5. Commit and push after each step; when it is finished: node tools/release.js ${name}, the README row.`);
+  4. node tools/devkit/soak.mjs carts/${name}.nova (random play) and node tools/devkit/smoke.mjs ${name} (the real console)
+  5. Play it yourself: serve the repo (python3 -m http.server) and open /?cart=${name}
+  6. Commit and push after each step; when it is finished: node tools/release.js ${name}, the README row.`);
 }
 
 async function selftest() {
@@ -64,7 +65,8 @@ async function selftest() {
     scaffold(name, 'Self Test');
     console.log(run('node', 'tools/check.js', name));
     console.log(run('node', 'tools/test.js', name));
-    console.log('\nthe starter scaffolds, packs, passes its checks and its tests');
+    console.log(run('node', 'tools/devkit/soak.mjs', `carts/${name}.nova`, '--frames', '3000', '--seeds', '1'));
+    console.log('\nthe starter scaffolds, packs, passes its checks, its tests and a soak run');
     return 0;
   } catch (e) {
     console.error(String(e.stdout || ''), String(e.stderr || ''), e.message);

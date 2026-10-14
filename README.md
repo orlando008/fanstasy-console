@@ -142,7 +142,8 @@ node tools/test.js <name>                  # a cart's check scripts in tests/car
 node tools/release.js <name>               # label, .nova.png, Library entry, checks
 node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300   # screenshots without a browser
 node tools/devkit/music/loud.mjs carts/<name>.nova               # loudness of each song
-node tools/devkit/voices.mjs carts/<name>.nova                   # effects sent to a channel of the wrong voice
+node tools/devkit/soak.mjs carts/<name>.nova                     # random play: exceptions, soft locks, frame time, wrong-voice effects
+node tools/devkit/smoke.mjs <name>                               # the cart in the real console (headless Chromium)
 ```
 
 The song toolkit (`tools/devkit/music/kit.py`) and the headless test harness

@@ -39,7 +39,9 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level and pitch (centroid) of effects, on the channel the game uses |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and saw on the beat |
 | `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons) |
-| `node tools/devkit/voices.mjs carts/<name>.nova [frames] [seed]` | Plays the cart with random presses and reports any effect sent to a channel whose voice does not suit it |
+| `node tools/devkit/soak.mjs carts/<name>.nova [--frames 20000] [--seeds 3]` | **Soak test**: random play in the harness for a long time. Fails on an exception, an effect on the wrong voice's channel, or a frozen screen (a soft lock, with the state named); reports frame times, sprites (OAM and per scanline), the states reached and the effects and songs never played. `--all` does every cart (CI) |
+| `node tools/devkit/smoke.mjs <name> [--seconds 12] [--shot f.png]` | **Smoke test in the real console** (headless Chromium): loads the cart, plays with random keys, and reports page and console errors, the cart's logged errors (a cart that throws is stopped), fps, and a frozen or blank screen. Catches what the Node harness cannot |
+| `node tools/devkit/voices.mjs carts/<name>.nova [frames] [seed]` | Just the wrong-voice check (soak does this too) |
 | `tools/devkit/harness.mjs` | The headless console for tests (see its header comment) |
 
 The starter's template is `tools/templates/cart/` (`code.js` is the frame to build on, and its `01-flow.mjs` is the
@@ -89,6 +91,18 @@ Checks that proved their worth:
   another process spoils one frame); and one suite at a time (`tools/test.js` does this);
 - **audio cues** from `vm.audioLog` (which song and which SFX on which channel, when), not by ear;
 - **a test that fails without the fix**: after fixing a bug, put the fix back out and check the new test fails.
+
+### Soak and smoke
+
+Run both before you call a step done, and again after the art and audio passes:
+
+- `soak.mjs` is quick (seconds) and runs in CI. A **frozen screen** failure is the generic form of "a rival sat
+  on a bump for ever": the random player pressed buttons for 15 s and the picture never changed. Give the cart
+  a `state` variable and the failure names the state. The "never played" lists show what random play cannot reach;
+  cover those with a test or a bot (a bot is a function that returns the pad each frame: `makePad` in
+  `tools/devkit/pad.mjs` is the random one; a game's own auto-player should drive the same code as a human).
+- `smoke.mjs` takes about 15 s and needs Playwright with Chromium (not in CI). It is the only check that runs the
+  cart in the real worker and page. Use `--keys Enter:300,Enter:300` to get past a title, and `--shot` to look.
 
 ## 5. Audio
 

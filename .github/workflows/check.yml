@@ -19,3 +19,5 @@ jobs:
       - run: node tools/check.js --all
       # The starter: scaffolds a throwaway cart, packs, checks and tests it, and deletes it
       - run: node tools/new-cart.js --selftest
+      # Random play for 3,000 frames on every cart: exceptions, wrong-voice effects, soft locks, frame time
+      - run: node tools/devkit/soak.mjs --all
