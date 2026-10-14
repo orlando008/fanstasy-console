@@ -1,6 +1,14 @@
 {
   "carts": [
     {
+      "name": "alien-swarm",
+      "title": "Alien Swarm",
+      "author": "NOVA-16",
+      "description": "A space tower defense: hold back the alien swarm with five kinds of gun tower across 8 maps on 4 planets, 15 waves each with a Queen to finish, with stars, a hard mode and a song for every planet.",
+      "label": "carts/labels/alien-swarm.png",
+      "png": "carts/alien-swarm.nova.png"
+    },
+    {
       "name": "block-wizard",
       "title": "Block Wizard",
       "author": "NOVA-16",
@@ -31,14 +39,6 @@
       "description": "Race an AI model up the mountain. Pick one of seven models, collect electricity, GPU, CPU and RAM, and dodge protesters, red tape, high prices and legislation. Three stages: Base Camp, the Treeline and the Summit.",
       "label": "carts/labels/summit-rush.png",
       "png": "carts/summit-rush.nova.png"
-    },
-    {
-      "name": "alien-swarm",
-      "title": "Alien Swarm",
-      "author": "NOVA-16",
-      "description": "A space tower defense: hold back the alien swarm with gun towers. Work in progress.",
-      "label": null,
-      "png": null
     },
     {
       "name": "chiptune",

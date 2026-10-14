@@ -1,7 +1,7 @@
 # Alien Swarm: Cart Specification
 
-**Version:** 0.7 (draft)
-**Status:** In progress: steps 1–6 of the plan (15) are built
+**Version:** 1.0
+**Status:** Released: all 7 steps of the plan (15) are built; also as the PNG cart `carts/alien-swarm.nova.png`
 **Cart source:** `carts/src/alien-swarm/` → `carts/alien-swarm.nova`
 
 ---
@@ -98,7 +98,8 @@ or NEAR (closest to the tower).
 | **Splitter** | 40 | 0.45 | 10 | 1 | Bursts into 3 Skitters when killed |
 | **Queen** | 1,500 | 0.25 | 200 | 10 | Wave 15's boss; armour 5; lays a Crawler every 3 s |
 
-Health scales with the map: × (1 + 0.15 × map index), and × 1.5 in hard mode.
+Health scales with the map: × (1 + 0.15 × map index). Hard mode multiplies it again, by a
+factor for each map, from × 4 on 1-1 down to × 1.15 on Queen's Nest (see 15, step 7).
 
 ## 7. Waves and economy
 
@@ -391,6 +392,56 @@ crowd a scanline.
 7. **Balance and polish:** a bot with a build plan for each map checks that each
    map can be three-starred with good play and is lost with poor play, and that
    hard mode is tough but fair; a label, the PNG cart and the Library.
+   - **How it was measured:** the bot from step 3 plays every map at three strengths:
+
+     | Bot | Plan |
+     |---|---|
+     | Strong | All five towers, 16 placements, upgrades |
+     | Medium | Six towers, upgraded |
+     | Weak | Three Blasters, upgraded |
+
+     Strong and medium also play hard. Each table is 40 games.
+   - **Before:**
+     - Three Blasters won 1-1.
+     - The strong bot could only one-star Queen's Nest: it lost 16 hull on the last
+       wave, to three Queens coming one down each lane, two of them short.
+     - Hard mode cost good play nothing on seven maps, and lost Queen's Nest by
+       wave 5.
+   - **Changes:**
+     - **Queen's Nest:** its three Queens all take the long lane.
+     - **The Swamp:** its two Queens all take the long lane too.
+     - **1-1:** its last waves are denser swarms, and its Queen has an escort.
+     - **Hard:** a flat multiplier stacked on each map's own health growth, so it was
+       free early and a cliff late. Hard health is now set per map:
+
+       | Map | 1-1 | 1-2 | 2-1 | 2-2 | 3-1 | 3-2 | 4-1 | 4-2 |
+       |---|---|---|---|---|---|---|---|---|
+       | Hard health | × 4.0 | × 3.0 | × 2.6 | × 2.6 | × 1.6 | × 1.6 | × 1.9 | × 1.15 |
+
+       1-1 needs the most: its 45-cell lane gives towers a long time on everything.
+   - **Results** (W won, with the hull left; L lost, on that wave):
+
+     | Map | Normal, strong | Normal, medium | Normal, weak | Hard, strong | Hard, medium |
+     |---|---|---|---|---|---|
+     | 1-1 | W20 ★★★ | W20 ★★★ | W8 ★ | W6 ★ | W5 ★ |
+     | 1-2 | W20 ★★★ | W20 ★★★ | L13 | W9 ★ | L15 |
+     | 2-1 | W20 ★★★ | W20 ★★★ | L15 | W15 ★★ | L15 |
+     | 2-2 | W20 ★★★ | W20 ★★★ | L10 | W14 ★★ | L14 |
+     | 3-1 | W20 ★★★ | L15 | L6 | W16 ★★ | L9 |
+     | 3-2 | W20 ★★★ | L15 | L7 | W8 ★ | L11 |
+     | 4-1 | W20 ★★★ | L15 | L4 | W9 ★ | L7 |
+     | 4-2 | W20 ★★★ | L5 | L3 | W15 ★★ | L5 |
+
+     - Good play three-stars every map on normal. Middling play clears the first two
+       planets and then falls to the Queens. Poor play loses everything except 1-1.
+     - The weak bot puts its three Blasters on the best pads and upgrades them fully;
+       only the Queen gets past it, for a one-star win. That seems fair for the
+       first map.
+     - Hard is won by good play on every map, but for only one or two stars, and
+       lost by middling play everywhere but 1-1.
+   - **Release:** the label is the title screen (F7). The cart is released as
+     `alien-swarm.nova.png`, which decodes to exactly the packed `.nova`. The Library
+     lists it with the released games.
 
 ## 16. Open questions
 
