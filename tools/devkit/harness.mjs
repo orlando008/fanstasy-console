@@ -64,7 +64,7 @@ export function boot(path, { seed = 1, save = null, extra = '' } = {}) {
   return vm;
 }
 
-function png(px, w, h, s) {
+export function png(px, w, h, s) {
   const W = w * s, H = h * s;
   const raw = Buffer.alloc((W * 4 + 1) * H);
   for (let y = 0; y < H; y++) {

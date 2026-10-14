@@ -1,6 +1,6 @@
 # Alien Swarm: Cart Specification
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Released: all 7 steps of the plan (15) are built; also as the PNG cart `carts/alien-swarm.nova.png`
 **Cart source:** `carts/src/alien-swarm/` → `carts/alien-swarm.nova`
 
@@ -163,6 +163,12 @@ In the menus START or A goes on and B goes back, as in Smashy Smash.
 
 **Songs** (5): the title, and one for each planet (8), looping. Channel 1 is kept
 for sound effects.
+
+**Effects on a channel with their voice** (v1.1): the channel decides the voice, so an effect with noise in it
+sounds like noise only on a noise channel. The cannon (1), the splat (2), freeze (9), the missile (10) and the boom (11) play on channel 4 (noise) through the `SFX_VOICE_CH` table and `sfxv()` in the code; the laser (8) is a saw and plays on channel 3; every other effect plays on
+channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sounded like pulse tones. A noise effect
+briefly mutes the music's channel 4 while it plays. (`tools/check.js` and `tools/devkit/soak.mjs` check this; see
+`docs/dev/playbook.md`, section 5.)
 
 | Song | Tempo | Style |
 |---|---|---|

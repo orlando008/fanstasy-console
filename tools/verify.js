@@ -13,6 +13,7 @@
 //   3. tools/check.js: limits, voices, the PNG cart holding exactly the packed cart, the spec
 //   4. tools/devkit/soak.mjs: 3,000 frames of random play
 //   5. tools/test.js: the cart's test scripts, if tests/carts/<name>/ exists (skipped by --fast)
+// and once, first: tools/check-docs.js (the documentation mentions only files that exist)
 // A change under src/ (the console itself) or tools/devkit/ selects every cart. CI runs this on pull requests.
 // Does not do what needs a browser: node tools/devkit/smoke.mjs <name>, and node tools/release.js <name> to
 // regenerate the label and PNG cart.
@@ -48,7 +49,10 @@ else if (!named.length) {
   if (everything) { console.log('The console or the kit changed: verifying every cart.'); carts = new Set(allCarts); }
   console.log(`Changed since ${base}: ${[...carts].join(', ') || 'no cart'}`);
 }
-if (!carts.size) { console.log('Nothing to verify.'); process.exit(0); }
+const docs = spawnSync('node', ['tools/check-docs.js'], { cwd: ROOT, encoding: 'utf8' });
+console.log(`${docs.status ? 'FAIL' : 'ok  '} tools/check-docs.js (the documentation mentions only files that exist)`);
+if (docs.status) console.log(docs.stdout.trim().split('\n').map((l) => `       ${l}`).join('\n'));
+if (!carts.size) { console.log('Nothing more to verify.'); process.exit(docs.status ? 1 : 0); }
 
 const node = (...a) => spawnSync('node', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 });
 let failed = 0;
@@ -90,5 +94,5 @@ for (const name of [...carts].sort()) {
   if (problems.length) failed++;
   report.push(`${problems.length ? 'FAIL' : 'ok  '} ${name}${problems.length ? `: ${problems.join('; ')}` : ''}`);
 }
-console.log(`\n${report.join('\n')}\n\n${failed ? `${failed} cart(s) failed` : 'all verified'}`);
-process.exit(failed ? 1 : 0);
+console.log(`\n${report.join('\n')}\n\n${failed || docs.status ? `${failed} cart(s) failed${docs.status ? ' and the documentation check failed' : ''}` : 'all verified'}`);
+process.exit(failed || docs.status ? 1 : 0);

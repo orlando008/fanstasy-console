@@ -3,6 +3,32 @@
 For agents (and people) building games for the NOVA-16 fantasy console. It collects what the first
 seven games taught us, so the next one starts from a working kit instead of rebuilding it.
 The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/carts/<name>.md`.
+`node tools/check-docs.js` keeps every file this document mentions real: if you move a tool, fix the docs.
+
+## Quick start
+
+```sh
+node tools/new-cart.js my-game "My Game"      # a working cart, tests, audio script and spec template
+# write docs/carts/my-game.md, then replace updatePlay/drawPlay in carts/src/my-game/code.js
+node tools/pack.js carts/src/my-game carts/my-game.nova
+node tools/verify.js --fast                   # audio script, pack, checks, soak (add the tests: leave out --fast)
+node tools/devkit/smoke.mjs my-game           # the real console, headless
+node tools/devkit/sweep.mjs my-game           # the bot over many seeds (once tests/carts/my-game/bot.mjs is real)
+node tools/release.js my-game                 # when finished: label, .nova.png, Library, README row
+```
+
+## Where things live
+
+| Path | What |
+|---|---|
+| `carts/src/<name>/` | A cart's source: `code.js`, `meta.json`, `tiles.txt`, `palette.txt`, `map.txt`, `audio.json` (made by `audio.py` if there is one), `label.png` |
+| `carts/<name>.nova`, `.nova.png`, `labels/`, `index.json` | What `pack.js`, `release.js` and `library.js` build from the source: commit them with it |
+| `tests/carts/<name>/` | `lib.mjs` (boots the cart with its variables exposed), `NN-*.mjs` (check scripts, one per build step), `bot.mjs` (the bot for `sweep.mjs`) |
+| `docs/carts/<name>.md` | The game's spec, with each step's **Built** and **Results** notes |
+| `tools/` | `pack`, `library`, `new-cart`, `verify`, `check`, `test`, `release`, `check-docs` (section 2) |
+| `tools/devkit/` | The headless harness, soak, smoke, sweep, shots, tiles, voices, the random player and the song toolkit (`music/`) |
+| `tools/templates/cart/` | The starter's files |
+| `CLAUDE.md`, `docs/dev/playbook.md` | Notes for agents (short) and this guide |
 
 ## 1. The shape of a game build
 
@@ -15,9 +41,10 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 2. **Build one step at a time.** The user says "go ahead" for each. A typical plan: 1 vertical slice,
    2 the core mechanics, 3 opponents or enemies, 4 content (levels, tracks), 5 the flow (title, menus,
    modes, saves), 6 art, 7 audio, 8 balance, polish, label, PNG cart, Library entry, README.
-3. **After each step**: run its checks (section 4), write the step's **Built** and **Results** notes into the
-   spec (the spec is the memory that survives a long session), commit and push to the branch. Do not
-   open a pull request until the user asks ("merge it in").
+3. **A step is done when**: its checks pass (`node tools/verify.js`, then `smoke.mjs`; `sweep.mjs` after changes to
+   the rules or the AI), the step's **Built** and **Results** notes are in the spec (the spec is the memory that
+   survives a long session), and it is committed and pushed to the branch. Do not open a pull request until
+   the user asks, and do not merge until the user says "merge it in".
 4. **The spec and the code stay in step.** When a number changes (a speed, a par time, a rating), change
    the spec's table in the same commit.
 5. **Context runs out in long builds.** Keep the spec current, keep scripts in the repo (not in a scratch
@@ -25,30 +52,58 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 
 ## 2. The kit
 
+**Build and verify**
+
 | Command | What it does |
 |---|---|
-| `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder (`code.js`, `tiles.txt`, `palette.txt`, `map.txt`, `audio.json`, `meta.json`, `label.png`) |
-| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an audio script, tests and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--selftest` checks the starter itself |
-| `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): audio script regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
-| `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser needed), the spec (header, TODOs in a released cart, code size in the budget table), missing label or description |
-| `node tools/devkit/sweep.mjs <name> --seeds 8 --set skill=0.9,1` | **Run the cart's bot** (`tests/carts/<name>/bot.mjs`) over many seeds and variants and summarise (win rates, times, crashes); fails on an exception, a frozen screen, a run that never finishes, or a problem the bot reports (a rival stuck). How balance is checked |
+| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--selftest` checks the starter itself (CI does) |
+| `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder |
+| `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the docs check, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
+| `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser), the spec (header, TODOs in a released cart, code size in the budget table), label and description |
 | `node tools/test.js <name> [filter] [-v]` | Run `tests/carts/<name>/NN-*.mjs` one at a time (about 3 minutes for Moto Crosser: run it in the background) |
-| `node tools/release.js <name> [--keep-label]` | Pack, capture the F7 label in headless Chromium, export `.nova.png`, verify it decodes to the packed cart, rebuild the Library index, run the checks |
-| `node tools/library.js` | Rebuild `carts/index.json` and `carts/labels/` (release.js does it) |
-| `python3 carts/src/<name>/audio.py carts/src/<name>/audio.json` | Regenerate a game's audio from its script, with the song toolkit in `tools/devkit/music/kit.py` |
+| `node tools/check-docs.js` | Every `tools/`, `tests/`, `carts/`, `docs/` and `src/` path the documentation mentions must exist (placeholders like `<name>` are skipped) |
+
+**Play it, automatically**
+
+| Command | What it does |
+|---|---|
+| `node tools/devkit/soak.mjs carts/<name>.nova [--frames 20000] [--seeds 3]` | **Soak test**: random play in the harness for a long time. Fails on an exception, an effect on the wrong voice's channel, or a frozen screen (a soft lock, with the state named); reports frame times, sprites (OAM and per scanline), the states reached and the effects and songs never played. `--all` does every cart (CI) |
+| `node tools/devkit/sweep.mjs <name> --seeds 8 --set skill=0.9,1` | **Run the cart's bot** (`tests/carts/<name>/bot.mjs`) over many seeds and variants and summarise (win rates, times, crashes); fails on an exception, a frozen screen, a run that never finishes, or a problem the bot reports (a rival stuck). How balance is checked |
+| `node tools/devkit/smoke.mjs <name> [--seconds 12] [--shot f.png]` | **Smoke test in the real console** (headless Chromium): loads the cart, plays with random keys, and reports page and console errors, the cart's logged errors (a cart that throws is stopped), fps, and a frozen or blank screen. Catches what the Node harness cannot |
+| `tools/devkit/harness.mjs` | The headless console for tests (see its header comment); `pad.mjs` is the random player |
+
+**See it**
+
+| Command | What it does |
+|---|---|
+| `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons, `--extra "skipTitle = true;"`) |
+| `node tools/devkit/tiles.mjs carts/<name>.nova out.png --from 640 --count 64 --pal 0 [--sprite] [--skip-empty]` | A contact sheet of tiles with their numbers in a palette (open the PNG with the Read tool). `--ascii <n>` prints one tile as `tiles.txt` rows; `--palette out.png` shows all 256 entries |
+
+**Hear it** (measure it: you cannot listen)
+
+| Command | What it does |
+|---|---|
+| `python3 carts/src/<name>/audio.py carts/src/<name>/audio.json` | Regenerate a game's audio from its script, with the song toolkit in `tools/devkit/music/kit.py` (its header explains `bar()`) |
 | `node tools/devkit/music/loud.mjs carts/<name>.nova` | Per-section loudness of every song |
 | `node tools/devkit/music/render.mjs carts/<name>.nova out/` | WAV files of the songs, with level and clipping |
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level and pitch (centroid) of effects, on the channel the game uses |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and saw on the beat |
-| `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons) |
-| `node tools/devkit/soak.mjs carts/<name>.nova [--frames 20000] [--seeds 3]` | **Soak test**: random play in the harness for a long time. Fails on an exception, an effect on the wrong voice's channel, or a frozen screen (a soft lock, with the state named); reports frame times, sprites (OAM and per scanline), the states reached and the effects and songs never played. `--all` does every cart (CI) |
-| `node tools/devkit/smoke.mjs <name> [--seconds 12] [--shot f.png]` | **Smoke test in the real console** (headless Chromium): loads the cart, plays with random keys, and reports page and console errors, the cart's logged errors (a cart that throws is stopped), fps, and a frozen or blank screen. Catches what the Node harness cannot |
 | `node tools/devkit/voices.mjs carts/<name>.nova [frames] [seed]` | Just the wrong-voice check (soak does this too) |
-| `tools/devkit/harness.mjs` | The headless console for tests (see its header comment) |
 
-The starter's template is `tools/templates/cart/` (`code.js` is the frame to build on, and its `01-flow.mjs` is the
-first test file). Examples of a full build: `tests/carts/moto-crosser/` (a full test suite with a `lib.mjs`), `carts/src/moto-crosser/audio.py`
-(songs and effects with the kit).
+**Release**
+
+| Command | What it does |
+|---|---|
+| `node tools/release.js <name> [--keep-label]` | Pack, capture the F7 label in headless Chromium, export `.nova.png`, verify it decodes to the packed cart, rebuild the Library index, run the checks |
+| `node tools/library.js` | Rebuild `carts/index.json` and `carts/labels/` (release.js does it) |
+
+The starter's template is `tools/templates/cart/` (`code.js` is the frame to build on; its `01-flow.mjs` is the
+first test file and its `bot.mjs` the first bot). Examples of a full build: `tests/carts/moto-crosser/` (seven
+suites, a `lib.mjs` and a bot) and `carts/src/moto-crosser/audio.py` (songs and effects with the kit).
+
+**CI** (`.github/workflows/check.yml`): syntax of `src/`, `tools/` and `tests/`; the docs check; `check.js --all`; the
+starter's self-test; `soak.mjs --all`; and, on pull requests, `verify.js` for the carts the PR changes. The smoke
+test is not in CI (it needs Playwright and Chromium). On CI the tests' frame-time limits are 3 times looser.
 
 ## 3. Limits and rules of the console
 
@@ -84,9 +139,10 @@ Build the cart with these in mind from the start:
   many seeds. It finds stuck states, balance problems and crashes that no hand-written test would. The Moto
   Crosser bot found a rider that sat on a bump for ever (it could not climb a steep slope from a standstill: the
   same thing could have happened to a player). Give the bot a skill option and sweep it (`--set skill=0.9,1`):
-  a perfect run should win most races and a player 5% off the pace should place mid-field, not last;
+  a perfect run should win most races and a player 5% off the pace should place mid-field, not last.
 
-Checks that proved their worth:
+
+Checks that proved their worth (the test files in `tests/carts/moto-crosser/` are the examples):
 - one `PASS`/`FAIL` line per behaviour, written as a sentence a designer would say ("a crash has its sound");
 - **numbers from the spec** asserted in the test (speeds, costs, scores), so a spec change is a visible failure;
 - **flow checks** that walk the screens in order (title, menu, game, results, back), including quitting from
@@ -141,8 +197,9 @@ You cannot hear the result, so measure it, and follow the rules that keep player
   Map RAM, not a rewrite of the map.
 - Count sprites per scanline in a test of a busy scene (the harness exposes `vm.ppu.oamCount`, and layers and
   palettes), and cap the particles.
-- Make screenshots (`shots.mjs`) and look at them after every art change; a tile-aligned scene is easy to get
-  slightly wrong (a transparent tile showing a gap).
+- **Look at the art**: `tiles.mjs` shows the tiles you wrote with their numbers (a hex-digit `tiles.txt` cannot be judged
+  by reading it), and `shots.mjs` shows them in place. Do both after every art change: a tile-aligned scene is easy to
+  get slightly wrong (a transparent tile showing a gap).
 
 ## 7. Tooling traps
 
@@ -153,7 +210,9 @@ You cannot hear the result, so measure it, and follow the rules that keep player
   functions in one game): put each operand in parentheses.
 - A tool call stops after 2 minutes: run long jobs in the background (`run_in_background`) and wait for the
   notification, rather than sleeping.
-- Do not run suites in parallel (frame-time checks fail under load).
+- Do not run suites in parallel (frame-time checks fail under load); `test.js` and `verify.js` run them one at a time.
+- A fix to the console's behaviour, to a cart's physics or to the AI changes what the sweep and the tests see: run both,
+  and put the new numbers in the spec.
 - A label captured by `release.js` depends on frame timing, so each run is a new picture: use `--keep-label`
   when only code changed, so the label and the PNG do not change for no reason.
 

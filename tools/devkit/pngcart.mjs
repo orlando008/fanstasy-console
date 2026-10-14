@@ -2,7 +2,7 @@
 // (src/formats/nova-png.js: the cart, minified and deflated, in the low 2 bits of R, G and B).
 //
 //   import { readPngCart } from './pngcart.mjs';
-//   const { text, label } = readPngCart(readFileSync('carts/x.nova.png'));   // text is the cart's .nova JSON
+//   const { text, label } = readPngCart(readFileSync('carts/my-game.nova.png'));   // text is the cart's .nova JSON
 //
 // tools/check.js uses it to verify that a PNG cart carries exactly what carts/<name>.nova packs to.
 import { inflateRawSync, inflateSync } from 'node:zlib';
