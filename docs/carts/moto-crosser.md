@@ -1,7 +1,7 @@
 # Moto Crosser: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Draft: nothing is built yet
+**Version:** 0.2 (draft)
+**Status:** In progress: step 1 of the plan (15) is built
 **Cart source:** `carts/src/moto-crosser/` → `carts/moto-crosser.nova`
 
 ---
@@ -236,6 +236,37 @@ the landing.
    and lane changes, the countdown and the gate, a timer and the finish line, placeholder
    art. **Prove:** the bike changes lanes cleanly, the camera keeps the player a third of the
    way across, and a run is repeatable (same inputs, same time).
+   - **Built:**
+     - **A test course:** 4,000 px (about 26 seconds), with the Stadium Dirt look. The final
+       tracks come in step 4.
+     - **Flow:** a 2-second track card, then the three lights (at 0.5, 1.2 and 1.8 seconds, a
+       beep each) and GO at 2.5 seconds, when the barrier across the four lanes drops.
+       Gas before GO moves nothing, but it is a **false start**: the buzzer sounds at GO and
+       the engine is dead for half a second. The race ends when the bike's front edge crosses
+       the checkered line; the time is frozen, the bike coasts to a stop on its own, then the
+       results card shows the time. START there races again. START pauses with RESUME and
+       RESTART RACE (QUIT TO TITLE comes with the title screen in step 5).
+     - **The bike:** gas takes it from 0 to cruising speed (2.6 px a frame, shown as 104)
+       in 90 frames, and letting go coasts it down by 0.012 a frame. UP and DOWN move one
+       lane (20 frames), clamped at the top and bottom, and quick presses add up. The
+       turbo and the engine heat come in step 2.
+     - **The camera and the track:** the bike's centre stays 85 px from the left of the screen.
+       The track is a ring of 256 columns in Map RAM (2,048 px): as the camera moves, the cart
+       writes each new column from a function of the column number (the HUD band, the tyre
+       wall, four lanes with dashed lines, the kerb and fence, and the gate and the finish
+       line), so the course can be longer than the ring. The stands scroll at half the
+       speed and the hills at a quarter.
+     - **Art:** placeholder, but readable: the stadium, the crowd, a rider on an orange bike
+       (white suit) in two wheel positions, a shadow, dust and the traffic-light panel. The
+       other five riders' colours are already in the palettes.
+   - **Results:** a script of 37 checks passes.
+     - It checks the card, the lights and their beeps, the barrier and its removal, a false
+       start and the stall, a clean start, 0 to cruising speed in 90 frames, coasting,
+       the lane changes (one, two, clamped and smooth), the camera's 85 px, the streamed tiles on
+       every 37th frame against the track function (before and after the ring wraps at
+       2,048 px), the finish time (1,577 frames, as worked out from the acceleration), the same
+       inputs giving exactly the same time, the results and the restart, and the pause.
+     - The worst frame takes 5 ms. No errors in the browser.
 2. **Ramps, hazards and heat:** ground height and slopes, jumps and pitch control,
    landings and crashes, hurdles, mud, arrow strips, the engine heat and cooling pads, and
    the HUD gauge. **Prove:** a bike taking a ramp flat lands clean; a bike nose-up crashes;
