@@ -309,7 +309,7 @@ the landing.
        overheating after 223 frames, pushing at 0.6, the restart at 50%; the cooling pad; a crash and
        the remount; a run of the whole test course with the same inputs giving the same
        result twice; and every visible track tile being the right one.
-     - The drawn edge of the big ramp is within a pixel of the physics' ground in 60 of its 64
+     - The drawn edge of the big ramp is within a pixel of the physics' ground in 63 of its 64
        columns.
      - Frames take 1.5 ms on average and under 8 ms at the 99th percentile. No errors in the
        browser.
