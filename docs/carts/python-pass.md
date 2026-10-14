@@ -1,6 +1,6 @@
 # Python Pass: Cart Specification
 
-**Version:** 0.1 (draft)
+**Version:** 0.2 (draft)
 **Status:** Proposed
 **Cart source:** `carts/src/python-pass/` → `carts/python-pass.nova`
 
@@ -39,16 +39,14 @@ for a few seconds.
 | Button | Action |
 |---|---|
 | D-pad | Turn the snake (it can't reverse on itself) |
-| A (held) | Hustle: the snake steps faster |
-| B (held) | Creep: the snake steps slower, for tight squeezes |
 | START | Pause: RESUME, RESTART LEVEL or QUIT TO TITLE |
 
 The snake moves one cell at a time, and the d-pad is digital, so turns are queued:
 up to two presses are remembered and used on the next two steps. A quick U-turn
 (UP, LEFT in the space of one step) works instead of being dropped.
 
-Hustle and creep change only the snake's pace: hazards keep their own, whatever the
-snake does.
+The snake's pace is the level's, and only a SLOW power-up changes it (7.2): there is
+no speed control.
 
 ## 4. Screen layout
 
@@ -69,8 +67,7 @@ position for collisions is the cell they are in.
 - **Growth:** +1 cell per fruit, +2 for a golden fruit. The tail stays in place for
   one step per cell to grow.
 - **Speed:** a step every 9 frames on level 1 (6.7 cells a second), falling to 5
-  frames (12 cells a second) on level 16. Hustle uses ⅔ of the step time (at least 3
-  frames) and creep 1½ ×.
+  frames (12 cells a second) on level 16.
 - **Dying:** the head hitting a wall, the snake's own body or any part of the snake
   touching a hazard costs a life, unless a SHIELD is active (7.2). The level restarts,
   the fruit eaten this level and its score are lost, and the snake starts again.
@@ -214,7 +211,7 @@ In the menus START or A goes on and B goes back, as in Smashy Smash.
 **Songs** (5): the title, and one for each zone (8.1), looping. Channel 1 is kept for
 sound effects.
 
-**SFX:** each step's soft tick (very quiet, and faster with hustle), fruit eaten (rising
+**SFX:** each step's soft tick (very quiet), fruit eaten (rising
 with the combo), golden fruit, power-up taken and ended, shield break, gate opens, level
 clear, life lost, extra life, game over, TEMPLE CLEARED, boulder rumble, scorpion
 skitter, rock shadow and rock landing, menu move and select, pause.
@@ -277,10 +274,6 @@ it, the gate's glow and the Temple's lava cycle colours.
 
 ## 16. Open questions
 
-- **Practice mode:** should cleared levels be playable on their own from a level
-  select? It would help to practise a hard level, but it's not in the first plan.
-- **Hustle and creep:** are both worth their buttons? Creep is mainly for the narrow
-  bridges on the Riverbank. Try them in the slice.
-- **Hazard contact:** any part of the snake touching a hazard costs a life, which can
-  be harsh for a long snake across a boulder's path. The alternative, cutting the
-  snake at that cell, would make cutting a way to shorten it.
+- **Hazard contact (settled):** any part of the snake touching a hazard costs a life,
+  even for a long snake caught across a boulder's path. Levels are designed so that a
+  careful player can always see it coming.
