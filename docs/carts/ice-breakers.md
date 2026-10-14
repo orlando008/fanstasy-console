@@ -1,7 +1,7 @@
 # Ice Breakers: Cart Specification
 
 **Version:** 0.2 (draft)
-**Status:** Steps 1 to 5 built (the ice, the three goals, the twelve levels tuned with the bot, the level banner, the game over that names the goal, the hint, the ice art). The sound is still the starter's.
+**Status:** Steps 1 to 6 built (the ice, the three goals, the twelve levels tuned with the bot, the level banner, the game over that names the goal, the hint, the ice art, the records and the win screen). The sound is still the starter's.
 **Cart source:** `carts/src/ice-breakers/` → `carts/ice-breakers.nova`
 
 ---
@@ -100,14 +100,14 @@ One: the 12 levels in order, then the game is won. A timed mode and a daily seed
 ## 9. Scoring
 
 As section 5, summed over the run. The bonus for moves left counts towards the score. The top 10 keeps the score, the
-initials and the level reached (save slots 10 to 39).
+initials and the level reached (save slots 10 to 39); a game that cleared all twelve levels is saved as level 13, which the records show as `WON`.
 
 ## 10. Screens and flow
 
 1. **Title:** PLAY, RECORDS.
 2. **Play**, with a **Pause** (START): RESUME, RESTART, QUIT TO TITLE. The play state is a machine: idle → swap → (unswap | pop → fall → pop ...) → idle, win (banner, then the next level) or game over.
 3. **Level banner** at the start of each level (2 seconds, over the board while the gems drop in): `LEVEL n`, what the level asks (`BREAK ALL THE ICE`, `COLLECT 12 YELLOW`, `EARN 600 POINTS`) and its moves. The pad waits for it; A skips it; it waits while the game is paused.
-4. **Game over** names the level and the goal with how far the player got (`LEVEL 3`, `YELLOW 7/12`), then the score; or **Won** (`YOU WON!`, `ALL LEVELS CLEARED`). Then **initials** if the score is in the top 10, then the **records**.
+4. **Game over** names the level and the goal with how far the player got (`LEVEL 3`, `YELLOW 7/12`), then the score; or **Won**: a gold panel (`YOU WON!`, `ALL LEVELS CLEARED`, `FINAL SCORE`) with 16 gems falling round it. Then **initials** if the score is in the top 10, then the **records**: rank, initials, the level reached (`L7`; `WON` in gold for a game that cleared them all) and the score.
 
 ## 11. Audio
 
@@ -140,16 +140,16 @@ Sprites: 64 gems, the cursor and the HUD picture (66 of the 128, at most 16 on a
 |---|---|
 | 0 | Format version |
 | 1 | Last initials entered |
-| 10–39 | Top 10, best first, 3 slots each: score, initials, level reached |
+| 10–39 | Top 10, best first, 3 slots each: score, initials, level reached (1 to 12; 13 is a win) |
 | 40–255 | Reserved |
 
 ## 14. Asset budget
 
 | Asset | Budget |
 |---|---|
-| Code | 26.8 KB (`node tools/check.js ice-breakers`); the levels, the ice, the banner, the hint and the ice art added 8.8 KB to the starter's 18 |
+| Code | 27.5 KB (`node tools/check.js ice-breakers`); the levels, the ice, the banner, the hint, the ice art and the win screen added 9.5 KB to the starter's 18 |
 | Tiles | 89 of 1,023 (BG region 53: the background 38, the ice 15; sprite region 36: the gems and cursor 28, the two HUD pictures 8) |
-| Sprites | 66 on the board (128 in OAM, 32 per scanline) |
+| Sprites | 66 on the board, 81 on the win screen (128 in OAM, 32 per scanline: at most 10 are used) |
 | Songs / SFX | 2 songs, 14 SFX; the ice crack makes 15 |
 
 ## 15. Implementation plan
@@ -178,6 +178,9 @@ Step 0 is done: the spec, the scaffold (the match-3 starter with placeholder num
    **Built:** the layers moved (section 12): the board to BG2, the gems to sprite priority 1, the ice on BG1 at high priority, the cursor at priority 2 (this replaces the cyan outlines of step 1), and BG0 hidden. The ice: four 16 × 16 pictures in `art.py` (a rim with a glint and flecks of frost, two stages of cracks with the rim breaking up, and the shards), painted by `paintIce`; a cell that breaks takes 12 frames (`ICE_BREAK`, `iceFx`) to crack, scatter and clear. The HUD shows the goal's picture left of its text (an ice cube, a star, or the gem asked for), as sprites in the two spare sprite palettes (6 and 7 now carry the icons' colours too). The level banner has a fringe of icicles (overlay shapes: the overlay is above every sprite, so a gem picture cannot be in the banner).
    **Results:** 150 checks pass (`01-flow` 35, `02-art` 34, `03-rules` 61, `04-hint` 20; 22 new art checks: the pictures and their palette and priority bits, the ice on the screen and over the gem and under the cursor, the break animation stage by stage, a new level repainting, no ice on the title or after quitting to it, the HUD pictures for each goal kind, the icicles). Seven deliberate breakages of the art were tried: gems above the ice (3 checks fail), the cursor under it (2), no cracks (2), layer 0 left on (8), ice left on the title (2) and the wrong HUD picture (2) were caught; the seventh, resetting what each cell was painted with on a new level, changed nothing (what a cell shows always matches the map, so the ordinary comparison repaints it), so that was removed as dead code. `verify.js --fast`, `smoke.mjs` and the soak pass (worst frame 9.8 ms of 16.7); the balance is unchanged (the rules were not touched). Screenshots: the frost over the gems on levels 1, 7 and 12, the break in four frames, the banner and the HUD, the title with no ice. A mistake along the way: with the board moved to BG2, the default-on layer 0 still showed the same map, over the gems and the ice (both vanished); the test now checks that layer 0 is hidden.
 6. **Flow polish:** the records screen shows the level reached; the win screen.
+
+   **Built:** the records show the level each game reached as `L7`, and a game that cleared every level as `WON` in gold: it is saved as level 13 (one past the last) in the same slot, so older saves (levels 1 to 12) still read right and the save version stays 1. The win screen: a gold border, `FINAL SCORE`, and 16 gems falling past the panel (`confetti`, drawn as sprites, so behind the panel); a lost game has the plain panel (the level and the goal missed) and no gems. The rest of the flow (the title, pause, initials, the order of the screens) was already right and is unchanged.
+   **Results:** 163 checks pass (`01-flow` 48: 13 new, for the text of a level reached, the records' pixels for a won, a lost and an empty row, and the win screen: its ending in the top 10, the stored 13, the 16 moving gems, at most 32 sprites on a scanline (10 used), and a lost game having none of it). Five deliberate breakages were all caught (saving a win as its level: 2 checks; gems on every game over; no `WON` wording; the won row not gold; gems that do not move: 1 each). `verify.js --fast`, `smoke.mjs` and the soak pass (the soak never wins a game, so the win screen's cost is not in it: 81 sprites, no more than 10 on a line). Screenshots of the records screen (WON, L12, L7, L2 in a list) and of the win panel looked right.
 7. **Audio pass:** `audio.py`: the ice crack, the goal reached, the win fanfare; the songs' levels checked with `loud.mjs --check`.
 8. **Release:** the PNG cart, the label (`node tools/release.js ice-breakers`), the Library entry, a README row, the spec's Results notes.
 

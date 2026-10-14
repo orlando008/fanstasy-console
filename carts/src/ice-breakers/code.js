@@ -47,6 +47,8 @@ const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
 const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, the level reached (slots 10 to 39)
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
+/** What a top-10 entry says it reached: L7 for a game lost on level 7; WON for one that cleared them all (that is stored as one past the last level). */
+const reached = (l) => (l > LEVELS.length ? 'WON' : `L${l}`);
 function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)), level: dget(s + 2) }; }
 function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); dset(s + 2, e.level || 0); }
 const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
@@ -369,7 +371,7 @@ function afterWin() {
 
 function gameOver() {
   state = 'over'; timer = 0; play(-1); fx(SFX.over); phase = 'idle'; sel = -1; introT = 0;
-  rank = insertTop({ score, initials: lastInitials(), level });
+  rank = insertTop({ score, initials: lastInitials(), level: won ? LEVELS.length + 1 : level });
 }
 
 function updateOver() {
@@ -421,11 +423,13 @@ function draw() {
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
   if (state === 'over') {
+    if (won) confetti();
     panel(48, 68, 160, 88);
+    if (won) rect(50, 70, 156, 84, GOLD); // the win screen has a gold border
     ctxt(won ? 'YOU WON!' : 'GAME OVER', 76, won ? GOLD : RED);
     ctxt(won ? 'ALL LEVELS CLEARED' : `LEVEL ${level}`, 92, WHITE);
     if (!won) ctxt(goalText(), 104, DIM); // what the level asked for, and how far the player got
-    ctxt(`SCORE ${score}`, 120, WHITE);
+    ctxt(`${won ? 'FINAL ' : ''}SCORE ${score}`, 120, WHITE);
     if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 138, DIM);
   }
   if (paused) drawPause();
@@ -468,7 +472,7 @@ function drawRecords() {
     if (on && timer % 40 < 30) rectfill(28, y - 2, 200, 12, PANEL);
     txt(String(i + 1).padStart(2), 40, y, i === 0 ? GOLD : DIM);
     txt(e.score ? e.initials : '---', 72, y, on ? GOLD : WHITE);
-    txt(e.score ? `L${e.level}` : '', 112, y, DIM);
+    txt(e.score ? reached(e.level) : '', 112, y, e.level > LEVELS.length ? GOLD : DIM);
     txt(e.score ? String(e.score).padStart(8) : '', 140, y, i === 0 ? GOLD : WHITE);
   });
   if (timer % 60 < 40) ctxt('START: BACK', 192, DIM);
@@ -494,6 +498,10 @@ function drawPause() {
   ['RESUME', 'RESTART', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
 }
 
+/** The win screen's gems, falling past the panel (sprites are under the overlay's panel, so they fall behind it and round it). */
+function confetti() {
+  for (let k = 0; k < 16; k++) sprite(ART.sprites[`gem${k % KINDS}`], 8 + ((k * 53 + 17) % 224), ((timer * 2 + k * 29) % 260) - 24, { prio: 3 });
+}
 /** A fringe of icicles hanging from y, across x to x + w (the level banner's top edge). */
 function icicles(x, y, w) {
   for (let i = 0; i < w / 8; i++) {

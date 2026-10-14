@@ -16,7 +16,7 @@ const PROBE = `__expose(() => ({
   get rank() { return rank; }, get initials() { return initials; }, get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
   get ART() { return ART; }, mget: (x, y) => mget(x, y),
   SFX, SONG, TOP_SLOT, ENTRY, COLS, ROWS, CELL, BX, BY, KINDS, POP_FRAMES, WIN_FRAMES, LEVELS, GEM_NAMES, INTRO_FRAMES, HINT_FRAMES, bestSwap, nbrs, iceCount, breakIce, goalMet, progress, goalText, goalWords, startLevel,
-  insertTop, topTen, packInitials, unpackInitials, findRuns, matched, hasMoves, makeTypes, popScore, swapped, settle, typesNow, startGame,
+  insertTop, topTen, reached, packInitials, unpackInitials, findRuns, matched, hasMoves, makeTypes, popScore, swapped, settle, typesNow, startGame,
   /** Put a board of types on the screen at rest (gems in their cells), as if dealt and settled. */
   setTypes(t) { grid = t.map((v, i) => ({ t: v, x: cellX(i), y: cellY(i) })); phase = 'idle'; sel = -1; popCells = []; chain = 0; introT = 0; idleT = 0; hint = null; },
 }));`;

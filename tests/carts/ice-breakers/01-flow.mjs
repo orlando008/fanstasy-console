@@ -100,4 +100,39 @@ const THREE = DEAD.slice(); THREE[56] = 0; THREE[57] = 0; THREE[50] = 0; THREE[5
   tap(vm, 'A'); tap(vm, 'DOWN'); rest(vm, p, 400);
   ok(p.state === 'over' && p.introT === 0 && p.goalText() === 'YELLOW 0/12', 'out of moves on a GEMS level: the game is over, and the goal still says how far it got', `${p.state} ${p.goalText()}`);
 }
+
+// 9. The records show the level reached; a game that cleared every level says WON.
+{
+  const e = (c) => (c << 3) | (c >> 2);
+  const rgb = (vm, i) => { const v = vm.cart.palette[i]; return (e(v & 31) | (e((v >> 5) & 31) << 8) | (e((v >> 10) & 31) << 16) | 0xff000000) >>> 0; };
+  const has = (vm, entry, x0, y0, x1, y1) => { const w = rgb(vm, entry); for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if ((vm.out32[y * 256 + x] >>> 0) === w) return true; return false; };
+  const GOLD = 14, DIM = 10;
+  const vm = newGame(13, { title: true }), p = vm.probe(); vm.run(3);
+  ok(p.reached(7) === 'L7' && p.reached(12) === 'L12' && p.reached(13) === 'WON', 'a game lost on level 7 reads L7, and one that cleared all twelve reads WON (it is stored as level 13)');
+  p.insertTop({ score: 5000, initials: 'WIN', level: 13 }); p.insertTop({ score: 3000, initials: 'LOS', level: 7 });
+  tap(vm, 'DOWN'); tap(vm, 'A'); vm.run(25);
+  ok(p.state === 'records' && has(vm, GOLD, 112, 48, 136, 58), 'the records show WON in gold in the level column of a game that was won');
+  ok(has(vm, DIM, 112, 62, 136, 72) && !has(vm, GOLD, 112, 62, 136, 72), 'and the level a lost game reached (L7) in grey');
+  ok(!has(vm, GOLD, 112, 76, 136, 188) && !has(vm, DIM, 112, 76, 136, 188), 'and nothing for an empty row');
+}
+
+// 10. The win screen: a gold panel, the final score, gems falling round it; it is saved as a win, and the records show it.
+{
+  const won = () => { const vm = newGame(14), p = vm.probe(); rest(vm, p); p.startLevel(12); p.score = 4000; p.ice = Array(64).fill(false); p.settle(); for (let i = 0; i < p.WIN_FRAMES + 3 && p.state === 'play'; i++) vm.step(0); return { vm, p }; };
+  const { vm, p } = won(); vm.run(30);
+  ok(p.state === 'over' && p.won && p.rank === 0, 'clearing the last level ends the game as won, in the top 10', `${p.state} won ${p.won} rank ${p.rank}`);
+  ok(vm.m.save[p.TOP_SLOT + 2] === p.LEVELS.length + 1, 'and the save slot for its level holds 13 (one past the last)', `${vm.m.save[p.TOP_SLOT + 2]}`);
+  ok(vm.ppu.oamCount === 64 + 1 + 16, 'the win screen has 16 gems falling past the panel (as well as the board and the HUD picture)', `${vm.ppu.oamCount} sprites`);
+  const line = new Uint16Array(224); for (let i = 0; i < vm.ppu.oamCount; i++) for (let y = Math.max(0, vm.ppu.oamY[i]); y < Math.min(224, vm.ppu.oamY[i] + vm.ppu.oamSize[i]); y++) line[y]++;
+  ok(Math.max(...line) <= 32, 'and no scanline has more than 32 sprites with them', `${Math.max(...line)}`);
+  const y0 = Array.from({ length: vm.ppu.oamCount }, (_, i) => vm.ppu.oamY[i]).slice(65).join();
+  vm.run(20); const y1 = Array.from({ length: vm.ppu.oamCount }, (_, i) => vm.ppu.oamY[i]).slice(65).join();
+  ok(y0 !== y1, 'the gems are moving');
+  vm.run(40); tap(vm, 'A'); ok(p.state === 'initials', 'A asks for the initials');
+  vm.run(25); tap(vm, 'START'); ok(p.state === 'records' && p.topTen()[0].level === p.LEVELS.length + 1 && p.topTen()[0].score >= 4000, 'and the records list it with its level as a win', JSON.stringify(p.topTen()[0]));
+  // a lost game has none of it
+  const v2 = newGame(15), q = v2.probe(); rest(v2, q); q.startLevel(3); q.setTypes(THREE); q.moves = 1; q.cursor = 50; tap(v2, 'A'); tap(v2, 'DOWN'); rest(v2, q, 400); v2.run(5);
+  ok(q.state === 'over' && !q.won && v2.ppu.oamCount === 64 + 1, 'a lost game has no gems falling: the board and the HUD picture only', `${v2.ppu.oamCount} sprites`);
+  ok(v2.m.save[q.TOP_SLOT + 2] === 3, 'and it is saved with the level it reached (3)', `${v2.m.save[q.TOP_SLOT + 2]}`);
+}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);
