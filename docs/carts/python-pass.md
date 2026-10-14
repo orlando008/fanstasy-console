@@ -1,7 +1,7 @@
 # Python Pass: Cart Specification
 
-**Version:** 0.3 (draft)
-**Status:** In progress: step 1 of the plan (15) is built
+**Version:** 0.4 (draft)
+**Status:** In progress: steps 1–2 of the plan (15) are built
 **Cart source:** `carts/src/python-pass/` → `carts/python-pass.nova`
 
 ---
@@ -113,15 +113,17 @@ covers that case as well as sharing a cell.
 
 A power-up appears every 15–25 seconds in a free cell (like fruit), lasts 10 seconds
 unless eaten, and then lasts for its own time. One is active at a time: eating another
-replaces it. They don't count toward the quota.
+replaces it, except SHRINK, which happens at once and leaves the active one alone. They
+don't count toward the quota. The next one comes 15–25 seconds after the last was
+eaten or left.
 
 | Power-up | Effect |
 |---|---|
-| **SLOW** | The snake and the hazards step a third slower for 8 seconds |
+| **SLOW** | The snake and the hazards step a third slower for 8 seconds (the game's clock runs at ⅔ speed; the combo and the time bonus don't change) |
 | **GHOST** | The snake passes through its own body for 6 seconds, which flashes for the last 2. If it ends with the head on its body, it lasts until the head is clear |
-| **SHRINK** | The snake loses half its length (at least 3 cells remain), at once |
+| **SHRINK** | The snake loses half its length, rounded up (at least 3 cells remain), at once |
 | **DOUBLE** | Points from fruit are doubled for 10 seconds |
-| **SHIELD** | Survives one hit from a hazard, a wall or the snake's own body: the hit is absorbed and the shield breaks. It lasts until used, for up to 15 seconds |
+| **SHIELD** | Survives one hit from a hazard, a wall or the snake's own body: the hit is absorbed and the shield breaks. A wall or the snake itself stops that step (the snake stays where it is); a hazard doesn't, and can't hurt for the next 1½ seconds, so a boulder rolling on through the snake does no more harm. It lasts until used, for up to 15 seconds |
 
 ## 8. Levels and zones
 
@@ -293,6 +295,49 @@ it, the gate's glow and the Temple's lava cycle colours.
        collection. No errors in the browser.
 2. **Power-ups and hazards:** the five power-ups, golden fruit and combos, boulders,
    scorpions and falling rocks.
+   - **Built:**
+     - **Fruit:** a golden fruit comes beside one fruit in six, for 8 seconds. The combo
+       is 1 to 4, rising with each fruit within 4 seconds of the last. Extra lives are
+       in too, at 2,500, 8,000, 16,000 and so on.
+     - **Power-ups:** each cell now counts how many of the snake's segments are in it,
+       so a GHOST can overlap itself; where it does, the front segment shows, and the
+       snake is redrawn whole while that lasts. The pale ghost, the gold-edged shield
+       and the white flash after a hit are palette changes. Tokens are small round
+       icons: an hourglass, a ghost, a squeeze, a 2 and a shield.
+     - **Pace:** the snake and the hazards run on one clock, which SLOW runs at ⅔
+       speed. The snake steps first and then the hazards, so a head and a hazard
+       swapping cells in one step are caught as sharing a cell, with no special case.
+     - **Hazards:** a level lists them as `['b', x, y, dir]` (a boulder),
+       `['s', 'ring' or 'beat', route]` (a scorpion) and `['r', x, y, w, h]` (the area
+       rocks fall in), which the cart builds on loading. Fruit and power-ups keep off
+       each boulder's whole corridor and each scorpion's route. Rocks use the run's
+       seeded generator.
+     - 1-1 has no hazards, as planned, so the tests add them through the cart's own
+       functions.
+   - **Results:** a second script of 43 checks all pass, along with the 23 from step 1
+     (one of which, the snake running into itself, had passed by hitting a vine
+     clump instead: it now runs in open ground).
+     - **Score:** fruit pays 10, 20, 30, 40, 40 as the combo climbs, and 10 again after
+       a gap. DOUBLE doubles it, a golden fruit pays 50 × the combo, and fruit grow the
+       snake by 1 and 2.
+     - **Spawns:** about one fruit in six brings a golden one, always beside it, on open
+       ground, and it goes after 8 seconds. Over 30,000 frames a power-up comes every
+       901–1,496 frames, waits exactly 10 seconds, always lands on free ground away
+       from the head and the fruit, and all five kinds turn up.
+     - **Power-ups:** SLOW makes 20 steps in 180 frames into 13 or 14, and ends after 8
+       seconds, and slows a boulder too. A GHOST crosses itself with the tiles right at
+       every step, and one that runs out with its head on its body waits until it is
+       clear. SHRINK halves 11 to 6, never goes under 3 and leaves another power-up
+       alone. A SHIELD takes a wall, the snake itself and a boulder, once each.
+     - **Hazards:** a boulder rolls a cell every 12 frames and turns at the wall; a
+       scorpion walks its ring or beat, a cell every 14. Rocks come every 120–179
+       frames, show their shadow for 59 frames and kill only what is under them. A head,
+       a body or a swap of places with a boulder all cost a life, across four timings.
+       Hazards return with the level, and the same seed replays the same game with them.
+     - **Bot:** a test bot that knows where hazards are and will be gets through 1-1 with
+       a boulder, a scorpion and rocks on all four seeds tried (one with a single
+       life left).
+     - No errors in the browser.
 3. **All 16 levels and the 4 zones:** the levels in the Map tab, the grounds and
    walls, the speed ramp, the quotas.
 4. **Flow:** title, level cards, level clear, game over, the ending, initials, scores,
