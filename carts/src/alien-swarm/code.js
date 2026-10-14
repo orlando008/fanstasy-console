@@ -60,7 +60,10 @@ const PLANETS = [
   { name: 'THE HIVE', terrain: '3a1838 52284e 7a4474 1e0a1a 2e1228 8a4a80 5a2a20 9a5a30 e0b060 9098a8 3070b0 b0e0ff ff70c0 802a60 140812' },
 ];
 const MAPS = ['LANDING ZONE', 'CRATER RIM', 'ICE SHELF', 'GLACIER PASS', 'OVERGROWTH', 'THE SWAMP', 'HIVE GATE', "QUEEN'S NEST"];
-const HEALTH_STEP = 0.15, HARD_HEALTH = 1.8; // aliens' health: x (1 + 0.15 x the map's index), x 1.8 in hard (SPEC 6)
+const HEALTH_STEP = 0.15; // aliens' health: x (1 + 0.15 x the map's index) (SPEC 6)
+// Hard mode's extra health, by map: it stacks on the map's own, so it falls as the maps get
+// tougher, to keep hard a step up from normal on every map rather than a cliff late on (step 7).
+const HARD_HEALTH = [4.0, 3.0, 2.6, 2.6, 1.6, 1.6, 1.9, 1.15];
 
 // --- Waves (SPEC 7) ---
 
@@ -71,7 +74,7 @@ const CODES = 'CSBDPQ', GAPS = [40, 24, 70, 45, 60, 0];
 const WAVES = [
   [ // 1-1 Landing Zone: Crawlers and Skitters
     'C8', 'C12', 'S10', 'C10 &S8', 'C16:30', 'S16:18', 'C12 S12', 'C20:25',
-    'S20:16', 'C15 &S15', 'C24:22', 'S24:15', 'C24 &S24', 'C36:16 &S24', 'Q1 &C16:45'],
+    'S20:16', 'C15 &S15', 'C24:22', 'S30:12', 'C30:16 &S30:12', 'C40:14 &S30:12', 'Q1 &C16:45 &S24:25'],
   [ // 1-2 Crater Rim: Brutes arrive
     'C10', 'S12', 'B4', 'C12 &S10', 'B6', 'C15 B4', 'S20:18', 'B8 &C10',
     'C20 &S15', 'B10:55', 'C20 B6 S15', 'S25:15 &B6', 'B12:50 &C15', 'C25 &S20 &B8', 'Q1 &B6:120'],
@@ -86,7 +89,7 @@ const WAVES = [
     'S30:14 &P6', 'B14 &D12', 'C30 &P10', 'D20 &S24', 'B16 &P10', 'C30 &D20 &B10', 'Q2:400 &C16'],
   [ // 3-2 The Swamp
     'C18', 'D10', 'S24 &B6', 'P10 &D8', 'B14:50', 'C24 &S20', 'D20 &P8', 'B16 &C16',
-    'P14 &D12', 'S30 &B12', 'D24 &P10', 'B18 &S24', 'C30 &D20 &P10', 'B20 &D20 &S20', 'Q2:300 &P10 &D12'],
+    'P14 &D12', 'S30 &B12', 'D24 &P10', 'B18 &S24', 'C30 &D20 &P10', 'B20 &D20 &S20', 'Q2:300>0 &P10 &D12'],
   [ // 4-1 Hive Gate
     'C20 &S10', 'B10', 'D16', 'P12 &S16', 'B14 &D10', 'C30 &P10', 'D22 &B10', 'S36:12 &P10',
     'B20 &D16', 'P16 &C24', 'D26 &B14', 'S36 &P14', 'B24 &D20', 'C36 &P16 &D20 &B12', 'Q2:300 &B12 &D16'],
@@ -432,7 +435,7 @@ function updateShots() {
 // --- Aliens ---
 
 function spawn(kind, path, s = 0) {
-  const A = ALIENS[kind], [x, y] = along(path, s), hp = A.hp * (1 + HEALTH_STEP * mapIx) * (hard ? HARD_HEALTH : 1);
+  const A = ALIENS[kind], [x, y] = along(path, s), hp = A.hp * (1 + HEALTH_STEP * mapIx) * (hard ? HARD_HEALTH[mapIx] : 1);
   aliens.push({ kind, hp, max: hp, s, path, x, y, dead: false, slowT: 0, layT: A.lay || 0 });
 }
 
