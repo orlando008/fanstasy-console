@@ -6,6 +6,11 @@
 21 4a4470
 22 8595a1
 23 24203a
+33 8fd0ff
+34 bfe6ff
+35 f2fbff
+36 4f8fd0
+37 2a4f8a
 129 140c1c
 130 872e2f
 131 d04648
@@ -37,4 +42,14 @@
 212 b394db
 213 e8def4
 225 ffffff
+226 2a4f8a
+227 4f8fd0
+228 8fd0ff
+229 bfe6ff
+230 ffffff
 241 dad45e
+242 4a2e14
+243 b0802c
+244 dad45e
+245 f5ec9a
+246 ffffff

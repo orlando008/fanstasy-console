@@ -1,7 +1,7 @@
 # Ice Breakers: Cart Specification
 
 **Version:** 0.2 (draft)
-**Status:** Steps 1 to 4 built (the ice, the three goals, the twelve levels tuned with the bot, the level banner, the game over that names the goal, the hint). The art and the sound are still the starter's.
+**Status:** Steps 1 to 5 built (the ice, the three goals, the twelve levels tuned with the bot, the level banner, the game over that names the goal, the hint, the ice art). The sound is still the starter's.
 **Cart source:** `carts/src/ice-breakers/` → `carts/ice-breakers.nova`
 
 ---
@@ -38,7 +38,7 @@ the game is over.
 256 × 224. Top (y 0 to 42): the score and the level (left); the level's goal and the moves left (right); a progress bar
 for the goal. The goal reads `ICE LEFT 4`, `YELLOW 3/12` (a GEMS goal names its kind of gem by its colour: RED, ORANGE,
 YELLOW, GREEN, BLUE, PURPLE) or `GOAL 410/600`. The board is 8 × 8 cells of 16 px at (64, 64) to (192, 192). Below it: the chain counter and messages.
-BG0 is the starfield and the board's panel (`art.py`, scene `board`); the ice is a layer over the board (BG1, section 12);
+BG2 is the starfield and the board's panel (`art.py`, scene `board`); the ice is a layer over the gems (BG1, section 12);
 the gems and the cursor are 16 px sprites; the text is the overlay.
 
 ## 5. The rules
@@ -120,10 +120,19 @@ The songs and the effects are the starter's until step 7.
 
 ## 12. Video layers
 
-BG0: the background scene (32 × 28 tiles, `art.py`). BG1: the ice, a tile layer over the board, drawn from the level's
-ice cells and redrawn when a cell breaks (step 5 decides the tile and the map). Sprites: 64 gems and the cursor (65 of the
-128, at most 16 on a scanline). Overlay: the HUD, the banners and the menus.
-The gems are 16 px sprites, each kind in its own sprite palette (0 to 5); the cursor uses palettes 6 (white) and 7 (gold, for a picked-up gem).
+The order that matters (SPEC 4.8): the gems are sprites that must sit under the ice and above the board, and the cursor above the ice.
+
+| Layer | Content |
+|---|---|
+| BG2 | The background: the starfield and the board's panel (scene `board`, 32 × 28 tiles, `art.py`). It is the back layer |
+| Sprites, priority 1 | The 64 gems (16 px each, sprite palette k for gem k) |
+| BG1, high priority | The ice: its own map region (columns 32 to 63), written by `paintIce` from the pictures `ice0` to `ice3` that `art.py` keeps in Map RAM at row 40 (where no layer shows them). Frost over a gem, in BG palette 2, mostly clear so the gem shows through |
+| Sprites, priority 2 | The cursor (sprite palette 6, white; 7, gold, for a picked-up gem) |
+| Sprites, priority 3 | The goal's picture in the HUD: an ice cube (palette 6), a star (palette 7) or the gem asked for |
+| Overlay | The HUD text, the banners, the icicle fringe on the level banner, the hint's gold rings and the menus |
+
+Layer 0 is on by default, so `init` hides it (it would show the board again, over the gems). BG1 is shown only while a game is (the title and records have no ice). The ice has four pictures: whole, two stages of cracking, shards; a cell of ice that breaks goes through the last three in 12 frames (4 each) and is then clear.
+Sprites: 64 gems, the cursor and the HUD picture (66 of the 128, at most 16 on a scanline: the soak run sees 10).
 
 ## 13. Persistence (save slots)
 
@@ -138,9 +147,9 @@ The gems are 16 px sprites, each kind in its own sprite palette (0 to 5); the cu
 
 | Asset | Budget |
 |---|---|
-| Code | 24.5 KB (`node tools/check.js ice-breakers`); the levels, the ice, the banner and the hint added 6.5 KB to the starter's 18 |
-| Tiles | about 66 of 1,023 now (the background 38, the gems and cursor 28); the ice adds a few |
-| Sprites | 65 on the board (128 in OAM, 32 per scanline) |
+| Code | 26.8 KB (`node tools/check.js ice-breakers`); the levels, the ice, the banner, the hint and the ice art added 8.8 KB to the starter's 18 |
+| Tiles | 89 of 1,023 (BG region 53: the background 38, the ice 15; sprite region 36: the gems and cursor 28, the two HUD pictures 8) |
+| Sprites | 66 on the board (128 in OAM, 32 per scanline) |
 | Songs / SFX | 2 songs, 14 SFX; the ice crack makes 15 |
 
 ## 15. Implementation plan
@@ -165,6 +174,9 @@ Step 0 is done: the spec, the scaffold (the match-3 starter with placeholder num
    **Built:** `bestSwap` (the swap worth most to the goal, in the same weights as the bot's) and the wait (`idleT`, `HINT_FRAMES` 360, `hint`): the clock counts only at rest, with the banner gone, and starts again on any press; the hint is two double gold outlines that blink (`timer % 40 < 26`), drawn on the overlay until the art step. A new test file, `04-hint.mjs` (20 checks): it comes at 360 frames and not before; a press, a cursor move or a held gem starts the wait again; not over the banner, not while paused; it picks the ice-breaking swap and the goal-gem swap (each of two boards); making the swap clears it; and the blinking ring is the only thing that changes on the screen.
    **Results:** 128 checks pass (`01-flow` 35, `02-art` 12, `03-rules` 61, `04-hint` 20). Six deliberate breakages of the hint were tried. Five were caught: a press that no longer restarts the wait (5 checks fail), no ice weight, no goal-gem weight, no blink, and the banner counting towards the wait (1 check each). The sixth, deleting a line that cleared the hint when the board moved, changed nothing, because a swap can only start from a press, which clears the hint already; so the line was dead code and was removed. The frame that computes the hint costs about 2.5 ms (median frame 1.4 ms, the budget is 16.7 ms). `verify.js --fast`, `smoke.mjs` and the soak pass; the screenshot shows the double gold ring on two gems, distinct from the cyan ice outlines. The bot presses a button every other frame, so it never sees a hint and the balance in step 3 is unchanged.
 5. **Art pass:** `art.py`: the ice tiles on BG1 (a palette for the ice), the level banner, the goal icons in the HUD, a clear effect for the ice.
+
+   **Built:** the layers moved (section 12): the board to BG2, the gems to sprite priority 1, the ice on BG1 at high priority, the cursor at priority 2 (this replaces the cyan outlines of step 1), and BG0 hidden. The ice: four 16 × 16 pictures in `art.py` (a rim with a glint and flecks of frost, two stages of cracks with the rim breaking up, and the shards), painted by `paintIce`; a cell that breaks takes 12 frames (`ICE_BREAK`, `iceFx`) to crack, scatter and clear. The HUD shows the goal's picture left of its text (an ice cube, a star, or the gem asked for), as sprites in the two spare sprite palettes (6 and 7 now carry the icons' colours too). The level banner has a fringe of icicles (overlay shapes: the overlay is above every sprite, so a gem picture cannot be in the banner).
+   **Results:** 150 checks pass (`01-flow` 35, `02-art` 34, `03-rules` 61, `04-hint` 20; 22 new art checks: the pictures and their palette and priority bits, the ice on the screen and over the gem and under the cursor, the break animation stage by stage, a new level repainting, no ice on the title or after quitting to it, the HUD pictures for each goal kind, the icicles). Seven deliberate breakages of the art were tried: gems above the ice (3 checks fail), the cursor under it (2), no cracks (2), layer 0 left on (8), ice left on the title (2) and the wrong HUD picture (2) were caught; the seventh, resetting what each cell was painted with on a new level, changed nothing (what a cell shows always matches the map, so the ordinary comparison repaints it), so that was removed as dead code. `verify.js --fast`, `smoke.mjs` and the soak pass (worst frame 9.8 ms of 16.7); the balance is unchanged (the rules were not touched). Screenshots: the frost over the gems on levels 1, 7 and 12, the break in four frames, the banner and the HUD, the title with no ice. A mistake along the way: with the board moved to BG2, the default-on layer 0 still showed the same map, over the gems and the ice (both vanished); the test now checks that layer 0 is hidden.
 6. **Flow polish:** the records screen shows the level reached; the win screen.
 7. **Audio pass:** `audio.py`: the ice crack, the goal reached, the win fanfare; the songs' levels checked with `loud.mjs --check`.
 8. **Release:** the PNG cart, the label (`node tools/release.js ice-breakers`), the Library entry, a README row, the spec's Results notes.

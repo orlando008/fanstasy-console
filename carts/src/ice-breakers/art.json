@@ -13,6 +13,16 @@
     "star": 3
    }
   },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "deep": 5,
+    "frost": 2,
+    "rim": 1,
+    "shade": 4,
+    "white": 3
+   }
+  },
   "spr0": {
    "base": 128,
    "colors": {
@@ -76,13 +86,23 @@
   "spr6": {
    "base": 224,
    "colors": {
-    "c": 1
+    "c": 1,
+    "i_dark": 3,
+    "i_edge": 2,
+    "i_light": 5,
+    "i_mid": 4,
+    "i_shine": 6
    }
   },
   "spr7": {
    "base": 240,
    "colors": {
-    "c": 1
+    "c": 1,
+    "s_dark": 3,
+    "s_edge": 2,
+    "s_light": 5,
+    "s_mid": 4,
+    "s_shine": 6
    }
   }
  },
@@ -93,6 +113,34 @@
    "my": 0,
    "pal": 1,
    "w": 32
+  },
+  "ice0": {
+   "h": 2,
+   "mx": 0,
+   "my": 40,
+   "pal": 2,
+   "w": 2
+  },
+  "ice1": {
+   "h": 2,
+   "mx": 2,
+   "my": 40,
+   "pal": 2,
+   "w": 2
+  },
+  "ice2": {
+   "h": 2,
+   "mx": 4,
+   "my": 40,
+   "pal": 2,
+   "w": 2
+  },
+  "ice3": {
+   "h": 2,
+   "mx": 6,
+   "my": 40,
+   "pal": 2,
+   "w": 2
   }
  },
  "sprites": {
@@ -130,9 +178,19 @@
    "pal": 5,
    "size": 16,
    "tile": 266
+  },
+  "icon_ice": {
+   "pal": 6,
+   "size": 16,
+   "tile": 270
+  },
+  "icon_star": {
+   "pal": 7,
+   "size": 16,
+   "tile": 288
   }
  },
  "tiles": {},
- "used": 66,
+ "used": 89,
  "version": 1
 }
