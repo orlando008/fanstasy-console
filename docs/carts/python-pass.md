@@ -1,7 +1,7 @@
 # Python Pass: Cart Specification
 
-**Version:** 0.4 (draft)
-**Status:** In progress: steps 1–2 of the plan (15) are built
+**Version:** 0.5 (draft)
+**Status:** In progress: steps 1–4 of the plan (15) are built; step 3's balance work is not finished
 **Cart source:** `carts/src/python-pass/` → `carts/python-pass.nova`
 
 ---
@@ -338,10 +338,67 @@ it, the gate's glow and the Temple's lava cycle colours.
        a boulder, a scorpion and rocks on all four seeds tried (one with a single
        life left).
      - No errors in the browser.
-3. **All 16 levels and the 4 zones:** the levels in the Map tab, the grounds and
-   walls, the speed ramp, the quotas.
-4. **Flow:** title, level cards, level clear, game over, the ending, initials, scores,
-   pause and saves.
+3. **All 16 levels and the 4 zones (built; balance unfinished):** the levels in the Map
+   tab, the grounds and walls, the speed ramp, the quotas.
+   - **Built:**
+     - The 16 levels are laid out in the art script with a small helper (walls, open
+       ground, rings and lines for routes), and checked as they are built: every open
+       cell can be reached from the start, the gate can be reached, every hazard route
+       is sound (a boulder lane at least 4 cells long, a scorpion route with no gaps),
+       no hazard starts within 6 cells of the snake's head or on its first cells, rocks
+       can't fall on the start, the gate's inner cell is free of hazards, and at least
+       60 cells are free for fruit.
+     - Each zone has its own ground picture and colours (the Riverbank's walls are
+       water, the Ruins' are columns, the Temple's carved stone). The cart recolours the
+       two palettes and points BG2 at the zone's ground when a level begins. These are
+       placeholders for the art pass.
+     - The speed ramp is the formula in section 5: 9 ticks a step on level 1, 5 on
+       level 16. Quotas run from 8 to 16.
+     - Fixing the starts: the checks found hazards too near the head on five levels,
+       and boulder lanes that ran into the start; those layouts were changed.
+   - **Not finished:** a test bot that plans in time (it simulates every hazard's route
+     and keeps the whole snake clear of it) clears 1-1, 1-3, 1-4, 2-1, 2-3, 3-1 to 3-4,
+     4-1, 4-2 and 4-4 on most of five seeds, sometimes losing a life. It got stuck or
+     died repeatedly on 1-2, 2-2, 2-4 and 4-3. On the long winding levels (1-2, 2-4,
+     4-3) the cause was the bot: the fruit is further than its 90-step search, so it
+     wandered. A fix was written but not run. 2-2 (The Rapids) was not investigated, so
+     it is not known whether it is the bot or the level. Run length (spec: about 20
+     minutes) and fairness for a human are for step 7.
+4. **Flow (built):** title, level cards, level clear, game over, the ending, initials,
+   scores, pause and saves.
+   - **Built:**
+     - **Title:** the letters of PYTHON PASS drop in one by one and land with a thud
+       (START skips the drop), over an empty jungle with a snake slithering along the
+       bottom: the real snake drawing, steered along a wavy route. Then the best score
+       with its initials and the menu.
+     - **Banners:** `WATCH OUT: BOULDERS!`, `SCORPIONS!` or `FALLING ROCKS!` the first time
+       each comes up in a run, for 2½ seconds at the top of the field.
+     - **Tally:** FRUIT EATEN, GOLDEN FRUIT, CLEAR TIME, LEVEL BONUS and TIME BONUS come up
+       one by one, then the bonus counts into the score. START or A pays it at once,
+       and a second press goes on. The level clear no longer pays the bonus the
+       moment the head enters the gate.
+     - **Endings:** GAME OVER and TEMPLE CLEARED (with its 2,000 a life bonus) show the
+       score and its place. The run goes into the top 10 at once under the last initials,
+       so it counts if you never name it. START goes on to initials if it ranked, or the
+       title if not.
+     - **Initials and scores:** as in Smashy Smash: UP and DOWN change the letter, LEFT
+       and RIGHT (or B and A) move, START saves. The scores screen lights the new row.
+       Each row shows the initials, the level reached (`2-3`, or `ALL`) and the score.
+     - **Pause:** RESUME, RESTART LEVEL and QUIT TO TITLE. Quitting abandons the run
+       without recording it.
+     - **Saves:** the layout in section 13. The save format version is 2 (the earlier one
+       held only a high score, and is wiped).
+     - Menu sounds, a thud for each landing letter and a fanfare for the ending are
+       placeholders for the audio pass.
+   - **Results:** a script of 24 checks of the flow all pass.
+     - It runs from the title through a pause, a tally, three hazard banners, game over
+       and the initials, to the scores and back, and through the ending.
+     - After runs ending at 23,456, 12,000 and 99,999 the saved table is in order, each
+       entry has its level reached and the last initials used, and the title shows the
+       best.
+     - The step 1 checks still pass through the new title, with the gate test changed:
+       it now checks that the tally pays the bonus and the next level begins.
+     - No errors in the browser.
 5. **Art pass:** the four zones' looks, the snake with scales and animated eyes and
    tongue, fruit and power-ups, hazards, particles, the title.
 6. **Audio pass:** five songs and the effects.
