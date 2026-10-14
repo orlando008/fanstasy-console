@@ -1,6 +1,14 @@
 {
   "carts": [
     {
+      "name": "alien-swarm",
+      "title": "Alien Swarm",
+      "author": "NOVA-16",
+      "description": "A space tower defense: hold back the alien swarm with five kinds of gun tower across 8 maps on 4 planets, 15 waves each with a Queen to finish, with stars, a hard mode and a song for every planet.",
+      "label": "carts/labels/alien-swarm.png",
+      "png": "carts/alien-swarm.nova.png"
+    },
+    {
       "name": "block-wizard",
       "title": "Block Wizard",
       "author": "NOVA-16",
