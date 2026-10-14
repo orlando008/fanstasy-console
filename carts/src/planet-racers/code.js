@@ -132,6 +132,9 @@ const ATTITUDE = [
 const SUN = [21, 22, 23], MOON = [24, 25, 26]; // core, disc and glow (BG palette 1)
 const SFX = { beep: 0, go: 1, orb: 2, lap: 3, final: 4, finish: 5, pit: 6, move: 7, select: 8, drift: 9, boostEnd: 10, wall: 11, bump: 12, bumper: 13, lose: 14 };
 const SFX_CH = 1;
+// Effects with noise (or saw or triangle) in them go on a channel with that voice: the channel decides the voice.
+const SFX_VOICE_CH = {9: 4};
+function sfxv(n, ch) { sfx(n, n in SFX_VOICE_CH ? SFX_VOICE_CH[n] : ch); }
 const ORD = ['1ST', '2ND', '3RD', '4TH', '5TH', '6TH', '7TH', '8TH'];
 const MENU = ['GRAND PRIX', 'TIME TRIAL', 'SCORES'];
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -486,7 +489,7 @@ function drive(k, m) {
   let sp = k.sp;
   k.drift = !k.rev && dir !== 0 && (m & (BIT(L) | BIT(R))) !== 0 && sp > DRIFT_MIN;
   k.skid = k.drift ? k.skid + 1 : 0;
-  if (me && k.drift && k.skid % SKID_EVERY === 1) sfx(SFX.drift, SFX_CH);
+  if (me && k.drift && k.skid % SKID_EVERY === 1) sfxv(SFX.drift, SFX_CH);
 
   // Steering: full rate after the ramp, scaled down at low speed, reversed in reverse.
   let rate = st.turn * k.steerT / STEER_RAMP * Math.min(1, sp / TURN_FULL);
@@ -518,7 +521,7 @@ function drive(k, m) {
   } else sp *= COAST;
   if (sp > cap) sp = Math.max(cap, sp * 0.94); // off the road, or a boost running out
   if (k.drift) sp *= DRIFT_DRAG;
-  if (k.boost > 0 && --k.boost === 0 && me) sfx(SFX.boostEnd, SFX_CH);
+  if (k.boost > 0 && --k.boost === 0 && me) sfxv(SFX.boostEnd, SFX_CH);
   if (k.dizzy > 0) k.dizzy--;
 
   // Move at the new speed along the velocity's direction.
@@ -537,7 +540,7 @@ function drive(k, m) {
   // The floor's edge is a soft wall.
   if (k.x < EDGE || k.x > 1024 - EDGE || k.y < EDGE || k.y > 1024 - EDGE) {
     k.x = mid(EDGE, k.x, 1024 - EDGE); k.y = mid(EDGE, k.y, 1024 - EDGE);
-    if (me && k.sp > 0.3) sfx(SFX.wall, SFX_CH);
+    if (me && k.sp > 0.3) sfxv(SFX.wall, SFX_CH);
     k.sp *= 0.5;
   }
 
@@ -545,7 +548,7 @@ function drive(k, m) {
   const now = surfaceAt(k.x, k.y);
   if (now === S_PIT && k.surf !== S_PIT) {
     k.sp *= PIT_SLOW; k.dizzy = DIZZY;
-    if (me) sfx(SFX.pit, SFX_CH);
+    if (me) sfxv(SFX.pit, SFX_CH);
   }
   k.surf = now;
 }
@@ -566,7 +569,7 @@ function hitBumpers(k) {
     if (vn >= 0) continue;
     k.vx -= 2 * vn * nx; k.vy -= 2 * vn * ny;
     k.sp *= 1 - BUMPER_LOSS;
-    if (k === player) sfx(SFX.bumper, SFX_CH);
+    if (k === player) sfxv(SFX.bumper, SFX_CH);
   }
 }
 
@@ -579,7 +582,7 @@ function collectOrbs(k) {
       k.taken[i] = 1;
       k.boost = BOOST_FRAMES;
       k.sp = Math.max(k.sp, k.st.top * BOOST);
-      if (k === player) sfx(SFX.orb, SFX_CH);
+      if (k === player) sfxv(SFX.orb, SFX_CH);
     }
   }
 }
@@ -602,7 +605,7 @@ function bump() {
       // so a kart pressed against a slower one isn't dragged down to a crawl.
       if ((b.vx - a.vx) * nx + (b.vy - a.vy) * ny >= 0) continue;
       a.sp *= 1 - BUMP_LOSS * ka; b.sp *= 1 - BUMP_LOSS * kb;
-      if ((a === player || b === player) && bumpQuiet === 0) { sfx(SFX.bump, SFX_CH); bumpQuiet = 12; }
+      if ((a === player || b === player) && bumpQuiet === 0) { sfxv(SFX.bump, SFX_CH); bumpQuiet = 12; }
     }
   }
 }
@@ -656,8 +659,8 @@ function crossLine(k) {
     return;
   }
   if (k !== player) return;
-  if (k.laps.length === LAPS - 1) { banner = { text: 'FINAL LAP', until: timer + 90, color: GOLD }; sfx(SFX.final, SFX_CH); }
-  else sfx(SFX.lap, SFX_CH);
+  if (k.laps.length === LAPS - 1) { banner = { text: 'FINAL LAP', until: timer + 90, color: GOLD }; sfxv(SFX.final, SFX_CH); }
+  else sfxv(SFX.lap, SFX_CH);
 }
 
 /** The AI's buttons this frame (SPEC 7.1): steer at the racing line, pace to the corner ahead. */
@@ -715,12 +718,12 @@ function finish() {
   state = 'finish'; timer = 0; page = 0;
   music(-1); // the fanfare: a winner's for first place or a record, the other for the rest (SPEC 12)
   const p = player;
-  if (mode !== 1) { sfx(order().indexOf(p) === 0 ? SFX.finish : SFX.lose, SFX_CH); return; }
+  if (mode !== 1) { sfxv(order().indexOf(p) === 0 ? SFX.finish : SFX.lose, SFX_CH); return; }
   const slot = TRIAL_SLOT + 3 * tix;
   if (!p.capped && (!best.time || p.finish < best.time)) { best.time = p.finish; record.time = true; dset(slot, p.finish); dset(slot + 2, pick); }
   const lap = Math.min(...p.laps);
   if (p.laps.length && (!best.lap || lap < best.lap)) { best.lap = lap; record.lap = true; dset(slot + 1, lap); }
-  sfx(record.time || record.lap ? SFX.finish : SFX.lose, SFX_CH);
+  sfxv(record.time || record.lap ? SFX.finish : SFX.lose, SFX_CH);
 }
 
 /** The championship so far: all eight planets by points, ties by this race's places. */
@@ -814,7 +817,7 @@ function update() {
 
 const ok = () => pressed(START) || pressed(B); // menus: START or B to go on, A to go back
 const lr = () => (pressed(LEFT) ? -1 : pressed(RIGHT) ? 1 : 0);
-const beep = (n) => sfx(n, SFX_CH);
+const beep = (n) => sfxv(n, SFX_CH);
 
 function updateTitle() {
   timer++;
@@ -854,21 +857,21 @@ function updateCard() {
 
 function updateRace() {
   if (paused) {
-    if (pressed(UP) || pressed(DOWN)) { pauseSel ^= 1; sfx(SFX.move, SFX_CH); }
+    if (pressed(UP) || pressed(DOWN)) { pauseSel ^= 1; sfxv(SFX.move, SFX_CH); }
     if (pressed(START) || pressed(B)) {
-      sfx(SFX.select, SFX_CH);
+      sfxv(SFX.select, SFX_CH);
       if (pauseSel === 0) paused = false; else toTitle(); // quitting abandons a Grand Prix
     }
     return;
   }
-  if (pressed(START)) { paused = true; pauseSel = 0; sfx(SFX.select, SFX_CH); return; }
+  if (pressed(START)) { paused = true; pauseSel = 0; sfxv(SFX.select, SFX_CH); return; }
   if (mode === 1 && pressed(SELECT)) { startRace(); return; }
   timer++;
   if (timer <= COUNT) {
-    if (timer % 60 === 1) sfx(SFX.beep, SFX_CH);
+    if (timer % 60 === 1) sfxv(SFX.beep, SFX_CH);
     return;
   }
-  if (timer === COUNT + 1) { sfx(SFX.go, SFX_CH); banner = { text: 'GO!', until: timer + 45, color: GREEN }; }
+  if (timer === COUNT + 1) { sfxv(SFX.go, SFX_CH); banner = { text: 'GO!', until: timer + 45, color: GREEN }; }
   stepRace();
 }
 
@@ -877,8 +880,8 @@ function updateFinish() {
   stepRace(); // everyone drives on: the rivals to the line, you on autopilot
   if (timer <= 60) return;
   if (mode === 1) {
-    if (pressed(START)) { sfx(SFX.select, SFX_CH); startRace(); }
-    else if (pressed(SELECT)) { sfx(SFX.select, SFX_CH); toTitle(); }
+    if (pressed(START)) { sfxv(SFX.select, SFX_CH); startRace(); }
+    else if (pressed(SELECT)) { sfxv(SFX.select, SFX_CH); toTitle(); }
     return;
   }
   if (!ok()) return;

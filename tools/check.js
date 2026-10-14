@@ -7,7 +7,7 @@
 // Errors (exit code 1): code over 64 KB, a syntax error, audio over its limits, an instrument whose wave does
 // not suit the channel it is on in a song, a note out of range, an SFX that mixes voices, or a PNG cart that
 // would not fit. Warnings: code over 90% of the limit, a built .nova that is older than its source, an SFX
-// that would sound wrong through the cart's SFX_CH, a description that still says "work in progress", no label.
+// that would sound wrong through the cart's SFX_CH (unless the code routes them: a table named SFX_VOICE_CH, or a comment "sfx-voice-routed"), a description that still says "work in progress", no label.
 // Numbers worth knowing are printed for every cart (code size, tiles, sprites per scanline are a run-time limit:
 // see docs/dev/playbook.md for the harness check).
 
@@ -97,14 +97,14 @@ async function checkCart(arg) {
     const used = [0, 1, 2, 3, 4, 5].filter((ch) => song.order.some((k) => cart.patterns[k].some((row, r) => (r === 0 && ch === 1 ? row[ch]?.n != null : nz(row[ch])))));
     console.log(`  song ${s}  ${song.order.length} patterns, channels ${used.join(',') || 'none'}${used.includes(1) ? '  (channel 1 has notes: it is usually kept for SFX)' : ''}`);
   });
-  const code = cart.code, sfxCh = /\bSFX_CH\s*=\s*(\d)/.exec(code), wrongVoice = [];
+  const code = cart.code, sfxCh = /\bSFX_CH\s*=\s*(\d)/.exec(code), wrongVoice = [], routed = /sfx-voice-routed|SFX_VOICE_CH/.test(code);
   cart.sfx.forEach((e, n) => {
     const used = e.rows.filter((r) => r && r.n != null && r.n >= 0 && r.i != null);
     if (!used.length) return;
     used.forEach((r) => insUsed.add(r.i));
     const voices = new Set(used.map((r) => voice(r.i)));
     if (voices.size > 1) { err(`sfx ${n} mixes instruments of different voices (${[...voices].join(', ')}): an SFX plays on one channel`); return; }
-    if (sfxCh && CHANNEL_VOICES[Number(sfxCh[1])] !== [...voices][0]) wrongVoice.push(`${n} (${[...voices][0]})`);
+    if (sfxCh && !routed && CHANNEL_VOICES[Number(sfxCh[1])] !== [...voices][0]) wrongVoice.push(`${n} (${[...voices][0]})`);
   });
   if (wrongVoice.length) warn(`SFX_CH = ${sfxCh[1]} is a ${CHANNEL_VOICES[Number(sfxCh[1])]} channel, so these effects sound like a ${CHANNEL_VOICES[Number(sfxCh[1])]} if the cart plays them on it (the channel decides the voice): ${wrongVoice.join(', ')}`);
   const lastIns = Math.max(-1, ...insUsed);

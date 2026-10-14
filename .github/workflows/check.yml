@@ -15,6 +15,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      # Limits and the mistakes in docs/dev/playbook.md. Smashy Smash has a known instrument/channel error
-      # (playbook section 9) and is skipped until it is fixed.
-      - run: node tools/check.js --all --skip=smashy-smash
+      # Limits and the mistakes in docs/dev/playbook.md
+      - run: node tools/check.js --all

@@ -36,6 +36,7 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level and pitch (centroid) of effects, on the channel the game uses |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and saw on the beat |
 | `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons) |
+| `node tools/devkit/voices.mjs carts/<name>.nova [frames] [seed]` | Plays the cart with random presses and reports any effect sent to a channel whose voice does not suit it |
 | `tools/devkit/harness.mjs` | The headless console for tests (see its header comment) |
 
 Examples to copy: `tests/carts/moto-crosser/` (a full test suite with a `lib.mjs`), `carts/src/moto-crosser/audio.py`
@@ -91,8 +92,10 @@ You cannot hear the result, so measure it, and follow the rules that keep player
 
 - **The channel decides the voice** (0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample), whatever an
   instrument's `wave` says. A noise instrument played on a pulse channel is a pulse. `check.js` flags a song
-  cell on the wrong channel as an error, and lists effects whose voice does not suit the cart's `SFX_CH`.
-  Games that need real noise effects play them on channel 4 (Moto Crosser routes them through its `fx()`).
+  cell on the wrong channel as an error, and lists effects whose voice does not suit the cart's `SFX_CH` (unless
+  the code has a `SFX_VOICE_CH` table or a `sfx-voice-routed` comment); `voices.mjs` plays the cart and flags
+  what it really sends. Put noise effects on channel 4, saw on 3, triangle on 2: copy `sfxv()` and
+  `SFX_VOICE_CH` from Python Pass, or Moto Crosser's `fx()`.
 - **Reserve channels**: channel 1 for SFX (songs only carry the tempo `F0x` on row 0 of each pattern on it),
   and channel 4 for an engine or other continuous sound. Hats then become short samples on channel 5, on rows
   with no kick or snare (the kit does this).
@@ -140,11 +143,15 @@ You cannot hear the result, so measure it, and follow the rules that keep player
 - Commit the cart (`carts/<name>.nova`, `.nova.png`, `labels/`, `index.json`), its source folder, its spec and the
   README row together.
 
-## 9. Known issues in the first games
+## 9. Fixed in the first games
 
-Found by `check.js` when it was written; not changed, because they alter a released game:
+`check.js` and `voices.mjs` found two mistakes in the first games, both from the rule that the channel decides
+the voice. They are fixed, so the sound of those games changed a little:
 
-- Smashy Smash, song 2: an instrument with a pulse wave sits on channel 3 (saw), so it plays as a saw.
-- Alien Swarm, Planet Racers, Python Pass and Smashy Smash send some noise effects through `SFX_CH = 1` (a pulse
-  channel), so they sound like pulse tones rather than noise. Moto Crosser fixed this by routing noise effects
-  to channel 4.
+- **Noise (and saw) effects played through the pulse effects channel** (Alien Swarm, Planet Racers, Python
+  Pass, Smashy Smash): they sounded like pulse tones. Each cart now has a table, `SFX_VOICE_CH`, and plays those
+  effects on channel 4 (noise) or 3 (saw) through `sfxv()`; the rest still use `SFX_CH = 1`. A noise effect
+  briefly mutes the music's channel 4 (the hats) while it plays. Noise is somewhat louder than a pulse at the
+  same volume (RMS 1.3 to 1.5 times), still well under the music.
+- **Smashy Smash, song 2** had an instrument declared as `pulse12` on the saw channel (it always played as a
+  saw, with a fast vibrato). Its wave is now `saw`, so the sound is as it was.
