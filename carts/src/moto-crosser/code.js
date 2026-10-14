@@ -1,7 +1,8 @@
 // Moto Crosser: a dirt-bike racer in the style of Excitebike (docs/carts/moto-crosser.md).
-// The whole game (steps 1-5): a title, QUICK RACE and CHAMPIONSHIP on three four-lane tracks with the
-// bike's gas, turbo, lane changes, jumps, landings and overheating engine, hurdles, mud, arrow strips and
-// cooling pads, five CPU rivals, places, points, the podium, initials, saved best times and a top 10, and a pause.
+// The whole game (steps 1-6): a title, QUICK RACE and CHAMPIONSHIP on three four-lane tracks (a stadium,
+// a desert and a night mountain road, each with its own scenery) with the bike's gas, turbo, lane changes,
+// jumps, landings and overheating engine, hurdles, mud, arrow strips and cooling pads, five CPU rivals,
+// places, points, the podium, initials, saved best times and a top 10, and a pause.
 
 // --- Layout (SPEC 4) ---
 
@@ -97,8 +98,8 @@ function init() {
     dset(VERSION_SLOT, SAVE_VERSION);
   }
   bg(0, { mx: 0, my: 0, mw: RING, mh: 28, wrap: true, show: true });
-  bg(1, { mx: 0, my: 28, mw: 64, mh: 28, wrap: true, show: true });
-  bg(2, { mx: 0, my: 56, mw: 32, mh: 28, wrap: true, show: true });
+  bg(1, { mx: 0, my: 28, mw: 64, mh: 12, wrap: true, show: true });
+  bg(2, { mx: 0, my: 52, mw: 64, mh: 12, wrap: true, show: true });
   if (skipTitle) startRace(true); else toTitle();
 }
 
@@ -114,9 +115,9 @@ const BIKE_OFF = [[5,7],[5,7],[2,5],[2,5],[2,3],[2,3],[2,1],[2,1],[1,3],[1,3],[0
 // Kinds: rampS, rampM, rampL (up to a lip), downS, downM, downL (the same, going down: for landing on), bump, hill, hurdle, mud, arrow, cool.
 // TRACKS (written by tracks.py)
 const TRACKS = [
-  { name: "STADIUM DIRT", len: 9600, par: 3200, skills: [1.0, 0.97, 0.94, 1.02, 0.92], look: {}, objs: [["rampS",1,640],["arrow",2,1056,2],["rampM",3,1296],["hurdle",2,1728],["bump",0,1968],["bump",0,2016],["bump",0,2064],["rampM",1,2320],["mud",2,2752,6],["hurdle",1,3024],["hurdle",2,3024],["cool",2,3248,2],["rampL",2,3488],["downL",2,3632],["hill",1,4016],["hurdle",0,4352],["hurdle",1,4352],["arrow",0,4592,3],["rampL",0,4848],["hurdle",1,5296],["bump",3,5520],["bump",3,5568],["bump",3,5616],["rampM",2,5888],["arrow",1,6320,2],["hurdle",2,6560],["hurdle",3,6560],["arrow",2,6800,2],["rampL",1,7040],["downL",1,7184],["hurdle",2,7568],["hurdle",3,7568],["cool",1,7792,2],["rampM",0,8032],["hurdle",0,8464],["hurdle",1,8464],["bump",1,8704],["bump",1,8752],["bump",1,8800],["bump",1,8848],["rampL",2,9104]] },
-  { name: "DESERT RUN", len: 12000, par: 4000, skills: [1.01, 0.98, 0.95, 1.03, 0.93], look: {"set": {"0": "f4c070", "1": "ffe0a0", "2": "fff4dc", "3": "9a6a40", "4": "c08850", "5": "c8a070", "6": "8a5a2c", "7": "d8a860", "8": "f0c880", "17": "8a5a2c", "18": "d8a860", "19": "f0c880", "21": "6a4020", "22": "f8e8b8", "9": "4a2810", "10": "c86a38", "11": "f0a068", "12": "9a4a20"}}, objs: [["rampM",2,640],["hill",1,1024],["arrow",2,1328,3],["mud",1,1552,10],["hurdle",0,1792],["hurdle",1,1792],["hurdle",3,1792],["cool",3,1984,2],["rampL",1,2192],["downL",1,2336],["hill",0,2656],["hill",1,2688],["mud",2,2992,8],["arrow",1,3232,2],["rampL",0,3424],["hurdle",0,3840],["hurdle",2,3840],["bump",2,4016],["bump",2,4064],["bump",2,4112],["bump",2,4160],["mud",3,4384,12],["arrow",2,4656,3],["cool",0,4864,2],["hurdle",0,5072],["hurdle",1,5072],["rampM",1,5264],["hill",2,5648],["arrow",0,5952,2],["mud",1,6144,8],["hurdle",2,6384],["hurdle",3,6384],["rampL",3,6576],["hill",1,6976],["hill",2,7008],["cool",2,7296,2],["hurdle",0,7504],["hurdle",2,7504],["hurdle",3,7504],["rampM",0,7696],["downM",0,7824],["mud",2,8144,10],["arrow",3,8384,3],["rampL",1,8608],["hurdle",0,9008],["hurdle",1,9008],["hill",0,9200],["bump",1,9504],["bump",1,9552],["bump",1,9600],["mud",0,9808,8],["arrow",1,10048,2],["rampL",2,10256],["downL",2,10400],["hurdle",2,10720],["hurdle",3,10720],["cool",3,10912,2],["rampM",2,11120],["hurdle",1,11504],["hurdle",2,11504],["arrow",3,11696,3]] },
-  { name: "NIGHT MOUNTAIN", len: 14400, par: 4800, skills: [1.02, 0.99, 0.96, 1.04, 0.94], look: {"dim": 0.42, "set": {"0": "0a1030", "1": "101c40", "2": "404c78", "3": "18283a", "4": "24405a", "5": "1c2c48", "9": "2a1408", "10": "a07048", "11": "e0b078", "12": "785030", "26": "f8d838", "27": "906010", "28": "a8e0ff", "29": "4890d8", "30": "ffffff"}}, objs: [["rampM",1,640],["rampS",2,960],["rampM",2,1160],["arrow",1,1472,2],["hurdle",0,1600],["hurdle",1,1600],["hurdle",3,1600],["mud",3,1712,8],["rampL",0,1872],["hurdle",2,2224],["hurdle",3,2224],["hill",2,2336],["arrow",3,2576,3],["rampS",0,2720],["rampM",0,2920],["hurdle",0,3232],["hurdle",2,3232],["hurdle",3,3232],["rampL",1,3344],["downL",1,3488],["mud",2,3744,10],["cool",2,3920,2],["bump",0,4064],["bump",0,4112],["bump",0,4160],["bump",0,4208],["rampM",3,4352],["hurdle",0,4656],["hurdle",1,4656],["arrow",1,4768,3],["hill",2,4912],["hill",3,4944],["hurdle",2,5168],["hurdle",3,5168],["rampS",1,5280],["rampM",1,5480],["mud",3,5792,12],["hurdle",0,5984],["hurdle",1,5984],["rampL",1,6112],["hurdle",0,6496],["hurdle",3,6496],["arrow",2,6608,2],["rampL",0,6736],["downL",0,6880],["mud",1,7136,8],["hurdle",0,7296],["hurdle",1,7296],["hurdle",3,7296],["rampS",3,7408],["rampM",3,7608],["hill",1,7936],["arrow",0,8160,3],["hurdle",2,8304],["hurdle",3,8304],["rampM",2,8416],["hurdle",0,8736],["hurdle",1,8736],["cool",1,8848,2],["mud",2,8976,12],["hurdle",0,9168],["hurdle",2,9168],["hurdle",3,9168],["rampL",3,9280],["downL",3,9424],["bump",2,9696],["bump",2,9744],["bump",2,9792],["arrow",3,9936,2],["rampS",1,10064],["rampM",1,10264],["hurdle",0,10576],["hurdle",1,10576],["rampL",0,10688],["hurdle",2,11072],["hurdle",3,11072],["mud",1,11184,10],["hurdle",0,11376],["hurdle",1,11376],["hurdle",3,11376],["hill",0,11488],["hill",1,11520],["arrow",2,11744,3],["rampM",2,11888],["downM",2,12016],["hurdle",0,12256],["hurdle",2,12256],["hurdle",3,12256],["rampL",3,12368],["hurdle",0,12720],["hurdle",1,12720],["cool",0,12832,2],["rampS",2,12976],["rampM",2,13176],["hurdle",2,13488],["hurdle",3,13488],["mud",3,13600,8],["arrow",1,13760,3],["rampL",2,13904]] },
+  { name: "STADIUM DIRT", len: 9600, par: 3200, skills: [1.0, 0.97, 0.94, 1.02, 0.92], setting: 0, look: {}, objs: [["rampS",1,640],["arrow",2,1056,2],["rampM",3,1296],["hurdle",2,1728],["bump",0,1968],["bump",0,2016],["bump",0,2064],["rampM",1,2320],["mud",2,2752,6],["hurdle",1,3024],["hurdle",2,3024],["cool",2,3248,2],["rampL",2,3488],["downL",2,3632],["hill",1,4016],["hurdle",0,4352],["hurdle",1,4352],["arrow",0,4592,3],["rampL",0,4848],["hurdle",1,5296],["bump",3,5520],["bump",3,5568],["bump",3,5616],["rampM",2,5888],["arrow",1,6320,2],["hurdle",2,6560],["hurdle",3,6560],["arrow",2,6800,2],["rampL",1,7040],["downL",1,7184],["hurdle",2,7568],["hurdle",3,7568],["cool",1,7792,2],["rampM",0,8032],["hurdle",0,8464],["hurdle",1,8464],["bump",1,8704],["bump",1,8752],["bump",1,8800],["bump",1,8848],["rampL",2,9104]] },
+  { name: "DESERT RUN", len: 12000, par: 4000, skills: [1.01, 0.98, 0.95, 1.03, 0.93], setting: 1, look: {"set": {"0": "f4c070", "6": "8a5a2c", "7": "d8a860", "8": "f0c880", "9": "4a2810", "10": "c86a38", "11": "f0a068", "12": "9a4a20", "13": "e8c898", "14": "c8a070", "15": "a07848", "17": "8a5a2c", "18": "d8a860", "19": "f0c880", "20": "fff4dc", "21": "6a4020", "22": "f8e8b8", "23": "4a2c14", "24": "6a4020", "25": "8a6038", "81": "3a2010", "82": "6a4020", "83": "c8a070", "84": "e8c898", "85": "a07848", "86": "d8b078", "87": "5a2a1a", "88": "9a4a2a", "89": "c06a3a", "90": "e08a50", "91": "3a8a40", "92": "70c060", "100": "fff0a0", "101": "ffd070", "102": "8a3a20", "103": "b05a30", "104": "d8a060", "105": "f0c880", "106": "f8d090", "107": "c87040", "226": "f0d8a0", "227": "d0a868", "228": "6a4020", "229": "8a5a30"}}, objs: [["rampM",2,640],["hill",1,1024],["arrow",2,1328,3],["mud",1,1552,10],["hurdle",0,1792],["hurdle",1,1792],["hurdle",3,1792],["cool",3,1984,2],["rampL",1,2192],["downL",1,2336],["hill",0,2656],["hill",1,2688],["mud",2,2992,8],["arrow",1,3232,2],["rampL",0,3424],["hurdle",0,3840],["hurdle",2,3840],["bump",2,4016],["bump",2,4064],["bump",2,4112],["bump",2,4160],["mud",3,4384,12],["arrow",2,4656,3],["cool",0,4864,2],["hurdle",0,5072],["hurdle",1,5072],["rampM",1,5264],["hill",2,5648],["arrow",0,5952,2],["mud",1,6144,8],["hurdle",2,6384],["hurdle",3,6384],["rampL",3,6576],["hill",1,6976],["hill",2,7008],["cool",2,7296,2],["hurdle",0,7504],["hurdle",2,7504],["hurdle",3,7504],["rampM",0,7696],["downM",0,7824],["mud",2,8144,10],["arrow",3,8384,3],["rampL",1,8608],["hurdle",0,9008],["hurdle",1,9008],["hill",0,9200],["bump",1,9504],["bump",1,9552],["bump",1,9600],["mud",0,9808,8],["arrow",1,10048,2],["rampL",2,10256],["downL",2,10400],["hurdle",2,10720],["hurdle",3,10720],["cool",3,10912,2],["rampM",2,11120],["hurdle",1,11504],["hurdle",2,11504],["arrow",3,11696,3]] },
+  { name: "NIGHT MOUNTAIN", len: 14400, par: 4800, skills: [1.02, 0.99, 0.96, 1.04, 0.94], setting: 2, look: {"dim": 0.42, "set": {"0": "04081c", "9": "2a1408", "10": "a07048", "11": "e0b078", "12": "785030", "13": "a0a0a8", "14": "808088", "15": "606068", "20": "c8c8d0", "22": "c83030", "26": "f8d838", "27": "906010", "28": "a8e0ff", "29": "4890d8", "30": "ffffff", "76": "8890a0", "77": "505868", "78": "ffe8a0", "79": "ffffff", "81": "0c0e14", "82": "2a3040", "83": "586070", "84": "a0a8b8", "85": "3a3020", "86": "584830", "100": "ffffff", "101": "a0b8e0", "102": "e8e8d0", "103": "1c2840", "104": "10182c", "105": "9ab0d0", "106": "121c34", "107": "10182c", "226": "6a7080", "227": "484e5c", "228": "1c1810", "229": "2c2418"}}, objs: [["rampM",1,640],["rampS",2,960],["rampM",2,1160],["arrow",1,1472,2],["hurdle",0,1600],["hurdle",1,1600],["hurdle",3,1600],["mud",3,1712,8],["rampL",0,1872],["hurdle",2,2224],["hurdle",3,2224],["hill",2,2336],["arrow",3,2576,3],["rampS",0,2720],["rampM",0,2920],["hurdle",0,3232],["hurdle",2,3232],["hurdle",3,3232],["rampL",1,3344],["downL",1,3488],["mud",2,3744,10],["cool",2,3920,2],["bump",0,4064],["bump",0,4112],["bump",0,4160],["bump",0,4208],["rampM",3,4352],["hurdle",0,4656],["hurdle",1,4656],["arrow",1,4768,3],["hill",2,4912],["hill",3,4944],["hurdle",2,5168],["hurdle",3,5168],["rampS",1,5280],["rampM",1,5480],["mud",3,5792,12],["hurdle",0,5984],["hurdle",1,5984],["rampL",1,6112],["hurdle",0,6496],["hurdle",3,6496],["arrow",2,6608,2],["rampL",0,6736],["downL",0,6880],["mud",1,7136,8],["hurdle",0,7296],["hurdle",1,7296],["hurdle",3,7296],["rampS",3,7408],["rampM",3,7608],["hill",1,7936],["arrow",0,8160,3],["hurdle",2,8304],["hurdle",3,8304],["rampM",2,8416],["hurdle",0,8736],["hurdle",1,8736],["cool",1,8848,2],["mud",2,8976,12],["hurdle",0,9168],["hurdle",2,9168],["hurdle",3,9168],["rampL",3,9280],["downL",3,9424],["bump",2,9696],["bump",2,9744],["bump",2,9792],["arrow",3,9936,2],["rampS",1,10064],["rampM",1,10264],["hurdle",0,10576],["hurdle",1,10576],["rampL",0,10688],["hurdle",2,11072],["hurdle",3,11072],["mud",1,11184,10],["hurdle",0,11376],["hurdle",1,11376],["hurdle",3,11376],["hill",0,11488],["hill",1,11520],["arrow",2,11744,3],["rampM",2,11888],["downM",2,12016],["hurdle",0,12256],["hurdle",2,12256],["hurdle",3,12256],["rampL",3,12368],["hurdle",0,12720],["hurdle",1,12720],["cool",0,12832,2],["rampS",2,12976],["rampM",2,13176],["hurdle",2,13488],["hurdle",3,13488],["mud",3,13600,8],["arrow",1,13760,3],["rampL",2,13904]] },
 ];
 // END TRACKS
 let track = 0; // the track being raced
@@ -130,19 +131,49 @@ function setTrack(i) {
 }
 
 /** The menus' backdrop: a long flat run of the stadium, with the first track's colours. */
-const SCENE = { len: 100000, objs: [], look: {} };
+const SCENE = { len: 100000, objs: [], look: {}, setting: 0 };
+let setting = 0, crowdFrame = 0; // the scenery in use (0 stadium, 1 desert, 2 night); the crowd's arm position
 function loadTrack(t) {
   TRACK_LEN = t.len; FINISH_X = START_X + TRACK_LEN; FIN_COL = FINISH_X >> 3;
   buildCourse(t.objs);
+  setting = t.setting; crowdFrame = 0;
+  showScenery();
   applyLook(t.look);
+}
+
+/** Point BG1 (the stands, cliffs or treeline) and BG2 (the sky) at this setting's pictures in Map RAM. */
+function showScenery() {
+  const n = 2 * setting + crowdFrame;
+  bg(1, { mx: 64 * (n & 3), my: 28 + 12 * (n >> 2), mw: 64, mh: 12 });
+  bg(2, { mx: 64 * setting, my: 52, mw: 64, mh: 12 });
 }
 
 function col(i, hex) { const v = parseInt(hex, 16); color(i, v >> 19, (v >> 11) & 31, (v >> 3) & 31); }
 const dimHex = (hex, f) => { const v = parseInt(hex, 16); return [16, 8, 0].map((sh) => flr(((v >> sh) & 255) * f).toString(16).padStart(2, '0')).join(''); };
 
+// SETTINGS (written by art.py)
+const SET = [{"ground":[16,17,18,19],"line":[20,21],"kerb":22,"wall":[24,25],"fence":[26,27]},{"ground":[648,649,650,651],"line":[652,653],"kerb":654,"wall":[655,656],"fence":[657,658]},{"ground":[659,660,661,662],"line":[663,664],"kerb":665,"wall":[666,667],"fence":[668,669]}];
+const LETTER = {"S":640,"T":641,"A":642,"R":643,"F":644,"I":645,"N":646,"H":647};
+const PART = [960, 961, 962, 963, 964, 965, 966];
+// END SETTINGS
+
 // BASE_PAL (written by art.py)
-const BASE_PAL = {"0":"58a0e0","1":"a8d8f0","2":"ffffff","3":"4a7a50","4":"6a9a5a","5":"7a8ab0","6":"6a3a1e","7":"a05a2c","8":"c88040","9":"3a1c0c","10":"d49458","11":"f8d8a0","12":"b0703c","13":"e8c860","14":"c8a038","15":"907020","17":"6a3a1e","18":"a05a2c","19":"c88040","20":"f0e8d8","21":"50301a","22":"e8c890","23":"3a2410","24":"5a3818","25":"8a6038","26":"f8d838","27":"906010","28":"a8e0ff","29":"4890d8","30":"ffffff","33":"1a1010","34":"e03028","35":"f8f8f8","36":"808890","37":"f8d030","49":"10141c","50":"24303c","51":"d8a830","65":"1a1828","66":"3a4058","67":"d83a3a","68":"3a6ad8","69":"e8c83a","70":"3ab850","71":"e8b890","72":"f0f0f0","73":"a8785a","74":"2848a8","75":"c82828","81":"181818","82":"383838","83":"585858","84":"e8e8e8","85":"8a5a30","86":"b07840"};
+const BASE_PAL = {"0":"58a0e0","1":"a8d8f0","2":"ffffff","3":"4a7a50","4":"6a9a5a","5":"7a8ab0","6":"6a3a1e","7":"a05a2c","8":"c88040","9":"3a1c0c","10":"d49458","11":"f8d8a0","12":"b0703c","13":"e8c860","14":"c8a038","15":"907020","17":"6a3a1e","18":"a05a2c","19":"c88040","20":"f0e8d8","21":"50301a","22":"e8c890","23":"3a2410","24":"5a3818","25":"8a6038","26":"f8d838","27":"906010","28":"a8e0ff","29":"4890d8","30":"ffffff","33":"1a1010","34":"e03028","35":"f8f8f8","36":"808890","37":"f8d030","49":"10141c","50":"24303c","51":"d8a830","65":"1a1828","66":"3a4058","67":"d83a3a","68":"3a6ad8","69":"e8c83a","70":"3ab850","71":"e8b890","72":"f0f0f0","73":"a8785a","74":"2848a8","75":"c82828","76":"8890a0","77":"505868","78":"ffe8a0","79":"ffffff","81":"181818","82":"383838","83":"585858","84":"e8e8e8","85":"8a5a30","86":"b07840","87":"5a2a1a","88":"9a4a2a","89":"c06a3a","90":"e08a50","91":"3a8a40","92":"70c060","97":"8a2010","98":"ffb090","99":"b070f0","100":"fff0a0","101":"ffd070","102":"8a3a20","103":"b05a30","104":"d8a060","105":"f0c880","106":"f8d090","107":"c87040","225":"000000","226":"e8c898","227":"c09860","228":"3a2410","229":"5a3818","230":"ffd040","231":"ff8020","232":"ffffff"};
 // END BASE_PAL
+
+const mixHex = (a, b, f) => { const x = parseInt(a, 16), y = parseInt(b, 16); return [16, 8, 0].map((sh) => flr(((x >> sh) & 255) * (1 - f) + ((y >> sh) & 255) * f).toString(16).padStart(2, '0')).join(''); };
+
+/** Scenery that moves: the crowd's arms, the desert sun's glow, the night's twinkling stars and flickering floodlights. */
+function animate() {
+  const f = flr(clock / 24) & 1;
+  if (setting !== 1 && f !== crowdFrame) { crowdFrame = f; showScenery(); }
+  if (setting === 1) col(101, mixHex('ffd070', 'fff0b0', (Math.sin(clock / 30) + 1) / 2));
+  else if (setting === 2) {
+    const a = flr(clock / 45) & 1;
+    col(100, a ? 'a0b8e0' : 'ffffff'); col(101, a ? 'ffffff' : 'a0b8e0');
+    col(78, (clock % 90) < 3 ? 'c0a060' : 'ffe8a0');
+  }
+}
 
 /** The track's colours: the base palette, then the track's own entries, and everything else dimmed by `dim` (the night). */
 function applyLook(look) {
@@ -210,28 +241,30 @@ function hash(n) {
   return (n ^ (n >>> 15)) >>> 0;
 }
 
-/** The map entry for track column c, row `row` (0-27): the HUD band, the gate and finish, the tyre wall, the four lanes, the kerb and the fence. */
+/** The map entry for track column c, row `row` (0-27): the HUD band, the gate and finish, the back wall, the four lanes, the kerb and the fence. */
 function trackEntry(c, row) {
-  const atGate = c === GATE_COL, atFinish = c === FIN_COL || c === FIN_COL + 1, finishPost = c === FIN_COL - 1 || c === FIN_COL + 2;
+  const S = SET[setting];
   if (row < 3) return tile(T_BAND + row, PAL_BAND);
-  if (row >= 9 && row <= 12) {
-    if (atGate) return tile(row === 9 ? T_POSTTOP : T_POST, PAL_GATE);
-    if (finishPost) return tile(row === 9 ? T_BANNER : T_POST, PAL_GATE);
-    if (atFinish && row === 9) return tile(T_BANNER, PAL_GATE);
+  // The START banner over the gate, and the FINISH banner over the line, with a post at each end.
+  const gl = GATE_COL - 2, fl = FIN_COL - 2;
+  if (row >= 8 && row <= 12) {
+    if (c === gl - 1 || c === gl + 5 || c === fl - 1 || c === fl + 6) return tile(row === 8 ? T_POSTTOP : T_POST, PAL_GATE);
+    if (row === 8 && c >= gl && c < gl + 5) return tile(LETTER['START'[c - gl]], PAL_GATE);
+    if (row === 8 && c >= fl && c < fl + 6) return tile(LETTER['FINISH'[c - fl]], PAL_GATE);
   }
   if (row < 12) return 0;
-  if (row === 12) return tile(T_TYRE + (c & 1), PAL_TYRE);
+  if (row === 12) return tile(S.wall[c & 1], setting === 0 ? PAL_TYRE : PAL_TYRE);
   if (row <= 24) {
-    if (atFinish) return tile(T_CHECK + ((c + row) & 1), PAL_GATE);
-    if (atGate && !gateDown) return tile(T_BARRIER, PAL_GATE);
+    if (c === FIN_COL || c === FIN_COL + 1) return tile(T_CHECK + ((c + row) & 1), PAL_GATE);
+    if (c === GATE_COL && !gateDown) return tile(T_BARRIER, PAL_GATE);
     const t = colTiles.get(c);
     if (t && t[row] !== undefined) return t[row];
     const k = ((row - 13) / 3) | 0, rs = (row - 13) % 3;
-    if (rs === 2 && k < LANES - 1) return tile(T_LINE + (c & 1), PAL_TRACK);
-    return tile(T_DIRT + (hash(c * 7 + row * 13) & 3), PAL_TRACK);
+    if (rs === 2 && k < LANES - 1) return tile(S.line[c & 1], PAL_TRACK);
+    return tile(S.ground[hash(c * 7 + row * 13) & 3], PAL_TRACK);
   }
-  if (row === 25) return tile(T_KERB, PAL_TRACK);
-  return tile(row === 26 ? T_FENCE : T_PLANK, PAL_TYRE);
+  if (row === 25) return tile(S.kerb, PAL_TRACK);
+  return tile(S.fence[row - 26], PAL_TYRE);
 }
 
 function writeCol(c) {
@@ -391,6 +424,7 @@ const pressed = (b) => (inputMask & BIT(b)) !== 0 && (prevMask & BIT(b)) === 0;
 function update() {
   inputMask = readPad();
   clock++;
+  animate();
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'select') updateSelect();
@@ -560,7 +594,8 @@ function updateInitials() {
 /** The menus' backdrop: the stadium scrolling past a bike doing a wheelie. */
 function toScene() {
   loadTrack(SCENE);
-  riders = [newRider(100, 2, 0)]; scene = riders[0];
+  riders = [newRider(100, 3, 0)]; scene = riders[0];
+  [[0, 1], [1, 2], [2, 3], [0, 4], [2, 5]].forEach(([lane, pal], k) => { const r = newRider(40 + k * 70, lane, pal); r.v = 1.9 + k * 0.25; riders.push(r); }); // the field, riding along
   order = [0]; parts = []; paused = false; gateDown = true;
   camX = 0; filled = -1; streamTo(40);
 }
@@ -569,7 +604,11 @@ function sceneStep() {
   scene.x += 2.4; scene.v = 2.4; scene.pitch = 3; scene.z = 0; scene.air = false;
   camX = flr(scene.x) - 100;
   streamTo((camX >> 3) + 40);
-  emitDust(scene); moveParts();
+  for (const r of riders) {
+    if (r !== scene) { r.x += r.v; r.pitch = 0; if (r.x < camX - 80) r.x = camX + 320; else if (r.x > camX + 330) r.x = camX - 70; }
+    emitDust(r);
+  }
+  moveParts();
 }
 
 function toTitle() {
@@ -738,7 +777,7 @@ function emitDust(r) {
 function moveParts() {
   for (const q of parts) { q.x += q.vx; q.y += q.vy; q.vy += 0.03; q.t--; }
   parts = parts.filter((q) => q.t > 0);
-  if (parts.length > 150) parts.splice(0, parts.length - 150);
+  if (parts.length > 20) parts.splice(0, parts.length - 20);
 }
 const puff = (x, y, vx, vy, t, c) => parts.push({ x, y, vx, vy, t, c });
 /** n specks thrown out in all directions, for a landing or a crash. */
@@ -768,9 +807,13 @@ function draw() {
   cls();
   bgscroll(0, camX & (RING * 8 - 1), 0);
   bgscroll(1, (camX >> 1) & 511, 0);
-  bgscroll(2, (camX >> 2) & 255, 0);
-  if (state === 'title') { drawRider(scene); drawParts(); drawTitle(); return; }
-  if (state === 'select') { drawParts(); drawSelect(); return; }
+  bgscroll(2, (camX >> 2) & 511, 0);
+  if (state === 'title' || state === 'select') {
+    for (const r of [...riders].sort((a, b) => b.lane - a.lane)) if (r.x > camX - 40 && r.x < camX + 296) drawRider(r);
+    drawParts();
+    if (state === 'title') drawTitle(); else drawSelect();
+    return;
+  }
   if (state === 'records') { drawRecords(); return; }
   if (state === 'podium') { drawPodium(); return; }
   if (state === 'initials') { drawInitials(); return; }
@@ -799,7 +842,15 @@ function draw() {
   }
 }
 
-function drawParts() { for (const q of parts) rectfill(flr(q.x - camX), flr(q.y), q.t > 8 ? 2 : 1, q.t > 8 ? 2 : 1, q.c); }
+/** Dust, mud and sparks as little sprites that grow as they fade. */
+function drawParts() {
+  for (const q of parts) {
+    const x = flr(q.x - camX) - 4;
+    if (x < -8 || x > 256) continue;
+    const size = q.t > 12 ? 0 : q.t > 6 ? 1 : 2, kind = q.c === DUST ? 0 : q.c === DUST2 ? 1 : 2;
+    spr(PART[[[0, 1, 2], [3, 4, 4], [5, 5, 6]][kind][size]], x, flr(q.y) - 4, { size: 8, pal: 6, prio: 3 });
+  }
+}
 const commas = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 const bestName = (t) => (dget(TIME_SLOT + t) ? fmtTime(dget(TIME_SLOT + t)) : '--:--.--');
 const ordinal = (p) => `${p}${['ST', 'ND', 'RD'][p - 1] || 'TH'}`;
@@ -817,13 +868,15 @@ function drawRider(r) {
 
 /** The starting lights: a red one for each tick of the count, then GO. */
 function drawLights() {
-  panel(100, 40, 56, 26);
+  panel(96, 26, 64, 24);
+  rectfill(98, 28, 60, 2, PANEL);
   for (let i = 0; i < 3; i++) {
-    const on = state === 'race' ? 2 : timer >= LIGHTS[i] ? 1 : 0;
-    circfill(114 + i * 14, 53, 5, on === 2 ? GREEN : on === 1 ? RED : PANEL);
-    circ(114 + i * 14, 53, 5, BLACK);
+    const on = state === 'race' ? 2 : timer >= LIGHTS[i] ? 1 : 0, cx = 112 + i * 16, cy = 39;
+    circfill(cx, cy, 6, on === 2 ? GREEN : on === 1 ? RED : 122);
+    circ(cx, cy, 6, BLACK);
+    if (on) { pset(cx - 2, cy - 3, WHITE); pset(cx - 3, cy - 2, WHITE); pset(cx - 1, cy - 3, WHITE); }
   }
-  if (state === 'race') ctxt(falseStart ? 'FALSE START!' : 'GO!', 72, falseStart ? RED : GREEN);
+  if (state === 'race') ctxt(falseStart ? 'FALSE START!' : 'GO!', 53, falseStart ? RED : GREEN);
 }
 
 const fmtTime = (f) => `${flr(f / 3600)}:${String(flr(f / 60) % 60).padStart(2, '0')}.${String(flr((f % 60) * 100 / 60)).padStart(2, '0')}`;

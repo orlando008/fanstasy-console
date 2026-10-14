@@ -1,7 +1,7 @@
 # Moto Crosser: Cart Specification
 
-**Version:** 0.6 (draft)
-**Status:** In progress: steps 1 to 5 of the plan (15) are built
+**Version:** 0.7 (draft)
+**Status:** In progress: steps 1 to 6 of the plan (15) are built
 **Cart source:** `carts/src/moto-crosser/` → `carts/moto-crosser.nova`
 
 ---
@@ -204,8 +204,8 @@ finish line, menu move and select, pause.
 | Layer | Use |
 |---|---|
 | BG0 | The track: lane ground, ramps, hurdles, mud, arrows and pads, written a column at a time as the camera moves |
-| BG1 | The stands, fence and banners, scrolling at half speed |
-| BG2 | The sky and distant hills or mountains, scrolling at a quarter speed |
+| BG1 | The scenery behind the track, at half speed: the stands with a crowd that waves and floodlight towers, the desert's red cliffs and cacti, or the night's treeline, crowd and floodlights. 64 × 12 tiles, one picture for each setting and each arm position of the crowd |
+| BG2 | The sky at a quarter speed: clouds and hills, the desert's sun and mesas and dunes, or the night's moon, stars and mountains. 64 × 12 tiles for each setting |
 | Sprites | The bikes and riders (32 × 32), shadows, dust and mud, spectators in the stands |
 | Overlay | The HUD, the countdown, cards and menus |
 
@@ -226,8 +226,8 @@ the landing.
 
 | Asset | Budget |
 |---|---|
-| Code | ≤ 60 KB of the 64 KB limit; the tracks are tables in the code, about 19 KB of it |
-| Tiles | Track pieces per track (~60), the stands, crowd and sky for each of 3 settings (~250), HUD and title letters (~80) |
+| Code | 58.5 KB of the 64 KB limit; the tracks are tables in the code, about 19 KB of it |
+| Tiles | Used: the things on the track (73), the stadium (about 130), the desert and night (196 more), banners, particles |
 | Sprites | Bikes: 7 pitch steps × a few frames, push, tumble (~25 sprites of 32 × 32), in 6 colour palettes; dust, mud, shadow, spectators |
 | Songs / SFX | 5 songs, ~25 SFX plus the engine |
 
@@ -457,6 +457,48 @@ the landing.
      - Quitting from the pause: back to the title, nothing recorded; and the save version.
      - A browser run through the title and track select into a race shows no errors.
 6. **Art pass:** the three settings, the riders, dust and mud, the crowd, parallax.
+   - **Built:**
+     - **Three settings,** each with its own pieces on all three layers:
+       - **Stadium Dirt:** red clay with tyre tracks, a tyre wall, the stands with the crowd, two
+         floodlight towers over them and clouds and green hills behind.
+       - **Desert Run:** rippled sand, a sandbag wall, rock and rope-fence pieces at the front,
+         stepped red cliffs with cacti (saguaros and a barrel cactus), and a sky with a pale sun,
+         mesas and dunes.
+       - **Night Mountain:** gravel, a red and white rumble strip for the kerb, a guardrail at the back and
+         front, a treeline over a dim crowd, floodlight towers, a moon, stars and snow-capped
+         mountains.
+       The track tells the cart which setting it uses (`setting` in the table), and the cart
+       points BG1 and BG2 at that setting's pictures in Map RAM and takes the track pieces (ground,
+       lane line, kerb, wall and fence) from that setting's set. The hurdles, mud, arrows and pads
+       keep their tiles and change colour: hay bales become sandbags in the desert and concrete
+       blocks (with red stripes) at night.
+     - **Moving scenery:** the crowd waves its arms every 24 frames (by switching BG1 to its second
+       picture; no map writes), the desert sun's glow breathes, and at night the stars twinkle in two
+       groups and the floodlights flicker now and then (palette changes).
+     - **Banners:** START over the gate and FINISH over the line, each between a post at either end.
+     - **Riders:** a number plate on the front, an exhaust pipe, a stripe down each jersey and a
+       stripe on each helmet, on top of the earlier frames.
+     - **Particles:** dust, mud and sparks are small sprites that grow as they fade (three sizes), in
+       the setting's colours (sand in the desert, grey gravel dust at night), where they were
+       2-pixel squares. At most 20 at a time.
+     - **Starting lights:** a gantry of three lamps with a shine, above the START banner.
+     - **Title and select:** all six bikes ride along under the logo (the white one doing a wheelie
+       in the near lane, below the menu) while the stadium scrolls.
+     - **Space:** the new pieces use 196 of the 320 tiles set aside (640 to 959), and the code is
+       58.5 KB (the limit is 64 KB).
+   - **Results:** a script of 31 checks passes (and the earlier 37, 46, 38, 40 and 48, with the
+     colour check changed to compare averages now the ground has patterns).
+     - Each track points BG1 and BG2 at its own pictures, which are filled in (300 tiles on BG1, 180 to
+       256 on BG2), and takes its track pieces from its own set; the desert's and the night's tiles
+       are their own.
+     - The crowd waves in the stadium and at night and not in the desert; the stars twinkle in turn;
+       the sun's glow takes several shades.
+     - START and FINISH are spelled out in the right tiles, with a post at each end; the gate drops at
+       GO and the banner stays.
+     - Six bikes ride along the title, in different lanes and at different speeds.
+     - A busy race on the desert track uses at most 32 of the 128 sprites, and at most 26 on a
+       line (the limit is 32); frames average 1.7 ms.
+     - No errors in the browser.
 7. **Audio pass:** five songs, the engine and the effects.
 8. **Balance and polish:** speeds, rival skills, heat rates, track layouts, checked with
    the automatic player; a label, the PNG cart and the Library.
