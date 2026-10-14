@@ -75,7 +75,7 @@ const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) ===
 // --- The board: rules as plain functions on an array of gem types (0 to KINDS-1, -1 for empty), row by row ---
 
 const COLS = 8, ROWS = 8, CELL = 16, BX = 64, BY = 64, KINDS = 6; // the board's size, its cells in px, its top left corner
-const POP_FRAMES = 14, WIN_FRAMES = 100, INTRO_FRAMES = 120, FALL = 4; // a match's flash, the level-clear banner, a level's opening banner, a gem's speed in px a frame
+const POP_FRAMES = 14, WIN_FRAMES = 100, INTRO_FRAMES = 120, HINT_FRAMES = 360, FALL = 4; // a match's flash, the level-clear banner, a level's opening banner, the wait before a hint (6 s), a gem's speed in px a frame
 
 /** The runs of three or more equal gems, across or down: an array of arrays of cell numbers. */
 function findRuns(t) {
@@ -151,6 +151,7 @@ let sw = [0, 0];          // the two cells of the swap being shown
 let popCells = [], popT = 0, winT = 0, chain = 0;
 let score = 0, levelPts = 0, moves = 0, level = 1, lev = LEVELS[0]; // the total score; the points earned in this level; moves left; the level; its entry in LEVELS
 let ice = [], gemsGot = 0, won = false, introT = 0; // the ice on each cell (true: iced); the gems of the goal's kind cleared in this level; the game is won; frames left of the level's opening banner
+let idleT = 0, hint = null; // frames with no button pressed, with the board at rest; the hint: the two cells of a good swap, or null
 
 const cellX = (i) => BX + (i % COLS) * CELL, cellY = (i) => BY + flr(i / COLS) * CELL;
 const typesNow = () => grid.map((g) => (g ? g.t : -1));
@@ -173,9 +174,25 @@ const progress = () => (lev.goal === ICE_GOAL ? 1 - iceCount() / lev.ice.length 
 const goalText = () => (lev.goal === ICE_GOAL ? `ICE LEFT ${iceCount()}` : lev.goal === GEMS_GOAL ? `${GEM_NAMES[lev.kind]} ${gemsGot}/${lev.n}` : `GOAL ${levelPts}/${lev.n}`);
 /** What the level asks, in words (the opening banner). */
 const goalWords = () => (lev.goal === ICE_GOAL ? 'BREAK ALL THE ICE' : lev.goal === GEMS_GOAL ? `COLLECT ${lev.n} ${GEM_NAMES[lev.kind]}` : `EARN ${lev.n} POINTS`);
+/** The swap worth most to the goal (the hint): the ice it breaks (12 a cell), the gems of the goal's kind it clears (8 more each) and the gems it clears. [a, b], or null. */
+function bestSwap() {
+  const t = typesNow();
+  let best = null, top = 0;
+  for (let i = 0; i < t.length; i++) {
+    for (const j of [i % COLS < COLS - 1 ? i + 1 : -1, i < COLS * (ROWS - 1) ? i + COLS : -1]) {
+      if (j < 0) continue;
+      const u = swapped(t, i, j), cl = matched(u);
+      if (!cl.length) continue;
+      let w = cl.length + 8 * cl.filter((c) => u[c] === lev.kind).length;
+      for (const k of new Set(cl.flatMap((c) => nbrs(c)))) if (ice[k]) w += 12;
+      if (w > top) { top = w; best = [i, j]; }
+    }
+  }
+  return best;
+}
 /** Start level n: its goal, its moves and its ice, and a new board dropping in under the level's opening banner. */
 function startLevel(n) {
-  level = n; lev = LEVELS[n - 1]; moves = lev.moves; levelPts = 0; gemsGot = 0; chain = 0; sel = -1; introT = INTRO_FRAMES;
+  level = n; lev = LEVELS[n - 1]; moves = lev.moves; levelPts = 0; gemsGot = 0; chain = 0; sel = -1; introT = INTRO_FRAMES; idleT = 0; hint = null;
   ice = Array(COLS * ROWS).fill(false);
   for (const i of lev.ice) ice[i] = true;
   dealBoard();
@@ -259,7 +276,11 @@ function updatePlay() {
   const intro = introT > 0; // the opening banner: the pad waits for it (A skips it)
   if (intro) introT = pressed(A) ? 0 : introT - 1;
   const moving = moveGems();
-  if (phase === 'idle') { if (!intro) idleInput(); }
+  if (phase === 'idle') {
+    if (!intro) idleInput();
+    idleT = intro || (inputMask & ~prevMask) ? 0 : idleT + 1; // any press starts the wait again
+    hint = idleT >= HINT_FRAMES ? hint || bestSwap() : null;   // after HINT_FRAMES at rest with no press, mark a good swap
+  }
   else if (phase === 'pop') { if (--popT <= 0) afterPop(); }
   else if (phase === 'win') { if (--winT <= 0) afterWin(); }
   else if (!moving) {
@@ -401,6 +422,7 @@ function drawPlay() {
     sprite(ART.sprites[`gem${g.t}`], g.x, g.y);
   });
   ice.forEach((on, i) => { if (on) rect(cellX(i) + 1, cellY(i) + 1, CELL - 2, CELL - 2, CYAN); }); // placeholder: the ice, until step 5 draws it on BG1
+  if (hint && timer % 40 < 26) for (const c of hint) { rect(cellX(c), cellY(c), CELL, CELL, GOLD); rect(cellX(c) - 1, cellY(c) - 1, CELL + 2, CELL + 2, GOLD); } // the hint: the two gems to swap, blinking
   if (state === 'play' && phase === 'idle') {
     if (sel >= 0) sprite(ART.sprites.cursor, cellX(sel), cellY(sel), { pal: 7 });
     sprite(ART.sprites.cursor, cellX(cursor), cellY(cursor), { pal: 6 });

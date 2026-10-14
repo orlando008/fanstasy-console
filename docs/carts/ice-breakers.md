@@ -1,7 +1,7 @@
 # Ice Breakers: Cart Specification
 
 **Version:** 0.2 (draft)
-**Status:** Steps 1 to 3 built (the ice, the three goals, the twelve levels tuned with the bot, the level banner, the game over that names the goal). The art and the sound are still the starter's.
+**Status:** Steps 1 to 4 built (the ice, the three goals, the twelve levels tuned with the bot, the level banner, the game over that names the goal, the hint). The art and the sound are still the starter's.
 **Cart source:** `carts/src/ice-breakers/` → `carts/ice-breakers.nova`
 
 ---
@@ -30,6 +30,8 @@ the game is over.
 | A | Pick the gem under the cursor up; A again puts it down |
 | B | Put the gem down |
 | START | Pause (RESUME, RESTART, QUIT TO TITLE) |
+
+**The hint:** after 6 seconds with the board at rest and no button pressed, the two gems of a good swap get a gold outline that blinks. Any press takes it away and starts the wait again; so does a swap, a pause (the wait stands still) or a new level (it starts when the banner is gone). The swap it marks is the one worth most to the level's goal: the ice it breaks (12 a cell), the gems of the goal's kind it clears (8 more each) and the gems it clears.
 
 ## 4. Screen layout
 
@@ -136,7 +138,7 @@ The gems are 16 px sprites, each kind in its own sprite palette (0 to 5); the cu
 
 | Asset | Budget |
 |---|---|
-| Code | 23.1 KB (`node tools/check.js ice-breakers`); the levels, the ice and the banner added 5 KB to the starter's 18 |
+| Code | 24.5 KB (`node tools/check.js ice-breakers`); the levels, the ice, the banner and the hint added 6.5 KB to the starter's 18 |
 | Tiles | about 66 of 1,023 now (the background 38, the gems and cursor 28); the ice adds a few |
 | Sprites | 65 on the board (128 in OAM, 32 per scanline) |
 | Songs / SFX | 2 songs, 14 SFX; the ice crack makes 15 |
@@ -159,6 +161,9 @@ Step 0 is done: the spec, the scaffold (the match-3 starter with placeholder num
    **Built:** the bot plays one level at a time (`--set level=N`), with `--set moves=40` to measure a level's cost (`used`) and `--set n=...` to try another target; it values a broken ice cell at 12 and a gem of the goal's kind at 8 more than a plain gem (it was 5 and 4: with those the bot left the last ice cell and lost 7% of level 1 with moves to spare). The levels were retuned from those measurements: new layouts for the ICE levels (a bar, a checker, a dashed border, the whole border, the border and both diagonals), new targets for POINTS (1,000 to 1,600) and GEMS (12, 14, 17), and moves of 12 to 23 (section 6).
    **Results:** the table in section 6 (40 seeds a level): skill 1 wins 78 to 93% of every level (86% on average, about 5 moves to spare when it wins), skill 0.5 wins 45 to 90% (77% on average). The whole game (8 seeds): skill 1 reaches level 7.9 on average (2 to 12), skill 0.5 reaches 6.9; no run failed. What the measurements found: (1) the first draft was far too easy (POINTS and GEMS levels won every time with 7 to 14 moves to spare, the ice bars with 12 to 17); (2) a corner of ice is only reached by a clear on three cells, so layouts with corners were luck (the four corners cost 15.7 moves for four cells; the diagonals cost 14.4 with their corners and 5.6 without), and no level has ice on a corner now (a test checks); (3) the two skills differ little on POINTS levels (they cost 12 to 19 moves to both), and most on the hard ice layouts (the ring: 12.8 against 18.7 moves), so the casual bot does not win "about half" of every level as the plan said. 108 checks pass; `verify.js --fast` and `smoke.mjs` pass.
 4. **Hint and feel:** after about 6 seconds with no move, the board shows one swap that makes a run (or that breaks ice).
+
+   **Built:** `bestSwap` (the swap worth most to the goal, in the same weights as the bot's) and the wait (`idleT`, `HINT_FRAMES` 360, `hint`): the clock counts only at rest, with the banner gone, and starts again on any press; the hint is two double gold outlines that blink (`timer % 40 < 26`), drawn on the overlay until the art step. A new test file, `04-hint.mjs` (20 checks): it comes at 360 frames and not before; a press, a cursor move or a held gem starts the wait again; not over the banner, not while paused; it picks the ice-breaking swap and the goal-gem swap (each of two boards); making the swap clears it; and the blinking ring is the only thing that changes on the screen.
+   **Results:** 128 checks pass (`01-flow` 35, `02-art` 12, `03-rules` 61, `04-hint` 20). Six deliberate breakages of the hint were tried. Five were caught: a press that no longer restarts the wait (5 checks fail), no ice weight, no goal-gem weight, no blink, and the banner counting towards the wait (1 check each). The sixth, deleting a line that cleared the hint when the board moved, changed nothing, because a swap can only start from a press, which clears the hint already; so the line was dead code and was removed. The frame that computes the hint costs about 2.5 ms (median frame 1.4 ms, the budget is 16.7 ms). `verify.js --fast`, `smoke.mjs` and the soak pass; the screenshot shows the double gold ring on two gems, distinct from the cyan ice outlines. The bot presses a button every other frame, so it never sees a hint and the balance in step 3 is unchanged.
 5. **Art pass:** `art.py`: the ice tiles on BG1 (a palette for the ice), the level banner, the goal icons in the HUD, a clear effect for the ice.
 6. **Flow polish:** the records screen shows the level reached; the win screen.
 7. **Audio pass:** `audio.py`: the ice crack, the goal reached, the win fanfare; the songs' levels checked with `loud.mjs --check`.
