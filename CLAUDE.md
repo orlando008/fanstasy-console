@@ -11,8 +11,9 @@
   `node tools/devkit/smoke.mjs <name>` (the real console). After a change to the rules, the physics or the AI:
   `node tools/devkit/sweep.mjs <name>` (the cart's bot over many seeds). If you changed the code or art of a released
   game: `node tools/release.js <name> --keep-label`, so the `.nova.png` and the Library entry match.
-- You cannot hear or see a cart directly: measure the audio (`tools/devkit/music/`), and look at art and screens
-  with `tools/devkit/tiles.mjs` and `shots.mjs` (open the PNGs with the Read tool).
+- You cannot hear or see a cart directly: measure the audio (`tools/devkit/music/`), make the art in code (a cart's
+  `art.py`, with `tools/devkit/art/kit.py`) and look at it with `tools/devkit/art/sprites.mjs`, `scene.mjs`, `tiles.mjs`
+  and `shots.mjs` (open the PNGs with the Read tool).
 - Commit and push after every build step. Open a pull request only when the user asks, and merge only when told to.
 - Keep the game's spec in step with the code (numbers, tables, the step's Built and Results notes), and keep the docs
   true: `node tools/check-docs.js` fails on a mention of a file or a tool flag that does not exist.

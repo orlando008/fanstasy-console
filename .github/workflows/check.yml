@@ -18,6 +18,8 @@ jobs:
         with: { node-version: 20 }
       # Limits and the mistakes in docs/dev/playbook.md
       - run: node tools/check.js --all
+      # The art kit: drawing, palettes, tile sharing, scenes, sprites, the files it writes and the viewers
+      - run: python3 tools/devkit/art/selftest.py
       # The starter: scaffolds a throwaway cart, packs, checks and tests it, and deletes it
       - run: node tools/new-cart.js --selftest
       # Random play for 3,000 frames on every cart: exceptions, wrong-voice effects, soft locks, frame time

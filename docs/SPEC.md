@@ -533,20 +533,20 @@ built in HTML like the editor, not inside the console.
 │       └── sheet-view.js   # Tile-sheet picker shared by Sprites and Map
 ├── carts/                  # Demo and game carts (.nova, .nova.png), index.json and labels/ for the Library
 │   └── src/<name>/         # A cart's source: code.js, meta.json, tiles.txt, palette.txt, map.txt, audio.json (made
-│                           #   by audio.py where there is one), label.png
+│                           #   by audio.py where there is one; tiles.txt, palette.txt, map.txt, art.json by art.py), label.png
 ├── tests/console/          # Checks of the console itself in headless Chromium (node tests/console/volume.mjs)
 ├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs), its lib.mjs and its bot.mjs for the sweep tool
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/
 │   ├── library.js          # Regenerates carts/index.json and carts/labels/
-│   ├── new-cart.js         # Scaffolds a new cart from templates/cart/ (--selftest checks the starter)
+│   ├── new-cart.js         # Scaffolds a new cart (code, art.py, audio.py, tests, spec) from templates/cart/ (--selftest checks the starter)
 │   ├── verify.js           # Verifies the carts changed since origin/main: audio, pack, checks, soak, tests
 │   ├── check.js            # Limits and common mistakes in a cart; the .nova.png must hold the packed cart
 │   ├── test.js             # Runs a cart's check scripts one at a time
 │   ├── release.js          # Label (F7), .nova.png export, Library index and checks in headless Chromium
 │   ├── check-docs.js       # Documentation may only mention files that exist
 │   ├── templates/cart/     # The starter's files ({{NAME}}, {{TITLE}} placeholders)
-│   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader; music/: song toolkit, loudness, lead lowering
+│   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader; music/: song toolkit, loudness, lead lowering; art/: art toolkit, scene and sprite viewers
 ├── docs/
 │   ├── SPEC.md             # This document (the cart-facing API is section 8)
 │   ├── carts/<name>.md     # Each game's specification, with its build notes

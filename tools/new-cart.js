@@ -5,9 +5,10 @@
 //
 // Creates, and packs, a small working game around the parts every cart needs (title, play, pause, game over,
 // a saved top 10 with initials, a records screen, sound and music cues, a skipTitle hook, save slots):
-//   carts/src/<name>/code.js, meta.json, audio.py (and the audio.json it makes)
+//   carts/src/<name>/code.js, meta.json, audio.py (and the audio.json it makes), art.py (and the tiles.txt, palette.txt,
+//                    map.txt and art.json it makes, and the ART block in code.js)
 //   carts/<name>.nova                the packed cart
-//   tests/carts/<name>/lib.mjs, 01-flow.mjs, bot.mjs (a bot for tools/devkit/sweep.mjs)
+//   tests/carts/<name>/lib.mjs, 01-flow.mjs, 02-art.mjs, bot.mjs (a bot for tools/devkit/sweep.mjs)
 //   docs/carts/<name>.md             the spec template, with the implementation plan
 // Then: write the spec, replace the placeholder game in updatePlay and drawPlay, and build step by step
 // (docs/dev/playbook.md). The template files are plain text with {{NAME}}, {{TITLE}} and {{TITLE_UPPER}}.
@@ -36,24 +37,27 @@ function scaffold(name, title) {
   put('code.js', join(dirs.src, 'code.js'));
   put('meta.json', join(dirs.src, 'meta.json'));
   put('audio.py', join(dirs.src, 'audio.py'));
+  put('art.py', join(dirs.src, 'art.py'));
   put('spec.md', dirs.spec);
   put('lib.mjs', join(dirs.tests, 'lib.mjs'));
   put('01-flow.mjs', join(dirs.tests, '01-flow.mjs'));
+  put('02-art.mjs', join(dirs.tests, '02-art.mjs'));
   put('bot.mjs', join(dirs.tests, 'bot.mjs'));
   run('python3', join(dirs.src, 'audio.py'), join(dirs.src, 'audio.json'));
+  run('python3', join(dirs.src, 'art.py'), dirs.src); // tiles.txt, palette.txt, map.txt, art.json and the ART block of code.js
   run('node', 'tools/pack.js', `carts/src/${name}`, `carts/${name}.nova`);
   console.log(`Created ${title} (${name}):
-  carts/src/${name}/       code.js, meta.json, audio.py, audio.json
+  carts/src/${name}/       code.js, meta.json, audio.py + audio.json, art.py + tiles.txt, palette.txt, map.txt, art.json
   carts/${name}.nova       packed
-  tests/carts/${name}/     lib.mjs, 01-flow.mjs, bot.mjs (for node tools/devkit/sweep.mjs ${name})
+  tests/carts/${name}/     lib.mjs, 01-flow.mjs, 02-art.mjs, bot.mjs (for node tools/devkit/sweep.mjs ${name})
   docs/carts/${name}.md    the spec to fill in
 
 Next:
   1. Write the spec (docs/carts/${name}.md) and agree the design questions with the user.
-  2. Replace the placeholder game: updatePlay and drawPlay in code.js (and the SFX, SONG tables, audio.py).
+  2. Replace the placeholder game: updatePlay and drawPlay in code.js, and its art (art.py) and sound (audio.py).
   3. node tools/pack.js carts/src/${name} carts/${name}.nova, then node tools/verify.js (checks, soak, tests; --fast skips the tests)
   4. node tools/devkit/smoke.mjs ${name} (the real console), node tools/devkit/sweep.mjs ${name} (the bot over many seeds)
-  5. node tools/devkit/tiles.mjs / shots.mjs to look at your art; node tools/devkit/music/loud.mjs --check to measure your music (the lead's level)
+  5. node tools/devkit/art/sprites.mjs / scene.mjs / tiles.mjs / shots.mjs to look at your art; node tools/devkit/music/loud.mjs --check to measure your music (the lead's level)
   6. Play it yourself: serve the repo (python3 -m http.server) and open /?cart=${name}
   7. Commit and push after each step; when it is finished: node tools/release.js ${name}, the README row.`);
 }

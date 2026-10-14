@@ -12,19 +12,16 @@
 // swatches closes the sheet. Look at the result with the Read tool (it opens images). In a game, the same tiles in
 // place are better seen with tools/devkit/shots.mjs.
 import { writeFileSync } from 'node:fs';
-import { FONT } from '../../src/console/font.js';
-import { SHEET_W, SHEET_H } from '../../src/formats/cart.js';
-import { loadCart } from './music/lib.mjs';
-import { png } from './harness.mjs';
+import { SHEET_H, SHEET_W } from '../../src/formats/cart.js';
+import { COLORS, canvas, drawTile, loadArt, pixel as tilePixel, png, rgb as cgram, text } from './art/view.mjs';
 
 const argv = process.argv.slice(2);
 const opt = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const [path, out] = argv;
 if (!path || (argv.includes('--ascii') ? false : !out)) { console.error('usage: node tools/devkit/tiles.mjs <cart.nova> <out.png> [--from n] [--count n] [--pal p] [--sprite] [--scale n]  |  --ascii <tile>  |  --palette <out.png>'); process.exit(1); }
-const cart = loadCart(path);
-const COLS_T = SHEET_W / 8;
-const pixel = (t, x, y) => cart.tiles[(Math.floor(t / COLS_T) * 8 + y) * SHEET_W + (t % COLS_T) * 8 + x];
-const rgb = (i) => { const v = cart.palette[i & 255]; const e = (c) => (c << 3) | (c >> 2); return e(v & 31) | (e((v >> 5) & 31) << 8) | (e((v >> 10) & 31) << 16) | 0xff000000; };
+const { cart } = loadArt(path);
+const pixel = (t, x, y) => tilePixel(cart, t, x, y);
+const rgb = (i) => cgram(cart, i);
 
 if (argv.includes('--ascii')) {
   const t = Number(opt('--ascii'));
@@ -32,15 +29,7 @@ if (argv.includes('--ascii')) {
   process.exit(0);
 }
 
-// A canvas of 32-bit pixels, with text from the console's own font.
-function canvas(w, h, fill) { const px = new Uint32Array(w * h).fill(fill); return { w, h, px }; }
-function text(c, s, x, y, col) {
-  for (let k = 0; k < s.length; k++) {
-    const code = s.charCodeAt(k) - 32; if (code < 0 || code * 64 + 63 >= FONT.length) continue;
-    for (let j = 0; j < 8; j++) for (let i = 0; i < 8; i++) if (FONT[code * 64 + j * 8 + i] && x + k * 8 + i < c.w && y + j < c.h) c.px[(y + j) * c.w + x + k * 8 + i] = col;
-  }
-}
-const BG = 0xff201a1a, GRID = 0xff3a3030, LABEL = 0xffd0d0d0, DARK = [0xff2a2a2a, 0xff343434];
+const BG = COLORS.bg, LABEL = COLORS.label;
 
 if (argv.includes('--palette')) {
   const file = opt('--palette'), S = 16, c = canvas(16 * (S + 2) + 40, 16 * (S + 2) + 12, BG);
@@ -63,10 +52,7 @@ const c = canvas(cols * cw + 4, rows * ch + 4 + 30, BG);
 list.forEach((t, n) => {
   const ox = 2 + (n % cols) * cw, oy = 2 + Math.floor(n / cols) * ch;
   text(c, String(t), ox + 1, oy, LABEL);
-  for (let y = 0; y < 8 * scale; y++) for (let x = 0; x < 8 * scale; x++) {
-    const v = pixel(t, Math.floor(x / scale), Math.floor(y / scale));
-    c.px[(oy + 10 + y) * c.w + ox + x] = v ? rgb(base + v) : DARK[((Math.floor(x / scale) + Math.floor(y / scale)) & 1)];
-  }
+  drawTile(c, cart, t, ox, oy + 10, scale, base);
 });
 const sy = rows * ch + 6; // the palette's 16 swatches
 text(c, `palette ${argv.includes('--sprite') ? 'sprite' : 'BG'} ${pal}`, 4, sy, LABEL);
