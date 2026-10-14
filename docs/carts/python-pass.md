@@ -1,7 +1,7 @@
 # Python Pass: Cart Specification
 
-**Version:** 0.2 (draft)
-**Status:** Proposed
+**Version:** 0.3 (draft)
+**Status:** In progress: step 1 of the plan (15) is built
 **Cart source:** `carts/src/python-pass/` → `carts/python-pass.nova`
 
 ---
@@ -260,6 +260,37 @@ it, the gate's glow and the Temple's lava cycle colours.
    - the tiles on screen always match the snake the game knows, after every step;
    - the same inputs replay the same game;
    - an automatic player, which searches for a safe path to the fruit, clears 1-1.
+   - **Built:**
+     - Level 1-1 is built by the art script from a grid, with the clumps of vine as
+       rectangles. The script checks that every open cell can be reached from the
+       snake's start and that the gate can be reached, and writes the level's start,
+       heading, gate and quota into the cart's `LEVELS` table.
+     - The snake is tiles on BG0: a head (two tiles, flipped for four directions),
+       straight body, one corner tile in four flips and a tail. A step repaints the new
+       head, the old head, the new tail and clears the old tail: four cells at most.
+     - The snake may move into the cell its tail is leaving, unless it is growing.
+     - A fruit goes on a cell found by flooding out from the start (so it is
+       reachable), at least four cells from the head, using the run's own seeded
+       generator. The quota opens the gate, and no fruit follows.
+     - Dying flashes the snake, then restarts the level: the score drops back to what
+       it was at the level's start, and the fruit eaten is lost.
+     - Placeholder art and effects; there is no title yet. The slice shows a card, then
+       the game, then a clear or game-over screen that starts again.
+   - **Results:** a script of 23 checks all pass.
+     - **Turns:** UP then LEFT inside one step is a U-turn, made in the right cells.
+       The queue holds two presses and drops the third, which changes nothing. A
+       reversal is ignored, and so is a press along the current heading.
+     - **Tiles:** after every one of 172 steps of a bot run, each tile matches the
+       snake, and a separately written rule for which neighbours each tile joins
+       agrees with where the snake's neighbours are (a wrong flip would show). Nothing
+       is drawn where the snake isn't, including after a restart.
+     - **Fruit:** every fruit is on open, reachable ground, away from the head.
+     - **Play:** the bot clears 1-1 with all its lives. The same seed and inputs replay
+       the same game, and another seed doesn't. Hitting a wall or its own body costs a
+       life, and following its tail into the cell it is leaving does not. The closed
+       gate is a wall, and the open one clears the level.
+     - **CPU:** the worst frame is 3–5 ms in Node, which includes its garbage
+       collection. No errors in the browser.
 2. **Power-ups and hazards:** the five power-ups, golden fruit and combos, boulders,
    scorpions and falling rocks.
 3. **All 16 levels and the 4 zones:** the levels in the Map tab, the grounds and
