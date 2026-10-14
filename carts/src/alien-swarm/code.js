@@ -270,7 +270,7 @@ function startWave() {
   for (const q of spawns) if (!(seen >> q.kind & 1)) { if (fresh < 0 || q.kind === QUEEN) fresh = q.kind; seen |= 1 << q.kind; }
   const tag = fresh === QUEEN ? 'THE QUEEN!' : fresh >= 0 && wave > 0 ? `${ALIENS[fresh].name}S!` : '';
   banner = { text: tag ? `WAVE ${wave + 1}: ${tag}` : `WAVE ${wave + 1}`, t: 100, c: tag ? (fresh === QUEEN ? RED : ORANGE) : GOLD };
-  sfx(fresh === QUEEN ? SFX.boss : SFX.wave, SFX_CH);
+  sfxv(fresh === QUEEN ? SFX.boss : SFX.wave, SFX_CH);
 }
 
 /** SELECT in the build phase: the wave now, and 2 credits for each second left (SPEC 7). */
@@ -285,7 +285,7 @@ function waveCleared() {
   wave++;
   if (wave >= WAVE_COUNT) { win(); return; }
   phase = 'build'; count = COUNT;
-  sfx(SFX.cleared, SFX_CH);
+  sfxv(SFX.cleared, SFX_CH);
 }
 
 // --- Towers ---
@@ -297,7 +297,7 @@ function win() {
   const stars = starsFor(hull), score = 100 * hull + credits + 50 * calls;
   const best = dget(bestSlot(mapIx, hard));
   result = { stars, score, best: score > best };
-  sfx(SFX.victory, SFX_CH);
+  sfxv(SFX.victory, SFX_CH);
   if (score > best) dset(bestSlot(mapIx, hard), score);
   if (stars > dget(starsSlot(mapIx, hard))) dset(starsSlot(mapIx, hard), stars);
   if (unlocked() < Math.min(MAPS.length, mapIx + 2)) dset(UNLOCK_SLOT, Math.min(MAPS.length, mapIx + 2));
@@ -448,7 +448,7 @@ function hit(a, dmg, pierce = false) {
   credits += A.bounty;
   effects.push({ x: a.x, y: a.y, r: A.big ? 16 : 6, t: A.big ? 20 : 10, c: GOO[a.kind][1] });
   burst(a.x, a.y, A.big ? 24 : 7, GOO[a.kind], A.big ? 2.2 : 1.3);
-  sfx(A.big ? SFX.boom : SFX.splat, SFX_CH);
+  sfxv(A.big ? SFX.boom : SFX.splat, SFX_CH);
   // A Splitter bursts into Skitters, spread back along its path.
   for (let k = 0; k < (A.split || 0); k++) spawn(SKITTER, a.path, Math.max(0, a.s - 6 * k));
 }
@@ -467,7 +467,7 @@ function updateAliens() {
       hull = Math.max(0, hull - A.hull);
       effects.push({ x: a.x, y: a.y, r: 10, t: 16, c: RED });
       hullFlash = 12;
-      sfx(SFX.hull, SFX_CH);
+      sfxv(SFX.hull, SFX_CH);
       continue;
     }
     [a.x, a.y] = along(a.path, a.s);
@@ -490,10 +490,10 @@ function update() {
   timer++; clock++;
   const go = pressed(START) || pressed(A), back = pressed(B);
   if (state === 'title') {
-    if (btnp(UP) || btnp(DOWN)) { titleSel ^= 1; sfx(SFX.move, SFX_CH); }
-    if (go) { sfx(SFX.select, SFX_CH); if (titleSel === 0) toSelect(unlocked() - 1); else { state = 'records'; timer = 0; } }
+    if (btnp(UP) || btnp(DOWN)) { titleSel ^= 1; sfxv(SFX.move, SFX_CH); }
+    if (go) { sfxv(SFX.select, SFX_CH); if (titleSel === 0) toSelect(unlocked() - 1); else { state = 'records'; timer = 0; } }
   } else if (state === 'records') {
-    if (go || back) { sfx(SFX.move, SFX_CH); toTitle(); }
+    if (go || back) { sfxv(SFX.move, SFX_CH); toTitle(); }
   } else if (state === 'select') {
     updateSelect(go, back);
   } else if (state === 'intro') {
@@ -501,11 +501,11 @@ function update() {
   } else if (state === 'play') {
     updatePlay();
   } else if (state === 'won') {
-    for (let k = 0; k < result.stars; k++) if (timer === STAR_AT[k]) sfx(SFX.star, SFX_CH);
-    if (timer > WON_FRAMES && go) { sfx(SFX.select, SFX_CH); toSelect(Math.min(mapIx + 1, MAPS.length - 1)); }
+    for (let k = 0; k < result.stars; k++) if (timer === STAR_AT[k]) sfxv(SFX.star, SFX_CH);
+    if (timer > WON_FRAMES && go) { sfxv(SFX.select, SFX_CH); toSelect(Math.min(mapIx + 1, MAPS.length - 1)); }
   } else if (state === 'lost') {
-    if (btnp(UP) || btnp(DOWN)) { endSel ^= 1; sfx(SFX.move, SFX_CH); }
-    if (timer > 60 && go) { sfx(SFX.select, SFX_CH); if (endSel === 0) startMap(mapIx); else toSelect(mapIx); }
+    if (btnp(UP) || btnp(DOWN)) { endSel ^= 1; sfxv(SFX.move, SFX_CH); }
+    if (timer > 60 && go) { sfxv(SFX.select, SFX_CH); if (endSel === 0) startMap(mapIx); else toSelect(mapIx); }
     else if (timer > 60 && back) toSelect(mapIx);
   }
   if (state !== 'play') for (const e of effects) e.t--;
@@ -518,13 +518,13 @@ const INTRO_FRAMES = 180, WON_FRAMES = 150;
 /** LEFT/RIGHT: the map (locked ones are skipped); UP/DOWN: normal or hard, once it's beaten. */
 function updateSelect(go, back) {
   const open = unlocked();
-  if (btnp(LEFT) && sel > 0) { sel--; sfx(SFX.move, SFX_CH); }
-  if (btnp(RIGHT) && sel < open - 1) { sel++; sfx(SFX.move, SFX_CH); }
+  if (btnp(LEFT) && sel > 0) { sel--; sfxv(SFX.move, SFX_CH); }
+  if (btnp(RIGHT) && sel < open - 1) { sel++; sfxv(SFX.move, SFX_CH); }
   const canHard = dget(starsSlot(sel, false)) > 0;
   if (!canHard) selHard = false;
-  if ((btnp(UP) || btnp(DOWN)) && canHard) { selHard = !selHard; sfx(SFX.move, SFX_CH); }
-  if (go) { sfx(SFX.select, SFX_CH); startMap(sel, selHard); }
-  else if (back) { sfx(SFX.move, SFX_CH); toTitle(); }
+  if ((btnp(UP) || btnp(DOWN)) && canHard) { selHard = !selHard; sfxv(SFX.move, SFX_CH); }
+  if (go) { sfxv(SFX.select, SFX_CH); startMap(sel, selHard); }
+  else if (back) { sfxv(SFX.move, SFX_CH); toTitle(); }
 }
 
 function updatePlay() {
@@ -550,7 +550,7 @@ function handleInput() {
   if (menu && menu.kind === 'build') {
     if (btnp(LEFT)) menu.sel = (menu.sel + TOWERS.length - 1) % TOWERS.length;
     if (btnp(RIGHT)) menu.sel = (menu.sel + 1) % TOWERS.length;
-    if (pressed(A)) { if (build(menu.sel)) { menu = null; sfx(SFX.build, SFX_CH); } else sfx(SFX.no, SFX_CH); }
+    if (pressed(A)) { if (build(menu.sel)) { menu = null; sfxv(SFX.build, SFX_CH); } else sfxv(SFX.no, SFX_CH); }
     else if (pressed(B)) menu = null;
     return;
   }
@@ -562,9 +562,9 @@ function handleInput() {
     if (btnp(DOWN)) menu.sel = (menu.sel + 1) % items.length;
     const item = items[menu.sel];
     if (pressed(A)) {
-      if (item === 'UPGRADE') sfx(upgrade(t) ? SFX.build : SFX.no, SFX_CH);
-      else if (item === 'TARGET') { t.mode = (t.mode + 1) % TARGETS.length; t.target = null; sfx(SFX.move, SFX_CH); }
-      else { sell(t); menu = null; sfx(SFX.sell, SFX_CH); }
+      if (item === 'UPGRADE') sfxv(upgrade(t) ? SFX.build : SFX.no, SFX_CH);
+      else if (item === 'TARGET') { t.mode = (t.mode + 1) % TARGETS.length; t.target = null; sfxv(SFX.move, SFX_CH); }
+      else { sell(t); menu = null; sfxv(SFX.sell, SFX_CH); }
     } else if (pressed(B)) menu = null;
     return;
   }
@@ -628,7 +628,7 @@ function tick() {
   parts = parts.filter((q) => q.t > 0);
   if (hullFlash > 0) hullFlash--;
   if (banner && --banner.t <= 0) banner = null;
-  if (hull <= 0) { state = 'lost'; timer = 0; menu = null; endSel = 0; play(-1); sfx(SFX.lost, SFX_CH); return; }
+  if (hull <= 0) { state = 'lost'; timer = 0; menu = null; endSel = 0; play(-1); sfxv(SFX.lost, SFX_CH); return; }
   if (phase === 'wave' && !spawns.length && !aliens.length) waveCleared();
 }
 
@@ -637,6 +637,9 @@ function tick() {
 const SFX = { blaster: 0, cannon: 1, splat: 2, hull: 3, build: 4, sell: 5, no: 6, lost: 7, laser: 8, freeze: 9, missile: 10, boom: 11, move: 12,
   select: 13, wave: 14, boss: 15, cleared: 16, star: 17, victory: 18 };
 const SFX_CH = 1;
+// Effects with noise (or saw or triangle) in them go on a channel with that voice: the channel decides the voice.
+const SFX_VOICE_CH = {1: 4, 2: 4, 8: 3, 9: 4, 10: 4, 11: 4};
+function sfxv(n, ch) { sfx(n, n in SFX_VOICE_CH ? SFX_VOICE_CH[n] : ch); }
 const TITLE_SONG = 0; // then song 1 + p on planet p (SPEC 11)
 let song = -1, lastShot = -99; // the song playing; the frame of the last tower shot's sound
 
@@ -651,7 +654,7 @@ function play(n) {
 function shotSfx(n) {
   if (clock - lastShot < 4) return;
   lastShot = clock;
-  sfx(n, SFX_CH);
+  sfxv(n, SFX_CH);
 }
 
 // --- Draw ---

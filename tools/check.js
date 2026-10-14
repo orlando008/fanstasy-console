@@ -1,0 +1,125 @@
+// Dev tool: check a cart against the console's limits and the mistakes that have cost time before.
+//
+//   node tools/check.js moto-crosser          one cart (a name in carts/, or a path to a .nova)
+//   node tools/check.js --all                 every cart in carts/ that has a source folder
+//   node tools/check.js --all --skip=a,b      ... except these (carts with known problems)
+//
+// Errors (exit code 1): code over 64 KB, a syntax error, audio over its limits, an instrument whose wave does
+// not suit the channel it is on in a song, a note out of range, an SFX that mixes voices, or a PNG cart that
+// would not fit. Warnings: code over 90% of the limit, a built .nova that is older than its source, an SFX
+// that would sound wrong through the cart's SFX_CH (unless the code routes them: a table named SFX_VOICE_CH, or a comment "sfx-voice-routed"), a description that still says "work in progress", no label.
+// Numbers worth knowing are printed for every cart (code size, tiles, sprites per scanline are a run-time limit:
+// see docs/dev/playbook.md for the harness check).
+
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
+import { CHANNEL_VOICES, INSTRUMENTS, NOTE_COUNT, PATTERNS, SAMPLE_RAM, SAMPLE_SLOTS, SFX_SLOTS, SONGS, sampleBytes, waveVoice } from '../src/formats/audio.js';
+import { CODE_LIMIT, SHEET_W, codeBytes } from '../src/formats/cart.js';
+import { readNova } from '../src/formats/nova-json.js';
+import { MAX_PAYLOAD, cartPayload } from '../src/formats/nova-png.js';
+
+const ROOT = fileURLToPath(new URL('../', import.meta.url));
+const args = process.argv.slice(2);
+if (!args.length) { console.error('usage: node tools/check.js <cart name | file.nova | --all>'); process.exit(1); }
+
+const skip = (args.find((a) => a.startsWith('--skip='))?.slice(7) || '').split(',').filter(Boolean);
+const names = args.includes('--all')
+  ? readdirSync(join(ROOT, 'carts', 'src')).filter((n) => existsSync(join(ROOT, 'carts', `${n}.nova`)) && !skip.includes(n))
+  : args.filter((a) => !a.startsWith('--'));
+
+let errors = 0, warnings = 0;
+for (const arg of names) await checkCart(arg);
+console.log(errors ? `\n${errors} error(s), ${warnings} warning(s)` : `\nok (${warnings} warning(s))`);
+process.exit(errors ? 1 : 0);
+
+async function checkCart(arg) {
+  const file = arg.endsWith('.nova') ? arg : join(ROOT, 'carts', `${arg}.nova`);
+  const name = arg.replace(/^.*\//, '').replace(/\.nova$/, '');
+  const src = join(ROOT, 'carts', 'src', name);
+  const err = (m) => { errors++; console.log(`  ERROR   ${m}`); };
+  const warn = (m) => { warnings++; console.log(`  warning ${m}`); };
+  console.log(`${name}`);
+  if (!existsSync(file)) { err(`${file} does not exist (node tools/pack.js carts/src/${name} carts/${name}.nova)`); return; }
+  const cart = readNova(readFileSync(file, 'utf8'));
+
+  // Freshness: the built cart should be what the source folder packs to.
+  if (existsSync(src)) {
+    const tmp = mkdtempSync(join(tmpdir(), 'nova-check-'));
+    try {
+      execFileSync('node', [join(ROOT, 'tools', 'pack.js'), src, join(tmp, 'x.nova')], { stdio: 'pipe' });
+      if (readFileSync(join(tmp, 'x.nova'), 'utf8') !== readFileSync(file, 'utf8')) warn(`carts/${name}.nova is not what carts/src/${name} packs to: run node tools/pack.js carts/src/${name} carts/${name}.nova`);
+    } catch (e) { err(`packing the source failed: ${String(e.stderr || e.message).trim()}`); } finally { rmSync(tmp, { recursive: true, force: true }); }
+  }
+
+  // Code.
+  const bytes = codeBytes(cart.code);
+  console.log(`  code    ${bytes.toLocaleString('en-US')} of ${CODE_LIMIT.toLocaleString('en-US')} bytes (${((100 * bytes) / CODE_LIMIT).toFixed(1)}%)`);
+  if (bytes > CODE_LIMIT) err('code is over the limit');
+  else if (bytes > CODE_LIMIT * 0.9) warn(`code is over 90% of the limit (${(CODE_LIMIT - bytes).toLocaleString('en-US')} bytes left)`);
+  try { new vm.Script(cart.code, { filename: `${name}/code.js` }); } catch (e) { err(`code does not compile: ${e.message}`); }
+
+  // Tiles and palette use.
+  let lastTile = -1;
+  for (let t = 0; t < cart.tiles.length / 64; t++) {
+    const x0 = (t % (SHEET_W / 8)) * 8, y0 = Math.floor(t / (SHEET_W / 8)) * 8;
+    let any = false;
+    for (let y = 0; y < 8 && !any; y++) for (let x = 0; x < 8; x++) if (cart.tiles[(y0 + y) * SHEET_W + x0 + x]) { any = true; break; }
+    if (any) lastTile = t;
+  }
+  console.log(`  tiles   up to tile ${lastTile + 1} of ${cart.tiles.length / 64} used`);
+
+  // Audio.
+  const nz = (c) => c && (c.n != null || c.i != null);
+  const songsUsed = cart.songs.filter((s) => s.order.length).length;
+  const sfxUsed = cart.sfx.filter((e) => e.rows.some(Boolean)).length;
+  const patUsed = new Set(cart.songs.flatMap((s) => s.order)).size;
+  const insUsed = new Set();
+  const ram = sampleBytes(cart.samples);
+  console.log(`  audio   ${songsUsed}/${SONGS} songs, ${patUsed}/${PATTERNS} patterns, ${sfxUsed}/${SFX_SLOTS} sfx, sample RAM ${ram}/${SAMPLE_RAM} bytes (${cart.samples.filter((s) => s.data.length).length}/${SAMPLE_SLOTS} samples)`);
+  if (ram > SAMPLE_RAM) err('sample RAM is over the limit');
+  const voice = (i) => waveVoice(cart.instruments[i]?.wave ?? 'pulse50');
+  cart.songs.forEach((song, s) => {
+    if (!song.order.length) return;
+    const seen = new Set();
+    for (const k of song.order) cart.patterns[k].forEach((row, r) => row.forEach((c, ch) => {
+      if (!nz(c)) return;
+      if (c.i != null) insUsed.add(c.i);
+      if (c.n != null && c.n >= 0 && c.n >= NOTE_COUNT) err(`song ${s}: note ${c.n} out of range`);
+      if (c.i != null && c.n != null && voice(c.i) !== CHANNEL_VOICES[ch] && !seen.has(`${ch}/${c.i}`)) {
+        seen.add(`${ch}/${c.i}`);
+        err(`song ${s}, channel ${ch} (${CHANNEL_VOICES[ch]}): instrument ${c.i} (${cart.instruments[c.i]?.wave}) is a ${voice(c.i)} voice, which this channel cannot play`);
+      }
+    }));
+    const used = [0, 1, 2, 3, 4, 5].filter((ch) => song.order.some((k) => cart.patterns[k].some((row, r) => (r === 0 && ch === 1 ? row[ch]?.n != null : nz(row[ch])))));
+    console.log(`  song ${s}  ${song.order.length} patterns, channels ${used.join(',') || 'none'}${used.includes(1) ? '  (channel 1 has notes: it is usually kept for SFX)' : ''}`);
+  });
+  const code = cart.code, sfxCh = /\bSFX_CH\s*=\s*(\d)/.exec(code), wrongVoice = [], routed = /sfx-voice-routed|SFX_VOICE_CH/.test(code);
+  cart.sfx.forEach((e, n) => {
+    const used = e.rows.filter((r) => r && r.n != null && r.n >= 0 && r.i != null);
+    if (!used.length) return;
+    used.forEach((r) => insUsed.add(r.i));
+    const voices = new Set(used.map((r) => voice(r.i)));
+    if (voices.size > 1) { err(`sfx ${n} mixes instruments of different voices (${[...voices].join(', ')}): an SFX plays on one channel`); return; }
+    if (sfxCh && !routed && CHANNEL_VOICES[Number(sfxCh[1])] !== [...voices][0]) wrongVoice.push(`${n} (${[...voices][0]})`);
+  });
+  if (wrongVoice.length) warn(`SFX_CH = ${sfxCh[1]} is a ${CHANNEL_VOICES[Number(sfxCh[1])]} channel, so these effects sound like a ${CHANNEL_VOICES[Number(sfxCh[1])]} if the cart plays them on it (the channel decides the voice): ${wrongVoice.join(', ')}`);
+  const lastIns = Math.max(-1, ...insUsed);
+  console.log(`  instruments used: ${insUsed.size}, highest index ${lastIns} (limit ${INSTRUMENTS})`);
+
+  // The PNG cart.
+  const payload = (await cartPayload(cart)).length;
+  console.log(`  png     payload ${payload.toLocaleString('en-US')} of ${MAX_PAYLOAD.toLocaleString('en-US')} bytes (${((100 * payload) / MAX_PAYLOAD).toFixed(0)}%)`);
+  if (payload > MAX_PAYLOAD) err('the cart does not fit a .nova.png');
+
+  // Release items.
+  const desc = cart.meta.description || '';
+  if (!cart.label) warn('no label (F7 in the console, or node tools/release.js)');
+  if (/work in progress/i.test(desc)) warn('the description still says it is a work in progress');
+  if (!desc) warn('no description in meta.json');
+  const png = join(ROOT, 'carts', `${name}.nova.png`);
+  if (existsSync(png) && existsSync(file) && statSync(png).mtimeMs < statSync(file).mtimeMs - 60_000) warn(`carts/${name}.nova.png is older than the cart: run node tools/release.js ${name}`);
+}

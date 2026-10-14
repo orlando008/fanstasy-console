@@ -129,3 +129,21 @@ After adding or repacking a cart, regenerate the Library's manifest
 ```sh
 node tools/library.js
 ```
+
+### Making a cart
+
+`docs/dev/playbook.md` is the guide to building a game (the workflow, the limits, how to test and
+measure the audio, the traps). The tools:
+
+```sh
+node tools/check.js <name>                 # limits and common mistakes (--all for every cart)
+node tools/test.js <name>                  # a cart's check scripts in tests/carts/<name>/
+node tools/release.js <name>               # label, .nova.png, Library entry, checks
+node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300   # screenshots without a browser
+node tools/devkit/music/loud.mjs carts/<name>.nova               # loudness of each song
+node tools/devkit/voices.mjs carts/<name>.nova                   # effects sent to a channel of the wrong voice
+```
+
+The song toolkit (`tools/devkit/music/kit.py`) and the headless test harness
+(`tools/devkit/harness.mjs`) are used by `carts/src/moto-crosser/audio.py` and
+`tests/carts/moto-crosser/`, which are the examples to start from.

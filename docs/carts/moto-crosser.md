@@ -530,7 +530,8 @@ the landing.
      - No errors in the browser.
 7. **Audio pass:** five songs, the engine and the effects.
    - **Built:**
-     - **Five songs** (section 11), written with the same toolkit as the earlier games: a small
+     - **Five songs** (section 11), written with the song toolkit (`tools/devkit/music/kit.py`; the
+       script is `carts/src/moto-crosser/audio.py`, which regenerates `audio.json`): a small
        Python script that turns bars of chords, a lead line, a bass line, an arpeggio and a drum
        pattern into patterns, and checks that the lead does not clash with the bass or arpeggio on the
        beat. The hats are samples on the drum channel (only on rows where there is no kick or snare),

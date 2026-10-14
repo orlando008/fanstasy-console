@@ -56,7 +56,7 @@ const TOP_SLOT = 10, TOP_N = 10, ENTRY = 4; // the top 10 championship scores, b
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const PLACE_POINTS = [10000, 7000, 5000, 3000, 2000, 1000], TIME_BONUS = 100, CLEAN_BONUS = 1000, QUALIFY_PLACE = 3; // a point value for each place; a bonus for each second under par; and for a race without a crash
 const SFX_CH = 1;
-// Effects with noise in them go on the noise channel (channel 1 is a pulse), which is also the engine's: they cut it, and it starts again when they end.
+// Effects with noise in them go on the noise channel (channel 1 is a pulse), which is also the engine's: they cut it, and it starts again when they end.  (sfx-voice-routed)
 const ENGINE_CH = 4, NOISE_FRAMES = { [SFX.buzz]: 16, [SFX.takeoff]: 8, [SFX.rough]: 12, [SFX.crash]: 15, [SFX.mud]: 9, [SFX.overheat]: 20, [SFX.smash]: 15 };
 let noiseT = 0;
 function fx(n) {
