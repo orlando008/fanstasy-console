@@ -1,7 +1,7 @@
 # Alien Swarm: Cart Specification
 
-**Version:** 0.6 (draft)
-**Status:** In progress: steps 1–5 of the plan (15) are built
+**Version:** 0.7 (draft)
+**Status:** In progress: steps 1–6 of the plan (15) are built
 **Cart source:** `carts/src/alien-swarm/` → `carts/alien-swarm.nova`
 
 ---
@@ -162,6 +162,19 @@ In the menus START or A goes on and B goes back, as in Smashy Smash.
 
 **Songs** (5): the title, and one for each planet (8), looping. Channel 1 is kept
 for sound effects.
+
+| Song | Tempo | Style |
+|---|---|---|
+| 0 Title | 129 bpm, A minor | Ominous arpeggios, then a theme that rises; also on the map select and records |
+| 1 Luna Outpost | 150 bpm, C major | A bright space-age march |
+| 2 Frost Moon | 129 bpm, E minor | A cool groove under chiming arpeggios |
+| 3 Jungle World | 129 bpm, D minor | A tense percussive pulse |
+| 4 The Hive | 150 bpm, G minor | A heroic last stand |
+
+A map's song starts at its intro and runs through pauses. It stops for the victory
+and colony-lost jingles, and the title song returns on the map select. Tower shots
+share one sound: at most one every 4 frames, so a battery of towers is a rattle,
+not a roar.
 
 **SFX:** cursor move, build, upgrade, sell, can't afford, each tower's shot (5),
 alien hit, alien death (small, big), splitter burst, hull hit, wave start, wave
@@ -362,6 +375,19 @@ crowd a scanline.
      frame on Queen's Nest is 4.9 ms at 3× with 46 aliens and all the effects. No
      errors in the browser.
 6. **Audio pass:** five songs and the effects.
+   - **Built:** the songs (11) use the song toolkit from Planet Racers. The effects are
+     redone: a pew for the Blaster, a boom for the Cannon, a zap for the Laser, a
+     crackle for the Freezer, a rising whoosh for the Missile, splats, alarms, a siren
+     for the Queen, chimes and a victory fanfare.
+   - **Results:**
+     - A check of every beat finds no semitone or tritone between the tune and the bass
+       or chords, first time.
+     - Rendered offline, the songs peak at 0.30–0.39 with no clipping.
+     - Every screen cues the right song and effects.
+     - A battle with 16 towers at 3× averages 10 sound commands a second, under the cap
+       of 15.
+     - The game itself is unchanged: the mechanics checks, the flow and the bot's
+       results all match. No errors in the browser.
 7. **Balance and polish:** a bot with a build plan for each map checks that each
    map can be three-starred with good play and is lost with poor play, and that
    hard mode is tough but fair; a label, the PNG cart and the Library.

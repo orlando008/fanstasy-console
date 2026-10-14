@@ -233,12 +233,13 @@ const pathLen = (path) => (path.length - 1) * CELL;
 
 // --- Flow ---
 
-function toTitle() { state = 'title'; timer = 0; titleSel = 0; bg(1, { show: false }); }
+function toTitle() { state = 'title'; timer = 0; titleSel = 0; bg(1, { show: false }); play(TITLE_SONG); }
 
 function toSelect(m = sel) {
   state = 'select'; timer = 0; sel = Math.min(m, unlocked() - 1);
   if (selHard && !dget(starsSlot(sel, false))) selHard = false;
   bg(1, { show: false });
+  play(TITLE_SONG);
 }
 
 /** Load map m and show its intro; the build phase starts after it (SPEC 10). */
@@ -247,6 +248,7 @@ function startMap(m, h = hard) {
   hard = h;
   bg(1, { show: true });
   state = 'intro'; timer = 0;
+  play(1 + (m >> 1));
   towers = []; aliens = []; shots = []; effects = []; parts = []; spawns = []; hullFlash = 0;
   credits = startCredits(m); hull = HULL; wave = 0; calls = 0; seen = 0; result = null;
   phase = 'build'; count = FIRST_COUNT;
@@ -288,6 +290,7 @@ function waveCleared() {
 /** The map is won: stars, score and saves (SPEC 9, 13). */
 function win() {
   state = 'won'; timer = 0; menu = null; endSel = 0;
+  play(-1);
   const stars = starsFor(hull), score = 100 * hull + credits + 50 * calls;
   const best = dget(bestSlot(mapIx, hard));
   result = { stars, score, best: score > best };
@@ -368,7 +371,7 @@ function updateTowers() {
     // A muzzle flash at the end of the barrel.
     const [ux, uy] = DIR_STEP[t.dir];
     effects.push({ x: t.x + 7 * ux, y: t.y + 7 * uy, r: t.kind === CANNON ? 3 : 2, t: 3, c: WHITE, fill: true });
-    sfx(t.kind === BLASTER ? SFX.blaster : t.kind === CANNON ? SFX.cannon : SFX.missile, SFX_CH);
+    shotSfx(t.kind === BLASTER ? SFX.blaster : t.kind === CANNON ? SFX.cannon : SFX.missile);
   }
 }
 
@@ -381,7 +384,7 @@ function updateBeam(t, T) {
   t.dir = dirTo(t.target.x - t.x, t.target.y - t.y);
   t.heat++;
   hit(t.target, Math.min(T.max, T.dmg + T.ramp * t.heat) * levelMul(t), true);
-  if (t.heat % 24 === 1) sfx(SFX.laser, SFX_CH);
+  if (t.heat % 24 === 1) shotSfx(SFX.laser);
 }
 
 /** The Freezer pulses only when something on the ground is in range. */
@@ -397,7 +400,7 @@ function freezePulse(t, T) {
   if (!any) return;
   t.cool = T.rate; t.pulse = 12;
   effects.push({ x: t.x, y: t.y, r: R, t: 14, c: CYAN });
-  sfx(SFX.freeze, SFX_CH);
+  shotSfx(SFX.freeze);
 }
 
 function updateShots() {
@@ -622,7 +625,7 @@ function tick() {
   parts = parts.filter((q) => q.t > 0);
   if (hullFlash > 0) hullFlash--;
   if (banner && --banner.t <= 0) banner = null;
-  if (hull <= 0) { state = 'lost'; timer = 0; menu = null; endSel = 0; sfx(SFX.lost, SFX_CH); return; }
+  if (hull <= 0) { state = 'lost'; timer = 0; menu = null; endSel = 0; play(-1); sfx(SFX.lost, SFX_CH); return; }
   if (phase === 'wave' && !spawns.length && !aliens.length) waveCleared();
 }
 
@@ -631,6 +634,22 @@ function tick() {
 const SFX = { blaster: 0, cannon: 1, splat: 2, hull: 3, build: 4, sell: 5, no: 6, lost: 7, laser: 8, freeze: 9, missile: 10, boom: 11, move: 12,
   select: 13, wave: 14, boss: 15, cleared: 16, star: 17, victory: 18 };
 const SFX_CH = 1;
+const TITLE_SONG = 0; // then song 1 + p on planet p (SPEC 11)
+let song = -1, lastShot = -99; // the song playing; the frame of the last tower shot's sound
+
+/** Start a song unless it's already playing; -1 stops the music. */
+function play(n) {
+  if (n === song) return;
+  song = n;
+  music(n);
+}
+
+/** Tower shots share one voice: at most one shot sound every 4 frames, so a battery of towers stays a rattle, not a roar. */
+function shotSfx(n) {
+  if (clock - lastShot < 4) return;
+  lastShot = clock;
+  sfx(n, SFX_CH);
+}
 
 // --- Draw ---
 
