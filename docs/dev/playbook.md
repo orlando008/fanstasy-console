@@ -84,7 +84,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | Command | What it does |
 |---|---|
 | `python3 carts/src/<name>/audio.py carts/src/<name>/audio.json` | Regenerate a game's audio from its script, with the song toolkit in `tools/devkit/music/kit.py` (its header explains `bar()`) |
-| `node tools/devkit/music/loud.mjs carts/<name>.nova` | Per-section loudness of every song |
+| `node tools/devkit/music/loud.mjs carts/<name>.nova [--check]` | Per-section loudness of every song, surges, peak, and **the lead alone**: its RMS, its share of the mix and how much the mix jumps when it enters. `--check` fails on the limits in section 5 (`verify.js` runs it) |
 | `node tools/devkit/music/render.mjs carts/<name>.nova out/` | WAV files of the songs, with level and clipping |
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level and pitch (centroid) of effects, on the channel the game uses |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and saw on the beat |
@@ -177,9 +177,16 @@ You cannot hear the result, so measure it, and follow the rules that keep player
 - **Reserve channels**: channel 1 for SFX (songs only carry the tempo `F0x` on row 0 of each pattern on it),
   and channel 4 for an engine or other continuous sound. Hats then become short samples on channel 5, on rows
   with no kick or snare (the kit does this).
-- **No wobbly or loud leads.** Players complained about vibrato and sudden jumps in level. Leads are
-  `pulse25` or `pulse50` at volume 5 to 7 with no vibrato; kick 12, snare 10. Check `loud.mjs`: sections
-  within about 15% of the median, loudest at most 1.5x the median, peak under about 0.35. An intro may be quieter.
+- **No wobbly or loud leads.** Players complained about vibrato, sudden jumps in level and a lead that "blew out my
+  ears". Leads are `pulse25` or `pulse50` at volume 4 to 6 with no vibrato; kick 12, snare 10. `loud.mjs --check`
+  turns the complaint into numbers (for songs of 12 s or more): the lead alone at most 0.07 RMS and at most 0.75 of the
+  mix, the mix at most 1.5x louder in the section where the lead enters, no section over 1.6x the song's median, the
+  loudest 250 ms at most 2.2x the median, the peak at most 0.45, the median level 0.03 to 0.15. Python Pass's first
+  version (lead 0.09 to 0.13, 0.8 to 0.9 of the mix, entering up to 2.4x) was what players called blaring; its fixed
+  songs are 0.04 to 0.05 and 0.5 to 0.7. A pulse50 lead is louder than a pulse25 at the same volume.
+  **The first games' leads are as loud as Python Pass's first version**, so they fail these limits (`verify.js`
+  warns for them, from a list in the tool): Alien Swarm, Block Wizard, Planet Racers, Smashy Smash and Summit Rush
+  could have their leads brought down the same way.
 - **A held note cannot change pitch** (no API for it). A pitch that follows a value (an engine) is a short loop
   restarted at one of 5 or 6 pitches, changed only after the new pitch has held a few frames.
 - **Effect levels**: a song is about 0.06 to 0.08 RMS; effects 0.01 to 0.06; a looping sound 0.02 to 0.03.

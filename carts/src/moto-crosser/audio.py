@@ -22,7 +22,7 @@ a.instrument('GLASS', 'pulse25', 2, 18, 9, 16, 5, pan=-0.2)   # a lead's entranc
 a.instrument('KICK', 'sample', 0, 0, 15, 0, 12, sample=0)
 a.instrument('SNARE', 'sample', 0, 0, 15, 0, 10, sample=1)
 a.instrument('COUNTER', 'saw', 1, 10, 6, 8, 5, (1, 5), 0.3)
-a.instrument('BRASS', 'pulse50', 3, 16, 12, 10, 5)   # the night lead: steady, no wobble
+a.instrument('BRASS', 'pulse50', 3, 16, 12, 10, 4)   # the night lead: steady, no wobble
 a.instrument('SOLO', 'pulse25', 0, 6, 10, 6, 5, pan=-0.1)   # the last section's lead: steady, no wobble
 a.instrument('SOFTHORN', 'pulse25', 6, 20, 10, 12, 6, pan=-0.15)
 a.instrument('PAH', 'saw', 0, 3, 2, 1, 5, pan=0.25)   # off-beat chords
