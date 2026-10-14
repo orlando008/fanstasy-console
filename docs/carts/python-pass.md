@@ -464,6 +464,13 @@ it, the gate's glow and the Temple's lava cycle colours.
        ledge. The 12-cell snake in 2-4's band could not cross them; the bot stalled there
        or died.
      - **Lives:** extra lives at 5,000, 12,000 and 20,000 (see 9).
+     - **Music levels:** the last section of each song used the sound-effect fanfare (loud,
+       with vibrato) for its lead, and the Temple's brass was louder still, so those parts
+       jumped out and wobbled (the Temple's were twice as loud as its intro). They now have
+       their own steadier, quieter instruments with no vibrato, and the glass lead's vibrato is
+       halved. The loudest part of any song is now 0.10 (RMS), where the Temple's was 0.14, and
+       each song's overall level is within 12% of the others'. The effects keep their loud
+       fanfare so they stand out over the music.
      - **The label:** the title screen, taken with F7 and kept in the cart; the PNG cart
        `carts/python-pass.nova.png` is the same cart exported from the editor, and the
        Library lists it.
