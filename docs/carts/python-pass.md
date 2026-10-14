@@ -1,7 +1,7 @@
 # Python Pass: Cart Specification
 
-**Version:** 0.5 (draft)
-**Status:** In progress: steps 1–4 of the plan (15) are built; step 3's balance work is not finished
+**Version:** 0.6 (draft)
+**Status:** In progress: steps 1–5 of the plan (15) are built; step 3's balance work is not finished
 **Cart source:** `carts/src/python-pass/` → `carts/python-pass.nova`
 
 ---
@@ -401,6 +401,30 @@ it, the gate's glow and the Temple's lava cycle colours.
      - No errors in the browser.
 5. **Art pass:** the four zones' looks, the snake with scales and animated eyes and
    tongue, fruit and power-ups, hazards, particles, the title.
+   - **Built:**
+     - **Walls:** each zone has its own walls, drawn with a 4-neighbour edge: bushes in
+       the Jungle, rippling water on the Riverbank, mortared stone blocks in the Ruins and carved
+       stone with a gold inlay in the Temple. The art script picks each wall's tile (128 + 32 ×
+       zone + 16 × variant + a mask of which sides are open), so edges have an outline, a lit
+       side and a shaded side, and outer corners are rounded. The cart finds walls as tiles
+       128–255 (and the gate).
+     - **Ground:** 8 variants per zone (tiles 256–287): grass with the odd flower, sand and
+       pebbles, flagstones with moss, terracotta with gold studs.
+     - **Colours:** the cart sets each zone's palette (6 ground roles, 5 wall roles) when a
+       level loads, and moves some of them: the Riverbank's water cycles, the Temple's gold
+       pulses, and the open gate's glow pulses.
+     - **Snake:** a diamond-back with an outlined tube and light and dark sides, and a head
+       that flicks its tongue (a quarter of every ~1 s) and blinks every ~3.5 s (tiles 72–75).
+     - **Sprites:** an outlined apple with a stem and leaf; the golden fruit sparkles
+       (81, 92); the tokens as before; the boulder shaded; an outlined scorpion; the rock; and a
+       dithered shadow (93) under each rock about to fall, with the warning ring.
+     - **HUD band:** two rows of tiles, vine-textured with a gold line along the bottom.
+     - **Title and scores:** a clearing in the Jungle (Map RAM column 128, row 80) with the
+       path through it that the title snake follows from edge to edge.
+   - **Results:** the 24, 43 and 26 earlier checks all pass with the new tiles, and a new
+     script of 4 checks passes: on all 16 levels the cart's wall cells are exactly the wall
+     and gate tiles, each wall's mask matches its open neighbours, and the head's three
+     variants show with the snake's tiles still joined. No errors in the browser.
 6. **Audio pass:** five songs and the effects.
 7. **Balance and polish:** speeds, quotas, hazard rates, power-up weights and scoring,
    checked with the automatic player; a label, the PNG cart and the Library.

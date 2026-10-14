@@ -13,10 +13,12 @@ const DX = [1, 0, -1, 0], DY = [0, 1, 0, -1]; // directions: 0 right, 1 down, 2 
 // column 32); level l at column 32 * (l % 8), row 28 + 26 * (l >> 3); each zone's ground at
 // column 32 * zone, row 100.
 const SNAKE_X = 32, LEVEL_ROW = 28, GROUND_ROW = 100;
-const T_BAND = 12, WALL_LO = 32, WALL_HI = 47, T_GATE = 48, T_GATE_OPEN = 49; // terrain tiles
-const T_HEAD_R = 64, T_HEAD_D = 65, T_BODY_H = 66, T_BODY_V = 67, T_CORNER = 68, T_TAIL_R = 69, T_TAIL_D = 70; // the snake
+const TITLE_SCENE = 16, TITLE_COL = 128, TITLE_ROW = 80; // the title's clearing sits after the levels in Map RAM
+const T_BAND = 12, T_BAND2 = 13, WALL_LO = 128, WALL_HI = 255, T_GATE = 48, T_GATE_OPEN = 49; // terrain tiles
+const T_HEAD_R = 64, T_HEAD_D = 65, T_BODY_H = 66, T_BODY_V = 67, T_CORNER = 68, T_TAIL_R = 69, T_TAIL_D = 70; // the snake; the head's tongue-out tiles are 8 on, its eyes-shut tiles 10 on
+const HEAD_TONGUE = 8, HEAD_BLINK = 10
 const PAL_GROUND = 1, PAL_WALL = 2, PAL_BAND = 3, PAL_SNAKE = 4;
-const S_FRUIT = 80, S_GOLD = 81, S_POWER = 82, S_BOULDER = 88, S_SCORPION = 89, S_ROCK = 91; // sprites
+const S_FRUIT = 80, S_GOLD = 81, S_GOLD2 = 92, S_SHADOW = 93, S_POWER = 82, S_BOULDER = 88, S_SCORPION = 89, S_ROCK = 91; // sprites
 
 // --- The game's numbers (SPEC 5, 6, 7, 9) ---
 
@@ -65,12 +67,13 @@ const LEVELS = [
 const ZONES = ['THE JUNGLE', 'THE RIVERBANK', 'THE RUINS', 'THE TEMPLE'];
 const NAMES = ['FIRST STEPS', 'WINDING PATH', 'BOULDER RUN', 'CROSSROADS', 'STEPPING STONES', 'THE RAPIDS', 'SCORPION BEACH', 'WATERFALL',
   'FALLEN COLUMNS', 'THE COLONNADE', 'STATUE GARDEN', 'COLLAPSE', 'THE GATE', 'TORCH HALL', 'THE GAUNTLET', "THE IDOL'S CHAMBER"];
-// Each zone's colours (SPEC 8.1): the ground's four (palette 1, entries 17-20) and the walls' five (palette 2, 33-37).
+// Each zone's colours (SPEC 8.1): the ground's six (palette 1, entries 17-22: dark, mid, light, accent, shadow, second accent)
+// and the walls' five (palette 2, 33-37: outline, base, light, dark, accent).
 const ZONE_COLORS = [
-  ['58803a 749c48 9cc060 f0e060', '04140a 16502a 2a8040 5a3c20 0c3418'], // the Jungle: green ground, vines
-  ['6a8a58 8aac6e a8c888 e8e0a0', '0a2a50 2468b8 4c98e0 1a4880 103c78'], // the Riverbank: grassy banks, water
-  ['807a6c 9a9484 b8b2a0 e8d8a0', '24201a 6a645a 8a8478 4a4640 56524a'], // the Ruins: flagstones, columns
-  ['5a3e24 7a5a34 9a7a46 f0d060', '140c06 4a3a28 6a5438 3a2a18 c89020'], // the Temple: dark gold, carved stone
+  ['3f6a2e 5a8a3a 7cac4a f0e060 2e5024 e87878', '0a2410 1c5a28 3a8a3c 123c1c e8c040'], // the Jungle: grass, thick bushes
+  ['6a8a50 88a860 a8c878 e8e0a0 506a40 c0b890', '0a2050 2468b8 5ca0e8 1a4a90 e8f4ff'], // the Riverbank: grassy banks, water
+  ['8a8474 a09a88 bab49e 7a9a50 706a5c d8c890', '1c1814 70685a 948c7a 4c463c 5a8a40'], // the Ruins: flagstones, mossy blocks
+  ['6a4428 86592e a67238 f0c840 4a2e1a c0622a', '120a04 4a3624 6a5236 2e2014 e8b830'], // the Temple: terracotta, gold inlay
 ];
 
 // --- Colors (BG palette 7, for the overlay) ---
@@ -112,6 +115,7 @@ let prevMask = 0, inputMask = 0;
 let tally = null; // the level-clear tally: { rows, owed, paidAt }
 let golds = 0, lifeBonus = 0, seenHz = 0, banner = null; // golden fruit this level; the ending's bonus; hazards met this run
 let titleSel = 0, rank = -1, hl = -1, initials = null; // the title menu; this run's top-10 row; the scores row to light; initials being entered
+let scene = 0, headOff = 0; // the zone whose colours are on screen; the head's tile variant (0, HEAD_TONGUE or HEAD_BLINK)
 const TITLE_PATH = []; // the cells the title's snake slithers along
 
 function init() {
@@ -123,7 +127,7 @@ function init() {
   bg(0, { mx: SNAKE_X, my: 0, mw: 32, mh: 28, show: true });
   bg(1, { mx: 0, my: 0, mw: 32, mh: 28, show: true });
   bg(2, { mx: 0, my: GROUND_ROW, mw: 32, mh: 28, show: true });
-  for (let x = 0; x < 32; x++) for (let y = 0; y < 2; y++) mset(x, y, tile(T_BAND, PAL_BAND));
+  for (let x = 0; x < 32; x++) for (let y = 0; y < 2; y++) mset(x, y, tile(y ? T_BAND2 : T_BAND, PAL_BAND));
   // The title snake's route: along the bottom, up and down a row (SPEC 10).
   let x = 0, y = 23, i = 0;
   TITLE_PATH.push(y * COLS + x);
@@ -143,7 +147,8 @@ const rand = (lo, hi) => lo + (rng() % (hi - lo + 1)); // a whole number from lo
 
 /** Copy level l's terrain to the live screen with its zone's colours, and clear the snake's layer. */
 function loadScene(l) {
-  const mx = 32 * (l % 8), my = LEVEL_ROW + 26 * (l >> 3);
+  const mx = l === TITLE_SCENE ? TITLE_COL : 32 * (l % 8), my = l === TITLE_SCENE ? TITLE_ROW : LEVEL_ROW + 26 * (l >> 3);
+  const zone = l === TITLE_SCENE ? 0 : l >> 2;
   for (let y = 0; y < ROWS; y++) {
     for (let x = 0; x < COLS; x++) {
       const e = mget(mx + x, my + y), t = e & 1023;
@@ -152,15 +157,14 @@ function loadScene(l) {
       mset(SNAKE_X + x, 2 + y, 0);
     }
   }
-  bg(2, { mx: 32 * (l >> 2) });
-  ZONE_COLORS[l >> 2][0].split(' ').forEach((h, k) => col(17 + k, h));
-  ZONE_COLORS[l >> 2][1].split(' ').forEach((h, k) => col(33 + k, h));
+  bg(2, { mx: 32 * zone });
+  scene = zone;
+  animate();
 }
 
-/** The jungle with nothing in it but its border, for the title and the scores. */
+/** The jungle clearing, for the title and the scores. */
 function titleScene() {
-  loadScene(0);
-  for (let y = 1; y < ROWS - 1; y++) for (let x = 1; x < COLS - 1; x++) mset(x, 2 + y, 0);
+  loadScene(TITLE_SCENE);
   body = [];
 }
 
@@ -303,7 +307,7 @@ function segEntry(i) {
   const c = body[i], last = body.length - 1;
   if (i === 0) {
     const d = dirOf(body[1], c);
-    return d % 2 === 0 ? tile(T_HEAD_R, PAL_SNAKE, d === 2) : tile(T_HEAD_D, PAL_SNAKE, false, d === 3);
+    return d % 2 === 0 ? tile(T_HEAD_R + headOff, PAL_SNAKE, d === 2) : tile(T_HEAD_D + headOff, PAL_SNAKE, false, d === 3);
   }
   if (i === last) {
     const d = dirOf(c, body[i - 1]);
@@ -313,6 +317,23 @@ function segEntry(i) {
   if (a % 2 === b % 2) return tile(a % 2 === 0 ? T_BODY_H : T_BODY_V, PAL_SNAKE);
   const h = a % 2 === 0 ? a : b, v = a % 2 === 1 ? a : b; // a corner joins the right and down tile's way
   return tile(T_CORNER, PAL_SNAKE, h === 2, v === 3);
+}
+
+/** Colours and tiles that move: the water, the Temple's gold, the open gate's glow, the snake's flicking tongue and blink. */
+function animate() {
+  const mix = (a, b, f) => {
+    const x = parseInt(a, 16), y = parseInt(b, 16);
+    return [16, 8, 0].map(sh => ((((x >> sh) & 255) * (1 - f) + ((y >> sh) & 255) * f) | 0).toString(16).padStart(2, '0')).join('');
+  };
+  const zc = ZONE_COLORS[scene], g = zc[0].split(' '), w = zc[1].split(' ');
+  g.forEach((h, k) => col(17 + k, h));
+  w.forEach((h, k) => col(33 + k, h));
+  const pulse = Math.abs(clock % 90 - 45) / 45; // 0 to 1 and back, every 1.5 s
+  if (scene === 1) { const ph = (clock >> 3) % 3; for (let k = 0; k < 3; k++) col(34 + k, w[1 + (k + ph) % 3]); }
+  if (scene === 3) { col(37, mix(w[4], 'fff0a0', pulse * 0.8)); col(20, mix(g[3], 'ffffff', pulse * 0.6)); }
+  col(41, gateOpen ? mix('ffd860', 'ffffff', pulse) : 'ffd860');
+  const off = clock % 220 < 5 ? HEAD_BLINK : clock % 56 >= 40 ? HEAD_TONGUE : 0;
+  if (off !== headOff) { headOff = off; if (body.length > 1 && (state === 'play' || state === 'card' || state === 'title' || state === 'dying')) paintSeg(0); }
 }
 
 function paintSeg(i) {
@@ -458,6 +479,7 @@ const pressed = (b) => (inputMask & BIT(b)) !== 0 && (prevMask & BIT(b)) === 0;
 function update() {
   inputMask = readPad();
   timer++; clock++;
+  animate();
   const go = pressed(START) || pressed(A);
   if (state === 'title') {
     updateTitle(go);
@@ -677,7 +699,7 @@ function draw() {
   if (state === 'scores') { drawScores(); return; }
   const rise = (clock >> 4) & 1;
   if (fruit >= 0) spr(S_FRUIT, (fruit % COLS) * 8, FIELD_Y + flr(fruit / COLS) * 8 - rise, { size: 8, pal: 0, prio: 3 });
-  if (golden >= 0 && (goldenT > 120 || clock % 12 < 8)) spr(S_GOLD, (golden % COLS) * 8, FIELD_Y + flr(golden / COLS) * 8 - rise, { size: 8, pal: 1, prio: 3 });
+  if (golden >= 0 && (goldenT > 120 || clock % 12 < 8)) spr((clock >> 3) & 1 ? S_GOLD2 : S_GOLD, (golden % COLS) * 8, FIELD_Y + flr(golden / COLS) * 8 - rise, { size: 8, pal: 1, prio: 3 });
   if (pickup >= 0 && (pickupT > 120 || clock % 12 < 8)) spr(S_POWER + pickupKind, (pickup % COLS) * 8, FIELD_Y + flr(pickup / COLS) * 8 - (1 - rise), { size: 8, pal: 2, prio: 3 });
   drawHazards();
   for (const q of parts) rectfill(flr(q.x), flr(q.y), q.t > 8 ? 2 : 1, q.t > 8 ? 2 : 1, q.c);
@@ -814,6 +836,7 @@ function drawHazards() {
   }
   for (const r of rocks) {
     const x = (r.c % COLS) * 8, y = FIELD_Y + flr(r.c / COLS) * 8;
+    spr(S_SHADOW, x, y, { size: 8, pal: 3, prio: 2 });
     if (r.t % 10 < 6) { circ(x + 4, y + 4, 4, ORANGE); circ(x + 4, y + 4, 2, RED); }
     if (r.t < 14) spr(S_ROCK, x, y - r.t * 3, { size: 8, pal: 3, prio: 3 }); // falling in
   }
