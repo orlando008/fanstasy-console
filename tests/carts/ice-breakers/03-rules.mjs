@@ -52,7 +52,11 @@ const swap = (vm, p, from, dir) => { p.cursor = from; tap(vm, 'A'); tap(vm, dir)
   const { p } = play();
   ok(p.popScore(3, 0, 1) === 30 && p.popScore(4, 1, 1) === 70 && p.popScore(5, 1, 1) === 80, '10 a gem, and 30 more for a run of four or more', `${p.popScore(3, 0, 1)} ${p.popScore(4, 1, 1)} ${p.popScore(5, 1, 1)}`);
   ok(p.popScore(3, 0, 2) === 60 && p.popScore(3, 0, 3) === 90 && p.popScore(7, 2, 2) === 260, 'all times the chain', `${p.popScore(3, 0, 2)} ${p.popScore(3, 0, 3)} ${p.popScore(7, 2, 2)}`);
-  ok(p.goalFor(1) < p.goalFor(2) && p.goalFor(2) < p.goalFor(5), 'each level asks for more');
+  const L = p.LEVELS;
+  ok(L.length === 12 && L.every((l) => l.moves >= 20 && l.moves <= 24), 'twelve levels, each with 20 to 24 moves');
+  ok(L.filter((l) => l.goal === 'ice').every((l) => l.ice.length > 0) && L.filter((l) => l.goal !== 'ice').every((l) => l.ice.length === 0), 'the ICE levels have ice on the board; the others have none');
+  ok(L.filter((l) => l.goal === 'points').map((l) => l.n).join() === '600,900,1200,1500' && L.filter((l) => l.goal === 'gems').every((l) => l.kind >= 0 && l.kind < p.KINDS), 'the points targets rise, and each gems goal names a kind of gem');
+  ok(L.filter((l) => l.goal === 'ice').map((l) => l.ice.length).join() === '4,8,12,16,24', 'the ICE levels have 4, 8, 12, 16 and 24 cells of ice', L.filter((l) => l.goal === 'ice').map((l) => l.ice.length).join());
 }
 
 // 4. A swap that makes a run.
@@ -115,21 +119,21 @@ const swap = (vm, p, from, dir) => { p.cursor = from; tap(vm, 'A'); tap(vm, dir)
   ok(found && found.score > 30 && found.log.includes(6), 'when the gems that fall make another run, it scores again with the chain at 2 and the chain sound is higher', found ? `seed ${found.seed}: score ${found.score}, chain ${found.top}` : 'no chain in 80 seeds');
 }
 
-// 8. The goal, the bonus and the next level.
+// 8. The goal, the bonus and the next level (level 2 asks for points).
 {
-  const { vm, p } = play(); p.setTypes(THREE); p.score = 1000; p.levelPts = p.goal - 30; p.moves = 10; sfxLog(vm);
+  const { vm, p } = play(); p.startLevel(2); p.setTypes(THREE); p.score = 1000; p.levelPts = p.lev.n - 30; p.moves = 10; sfxLog(vm);
   swap(vm, p, 50, 'DOWN'); for (let i = 0; i < 60 && p.phase !== 'win'; i++) vm.step(0);
   let guard = 0; while (p.phase !== 'win' && guard++ < 400) vm.step(0);
   ok(p.phase === 'win' && p.score >= 1000 + 30 + 9 * 50, 'reaching the goal wins the level, with a bonus of 50 for each move left', `score ${p.score}`);
   ok(sfxLog(vm).some(([n]) => n === p.SFX.clear), 'with the level-clear sound');
   for (let i = 0; i < p.WIN_FRAMES + 2; i++) vm.step(0);
-  ok(p.level === 2 && p.moves === p.MOVES && p.levelPts === 0 && p.goal === p.goalFor(2) && p.phase === 'fall', 'then level 2: new goal, 20 moves, the level\'s points back to 0, and a new board dropping in');
+  ok(p.level === 3 && p.moves === p.LEVELS[2].moves && p.levelPts === 0 && p.lev.goal === 'gems' && p.phase === 'fall', 'then level 3: its own goal and moves, the level\'s points back to 0, and a new board dropping in');
   rest(vm, p); ok(p.phase === 'idle' && p.findRuns(p.typesNow()).length === 0 && p.hasMoves(p.typesNow()), 'which settles with a move to make');
 }
 
-// 9. Out of moves.
+// 9. Out of moves (level 2: points).
 {
-  const { vm, p } = play(); p.setTypes(THREE); p.moves = 1; swap(vm, p, 50, 'DOWN'); rest(vm, p, 500);
+  const { vm, p } = play(); p.startLevel(2); p.setTypes(THREE); p.moves = 1; swap(vm, p, 50, 'DOWN'); rest(vm, p, 500);
   ok(p.state === 'over' && p.moves === 0, 'the last move, with the goal not reached, ends the game');
 }
 {
@@ -143,5 +147,42 @@ const swap = (vm, p, from, dir) => { p.cursor = from; tap(vm, 'A'); tap(vm, dir)
   ok(p.phase === 'fall', 'a board with no move left is dealt again (the gems drop in)');
   ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.shuffle && ch === 4), 'with the shuffle sound, on the noise channel');
   rest(vm, p); ok(p.hasMoves(p.typesNow()) && p.findRuns(p.typesNow()).length === 0 && p.moves === 5, 'and the new board has a move; no move was spent');
+}
+// 11. Ice: a clear breaks the ice on its cells and beside them; the ICE goal is met when it is all gone; the last level wins.
+{
+  const { p } = play(); p.startLevel(1);
+  const corners = [0, 7, 56, 63];
+  ok(p.lev.goal === 'ice' && p.iceCount() === 4 && corners.every((i) => p.ice[i]), 'level 1 starts with ice on the four corners');
+  const only = (...cells) => { p.ice = Array(64).fill(false); for (const i of cells) p.ice[i] = true; };
+  only(0, 2); p.breakIce([1]);
+  ok(p.iceCount() === 0, 'a clear beside two iced cells breaks both');
+  only(9); p.breakIce([0]);
+  ok(p.ice[9] && p.iceCount() === 1, 'but not a cell diagonal to the clear');
+  only(7); p.breakIce([6]);
+  ok(p.iceCount() === 0, 'the cells beside an edge count (6 is beside 7)');
+  only(7); p.breakIce([8]);
+  ok(p.ice[7] && p.iceCount() === 1, 'and a clear at the start of a row does not reach the end of the row above');
+  only(...corners); p.breakIce([9]);
+  ok(p.iceCount() === 4 && p.nbrs(9).length === 5 && p.nbrs(0).length === 3, 'a middle cell has four neighbours and a corner two (plus itself)');
+}
+{
+  const { vm, p } = play(); p.startLevel(1); p.setTypes(withCells(DEAD, { 0: 5, 1: 0, 2: 0, 4: 0 })); p.moves = 5; sfxLog(vm);
+  swap(vm, p, 3, 'RIGHT');   // the three 0s on cells 1 to 3 pop: cell 0 (a corner) is beside cell 1
+  for (let i = 0; i < 40 && p.phase !== 'fall'; i++) vm.step(0);
+  ok(!p.ice[0] && p.ice[7] && p.ice[56] && p.ice[63] && p.iceCount() === 3, 'a run along the top breaks the corner beside it, and the other three corners stay', `ice ${p.iceCount()}`);
+  ok(p.score === 30 && p.moves === 4, 'the run scores as any run and spends one move');
+}
+{
+  const { vm, p } = play(); p.startLevel(1); p.setTypes(withCells(DEAD, { 0: 5, 1: 0, 2: 0, 4: 0 })); p.moves = 5;
+  p.ice = Array(64).fill(false); p.ice[0] = true;   // one cell of ice left: the level is won when a clear breaks it
+  swap(vm, p, 3, 'RIGHT');
+  for (let i = 0; i < 600 && p.phase !== 'win' && p.state === 'play'; i++) vm.step(0);
+  ok(p.phase === 'win' && p.iceCount() === 0, 'when the last ice breaks, the level is won');
+}
+{
+  const { vm, p } = play(); p.startLevel(12); p.score = 100; p.ice = Array(64).fill(false); p.moves = 3; p.settle(); vm.step(0);
+  ok(p.phase === 'win', 'with the ice gone on level 12, the level is won');
+  for (let i = 0; i < p.WIN_FRAMES + 2 && p.state === 'play'; i++) vm.step(0);
+  ok(p.state === 'over' && p.won && p.rank >= 0, 'after the last level the game is won, and the score goes into the top 10', `state ${p.state} won ${p.won}`);
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

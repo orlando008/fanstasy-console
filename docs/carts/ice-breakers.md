@@ -1,7 +1,7 @@
 # Ice Breakers: Cart Specification
 
 **Version:** 0.2 (draft)
-**Status:** Spec drafted, waiting for the go-ahead on step 1. The code is still the match-3 starter (`--kind puzzle`) with placeholder numbers.
+**Status:** Step 1 built (the ice, the three goals, the twelve levels); the balance is step 3. The art and the sound are still the starter's.
 **Cart source:** `carts/src/ice-breakers/` → `carts/ice-breakers.nova`
 
 ---
@@ -58,7 +58,7 @@ the gems and the cursor are 16 px sprites; the text is the overlay.
 
 ## 6. Levels
 
-The levels are hand-made: each has its goal, its moves and its ice layout. (None of this is in the code yet.) The board itself is dealt from the seed, so a
+The levels are hand-made: each has its goal, its moves and its ice layout. The board itself is dealt from the seed, so a
 level is the same puzzle with a different start. Numbers are the defaults; the sweep (step 3) tunes the moves and targets.
 
 | Level | Goal | Target | Moves | Ice layout |
@@ -69,14 +69,14 @@ level is the same puzzle with a different start. Numbers are the defaults; the s
 | 4 | ICE | 8 cells | 22 | a bar across row 3 |
 | 5 | POINTS | 900 | 20 | none |
 | 6 | GEMS | 15 of gem 4 | 22 | none |
-| 7 | ICE | 12 cells | 22 | bars across rows 2 and 5 |
+| 7 | ICE | 12 cells | 22 | bars across rows 2 and 5, columns 0 to 5 |
 | 8 | POINTS | 1,200 | 20 | none |
 | 9 | GEMS | 18 of gem 1 | 20 | none |
-| 10 | ICE | 16 cells | 24 | a checker of the board's centre |
+| 10 | ICE | 16 cells | 24 | a checker of rows 2 to 5 |
 | 11 | POINTS | 1,500 | 20 | none |
-| 12 | ICE | 20 cells | 24 | the outer ring and the middle of each side |
+| 12 | ICE | 24 cells | 24 | the outer ring, without its corners |
 
-The ice layouts will be written in code as lists of cells (`LEVELS` in code.js, step 1), so a level is easy to read and change. Levels with
+The ice layouts are lists of cells in `LEVELS` (code.js), so a level is easy to read and change. Levels with
 ice and no other goal are the ICE levels: their HUD shows the ice cells left.
 
 ## 7. Hazards
@@ -128,7 +128,7 @@ The gems are 16 px sprites, each kind in its own sprite palette (0 to 5); the cu
 
 | Asset | Budget |
 |---|---|
-| Code | 18 KB (the starter; `node tools/check.js ice-breakers`); the levels and the ice add a few KB |
+| Code | 21 KB (`node tools/check.js ice-breakers`); the levels and the ice added 3 KB |
 | Tiles | about 66 of 1,023 now (the background 38, the gems and cursor 28); the ice adds a few |
 | Sprites | 65 on the board (128 in OAM, 32 per scanline) |
 | Songs / SFX | 2 songs, 14 SFX; the ice crack makes 15 |
@@ -138,6 +138,10 @@ The gems are 16 px sprites, each kind in its own sprite palette (0 to 5); the cu
 Step 0 is done: the spec, the scaffold (the match-3 starter with placeholder numbers), its tests and bot.
 
 1. **The ice and its breaking:** the ice layer (a cell property), the break rule (section 5), the ICE goal, the level list (`LEVELS`), level 1 playable. Tests in `03-rules.mjs`: a clear touching ice breaks it, a clear two cells away does not, a clear breaks all touched ice at once.
+
+   **Built:** the ice (`ice`, `breakIce`, `nbrs`: the cell and its four neighbours); the three goals in `goalMet` and `progress` (ICE, GEMS, POINTS), so the GEMS and POINTS goals came in with step 1 rather than step 2; `LEVELS` with all twelve levels; `startLevel(n)`; the last level's win ends the game as won (`won`, "YOU WON!"). Placeholder art: the ice is a cyan outline on its cell (step 5 replaces it). The bot scores swaps by their worth to the goal.
+   **Results:** 93 checks pass (`01-flow` 22, `02-art` 11, `03-rules` 60; section 11 of `03-rules` is the ice); `verify.js --fast` passes; the screenshot shows the four corners outlined and `ICE 4` in the HUD.
+   The sweep (6 seeds each, `sweep.mjs`): no crash, no stuck run. The level reached: skill 1 8.7 on average (1 to 12), skill 0.5 3.7 (1 to 9). The spread is for step 3 to tune.
 2. **The goals and the level flow:** the GEMS and POINTS goals, the level banner, the next level, the win after level 12 and the game over that names the goal. Tests in `01-flow.mjs`. The old points rule (`goalFor`) goes.
 3. **Balance:** the bot (`bot.mjs`) plays for the goal of each level (it prefers swaps that break ice or gather the goal's gem). `node tools/devkit/sweep.mjs ice-breakers`: skill 1 wins most levels within the moves; skill 0.5 wins about half of them. Tune the moves and the targets in `LEVELS` and this table together.
 4. **Hint and feel:** after about 6 seconds with no move, the board shows one swap that makes a run (or that breaks ice).

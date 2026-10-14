@@ -1,8 +1,8 @@
-// Ice Breakers
-// Scaffolded by tools/new-cart.js --kind puzzle: a match-3 game (swap two neighbouring gems, three or more in a row
-// clear, the rest fall, new ones drop in, and chains score more) around the frame every cart needs: a title, play,
-// pause, game over, a saved top 10 with initials, records, sound and music cues, a skipTitle hook and save slots.
-// Replace the rules, the art (art.py) and the sound (audio.py); keep the structure. See docs/dev/playbook.md.
+// Ice Breakers: a match-3 on hand-made levels. Swap two neighbouring gems; three or more in a row clear, the rest fall, new
+// ones drop in, and chains score more. The board has ice on some cells: a clear on an iced cell, or beside one, breaks it.
+// Each level has a goal (all the ice gone, a number of gems of one kind, or a number of points) and a move budget.
+// The frame (title, play, pause, game over, a saved top 10 with initials, records, sound and music cues, skipTitle and save
+// slots) came from the puzzle starter (tools/new-cart.js --kind puzzle). The spec is docs/carts/ice-breakers.md.
 //
 // The board logic is plain functions on an array of gem types (findRuns, hasMoves, makeTypes, popScore), kept apart from the
 // gems' pictures and movement, so tests and bots can call them. The play state is a small machine (`phase`):
@@ -75,7 +75,7 @@ const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) ===
 // --- The board: rules as plain functions on an array of gem types (0 to KINDS-1, -1 for empty), row by row ---
 
 const COLS = 8, ROWS = 8, CELL = 16, BX = 64, BY = 64, KINDS = 6; // the board's size, its cells in px, its top left corner
-const MOVES = 20, POP_FRAMES = 14, WIN_FRAMES = 100, FALL = 4; // moves a level, a match's flash, the level-clear banner, a gem's speed in px a frame
+const POP_FRAMES = 14, WIN_FRAMES = 100, FALL = 4; // a match's flash, the level-clear banner, a gem's speed in px a frame
 
 /** The runs of three or more equal gems, across or down: an array of arrays of cell numbers. */
 function findRuns(t) {
@@ -116,8 +116,32 @@ function makeTypes() {
 }
 /** Points for one clear: 10 a gem, 30 more for each run of four or more, all times the chain (1 for the first clear, 2 for the one it caused ...). */
 const popScore = (count, bigRuns, chain) => (10 * count + 30 * bigRuns) * chain;
-/** The points a level asks for (earned in that level: the clear bonus does not count towards the next). */
-const goalFor = (level) => 500 + 400 * level;
+// --- Levels (SPEC 6). A goal is ICE (break all the ice), GEMS (collect `n` gems of kind `kind`) or POINTS (earn `n` points in
+// the level; the clear bonus does not count). `ice` lists the cells that start with ice. A level's moves are its budget. ---
+
+const ICE_GOAL = 'ice', GEMS_GOAL = 'gems', POINTS_GOAL = 'points';
+const rowCells = (r, from = 0, to = COLS - 1) => Array.from({ length: to - from + 1 }, (_, c) => r * COLS + from + c);
+/** Rows r0 to r1, on every other cell (a checker). */
+const checker = (r0, r1) => Array.from({ length: (r1 - r0 + 1) * COLS }, (_, k) => r0 * COLS + k).filter((i) => (flr(i / COLS) + (i % COLS)) % 2 === 0);
+/** The outer ring of the board, without its corners. */
+const ring = () => Array.from({ length: COLS * ROWS }, (_, i) => i).filter((i) => {
+  const r = flr(i / COLS), c = i % COLS, corner = [0, COLS - 1, (ROWS - 1) * COLS, ROWS * COLS - 1].includes(i);
+  return (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1) && !corner;
+});
+const LEVELS = [
+  { goal: ICE_GOAL, moves: 20, ice: [0, 7, 56, 63] },
+  { goal: POINTS_GOAL, n: 600, moves: 20, ice: [] },
+  { goal: GEMS_GOAL, n: 12, kind: 2, moves: 20, ice: [] },
+  { goal: ICE_GOAL, moves: 22, ice: rowCells(3) },
+  { goal: POINTS_GOAL, n: 900, moves: 20, ice: [] },
+  { goal: GEMS_GOAL, n: 15, kind: 4, moves: 22, ice: [] },
+  { goal: ICE_GOAL, moves: 22, ice: [...rowCells(2, 0, 5), ...rowCells(5, 0, 5)] },
+  { goal: POINTS_GOAL, n: 1200, moves: 20, ice: [] },
+  { goal: GEMS_GOAL, n: 18, kind: 1, moves: 20, ice: [] },
+  { goal: ICE_GOAL, moves: 24, ice: checker(2, 5) },
+  { goal: POINTS_GOAL, n: 1500, moves: 20, ice: [] },
+  { goal: ICE_GOAL, moves: 24, ice: ring() },
+];
 
 // --- The gems: a picture for each cell, sliding to its place ---
 
@@ -126,7 +150,8 @@ let phase = 'idle';       // idle | swap | unswap | pop | fall | win
 let cursor = 0, sel = -1; // the cursor's cell; the picked-up gem's cell, or -1
 let sw = [0, 0];          // the two cells of the swap being shown
 let popCells = [], popT = 0, winT = 0, chain = 0;
-let score = 0, levelPts = 0, moves = MOVES, level = 1, goal = goalFor(1); // the total score; the points earned in this level; moves left; the level; its goal
+let score = 0, levelPts = 0, moves = 0, level = 1, lev = LEVELS[0]; // the total score; the points earned in this level; moves left; the level; its entry in LEVELS
+let ice = [], gemsGot = 0, won = false; // the ice on each cell (true: iced); the gems of the goal's kind cleared in this level; the game is won
 
 const cellX = (i) => BX + (i % COLS) * CELL, cellY = (i) => BY + flr(i / COLS) * CELL;
 const typesNow = () => grid.map((g) => (g ? g.t : -1));
@@ -135,6 +160,22 @@ function dealBoard() {
   const t = makeTypes();
   grid = t.map((v, i) => ({ t: v, x: cellX(i), y: BY + (flr(i / COLS) - ROWS) * CELL }));
   phase = 'fall';
+}
+/** The cell i and the cells next to it (across or down): a clear on i breaks the ice on these. */
+const nbrs = (i) => [i, i % COLS ? i - 1 : -1, i % COLS < COLS - 1 ? i + 1 : -1, i >= COLS ? i - COLS : -1, i < COLS * (ROWS - 1) ? i + COLS : -1].filter((j) => j >= 0);
+const iceCount = () => ice.filter(Boolean).length;
+/** A clear breaks the ice on its cells and beside them. */
+function breakIce(cells) { for (const i of cells) for (const j of nbrs(i)) ice[j] = false; }
+/** Is the level's goal met? */
+const goalMet = () => (lev.goal === ICE_GOAL ? iceCount() === 0 : lev.goal === GEMS_GOAL ? gemsGot >= lev.n : levelPts >= lev.n);
+/** How far the player is towards the goal, from 0 to 1 (the bar). */
+const progress = () => (lev.goal === ICE_GOAL ? 1 - iceCount() / lev.ice.length : lev.goal === GEMS_GOAL ? gemsGot / lev.n : levelPts / lev.n);
+/** Start level n: its goal, its moves and its ice, and a new board dropping in. */
+function startLevel(n) {
+  level = n; lev = LEVELS[n - 1]; moves = lev.moves; levelPts = 0; gemsGot = 0; chain = 0; sel = -1;
+  ice = Array(COLS * ROWS).fill(false);
+  for (const i of lev.ice) ice[i] = true;
+  dealBoard();
 }
 /** Move every gem a step towards its cell. Returns true while any is still on its way. */
 function moveGems() {
@@ -181,9 +222,9 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 function startGame() {
-  score = 0; levelPts = 0; level = 1; moves = MOVES; goal = goalFor(1); chain = 0; cursor = 3 * COLS + 3; sel = -1;
+  score = 0; won = false; cursor = 3 * COLS + 3;
   paused = false; timer = 0; state = 'play';
-  dealBoard();
+  startLevel(1);
   play(SONG.play);
 }
 
@@ -215,7 +256,7 @@ function updatePlay() {
   const moving = moveGems();
   if (phase === 'idle') idleInput();
   else if (phase === 'pop') { if (--popT <= 0) afterPop(); }
-  else if (phase === 'win') { if (--winT <= 0) nextLevel(); }
+  else if (phase === 'win') { if (--winT <= 0) afterWin(); }
   else if (!moving) {
     if (phase === 'swap') afterSwap();
     else if (phase === 'unswap') phase = 'idle';
@@ -260,7 +301,8 @@ function startPop() {
   fx(SFX.match + Math.min(chain - 1, 4));
 }
 function afterPop() {
-  for (const i of popCells) grid[i] = null;
+  breakIce(popCells);
+  for (const i of popCells) { if (grid[i].t === lev.kind) gemsGot++; grid[i] = null; }
   popCells = [];
   collapse();
   phase = 'fall';
@@ -273,14 +315,15 @@ function afterFall() {
 }
 /** The turn is over: the level is won, or the game lost, or the board is stuck (reshuffled), or the player goes on. */
 function settle() {
-  if (levelPts >= goal) { const bonus = moves * 50; score += bonus; winT = WIN_FRAMES; phase = 'win'; fx(SFX.clear); }
+  if (goalMet()) { const bonus = moves * 50; score += bonus; winT = WIN_FRAMES; phase = 'win'; fx(SFX.clear); }
   else if (moves <= 0) gameOver();
   else if (!hasMoves(typesNow())) { dealBoard(); fx(SFX.shuffle); }
   else phase = 'idle';
 }
-function nextLevel() {
-  level++; levelPts = 0; moves = MOVES; goal = goalFor(level); sel = -1;
-  dealBoard();
+/** The level is won: the next one, or the game is won after the last. */
+function afterWin() {
+  if (level < LEVELS.length) startLevel(level + 1);
+  else { won = true; gameOver(); }
 }
 
 function gameOver() {
@@ -335,7 +378,7 @@ function draw() {
   else if (state === 'title') drawTitle();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  if (state === 'over') { panel(48, 80, 160, 64); ctxt('GAME OVER', 92, RED); ctxt(`SCORE ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
+  if (state === 'over') { panel(48, 80, 160, 64); ctxt(won ? 'YOU WON!' : 'GAME OVER', 92, won ? GOLD : RED); ctxt(`SCORE ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
   if (paused) drawPause();
 }
 
@@ -345,15 +388,16 @@ function drawPlay() {
     if (phase === 'pop' && popCells.includes(i) && (popT >> 1) & 1) return; // the matched gems flash
     sprite(ART.sprites[`gem${g.t}`], g.x, g.y);
   });
+  ice.forEach((on, i) => { if (on) rect(cellX(i) + 1, cellY(i) + 1, CELL - 2, CELL - 2, CYAN); }); // placeholder: the ice, until step 5 draws it on BG1
   if (state === 'play' && phase === 'idle') {
     if (sel >= 0) sprite(ART.sprites.cursor, cellX(sel), cellY(sel), { pal: 7 });
     sprite(ART.sprites.cursor, cellX(cursor), cellY(cursor), { pal: 6 });
   }
   txt(`SCORE ${score}`, 8, 8, WHITE);
   txt(`LEVEL ${level}`, 8, 20, GOLD);
-  txt(`GOAL ${levelPts}/${goal}`, 136, 8, WHITE);
+  txt(lev.goal === ICE_GOAL ? `ICE ${iceCount()}` : lev.goal === GEMS_GOAL ? `GEMS ${gemsGot}/${lev.n}` : `GOAL ${levelPts}/${lev.n}`, 136, 8, WHITE);
   txt(`MOVES ${moves}`, 168, 20, moves <= 3 ? RED : GREEN);
-  const bar = mid(0, 1, levelPts / goal); // progress to the goal
+  const bar = mid(0, 1, progress()); // progress to the goal
   rectfill(8, 36, 240, 6, SHADOW); rectfill(8, 36, flr(240 * bar), 6, bar >= 1 ? GOLD : CYAN);
   if (chain > 1 && phase !== 'idle') ctxt(`CHAIN x${chain}`, 202, GOLD);
   if (phase === 'win') { panel(40, 86, 176, 48); ctxt(`LEVEL ${level} CLEAR!`, 96, GOLD); ctxt(`BONUS ${moves * 50}`, 112, WHITE); }

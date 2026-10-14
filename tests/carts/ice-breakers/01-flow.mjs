@@ -21,7 +21,7 @@ const THREE = DEAD.slice(); THREE[56] = 0; THREE[57] = 0; THREE[50] = 0; THREE[5
 // 2. A game starts: the gems drop in and settle.
 {
   const vm = newGame(2), p = vm.probe();
-  ok(p.phase === 'fall' && p.grid.length === 64 && p.moves === p.MOVES && p.score === 0 && p.level === 1, 'a new game deals 64 gems that drop in; 20 moves, no score, level 1');
+  ok(p.phase === 'fall' && p.grid.length === 64 && p.moves === 20 && p.score === 0 && p.level === 1, 'a new game deals 64 gems that drop in; 20 moves, no score, level 1');
   rest(vm, p, 300);
   ok(p.phase === 'idle' && p.grid.every((g, i) => g && g.x === p.BX + (i % 8) * 16 && g.y === p.BY + Math.floor(i / 8) * 16), 'they settle in their cells', `${vm.m.frame} frames`);
   ok(p.findRuns(p.typesNow()).length === 0 && p.hasMoves(p.typesNow()), 'with no run on the board and at least one move to make');

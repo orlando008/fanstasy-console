@@ -10,12 +10,13 @@ const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
   get phase() { return phase; }, set phase(v) { phase = v; }, get cursor() { return cursor; }, set cursor(v) { cursor = v; }, get sel() { return sel; },
   get score() { return score; }, set score(v) { score = v; }, get levelPts() { return levelPts; }, set levelPts(v) { levelPts = v; },
-  get moves() { return moves; }, set moves(v) { moves = v; }, get level() { return level; }, get goal() { return goal; },
+  get moves() { return moves; }, set moves(v) { moves = v; }, get level() { return level; }, get lev() { return lev; },
+  get ice() { return ice; }, set ice(v) { ice = v; }, get gemsGot() { return gemsGot; }, get won() { return won; },
   get chain() { return chain; }, get grid() { return grid; }, get popCells() { return popCells; },
   get rank() { return rank; }, get initials() { return initials; }, get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
   get ART() { return ART; }, mget: (x, y) => mget(x, y),
-  SFX, SONG, TOP_SLOT, ENTRY, COLS, ROWS, CELL, BX, BY, KINDS, MOVES, POP_FRAMES, WIN_FRAMES,
-  insertTop, topTen, packInitials, unpackInitials, findRuns, matched, hasMoves, makeTypes, popScore, goalFor, swapped, settle, typesNow, startGame,
+  SFX, SONG, TOP_SLOT, ENTRY, COLS, ROWS, CELL, BX, BY, KINDS, POP_FRAMES, WIN_FRAMES, LEVELS, nbrs, iceCount, breakIce, goalMet, progress, startLevel,
+  insertTop, topTen, packInitials, unpackInitials, findRuns, matched, hasMoves, makeTypes, popScore, swapped, settle, typesNow, startGame,
   /** Put a board of types on the screen at rest (gems in their cells), as if dealt and settled. */
   setTypes(t) { grid = t.map((v, i) => ({ t: v, x: cellX(i), y: cellY(i) })); phase = 'idle'; sel = -1; popCells = []; chain = 0; },
 }));`;
