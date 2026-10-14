@@ -1,7 +1,7 @@
 // Python Pass: a snake game through a jungle and a temple (docs/carts/python-pass.md).
-// So far: level 1-1, the grid snake drawn as tiles, the turn queue, fruit, golden fruit and
-// combos, walls and self-collision, the gate, lives, five power-ups, and three hazards
-// (boulders, scorpions and falling rocks).
+// So far: all 16 levels in 4 zones, the grid snake drawn as tiles, the turn queue, fruit,
+// golden fruit and combos, walls and self-collision, the gate, lives, five power-ups, and
+// three hazards (boulders, scorpions and falling rocks).
 
 // --- Layout (SPEC 4) ---
 
@@ -44,10 +44,33 @@ const BOULDER_TICKS = 12, SCORPION_TICKS = 14, ROCK_SHADOW = 60, ROCK_GAP = [120
 // LEVELS (written by art.py)
 const LEVELS = [
   { start: [9, 21], dir: 0, gate: [16, 0], quota: 8, hz: [] },
+  { start: [6, 22], dir: 0, gate: [16, 0], quota: 8, hz: [] },
+  { start: [5, 22], dir: 0, gate: [28, 0], quota: 9, hz: [['b', 5, 12, 0]] },
+  { start: [13, 22], dir: 3, gate: [0, 10], quota: 9, hz: [['b', 3, 13, 0], ['b', 19, 3, 1]] },
+  { start: [5, 21], dir: 0, gate: [31, 4], quota: 10, hz: [['s', 'ring', [[14, 12], [15, 12], [16, 12], [17, 12], [17, 13], [16, 13], [15, 13], [14, 13]]]] },
+  { start: [3, 12], dir: 0, gate: [31, 12], quota: 10, hz: [['b', 10, 9, 1], ['b', 16, 9, 1], ['b', 24, 15, 3]] },
+  { start: [14, 22], dir: 0, gate: [16, 0], quota: 11, hz: [['s', 'ring', [[12, 9], [13, 9], [14, 9], [15, 9], [16, 9], [17, 9], [18, 9], [19, 9], [19, 10], [19, 11], [19, 12], [19, 13], [19, 14], [19, 15], [19, 16], [18, 16], [17, 16], [16, 16], [15, 16], [14, 16], [13, 16], [12, 16], [12, 15], [12, 14], [12, 13], [12, 12], [12, 11], [12, 10]]], ['s', 'ring', [[19, 16], [18, 16], [17, 16], [16, 16], [15, 16], [14, 16], [13, 16], [12, 16], [12, 15], [12, 14], [12, 13], [12, 12], [12, 11], [12, 10], [12, 9], [13, 9], [14, 9], [15, 9], [16, 9], [17, 9], [18, 9], [19, 9], [19, 10], [19, 11], [19, 12], [19, 13], [19, 14], [19, 15]]]] },
+  { start: [6, 21], dir: 0, gate: [16, 0], quota: 11, hz: [['b', 20, 20, 1], ['s', 'beat', [[8, 16], [9, 16], [10, 16], [11, 16], [12, 16], [13, 16], [14, 16], [15, 16], [16, 16], [17, 16], [18, 16], [19, 16], [20, 16], [21, 16], [22, 16]]], ['b', 14, 8, 1], ['s', 'ring', [[13, 2], [14, 2], [15, 2], [16, 2], [17, 2], [17, 3], [17, 4], [17, 5], [16, 5], [15, 5], [14, 5], [13, 5], [13, 4], [13, 3]]]] },
+  { start: [6, 23], dir: 0, gate: [31, 12], quota: 12, hz: [['r', 6, 2, 19, 20]] },
+  { start: [7, 22], dir: 0, gate: [16, 0], quota: 12, hz: [['s', 'beat', [[3, 9], [4, 9], [5, 9], [6, 9], [7, 9], [8, 9], [9, 9], [10, 9], [11, 9], [12, 9], [13, 9], [14, 9], [15, 9], [16, 9], [17, 9], [18, 9], [19, 9], [20, 9], [21, 9], [22, 9], [23, 9], [24, 9], [25, 9], [26, 9], [27, 9], [28, 9]]], ['s', 'beat', [[28, 15], [27, 15], [26, 15], [25, 15], [24, 15], [23, 15], [22, 15], [21, 15], [20, 15], [19, 15], [18, 15], [17, 15], [16, 15], [15, 15], [14, 15], [13, 15], [12, 15], [11, 15], [10, 15], [9, 15], [8, 15], [7, 15], [6, 15], [5, 15], [4, 15], [3, 15]]], ['r', 2, 1, 28, 4]] },
+  { start: [4, 20], dir: 3, gate: [31, 22], quota: 13, hz: [['r', 14, 1, 11, 24]] },
+  { start: [27, 20], dir: 2, gate: [31, 4], quota: 13, hz: [['r', 1, 2, 30, 14]] },
+  { start: [5, 13], dir: 0, gate: [31, 13], quota: 14, hz: [['b', 12, 3, 1], ['b', 20, 22, 3], ['r', 23, 9, 7, 8]] },
+  { start: [27, 24], dir: 2, gate: [5, 0], quota: 14, hz: [['s', 'ring', [[8, 7], [9, 7], [10, 7], [11, 7], [12, 7], [12, 8], [12, 9], [11, 9], [10, 9], [9, 9], [8, 9], [8, 8]]], ['s', 'ring', [[16, 13], [17, 13], [18, 13], [19, 13], [20, 13], [20, 14], [20, 15], [19, 15], [18, 15], [17, 15], [16, 15], [16, 14]]], ['s', 'ring', [[12, 19], [12, 20], [12, 21], [11, 21], [10, 21], [9, 21], [8, 21], [8, 20], [8, 19], [9, 19], [10, 19], [11, 19]]], ['b', 4, 2, 0]] },
+  { start: [6, 24], dir: 0, gate: [16, 0], quota: 15, hz: [['b', 18, 19, 1], ['s', 'beat', [[5, 15], [6, 15], [7, 15], [8, 15], [9, 15], [10, 15], [11, 15], [12, 15], [13, 15], [14, 15], [15, 15], [16, 15], [17, 15], [18, 15], [19, 15], [20, 15], [21, 15], [22, 15], [23, 15], [24, 15], [25, 15]]], ['r', 1, 7, 30, 5], ['b', 10, 1, 1], ['b', 22, 5, 3]] },
+  { start: [17, 23], dir: 0, gate: [16, 1], quota: 16, hz: [['s', 'ring', [[12, 9], [13, 9], [14, 9], [15, 9], [16, 9], [17, 9], [18, 9], [19, 9], [19, 10], [19, 11], [19, 12], [19, 13], [19, 14], [19, 15], [19, 16], [18, 16], [17, 16], [16, 16], [15, 16], [14, 16], [13, 16], [12, 16], [12, 15], [12, 14], [12, 13], [12, 12], [12, 11], [12, 10]]], ['s', 'ring', [[19, 16], [18, 16], [17, 16], [16, 16], [15, 16], [14, 16], [13, 16], [12, 16], [12, 15], [12, 14], [12, 13], [12, 12], [12, 11], [12, 10], [12, 9], [13, 9], [14, 9], [15, 9], [16, 9], [17, 9], [18, 9], [19, 9], [19, 10], [19, 11], [19, 12], [19, 13], [19, 14], [19, 15]]], ['b', 4, 17, 0], ['b', 25, 6, 1], ['r', 4, 3, 24, 20]] },
 ];
 // END LEVELS
 const ZONES = ['THE JUNGLE', 'THE RIVERBANK', 'THE RUINS', 'THE TEMPLE'];
-const NAMES = ['FIRST STEPS'];
+const NAMES = ['FIRST STEPS', 'WINDING PATH', 'BOULDER RUN', 'CROSSROADS', 'STEPPING STONES', 'THE RAPIDS', 'SCORPION BEACH', 'WATERFALL',
+  'FALLEN COLUMNS', 'THE COLONNADE', 'STATUE GARDEN', 'COLLAPSE', 'THE GATE', 'TORCH HALL', 'THE GAUNTLET', "THE IDOL'S CHAMBER"];
+// Each zone's colours (SPEC 8.1): the ground's four (palette 1, entries 17-20) and the walls' five (palette 2, 33-37).
+const ZONE_COLORS = [
+  ['58803a 749c48 9cc060 f0e060', '04140a 16502a 2a8040 5a3c20 0c3418'], // the Jungle: green ground, vines
+  ['6a8a58 8aac6e a8c888 e8e0a0', '0a2a50 2468b8 4c98e0 1a4880 103c78'], // the Riverbank: grassy banks, water
+  ['807a6c 9a9484 b8b2a0 e8d8a0', '24201a 6a645a 8a8478 4a4640 56524a'], // the Ruins: flagstones, columns
+  ['5a3e24 7a5a34 9a7a46 f0d060', '140c06 4a3a28 6a5438 3a2a18 c89020'], // the Temple: dark gold, carved stone
+];
 
 // --- Colors (BG palette 7, for the overlay) ---
 
@@ -126,6 +149,9 @@ function startLevel(l, card = true) {
     }
   }
   gate = L.gate[1] * COLS + L.gate[0]; gateOpen = false; quota = L.quota;
+  bg(2, { mx: 32 * (l >> 2) });
+  ZONE_COLORS[l >> 2][0].split(' ').forEach((h, k) => col(17 + k, h));
+  ZONE_COLORS[l >> 2][1].split(' ').forEach((h, k) => col(33 + k, h));
   // Open ground the snake can get to, found by flooding from its start (SPEC 6).
   reach.fill(0);
   const s0 = L.start[1] * COLS + L.start[0], todo = [s0];
