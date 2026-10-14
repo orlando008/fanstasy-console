@@ -60,7 +60,7 @@ const PLANETS = [
   { name: 'THE HIVE', terrain: '3a1838 52284e 7a4474 1e0a1a 2e1228 8a4a80 5a2a20 9a5a30 e0b060 9098a8 3070b0 b0e0ff ff70c0 802a60 140812' },
 ];
 const MAPS = ['LANDING ZONE', 'CRATER RIM', 'ICE SHELF', 'GLACIER PASS', 'OVERGROWTH', 'THE SWAMP', 'HIVE GATE', "QUEEN'S NEST"];
-const HEALTH_STEP = 0.15, HARD_HEALTH = 1.5; // aliens' health: x (1 + 0.15 x the map's index), x 1.5 in hard (SPEC 6)
+const HEALTH_STEP = 0.15, HARD_HEALTH = 1.8; // aliens' health: x (1 + 0.15 x the map's index), x 1.8 in hard (SPEC 6)
 
 // --- Waves (SPEC 7) ---
 
@@ -71,7 +71,7 @@ const CODES = 'CSBDPQ', GAPS = [40, 24, 70, 45, 60, 0];
 const WAVES = [
   [ // 1-1 Landing Zone: Crawlers and Skitters
     'C8', 'C12', 'S10', 'C10 &S8', 'C16:30', 'S16:18', 'C12 S12', 'C20:25',
-    'S20:16', 'C15 &S15', 'C24:22', 'S24:15', 'C20 &S20', 'C30:18 &S20', 'Q1 &C10:60'],
+    'S20:16', 'C15 &S15', 'C24:22', 'S24:15', 'C24 &S24', 'C36:16 &S24', 'Q1 &C16:45'],
   [ // 1-2 Crater Rim: Brutes arrive
     'C10', 'S12', 'B4', 'C12 &S10', 'B6', 'C15 B4', 'S20:18', 'B8 &C10',
     'C20 &S15', 'B10:55', 'C20 B6 S15', 'S25:15 &B6', 'B12:50 &C15', 'C25 &S20 &B8', 'Q1 &B6:120'],
@@ -92,7 +92,7 @@ const WAVES = [
     'B20 &D16', 'P16 &C24', 'D26 &B14', 'S36 &P14', 'B24 &D20', 'C36 &P16 &D20 &B12', 'Q2:300 &B12 &D16'],
   [ // 4-2 Queen's Nest: three lanes
     'C24', 'S30 &D8', 'B12 &P8', 'D20 &C20', 'P16 &B10', 'S36 &D16', 'B20 &P12', 'C36 &D20',
-    'P18 &B16', 'D28 &S30', 'B24 &P16', 'C40 &D24 &S24', 'B26 &P18 &D20', 'C40 &S40 &B20 &D24 &P16', 'Q3:300 &B16 &D20 &P12'],
+    'P18 &B16', 'D28 &S30', 'B24 &P16', 'C40 &D24 &S24', 'B26 &P18 &D20', 'C40 &S40 &B20 &D24 &P16', 'Q3:500>0 &B16 &D20 &P12'],
 ];
 const WAVE_COUNT = 15;
 
