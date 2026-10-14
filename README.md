@@ -70,6 +70,8 @@ Shell shortcuts:
 | Ctrl+R | Restart the cart with the current code |
 | Ctrl+S / Ctrl+Shift+S | Save / save as `.nova` |
 | Ctrl+O | Open a `.nova` file or a `.nova.png` PNG cart |
+| - / = (or +) | Turn the volume down / up in tenths while a cart runs (a square-law control, so each step sounds about equal); the level is remembered between visits and is separate from the cart's own `volume()` |
+| M | Mute, or bring the volume back to where it was |
 | F7 | Capture the current frame as the cart's label |
 | F8 | Start or stop recording a clip (saved as WebM or GIF from the Cart tab) |
 | F9 | Restart the cart and record its input; F9 again stops |

@@ -256,6 +256,12 @@ const app = {
     }
   },
 
+  /** - and = (or +) change the player's volume, M mutes: remembered between visits, not part of the cart. */
+  volume(action) {
+    const level = action === 'mute' ? apu.toggleMute() : apu.stepLevel(action === 'up' ? 1 : -1);
+    flashStatus(level === 0 ? 'Muted' : `Volume ${Math.round(level * 100)}%`);
+  },
+
   /** F7: make the current frame the cart's label. */
   async captureLabel() {
     const frame = await machine.captureFrame();
