@@ -120,28 +120,26 @@ const popScore = (count, bigRuns, chain) => (10 * count + 30 * bigRuns) * chain;
 // the level; the clear bonus does not count). `ice` lists the cells that start with ice. A level's moves are its budget. ---
 
 const ICE_GOAL = 'ice', GEMS_GOAL = 'gems', POINTS_GOAL = 'points';
-const rowCells = (r, from = 0, to = COLS - 1) => Array.from({ length: to - from + 1 }, (_, c) => r * COLS + from + c);
-/** Rows r0 to r1, on every other cell (a checker). */
-const checker = (r0, r1) => Array.from({ length: (r1 - r0 + 1) * COLS }, (_, k) => r0 * COLS + k).filter((i) => (flr(i / COLS) + (i % COLS)) % 2 === 0);
-/** The outer ring of the board, without its corners. */
-const ring = () => Array.from({ length: COLS * ROWS }, (_, i) => i).filter((i) => {
-  const r = flr(i / COLS), c = i % COLS, corner = [0, COLS - 1, (ROWS - 1) * COLS, ROWS * COLS - 1].includes(i);
-  return (r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1) && !corner;
-});
+/** The cells whose (row, column) pass f: how an ice layout is written. */
+const cellsWhere = (f) => Array.from({ length: COLS * ROWS }, (_, i) => i).filter((i) => f(flr(i / COLS), i % COLS));
+const edge = (r, c) => r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1;
+const corner = (r, c) => (r === 0 || r === ROWS - 1) && (c === 0 || c === COLS - 1);
+const DASH = [1, 3, 4, 6]; // along a side: where the dashes of the dashed border are (the same from both ends, so the layout is symmetric)
 const GEM_NAMES = ['RED', 'ORANGE', 'YELLOW', 'GREEN', 'BLUE', 'PURPLE']; // the kinds of gem, in the order art.py draws them
+// The moves are each level's cost to the bot at skill 1 (sweep.mjs, SPEC 6) plus about 4.5, so a good player has a few to spare.
 const LEVELS = [
-  { goal: ICE_GOAL, moves: 20, ice: [0, 7, 56, 63] },
-  { goal: POINTS_GOAL, n: 600, moves: 20, ice: [] },
-  { goal: GEMS_GOAL, n: 12, kind: 2, moves: 20, ice: [] },
-  { goal: ICE_GOAL, moves: 22, ice: rowCells(3) },
-  { goal: POINTS_GOAL, n: 900, moves: 20, ice: [] },
-  { goal: GEMS_GOAL, n: 15, kind: 4, moves: 22, ice: [] },
-  { goal: ICE_GOAL, moves: 22, ice: [...rowCells(2, 0, 5), ...rowCells(5, 0, 5)] },
-  { goal: POINTS_GOAL, n: 1200, moves: 20, ice: [] },
-  { goal: GEMS_GOAL, n: 18, kind: 1, moves: 20, ice: [] },
-  { goal: ICE_GOAL, moves: 24, ice: checker(2, 5) },
-  { goal: POINTS_GOAL, n: 1500, moves: 20, ice: [] },
-  { goal: ICE_GOAL, moves: 24, ice: ring() },
+  { goal: ICE_GOAL, moves: 12, ice: cellsWhere((r) => r === 3) },                                                    // a bar across the middle
+  { goal: POINTS_GOAL, n: 1000, moves: 16, ice: [] },
+  { goal: GEMS_GOAL, n: 12, kind: 2, moves: 15, ice: [] },
+  { goal: ICE_GOAL, moves: 12, ice: cellsWhere((r, c) => r >= 2 && r <= 5 && (r + c) % 2 === 0) },                  // a checker in the middle
+  { goal: POINTS_GOAL, n: 1200, moves: 18, ice: [] },
+  { goal: GEMS_GOAL, n: 14, kind: 4, moves: 17, ice: [] },
+  { goal: ICE_GOAL, moves: 19, ice: cellsWhere((r, c) => edge(r, c) && !corner(r, c) && DASH.includes(r === 0 || r === ROWS - 1 ? c : r)) },  // a dashed border
+  { goal: POINTS_GOAL, n: 1400, moves: 20, ice: [] },
+  { goal: GEMS_GOAL, n: 17, kind: 1, moves: 22, ice: [] },
+  { goal: ICE_GOAL, moves: 17, ice: cellsWhere((r, c) => edge(r, c) && !corner(r, c)) },                            // the whole border, without its corners
+  { goal: POINTS_GOAL, n: 1600, moves: 23, ice: [] },
+  { goal: ICE_GOAL, moves: 19, ice: cellsWhere((r, c) => (edge(r, c) && !corner(r, c)) || ((r === c || r + c === COLS - 1) && r > 0 && r < ROWS - 1)) },  // the border and both diagonals, but not the corners
 ];
 
 // --- The gems: a picture for each cell, sliding to its place ---

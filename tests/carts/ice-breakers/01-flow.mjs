@@ -21,7 +21,7 @@ const THREE = DEAD.slice(); THREE[56] = 0; THREE[57] = 0; THREE[50] = 0; THREE[5
 // 2. A game starts: the gems drop in and settle.
 {
   const vm = newGame(2), p = vm.probe();
-  ok(p.phase === 'fall' && p.grid.length === 64 && p.moves === 20 && p.score === 0 && p.level === 1, 'a new game deals 64 gems that drop in; 20 moves, no score, level 1');
+  ok(p.phase === 'fall' && p.grid.length === 64 && p.moves === p.LEVELS[0].moves && p.score === 0 && p.level === 1, 'a new game deals 64 gems that drop in; level 1\'s moves, no score, level 1');
   rest(vm, p, 300);
   ok(p.phase === 'idle' && p.grid.every((g, i) => g && g.x === p.BX + (i % 8) * 16 && g.y === p.BY + Math.floor(i / 8) * 16), 'they settle in their cells', `${vm.m.frame} frames`);
   ok(p.findRuns(p.typesNow()).length === 0 && p.hasMoves(p.typesNow()), 'with no run on the board and at least one move to make');
@@ -87,8 +87,8 @@ const THREE = DEAD.slice(); THREE[56] = 0; THREE[57] = 0; THREE[50] = 0; THREE[5
 {
   const vm = newGame(11), p = vm.probe();
   const says = (n) => { p.startLevel(n); return [p.goalText(), p.goalWords()]; };
-  ok(says(1).join(' | ') === 'ICE LEFT 4 | BREAK ALL THE ICE', 'an ICE level: the ice left, and "break all the ice"', says(1).join(' | '));
-  ok(says(2).join(' | ') === 'GOAL 0/600 | EARN 600 POINTS', 'a POINTS level: the points and the target', says(2).join(' | '));
+  ok(says(1).join(' | ') === 'ICE LEFT 8 | BREAK ALL THE ICE', 'an ICE level: the ice left, and "break all the ice"', says(1).join(' | '));
+  ok(says(2).join(' | ') === 'GOAL 0/1000 | EARN 1000 POINTS', 'a POINTS level: the points and the target', says(2).join(' | '));
   ok(says(3).join(' | ') === 'YELLOW 0/12 | COLLECT 12 YELLOW', 'a GEMS level names the kind of gem by its colour', says(3).join(' | '));
   ok(p.LEVELS.filter((l) => l.goal === 'gems').every((l) => p.GEM_NAMES[l.kind]) && p.GEM_NAMES.length === p.KINDS, 'every kind of gem has a name');
   ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].every((n) => says(n)[0].length <= 14), 'and the HUD text never runs off the right of the screen (14 characters at most)');

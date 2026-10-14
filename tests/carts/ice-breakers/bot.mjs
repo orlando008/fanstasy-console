@@ -8,23 +8,38 @@
 // `skill` is the chance of picking the best swap (otherwise any swap that makes a run, at random): a player who always
 // sees the best move is skill 1; skill 0.5 is a casual player. The best swap is the one worth most to the level's goal:
 // the ice it breaks, the gems of the goal's kind it clears, and the gems it clears. What the sweep tells you: how many
-// levels a player of each skill wins within the moves. Tune LEVELS (code.js) until skill 1 wins most levels and skill 0.5
-// about half of them.
+// levels a player of each skill wins within the moves. LEVELS (code.js) is tuned so skill 1 wins about 80 to 90% of each
+// level (it has about 5 moves to spare when it wins); skill 0.5 wins less, and a person less again.
+//
+// A level at a time: `--set level=1,2,3` plays each of those levels on its own, from a fresh board, until it is won or the
+// moves run out, and reports `won` (its mean over the seeds is the win rate), `movesLeft` (0 for a lost level) and
+// `progress` (how far towards the goal, 0 to 1) and `used` (the moves spent). With no `level`, the whole game is played and
+// the report is the score and the level reached:
+//   node tools/devkit/sweep.mjs ice-breakers --seeds 20 --set level=1,2,3,4,5,6,7,8,9,10,11,12 --set skill=0.5,1
+// To measure how hard a level is, give it more moves than it has and read `used` (`moves=40`), or try another target
+// (`n=1400`: a points or gems goal) before changing LEVELS.
 import { M, newGame as boot } from './lib.mjs';
 
 export const defaults = { frames: 80000, seeds: 6, set: { skill: [0.5, 1] } };
 export const newGame = (seed) => boot(seed);
 
-let plan = null, rng = 1;
-export function setup() { plan = null; rng = 12345; }
+let plan = null, rng = 1, only = 0, budget = 0;   // only: the level being played alone (0: the whole game); budget: its moves
+export function setup(vm, p, opts) {
+  plan = null; rng = 12345; only = Number(opts.level) || 0;
+  if (!only) return;
+  p.startLevel(only);
+  if (opts.moves) p.moves = Number(opts.moves);
+  if (opts.n) p.lev.n = Number(opts.n);
+  budget = p.moves;
+}
 const rand = () => { rng = (rng * 1664525 + 1013904223) >>> 0; return rng / 4294967296; };
 
-/** What a clear is worth to the level's goal: a gem is 1; a cell of ice it breaks 5; a gem of the goal's kind 4 more. */
+/** What a clear is worth to the level's goal: a gem is 1; a cell of ice it breaks 12; a gem of the goal's kind 8 more. */
 function worth(p, t, cleared) {
   const broken = new Set(cleared.flatMap((c) => p.nbrs(c)));
   let w = cleared.length;
-  for (const j of broken) if (p.ice[j]) w += 5;
-  if (p.lev.goal === 'gems') w += 4 * cleared.filter((c) => t[c] === p.lev.kind).length;
+  for (const j of broken) if (p.ice[j]) w += 12;
+  if (p.lev.goal === 'gems') w += 8 * cleared.filter((c) => t[c] === p.lev.kind).length;
   return w;
 }
 
@@ -60,8 +75,12 @@ export function pad(vm, p, frame, opts) {
   return M(plan.to - plan.from === 1 ? 'RIGHT' : 'DOWN');      // and push it
 }
 
-export const finished = (p) => p.state !== 'play';
+export const finished = (p) => p.state !== 'play' || (only > 0 && p.phase === 'win');
 
 export function result(p) {
+  if (only) {
+    const won = p.phase === 'win' ? 1 : 0;
+    return { won, movesLeft: won ? p.moves : 0, used: budget - p.moves, progress: won ? 1 : +p.progress().toFixed(2), problems: !won && p.state === 'play' ? ['still playing'] : [] };
+  }
   return { score: p.score, level: p.level, problems: p.state === 'play' ? ['still playing'] : [] };
 }

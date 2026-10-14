@@ -1,7 +1,7 @@
 # Ice Breakers: Cart Specification
 
 **Version:** 0.2 (draft)
-**Status:** Steps 1 and 2 built (the ice, the three goals, the twelve levels, the level banner, the game over that names the goal); the balance is step 3. The art and the sound are still the starter's.
+**Status:** Steps 1 to 3 built (the ice, the three goals, the twelve levels tuned with the bot, the level banner, the game over that names the goal). The art and the sound are still the starter's.
 **Cart source:** `carts/src/ice-breakers/` → `carts/ice-breakers.nova`
 
 ---
@@ -50,7 +50,7 @@ the gems and the cursor are 16 px sprites; the text is the overlay.
 | Collected gems | Each gem cleared counts once towards a GEMS goal; a gem of the goal's kind counts only for that goal |
 | After a clear | The gems above fall; new gems drop in from above; if that makes a run it clears too (chain 2, 3, ...) |
 | Score for a clear | (10 a gem + 30 for each run of four or more) × the chain |
-| Moves | Set by the level (20 to 24). Only a swap that makes a run spends one |
+| Moves | Set by the level (12 to 23). Only a swap that makes a run spends one |
 | Goal | One of three kinds, set by the level (table in section 6): **ICE** break every ice cell; **GEMS** collect N gems of one kind; **POINTS** earn N points in the level (the clear bonus does not count) |
 | Level clear | The goal reached when the board is at rest: a bonus of 50 for each move left, then the next level |
 | Game over | No moves left and the goal not reached |
@@ -60,22 +60,29 @@ the gems and the cursor are 16 px sprites; the text is the overlay.
 ## 6. Levels
 
 The levels are hand-made: each has its goal, its moves and its ice layout. The board itself is dealt from the seed, so a
-level is the same puzzle with a different start. Numbers are the defaults; the sweep (step 3) tunes the moves and targets.
+level is the same puzzle with a different start. The moves and targets were tuned with the bot (step 3): each level's
+moves are what it costs the bot at skill 1, plus about 4.5, so a good player has a few to spare.
 
-| Level | Goal | Target | Moves | Ice layout |
-|---|---|---|---|---|
-| 1 | ICE | 4 cells | 20 | the four corners |
-| 2 | POINTS | 600 | 20 | none |
-| 3 | GEMS | 12 of gem 2 | 20 | none |
-| 4 | ICE | 8 cells | 22 | a bar across row 3 |
-| 5 | POINTS | 900 | 20 | none |
-| 6 | GEMS | 15 of gem 4 | 22 | none |
-| 7 | ICE | 12 cells | 22 | bars across rows 2 and 5, columns 0 to 5 |
-| 8 | POINTS | 1,200 | 20 | none |
-| 9 | GEMS | 18 of gem 1 | 20 | none |
-| 10 | ICE | 16 cells | 24 | a checker of rows 2 to 5 |
-| 11 | POINTS | 1,500 | 20 | none |
-| 12 | ICE | 24 cells | 24 | the outer ring, without its corners |
+| Level | Goal | Target | Moves | Ice layout | Won by skill 1 | Won by skill 0.5 |
+|---|---|---|---|---|---|---|
+| 1 | ICE | 8 cells | 12 | a bar across row 3 | 93% | 90% |
+| 2 | POINTS | 1,000 | 16 | none | 90% | 90% |
+| 3 | GEMS | 12 yellow | 15 | none | 82% | 80% |
+| 4 | ICE | 16 cells | 12 | a checker of rows 2 to 5 | 88% | 72% |
+| 5 | POINTS | 1,200 | 18 | none | 88% | 82% |
+| 6 | GEMS | 14 blue | 17 | none | 88% | 75% |
+| 7 | ICE | 16 cells | 19 | a dashed border (dashes at 1, 3, 4, 6 along each side) | 80% | 70% |
+| 8 | POINTS | 1,400 | 20 | none | 85% | 82% |
+| 9 | GEMS | 17 orange | 22 | none | 82% | 82% |
+| 10 | ICE | 24 cells | 17 | the whole border, without its corners | 80% | 45% |
+| 11 | POINTS | 1,600 | 23 | none | 88% | 88% |
+| 12 | ICE | 36 cells | 19 | the border and both diagonals, without the corners | 78% | 68% |
+
+The two right-hand columns are measured (`sweep.mjs`, 40 seeds a level; the bot at skill 1 always picks the swap worth most to
+the goal, at skill 0.5 half the time). They are not a prediction for a person: the bot never misses a legal move, so a person
+wins less. No layout has ice on a corner: a corner is only reached by a clear on three cells (the cell itself and its two
+neighbours), so a corner of ice was luck, not skill (a bot needed 9 moves more for four corners than for the same layout
+without them).
 
 The ice layouts are lists of cells in `LEVELS` (code.js), so a level is easy to read and change. Levels with
 ice and no other goal are the ICE levels: their HUD shows the ice cells left.
@@ -129,7 +136,7 @@ The gems are 16 px sprites, each kind in its own sprite palette (0 to 5); the cu
 
 | Asset | Budget |
 |---|---|
-| Code | 22.6 KB (`node tools/check.js ice-breakers`); the levels, the ice and the banner added 4.5 KB to the starter's 18 |
+| Code | 23.1 KB (`node tools/check.js ice-breakers`); the levels, the ice and the banner added 5 KB to the starter's 18 |
 | Tiles | about 66 of 1,023 now (the background 38, the gems and cursor 28); the ice adds a few |
 | Sprites | 65 on the board (128 in OAM, 32 per scanline) |
 | Songs / SFX | 2 songs, 14 SFX; the ice crack makes 15 |
@@ -148,6 +155,9 @@ Step 0 is done: the spec, the scaffold (the match-3 starter with placeholder num
    **Built:** (the goals, the next level, the win after level 12 and the end of `goalFor` came with step 1.) The opening banner (`introT`, `INTRO_FRAMES` 120): it covers the board while the gems drop in, the pad waits for it, A skips it, and it waits while paused. `goalText` (the HUD and the game-over panel) and `goalWords` (the banner). A GEMS goal names its gem by colour (`GEM_NAMES`), because the overlay is always on top of the sprites, so a gem picture cannot sit on the banner; step 5 adds icons to the HUD. The game over shows the level, the goal and how far the player got, and the won game shows `YOU WON!`. The bot skips banners with A.
    **Results:** 107 checks pass (`01-flow` 35, `02-art` 12, `03-rules` 60: the banner, its skip and pause, the text of every goal kind, game over naming the goal, and the banner's pixels on the screen); `verify.js --fast` passes; `smoke.mjs` passes in the real console; the sweep is as in step 1 (the banner changes timing, not the dealing); the banner and the game-over panel looked right in screenshots.
 3. **Balance:** the bot (`bot.mjs`) plays for the goal of each level (it prefers swaps that break ice or gather the goal's gem). `node tools/devkit/sweep.mjs ice-breakers`: skill 1 wins most levels within the moves; skill 0.5 wins about half of them. Tune the moves and the targets in `LEVELS` and this table together.
+
+   **Built:** the bot plays one level at a time (`--set level=N`), with `--set moves=40` to measure a level's cost (`used`) and `--set n=...` to try another target; it values a broken ice cell at 12 and a gem of the goal's kind at 8 more than a plain gem (it was 5 and 4: with those the bot left the last ice cell and lost 7% of level 1 with moves to spare). The levels were retuned from those measurements: new layouts for the ICE levels (a bar, a checker, a dashed border, the whole border, the border and both diagonals), new targets for POINTS (1,000 to 1,600) and GEMS (12, 14, 17), and moves of 12 to 23 (section 6).
+   **Results:** the table in section 6 (40 seeds a level): skill 1 wins 78 to 93% of every level (86% on average, about 5 moves to spare when it wins), skill 0.5 wins 45 to 90% (77% on average). The whole game (8 seeds): skill 1 reaches level 7.9 on average (2 to 12), skill 0.5 reaches 6.9; no run failed. What the measurements found: (1) the first draft was far too easy (POINTS and GEMS levels won every time with 7 to 14 moves to spare, the ice bars with 12 to 17); (2) a corner of ice is only reached by a clear on three cells, so layouts with corners were luck (the four corners cost 15.7 moves for four cells; the diagonals cost 14.4 with their corners and 5.6 without), and no level has ice on a corner now (a test checks); (3) the two skills differ little on POINTS levels (they cost 12 to 19 moves to both), and most on the hard ice layouts (the ring: 12.8 against 18.7 moves), so the casual bot does not win "about half" of every level as the plan said. 108 checks pass; `verify.js --fast` and `smoke.mjs` pass.
 4. **Hint and feel:** after about 6 seconds with no move, the board shows one swap that makes a run (or that breaks ice).
 5. **Art pass:** `art.py`: the ice tiles on BG1 (a palette for the ice), the level banner, the goal icons in the HUD, a clear effect for the ice.
 6. **Flow polish:** the records screen shows the level reached; the win screen.
@@ -163,6 +173,7 @@ These were not in the design questions, so they are defaults here. Change them i
 
 - Ice is a layer, not a gem: gems fall through and swap over ice as normal; only the clears break it.
 - Ice breaks from an adjacent clear (four neighbours), not from a diagonal one.
-- Three goals (ICE, GEMS, POINTS) across 12 levels, with a 20 to 24 move budget.
+- Three goals (ICE, GEMS, POINTS) across 12 levels, with a 12 to 23 move budget.
 - Twelve levels and then the game is won; no endless mode in version 1.
 - The score is still kept and the top 10 is still the score, so the run's points matter as well as the win.
+- One life: a level lost is the game over. With about 85% a level the best bot clears all twelve about one run in seven, and a person will do worse. If that is too hard, a retry (a few lives, a restart of the level that costs its points) or more moves on the later levels would fix it; it is the user's to choose, and nothing is changed yet.

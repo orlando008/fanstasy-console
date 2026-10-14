@@ -53,10 +53,12 @@ const swap = (vm, p, from, dir) => { p.cursor = from; tap(vm, 'A'); tap(vm, dir)
   ok(p.popScore(3, 0, 1) === 30 && p.popScore(4, 1, 1) === 70 && p.popScore(5, 1, 1) === 80, '10 a gem, and 30 more for a run of four or more', `${p.popScore(3, 0, 1)} ${p.popScore(4, 1, 1)} ${p.popScore(5, 1, 1)}`);
   ok(p.popScore(3, 0, 2) === 60 && p.popScore(3, 0, 3) === 90 && p.popScore(7, 2, 2) === 260, 'all times the chain', `${p.popScore(3, 0, 2)} ${p.popScore(3, 0, 3)} ${p.popScore(7, 2, 2)}`);
   const L = p.LEVELS;
-  ok(L.length === 12 && L.every((l) => l.moves >= 20 && l.moves <= 24), 'twelve levels, each with 20 to 24 moves');
+  ok(L.length === 12 && L.every((l) => l.moves >= 12 && l.moves <= 23), 'twelve levels, each with 12 to 23 moves');
   ok(L.filter((l) => l.goal === 'ice').every((l) => l.ice.length > 0) && L.filter((l) => l.goal !== 'ice').every((l) => l.ice.length === 0), 'the ICE levels have ice on the board; the others have none');
-  ok(L.filter((l) => l.goal === 'points').map((l) => l.n).join() === '600,900,1200,1500' && L.filter((l) => l.goal === 'gems').every((l) => l.kind >= 0 && l.kind < p.KINDS), 'the points targets rise, and each gems goal names a kind of gem');
-  ok(L.filter((l) => l.goal === 'ice').map((l) => l.ice.length).join() === '4,8,12,16,24', 'the ICE levels have 4, 8, 12, 16 and 24 cells of ice', L.filter((l) => l.goal === 'ice').map((l) => l.ice.length).join());
+  ok(L.filter((l) => l.goal === 'points').map((l) => l.n).join() === '1000,1200,1400,1600' && L.filter((l) => l.goal === 'gems').every((l) => l.kind >= 0 && l.kind < p.KINDS), 'the points targets rise, and each gems goal names a kind of gem');
+  ok(L.filter((l) => l.goal === 'ice').map((l) => l.ice.length).join() === '8,16,16,24,36', 'the ICE levels have 8, 16, 16, 24 and 36 cells of ice', L.filter((l) => l.goal === 'ice').map((l) => l.ice.length).join());
+  const corners = [0, 7, 56, 63];
+  ok(L.every((l) => corners.every((c) => !l.ice.includes(c))), 'and none has ice on a corner: a corner can only be reached by a clear on three cells, so it would be luck, not skill');
 }
 
 // 4. A swap that makes a run.
@@ -152,7 +154,7 @@ const swap = (vm, p, from, dir) => { p.cursor = from; tap(vm, 'A'); tap(vm, dir)
 {
   const { p } = play(); p.startLevel(1);
   const corners = [0, 7, 56, 63];
-  ok(p.lev.goal === 'ice' && p.iceCount() === 4 && corners.every((i) => p.ice[i]), 'level 1 starts with ice on the four corners');
+  ok(p.lev.goal === 'ice' && p.iceCount() === 8 && [24, 25, 26, 27, 28, 29, 30, 31].every((i) => p.ice[i]), 'level 1 starts with a bar of ice across the middle row');
   const only = (...cells) => { p.ice = Array(64).fill(false); for (const i of cells) p.ice[i] = true; };
   only(0, 2); p.breakIce([1]);
   ok(p.iceCount() === 0, 'a clear beside two iced cells breaks both');
@@ -167,6 +169,7 @@ const swap = (vm, p, from, dir) => { p.cursor = from; tap(vm, 'A'); tap(vm, dir)
 }
 {
   const { vm, p } = play(); p.startLevel(1); p.setTypes(withCells(DEAD, { 0: 5, 1: 0, 2: 0, 4: 0 })); p.moves = 5; sfxLog(vm);
+  p.ice = Array(64).fill(false); for (const i of [0, 7, 56, 63]) p.ice[i] = true;   // the four corners
   swap(vm, p, 3, 'RIGHT');   // the three 0s on cells 1 to 3 pop: cell 0 (a corner) is beside cell 1
   for (let i = 0; i < 40 && p.phase !== 'fall'; i++) vm.step(0);
   ok(!p.ice[0] && p.ice[7] && p.ice[56] && p.ice[63] && p.iceCount() === 3, 'a run along the top breaks the corner beside it, and the other three corners stay', `ice ${p.iceCount()}`);
