@@ -1,6 +1,6 @@
 # Smashy Smash: Cart Specification
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Released: all 7 steps of the plan (15) are built; also as the PNG cart `carts/smashy-smash.nova.png`
 **Cart source:** `carts/src/smashy-smash/` → `carts/smashy-smash.nova`
 
@@ -222,6 +222,11 @@ channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sou
 briefly mutes the music's channel 4 while it plays. (`tools/check.js` and `tools/devkit/soak.mjs` check this; see
 `docs/dev/playbook.md`, section 5.) Also in v1.1: the wave of instrument 27 in song 2 was declared as a pulse but sits
 on the saw channel, where it always sounded as a saw; it is now declared as a saw (the sound is unchanged).
+
+**Lead levels** (v1.2, after players found the leads loud and wobbly): the lead instruments have no vibrato and their
+volumes were lowered so that the lead alone is at most 0.05 RMS in its loudest section (it was 0.088 to 0.128), which is
+about half the mix (it was 0.7 to 0.9), with the mix rising no more than 1.4x where the lead comes in. One lead instrument was also used by an effect, so it was copied (instrument 29) and the effect did not change. Done with
+`tools/devkit/music/lower-leads.mjs` (the games have no audio script); `tools/devkit/music/loud.mjs --check` holds the limits.
 
 | Song | Tempo | Style |
 |---|---|---|

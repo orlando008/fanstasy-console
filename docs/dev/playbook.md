@@ -85,6 +85,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 |---|---|
 | `python3 carts/src/<name>/audio.py carts/src/<name>/audio.json` | Regenerate a game's audio from its script, with the song toolkit in `tools/devkit/music/kit.py` (its header explains `bar()`) |
 | `node tools/devkit/music/loud.mjs carts/<name>.nova [--check]` | Per-section loudness of every song, surges, peak, and **the lead alone**: its RMS, its share of the mix and how much the mix jumps when it enters. `--check` fails on the limits in section 5 (`verify.js` runs it) |
+| `node tools/devkit/music/lower-leads.mjs carts/src/<name>/audio.json [--write]` | For songs with no audio script: remove the leads' vibrato and lower their volumes until each song's lead is at most 0.05 RMS (instruments shared with effects are copied first) |
 | `node tools/devkit/music/render.mjs carts/<name>.nova out/` | WAV files of the songs, with level and clipping |
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level and pitch (centroid) of effects, on the channel the game uses |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and saw on the beat |
@@ -184,9 +185,9 @@ You cannot hear the result, so measure it, and follow the rules that keep player
   loudest 250 ms at most 2.2x the median, the peak at most 0.45, the median level 0.03 to 0.15. Python Pass's first
   version (lead 0.09 to 0.13, 0.8 to 0.9 of the mix, entering up to 2.4x) was what players called blaring; its fixed
   songs are 0.04 to 0.05 and 0.5 to 0.7. A pulse50 lead is louder than a pulse25 at the same volume.
-  **The first games' leads are as loud as Python Pass's first version**, so they fail these limits (`verify.js`
-  warns for them, from a list in the tool): Alien Swarm, Block Wizard, Planet Racers, Smashy Smash and Summit Rush
-  could have their leads brought down the same way.
+  The first games' leads were as loud as that first version, and were brought down in the same way with
+  `lower-leads.mjs` (no vibrato; volumes lowered until each song's lead is at most 0.05 RMS). Only the `chiptune` demo is
+  over the limits (a loud sound test, so `verify.js` only warns for it).
 - **A held note cannot change pitch** (no API for it). A pitch that follows a value (an engine) is a short loop
   restarted at one of 5 or 6 pitches, changed only after the new pitch has held a few frames.
 - **Effect levels**: a song is about 0.06 to 0.08 RMS; effects 0.01 to 0.06; a looping sound 0.02 to 0.03.

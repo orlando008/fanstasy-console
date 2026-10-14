@@ -1,6 +1,6 @@
 # Alien Swarm: Cart Specification
 
-**Version:** 1.1
+**Version:** 1.2
 **Status:** Released: all 7 steps of the plan (15) are built; also as the PNG cart `carts/alien-swarm.nova.png`
 **Cart source:** `carts/src/alien-swarm/` → `carts/alien-swarm.nova`
 
@@ -169,6 +169,11 @@ sounds like noise only on a noise channel. The cannon (1), the splat (2), freeze
 channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sounded like pulse tones. A noise effect
 briefly mutes the music's channel 4 while it plays. (`tools/check.js` and `tools/devkit/soak.mjs` check this; see
 `docs/dev/playbook.md`, section 5.)
+
+**Lead levels** (v1.2, after players found the leads loud and wobbly): the lead instruments have no vibrato and their
+volumes were lowered so that the lead alone is at most 0.05 RMS in its loudest section (it was 0.067 to 0.126), which is
+about half the mix (it was 0.7 to 0.9), with the mix rising no more than 1.4x where the lead comes in. Two lead instruments were also used by effects, so they were copied (instruments 28 and 29) and the effects did not change. Done with
+`tools/devkit/music/lower-leads.mjs` (the games have no audio script); `tools/devkit/music/loud.mjs --check` holds the limits.
 
 | Song | Tempo | Style |
 |---|---|---|

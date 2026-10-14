@@ -1,6 +1,6 @@
 # Block Wizard: Cart Specification
 
-**Version:** 1.0
+**Version:** 1.1
 **Status:** Complete (version 1.0). Playable end to end with art and audio, and released as `carts/block-wizard.nova` and the PNG cart `carts/block-wizard.nova.png`.
 **Cart source:** `carts/src/block-wizard/` → `carts/block-wizard.nova`
 
@@ -270,6 +270,11 @@ timeline drifts. This affects every cart, so it is logged as a console issue,
 not worked around here.
 
 ## 11. Audio
+
+**Lead levels** (v1.2, after players found the leads loud and wobbly): the lead instruments have no vibrato and their
+volumes were lowered so that the lead alone is at most 0.05 RMS in its loudest section (it was 0.035 to 0.095), which is
+about half the mix (it was 0.7 to 0.9), with the mix rising no more than 1.4x where the lead comes in. Done with
+`tools/devkit/music/lower-leads.mjs` (the games have no audio script); `tools/devkit/music/loud.mjs --check` holds the limits.
 
 **Channel plan:** songs use channels 0 and 2–5: 0 lead (pulse), 2 bass
 (triangle), 3 pad, arpeggio or counter-line (saw), 4 hats, open hats and rolls

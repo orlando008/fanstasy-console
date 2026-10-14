@@ -55,9 +55,9 @@ console.log(`${docs.status ? 'FAIL' : 'ok  '} tools/check-docs.js (the documenta
 if (docs.status) console.log(docs.stdout.trim().split('\n').map((l) => `       ${l}`).join('\n'));
 if (!carts.size) { console.log('Nothing more to verify.'); process.exit(docs.status ? 1 : 0); }
 
-// Games whose songs were written before the music levels were checked: their leads are louder than the limits in
-// tools/devkit/music/loud.mjs, so for them the check only warns (a change to their audio should bring them within it).
-const LEGACY_LOUD = ['alien-swarm', 'block-wizard', 'chiptune', 'planet-racers', 'smashy-smash', 'summit-rush'];
+// Carts whose songs are over the limits in tools/devkit/music/loud.mjs and are left as they are (the chiptune demo is
+// a loud sound test), so for them the check only warns. The games were brought within the limits by lower-leads.mjs.
+const LEGACY_LOUD = ['chiptune'];
 const node = (...a) => spawnSync('node', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 });
 let failed = 0;
 const report = [];
