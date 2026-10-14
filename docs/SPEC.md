@@ -535,7 +535,7 @@ built in HTML like the editor, not inside the console.
 │   └── src/<name>/         # A cart's source: code.js, meta.json, tiles.txt, palette.txt, map.txt, audio.json (made
 │                           #   by audio.py where there is one; tiles.txt, palette.txt, map.txt, art.json by art.py), label.png
 ├── tests/console/          # Checks of the console itself in headless Chromium (node tests/console/volume.mjs)
-├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs), its lib.mjs and its bot.mjs for the sweep tool
+├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs: 01-flow, 02-art ...), its lib.mjs and its bot.mjs for the sweep tool
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/
 │   ├── library.js          # Regenerates carts/index.json and carts/labels/

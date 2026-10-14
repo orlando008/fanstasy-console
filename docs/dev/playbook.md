@@ -8,10 +8,10 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 ## Quick start
 
 ```sh
-node tools/new-cart.js my-game "My Game"      # a working cart, tests, audio script and spec template
-# write docs/carts/my-game.md, then replace updatePlay/drawPlay in carts/src/my-game/code.js
+node tools/new-cart.js my-game "My Game"      # a working cart, art and audio scripts, tests and spec template
+# write docs/carts/my-game.md, then replace updatePlay/drawPlay in carts/src/my-game/code.js, and the art in art.py
 node tools/pack.js carts/src/my-game carts/my-game.nova
-node tools/verify.js --fast                   # audio script, pack, checks, soak, music levels (add the tests: leave out --fast)
+node tools/verify.js --fast                   # audio and art scripts, pack, checks, soak, music levels (add the tests: leave out --fast)
 node tools/devkit/smoke.mjs my-game           # the real console, headless
 node tools/devkit/sweep.mjs my-game           # the bot over many seeds (once tests/carts/my-game/bot.mjs is real)
 node tools/release.js my-game                 # when finished: label, .nova.png, Library, README row
@@ -33,7 +33,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 
 ## 1. The shape of a game build
 
-0. **Start from the starter**: `node tools/new-cart.js <name> "Title"` creates the cart, its tests, its audio script and
+0. **Start from the starter**: `node tools/new-cart.js <name> "Title"` creates the cart, its tests, its art and audio scripts and
    the spec template (section 2). Do not copy another game's code to begin with.
 1. **Write the spec first** (`docs/carts/<name>.md`, scaffolded): concept, controls, screen layout, the rules with
    numbers, scoring, screens and flow, audio, video layers, save slots, asset budget, and a numbered
@@ -57,7 +57,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 
 | Command | What it does |
 |---|---|
-| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--selftest` checks the starter itself (CI does) |
+| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an art script (a field, a ship and a gem, drawn with the art kit), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--selftest` checks the starter itself (CI does) |
 | `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder |
 | `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the music levels (`loud.mjs --check`), the docs check, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
 | `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser), the spec (header, TODOs in a released cart, code size in the budget table), label and description |
@@ -238,6 +238,11 @@ What the kit does for you (each was a bug or a lost hour in a real game):
   1 to 7, or give the overlay its own colours with `art.color(113, 'ffffff', 'WHITE')`, as Moto Crosser does.
 - Scenery that moves (a waving crowd, twinkling stars) is a palette change or a switch between two pictures in Map RAM,
   not a rewrite of the map.
+
+**The first games' art has no script.** Only their generated `tiles.txt`, `palette.txt` and `map.txt` were kept (the scripts that
+made them were lost with a scratch directory), so those games cannot be regenerated: to change a picture, edit the file,
+or redraw just that piece with the kit and paste its `tiles.txt` rows in. The kit is for new games and new pieces. To look at
+such a game's art, use `tiles.mjs`, `scene.mjs --rect x,y,w,h` and `sprites.mjs --tile n --size s --pal p` (no manifest needed).
 
 **Look at the art, always.** `sprites.mjs` (every sprite at its real size, in its palette), `scene.mjs` (a map region, with
 `--holes`), `tiles.mjs` (the sheet with numbers) and `shots.mjs` (the game in place) all make PNGs to open with the Read tool.

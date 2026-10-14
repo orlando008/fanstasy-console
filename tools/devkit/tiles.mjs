@@ -9,8 +9,9 @@
 //   --pal p         the sub-palette to draw with: BG palette p is entries 16p..16p+15; with --sprite, entries 128+16p..
 //   --skip-empty    leave out tiles that are all transparent (pixel value 0)
 // Each cell shows the tile (pixel 0 as a dark checker, as transparent) and its number; a row of the palette's 16
-// swatches closes the sheet. Look at the result with the Read tool (it opens images). In a game, the same tiles in
-// place are better seen with tools/devkit/shots.mjs.
+// swatches closes the sheet. Look at the result with the Read tool (it opens images). Sprites at their real sizes are
+// better seen with tools/devkit/art/sprites.mjs, a Map RAM region with art/scene.mjs, and a game in place with
+// tools/devkit/shots.mjs.
 import { writeFileSync } from 'node:fs';
 import { SHEET_H, SHEET_W } from '../../src/formats/cart.js';
 import { COLORS, canvas, drawTile, loadArt, pixel as tilePixel, png, rgb as cgram, text } from './art/view.mjs';

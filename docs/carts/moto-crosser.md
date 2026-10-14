@@ -619,10 +619,15 @@ Everything below runs from the repository root; `docs/dev/playbook.md` explains 
 | In the real console | `node tools/devkit/smoke.mjs moto-crosser --keys Enter:300,Enter:300` |
 | Balance: the bot over many seeds | `node tools/devkit/sweep.mjs moto-crosser --seeds 8 --set track=1,2,3,skill=0.95,1` |
 | Rebuild the audio | `python3 carts/src/moto-crosser/audio.py carts/src/moto-crosser/audio.json` |
+| Look at the tiles | `node tools/devkit/tiles.mjs carts/moto-crosser.nova out.png --from 640 --count 64 --pal 0 --skip-empty` |
+| Look at the stadium | `node tools/devkit/art/scene.mjs carts/moto-crosser.nova out.png --rect 0,28,64,12 --holes` |
+| Look at the bike | `node tools/devkit/art/sprites.mjs carts/moto-crosser.nova out.png --tile 256 --size 32 --pal 0` |
 | Release again after a code or art change | `node tools/release.js moto-crosser --keep-label` |
 
 The test scripts are in `tests/carts/moto-crosser/`, one for each build step: `01-slice.mjs` (37 checks), `02-physics.mjs` (46),
 `03-rivals.mjs` (38), `04-tracks.mjs` (40), `05-flow.mjs` (48), `06-art.mjs` (31) and `07-audio.mjs` (48, including the
 standstill-on-a-slope check from step 8). `lib.mjs` boots the cart with its variables exposed; `bot.mjs` is the
 automatic player for the sweep (the rivals' AI drives the player's bike; `skill` is the player's speed rating).
-The audio comes from `carts/src/moto-crosser/audio.py` with the song toolkit in `tools/devkit/music/kit.py`.
+The audio comes from `carts/src/moto-crosser/audio.py` with the song toolkit in `tools/devkit/music/kit.py`. The art has no script: the
+scripts that drew it (step 6) were not kept, only the generated `tiles.txt`, `palette.txt` and `map.txt`, so there is no `art.py` or
+`art.json` (the art kit, `tools/devkit/art/kit.py`, is for new games).
