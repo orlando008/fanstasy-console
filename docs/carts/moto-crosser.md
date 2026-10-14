@@ -1,7 +1,7 @@
 # Moto Crosser: Cart Specification
 
-**Version:** 0.2 (draft)
-**Status:** In progress: step 1 of the plan (15) is built
+**Version:** 0.3 (draft)
+**Status:** In progress: steps 1 and 2 of the plan (15) are built
 **Cart source:** `carts/src/moto-crosser/` → `carts/moto-crosser.nova`
 
 ---
@@ -120,9 +120,10 @@ gate to the finish line.
 
 | Thing | What it does |
 |---|---|
-| Ramp (small, medium, big) | Rises to a lip; the bike leaves the ground at the top. A big ramp flies about 200 px |
-| Bump | A short hill that throws the bike up a little if taken at speed |
-| Long hill (up and down) | Slows and speeds the bike (5.1), and tilts it |
+| Ramp (small, medium, big) | Rises to a lip 8, 16 or 24 px high; the bike leaves the ground at the top. A big ramp flies about 130 px at cruising speed and 220 at turbo speed |
+| Down ramp | A ramp backwards: the bike lands on it, and rolls down it (a table-top jump is a ramp, a gap and a down ramp) |
+| Bump | A small hill (5 px, 40 px long) that throws the bike up a little if taken at speed, more at turbo speed |
+| Long hill (up and down) | A smooth hill 10 px high and 128 px long that slows and speeds the bike (5.1), and tilts it |
 | Hurdle | Hitting it from a lane causes a crash unless the bike is in the air above it |
 | Mud | A patch (5.1) |
 | Arrow strip | A speed boost (5.1) |
@@ -271,6 +272,47 @@ the landing.
    landings and crashes, hurdles, mud, arrow strips, the engine heat and cooling pads, and
    the HUD gauge. **Prove:** a bike taking a ramp flat lands clean; a bike nose-up crashes;
    overheating, pushing and cooling work.
+   - **Built:**
+     - **The test course** (a list in the code, to be replaced by the real tracks in step 4)
+       has one of everything: a medium ramp, an arrow strip, mud, three hurdles in a row
+       (one lane left clear), a cooling pad, a big ramp, three bumps, a hill, ramps
+       side by side, a long mud patch, a table-top jump (a big ramp and a down ramp) and a
+       boosted jump.
+     - **Ground and jumps:** each ramp, bump and hill has a ground height every 4 px, and the
+       bike follows it. It leaves the ground when the ground falls away faster than gravity
+       (0.055 a frame) would pull it: at a ramp's lip, or at the top of a bump taken at speed.
+       In the air it keeps its speed, and LEFT and RIGHT tilt it one step now, and another
+       every 6 frames. It leaves a ramp tilted to match (one step up) so a bike left alone lands
+       clean. A landing 0 or 1 step off the slope is clean, 2 is rough (a quarter of the
+       speed is lost) and 3 or more is a crash.
+     - **Speed:** the turbo builds to 3.6 in 25 frames. Hills pull the bike by the slope times
+       0.08 a frame (uphill takes speed off, downhill gives it, up to 3.0); mud pulls the speed
+       down to 1.2 and turns the turbo off; an arrow strip sets 4.0 for 1½ seconds.
+     - **Heat:** 0.45% a frame on turbo, 0.1% cooling off it, 35% off from a cooling pad (and
+       no heating for the next second). At 100% the engine cuts out and the rider pushes the
+       bike at 0.6 until it has cooled to 50%, which takes 100 frames of pushing.
+     - **Crashes:** a hurdle on or near the ground, a bad landing, or a landing on a hurdle.
+       The bike slides and tumbles for 72 frames, then the rider remounts at a standstill.
+       A bike changing lane is in both lanes for hurdles.
+     - **Art:** ramps, bumps and hills are tiles drawn from the same heights as the physics
+       (the ramp tiles are in the BG0 map, so the bike is always in front of them), hay-bale
+       hurdles, mud, yellow arrow chevrons and blue cooling pads. The bike has 7 pitch
+       frames (each with 2 wheel positions), a tumble, a lying frame and a push frame. All are
+       still placeholder art.
+     - **HUD:** a heat gauge (green, yellow from 60%, flashing red from 85%), and a word for the
+       state: TURBO, BOOST, MUD, PUSH or CRASH.
+   - **Results:** a script of 46 checks passes, and the 37 from step 1 still pass.
+     - The ramp's lip, tilt, height (21 px at cruising speed) and distance; clean, rough
+       and crashing landings, nose up and nose down; the big ramp's 131 px and, at turbo speed,
+       220 px; hills, bumps and a downhill; hurdles hit, jumped and gone round, and lane
+       changes; mud; arrow strips (4.0, then back to cruising speed); the heat to the number,
+       overheating after 223 frames, pushing at 0.6, the restart at 50%; the cooling pad; a crash and
+       the remount; a run of the whole test course with the same inputs giving the same
+       result twice; and every visible track tile being the right one.
+     - The drawn edge of the big ramp is within a pixel of the physics' ground in 60 of its 64
+       columns.
+     - Frames take 1.5 ms on average and under 8 ms at the 99th percentile. No errors in the
+       browser.
 3. **Rivals and races:** five CPU riders (lanes, jumps, turbo, contact), places, the progress
    strip, the finish and results. **Prove:** with a fixed seed a race is repeatable, rivals
    crash now and then and finish in a spread, and a bot player can win and lose.
