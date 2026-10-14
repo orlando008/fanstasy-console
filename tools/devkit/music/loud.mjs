@@ -16,7 +16,7 @@
 // Limits (--check), for songs of 12 s or more: a section at most 1.6x the median, the median between 0.03 and 0.15, the
 // loudest 250 ms at most 2.2x the median, peak at most 0.45, and for the lead: RMS at most 0.07, at most 0.75 of the mix,
 // and the mix at most 1.5x louder in the section where it enters than before. Calibrated on Python Pass: its first
-// version (lead 0.09 to 0.13, 0.8 to 0.9 of the mix) is what players called blaring; after the fixes it is 0.04 to
+// version (lead 0.08 to 0.13, 0.8 to 0.9 of the mix) is what players called blaring; after the fixes it is 0.04 to
 // 0.05 and 0.5 to 0.7. The first games' leads are as loud as that first version (see docs/dev/playbook.md, section 5).
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';

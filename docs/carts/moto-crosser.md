@@ -196,7 +196,7 @@ only use it for the tempo), 2 the bass, 3 the saw (arpeggios and off-beat chords
 and the noisy effects, and 5 the drums. The kick, snare and both hi-hats are samples (4 samples,
 7 KB of the 16 KB Sample RAM), so the songs never touch channel 4.
 
-**Songs** (5), each about 25 seconds and looping, with a quiet, steady lead (pulse at volume 5 to 7,
+**Songs** (5), each about 25 seconds and looping, with a quiet, steady lead (pulse at volume 4 to 7,
 no vibrato) that comes in after a bar-length intro of bass, arpeggio and drums:
 
 | Song | Where | Key and tempo |

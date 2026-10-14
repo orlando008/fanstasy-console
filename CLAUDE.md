@@ -15,4 +15,4 @@
   with `tools/devkit/tiles.mjs` and `shots.mjs` (open the PNGs with the Read tool).
 - Commit and push after every build step. Open a pull request only when the user asks, and merge only when told to.
 - Keep the game's spec in step with the code (numbers, tables, the step's Built and Results notes), and keep the docs
-  true: `node tools/check-docs.js` fails on a mention of a file that does not exist.
+  true: `node tools/check-docs.js` fails on a mention of a file or a tool flag that does not exist.

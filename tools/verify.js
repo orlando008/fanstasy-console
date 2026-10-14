@@ -12,7 +12,7 @@
 //      in your tree: commit it)
 //   3. tools/check.js: limits, voices, the PNG cart holding exactly the packed cart, the spec
 //   4. tools/devkit/soak.mjs: 3,000 frames of random play; and tools/devkit/music/loud.mjs --check: the songs' levels, the
-//      lead's loudness and entrance (a warning only for the games listed in LEGACY_LOUD)
+//      lead's loudness and entrance (a warning only for the carts listed in LEGACY_LOUD: the chiptune demo)
 //   5. tools/test.js: the cart's test scripts, if tests/carts/<name>/ exists (skipped by --fast)
 // and once, first: tools/check-docs.js (the documentation mentions only files that exist)
 // A change under src/ (the console itself) or tools/devkit/ selects every cart. CI runs this on pull requests.
