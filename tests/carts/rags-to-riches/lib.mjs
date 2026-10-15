@@ -8,7 +8,7 @@ export const CART = fileURLToPath(new URL('../../../carts/rags-to-riches.nova', 
 // Add to this list as the game grows.
 const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
-  get tour() { return tour; }, set tour(v) { tour = v; }, get plan() { return plan; }, get show() { return show; }, get hubSel() { return hubSel; },
+  get tour() { return tour; }, set tour(v) { tour = v; }, get plan() { return plan; }, get show() { return show; }, get hubSel() { return hubSel; }, get venueSel() { return venueSel; }, fansWord,
   get ART() { return ART; }, mget: (x, y) => mget(x, y), get rank() { return rank; }, get initials() { return initials; },
   get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
   TUNE, CITIES, SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,

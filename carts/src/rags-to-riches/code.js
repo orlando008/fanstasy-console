@@ -45,13 +45,28 @@ const TUNE = {
   priceMin: 5, priceMax: 50, priceStart: 10, priceStep: 1, priceBig: 5,
   adMax: 200, adStep: 10, adBig: 50,
   rollMin: 94, rollMax: 106, // the seeded variation of a crowd, in percent
-  freshCost: 10, fatigueGain: 25,
+  freshCost: 10, fatigueGain: 30,
+  // the crowd's terms (spec 5.2): base + slope * value; the price term is base - price / city.priceScale, clamped
+  popBase: 0.10, popSlope: 1.80, freshBase: 0.65, freshSlope: 0.35,
+  priceBase: 1.35, priceLow: 0.25, priceHigh: 1.15,
+  adBoost: 0.50, adHalf: 80, // advertising adds up to adBoost of a crowd, half of it at adHalf dollars
+  fatigueSpan: 100, fatigueFloor: 0.25,
+  songFresh: 30, songPop: 8, fare: 20, // songwriting and travel: used from Phase 3
 };
-// One city for now (Phase 2 adds the other four). pool: the crowd the city can give; priceScale: how much a ticket can
-// cost before the crowd thins out; competition: the share of the crowd lost to rival bands. Rents are paid up front.
+// The five markets. pool: the crowd the city can give; priceScale: how much a ticket can cost before the crowd thins out;
+// competition: the share of the crowd lost to rival bands. crowd/rooms/rivals are the words the player sees. Each city has
+// three venues (a bar, a theatre, an arena); rent is paid up front.
 const CITIES = [
-  { name: 'RUSTPORT', tags: 'SMALL CROWD / CHEAP ROOMS', pool: 90, priceScale: 55, competition: 0.02,
-    venues: [{ name: 'THE SOGGY BOOT', capacity: 75, rent: 35 }] },
+  { name: 'RUSTPORT', crowd: 'SMALL', rooms: 'CHEAP', rivals: 'FEW', pool: 50, priceScale: 30, competition: 0.02,
+    venues: [{ name: 'THE SOGGY BOOT', capacity: 25, rent: 35 }, { name: 'RIVET HALL', capacity: 50, rent: 95 }, { name: 'DOCKSIDE DOME', capacity: 100, rent: 220 }] },
+  { name: 'SUNVALE', crowd: 'MEDIUM', rooms: 'CHEAP', rivals: 'FEW', pool: 65, priceScale: 36, competition: 0.04,
+    venues: [{ name: 'CACTUS CANTINA', capacity: 30, rent: 45 }, { name: 'MESA THEATRE', capacity: 65, rent: 120 }, { name: 'SUNBOWL', capacity: 130, rent: 285 }] },
+  { name: 'CEDAR CITY', crowd: 'BIG', rooms: 'FAIR', rivals: 'SOME', pool: 80, priceScale: 40, competition: 0.08,
+    venues: [{ name: 'THE KNOTHOLE', capacity: 40, rent: 55 }, { name: 'LUMBER HALL', capacity: 80, rent: 145 }, { name: 'CEDAR COLISEUM', capacity: 160, rent: 330 }] },
+  { name: 'METRO HEIGHTS', crowd: 'BIG', rooms: 'DEAR', rivals: 'MANY', pool: 100, priceScale: 46, competition: 0.15,
+    venues: [{ name: 'THE BASEMENT', capacity: 50, rent: 75 }, { name: 'SKYLINE THEATRE', capacity: 100, rent: 185 }, { name: 'METRO ARENA', capacity: 200, rent: 430 }] },
+  { name: 'COASTLINE', crowd: 'HUGE', rooms: 'PRICEY', rivals: 'MANY', pool: 115, priceScale: 50, competition: 0.18,
+    venues: [{ name: 'THE TIDEPOOL', capacity: 55, rent: 90 }, { name: 'PIER PLAYHOUSE', capacity: 115, rent: 215 }, { name: 'SURF STADIUM', capacity: 230, rent: 500 }] },
 ];
 
 // --- The economy: pure functions (no state, no random numbers: the roll is an argument) ---
@@ -59,11 +74,11 @@ const CITIES = [
 /** The six multipliers of the crowd. */
 function factors(city, price, ad, pop, fresh, fatigue) {
   return {
-    pop: 0.25 + 1.30 * pop / 100,
-    fresh: 0.65 + 0.35 * fresh / 100,
-    price: clamp(1.35 - price / city.priceScale, 0.25, 1.15),
-    ad: 1 + 0.85 * (ad / (ad + 60)),
-    fatigue: clamp(1 - fatigue / 125, 0.25, 1),
+    pop: TUNE.popBase + TUNE.popSlope * pop / 100,
+    fresh: TUNE.freshBase + TUNE.freshSlope * fresh / 100,
+    price: clamp(TUNE.priceBase - price / city.priceScale, TUNE.priceLow, TUNE.priceHigh),
+    ad: 1 + TUNE.adBoost * (ad / (ad + TUNE.adHalf)),
+    fatigue: clamp(1 - fatigue / TUNE.fatigueSpan, TUNE.fatigueFloor, 1),
     comp: 1 - city.competition,
   };
 }
@@ -94,6 +109,8 @@ function mainFactor(f, full) {
     .reduce((a, b) => (b[0] < a[0] ? b : a));
   return worst[0] >= 0.9 ? 'GOOD MIX OF PRICE AND BUZZ' : worst[1];
 }
+/** How the fans of a market feel, from its fatigue: the word the hub shows. */
+const fansWord = (fatigue) => (fatigue < 20 ? 'EAGER' : fatigue < 45 ? 'WARM' : fatigue < 70 ? 'TIRED' : 'WORN OUT');
 /** The most advertising the cash allows after the rent. */
 const maxAd = (cash, rent) => clamp(Math.floor((cash - rent) / TUNE.adStep) * TUNE.adStep, 0, TUNE.adMax);
 const canAfford = (cash, venue, ad) => venue.rent + ad <= cash;
@@ -155,7 +172,7 @@ let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let tour = null; // the run: week, cash, pop, fresh, city, fatigue per city, counts
-let hubSel = 0, plan = { row: 0, price: TUNE.priceStart, ad: 0 }, show = null, broke = false;
+let hubSel = 0, venueSel = 0, plan = { row: 0, venue: 0, price: TUNE.priceStart, ad: 0 }, show = null, broke = false;
 
 function newTour() {
   return {
@@ -164,7 +181,7 @@ function newTour() {
   };
 }
 const city = () => CITIES[tour.city];
-const venue = () => city().venues[0]; // Phase 2 lets the player pick one of three
+const venue = () => city().venues[plan.venue];
 const cheapestRent = () => Math.min(...city().venues.map((v) => v.rent));
 
 function init() {
@@ -182,7 +199,7 @@ function toTitle() { go('title'); titleSel = 0; paused = false; tour = null; pla
 
 function startTour() {
   tour = newTour(); hubSel = 0; show = null; paused = false;
-  plan = { row: 0, price: TUNE.priceStart, ad: 0 };
+  plan = { row: 0, venue: 0, price: TUNE.priceStart, ad: 0 };
   go('hub'); play(SONG.play);
 }
 
@@ -194,6 +211,7 @@ function update() {
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'hub') updateHub();
+  else if (state === 'venue') updateVenue();
   else if (state === 'setup') updateSetup();
   else if (state === 'result') updateResult();
   else if (state === 'final') updateFinal();
@@ -220,14 +238,28 @@ function updateHub() {
   if (broke) { toFinal(); return; } // Phase 3's songwriting makes this case go away
   if (hubSel !== 0) { fx(SFX.hit); return; }
   fx(SFX.select);
-  plan.row = 0; plan.ad = Math.min(plan.ad, maxAd(tour.cash, venue().rent));
+  venueSel = clamp(plan.venue, 0, city().venues.length - 1);
+  go('venue');
+}
+
+/** The venue picker: UP/DOWN choose a room, A takes it if the rent can be paid, B goes back. */
+function updateVenue() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (pressed(B)) { fx(SFX.select); go('hub'); return; }
+  const n = city().venues.length;
+  if (pressed(UP)) { venueSel = (venueSel + n - 1) % n; fx(SFX.move); }
+  if (pressed(DOWN)) { venueSel = (venueSel + 1) % n; fx(SFX.move); }
+  if (!pressed(A)) return;
+  if (city().venues[venueSel].rent > tour.cash) { fx(SFX.hit); return; }
+  fx(SFX.select);
+  plan.venue = venueSel; plan.row = 0; plan.ad = Math.min(plan.ad, maxAd(tour.cash, venue().rent));
   go('setup');
 }
 
 /** Concert setup: UP/DOWN pick price or advertising, LEFT/RIGHT change by one step, L/R by a big step. */
 function updateSetup() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (pressed(B)) { fx(SFX.select); go('hub'); return; }
+  if (pressed(B)) { fx(SFX.select); go('venue'); return; }
   if (pressed(UP) || pressed(DOWN)) { plan.row ^= 1; fx(SFX.move); }
   const dir = (btnp(RIGHT) || btnp(R) ? 1 : 0) - (btnp(LEFT) || btnp(L) ? 1 : 0), big = btnp(L) || btnp(R);
   if (dir) {
@@ -309,6 +341,7 @@ function draw() {
   cls();
   if (state === 'title') drawTitle();
   else if (state === 'hub') drawHub();
+  else if (state === 'venue') drawVenue();
   else if (state === 'setup') drawSetup();
   else if (state === 'result') drawResult();
   else if (state === 'final') drawFinal();
@@ -330,7 +363,7 @@ function drawStatus() {
   txt(`WEEK ${two(Math.min(tour.week, TUNE.weeks))}/${TUNE.weeks}`, 16, 14, WHITE);
   rtxt(`CASH ${money(tour.cash)}`, 240, 14, tour.cash >= TUNE.goal ? GREEN : WHITE);
   txt(`CITY: ${city().name}`, 16, 28, WHITE);
-  rtxt(`POP ${String(tour.pop).padStart(3)}/100`, 240, 28, WHITE);
+  rtxt(`POP ${tour.pop}`, 240, 28, WHITE);
   txt(`FRESHNESS: ${tour.fresh}`, 16, 42, WHITE);
   rtxt(`GOAL ${money(TUNE.goal)}`, 240, 42, GOLD);
 }
@@ -338,12 +371,29 @@ function drawStatus() {
 function drawHub() {
   drawStatus();
   sprite(ART.sprites.van, 120, 168);
-  panel(24, 72, 208, 76);
+  panel(8, 72, 240, 82);
   const items = [['PLAY A CONCERT', true], ['WRITE NEW SONGS  SOON', false], ['TRAVEL $20  SOON', false]];
   items.forEach(([s, on], i) => txt(`${i === hubSel ? '> ' : '  '}${s}`, 40, 84 + i * 14, on ? (i === hubSel ? WHITE : DIM) : GREY));
   if (broke) ctxt('OUT OF CASH: THE TOUR ENDS', 134, RED);
-  else ctxt(`ONE ACTION: WEEK ${tour.week} OF ${TUNE.weeks}`, 134, DIM);
+  else {
+    const c = city();
+    ctxt(`CROWD ${c.crowd}  ROOMS ${c.rooms}`, 128, DIM);
+    ctxt(`RIVALS ${c.rivals}  FANS ${fansWord(tour.fatigue[tour.city])}`, 140, DIM);
+  }
   ctxt(broke ? 'A: FINISH' : 'A: SELECT   START: PAUSE', 206, WHITE);
+}
+
+function drawVenue() {
+  drawStatus();
+  panel(8, 64, 240, 142);
+  ctxt('PICK A VENUE', 72, GOLD);
+  city().venues.forEach((v, i) => {
+    const y = 90 + i * 34, on = i === venueSel, ok = v.rent <= tour.cash, c = !ok ? GREY : on ? WHITE : DIM;
+    txt(`${on ? '> ' : '  '}${v.name}`, 20, y, c);
+    if (!ok) rtxt(`NEED ${money(v.rent - tour.cash)}`, 236, y, RED);
+    txt(`ROOM FOR ${v.capacity}`, 36, y + 12, c); rtxt(`RENT ${money(v.rent)}`, 236, y + 12, c);
+  });
+  ctxt('A: PICK  B: BACK', 194, WHITE);
 }
 
 function drawSetup() {
@@ -368,7 +418,8 @@ function drawResult() {
   const r = show;
   panel(8, 8, 240, 208);
   ctxt(`WEEK ${r.week} CONCERT`, 16, GOLD);
-  ctxt(`${r.att} OF ${r.capacity} CAME`, 30, WHITE);
+  ctxt(r.att >= r.capacity ? `SOLD OUT! ${r.att} CAME` : `${r.att} OF ${r.capacity} CAME`, 28, r.att >= r.capacity ? GOLD : WHITE);
+  rect(20, 40, 216, 6, PANEL); rectfill(21, 41, Math.floor(214 * r.att / r.capacity), 4, r.att >= r.capacity ? GOLD : CYAN);
   const row = (label, value, y, c = WHITE) => { txt(label, 20, y, c); rtxt(value, 236, y, c); };
   row(`TICKETS ${r.att} X ${money(r.price)}`, money(r.revenue), 54);
   row('VENUE RENT', signed(-r.rent), 68);
