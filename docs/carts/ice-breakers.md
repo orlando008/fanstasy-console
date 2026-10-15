@@ -1,7 +1,7 @@
 # Ice Breakers: Cart Specification
 
-**Version:** 0.2 (draft)
-**Status:** Steps 1 to 7 built (the ice, the three goals, the twelve levels tuned with the bot, the level banner, the game over that names the goal, the hint, the ice art, the records and the win screen, the audio). Step 8, the release, is next.
+**Version:** 1.0
+**Status:** Released. Steps 1 to 8 built (the ice, the three goals, the twelve levels tuned with the bot, the level banner, the game over that names the goal, the hint, the ice art, the records and the win screen, the audio, the release). Also released as the PNG cart `carts/ice-breakers.nova.png`.
 **Cart source:** `carts/src/ice-breakers/` → `carts/ice-breakers.nova`
 
 ---
@@ -209,6 +209,9 @@ Step 0 is done: the spec, the scaffold (the match-3 starter with placeholder num
    **Built:** section 11. The game song doubled to 16 bars (30 s: the starter's 15 s tune came round too often for a game that is played for minutes) and a third, faster song in D minor for levels 7 to 12; four new effects (the ice crack in noise on channel 4, the pieces falling for three or more cells at once, the win jingle, the level-opening sting); the cues: `breakIce` returns how many cells broke so a clear makes one crack and at most one flick, `startLevel` plays the sting and the song for its level, and a won game plays the win jingle where the game-over jingle was played before (a bug since step 1: winning went through `gameOver()`).
    **Results:** 183 checks pass (`05-audio.mjs`, 20 checks: the data and its limits, the songs' lengths and the leads, the effects' lengths, which song plays at each of the twelve levels and that only level 7 changes it, a restart from the pause menu returning to the first song, the crack on channel 4 and the flick on channel 1 for 1, 2, 3 and 5 cells of ice and for none, the crack before the level-clear jingle, the sting, and the win and game-over jingles each only where they belong). Six deliberate breakages were all caught (the win playing the game-over jingle: 1 check; the flick from 2 cells: 1; no crack for one cell: 2; the song from level 8: 2; no sting: 1; the crack on the pulse channel: 3). `loud.mjs --check`: all songs within the limits; `clash.py`: nothing; `voices.mjs`: every effect on a channel with its voice; `verify.js --fast`, `smoke.mjs` and the soak pass (the soak plays 12 of the 18 effects, among them the crack and the flick; it never wins, so the win jingle and the late song are only in the tests). What cannot be measured here is whether the music is any good: the harmony is checked by rule (chord tones on the beat, no clash with the bass), not by ear.
 8. **Release:** the PNG cart, the label (`node tools/release.js ice-breakers`), the Library entry, a README row, the spec's Results notes.
+
+   **Built:** `node tools/release.js ice-breakers --wait 3500 --keys Enter:300` (Enter starts the game; 3.5 s later the level banner has gone and the board shows level 1 with its bar of frost: the label is that frame, `carts/src/ice-breakers/label.png`). The description in `meta.json` (it said "A game in progress."), the version set to 1.0, the Library entry (`carts/index.json`, `carts/labels/ice-breakers.png`) and a row in the README's list of carts. The spec has no open placeholders left.
+   **Results:** the PNG cart `carts/ice-breakers.nova.png` (payload 39,585 of 147,443 bytes, 27%) decodes to exactly the packed cart; `check.js` has no warnings; the Library lists the game with the released games. 183 tests, `verify.js`, the smoke test and the soak pass (see the earlier steps). Nothing is merged: the work is on its branch, and no pull request is open.
 
 Each step: build it, run `node tools/verify.js ice-breakers` and `node tools/devkit/smoke.mjs ice-breakers`, write its
 **Built** and **Results** notes under its number here, commit and push.

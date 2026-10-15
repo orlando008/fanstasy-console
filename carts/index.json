@@ -17,6 +17,14 @@
       "png": "carts/block-wizard.nova.png"
     },
     {
+      "name": "ice-breakers",
+      "title": "Ice Breakers",
+      "author": "NOVA-16",
+      "description": "A match-3 puzzle across twelve frozen levels: swap gems to break the ice, collect a colour or reach a score before the moves run out, with a hint when you are stuck, a song for the early levels and a faster one for the late ones.",
+      "label": "carts/labels/ice-breakers.png",
+      "png": "carts/ice-breakers.nova.png"
+    },
+    {
       "name": "moto-crosser",
       "title": "Moto Crosser",
       "author": "NOVA-16",
