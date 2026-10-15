@@ -1,0 +1,48 @@
+{
+ "colors": {},
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "dash": 8,
+    "hill": 6,
+    "road": 7,
+    "s0": 1,
+    "s1": 2,
+    "s2": 3,
+    "s3": 4,
+    "star": 5
+   }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "body": 2,
+    "edge": 1,
+    "glass": 3,
+    "light": 4,
+    "stripe": 5,
+    "tire": 6
+   }
+  }
+ },
+ "scenes": {
+  "field": {
+   "h": 28,
+   "mx": 0,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  }
+ },
+ "sprites": {
+  "van": {
+   "pal": 0,
+   "size": 16,
+   "tile": 256
+  }
+ },
+ "tiles": {},
+ "used": 23,
+ "version": 1
+}
