@@ -24,7 +24,7 @@ const start = (seed) => { const vm = newGame(seed), p = vm.probe(); vm.run(3); r
   ok(p.tour.pop === 26 && p.tour.fresh === 100, 'popularity +8 (18 to 26) and freshness +30 (70 to 100, the cap)');
   ok(p.act.popBefore === 18 && p.act.pop === 26 && p.act.freshBefore === 70 && p.act.fresh === 100 && p.act.popChange === 8, 'the result screen has the old and the new values');
   ok(p.tour.fatigue.every((f) => f === 0), 'songwriting adds no fatigue');
-  ok(sfxLog(vm).length > 0, 'and has a sound');
+  ok(vm.audioLog.some((a) => a[1] === 'music' && a[2] === p.SONG.writing), 'and the song result plays the new-songs jingle');
   vm.press('A'); ok(p.state === 'songResult', 'A is ignored for a moment on the result screen');
   vm.run(25); vm.press('A'); ok(p.state === 'hub' && p.tour.week === 2, 'then A goes on to week 2');
 }
@@ -65,7 +65,7 @@ const start = (seed) => { const vm = newGame(seed), p = vm.probe(); vm.run(3); r
   p.tour.cash = 19; vm.run(1);
   ok(p.hubOk().join() === 'false,true,false' && p.canTravel(20) && !p.canTravel(19), 'with $19 neither a show nor a trip can be paid for');
   toItem(vm, p, 2); sfxLog(vm); vm.press('A');
-  ok(p.state === 'hub' && p.tour.cash === 19 && p.tour.week === 1 && sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch === 4), 'TRAVEL is refused with a buzz, and nothing changes');
+  ok(p.state === 'hub' && p.tour.cash === 19 && p.tour.week === 1 && sfxLog(vm).some(([n, ch]) => n === p.SFX.refuse && ch === 4), 'TRAVEL is refused with a buzz, and nothing changes');
   p.tour.cash = 20; vm.run(1); vm.press('A'); vm.press('A');
   ok(p.state === 'travelResult' && p.tour.cash === 0, 'with exactly $20 the trip can be made, and leaves $0');
 }

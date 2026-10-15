@@ -1,7 +1,7 @@
 # Rags to Riches: Cart Specification
 
-**Version:** 0.6 (Phase 5 built)
-**Status:** In progress: Phases 1 to 5 of 8 (the vertical slice, the economic rules, the full ten-week tour, the game flow and controls, and the art) are built; the rest of the plan (section 15) is not
+**Version:** 0.7 (Phase 6 built)
+**Status:** In progress: Phases 1 to 6 of 8 (the vertical slice, the economic rules, the full ten-week tour, the game flow and controls, the art and the sound) are built; the rest of the plan (section 15) is not
 **Cart source:** `carts/src/rags-to-riches/` → `carts/rags-to-riches.nova`
 
 A single-player, turn-based band-management game. It is a **spiritual successor** to an old web game about running an
@@ -335,10 +335,50 @@ menu are overlays (`helpOpen`, `paused`) that work over any of them, so the help
 
 ## 11. Audio
 
-Songs: 0 the title, 1 the tour (the scaffold's placeholders until Phase 6). Channel 1 is for effects; effects with noise
-play on channel 4. Phase 6 adds a concert groove, a writing jingle, a travel jingle, victory and defeat cues. Levels: the
-lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x where it enters
-(`node tools/devkit/music/loud.mjs carts/rags-to-riches.nova --check`; playbook section 5).
+Written in code (`carts/src/rags-to-riches/audio.py`, with the song toolkit `tools/devkit/music/kit.py`) and measured, since nobody can listen
+in the build. Everything is original. Channel 1 is for effects (pulse), channel 4 for noise effects (the three that are noise), channels 0, 2, 3
+and 5 for the music (lead, bass, arpeggio, drums). Leads are quiet pulses with no vibrato.
+
+**One motif.** The band's climb: three rising notes, a triad going up. It opens the title (A C E A), the tour (C E G E), the concert (E G B E),
+the new-songs jingle (F A C), the road (D G B) and the victory (C E G C); the defeat opens with the same idea falling (E D C A). A test checks it.
+
+**Songs** (`SONG` in `code.js`), the screen that plays each, and how it was measured with `loud.mjs` (the lead's share of the mix and its RMS; the median
+level of the song; the peak):
+
+| # | Song | Plays on | Key, tempo | Length | Median / peak | Lead RMS (share) |
+|---|---|---|---|---|---|---|
+| 0 | Title | title, intro, initials, records | A minor, 150 bpm, loops | 12.8 s | 0.085 / 0.24 | 0.055 (0.65) |
+| 1 | The tour | start map, hub, venues, setup, songs, travel map | C major, 128 bpm, loops | 14.9 s | 0.082 / 0.24 | 0.054 (0.64) |
+| 2 | The concert | the cutscene and the concert result | E minor, 180 bpm, loops: a punk riff over a driving bass, fills at bars 4 and 8 | 10.7 s | 0.080 / 0.23 | 0.049 (0.61) |
+| 3 | New songs | the song result | F major, 150 bpm, plays once | 6.4 s | 0.079 / 0.23 | 0.050 (0.61) |
+| 4 | The road | the travel result | G major, 150 bpm, plays once (the kick is the motor) | 6.4 s | 0.086 / 0.20 | 0.055 (0.66) |
+| 5 | Victory | the final screen of a won tour | C major, 180 bpm, plays once | 5.3 s | 0.078 / 0.23 | 0.045 (0.58) |
+| 6 | Defeat | the final screen of a lost tour | A minor, 100 bpm, plays once, no drums | 9.6 s | 0.083 / 0.18 | 0.052 (0.64) |
+
+The music follows the screen (`musicFor`, called by `go()`): a song that is already playing is not restarted, so moving between screens that share
+one (the hub, the venues and the setup) does not restart it; the jingles play once and then it is quiet until the next screen. The pause menu and the
+help do not touch the music. (Leaving the result for the hub restarts the tour song.)
+
+**Effects** (`SFX`), the action that plays each, and measured on the channel the game uses (length in ticks of 1/60 s; RMS):
+
+| # | Effect | Played when | Channel | Ticks | RMS |
+|---|---|---|---|---:|---:|
+| 0 | move | any menu move, a value change, a letter | 1 | 4 | 0.014 |
+| 1 | select | A: a choice, a page, a save | 1 | 6 | 0.030 |
+| 2 | back | B (and START closing the help): a falling chime | 1 | 6 | 0.030 |
+| 3 | pause | START opens or closes the pause menu | 1 | 6 | 0.030 |
+| 4 | refuse | an action the cash cannot pay: a buzz | 4 (noise) | 15 | 0.051 |
+| 5 | coin | the result of a concert that made money | 1 | 9 | 0.027 |
+| 6 | loss | the result of a concert that lost money: a slide down | 1 | 20 | 0.039 |
+| 7 | soldout | a full house (instead of the coin) | 1 | 15 | 0.043 |
+| 8 | cheer | a crowd of 75 % or more that is not a full house (with the coin) | 4 (noise) | 56 | 0.054 |
+| 9 | roll | confirming a concert: a drum roll that rises | 4 (noise) | 22 | 0.017 |
+| 10 | horn | the trip begins: the van's two-tone horn | 1 | 18 | 0.036 |
+| 11 | record | a place in the top 10: the fanfare, as the initials come up | 1 | 32 | 0.049 |
+
+Limits kept (playbook section 5): the lead alone at most 0.07 RMS and 0.75 of the mix, no jump of more than 1.5x where it enters, every song's median
+between 0.03 and 0.15, peaks under 0.45; effects between 0.01 and 0.06 RMS and under a second; every effect on the channel with its voice (`SFX_VOICE_CH`
+sends the three noise effects to channel 4). Budget: 7 of 8 songs, 10 of 64 patterns, 12 of 64 effects, 4 samples (7,200 of 16,384 bytes of Sample RAM).
 
 ## 12. Video layers and art
 
@@ -401,7 +441,7 @@ before the tie-break slot); a save of any other version is cleared when the cart
 | Code | 48 KB of the 64 KB limit (`node tools/check.js rags-to-riches`) |
 | Tiles | 966 of 1,023: 706 background (limit 759 by the region) and 260 sprite (limit 264) |
 | Sprites | 32 pictures; at most 10 on screen and 5 on a line in 18,000 frames of random play (128 in OAM, 32 per line) |
-| Songs / SFX | 2 of 8 songs, 7 of 64 effects (the scaffold's) |
+| Songs / SFX | 7 of 8 songs, 10 of 64 patterns, 12 of 64 effects, 7,200 of 16,384 bytes of samples |
 
 ## 15. Implementation plan
 
@@ -540,6 +580,26 @@ between phases.
      rebuilt from repeated cell-aligned pieces (98 tiles for the three) to fit. 57 tiles are free in total (53 in the background region, 4 in the
      sprite region): Phase 6 and 8 need none, but a new picture must be paid for by simplifying another.
 6. **Sound and music.** Cues, concert SFX, menu SFX, victory and defeat; measured loudness.
+
+   - **Built:** `audio.py` now makes seven songs and twelve effects (section 11): the title and the tour (kept, with the motif), a new concert song,
+     and four once-only jingles (new songs, the road, victory, defeat). The code has one table of songs and one of effects, one function that
+     says which song a screen has (`musicFor`, called by `go()`, so the music follows the screen and nothing restarts a song that is already playing),
+     and `resultCue` for the sound of a concert's result. Effects: the menu blip (now audible), select, back, pause, a buzz for a refused action, coins,
+     a sad slide, a sold-out fanfare, a crowd cheer, a drum roll, the van's horn, the record fanfare. The three noise effects go to channel 4.
+   - **Results:** `node tools/verify.js rags-to-riches` passes (391 test checks: 75 flow, 65 art, 43 economy, 8 balance, 70 actions, 89 flow of Phase 4,
+     41 new in `07-audio.mjs`), `loud.mjs --check` says all songs are within the limits, no wrong-voice effect, the soak is clean and the smoke test in the
+     real console reports no errors. Measured: every song's median is 0.078 to 0.086 RMS with its lead at 0.045 to 0.055 (0.58 to 0.66 of the mix) and
+     the peak 0.18 to 0.24; every effect is 0.014 to 0.054 RMS and under a second (the first measure of the menu blip was 0.008 and the drum roll
+     0.010, so both were made louder). `clash.py` found two lead-against-bass clashes in the defeat song, fixed by changing one bar. The 41 sound
+     checks cover the data (the songs' loops, lengths, tempos, the motif, the levels, the effects' lengths and levels, rendered with the console's own
+     synth) and the cues read from the audio command log: which song each screen plays and that none restarts within a group of screens; the select and
+     back sounds; the buzz on the noise channel for a refused action and a refused trip; the drum roll and the concert song at confirm; the coin, the
+     slide, the fanfare and the cheer for a profit, a loss, a full house and a big crowd; the jingles playing once and then silence; the horn; the
+     victory and defeat songs; the record fanfare; the title song coming back; every effect and every song reached by the code; and, over random play,
+     every effect on the channel with its voice and all twelve heard. Mutation checks: swapping the coin and the slide, or giving the new-songs jingle
+     to the wrong screen, fails five checks.
+   - **Not done:** nobody has listened to it. Everything above is measurement and theory (levels, clashes, tempos, the motif); whether the songs
+     are good tunes is a matter for your ears, and the notes are in `audio.py` as bars of text, so changing a melody is a one-line edit.
 7. **Strategy bot and balance tuning.** Reckless, conservative, songwriter, traveller, greedy, adaptive; hundreds of
    seeds; findings and the final parameter table in this spec.
 8. **Polish and release.** Readability, skip speed, clarity, cart limits, PNG cartridge, label, Library entry, README row.

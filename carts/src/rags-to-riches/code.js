@@ -21,12 +21,12 @@ ART.cityPos = [[40, 50], [66, 90], [128, 38], [176, 68], [212, 94]];
 
 // --- Sound (SPEC 5). The channel decides the voice: 0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample. ---
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
-const SONG = { title: 0, play: 1 };
+const SFX = { move: 0, select: 1, back: 2, pause: 3, refuse: 4, coin: 5, loss: 6, soldout: 7, cheer: 8, roll: 9, horn: 10, record: 11 };
+const SONG = { title: 0, tour: 1, concert: 2, writing: 3, road: 4, victory: 5, defeat: 6 };
 const SFX_CH = 1; // effects share channel 1 (pulse); the songs leave it free
 // Effects with noise (or saw or triangle) in them go on a channel with that voice. Fill this from audio.py:
 // node tools/devkit/music/sfx.mjs carts/rags-to-riches.nova 1 shows what each effect is.
-const SFX_VOICE_CH = { [SFX.hit]: 4 };
+const SFX_VOICE_CH = { [SFX.refuse]: 4, [SFX.cheer]: 4, [SFX.roll]: 4 };
 function fx(n) { sfx(n, n in SFX_VOICE_CH ? SFX_VOICE_CH[n] : SFX_CH); }
 
 // A song is only started if it is not already playing.
@@ -221,14 +221,23 @@ function init() {
   if (skipTitle) startTour(true); else toTitle();
 }
 
-function go(s) { state = s; timer = 0; }
-function toTitle() { go('title'); titleSel = 0; paused = false; helpOpen = false; pauseAsk = -1; tour = null; play(SONG.title); }
+/** The song for each screen. Songs that are already playing are not restarted, so moving between screens that share one keeps it going. */
+function musicFor(s) {
+  if (s === 'cityStart' || s === 'hub' || s === 'venue' || s === 'setup' || s === 'songs' || s === 'travel') return SONG.tour;
+  if (s === 'show' || s === 'result') return SONG.concert;
+  if (s === 'songResult') return SONG.writing;
+  if (s === 'travelResult') return SONG.road;
+  if (s === 'final') return isWin(tour.cash) ? SONG.victory : SONG.defeat;
+  return SONG.title; // the title, the intro, the initials, the records
+}
+function go(s) { state = s; timer = 0; play(musicFor(s)); }
+function toTitle() { go('title'); titleSel = 0; paused = false; helpOpen = false; pauseAsk = -1; tour = null; }
 
 /** A new tour: on the map to pick the first city (no fare, no week). direct (tests) lands on the hub in Rustport. */
 function startTour(direct = false) {
   tour = newTour(); hubSel = 0; show = null; act = null; paused = false; helpOpen = false; pauseAsk = -1; mapSel = 0;
   plan = { row: 0, venue: 0, price: TUNE.priceStart, ad: 0 };
-  go(direct ? 'hub' : 'cityStart'); play(SONG.play);
+  go(direct ? 'hub' : 'cityStart');
 }
 function startIntro(then) { introPage = 0; introThen = then; go('intro'); }
 function endIntro() {
@@ -283,7 +292,7 @@ function updateHelp() {
   if (pressed(LEFT)) { helpPage = (helpPage + HELP_PAGES.length - 1) % HELP_PAGES.length; fx(SFX.move); }
   if (pressed(RIGHT)) { helpPage = (helpPage + 1) % HELP_PAGES.length; fx(SFX.move); }
   if (pressed(A)) { fx(SFX.move); if (helpPage + 1 < HELP_PAGES.length) helpPage++; else helpOpen = false; }
-  if (pressed(B) || pressed(START)) { helpOpen = false; fx(SFX.select); }
+  if (pressed(B) || pressed(START)) { helpOpen = false; fx(SFX.back); }
 }
 
 /** The map: the cities in order from west to east. LEFT/UP go to the one before, RIGHT/DOWN to the next. */
@@ -296,7 +305,7 @@ function mapMove(list, cur) {
 /** Before week 1: choose where the tour starts. No fare, no week; B goes back to the title. */
 function updateCityStart() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (pressed(B)) { fx(SFX.select); toTitle(); return; }
+  if (pressed(B)) { fx(SFX.back); toTitle(); return; }
   mapSel = mapMove(CITIES.map((_, i) => i), mapSel);
   if (pressed(A)) { tour.city = mapSel; plan.venue = 0; fx(SFX.select); go('hub'); }
 }
@@ -308,7 +317,7 @@ function updateHub() {
   if (pressed(UP)) { hubSel = (hubSel + 2) % 3; fx(SFX.move); }
   if (pressed(DOWN)) { hubSel = (hubSel + 1) % 3; fx(SFX.move); }
   if (!pressed(A)) return;
-  if (!hubOk()[hubSel]) { fx(SFX.hit); return; }
+  if (!hubOk()[hubSel]) { fx(SFX.refuse); return; }
   fx(SFX.select);
   if (hubSel === 0) { venueSel = clamp(plan.venue, 0, city().venues.length - 1); go('venue'); }
   else if (hubSel === 1) go('songs');
@@ -319,7 +328,7 @@ const otherCities = () => CITIES.map((_, i) => i).filter((i) => i !== tour.city)
 /** Songwriting: the screen says what it costs (a week, no money) and what it gives; A writes, B goes back. */
 function updateSongs() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (pressed(B)) { fx(SFX.select); go('hub'); return; }
+  if (pressed(B)) { fx(SFX.back); go('hub'); return; }
   if (pressed(A)) writeSongsNow();
 }
 function writeSongsNow() {
@@ -327,32 +336,32 @@ function writeSongsNow() {
   const r = writeSongs(tour);
   act = { kind: 'songs', week: tour.week, ...r, line: rndi(0, SONG_LINES.length - 1) };
   tour.pop = r.pop; tour.fresh = r.fresh; tour.songs++; tour.actions++; tour.week++;
-  go('songResult'); fx(SFX.point);
+  go('songResult');                                                 // (its jingle starts with the screen)
 }
 
 /** Travel: pick one of the other four cities on the map, A pays the fare and goes, B goes back. */
 function updateTravel() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (pressed(B)) { fx(SFX.select); go('hub'); return; }
+  if (pressed(B)) { fx(SFX.back); go('hub'); return; }
   travelSel = mapMove(otherCities(), travelSel);
-  if (pressed(A)) { if (canTravel(tour.cash)) travelNow(travelSel); else fx(SFX.hit); }
+  if (pressed(A)) { if (canTravel(tour.cash)) travelNow(travelSel); else fx(SFX.refuse); }
 }
 function travelNow(dest) {
   if (state !== 'travel' || tour.actions >= TUNE.weeks || dest === tour.city || !canTravel(tour.cash)) return;
   act = { kind: 'travel', week: tour.week, from: tour.city, to: dest, fare: TUNE.fare, cashBefore: tour.cash, cash: tour.cash - TUNE.fare };
   tour.cash -= TUNE.fare; tour.spent += TUNE.fare; tour.city = dest; plan.venue = 0; tour.trips++; tour.actions++; tour.week++;
-  go('travelResult'); fx(SFX.select);
+  go('travelResult'); fx(SFX.horn);
 }
 
 /** The venue picker: UP/DOWN choose a room, A takes it if the rent can be paid, B goes back. */
 function updateVenue() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (pressed(B)) { fx(SFX.select); go('hub'); return; }
+  if (pressed(B)) { fx(SFX.back); go('hub'); return; }
   const n = city().venues.length;
   if (pressed(UP)) { venueSel = (venueSel + n - 1) % n; fx(SFX.move); }
   if (pressed(DOWN)) { venueSel = (venueSel + 1) % n; fx(SFX.move); }
   if (!pressed(A)) return;
-  if (city().venues[venueSel].rent > tour.cash) { fx(SFX.hit); return; }
+  if (city().venues[venueSel].rent > tour.cash) { fx(SFX.refuse); return; }
   fx(SFX.select);
   plan.venue = venueSel; plan.row = 0; plan.ad = Math.min(plan.ad, maxAd(tour.cash, venue().rent));
   go('setup');
@@ -361,7 +370,7 @@ function updateVenue() {
 /** Concert setup: UP/DOWN pick price or advertising, LEFT/RIGHT change by one step, L/R by a big step. */
 function updateSetup() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (pressed(B)) { fx(SFX.select); go('venue'); return; }
+  if (pressed(B)) { fx(SFX.back); go('venue'); return; }
   if (pressed(UP) || pressed(DOWN)) { plan.row ^= 1; fx(SFX.move); }
   const dir = (btnp(RIGHT) || btnp(R) ? 1 : 0) - (btnp(LEFT) || btnp(L) ? 1 : 0), big = btnp(L) || btnp(R);
   if (dir) {
@@ -371,7 +380,7 @@ function updateSetup() {
     if ((plan.row === 0 ? plan.price : plan.ad) !== before) fx(SFX.move);
   }
   if (pressed(A)) {
-    if (canAfford(tour.cash, venue(), plan.ad)) playConcert(); else fx(SFX.hit);
+    if (canAfford(tour.cash, venue(), plan.ad)) playConcert(); else fx(SFX.refuse);
   }
 }
 
@@ -384,15 +393,20 @@ function playConcert() {
   tour.cash = show.cash; tour.pop = show.pop; tour.fresh = show.fresh; tour.fatigue[tour.city] = show.fatigue;
   tour.concerts++; tour.best = Math.max(tour.best, show.net); tour.actions++; tour.week++;
   tour.tickets += show.att; tour.earned += show.revenue; tour.spent += show.rent + show.ad;
-  go('show'); fx(SFX.select);
+  go('show'); fx(SFX.roll);
 }
 
 /** The concert cutscene (placeholder crowd, art in Phase 5): the show is already settled; this only presents it. START pauses,
  *  A or B skips (after 10 frames, so the press that confirmed the show cannot skip it), and it ends by itself after SHOW_LEN frames. */
 const SHOW_LEN = 200;
+/** The sounds of a concert's result: a fanfare for a full house, otherwise coins or a sad slide; and a cheer from the crowd if it was big. */
+function resultCue(r) {
+  fx(r.att >= r.capacity ? SFX.soldout : r.net >= 0 ? SFX.coin : SFX.loss);
+  if (r.att < r.capacity && r.att * 100 >= r.capacity * 75) fx(SFX.cheer);
+}
 function updateShow() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (timer >= SHOW_LEN || (timer >= 10 && (pressed(A) || pressed(B)))) { go('result'); fx(show.net >= 0 ? SFX.point : SFX.hit); }
+  if (timer >= SHOW_LEN || (timer >= 10 && (pressed(A) || pressed(B)))) { go('result'); resultCue(show); }
 }
 
 /** After any action's results screen: A (not in the first 20 frames) goes on to the next week, or to the end after week 10. */
@@ -403,7 +417,7 @@ function updateResult() {
   if (tour.week > TUNE.weeks) toFinal(); else go('hub');
 }
 
-function toFinal() { go('final'); play(-1); fx(isWin(tour.cash) ? SFX.record : SFX.over); }
+function toFinal() { go('final'); }                                      // the victory or the defeat song starts with the screen
 
 /** After the tour: the cash is the score. A top-10 cash asks for initials. */
 function updateFinal() {
@@ -439,7 +453,7 @@ const PAUSE_ITEMS = ['RESUME', 'HOW TO PLAY', 'RESTART', 'QUIT TO TITLE'];
 function updatePause() {
   if (pauseAsk >= 0) {
     if (pressed(UP) || pressed(DOWN)) { askSel ^= 1; fx(SFX.move); }
-    if (pressed(B)) { pauseAsk = -1; fx(SFX.select); return; }
+    if (pressed(B)) { pauseAsk = -1; fx(SFX.back); return; }
     if (!pressed(A)) return;
     fx(SFX.select);
     const yes = askSel === 1, what = pauseAsk; pauseAsk = -1;
