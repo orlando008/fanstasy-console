@@ -31,6 +31,9 @@ const argv = process.argv.slice(2);
 const opt = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const fast = argv.includes('--fast'), all = argv.includes('--all');
 const named = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--base');
+// A mistyped option or cart name must not be taken for a cart (it used to be: `-v` made a cart `-v`, and packed it).
+const unknown = argv.filter((a, i) => (a.startsWith('-') && !['--fast', '--all', '--base'].includes(a)) || (!a.startsWith('-') && argv[i - 1] !== '--base' && !existsSync(join(ROOT, 'carts', 'src', a)) && !existsSync(join(ROOT, 'carts', `${a}.nova`))));
+if (unknown.length) { console.error(`verify.js: not an option or a cart: ${unknown.join(', ')} (options: --fast, --all, --base <ref>; a cart is a name in carts/)`); process.exit(2); }
 const git = (...a) => { try { return execFileSync('git', a, { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString(); } catch { return ''; } };
 
 const allCarts = readdirSync(join(ROOT, 'carts', 'src')).filter((n) => existsSync(join(ROOT, 'carts', 'src', n, 'code.js')));
