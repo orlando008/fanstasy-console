@@ -1,7 +1,7 @@
 # Ice Breakers: Cart Specification
 
 **Version:** 0.2 (draft)
-**Status:** Steps 1 to 6 built (the ice, the three goals, the twelve levels tuned with the bot, the level banner, the game over that names the goal, the hint, the ice art, the records and the win screen). The sound is still the starter's.
+**Status:** Steps 1 to 7 built (the ice, the three goals, the twelve levels tuned with the bot, the level banner, the game over that names the goal, the hint, the ice art, the records and the win screen, the audio). Step 8, the release, is next.
 **Cart source:** `carts/src/ice-breakers/` → `carts/ice-breakers.nova`
 
 ---
@@ -111,12 +111,35 @@ initials and the level reached (save slots 10 to 39); a game that cleared all tw
 
 ## 11. Audio
 
-Songs: 0 the title, 1 the game (calm: it plays for a long time). Effects (SFX in code.js): cursor and menu move, pick up,
-pause, swap, a swap that makes nothing (noise: channel 4), a match in five steps (higher for each link of a chain), level
-clear, game over, a reshuffle (noise: channel 4), a high score. Channel 1 is for effects (the songs only carry the tempo on it).
-Step 7 adds: an ice crack (a short bright tick on a free channel) and a goal reached (the level clear, with the ice cracks
-before it). Levels: the lead alone at most 0.07 RMS and 0.75 of the mix (`node tools/devkit/music/loud.mjs carts/ice-breakers.nova --check`).
-The songs and the effects are the starter's until step 7.
+Written by `audio.py` with the song toolkit; every number below is measured (`loud.mjs --check`, `sfx.mjs`, `clash.py`; the tests read the data).
+
+**Songs** (the drums are samples on channel 5, the leads quiet pulses with no vibrato; channel 1 is for effects and carries only the tempo):
+
+| Song | Plays | Key and tempo | Length | Median level | Lead |
+|---|---|---|---|---|---|
+| 0 | the title | A minor, 150 bpm | 12.8 s | 0.085 | 0.055 RMS, 0.65 of the mix |
+| 1 | levels 1 to 6 (and the start of every game) | F major, 120 bpm: calm; 8 bars of the starter's tune, then 8 that go to D minor and back | 29.9 s | 0.082 | 0.054, 0.65 |
+| 2 | levels 7 to 12 | D minor, 150 bpm: a little faster and lower, the drums driving; Dm Bb F C, then Gm Dm Bb C | 25.6 s | 0.084 | 0.055, 0.65 |
+
+The three songs are within the limits (the lead alone at most 0.07 RMS and 0.75 of the mix, no surge) and equally loud, so the change at level 7 is not a jump. The song changes once, at level 7: a level never restarts the song already playing (`play`). `clash.py` finds nothing. The title returns when the player quits or after the records.
+
+**Effects** (SFX in code.js; levels in RMS, effects 0.01 to 0.06):
+
+| # | Effect | Channel | Length | Level | When |
+|---|---|---|---|---|---|
+| 0 to 3 | cursor and menu move, pick up, pause, swap | 1 | 2 to 6 ticks | 0.005 to 0.03 | as named |
+| 4 | a swap that makes nothing | 4 (noise) | 9 ticks | 0.042 | the gems slide back |
+| 5 to 9 | a match, a step higher for each link of a chain | 1 | 8 ticks | 0.034 | each clear |
+| 10 | level clear (the goal reached) | 1 | 36 ticks | 0.050 | the goal met and the board at rest |
+| 11 | game over | 1 | 48 ticks | 0.047 | out of moves |
+| 12 | the board is stuck: reshuffled | 4 (noise) | 8 ticks | 0.053 | no move left |
+| 13 | a high score | 1 | 32 ticks | 0.049 | the initials |
+| 14 | **ice cracks** | 4 (noise) | 3 ticks | 0.019 | any ice breaks (once for each clear, not for each cell) |
+| 15 | **the pieces fall** | 1 | 8 ticks | 0.023 | three or more cells of ice break at once, as well as 14 |
+| 16 | **the game is won** | 1 | 115 ticks (1.9 s) | 0.053 | the last level cleared (instead of the game-over jingle) |
+| 17 | **a level opens** | 1 | 12 ticks | 0.034 | the banner appears |
+
+The ice cracks before the level-clear jingle: the crack comes when the clear is finished (after the flash), the jingle when the gems have landed and the goal is met. Noise effects go on channel 4 (`SFX_VOICE_CH`); `voices.mjs` confirms every effect plays on a channel with its voice.
 
 ## 12. Video layers
 
@@ -147,10 +170,10 @@ Sprites: 64 gems, the cursor and the HUD picture (66 of the 128, at most 16 on a
 
 | Asset | Budget |
 |---|---|
-| Code | 27.5 KB (`node tools/check.js ice-breakers`); the levels, the ice, the banner, the hint, the ice art and the win screen added 9.5 KB to the starter's 18 |
+| Code | 27.9 KB (`node tools/check.js ice-breakers`); the levels, the ice, the banner, the hint, the ice art, the win screen and the sound cues added 9.9 KB to the starter's 18 |
 | Tiles | 89 of 1,023 (BG region 53: the background 38, the ice 15; sprite region 36: the gems and cursor 28, the two HUD pictures 8) |
 | Sprites | 66 on the board, 81 on the win screen (128 in OAM, 32 per scanline: at most 10 are used) |
-| Songs / SFX | 2 songs, 14 SFX; the ice crack makes 15 |
+| Songs / SFX | 3 songs (10 of 64 patterns), 18 SFX; 13 of 32 instruments |
 
 ## 15. Implementation plan
 
@@ -182,6 +205,9 @@ Step 0 is done: the spec, the scaffold (the match-3 starter with placeholder num
    **Built:** the records show the level each game reached as `L7`, and a game that cleared every level as `WON` in gold: it is saved as level 13 (one past the last) in the same slot, so older saves (levels 1 to 12) still read right and the save version stays 1. The win screen: a gold border, `FINAL SCORE`, and 16 gems falling past the panel (`confetti`, drawn as sprites, so behind the panel); a lost game has the plain panel (the level and the goal missed) and no gems. The rest of the flow (the title, pause, initials, the order of the screens) was already right and is unchanged.
    **Results:** 163 checks pass (`01-flow` 48: 13 new, for the text of a level reached, the records' pixels for a won, a lost and an empty row, and the win screen: its ending in the top 10, the stored 13, the 16 moving gems, at most 32 sprites on a scanline (10 used), and a lost game having none of it). Five deliberate breakages were all caught (saving a win as its level: 2 checks; gems on every game over; no `WON` wording; the won row not gold; gems that do not move: 1 each). `verify.js --fast`, `smoke.mjs` and the soak pass (the soak never wins a game, so the win screen's cost is not in it: 81 sprites, no more than 10 on a line). Screenshots of the records screen (WON, L12, L7, L2 in a list) and of the win panel looked right.
 7. **Audio pass:** `audio.py`: the ice crack, the goal reached, the win fanfare; the songs' levels checked with `loud.mjs --check`.
+
+   **Built:** section 11. The game song doubled to 16 bars (30 s: the starter's 15 s tune came round too often for a game that is played for minutes) and a third, faster song in D minor for levels 7 to 12; four new effects (the ice crack in noise on channel 4, the pieces falling for three or more cells at once, the win jingle, the level-opening sting); the cues: `breakIce` returns how many cells broke so a clear makes one crack and at most one flick, `startLevel` plays the sting and the song for its level, and a won game plays the win jingle where the game-over jingle was played before (a bug since step 1: winning went through `gameOver()`).
+   **Results:** 183 checks pass (`05-audio.mjs`, 20 checks: the data and its limits, the songs' lengths and the leads, the effects' lengths, which song plays at each of the twelve levels and that only level 7 changes it, a restart from the pause menu returning to the first song, the crack on channel 4 and the flick on channel 1 for 1, 2, 3 and 5 cells of ice and for none, the crack before the level-clear jingle, the sting, and the win and game-over jingles each only where they belong). Six deliberate breakages were all caught (the win playing the game-over jingle: 1 check; the flick from 2 cells: 1; no crack for one cell: 2; the song from level 8: 2; no sting: 1; the crack on the pulse channel: 3). `loud.mjs --check`: all songs within the limits; `clash.py`: nothing; `voices.mjs`: every effect on a channel with its voice; `verify.js --fast`, `smoke.mjs` and the soak pass (the soak plays 12 of the 18 effects, among them the crack and the flick; it never wins, so the win jingle and the late song are only in the tests). What cannot be measured here is whether the music is any good: the harmony is checked by rule (chord tones on the beat, no clash with the bass), not by ear.
 8. **Release:** the PNG cart, the label (`node tools/release.js ice-breakers`), the Library entry, a README row, the spec's Results notes.
 
 Each step: build it, run `node tools/verify.js ice-breakers` and `node tools/devkit/smoke.mjs ice-breakers`, write its

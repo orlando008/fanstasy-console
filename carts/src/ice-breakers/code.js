@@ -27,11 +27,11 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 
 // --- Sound (SPEC 5). The channel decides the voice: 0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample. ---
 
-const SFX = { move: 0, select: 1, pause: 2, swap: 3, bad: 4, match: 5, clear: 10, over: 11, shuffle: 12, record: 13 }; // match: 5 to 9, higher in a chain
-const SONG = { title: 0, play: 1 };
+const SFX = { move: 0, select: 1, pause: 2, swap: 3, bad: 4, match: 5, clear: 10, over: 11, shuffle: 12, record: 13, ice: 14, shatter: 15, win: 16, level: 17 }; // match: 5 to 9, higher in a chain
+const SONG = { title: 0, play: 1, late: 2 }; // the game song is `play` for levels 1 to 6 and `late` for 7 to 12
 const SFX_CH = 1; // effects share channel 1 (pulse); the songs leave it free
 // Effects with noise (or saw or triangle) in them go on a channel with that voice (audio.py makes them).
-const SFX_VOICE_CH = { [SFX.bad]: 4, [SFX.shuffle]: 4 };
+const SFX_VOICE_CH = { [SFX.bad]: 4, [SFX.shuffle]: 4, [SFX.ice]: 4 };
 function fx(n) { sfx(n, n in SFX_VOICE_CH ? SFX_VOICE_CH[n] : SFX_CH); }
 
 // A song is only started if it is not already playing.
@@ -169,7 +169,11 @@ function dealBoard() {
 const nbrs = (i) => [i, i % COLS ? i - 1 : -1, i % COLS < COLS - 1 ? i + 1 : -1, i >= COLS ? i - COLS : -1, i < COLS * (ROWS - 1) ? i + COLS : -1].filter((j) => j >= 0);
 const iceCount = () => ice.filter(Boolean).length;
 /** A clear breaks the ice on its cells and beside them. */
-function breakIce(cells) { for (const i of cells) for (const j of nbrs(i)) if (ice[j]) { ice[j] = false; iceFx[j] = ICE_BREAK; } }
+function breakIce(cells) {
+  let n = 0;
+  for (const i of cells) for (const j of nbrs(i)) if (ice[j]) { ice[j] = false; iceFx[j] = ICE_BREAK; n++; }
+  return n; // how many cells of ice broke
+}
 /** Show the ice on BG1: the frost on an iced cell, then the cracks and the shards of one that has just broken (the pictures are in Map RAM, ART.scenes ice0 to ice3). */
 function paintIce() {
   for (let i = 0; i < COLS * ROWS; i++) {
@@ -206,7 +210,7 @@ function bestSwap() {
 }
 /** Start level n: its goal, its moves and its ice, and a new board dropping in under the level's opening banner. */
 function startLevel(n) {
-  level = n; lev = LEVELS[n - 1]; moves = lev.moves; levelPts = 0; gemsGot = 0; chain = 0; sel = -1; introT = INTRO_FRAMES; idleT = 0; hint = null;
+  level = n; lev = LEVELS[n - 1]; moves = lev.moves; levelPts = 0; gemsGot = 0; chain = 0; sel = -1; introT = INTRO_FRAMES; idleT = 0; hint = null; fx(SFX.level); play(n > 6 ? SONG.late : SONG.play);
   ice = Array(COLS * ROWS).fill(false); iceFx.fill(0);
   for (const i of lev.ice) ice[i] = true;
   dealBoard();
@@ -261,7 +265,6 @@ function startGame() {
   score = 0; won = false; cursor = 3 * COLS + 3;
   paused = false; timer = 0; state = 'play';
   startLevel(1);
-  play(SONG.play);
 }
 
 // --- Update ---
@@ -344,7 +347,8 @@ function startPop() {
   fx(SFX.match + Math.min(chain - 1, 4));
 }
 function afterPop() {
-  breakIce(popCells);
+  const broke = breakIce(popCells);
+  if (broke) { fx(SFX.ice); if (broke >= 3) fx(SFX.shatter); } // a crack; and the pieces falling when three or more cells go at once
   for (const i of popCells) { if (grid[i].t === lev.kind) gemsGot++; grid[i] = null; }
   popCells = [];
   collapse();
@@ -370,7 +374,7 @@ function afterWin() {
 }
 
 function gameOver() {
-  state = 'over'; timer = 0; play(-1); fx(SFX.over); phase = 'idle'; sel = -1; introT = 0;
+  state = 'over'; timer = 0; play(-1); fx(won ? SFX.win : SFX.over); phase = 'idle'; sel = -1; introT = 0;
   rank = insertTop({ score, initials: lastInitials(), level: won ? LEVELS.length + 1 : level });
 }
 
