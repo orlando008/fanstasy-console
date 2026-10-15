@@ -1,12 +1,30 @@
 {
- "colors": {},
+ "colors": {
+  "c3a": 54,
+  "c3b": 55,
+  "c4a": 71,
+  "c5a": 91,
+  "c5b": 92,
+  "c5c": 93,
+  "t_bld": 26,
+  "t_ground": 22,
+  "t_roof": 28,
+  "t_s3": 20
+ },
  "palettes": {
   "bg1": {
    "base": 16,
    "colors": {
+    "bld": 10,
     "dash": 8,
-    "hill": 6,
+    "far": 9,
+    "gold": 13,
+    "goldd": 14,
+    "ground": 6,
+    "lit": 11,
+    "rag": 15,
     "road": 7,
+    "roof": 12,
     "s0": 1,
     "s1": 2,
     "s2": 3,
@@ -14,35 +32,533 @@
     "star": 5
    }
   },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "forest": 10,
+    "land": 4,
+    "landd": 5,
+    "mount": 7,
+    "mountl": 8,
+    "ocean": 1,
+    "oceand": 2,
+    "oceanl": 3,
+    "route": 9,
+    "sand": 6,
+    "white": 11
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "black": 10,
+    "floor": 4,
+    "floorl": 5,
+    "mortar": 3,
+    "neonb": 7,
+    "neonp": 6,
+    "sign": 12,
+    "stage": 11,
+    "wall": 1,
+    "walld": 2,
+    "wood": 8,
+    "woodd": 9
+   }
+  },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "curtain": 8,
+    "curtaind": 9,
+    "curtainl": 10,
+    "floor": 3,
+    "floorl": 4,
+    "gold": 11,
+    "goldd": 12,
+    "shadow": 13,
+    "spot": 7,
+    "stage": 5,
+    "stagel": 6,
+    "trim": 14,
+    "wall": 1,
+    "walld": 2
+   }
+  },
+  "bg5": {
+   "base": 80,
+   "colors": {
+    "black": 14,
+    "dark": 1,
+    "darkl": 2,
+    "floor": 4,
+    "floorl": 5,
+    "lA": 11,
+    "lB": 12,
+    "lC": 13,
+    "light": 10,
+    "screen": 8,
+    "screenl": 9,
+    "stage": 3,
+    "truss": 6,
+    "trussd": 7
+   }
+  },
+  "bg6": {
+   "base": 96,
+   "colors": {
+    "hair1": 7,
+    "hair2": 8,
+    "hair3": 9,
+    "shirt1": 10,
+    "shirt2": 11,
+    "shirt3": 12,
+    "shirt4": 13,
+    "sil": 1,
+    "sil2": 2,
+    "skin1": 3,
+    "skin2": 4,
+    "skin3": 5,
+    "skin4": 6
+   }
+  },
+  "bg7": {
+   "base": 112,
+   "colors": {
+    "black": 10,
+    "dawn1": 12,
+    "dawn2": 13,
+    "floor": 5,
+    "floorl": 6,
+    "hillp": 15,
+    "poster1": 7,
+    "poster2": 8,
+    "poster3": 9,
+    "sun": 14,
+    "wall": 1,
+    "walld": 2,
+    "white": 11,
+    "wood": 3,
+    "woodd": 4
+   }
+  },
   "spr0": {
    "base": 128,
    "colors": {
     "body": 2,
-    "edge": 1,
-    "glass": 3,
-    "light": 4,
-    "stripe": 5,
-    "tire": 6
+    "bodyd": 3,
+    "bodyl": 4,
+    "chrome": 11,
+    "glass": 5,
+    "glassd": 6,
+    "hub": 10,
+    "light": 7,
+    "outline": 1,
+    "rust": 12,
+    "stripe": 8,
+    "tyre": 9,
+    "white": 13
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "boot": 10,
+    "hair": 4,
+    "hairl": 5,
+    "jacket": 6,
+    "jacketd": 7,
+    "jeans": 8,
+    "jeansd": 9,
+    "mic": 12,
+    "outline": 1,
+    "skin": 2,
+    "skind": 3,
+    "white": 11
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "antenna": 9,
+    "blush": 13,
+    "eye": 5,
+    "gold": 8,
+    "keybd": 11,
+    "keys": 10,
+    "outline": 1,
+    "shirt": 6,
+    "shirtd": 7,
+    "skin": 2,
+    "skind": 3,
+    "skinl": 4,
+    "stand": 12
+   }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "brass": 10,
+    "brassd": 11,
+    "drum": 8,
+    "drumd": 9,
+    "mohawk": 4,
+    "mohawkd": 5,
+    "outline": 1,
+    "skin": 2,
+    "skind": 3,
+    "stick": 12,
+    "stud": 13,
+    "tank": 6,
+    "tankd": 7
+   }
+  },
+  "spr4": {
+   "base": 192,
+   "colors": {
+    "cheek": 13,
+    "ink": 11,
+    "outline": 1,
+    "paper": 9,
+    "paperd": 10,
+    "shirt": 6,
+    "shoe": 12,
+    "skin": 2,
+    "skind": 3,
+    "stache": 8,
+    "suit": 4,
+    "suitd": 5,
+    "tie": 7
+   }
+  },
+  "spr5": {
+   "base": 208,
+   "colors": {
+    "brick": 2,
+    "brickd": 3,
+    "curtain": 9,
+    "curtaind": 10,
+    "gold": 8,
+    "light": 15,
+    "neonb": 7,
+    "neonp": 6,
+    "outline": 1,
+    "sign": 14,
+    "silver": 11,
+    "steel": 12,
+    "steeld": 13,
+    "wood": 4,
+    "woodd": 5
+   }
+  },
+  "spr6": {
+   "base": 224,
+   "colors": {
+    "bag": 12,
+    "bagd": 13,
+    "cloud": 6,
+    "cloudd": 7,
+    "coin": 2,
+    "coind": 3,
+    "coinl": 4,
+    "green": 9,
+    "heart": 11,
+    "outline": 1,
+    "rain": 8,
+    "red": 10,
+    "spark": 5
+   }
+  },
+  "spr7": {
+   "base": 240,
+   "colors": {
+    "cactus": 5,
+    "cactusd": 6,
+    "outline": 1,
+    "palm": 13,
+    "palmd": 14,
+    "pine": 7,
+    "pined": 8,
+    "rust": 2,
+    "rustl": 3,
+    "sand": 4,
+    "sea": 15,
+    "tower": 10,
+    "towerd": 11,
+    "trunk": 9,
+    "win": 12
    }
   }
  },
  "scenes": {
-  "field": {
+  "crowdkit": {
+   "h": 2,
+   "mx": 192,
+   "my": 28,
+   "pal": 6,
+   "w": 16
+  },
+  "hub0": {
    "h": 28,
    "mx": 0,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  },
+  "hub1": {
+   "h": 28,
+   "mx": 32,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  },
+  "hub2": {
+   "h": 28,
+   "mx": 64,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  },
+  "hub3": {
+   "h": 28,
+   "mx": 96,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  },
+  "hub4": {
+   "h": 28,
+   "mx": 128,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  },
+  "intro0": {
+   "h": 28,
+   "mx": 96,
+   "my": 28,
+   "pal": 7,
+   "w": 32
+  },
+  "intro1": {
+   "h": 28,
+   "mx": 128,
+   "my": 28,
+   "pal": 7,
+   "w": 32
+  },
+  "intro2": {
+   "h": 28,
+   "mx": 160,
+   "my": 28,
+   "pal": 7,
+   "w": 32
+  },
+  "ledger": {
+   "h": 28,
+   "mx": 192,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  },
+  "map": {
+   "h": 28,
+   "mx": 224,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "stage0": {
+   "h": 28,
+   "mx": 0,
+   "my": 28,
+   "pal": 3,
+   "w": 32
+  },
+  "stage1": {
+   "h": 28,
+   "mx": 32,
+   "my": 28,
+   "pal": 4,
+   "w": 32
+  },
+  "stage2": {
+   "h": 28,
+   "mx": 64,
+   "my": 28,
+   "pal": 5,
+   "w": 32
+  },
+  "title": {
+   "h": 28,
+   "mx": 160,
    "my": 0,
    "pal": 1,
    "w": 32
   }
  },
  "sprites": {
-  "van": {
-   "pal": 0,
+  "arena": {
+   "pal": 5,
+   "size": 32,
+   "tile": 960
+  },
+  "bag": {
+   "pal": 6,
    "size": 16,
-   "tile": 256
+   "tile": 972
+  },
+  "bar": {
+   "pal": 5,
+   "size": 32,
+   "tile": 904
+  },
+  "city0": {
+   "pal": 7,
+   "size": 16,
+   "tile": 996
+  },
+  "city1": {
+   "pal": 7,
+   "size": 16,
+   "tile": 998
+  },
+  "city2": {
+   "pal": 7,
+   "size": 16,
+   "tile": 1000
+  },
+  "city3": {
+   "pal": 7,
+   "size": 16,
+   "tile": 1002
+  },
+  "city4": {
+   "pal": 7,
+   "size": 16,
+   "tile": 1004
+  },
+  "cloud0": {
+   "pal": 6,
+   "size": 16,
+   "tile": 964
+  },
+  "cloud1": {
+   "pal": 6,
+   "size": 16,
+   "tile": 968
+  },
+  "coin0": {
+   "pal": 6,
+   "size": 8,
+   "tile": 760
+  },
+  "coin1": {
+   "pal": 6,
+   "size": 8,
+   "tile": 762
+  },
+  "coin2": {
+   "pal": 6,
+   "size": 8,
+   "tile": 764
+  },
+  "coin3": {
+   "pal": 6,
+   "size": 8,
+   "tile": 766
+  },
+  "dot0": {
+   "pal": 1,
+   "size": 32,
+   "tile": 772
+  },
+  "dot1": {
+   "pal": 1,
+   "size": 32,
+   "tile": 840
+  },
+  "grubb0": {
+   "pal": 4,
+   "size": 32,
+   "tile": 832
+  },
+  "grubb1": {
+   "pal": 4,
+   "size": 32,
+   "tile": 900
+  },
+  "ring0": {
+   "pal": 6,
+   "size": 16,
+   "tile": 966
+  },
+  "ring1": {
+   "pal": 6,
+   "size": 16,
+   "tile": 970
+  },
+  "spark0": {
+   "pal": 6,
+   "size": 8,
+   "tile": 761
+  },
+  "spark1": {
+   "pal": 6,
+   "size": 8,
+   "tile": 763
+  },
+  "spark2": {
+   "pal": 6,
+   "size": 8,
+   "tile": 765
+  },
+  "spark3": {
+   "pal": 6,
+   "size": 8,
+   "tile": 767
+  },
+  "spike0": {
+   "pal": 3,
+   "size": 32,
+   "tile": 780
+  },
+  "spike1": {
+   "pal": 3,
+   "size": 32,
+   "tile": 896
+  },
+  "star": {
+   "pal": 6,
+   "size": 16,
+   "tile": 974
+  },
+  "theatre": {
+   "pal": 5,
+   "size": 32,
+   "tile": 908
+  },
+  "van0": {
+   "pal": 0,
+   "size": 32,
+   "tile": 768
+  },
+  "van1": {
+   "pal": 0,
+   "size": 32,
+   "tile": 836
+  },
+  "zorp0": {
+   "pal": 2,
+   "size": 32,
+   "tile": 776
+  },
+  "zorp1": {
+   "pal": 2,
+   "size": 32,
+   "tile": 844
   }
  },
  "tiles": {},
- "used": 23,
+ "used": 966,
  "version": 1
 }

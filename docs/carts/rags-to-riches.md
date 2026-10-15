@@ -1,7 +1,7 @@
 # Rags to Riches: Cart Specification
 
-**Version:** 0.5 (Phase 4 built)
-**Status:** In progress: Phases 1 to 4 of 8 (the vertical slice, the economic rules, the full ten-week tour with all three actions, and the game flow and controls) are built; the rest of the plan (section 15) is not
+**Version:** 0.6 (Phase 5 built)
+**Status:** In progress: Phases 1 to 5 of 8 (the vertical slice, the economic rules, the full ten-week tour, the game flow and controls, and the art) are built; the rest of the plan (section 15) is not
 **Cart source:** `carts/src/rags-to-riches/` → `carts/rags-to-riches.nova`
 
 A single-player, turn-based band-management game. It is a **spiritual successor** to an old web game about running an
@@ -68,8 +68,9 @@ start city is free, the songs and the trip have a confirm step, a concert is con
 
 ## 4. Screen layout
 
-256 × 224. The picture is on BG0 (a night-sky backdrop, placeholder); the van and later the band are
-sprites; every word and number is on the overlay (the built-in 8 × 8 font, drawn with a one-pixel shadow). Body copy is
+256 × 224. The pictures are backdrops on the BG layers (section 12) and sprites (the cast, the venues, coins and clouds); every word and
+number is on the overlay (the built-in 8 × 8 font, drawn with a one-pixel shadow). The overlay is always drawn over everything, so a panel
+hides the art behind it: screens that show sprites leave windows in their panels, and the result screens have no panels at all. Body copy is
 kept to short lines of at most 28 characters; there are no dense tables.
 
 **Week hub:**
@@ -79,15 +80,15 @@ kept to short lines of at most 28 characters; there are no dense tables.
 | WEEK 04/10        CASH $1,240  |
 | CITY: RUSTPORT         POP 42  |
 | FRESHNESS: 65     GOAL $5,000  |
-|--------------------------------|
-|      > PLAY A CONCERT          |
-|        WRITE NEW SONGS         |
-|        TRAVEL ($20)            |
-|     CROWD SMALL  ROOMS CHEAP   |
-|     RIVALS FEW  FANS WARM      |
-|                                |
-|    EACH ACTION TAKES ONE WEEK  |
-|            [van on the road]   |
+|  +--------------------------+  |
+|  |  > PLAY A CONCERT        |  |
+|  |    WRITE NEW SONGS       |  |
+|  |    TRAVEL ($20)         |  |
+|  |  CROWD SMALL  ROOMS CHEAP|  |
+|  |  RIVALS FEW  FANS WARM   |  |
+|  +--------------------------+  |
+|  [the city's skyline, lit windows]
+|  [van] [Dot] [Zorp] [Spike]    |
 |  A: SELECT   START: PAUSE      |
 +--------------------------------+
 ```
@@ -97,13 +98,15 @@ after the concerts already played there (section 5.8). An action that cannot be 
 it, the line under the menu says why in red (`NEED $35 FOR ANY ROOM`, `NEED $20 FOR THE BUS`); A on it buzzes.
 Songwriting is never greyed.
 
-**Title:** the name, `RAISE $5,000 IN 10 WEEKS`, the four menu items, the van on the road.
+**Title:** the logo (RAGS in torn grey letters, TO, RICHES in shining gold) over a night skyline, the four menu items in a panel, `RAISE $5,000 IN 10 WEEKS`, and the van and the band on the road.
 
-**Intro (placeholder art):** three panels, each a heading, a window onto the sky with the van in it (Phase 5 draws the comic panel
-there), and three lines of story: the rehearsal room, the landlord's $5,000 in ten weeks, the plan. `A: NEXT   START: SKIP`.
+**Intro:** three painted panels (section 12), each with its cast standing on it as sprites, under a heading and above three lines of story: the
+rehearsal room (Dot, Zorp and Spike in a damp room with speaker stacks and a bare bulb), the bad news (Mr. Grubb, the landlord, selling the
+building, at a door with a FOR SALE board), and the plan (the van on the road at dawn, with exhaust). `A: NEXT   START: SKIP`.
 
-**Map (placeholder art):** the five cities as dots joined by a road, from west to east (Rustport, Sunvale, Cedar City, Metro Heights,
-Coastline), with a gold highlighted dot. Under it a card for the highlighted city: its name, `CROWD x  ROOMS y`, `RIVALS z  FANS w`.
+**Map:** the five cities as little landmarks on a continent of cells (a harbour crane for Rustport, a cactus under the sun for Sunvale, pines for
+Cedar City, towers for Metro Heights, a palm and the sea for Coastline), from west to east, joined by a dashed white road whose dashes crawl;
+a ring breathes round the highlighted city. Under it a card for that city: its name, `CROWD x  ROOMS y`, `RIVALS z  FANS w`.
 On the start-city map the header is `WHERE DOES THE TOUR START?` and the footer `NO FARE AND NO WEEK USED`; on the travel map the
 header is `WHERE TO?  $20 AND A WEEK`, the band's own city is marked `YOU` and cannot be picked, and the card ends with the cash before and
 after the fare and the week used.
@@ -111,11 +114,13 @@ after the fare and the week used.
 **Help:** four pages over whatever is behind it (the title or a paused tour): THE GOAL, CONCERTS, SONGS AND TRAVEL, CONTROLS.
 At most 12 lines of 28 characters a page.
 
-**Concert cutscene (placeholder art):** `LIVE AT <venue>`, the van on a stage, 48 crowd heads that fill up to the room's turnout over two
-seconds beside a counter (`23 OF 40 CAME`), then a line for the turnout (`SOLD OUT! THE ROOM ERUPTS!` at 100 %, `WHAT A NIGHT!` from 75,
-`A GOOD, LOUD CROWD` from 45, `A THIN BUT KIND CROWD` from 20, `CRICKETS... AND ONE DOG` below). It lasts 200 frames (3.3 seconds) and
-ends on the results by itself; A or B skips it after 10 frames; START pauses it. The show is already settled when it begins, so skipping
-changes nothing.
+**Concert cutscene:** the band (Zorp, Dot, Spike) on the stage of the venue the band is playing: a bar (brick wall, LIVE and BAND in neon, a dartboard),
+a theatre (red curtains, gold arch, two spotlights) or an arena (truss, a big screen, six coloured lights). The stage lights flicker (palette
+changes). In front, 48 heads in three rows fill up to the room's turnout over two seconds (heads fill in a scattered order and wave their arms; the
+bigger the crowd, the more arms), beside a panel with `LIVE AT <venue>`, a counter (`23 OF 40 CAME`) and a line for the turnout (`SOLD OUT! THE
+ROOM ERUPTS!` at 100 %, `WHAT A NIGHT!` from 75, `A GOOD, LOUD CROWD` from 45, `A THIN BUT KIND CROWD` from 20, `CRICKETS... AND ONE DOG`
+below). It lasts 200 frames (3.3 seconds) and ends on the results by itself; A or B skips it after 10 frames; START pauses it. The show is
+already settled when it begins, so skipping changes nothing.
 
 **Pause:** `RESUME`, `HOW TO PLAY`, `RESTART`, `QUIT TO TITLE`; the last two ask `RESTART THE TOUR?` / `QUIT TO THE TITLE?`, `THIS TOUR WILL BE
 LOST`, `NO, KEEP PLAYING` (selected) and `YES, DO IT`. RESTART begins again on the start-city map.
@@ -125,26 +130,29 @@ LOST`, `NO, KEEP PLAYING` (selected) and `YES, DO IT`. RESTART begins again on t
 `NOT IN THE TOP 10`). Cash always equals $400 plus ticket sales minus rent, ads and fares (a test checks it).
 
 **Records:** `TOP 10 BY FINAL CASH`: rank, initials, cash, and the concerts and trips of the tour (`6C 2T`), the new entry blinking; a line says
-how ties are broken.
+how ties are broken. On the ledger backdrop.
 
-**Venue picker:** the city's three venues, each with its name, `ROOM FOR n` and `RENT $n`. A venue whose rent is over
+**Venue picker:** the city's three venues, each with its icon (a bar, a theatre, an arena), its name, `ROOM FOR n` and `RENT $n`. A venue whose rent is over
 the cash is greyed and shows `NEED $n` in red; A on it buzzes. A takes the venue, B goes back to the hub.
 
-**Concert setup:** the venue (name, capacity, rent), then two rows (TICKET PRICE, ADVERTISING), the **total upfront
+**Concert setup:** the venue (its icon, name, capacity, rent), then two rows (TICKET PRICE, ADVERTISING), the **total upfront
 cost**, the **cash left after costs**, and the **audience forecast** (LOW / FAIR / STRONG). If the cost is over the cash,
 the footer is replaced by the reason (`CAN'T PAY: B TO GO BACK`) and A is refused with a buzz. B goes back to the venues.
 
-**Songs:** `WRITE NEW SONGS`, `FRESHNESS 70 > 100`, `POPULARITY 18 > 26`, `COST $0 AND A WEEK`, `INCOME THIS WEEK $0`, `THIS USES
+**Songs:** the band (Zorp, Dot, Spike) in a window, `WRITE NEW SONGS`, `FRESHNESS 70 > 100`, `POPULARITY 18 > 26`, `COST $0 AND A WEEK`, `INCOME THIS WEEK $0`, `THIS USES
 WEEK n OF 10`, `A: WRITE   B: BACK`. A confirms: no week is spent before it. **Song result:** a one-line joke (six, picked with the
-seeded generator), freshness and popularity old > new, `TICKETS SOLD 0`, `INCOME $0`, the cash.
+seeded generator), freshness and popularity old > new, `TICKETS SOLD 0`, `INCOME $0`, the cash; sparks twinkle in the margins and Dot and Zorp
+stand in the bottom corners.
 
 **Travel:** `WHERE TO?  $20 AND A WEEK`, the four other cities (with `FANS tired` for one already played), the highlighted city's
 words and its cheapest rent, `THIS USES WEEK n OF 10`. A pays and goes; B goes back. **Travel result:** `from > to`, an arrival line
-for each city, `BUS FARE -$20`, the cash, `CONCERT THIS WEEK NONE`, the city's words and fans.
+for each city, `BUS FARE -$20`, the cash, `CONCERT THIS WEEK NONE`, the city's landmark, its words and fans; the van drives across the screen.
 
 **Concert result:** `19 OF 25 CAME` with an occupancy bar (`SOLD OUT! 25 CAME` in gold when the room is full), then `TICKETS 19 X $10  $190`,
 `VENUE RENT -$35`, `ADVERTISING -$0`, `NET +$155`, `CASH NOW $555`, `POPULARITY 18 > 22 (+4)`, `FRESHNESS 70 > 60`, and
-one line naming the main factor.
+one line naming the main factor. On the ledger backdrop, with no panel: coins rain down the margins after a profit (more coins for a bigger one,
+at most 10), rain clouds sit in the corners after a loss, and a sold-out house gets a spinning star on each side and a sparkle. The won final
+screen is a shower of coins with a star on each side and a money bag with sparkles; the lost one has rain clouds.
 
 ## 5. The rules
 
@@ -332,11 +340,46 @@ play on channel 4. Phase 6 adds a concert groove, a writing jingle, a travel jin
 lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x where it enters
 (`node tools/devkit/music/loud.mjs carts/rags-to-riches.nova --check`; playbook section 5).
 
-## 12. Video layers
+## 12. Video layers and art
 
-BG0: the backdrop (a night sky with stars, one 32 × 28 scene). Sprites: the van (Phase 1), the band, venues and crowd
-later. Overlay: all text, panels and numbers. The art is made in code by `carts/src/rags-to-riches/art.py` (the art
-toolkit, `tools/devkit/art/kit.py`).
+The art is made in code (`carts/src/rags-to-riches/art.py`, with `rtr_cast.py` for the sprites and `rtr_world.py` for the backdrops, on the art
+toolkit `tools/devkit/art/kit.py`): `verify.js` regenerates it and fails if the committed files differ. Everything is original: the band, the
+landlord, the van, the venues, the cities.
+
+**The cast.** *Dot* (the singer: a human with spiky pink hair, a yellow jacket and a microphone), *Zorp* (the synth player: an alien with
+teal skin, big eyes and antennae with glowing bobbles, behind a keyboard), *Spike* (the drummer: a punk with a green mohawk behind a drum kit,
+sticks swapping each frame), *Mr. Grubb* (the landlord: bald, a big moustache, a brown suit, an eviction notice), and *the Rustbucket* (the van:
+orange, with a stripe, a roof rack with an amp, a star sticker). Each is a 32 × 32 sprite with two frames (the idle bounce); the van bounces on
+its road.
+
+**Layers.** BG0 is the front layer: it holds a screen's backdrop (a scene) and, in the concert, the crowd. BG1 holds the stage in the concert (behind
+the crowd on BG0) and is off otherwise. BG2 is unused. Sprites are all at priority 3 (above the backgrounds). The overlay carries every word.
+
+**Palettes.** BG palette 0 is left to the overlay's text colours. BG 1 night (the hub, the title, the ledger; each city tints four of its
+colours at run time: the horizon, the ground, the buildings and the neon), 2 the map, 3 the bar, 4 the theatre, 5 the arena, 6 the crowd, 7 the
+intro's warm paper colours. Sprite palettes 0 to 7: the van, Dot, Zorp, Spike, Mr. Grubb, the venues, fx (coins, sparks, clouds, rings, the bag, the
+star) and the map landmarks. The stage lights and the city tints are `color()` calls on named entries (`ART.colors`).
+
+**Scenes** (cells in Map RAM; tile cost). Backdrops are built from 8 × 8 cells that repeat (the kit stores identical and flipped tiles once), which is
+why a full picture is cheap:
+
+| Scene | What | Tiles |
+|---|---|---:|
+| `hub0` to `hub4` | The sky, the city's skyline (Rustport: warehouses, cranes, a smokestack; Sunvale: adobe, domes, cacti, a low sun; Cedar City: log halls, pines, a bell tower; Metro Heights: towers; Coastline: hotels, palms, the sea), the ground and the road | 60, 24, 65, 19, 48 |
+| `title` | The sky over the Metro Heights skyline with the logo | 132 |
+| `ledger` | A dark ledger page with a double rule and gold corner studs | 13 |
+| `map` | A continent of cells (beaches, mountains, forests, desert) on the sea | 36 |
+| `stage0` to `stage2` | The bar, the theatre, the arena | 65, 55, 65 |
+| `intro0` to `intro2` | The rehearsal room, the hallway with the FOR SALE board, the road at dawn | 20, 35, 43 |
+| `crowdkit` | Four heads seen from behind, two poses each (arms down, arms up): the code copies them into the crowd | 26 |
+
+**The crowd** is 48 slots (3 rows of 16) on BG0 over Map RAM cells (192, 40) to (223, 45), written with `mset` each frame from the crowd kit: a slot
+is filled if its place in a scattered order is below the number of heads, and its arms go up on a rolling beat (a share of the heads that grows with
+the turnout).
+
+**Sprites on screen.** The most is on the hub and the result screens (the van, three band members, coins): in 18,000 frames of random play the
+most was 10 in a frame and 5 on a line (a test checks the console's limits of 128 and 32). While the pause menu or the help is up, sprites that
+would poke out of its panel are left out (the overlay is drawn over sprites, so a panel would hide them, but not their edges).
 
 ## 13. Persistence (save slots)
 
@@ -355,9 +398,9 @@ before the tie-break slot); a save of any other version is cleared when the cart
 
 | Asset | Budget |
 |---|---|
-| Code | 40 KB of the 64 KB limit (`node tools/check.js rags-to-riches`) |
-| Tiles | 23 (19 background, 4 sprite) of 1,024 |
-| Sprites | 1 on screen (128 in OAM, 32 per line) |
+| Code | 48 KB of the 64 KB limit (`node tools/check.js rags-to-riches`) |
+| Tiles | 966 of 1,023: 706 background (limit 759 by the region) and 260 sprite (limit 264) |
+| Sprites | 32 pictures; at most 10 on screen and 5 on a line in 18,000 frames of random play (128 in OAM, 32 per line) |
 | Songs / SFX | 2 of 8 songs, 7 of 64 effects (the scaffold's) |
 
 ## 15. Implementation plan
@@ -474,6 +517,28 @@ between phases.
      (the overlay is drawn over sprites, so a screen with a sprite leaves its window unfilled); Phase 5 replaces them with
      art. The strings of the intro and the help are final unless you want different words.
 5. **Art and character personality.** Band, van, venues, city map, animated crowd, intro panels, flourishes.
+
+   - **Built:** the art script (`art.py`, `rtr_cast.py`, `rtr_world.py`): 32 sprites (section 12), 15 scenes, 7 BG and 8 sprite palettes. Every
+     screen has its backdrop (`drawBackdrop`): the title with the logo, three intro panels, the map with landmarks and a crawling road, each city's
+     skyline on the hub (tinted with `color()` for that city), the three stages with flickering lights, the ledger under the results. The
+     cast stands where it belongs: the van and the band on the hub's and the title's road, the band in the songs window and on the stage, Mr.
+     Grubb in the second intro panel. The concert cutscene's crowd is 48 heads that fill to the turnout and wave. The result screens lost their panels
+     for the ledger, with coins, clouds, stars, sparks and a driving van as flourishes. Venue icons in the picker and the setup (panels with windows
+     cut in them). The intro text now names the band and the landlord. Sprites are left out while the pause menu or the help covers them.
+   - **Results:** `node tools/verify.js rags-to-riches` passes (350 test checks: 75 flow, 65 art, 43 economy, 8 balance, 70 actions, 89 flow of
+     Phase 4), the soak is clean and the smoke test in the real console, driven by controller keys, reports no errors. The 65 art checks cover the
+     manifest (every sprite and scene there, sizes, no holes, city positions west to east, 966 tiles of 1,023), the backdrop of every screen
+     (including the two layers of the concert), the cast on each screen and its two-frame idle, the five city tints and the lit windows, the venue
+     icons, the map's landmarks and ring, the intro panels' cast, the crowd (it fills up, ends at four cells for each head of the room's share, and
+     grows with the turnout), the stage lights' palette cycle, the flourishes (coins by profit and at most 10, clouds on a loss, stars on a full
+     house, a van that drives, the won and lost final screens), the console's limits over 18,000 frames of random play, the pause menu hiding sprites,
+     and the 28-character rule. Mutation checks: with the city tint switched off, or five heads added to every crowd, the tests fail. I looked at every
+     screen at native size; what I fixed on the way: the crowd was behind the stage (BG0 is the front layer, so the stage is on BG1), text that
+     overlapped (the travel cash line, the venue rows, the title menu, the final screen's last lines, and the records' tie line over the tenth row
+     since Phase 4), and a map that cost 184 tiles (it is now a continent of cells, 36 tiles, and the dashed road is drawn by the code).
+   - **Budget.** The tiles were the constraint: the logo (132 tiles), the map and the stages first overran the 1,023, and the intro panels were
+     rebuilt from repeated cell-aligned pieces (98 tiles for the three) to fit. 57 tiles are free in total (53 in the background region, 4 in the
+     sprite region): Phase 6 and 8 need none, but a new picture must be paid for by simplifying another.
 6. **Sound and music.** Cues, concert SFX, menu SFX, victory and defeat; measured loudness.
 7. **Strategy bot and balance tuning.** Reckless, conservative, songwriter, traveller, greedy, adaptive; hundreds of
    seeds; findings and the final parameter table in this spec.
