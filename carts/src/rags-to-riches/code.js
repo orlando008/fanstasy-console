@@ -56,16 +56,16 @@ const TUNE = {
 // competition: the share of the crowd lost to rival bands. crowd/rooms/rivals are the words the player sees. Each city has
 // three venues (a bar, a theatre, an arena); rent is paid up front.
 const CITIES = [
-  { name: 'RUSTPORT', crowd: 'SMALL', rooms: 'CHEAP', rivals: 'FEW', pool: 50, priceScale: 30, competition: 0.02,
-    venues: [{ name: 'THE SOGGY BOOT', capacity: 25, rent: 35 }, { name: 'RIVET HALL', capacity: 50, rent: 95 }, { name: 'DOCKSIDE DOME', capacity: 100, rent: 220 }] },
-  { name: 'SUNVALE', crowd: 'MEDIUM', rooms: 'CHEAP', rivals: 'FEW', pool: 65, priceScale: 36, competition: 0.04,
-    venues: [{ name: 'CACTUS CANTINA', capacity: 30, rent: 45 }, { name: 'MESA THEATRE', capacity: 65, rent: 120 }, { name: 'SUNBOWL', capacity: 130, rent: 285 }] },
-  { name: 'CEDAR CITY', crowd: 'BIG', rooms: 'FAIR', rivals: 'SOME', pool: 80, priceScale: 40, competition: 0.08,
-    venues: [{ name: 'THE KNOTHOLE', capacity: 40, rent: 55 }, { name: 'LUMBER HALL', capacity: 80, rent: 145 }, { name: 'CEDAR COLISEUM', capacity: 160, rent: 330 }] },
-  { name: 'METRO HEIGHTS', crowd: 'BIG', rooms: 'DEAR', rivals: 'MANY', pool: 100, priceScale: 46, competition: 0.15,
-    venues: [{ name: 'THE BASEMENT', capacity: 50, rent: 75 }, { name: 'SKYLINE THEATRE', capacity: 100, rent: 185 }, { name: 'METRO ARENA', capacity: 200, rent: 430 }] },
-  { name: 'COASTLINE', crowd: 'HUGE', rooms: 'PRICEY', rivals: 'MANY', pool: 115, priceScale: 50, competition: 0.18,
-    venues: [{ name: 'THE TIDEPOOL', capacity: 55, rent: 90 }, { name: 'PIER PLAYHOUSE', capacity: 115, rent: 215 }, { name: 'SURF STADIUM', capacity: 230, rent: 500 }] },
+  { name: 'RUSTPORT', crowd: 'SMALL', rooms: 'CHEAP', rivals: 'FEW', pool: 34, priceScale: 30, competition: 0.02,
+    venues: [{ name: 'THE SOGGY BOOT', capacity: 15, rent: 35 }, { name: 'RIVET HALL', capacity: 25, rent: 95 }, { name: 'DOCKSIDE DOME', capacity: 50, rent: 220 }] },
+  { name: 'SUNVALE', crowd: 'MEDIUM', rooms: 'CHEAP', rivals: 'FEW', pool: 44, priceScale: 36, competition: 0.04,
+    venues: [{ name: 'CACTUS CANTINA', capacity: 15, rent: 45 }, { name: 'MESA THEATRE', capacity: 35, rent: 120 }, { name: 'SUNBOWL', capacity: 65, rent: 285 }] },
+  { name: 'CEDAR CITY', crowd: 'BIG', rooms: 'FAIR', rivals: 'SOME', pool: 54, priceScale: 40, competition: 0.08,
+    venues: [{ name: 'THE KNOTHOLE', capacity: 20, rent: 55 }, { name: 'LUMBER HALL', capacity: 40, rent: 145 }, { name: 'CEDAR COLISEUM', capacity: 80, rent: 330 }] },
+  { name: 'METRO HEIGHTS', crowd: 'BIG', rooms: 'DEAR', rivals: 'MANY', pool: 68, priceScale: 46, competition: 0.15,
+    venues: [{ name: 'THE BASEMENT', capacity: 25, rent: 75 }, { name: 'SKYLINE THEATRE', capacity: 50, rent: 185 }, { name: 'METRO ARENA', capacity: 100, rent: 430 }] },
+  { name: 'COASTLINE', crowd: 'HUGE', rooms: 'PRICEY', rivals: 'MANY', pool: 78, priceScale: 50, competition: 0.18,
+    venues: [{ name: 'THE TIDEPOOL', capacity: 30, rent: 90 }, { name: 'PIER PLAYHOUSE', capacity: 60, rent: 215 }, { name: 'SURF STADIUM', capacity: 115, rent: 500 }] },
 ];
 
 // --- The economy: pure functions (no state, no random numbers: the roll is an argument) ---

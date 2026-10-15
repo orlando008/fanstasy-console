@@ -1,7 +1,7 @@
 # Rags to Riches: Cart Specification
 
-**Version:** 0.7 (Phase 6 built)
-**Status:** In progress: Phases 1 to 6 of 8 (the vertical slice, the economic rules, the full ten-week tour, the game flow and controls, the art and the sound) are built; the rest of the plan (section 15) is not
+**Version:** 0.8 (Phase 7 built)
+**Status:** In progress: Phases 1 to 7 of 8 (the vertical slice, the economic rules, the full ten-week tour, the game flow and controls, the art, the sound, and the strategies and balance) are built; the rest of the plan (section 15) is not
 **Cart source:** `carts/src/rags-to-riches/` → `carts/rags-to-riches.nova`
 
 A single-player, turn-based band-management game. It is a **spiritual successor** to an old web game about running an
@@ -148,8 +148,8 @@ stand in the bottom corners.
 words and its cheapest rent, `THIS USES WEEK n OF 10`. A pays and goes; B goes back. **Travel result:** `from > to`, an arrival line
 for each city, `BUS FARE -$20`, the cash, `CONCERT THIS WEEK NONE`, the city's landmark, its words and fans; the van drives across the screen.
 
-**Concert result:** `19 OF 25 CAME` with an occupancy bar (`SOLD OUT! 25 CAME` in gold when the room is full), then `TICKETS 19 X $10  $190`,
-`VENUE RENT -$35`, `ADVERTISING -$0`, `NET +$155`, `CASH NOW $555`, `POPULARITY 18 > 22 (+4)`, `FRESHNESS 70 > 60`, and
+**Concert result:** `13 OF 15 CAME` with an occupancy bar (`SOLD OUT! 15 CAME` in gold when the room is full), then `TICKETS 13 X $10  $130`,
+`VENUE RENT -$35`, `ADVERTISING -$0`, `NET +$95`, `CASH NOW $495`, `POPULARITY 18 > 22 (+4)`, `FRESHNESS 70 > 60`, and
 one line naming the main factor. On the ledger backdrop, with no panel: coins rain down the margins after a profit (more coins for a bigger one,
 at most 10), rain clouds sit in the corners after a loss, and a sold-out house gets a spinning star on each side and a sparkle. The won final
 screen is a shower of coins with a star on each side and a money bag with sparkles; the lost one has rain clouds.
@@ -247,7 +247,10 @@ travel is greyed with the reason, and songwriting remains: a tour can always be 
 The hub shows the word for the fatigue of the city the band is in: `EAGER` (under 20), `WARM` (under 45), `TIRED`
 (under 70), `WORN OUT`. One concert makes a fresh market `WARM`; two make it `TIRED`; three `WORN OUT`.
 
-### 5.9 Tuning: from the brief's placeholders to these numbers
+### 5.9 Tuning: from the brief's placeholders to these numbers (Phase 2)
+
+*Phase 7 retuned the pools and the rooms again, after playing strategies over hundreds of seeds: the numbers in the tables below are Phase 2's, the
+final ones are in 5.10 and section 6, and the guard rails of `04-balance.mjs` are now the ones listed at the end of 5.10.*
 
 The brief said its numbers were placeholders to be tested. Played as written they make the game trivial. `econ.mjs` is a
 beam search for the best ten-week tour under the cart's own functions (roll 100: no luck), plus the "habit" of playing the
@@ -290,20 +293,127 @@ concerts" style wins only by a margin; advertising of $150 to $200 is still righ
 earns 85 % of the best); the 100- and 200-seat rooms are only worth it late and in the big cities; the arenas (rent up
 to $500) are almost never right; and a high price is not punished much, since the price factor flattens near $50.
 
+### 5.10 The strategies and the final tuning (Phase 7)
+
+Phase 2 tuned the economy against *one* beam search and some habits. Phase 7 plays it with strategies, the way people play, over many seeds. The
+tools, all in `tests/carts/rags-to-riches/`:
+
+- `policies.mjs`: the strategies, as functions of the tour's state. One policy is used two ways:
+- `bot.mjs`: presses the real buttons for `sweep.mjs` (`node tools/devkit/sweep.mjs rags-to-riches --seeds 100 --set strategy=adaptive,earlysongs`).
+  It starts on the title, picks the start city on the map and plays the ten weeks through the hub, the picker, the setup and the cutscene.
+- `strategies.mjs`: the same rules and the console's own random numbers in the same order, without the screens: 100 tours in a tenth of a second
+  (`node tests/carts/rags-to-riches/strategies.mjs --seeds 100 --hist`; `--tune` and `--cities` try numbers before they go into `code.js`).
+  `08-strategies.mjs` checks that the two give the **same tour for the same seed** (final cash, actions, start city).
+- `08-strategies.mjs` also holds the guard rails below, and `04-balance.mjs` the older ones.
+
+**The strategies** (every one is made legal first: a room the cash cannot pay is dropped to a cheaper one, advertising is limited by the cash after
+the rent, a trip with no fare is not taken, and a player with no money for a room writes songs):
+
+| Name | Plays |
+|---|---|
+| `reckless` | The biggest room, a $50 ticket, $200 of advertising, in the richest city, every week |
+| `conservative` | The smallest room in the smallest city, $20, no advertising, every week |
+| `greedy` | Each week the show with the best expected profit (venue, price and advertising together), nothing else |
+| `songwriter` | Three weeks of songs, then the best show in the richest city; never moves |
+| `traveler` | The best show every week; moves to the next market when the fans are `TIRED`; no songs |
+| `adaptive` | The player who knows the rules of thumb: songs when the songs are stale or popularity is low, a move when the fans tire and the next market pays better, otherwise the best show; it slips one time in ten, and each run's habits (the thresholds) differ a little, as different people's would |
+| `earlysongs` | `adaptive`, opening with three weeks of songs |
+| `earlyshows` | `adaptive`, playing from week 1 and pricing the show for popularity as well as money (songs only when stale) |
+| `smallrooms` | `earlysongs`, only ever in the small bars (the same tour as `earlysongs`: the bar is always the best room it can find) |
+| `bigrooms` | `earlysongs`, only ever in the theatres and arenas (when the cash allows) |
+| `planner` | The benchmark, not a human: a beam search over the expected crowds, replanned every week |
+
+**The result of the final economy** (100 seeds, 1 to 100; `planner` 20 seeds; the screens, 100 seeds each, agree with this table):
+
+| Strategy | Wins | Mean | Median | p10 to p90 | Concerts / songs / trips |
+|---|---:|---:|---:|---|---|
+| reckless | 0 % (all broke: $50) | $50 | $50 | $50 to $50 | 4.8 / 5.2 / 0.0 |
+| conservative | 0 % | $634 | $630 | $610 to $670 | 10.0 / 0.0 / 0.0 |
+| greedy | 0 % | $1,661 | $1,655 | $1,595 to $1,745 | 9.0 / 1.0 / 0.0 |
+| traveler | 0 % | $2,785 | $2,920 | $2,270 to $3,095 | 8.0 / 0.0 / 2.0 |
+| earlyshows | 0 % | $2,919 | $2,970 | $2,480 to $3,350 | 7.4 / 1.1 / 1.5 |
+| songwriter | 0 % | $3,907 | $4,010 | $3,055 to $4,615 | 7.2 / 2.8 / 0.0 |
+| bigrooms | 29 % | $4,629 | $4,720 | $3,660 to $5,705 | 5.9 / 2.9 / 1.1 |
+| **adaptive** | **56 %** | $4,841 | $5,075 | $3,985 to $5,530 | 6.5 / 2.0 / 1.4 |
+| smallrooms | 57 % | $4,928 | $5,085 | $4,190 to $5,440 | 5.9 / 2.9 / 1.1 |
+| earlysongs | 72 % | $5,205 | $5,310 | $4,265 to $5,880 | 5.9 / 2.9 / 1.1 |
+| planner (perfect play) | 100 % | $5,724 | $5,755 | $5,545 to $5,885 | 6.0 / 3.0 / 1.0 |
+
+Mistakes cost money: the `adaptive` player wins 69 % when it never slips (skill 1), 56 % at skill 0.9 and 16 % at skill 0.6. A histogram of its final
+cash: $3,000 to $4,000: 11 tours; $4,000 to $5,000: 33; $5,000 to $6,000: 56. Nobody ends over $6,000 but the planner: the game is a close race, not a
+runaway, and perfect play wins by a margin of about $700 (its worst of 20 tours is $5,365).
+
+**What was changed.** On Phase 2's numbers (pools 50 / 65 / 80 / 100 / 115 and rooms of 0.5, 1 and 2 pools) the same players win far too often:
+`adaptive` 100 %, `earlysongs` 100 %, `bigrooms` 98 %, `songwriter` 85 %: a trivial game. Phase 7 scaled the **audience pools by 0.68** (to 34 / 44 / 54
+/ 68 / 78) and the **rooms by 0.5** (bars of 15 to 30 seats, theatres of 25 to 60, arenas of 50 to 115), and left everything else (the formula, the
+rents, the price scales, the competition, the songs, the fatigue) as it was in section 5.2, 5.3 and 6. Smaller rooms matter twice: a bar fills at a
+smaller crowd (a full house is what builds popularity), and the bigger rooms start to pay when the band is popular (`bigrooms` wins 29 %; with the
+Phase 2 rooms `smallrooms` and `earlysongs` were the same tour because the bar was always the best room).
+
+**The final parameters** (`TUNE` and `CITIES` in `code.js`):
+
+| Parameter | Value |
+|---|---|
+| Weeks, goal | 10, $5,000 |
+| Start: cash, popularity, freshness | $400, 18, 70 |
+| Ticket price | $5 to $50 (steps of $1, $5) |
+| Advertising | $0 to $200 (steps of $10, $50), at most the cash left after the rent |
+| Crowd terms | popularity `0.10 + 1.80 p/100`; freshness `0.65 + 0.35 f/100`; price `clamp(1.35 - price/priceScale, 0.25, 1.15)`; advertising `1 + 0.50 a/(a+80)`; fatigue `clamp(1 - fatigue/100, 0.25, 1)`; competition `1 - c` |
+| The roll | 94 to 106 % (`rndi`), once a concert |
+| After a show | freshness -10, fatigue +30; popularity -3 to +6 by turnout (5.3) |
+| Songs | freshness +30, popularity +8 |
+| Bus fare | $20 |
+| Cities (pool, price scale, competition) | Rustport 34, 30, 0.02; Sunvale 44, 36, 0.04; Cedar City 54, 40, 0.08; Metro Heights 68, 46, 0.15; Coastline 78, 50, 0.18 |
+| Rooms and rents | section 6 |
+
+**Guard rails** (`08-strategies.mjs` over 100 seeds on the simulator, and `04-balance.mjs` on the beam search; a change to the numbers that breaks one
+is a change to the shape of the game): the reckless player goes broke every time; the conservative player never wins and never goes broke; the simple
+plans (greedy, traveler, songwriter, earlyshows) win at most 10 %; `adaptive` wins 30 to 65 %; `earlysongs` 50 to 85 %; `smallrooms` at least 25 %
+and `bigrooms` at least 20 % (two room styles can win); no strategy but the planner wins more than 85 %; the planner wins 90 % or more (the goal is
+within reach); the strategies are ordered by skill in their mean cash; mistakes cost (skill 1 beats skill 0.6); a seed replays; a player who goes broke
+still plays ten weeks. And from `04-balance.mjs`: perfect play ends between $5,500 and $8,000, a tour with no songs reaches 70 to 100 % of the goal but cannot
+win, a tour of songs and concerts in one place can win, no habit reaches 70 % of the goal, no first show nets over a fifth of the goal, an oversized
+room is a visible waste, and a bad habit goes broke.
+
+**Findings, and what is not fixed.**
+
+- **Songs are needed, and opening with them is the best plan.** The tour has to build popularity, and only songs (+8) do it fast: a plan with no songs
+  cannot win (the best tour without songs ends at 84 % of the goal), and `earlyshows`, which plays from week 1, ends at $2,900. The brief's example of two
+  styles, "early songwriting vs early concerts", is therefore only half met: the styles that win are the balanced player, the songs-first player and the
+  small-rooms and big-rooms players, all of which write songs early. Why shows-first loses: at popularity 18 even a good show draws about a third of a
+  small room, adds 1 to 3 popularity and tires the market by 30 (a market is a resource: three shows and its crowd is a quarter), so early shows burn markets
+  for little. A trace of one tour (seed 3) shows it: the shows-first player nets $530, $380 and $180 in its first three shows and has popularity 26 after them, while
+  the songs-first player has popularity 50 after four weeks of songs and nets $1,595 and $1,035 in its first two shows. **Levers tried and rejected** (each was tried on the simulator at
+  a pool scale that kept the balanced player near half; none made shows-first win more than about 20 % without making everything else easy):
+  weaker songs (+2 to +5 popularity), a flatter popularity term (`0.4 + 0.8 p`), twice or three times the popularity from a good show, fans recovering
+  10 to 20 points a week (it helped the song-heavy plans more), fatigue by the share of the market a show drew instead of a flat +30, a price curve that
+  rewards cheap tickets (a higher cap on the price factor: it is 1.15, so a very cheap ticket does not fill a room faster), and a higher starting popularity (30 to 50). If you
+  want a real shows-first style, the likely fix is structural: fatigue by crowd drawn plus a higher cap on the price factor, together with a rebalance of the
+  pools, and a retune; it was not done here because it changes the feel of the game.
+- **Perfect play wins by a thin margin** (about $700). A person who plays well but not perfectly will lose most tours and win about half. That is the
+  target of the brief (30 to 60 % for smart play); if you want a gentler game, raise the pools a little (in the scans, 5 % of Phase 2's pools was worth 15 to 20 points of win
+  rate for the balanced player).
+- **The bar is a good room, the big rooms need popularity.** With the smaller rooms, theatres and arenas win 29 % of the tours as the only rooms
+  played; the balanced player mixes them.
+- **No unbeatable or trivial strategy.** Every tour of every strategy ends in ten weeks with a non-negative cash, a broke player can always write songs,
+  nothing but perfect play wins more than 85 %, and no strategy wins at the first week or by repeating one show.
+- **Variance is small.** The roll is 94 to 106 % on one number a concert, so a strategy's results lie within about $1,500 of each other from seed to seed;
+  the difference between winning and losing is nearly always the plan, not luck. The brief asked for it ("never the main determinant of victory").
+
 ## 6. World and content
 
 Five fictionalised city markets, in the order the cities go up in size. A venue is a bar, a theatre and an arena in each.
 
 | City | Pool | Price scale | Competition | Words (crowd / rooms / rivals) | Venues: capacity and rent |
 |---|---:|---:|---:|---|---|
-| Rustport | 50 | 30 | 0.02 | SMALL / CHEAP / FEW | The Soggy Boot 25 $35; Rivet Hall 50 $95; Dockside Dome 100 $220 |
-| Sunvale | 65 | 36 | 0.04 | MEDIUM / CHEAP / FEW | Cactus Cantina 30 $45; Mesa Theatre 65 $120; Sunbowl 130 $285 |
-| Cedar City | 80 | 40 | 0.08 | BIG / FAIR / SOME | The Knothole 40 $55; Lumber Hall 80 $145; Cedar Coliseum 160 $330 |
-| Metro Heights | 100 | 46 | 0.15 | BIG / DEAR / MANY | The Basement 50 $75; Skyline Theatre 100 $185; Metro Arena 200 $430 |
-| Coastline | 115 | 50 | 0.18 | HUGE / PRICEY / MANY | The Tidepool 55 $90; Pier Playhouse 115 $215; Surf Stadium 230 $500 |
+| Rustport | 34 | 30 | 0.02 | SMALL / CHEAP / FEW | The Soggy Boot 15 $35; Rivet Hall 25 $95; Dockside Dome 50 $220 |
+| Sunvale | 44 | 36 | 0.04 | MEDIUM / CHEAP / FEW | Cactus Cantina 15 $45; Mesa Theatre 35 $120; Sunbowl 65 $285 |
+| Cedar City | 54 | 40 | 0.08 | BIG / FAIR / SOME | The Knothole 20 $55; Lumber Hall 40 $145; Cedar Coliseum 80 $330 |
+| Metro Heights | 68 | 46 | 0.15 | BIG / DEAR / MANY | The Basement 25 $75; Skyline Theatre 50 $185; Metro Arena 100 $430 |
+| Coastline | 78 | 50 | 0.18 | HUGE / PRICEY / MANY | The Tidepool 30 $90; Pier Playhouse 60 $215; Surf Stadium 115 $500 |
 
 The rents, the competition (0.02 to 0.18) and the city order are the brief's. The pools, price scales and capacities are
-tuned (section 5.9; the brief's were pools of 90 to 320, price scales of 55 to 85 and capacities of 75 / 175 / 400). A
+tuned (sections 5.9 and 5.10; the brief's were pools of 90 to 320, price scales of 55 to 85 and capacities of 75 / 175 / 400). A
 venue costs more the larger it is, in every city, and every venue has its own name (tests assert both).
 
 ## 7. Opponents or hazards
@@ -438,7 +548,7 @@ before the tie-break slot); a save of any other version is cleared when the cart
 
 | Asset | Budget |
 |---|---|
-| Code | 48 KB of the 64 KB limit (`node tools/check.js rags-to-riches`) |
+| Code | 49 KB of the 64 KB limit (`node tools/check.js rags-to-riches`) |
 | Tiles | 966 of 1,023: 706 background (limit 759 by the region) and 260 sprite (limit 264) |
 | Sprites | 32 pictures; at most 10 on screen and 5 on a line in 18,000 frames of random play (128 in OAM, 32 per line) |
 | Songs / SFX | 7 of 8 songs, 10 of 64 patterns, 12 of 64 effects, 7,200 of 16,384 bytes of samples |
@@ -602,6 +712,22 @@ between phases.
      are good tunes is a matter for your ears, and the notes are in `audio.py` as bars of text, so changing a melody is a one-line edit.
 7. **Strategy bot and balance tuning.** Reckless, conservative, songwriter, traveller, greedy, adaptive; hundreds of
    seeds; findings and the final parameter table in this spec.
+
+   - **Built:** `policies.mjs` (eleven strategies, one function to make an action legal, a benchmark planner), a rewritten `bot.mjs` that plays any of
+     them on the real screens (`--set strategy=...`; it chooses the start city on the map), `strategies.mjs` (a simulator with the cart's own rules and random
+     numbers: a hundred tours in a tenth of a second, with `--tune`, `--cities`, `--hist`, `--md`), and `08-strategies.mjs` (the guard rails and the check
+     that screens and simulator agree). The economy was retuned (section 5.10): the audience pools by 0.68 and the rooms by 0.5. Section 6, the tests
+     of `03-economy.mjs` and the bands of `04-balance.mjs` follow the new numbers.
+   - **Results:** `node tools/verify.js rags-to-riches` passes (411 test checks: 75 flow, 65 art, 43 economy, 8 balance, 70 actions, 89 flow of Phase 4, 41
+     sound, 20 new strategy checks), the soak is clean, the smoke test in the real console reports no errors, and `node tools/devkit/sweep.mjs rags-to-riches
+     --seeds 100 --set strategy=adaptive,earlysongs,bigrooms,reckless,conservative,greedy` plays 600 whole tours on the real screens with no failure, no frozen
+     picture and no problem, and **the same win rates and the same mean cash as the simulator** (adaptive 56 % and $4,841, songs-first 72 % and $5,205,
+     big rooms 29 % and $4,629, reckless 0 % and $50, conservative $634, greedy $1,661). The table, the retune, the parameter table and the findings are in 5.10.
+     Mutation check: with Phase 2's generous pools put back, six guard rails fail (the simple plans win up to 88 %, adaptive 100 %).
+   - **What this found, in short:** the Phase 2 economy was far too easy for people (smart play won every time); with the retune smart play wins about half
+     and naive play loses; perfect play wins by about $700; **but a shows-first plan cannot win** (songs are needed, and opening with them is the best plan), so
+     "early concerts" as a second style is not met (the winning styles are all songs-first variants, and small rooms against big rooms). What I tried and why it
+     failed is in 5.10; the likely fix changes the feel of the game, so it is yours to decide.
 8. **Polish and release.** Readability, skip speed, clarity, cart limits, PNG cartridge, label, Library entry, README row.
 
 ## 16. Open questions

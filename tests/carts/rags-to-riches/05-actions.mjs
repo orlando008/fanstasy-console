@@ -50,7 +50,7 @@ const start = (seed) => { const vm = newGame(seed), p = vm.probe(); vm.run(3); r
   ok(p.tour.pop === 18 && p.tour.fresh === 70, 'popularity and freshness do not change');
   vm.run(25); vm.press('A'); ok(p.state === 'hub' && p.plan.venue === 0, 'the hub is in the new city, venue choice reset');
   toItem(vm, p, 0); vm.press('A'); vm.press('A'); vm.press('R'); vm.press('A');
-  ok(p.show.rent === 75 && p.show.capacity === 50, 'and a concert there is in that city\'s venues (Metro Heights\' bar: rent $75, room for 50)', `${p.show.rent}`);
+  ok(p.show.rent === 75 && p.show.capacity === 25, 'and a concert there is in that city\'s venues (Metro Heights\' bar: rent $75, room for 25)', `${p.show.rent}`);
 }
 {
   const [vm, p] = start(4);

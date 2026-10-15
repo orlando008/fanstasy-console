@@ -46,7 +46,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('UP'); vm.press('A'); ok(p.state === 'setup' && p.plan.venue === 0, 'the first venue ($35) is taken');
   vm.press('B'); ok(p.state === 'venue' && p.venueSel === 0, 'B from the setup returns to the picker, on the same venue');
   vm.press('B'); p.tour.cash = 400; vm.press('A'); vm.press('DOWN'); vm.press('A'); vm.press('A');
-  ok(p.state === 'show' && p.show.capacity === 50 && p.show.rent === 95, 'the venue chosen is the one played: Rivet Hall holds 50 and costs $95', `${p.show.capacity} ${p.show.rent}`);
+  ok(p.state === 'show' && p.show.capacity === 25 && p.show.rent === 95, 'the venue chosen is the one played: Rivet Hall holds 25 and costs $95', `${p.show.capacity} ${p.show.rent}`);
 }
 {
   let bad = 0, n = 0;

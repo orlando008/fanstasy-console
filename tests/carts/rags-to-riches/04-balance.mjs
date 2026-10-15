@@ -8,8 +8,8 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 const goal = TUNE.goal;
 
 const perfect = search({ cap: 3000 }).cash, noSongs = search({ cap: 3000, only: 'no-songs' }).cash, noTravel = search({ cap: 3000, only: 'no-travel' }).cash;
-ok(perfect >= goal * 1.4 && perfect <= goal * 2.4, 'perfect play wins comfortably, but not by an absurd margin ($7,000 to $12,000)', `$${perfect}`);
-ok(noSongs >= goal, 'a tour of concerts and travel with no songs can win', `$${noSongs}`);
+ok(perfect >= goal * 1.1 && perfect <= goal * 1.6, 'perfect play wins, with a margin but not an absurd one ($5,500 to $8,000)', `$${perfect}`);
+ok(noSongs >= goal * 0.7 && noSongs < goal, 'a tour with no songs cannot win but comes within reach of it (70 to 100 % of the goal): songs are needed', `$${noSongs}`);
 ok(noTravel >= goal, 'a tour of songs and concerts in one place can win', `$${noTravel}`);
 ok(noSongs < perfect && noTravel < perfect, 'and each is worse than playing all three actions');
 

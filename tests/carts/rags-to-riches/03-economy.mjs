@@ -23,9 +23,9 @@ ok(TUNE.popBase === 0.10 && TUNE.popSlope === 1.80 && TUNE.freshBase === 0.65 &&
   && TUNE.priceBase === 1.35 && TUNE.priceLow === 0.25 && TUNE.priceHigh === 1.15 && TUNE.fatigueSpan === 100 && TUNE.fatigueFloor === 0.25, 'the terms of the crowd formula are the spec\'s (5.2)');
 {
   const table = [
-    ['RUSTPORT', 50, 30, 0.02, [25, 50, 100], [35, 95, 220]], ['SUNVALE', 65, 36, 0.04, [30, 65, 130], [45, 120, 285]],
-    ['CEDAR CITY', 80, 40, 0.08, [40, 80, 160], [55, 145, 330]], ['METRO HEIGHTS', 100, 46, 0.15, [50, 100, 200], [75, 185, 430]],
-    ['COASTLINE', 115, 50, 0.18, [55, 115, 230], [90, 215, 500]],
+    ['RUSTPORT', 34, 30, 0.02, [15, 25, 50], [35, 95, 220]], ['SUNVALE', 44, 36, 0.04, [15, 35, 65], [45, 120, 285]],
+    ['CEDAR CITY', 54, 40, 0.08, [20, 40, 80], [55, 145, 330]], ['METRO HEIGHTS', 68, 46, 0.15, [25, 50, 100], [75, 185, 430]],
+    ['COASTLINE', 78, 50, 0.18, [30, 60, 115], [90, 215, 500]],
   ];
   ok(CITIES.length === 5 && table.every((t, i) => { const c = CITIES[i];
     return c.name === t[0] && c.pool === t[1] && c.priceScale === t[2] && c.competition === t[3] && c.venues.length === 3
@@ -35,17 +35,17 @@ ok(TUNE.popBase === 0.10 && TUNE.popSlope === 1.80 && TUNE.freshBase === 0.65 &&
   ok(new Set(CITIES.flatMap((c) => c.venues.map((v) => v.name))).size === 15 && CITIES.every((c) => c.crowd && c.rooms && c.rivals), 'every venue has its own name, every city its three descriptor words');
 }
 
-// 2. The starting state, by hand: 50 * 0.424 * 0.895 * (1.35 - 10 / 30) * 1 * 1 * 0.98 = 18.90.
+// 2. The starting state, by hand: 34 * 0.424 * 0.895 * (1.35 - 10 / 30) * 1 * 1 * 0.98 = 12.86.
 const e0 = p.expectedCrowd(city, 10, 0, 18, 70, 0);
-ok(Math.abs(e0 - 18.9044) < 0.001, 'the expected crowd at the start in Rustport ($10, no advertising) is 18.90', e0.toFixed(4));
-ok(p.attendance(city, room, 10, 0, 18, 70, 0, 100) === 19 && p.attendance(city, room, 10, 0, 18, 70, 0, 94) === 18 && p.attendance(city, room, 10, 0, 18, 70, 0, 106) === 20,
-  'and the crowd is 19 at roll 100, 18 at roll 94 and 20 at roll 106');
+ok(Math.abs(e0 - 12.855) < 0.001, 'the expected crowd at the start in Rustport ($10, no advertising) is 12.86', e0.toFixed(4));
+ok(p.attendance(city, room, 10, 0, 18, 70, 0, 100) === 13 && p.attendance(city, room, 10, 0, 18, 70, 0, 94) === 12 && p.attendance(city, room, 10, 0, 18, 70, 0, 106) === 14,
+  'and the crowd is 13 at roll 100, 12 at roll 94 and 14 at roll 106');
 {
   const r = p.settle(START, city, room, 10, 0, 100);
-  ok(r.att === 19 && r.revenue === 190 && r.net === 155 && r.cash === 555, 'a first show at $10: 19 tickets, $190, net +$155, cash $555', JSON.stringify([r.att, r.revenue, r.net, r.cash]));
-  ok(r.popChange === 4 && r.pop === 22 && r.fresh === 60 && r.fatigue === 30, 'popularity +4 (76 % full), freshness 60, fatigue 30');
+  ok(r.att === 13 && r.revenue === 130 && r.net === 95 && r.cash === 495, 'a first show at $10: 13 tickets, $130, net +$95, cash $495', JSON.stringify([r.att, r.revenue, r.net, r.cash]));
+  ok(r.popChange === 4 && r.pop === 22 && r.fresh === 60 && r.fatigue === 30, 'popularity +4 (86 % full), freshness 60, fatigue 30');
   const q = p.settle(START, CITIES[4], CITIES[4].venues[0], 25, 50, 100);
-  ok(q.att === 36 && q.net === 760 && q.popChange === 3, 'a first show in Coastline\'s bar at $25 with $50 of advertising: 36 tickets, net +$760, popularity +3', JSON.stringify([q.att, q.net, q.popChange]));
+  ok(q.att === 25 && q.net === 485 && q.popChange === 4, 'a first show in Coastline\'s bar at $25 with $50 of advertising: 25 tickets, net +$485, popularity +4', JSON.stringify([q.att, q.net, q.popChange]));
 }
 ok(Math.abs(p.factors(city, 5, 0, 18, 70, 0).price - 1.15) < 1e-9 && Math.abs(p.factors(city, 50, 0, 18, 70, 0).price - 0.25) < 1e-9 && Math.abs(p.factors(city, 20, 0, 18, 70, 0).price - (1.35 - 20 / 30)) < 1e-9, 'the price factor is capped at 1.15, falls with the price (scale 30) and stops at 0.25');
 ok(p.factors(city, 10, 0, 18, 70, 0).fatigue === 1 && p.factors(city, 10, 0, 18, 70, 30).fatigue === 0.7 && p.factors(city, 10, 0, 18, 70, 75).fatigue === 0.25 && p.factors(city, 10, 0, 18, 70, 100).fatigue === 0.25, 'the fatigue factor is 1 - fatigue / 100 and never goes under 0.25');
@@ -63,7 +63,7 @@ ok(p.factors(city, 10, 80, 18, 70, 0).ad === 1.25 && p.factors(city, 10, 0, 18, 
   ok(outside === 0, 'and never under 0 or over the venue\'s capacity');
   ok(ref_ === 0, 'and equals the spec\'s formula written out again');
 }
-ok(CITIES.every((c) => c.venues.every((v) => p.attendance(c, v, 5, 200, 100, 100, 0, 106) <= v.capacity)) && p.attendance(city, room, 5, 200, 100, 100, 0, 106) === 25, 'the best case fills the room, no more (Rustport\'s bar: 25)');
+ok(CITIES.every((c) => c.venues.every((v) => p.attendance(c, v, 5, 200, 100, 100, 0, 106) <= v.capacity)) && p.attendance(city, room, 5, 200, 100, 100, 0, 106) === 15, 'the best case fills the room, no more (Rustport\'s bar: 15)');
 ok(CITIES.every((c) => c.venues.every((v) => { const a = p.attendance(c, v, 50, 0, 0, 0, 100, 94); return a >= 0 && a <= 3; })), 'the worst case is a handful of people at most, never a negative');
 {
   let ad = true, fat = true, pop = true, price = true, fresh = true;
@@ -86,7 +86,7 @@ ok(CITIES.every((c) => c.venues.every((v) => { const a = p.attendance(c, v, 50, 
 {
   const t = [[0, -3], [9, -3], [10, -2], [19, -2], [20, -1], [29, -1], [30, 1], [44, 1], [45, 2], [59, 2], [60, 3], [74, 3], [75, 4], [89, 4], [90, 5], [99, 5], [100, 6]];
   ok(t.every(([occ, d]) => p.popularityChange(occ, 100) === d), 'popularity: -3 under 10 %, -2 under 20, -1 under 30, then +1 and a bonus of +1 at 45, +2 at 60, +3 at 75, +4 at 90, +5 when full');
-  ok(p.popularityChange(75, 75) === 6 && p.popularityChange(0, 75) === -3, 'a full 75-seat room is +6 and an empty one -3');
+  ok(p.popularityChange(75, 75) === 6 && p.popularityChange(0, 75) === -3, 'a full room is +6 and an empty one -3');
 }
 {
   const hi = p.settle({ cash: 1000, pop: 99, fresh: 5, fatigue: 90 }, city, room, 5, 0, 100);
