@@ -1,6 +1,6 @@
 // The economy explorer: not a test. A beam search for the best ten-week tour under the cart's own economy functions
 // (roll 100, no randomness), so the numbers in TUNE and CITIES can be tuned by looking at what a perfect player could earn
-// and what simple habits earn. Songwriting and travel follow the spec's rules (TUNE.songFresh, songPop, fare).
+// and what simple habits earn. Songwriting is the cart's own writeSongs and the fare is TUNE.fare.
 //
 //   node tests/carts/rags-to-riches/econ.mjs [--cap 30000] [--only no-songs|no-travel|city=N|no-big] [--brief]
 //        [--tune '{"freshCost":8}'] [--cities '[{"pool":60,"priceScale":30},...]']
@@ -43,7 +43,7 @@ export function search({ cap = CAP, only = '' } = {}) {
           put(next, { cash: r.cash, pop: r.pop, fresh: r.fresh, city: st.city, fat, plan: [...st.plan, `${city.name}/${vi} $${price} ad${ad} ${r.att}`] });
         }
       });
-      if (!noSongs) put(next, { ...st, pop: cl(st.pop + TUNE.songPop, 0, 100), fresh: cl(st.fresh + TUNE.songFresh, 0, 100), plan: [...st.plan, 'SONGS'] });
+      if (!noSongs) { const r = p.writeSongs(st); put(next, { ...st, pop: r.pop, fresh: r.fresh, plan: [...st.plan, 'SONGS'] }); }
       if (!noTravel && fixedCity < 0 && st.cash >= TUNE.fare) for (let c = 0; c < CITIES.length; c++) if (c !== st.city)
         put(next, { ...st, cash: st.cash - TUNE.fare, city: c, plan: [...st.plan, `TRAVEL ${CITIES[c].name}`] });
     }

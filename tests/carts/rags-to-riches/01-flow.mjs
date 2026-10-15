@@ -99,8 +99,8 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 }
 {
   const vm = newGame(5), p = vm.probe(); vm.run(3);
-  p.tour.cash = 30; sfxLog(vm); vm.press('A');
-  ok(p.state === 'final', 'with $30 (less than the rent) the hub does not open a setup: the tour ends');
+  p.tour.cash = 30; vm.run(1); sfxLog(vm); vm.press('A');
+  ok(p.state === 'hub' && sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch === 4), 'with $30 (less than the rent) the hub refuses the concert, with a buzz: the tour goes on');
 }
 {
   const vm = newGame(5), p = vm.probe(); vm.run(3);
@@ -110,12 +110,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch === 4), 'with the refusal sound, on the noise channel');
 }
 
-// 6. A broke band: the hub offers the end of the tour (Phase 3's songwriting removes this).
-{
-  const vm = newGame(6), p = vm.probe(); vm.run(3);
-  p.tour.cash = 20; vm.run(2); vm.press('A');
-  ok(p.state === 'final', 'with less cash than the cheapest rent, A ends the tour');
-}
+// 6. A broke band is not stuck: see 05-actions.mjs (songwriting is always possible).
 
 // 7. Ten weeks, then the end.
 {

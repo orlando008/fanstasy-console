@@ -36,4 +36,10 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
   vm.press('A'); vm.press('A'); vm.run(3);
   ok(vm.ppu.oamCount <= 128, 'sprites stay within the 128 of the console on the result screen too', `${vm.ppu.oamCount}`);
 }
+// 3. Text fits: a centred line of the cart is at most 28 characters (the panels are 240 pixels wide, 8 per character).
+{
+  const code = readFileSync(new URL('../../../carts/src/rags-to-riches/code.js', import.meta.url), 'utf8');
+  const long = [...code.matchAll(/ctxt\((['"])(.*?)\1/g)].map((m) => m[2]).concat([...code.matchAll(/ctxt\(`([^`$]*)`/g)].map((m) => m[1])).filter((t) => t.length > 28);
+  ok(long.length === 0, 'every centred text of the cart fits the screen (28 characters)', long.join(' | '));
+}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

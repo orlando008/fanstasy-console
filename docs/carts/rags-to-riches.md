@@ -1,7 +1,7 @@
 # Rags to Riches: Cart Specification
 
-**Version:** 0.3 (Phase 2 built)
-**Status:** In progress: Phases 1 and 2 of 8 (the vertical slice and the economic rules) are built; the rest of the plan (section 15) is not
+**Version:** 0.4 (Phase 3 built)
+**Status:** In progress: Phases 1 to 3 of 8 (the vertical slice, the economic rules and the full ten-week tour with all three actions) are built; the rest of the plan (section 15) is not
 **Cart source:** `carts/src/rags-to-riches/` → `carts/rags-to-riches.nova`
 
 A single-player, turn-based band-management game. It is a **spiritual successor** to an old web game about running an
@@ -43,8 +43,8 @@ including any amount over $5,000, is the high score.
    score in the top 10 asks for initials; then the records.
 
 No bankruptcy soft lock: negative cash is never allowed, a concert that costs more than the cash in hand cannot be
-confirmed (and the screen says why), and songwriting is always available (from Phase 3). Until then, in Phase 1 a band
-that cannot pay for any show ends its tour early (section 5.7).
+confirmed (and the screen says why), and songwriting is always available, free: a band with no money finishes its ten
+weeks writing songs (and ends with $0, which is a loss and not a record).
 
 ## 3. Controls
 
@@ -75,19 +75,21 @@ kept to short lines of at most 28 characters; there are no dense tables.
 | FRESHNESS: 65     GOAL $5,000  |
 |--------------------------------|
 |      > PLAY A CONCERT          |
-|        WRITE NEW SONGS  SOON   |
-|        TRAVEL $20  SOON        |
+|        WRITE NEW SONGS         |
+|        TRAVEL ($20)            |
 |     CROWD SMALL  ROOMS CHEAP   |
 |     RIVALS FEW  FANS WARM      |
 |                                |
+|    EACH ACTION TAKES ONE WEEK  |
 |            [van on the road]   |
 |  A: SELECT   START: PAUSE      |
 +--------------------------------+
 ```
 
 The two lines under the menu are the city's descriptors (crowd, rooms, rivals: words, not a table) and how its fans feel
-after the concerts already played there (section 5.8). The songs and travel items are shown greyed with SOON until
-Phase 3.
+after the concerts already played there (section 5.8). An action that cannot be paid for is greyed and, with the cursor on
+it, the line under the menu says why in red (`NEED $35 FOR ANY ROOM`, `NEED $20 FOR THE BUS`); A on it buzzes.
+Songwriting is never greyed.
 
 **Venue picker:** the city's three venues, each with its name, `ROOM FOR n` and `RENT $n`. A venue whose rent is over
 the cash is greyed and shows `NEED $n` in red; A on it buzzes. A takes the venue, B goes back to the hub.
@@ -95,6 +97,14 @@ the cash is greyed and shows `NEED $n` in red; A on it buzzes. A takes the venue
 **Concert setup:** the venue (name, capacity, rent), then two rows (TICKET PRICE, ADVERTISING), the **total upfront
 cost**, the **cash left after costs**, and the **audience forecast** (LOW / FAIR / STRONG). If the cost is over the cash,
 the footer is replaced by the reason (`CAN'T PAY: B TO GO BACK`) and A is refused with a buzz. B goes back to the venues.
+
+**Songs:** `WRITE NEW SONGS`, `FRESHNESS 70 > 100`, `POPULARITY 18 > 26`, `COST $0 AND A WEEK`, `INCOME THIS WEEK $0`, `THIS USES
+WEEK n OF 10`, `A: WRITE   B: BACK`. A confirms: no week is spent before it. **Song result:** a one-line joke (six, picked with the
+seeded generator), freshness and popularity old > new, `TICKETS SOLD 0`, `INCOME $0`, the cash.
+
+**Travel:** `WHERE TO?  $20 AND A WEEK`, the four other cities (with `FANS tired` for one already played), the highlighted city's
+words and its cheapest rent, `THIS USES WEEK n OF 10`. A pays and goes; B goes back. **Travel result:** `from > to`, an arrival line
+for each city, `BUS FARE -$20`, the cash, `CONCERT THIS WEEK NONE`, the city's words and fans.
 
 **Concert result:** `19 OF 25 CAME` with an occupancy bar (`SOLD OUT! 25 CAME` in gold when the room is full), then `TICKETS 19 X $10  $190`,
 `VENUE RENT -$35`, `ADVERTISING -$0`, `NET +$155`, `CASH NOW $555`, `POPULARITY 18 > 22 (+4)`, `FRESHNESS 70 > 60`, and
@@ -150,8 +160,8 @@ advertising in the setup, the venue in the picker.
 | Popularity | Under 30 % full: `-1` (under 30), `-2` (under 20), `-3` (under 10). Otherwise `+1`, plus a bonus: `+1` at 45 %, `+2` at 60 %, `+3` at 75 %, `+4` at 90 %, `+5` for a full house. Clamped 0 to 100 |
 | Freshness | `-10` per concert, clamped 0 to 100 |
 | City fatigue | `+30` per concert in that city, clamped 0 to 100. There is no recovery (no passive decay): a market is tired until the band leaves it for good |
-| Songwriting (Phase 3) | Freshness `+30`, popularity `+8`, both clamped; no fatigue, no money |
-| Bus fare (Phase 3) | `$20`, one week |
+| Songwriting | Freshness `+30`, popularity `+8`, both clamped; no fatigue, no money |
+| Bus fare | `$20`, one week |
 
 ### 5.4 The forecast
 
@@ -169,12 +179,25 @@ smallest of the popularity, freshness, price and fatigue factors names the cause
 Rent and advertising are paid up front; a show cannot be confirmed unless `rent + ad <= cash`. Ticket revenue is credited
 at once. No debt, no interest. The score is the **final cash**, not the lifetime earnings.
 
-### 5.7 What is not in the cart yet
+### 5.7 The three actions and the tour
 
-Songwriting and travel (Phase 3) and the start-city map (Phase 4): the tour starts in Rustport and the only action is the
-concert. The other four cities exist in `CITIES` and are covered by tests and the explorer (`tests/carts/rags-to-riches/
-econ.mjs`), but cannot be reached by a player yet. A band that cannot pay the rent of the cheapest venue sees
-`OUT OF CASH: THE TOUR ENDS` and goes to the final screen; songwriting (Phase 3) removes this case.
+One action a week, ten weeks, no bonus turns. `tour.actions` counts them and `tour.week = actions + 1`; the tour goes to the
+final screen the moment the tenth is resolved. Each action's confirm step changes the state in the same frame it resolves,
+so a held or repeated button cannot resolve it twice, and a result screen ignores A for its first 20 frames.
+
+| Action | Costs | Gives |
+|---|---|---|
+| Concert | rent + advertising up front (never over the cash), one week | tickets × price, popularity, fatigue, freshness, section 5.3 |
+| Write songs | no money, one week | freshness `+30`, popularity `+8` (both capped at 100); no income, no fatigue |
+| Travel | `$20`, one week; only to one of the other four cities; only with $20 or more | a new city; no concert that week; popularity, freshness and every city's fatigue unchanged |
+
+The tour is **won** with `$5,000` or more in cash after week 10 (`isWin`); the final screen is green `YOU DID IT!` with the
+amount over the goal, or red `TOUR OVER` with the amount short. The score is the final cash (not what was earned on the way),
+and a score of $0 is not entered in the top 10.
+
+**Failure states.** Cash is never negative. When cash is under the cheapest rent in the city, or under $20, the concert or the
+travel is greyed with the reason, and songwriting remains: a tour can always be finished. Until Phase 4 the tour starts in
+Rustport (the start-city map is Phase 4), and the other four cities are reached by travel.
 
 ### 5.8 How the fans feel
 
@@ -255,13 +278,16 @@ broken by least travel, then fewest concerts (Phase 4), then insertion order.
 
 ## 10. Screens and flow
 
-States (Phase 1 in bold): **`title`**, `intro`, `cityStart`, **`hub`**, `venue`, **`setup`** (concert setup),
-**`result`** (concert result), `songs`, `travel`, `travelResult`, **`final`**, **`initials`**, **`records`**, `help`.
+States (built ones in bold): **`title`**, `intro`, `cityStart`, **`hub`**, **`venue`**, **`setup`** (concert setup),
+**`result`** (concert result), **`songs`** (confirm), **`songResult`**, **`travel`** (pick a city), **`travelResult`**, **`final`**,
+**`initials`**, **`records`**, `help`.
 
 1. **Title:** NEW TOUR, RECORDS.
-2. **Hub**, then **setup**, then **result**, then the hub of the next week; after week 10 the **final** screen.
+2. **Hub**, then one of: venue picker, setup, result (concert); songs confirm, song result; travel list, travel result; then the
+   hub of the next week. After week 10 the **final** screen.
 3. **Final**, then **initials** if the score is in the top 10, then the **records**.
-4. START at any time in a tour opens the pause menu: RESUME, RESTART, QUIT TO TITLE (nothing is recorded).
+4. START at any time in a tour (on every screen from the hub to the results) opens the pause menu: RESUME, RESTART, QUIT TO TITLE
+   (nothing is recorded). B always goes back one screen at no cost.
 
 ## 11. Audio
 
@@ -291,7 +317,7 @@ No mid-tour save. Records are written only after a complete 10-week run.
 
 | Asset | Budget |
 |---|---|
-| Code | 24 KB of the 64 KB limit (`node tools/check.js rags-to-riches`) |
+| Code | 30 KB of the 64 KB limit (`node tools/check.js rags-to-riches`) |
 | Tiles | 23 (19 background, 4 sprite) of 1,024 |
 | Sprites | 1 on screen (128 in OAM, 32 per line) |
 | Songs / SFX | 2 of 8 songs, 7 of 64 effects (the scaffold's) |
@@ -356,6 +382,29 @@ between phases.
      two overlapping lines on the way. The bot sweep (one fixed habit per run) shows what it should: Rustport's bar at $20
      ends near $870, the theatre at $30 goes broke, and no run reaches $5,000.
 3. **All three actions and the full tour.** Songwriting, travel, the 10-turn state machine, win/loss, failure states.
+
+   - **Built:** songwriting (a confirm screen `songs`, then `songResult`) and travel (`travel` list of the other four cities,
+     then `travelResult`) as states of the hub, each resolved by one function that checks the state and the number of
+     actions used (`writeSongsNow`, `travelNow`); the pure `writeSongs`, `canTravel`, `canConcert` and `isWin`; the hub
+     greys an action it cannot pay for and says why; Phase 1's "out of cash ends the tour" is gone (songwriting is always
+     open); the final screen counts concerts, songs and trips. Six song jokes and five arrival lines (original). The
+     explorer (`econ.mjs`) now uses the cart's own `writeSongs`. The bot is one policy with options (`songs`, `hop`,
+     `venue`, `price`, `ad`): it can write songs first, travel when the fans are tired, and fall back to songs when it
+     cannot pay for a show. `05-actions.mjs` covers the actions and the tour; `02-art.mjs` checks that no centred text is
+     over 28 characters.
+   - **Results:** `node tools/verify.js rags-to-riches` passes (204 test checks: 72 flow, 11 art, 43 economy, 8 balance,
+     70 actions), the soak is clean and the smoke test in the real console reports no errors. The actions checks: songs
+     cost one week and no money and give +8 / +30 (capped); travel costs exactly $20 and a week, is refused with $19 and
+     allowed with $20, keeps every city's fatigue, and offers the four other cities; double presses spend one week only; B
+     and START work on every screen; a mixed tour of two songs, two trips and six concerts ends after exactly ten actions;
+     $4,999 is a loss and $5,000 a win, and the final screen is red or green to match; a band with $0 writes songs for ten
+     weeks and ends at $0 (no record); and a fuzz of random buttons over 40 seeds keeps every number in range, never passes
+     ten actions, and reaches the final screen in all 40. I looked at the greyed hub, songs, song result, travel and travel
+     result at native size and shortened four lines that were too wide.
+   - **A first look at balance with the bot** (price $20, no advertising, roll as seeded, 8 seeds): a concert every week
+     in Rustport ends with $870; hopping to a fresh market when the fans are `TIRED` (fatigue 60) $3,285; three songs
+     first and no travel $1,965; three songs first and then hopping $4,170. None wins (the bot never advertises or picks
+     a bigger room), but the actions work together as the economy intends. The tuned guard rails of Phase 2 still pass.
 4. **Game flow and controls.** Start-city map, menus, help, confirm/cancel safeguards, skip, summary, leaderboard.
 5. **Art and character personality.** Band, van, venues, city map, animated crowd, intro panels, flourishes.
 6. **Sound and music.** Cues, concert SFX, menu SFX, victory and defeat; measured loudness.

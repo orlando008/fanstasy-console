@@ -111,6 +111,16 @@ function mainFactor(f, full) {
 }
 /** How the fans of a market feel, from its fatigue: the word the hub shows. */
 const fansWord = (fatigue) => (fatigue < 20 ? 'EAGER' : fatigue < 45 ? 'WARM' : fatigue < 70 ? 'TIRED' : 'WORN OUT');
+/** Songwriting (spec 5.3): freshness and popularity up, no money, no fatigue. s = { pop, fresh }. */
+function writeSongs(s) {
+  const pop = clamp(s.pop + TUNE.songPop, 0, 100);
+  return { popBefore: s.pop, pop, popChange: pop - s.pop, freshBefore: s.fresh, fresh: clamp(s.fresh + TUNE.songFresh, 0, 100) };
+}
+const canTravel = (cash) => cash >= TUNE.fare;
+/** The tour is won with the goal or more in cash at the end of week 10. */
+const isWin = (cash) => cash >= TUNE.goal;
+/** Can the cash pay for a show in at least one venue of this city? */
+const canConcert = (cash, c) => cash >= Math.min(...c.venues.map((v) => v.rent));
 /** The most advertising the cash allows after the rent. */
 const maxAd = (cash, rent) => clamp(Math.floor((cash - rent) / TUNE.adStep) * TUNE.adStep, 0, TUNE.adMax);
 const canAfford = (cash, venue, ad) => venue.rent + ad <= cash;
@@ -133,6 +143,8 @@ function settle(s, city, venue, price, ad, roll) {
 
 const money = (n) => (n < 0 ? '-$' : '$') + String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 const signed = (n) => (n < 0 ? '-' : '+') + money(Math.abs(n));
+const SONG_LINES = ['A CHORUS ABOUT A SANDWICH', 'THREE CHORDS, ZERO SLEEP', 'THE SYNTH PLAYER WENT WILD', 'A RHYME FOR "RENT" AT LAST', 'THE VAN HUMS ALONG: A HIT?', 'THE NEIGHBORS ARE HUMMING IT'];
+const ARRIVE_LINES = ['RUST, ROPES AND SEAGULLS', 'SO SUNNY THE VAN MELTS', 'SAWDUST IN THE AIR', 'ALL HONKING, NO PARKING', 'SURF, SAND AND SUNBURN'];
 const two = (n) => String(n).padStart(2, '0');
 
 // --- Save slots (SPEC 13) ---
@@ -172,12 +184,12 @@ let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let tour = null; // the run: week, cash, pop, fresh, city, fatigue per city, counts
-let hubSel = 0, venueSel = 0, plan = { row: 0, venue: 0, price: TUNE.priceStart, ad: 0 }, show = null, broke = false;
+let hubSel = 0, venueSel = 0, plan = { row: 0, venue: 0, price: TUNE.priceStart, ad: 0 }, show = null, act = null, travelSel = 0;
 
 function newTour() {
   return {
     week: 1, cash: TUNE.startCash, pop: TUNE.startPop, fresh: TUNE.startFresh, city: 0,
-    fatigue: CITIES.map(() => 0), concerts: 0, best: 0, actions: 0,
+    fatigue: CITIES.map(() => 0), concerts: 0, songs: 0, trips: 0, best: 0, actions: 0,
   };
 }
 const city = () => CITIES[tour.city];
@@ -198,7 +210,7 @@ function go(s) { state = s; timer = 0; }
 function toTitle() { go('title'); titleSel = 0; paused = false; tour = null; play(SONG.title); }
 
 function startTour() {
-  tour = newTour(); hubSel = 0; show = null; paused = false;
+  tour = newTour(); hubSel = 0; show = null; act = null; paused = false;
   plan = { row: 0, venue: 0, price: TUNE.priceStart, ad: 0 };
   go('hub'); play(SONG.play);
 }
@@ -213,7 +225,9 @@ function update() {
   else if (state === 'hub') updateHub();
   else if (state === 'venue') updateVenue();
   else if (state === 'setup') updateSetup();
-  else if (state === 'result') updateResult();
+  else if (state === 'songs') updateSongs();
+  else if (state === 'travel') updateTravel();
+  else if (state === 'result' || state === 'songResult' || state === 'travelResult') updateResult();
   else if (state === 'final') updateFinal();
   else if (state === 'initials') updateInitials();
   else if (state === 'records') updateRecords();
@@ -228,18 +242,49 @@ function updateTitle() {
   }
 }
 
-/** The hub: one action a week. Only the concert exists so far; the other two are shown and refused. */
+/** The hub: one action a week. An action that cannot be paid for is greyed, and the hub says why. */
+const hubOk = () => [canConcert(tour.cash, city()), true, canTravel(tour.cash)];
 function updateHub() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  broke = tour.cash < cheapestRent();
   if (pressed(UP)) { hubSel = (hubSel + 2) % 3; fx(SFX.move); }
   if (pressed(DOWN)) { hubSel = (hubSel + 1) % 3; fx(SFX.move); }
   if (!pressed(A)) return;
-  if (broke) { toFinal(); return; } // Phase 3's songwriting makes this case go away
-  if (hubSel !== 0) { fx(SFX.hit); return; }
+  if (!hubOk()[hubSel]) { fx(SFX.hit); return; }
   fx(SFX.select);
-  venueSel = clamp(plan.venue, 0, city().venues.length - 1);
-  go('venue');
+  if (hubSel === 0) { venueSel = clamp(plan.venue, 0, city().venues.length - 1); go('venue'); }
+  else if (hubSel === 1) go('songs');
+  else { travelSel = otherCities()[0]; go('travel'); }
+}
+const otherCities = () => CITIES.map((_, i) => i).filter((i) => i !== tour.city);
+
+/** Songwriting: the screen says what it costs (a week, no money) and what it gives; A writes, B goes back. */
+function updateSongs() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (pressed(B)) { fx(SFX.select); go('hub'); return; }
+  if (pressed(A)) writeSongsNow();
+}
+function writeSongsNow() {
+  if (state !== 'songs' || tour.actions >= TUNE.weeks) return;
+  const r = writeSongs(tour);
+  act = { kind: 'songs', week: tour.week, ...r, line: rndi(0, SONG_LINES.length - 1) };
+  tour.pop = r.pop; tour.fresh = r.fresh; tour.songs++; tour.actions++; tour.week++;
+  go('songResult'); fx(SFX.point);
+}
+
+/** Travel: pick one of the other four cities (UP/DOWN), A pays the fare and goes, B goes back. */
+function updateTravel() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (pressed(B)) { fx(SFX.select); go('hub'); return; }
+  const dests = otherCities(), i = dests.indexOf(travelSel);
+  if (pressed(UP)) { travelSel = dests[(i + dests.length - 1) % dests.length]; fx(SFX.move); }
+  if (pressed(DOWN)) { travelSel = dests[(i + 1) % dests.length]; fx(SFX.move); }
+  if (pressed(A)) { if (canTravel(tour.cash)) travelNow(travelSel); else fx(SFX.hit); }
+}
+function travelNow(dest) {
+  if (state !== 'travel' || tour.actions >= TUNE.weeks || dest === tour.city || !canTravel(tour.cash)) return;
+  act = { kind: 'travel', week: tour.week, from: tour.city, to: dest, fare: TUNE.fare, cashBefore: tour.cash, cash: tour.cash - TUNE.fare };
+  tour.cash -= TUNE.fare; tour.city = dest; plan.venue = 0; tour.trips++; tour.actions++; tour.week++;
+  go('travelResult'); fx(SFX.select);
 }
 
 /** The venue picker: UP/DOWN choose a room, A takes it if the rent can be paid, B goes back. */
@@ -285,6 +330,7 @@ function playConcert() {
   fx(show.net >= 0 ? SFX.point : SFX.hit);
 }
 
+/** After any action's results screen: A (not in the first 20 frames) goes on to the next week, or to the end after week 10. */
 function updateResult() {
   if (pressed(START) && timer > 20) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   if (timer < 20 || !pressed(A)) return;
@@ -292,7 +338,7 @@ function updateResult() {
   if (tour.week > TUNE.weeks) toFinal(); else go('hub');
 }
 
-function toFinal() { go('final'); play(-1); fx(tour.cash >= TUNE.goal ? SFX.record : SFX.over); }
+function toFinal() { go('final'); play(-1); fx(isWin(tour.cash) ? SFX.record : SFX.over); }
 
 /** After the tour: the cash is the score. A top-10 cash asks for initials. */
 function updateFinal() {
@@ -344,6 +390,10 @@ function draw() {
   else if (state === 'venue') drawVenue();
   else if (state === 'setup') drawSetup();
   else if (state === 'result') drawResult();
+  else if (state === 'songs') drawSongs();
+  else if (state === 'songResult') drawSongResult();
+  else if (state === 'travel') drawTravel();
+  else if (state === 'travelResult') drawTravelResult();
   else if (state === 'final') drawFinal();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
@@ -361,7 +411,7 @@ function drawTitle() {
 function drawStatus() {
   panel(8, 8, 240, 48);
   txt(`WEEK ${two(Math.min(tour.week, TUNE.weeks))}/${TUNE.weeks}`, 16, 14, WHITE);
-  rtxt(`CASH ${money(tour.cash)}`, 240, 14, tour.cash >= TUNE.goal ? GREEN : WHITE);
+  rtxt(`CASH ${money(tour.cash)}`, 240, 14, isWin(tour.cash) ? GREEN : WHITE);
   txt(`CITY: ${city().name}`, 16, 28, WHITE);
   rtxt(`POP ${tour.pop}`, 240, 28, WHITE);
   txt(`FRESHNESS: ${tour.fresh}`, 16, 42, WHITE);
@@ -372,15 +422,17 @@ function drawHub() {
   drawStatus();
   sprite(ART.sprites.van, 120, 168);
   panel(8, 72, 240, 82);
-  const items = [['PLAY A CONCERT', true], ['WRITE NEW SONGS  SOON', false], ['TRAVEL $20  SOON', false]];
-  items.forEach(([s, on], i) => txt(`${i === hubSel ? '> ' : '  '}${s}`, 40, 84 + i * 14, on ? (i === hubSel ? WHITE : DIM) : GREY));
-  if (broke) ctxt('OUT OF CASH: THE TOUR ENDS', 134, RED);
-  else {
+  const items = ['PLAY A CONCERT', 'WRITE NEW SONGS', `TRAVEL (${money(TUNE.fare)})`], ok = hubOk();
+  items.forEach((t, i) => txt(`${i === hubSel ? '> ' : '  '}${t}`, 40, 84 + i * 14, !ok[i] ? GREY : i === hubSel ? WHITE : DIM));
+  if (!ok[hubSel]) {
+    ctxt(hubSel === 0 ? `NEED ${money(cheapestRent())} FOR ANY ROOM` : `NEED ${money(TUNE.fare)} FOR THE BUS`, 132, RED);
+  } else {
     const c = city();
     ctxt(`CROWD ${c.crowd}  ROOMS ${c.rooms}`, 128, DIM);
     ctxt(`RIVALS ${c.rivals}  FANS ${fansWord(tour.fatigue[tour.city])}`, 140, DIM);
   }
-  ctxt(broke ? 'A: FINISH' : 'A: SELECT   START: PAUSE', 206, WHITE);
+  ctxt('EACH ACTION TAKES ONE WEEK', 160, DIM);
+  ctxt('A: SELECT   START: PAUSE', 206, WHITE);
 }
 
 function drawVenue() {
@@ -420,7 +472,6 @@ function drawResult() {
   ctxt(`WEEK ${r.week} CONCERT`, 16, GOLD);
   ctxt(r.att >= r.capacity ? `SOLD OUT! ${r.att} CAME` : `${r.att} OF ${r.capacity} CAME`, 28, r.att >= r.capacity ? GOLD : WHITE);
   rect(20, 40, 216, 6, PANEL); rectfill(21, 41, Math.floor(214 * r.att / r.capacity), 4, r.att >= r.capacity ? GOLD : CYAN);
-  const row = (label, value, y, c = WHITE) => { txt(label, 20, y, c); rtxt(value, 236, y, c); };
   row(`TICKETS ${r.att} X ${money(r.price)}`, money(r.revenue), 54);
   row('VENUE RENT', signed(-r.rent), 68);
   row('ADVERTISING', signed(-r.ad), 82);
@@ -432,14 +483,76 @@ function drawResult() {
   if (timer >= 20) ctxt(tour.week > TUNE.weeks ? 'A: SEE THE FINAL TALLY' : `A: ON TO WEEK ${tour.week}`, 198, WHITE);
 }
 
+/** A line of a results screen: a label on the left, a value on the right. */
+function row(label, value, y, c = WHITE) { txt(label, 20, y, c); rtxt(value, 236, y, c); }
+
+function drawSongs() {
+  const r = writeSongs(tour);
+  drawStatus();
+  panel(8, 64, 240, 142);
+  ctxt('WRITE NEW SONGS', 72, GOLD);
+  ctxt('A WEEK IN THE REHEARSAL ROOM', 90, DIM);
+  row('FRESHNESS', `${r.freshBefore} > ${r.fresh}`, 112);
+  row('POPULARITY', `${r.popBefore} > ${r.pop}`, 126);
+  row('COST', `${money(0)} AND A WEEK`, 148);
+  row('INCOME THIS WEEK', money(0), 162, RED);
+  ctxt(`THIS USES WEEK ${tour.week} OF ${TUNE.weeks}`, 178, DIM);
+  ctxt('A: WRITE   B: BACK', 194, WHITE);
+}
+
+function drawSongResult() {
+  const r = act;
+  panel(8, 8, 240, 208);
+  ctxt(`WEEK ${r.week} NEW SONGS`, 16, GOLD);
+  ctxt(SONG_LINES[r.line], 34, CYAN);
+  row('FRESHNESS', `${r.freshBefore} > ${r.fresh}`, 66);
+  row('POPULARITY', `${r.popBefore} > ${r.pop} (+${r.popChange})`, 80);
+  row('TICKETS SOLD', '0', 108);
+  row('INCOME', money(0), 122);
+  row('CASH NOW', money(tour.cash), 136);
+  ctxt('NO MONEY THIS WEEK, BUT', 162, DIM);
+  ctxt('NEXT CROWD WILL BE BIGGER', 174, DIM);
+  if (timer >= 20) ctxt(tour.week > TUNE.weeks ? 'A: SEE THE FINAL TALLY' : `A: ON TO WEEK ${tour.week}`, 198, WHITE);
+}
+
+function drawTravel() {
+  drawStatus();
+  panel(8, 64, 240, 142);
+  ctxt(`WHERE TO?  ${money(TUNE.fare)} AND A WEEK`, 72, GOLD);
+  otherCities().forEach((ci, i) => {
+    const c = CITIES[ci], y = 88 + i * 14, on = ci === travelSel, f = tour.fatigue[ci];
+    txt(`${on ? '> ' : '  '}${c.name}`, 20, y, on ? WHITE : DIM);
+    if (f > 0) rtxt(`FANS ${fansWord(f)}`, 236, y, on ? WHITE : DIM);
+  });
+  const c = CITIES[travelSel];
+  ctxt(`CROWD ${c.crowd}  ROOMS ${c.rooms}`, 150, DIM);
+  ctxt(`RIVALS ${c.rivals}  FROM ${money(Math.min(...c.venues.map((v) => v.rent)))}`, 162, DIM);
+  ctxt(canTravel(tour.cash) ? `THIS USES WEEK ${tour.week} OF ${TUNE.weeks}` : `NEED ${money(TUNE.fare)} FOR THE BUS`, 178, canTravel(tour.cash) ? DIM : RED);
+  ctxt('A: GO   B: BACK', 194, WHITE);
+}
+
+function drawTravelResult() {
+  const r = act, c = CITIES[r.to];
+  panel(8, 8, 240, 208);
+  ctxt(`WEEK ${r.week} ON THE ROAD`, 16, GOLD);
+  ctxt(`${CITIES[r.from].name} > ${c.name}`.slice(0, 28), 34, WHITE);
+  ctxt(ARRIVE_LINES[r.to], 50, CYAN);
+  row('BUS FARE', signed(-r.fare), 80);
+  row('CASH NOW', money(r.cash), 94);
+  row('CONCERT THIS WEEK', 'NONE', 116, DIM);
+  ctxt(`CROWD ${c.crowd}  ROOMS ${c.rooms}`, 140, DIM);
+  ctxt(`RIVALS ${c.rivals}  FANS ${fansWord(tour.fatigue[r.to])}`, 152, DIM);
+  if (timer >= 20) ctxt(tour.week > TUNE.weeks ? 'A: SEE THE FINAL TALLY' : `A: ON TO WEEK ${tour.week}`, 198, WHITE);
+}
+
 function drawFinal() {
-  const win = tour.cash >= TUNE.goal;
+  const win = isWin(tour.cash);
   panel(24, 24, 208, 176);
   ctxt(win ? 'YOU DID IT!' : 'TOUR OVER', 36, win ? GREEN : RED);
   ctxt('FINAL CASH', 58, DIM);
   ctxt(money(tour.cash), 72, win ? GREEN : WHITE);
   ctxt(win ? `${money(tour.cash - TUNE.goal)} OVER THE GOAL` : `${money(TUNE.goal - tour.cash)} SHORT OF ${money(TUNE.goal)}`, 90, win ? GOLD : RED);
-  ctxt(`CONCERTS PLAYED  ${tour.concerts}`, 116, WHITE);
+  ctxt(`CONCERTS ${tour.concerts}  SONGS ${tour.songs}  TRIPS ${tour.trips}`, 116, WHITE);
   ctxt(`BEST NIGHT  ${signed(tour.best)}`, 130, WHITE);
   ctxt(`POPULARITY  ${tour.pop}`, 144, WHITE);
   if (timer >= 40 && timer % 60 < 40) ctxt('A: CONTINUE', 176, WHITE);
