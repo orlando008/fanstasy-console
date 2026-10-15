@@ -8,7 +8,8 @@ export const CART = fileURLToPath(new URL('../../../carts/rags-to-riches.nova', 
 // Add to this list as the game grows.
 const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
-  get tour() { return tour; }, set tour(v) { tour = v; }, get plan() { return plan; }, get show() { return show; }, get hubSel() { return hubSel; }, get venueSel() { return venueSel; }, get act() { return act; }, get travelSel() { return travelSel; }, hubOk, otherCities, writeSongs, canTravel, canConcert, isWin, SONG_LINES, ARRIVE_LINES, fansWord,
+  get tour() { return tour; }, set tour(v) { tour = v; }, get plan() { return plan; }, get show() { return show; }, get hubSel() { return hubSel; }, get venueSel() { return venueSel; }, get helpOpen() { return helpOpen; }, get helpPage() { return helpPage; }, get pauseAsk() { return pauseAsk; }, get askSel() { return askSel; },
+  get introPage() { return introPage; }, get mapSel() { return mapSel; }, HELP_PAGES, INTRO_PANELS, TITLE_ITEMS, PAUSE_ITEMS, MAP_POS, SHOW_LEN, INTRO_SLOT, rankOf, beats, crowdVerdict, get act() { return act; }, get travelSel() { return travelSel; }, hubOk, otherCities, writeSongs, canTravel, canConcert, isWin, SONG_LINES, ARRIVE_LINES, fansWord,
   get ART() { return ART; }, mget: (x, y) => mget(x, y), get rank() { return rank; }, get initials() { return initials; },
   get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
   TUNE, CITIES, SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,

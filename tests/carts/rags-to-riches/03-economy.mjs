@@ -126,7 +126,7 @@ const tour = (seed, price) => {
   const log = [];
   for (let w = 0; w < 10; w++) {
     g.press('A'); g.press('A'); for (let i = 0; i < price - 10; i++) g.press('RIGHT'); g.press('A');
-    log.push(q.show.att, q.show.roll); g.run(25); g.press('A');
+    log.push(q.show.att, q.show.roll); g.run(12); g.press('A'); g.run(25); g.press('A');
   }
   return { cash: q.tour.cash, log: log.join() };
 };

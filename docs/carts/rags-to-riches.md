@@ -1,7 +1,7 @@
 # Rags to Riches: Cart Specification
 
-**Version:** 0.4 (Phase 3 built)
-**Status:** In progress: Phases 1 to 3 of 8 (the vertical slice, the economic rules and the full ten-week tour with all three actions) are built; the rest of the plan (section 15) is not
+**Version:** 0.5 (Phase 4 built)
+**Status:** In progress: Phases 1 to 4 of 8 (the vertical slice, the economic rules, the full ten-week tour with all three actions, and the game flow and controls) are built; the rest of the plan (section 15) is not
 **Cart source:** `carts/src/rags-to-riches/` → `carts/rags-to-riches.nova`
 
 A single-player, turn-based band-management game. It is a **spiritual successor** to an old web game about running an
@@ -34,11 +34,13 @@ including any amount over $5,000, is the high score.
 
 ## 2. Core loop
 
-1. **Title:** NEW TOUR, RECORDS (HOW TO PLAY and the intro come in Phase 4 and 5).
-2. **Start city:** the band picks its first city before week 1, with no fare and no turn used (Phase 4; until then the
-   tour starts in Rustport).
+1. **Title:** NEW TOUR, HOW TO PLAY, RECORDS, SEE THE INTRO. The first NEW TOUR shows the **intro** (three text panels,
+   art in Phase 5); it can be skipped at once, and once it has been seen or skipped it is not shown again (a saved
+   preference); SEE THE INTRO shows it on demand.
+2. **Start city:** the band picks its first city on the **map** before week 1, with no fare and no turn used.
 3. **Weeks 1 to 10:** the **week hub** shows the week, cash, popularity, freshness and city. The player picks ONE
-   action and confirms it (for a concert: one of the city's three venues, then the price and the advertising); the action resolves; a **results screen** explains it; the week advances by 1.
+   action and confirms it (for a concert: one of the city's three venues, then the price and the advertising); the action
+   resolves (a concert plays a skippable **cutscene** first); a **results screen** explains it; the week advances by 1.
 4. **End:** after week 10 is resolved, the **final screen** shows the final cash, WIN or LOSS and the tour stats; a
    score in the top 10 asks for initials; then the records.
 
@@ -50,19 +52,23 @@ weeks writing songs (and ends with $0, which is a loss and not a record).
 
 | Button | Use |
 |---|---|
-| D-pad UP / DOWN | Move the selection (menus, the setup rows) |
-| D-pad LEFT / RIGHT | Change the selected value by one step (price $1, advertising $10); held, it repeats |
+| D-pad UP / DOWN | Move the selection (menus, the setup rows); on a map, UP is the previous city and DOWN the next |
+| D-pad LEFT / RIGHT | Change the selected value by one step (price $1, advertising $10); held, it repeats. On a map, the previous / next city (the cities are in west-to-east order). In the help, the page |
 | L / R | Change the selected value by a big step (price $5, advertising $50) |
 | A | Confirm / continue |
 | B | Back / cancel |
-| START | Pause menu (RESUME, RESTART, QUIT TO TITLE). Help comes in Phase 4 |
+| START | Pause menu (RESUME, HOW TO PLAY, RESTART, QUIT TO TITLE). Skips the intro; closes the help |
 
-A result screen ignores A for 20 frames after it appears, and an action is resolved the moment it is confirmed (the
-state changes in the same frame), so a held or double-tapped button cannot resolve it twice.
+Safeguards. Every press is an edge (a held button is one press, not a stream), so a held A never walks through several
+screens. A result screen ignores A for 20 frames after it appears; the concert cutscene ignores A and B for its first 10
+frames (so the press that confirmed the show cannot skip it). An action is resolved the moment it is confirmed (the state
+changes in the same frame), so a double-tapped button cannot resolve it twice. RESTART and QUIT TO TITLE (which throw the
+tour away) ask first, with NO selected. B always goes back one screen at no cost. Nothing is spent before a confirm: the
+start city is free, the songs and the trip have a confirm step, a concert is confirmed on the setup.
 
 ## 4. Screen layout
 
-256 × 224. The picture is on BG0 (a night-sky backdrop, placeholder in Phase 1); the van and later the band are
+256 × 224. The picture is on BG0 (a night-sky backdrop, placeholder); the van and later the band are
 sprites; every word and number is on the overlay (the built-in 8 × 8 font, drawn with a one-pixel shadow). Body copy is
 kept to short lines of at most 28 characters; there are no dense tables.
 
@@ -90,6 +96,36 @@ The two lines under the menu are the city's descriptors (crowd, rooms, rivals: w
 after the concerts already played there (section 5.8). An action that cannot be paid for is greyed and, with the cursor on
 it, the line under the menu says why in red (`NEED $35 FOR ANY ROOM`, `NEED $20 FOR THE BUS`); A on it buzzes.
 Songwriting is never greyed.
+
+**Title:** the name, `RAISE $5,000 IN 10 WEEKS`, the four menu items, the van on the road.
+
+**Intro (placeholder art):** three panels, each a heading, a window onto the sky with the van in it (Phase 5 draws the comic panel
+there), and three lines of story: the rehearsal room, the landlord's $5,000 in ten weeks, the plan. `A: NEXT   START: SKIP`.
+
+**Map (placeholder art):** the five cities as dots joined by a road, from west to east (Rustport, Sunvale, Cedar City, Metro Heights,
+Coastline), with a gold highlighted dot. Under it a card for the highlighted city: its name, `CROWD x  ROOMS y`, `RIVALS z  FANS w`.
+On the start-city map the header is `WHERE DOES THE TOUR START?` and the footer `NO FARE AND NO WEEK USED`; on the travel map the
+header is `WHERE TO?  $20 AND A WEEK`, the band's own city is marked `YOU` and cannot be picked, and the card ends with the cash before and
+after the fare and the week used.
+
+**Help:** four pages over whatever is behind it (the title or a paused tour): THE GOAL, CONCERTS, SONGS AND TRAVEL, CONTROLS.
+At most 12 lines of 28 characters a page.
+
+**Concert cutscene (placeholder art):** `LIVE AT <venue>`, the van on a stage, 48 crowd heads that fill up to the room's turnout over two
+seconds beside a counter (`23 OF 40 CAME`), then a line for the turnout (`SOLD OUT! THE ROOM ERUPTS!` at 100 %, `WHAT A NIGHT!` from 75,
+`A GOOD, LOUD CROWD` from 45, `A THIN BUT KIND CROWD` from 20, `CRICKETS... AND ONE DOG` below). It lasts 200 frames (3.3 seconds) and
+ends on the results by itself; A or B skips it after 10 frames; START pauses it. The show is already settled when it begins, so skipping
+changes nothing.
+
+**Pause:** `RESUME`, `HOW TO PLAY`, `RESTART`, `QUIT TO TITLE`; the last two ask `RESTART THE TOUR?` / `QUIT TO THE TITLE?`, `THIS TOUR WILL BE
+LOST`, `NO, KEEP PLAYING` (selected) and `YES, DO IT`. RESTART begins again on the start-city map.
+
+**Final summary:** `YOU DID IT!` or `TOUR OVER`, `FINAL CASH`, the amount over or short of the goal, then `CONCERTS`, `SONGS`, `TRIPS`,
+`TICKETS SOLD`, `TICKET SALES`, `RENT, ADS, FARES`, `BEST NIGHT`, `POPULARITY`, and the place it takes in the top 10 (`TOP 10 PLACE: #3`, or
+`NOT IN THE TOP 10`). Cash always equals $400 plus ticket sales minus rent, ads and fares (a test checks it).
+
+**Records:** `TOP 10 BY FINAL CASH`: rank, initials, cash, and the concerts and trips of the tour (`6C 2T`), the new entry blinking; a line says
+how ties are broken.
 
 **Venue picker:** the city's three venues, each with its name, `ROOM FOR n` and `RENT $n`. A venue whose rent is over
 the cash is greyed and shows `NEED $n` in red; A on it buzzes. A takes the venue, B goes back to the hub.
@@ -196,8 +232,7 @@ amount over the goal, or red `TOUR OVER` with the amount short. The score is the
 and a score of $0 is not entered in the top 10.
 
 **Failure states.** Cash is never negative. When cash is under the cheapest rent in the city, or under $20, the concert or the
-travel is greyed with the reason, and songwriting remains: a tour can always be finished. Until Phase 4 the tour starts in
-Rustport (the start-city map is Phase 4), and the other four cities are reached by travel.
+travel is greyed with the reason, and songwriting remains: a tour can always be finished.
 
 ### 5.8 How the fans feel
 
@@ -274,20 +309,21 @@ One mode: the 10-week tour.
 ## 9. Scoring
 
 Final cash at the end of week 10. A tour with $5,000 or more is a WIN. The top 10 is ranked by final cash; ties are
-broken by least travel, then fewest concerts (Phase 4), then insertion order.
+broken by fewer trips, then fewer concerts, then insertion order (the older result stays above). A tour that ends on $0 is not
+entered; a tour is entered only when all ten weeks are played (quitting records nothing).
 
 ## 10. Screens and flow
 
-States (built ones in bold): **`title`**, `intro`, `cityStart`, **`hub`**, **`venue`**, **`setup`** (concert setup),
-**`result`** (concert result), **`songs`** (confirm), **`songResult`**, **`travel`** (pick a city), **`travelResult`**, **`final`**,
-**`initials`**, **`records`**, `help`.
+States: `title`, `intro`, `cityStart` (the start map), `hub`, `venue`, `setup` (concert setup), `show` (the cutscene), `result` (concert
+result), `songs` (confirm), `songResult`, `travel` (the travel map), `travelResult`, `final`, `initials`, `records`. The help and the pause
+menu are overlays (`helpOpen`, `paused`) that work over any of them, so the help is reachable without leaving the run.
 
-1. **Title:** NEW TOUR, RECORDS.
-2. **Hub**, then one of: venue picker, setup, result (concert); songs confirm, song result; travel list, travel result; then the
+1. **Title:** NEW TOUR (the intro first if it was never seen), HOW TO PLAY, RECORDS, SEE THE INTRO. B on the start map goes back to the title.
+2. **Start map**, then the **hub** of week 1.
+3. **Hub**, then one of: venue picker, setup, cutscene, result (concert); songs confirm, song result; travel map, travel result; then the
    hub of the next week. After week 10 the **final** screen.
-3. **Final**, then **initials** if the score is in the top 10, then the **records**.
-4. START at any time in a tour (on every screen from the hub to the results) opens the pause menu: RESUME, RESTART, QUIT TO TITLE
-   (nothing is recorded). B always goes back one screen at no cost.
+4. **Final**, then **initials** if the score is in the top 10, then the **records**, then the title.
+5. START at any time in a tour opens the pause menu (nothing is recorded if the tour is abandoned). B always goes back one screen at no cost.
 
 ## 11. Audio
 
@@ -308,16 +344,18 @@ toolkit, `tools/devkit/art/kit.py`).
 |---|---|
 | 0 | Format version |
 | 1 | Last initials entered |
-| 10–39 | Top 10 final cash, best first, 3 slots each: cash, initials, 1 spare |
-| 40–255 | Reserved (a skip-intro preference in Phase 4) |
+| 2 | `1` once the intro has been seen or skipped |
+| 10–39 | Top 10 final cash, best first, 3 slots each: cash, initials (3 characters packed), `trips * 16 + concerts` (the tie-break) |
+| 40–255 | Reserved |
 
-No mid-tour save. Records are written only after a complete 10-week run.
+No mid-tour save. Records are written only after a complete 10-week run. The format version is 2 (version 1 was the layout
+before the tie-break slot); a save of any other version is cleared when the cart starts.
 
 ## 14. Asset budget
 
 | Asset | Budget |
 |---|---|
-| Code | 30 KB of the 64 KB limit (`node tools/check.js rags-to-riches`) |
+| Code | 40 KB of the 64 KB limit (`node tools/check.js rags-to-riches`) |
 | Tiles | 23 (19 background, 4 sprite) of 1,024 |
 | Sprites | 1 on screen (128 in OAM, 32 per line) |
 | Songs / SFX | 2 of 8 songs, 7 of 64 effects (the scaffold's) |
@@ -406,6 +444,35 @@ between phases.
      first and no travel $1,965; three songs first and then hopping $4,170. None wins (the bot never advertises or picks
      a bigger room), but the actions work together as the economy intends. The tuned guard rails of Phase 2 still pass.
 4. **Game flow and controls.** Start-city map, menus, help, confirm/cancel safeguards, skip, summary, leaderboard.
+
+   - **Built:** the title with four items; the intro (three text panels, `intro`) with a saved "seen" preference (slot 2) and
+     START or B to skip it at once; the start-city map (`cityStart`) and the travel map, one `drawMap` with the five cities
+     west to east, moved with the D-pad (previous / next, wrapping, so no city is ever unreachable); the concert cutscene
+     (`show`, 200 frames, A or B skips after 10 frames, START pauses; placeholder crowd of 48 heads); the help (four pages, an
+     overlay that works over the title and over a paused tour); a pause menu with HOW TO PLAY and a confirm (default NO) before
+     RESTART or QUIT TO TITLE; a final summary (tickets, ticket sales, rent / ads / fares, best night, the place in the top 10);
+     and the records with the tie-break (cash, fewer trips, fewer concerts, insertion order) stored in the entry's third slot
+     (save version 2). The tour now counts `tickets`, `earned` and `spent`. `skipTitle` (tests) still lands on the hub in
+     Rustport; a real NEW TOUR and a RESTART go through the map. The bot skips the cutscene.
+   - **Results:** `node tools/verify.js rags-to-riches` passes (the pack was stale once and `verify` repacked it, committed
+     with the step; 296 test checks: 75 flow, 11 art, 43 economy, 8 balance, 70 actions, 89 new in `06-flow.mjs`), the soak is
+     clean and the smoke test in the real console, driven by a script of controller keys (X is A, Enter is START, the arrows) from
+     the title through the intro skip, the map, a concert with its cutscene skipped, songs and travel, reports no errors. The new
+     checks: the title menu and its wrap; the help's pages and its close keys; the intro shown once, skipped at once by START or
+     B, remembered in the save, and replayed from the title; a held A that turns no page; the map (starts on Rustport with week
+     1, $400 and no action used; every one of the five cities as the start city; the labels laid out inside the panel and clear of
+     each other); the travel map offering exactly the four other cities; the cutscene (3.3 s, ignores a press in its first
+     moments, A or B skip, START pauses, the same result either way, a held A cannot play a second concert); the pause help, the
+     confirmed RESTART and QUIT (a double press of A answers NO, B answers NO); the records (each tie-break rule, the order
+     after five inserts, trips and concerts saved in slot 3 of the entry, the table keeping ten, a version-1 save cleared and a
+     version-2 save read as it is, nothing recorded mid-tour); and **a whole tour played with the pad alone**, with no L or R,
+     from the title through the intro, the map, ten weeks of concerts, songs and trips, the final screen, the initials and the
+     records back to the title, passing through every screen of the game. The width guard in `02-art.mjs` caught one line
+     (`TIES: FEWER TRIPS, THEN CONCERTS`, 32 characters), now shortened. I looked at the title, intro, both maps, the cutscene,
+     the help and the pause confirm at native size and moved the Cedar City dot and the "YOU" mark so that no names touch.
+   - **Notes for Phase 5:** the intro, the maps and the cutscene are placeholders drawn with overlay shapes and the one van sprite
+     (the overlay is drawn over sprites, so a screen with a sprite leaves its window unfilled); Phase 5 replaces them with
+     art. The strings of the intro and the help are final unless you want different words.
 5. **Art and character personality.** Band, van, venues, city map, animated crowd, intro panels, flourishes.
 6. **Sound and music.** Cues, concert SFX, menu SFX, victory and defeat; measured loudness.
 7. **Strategy bot and balance tuning.** Reckless, conservative, songwriter, traveller, greedy, adaptive; hundreds of

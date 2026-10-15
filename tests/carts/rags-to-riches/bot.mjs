@@ -41,6 +41,7 @@ export function pad(vm, p, frame, opts) {
     const item = want.kind === 'concert' ? 0 : want.kind === 'songs' ? 1 : 2;
     return p.hubSel !== item ? tap(frame, 'DOWN') : tap(frame, 'A');
   }
+  if (p.state === 'show') return p.timer > 12 ? tap(frame, 'A') : 0; // skip the cutscene
   if (p.state === 'songs') return tap(frame, 'A');
   if (p.state === 'travel') return p.travelSel !== want.dest ? tap(frame, 'DOWN') : tap(frame, 'A');
   if (p.state === 'venue') { // the wanted venue, or the biggest one below it that the cash can pay for

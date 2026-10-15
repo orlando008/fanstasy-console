@@ -9,10 +9,11 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3);
   ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
   vm.press('DOWN'); ok(p.titleSel === 1, 'DOWN moves down the menu'); vm.press('UP'); ok(p.titleSel === 0, 'and UP back');
-  vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
+  vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
-  sfxLog(vm); vm.press('A');
-  ok(p.state === 'hub' && p.playing === p.SONG.play, 'NEW TOUR starts week 1 on the hub, with the tour song');
+  sfxLog(vm); vm.press('A'); vm.press('START'); // the intro is skipped at once
+  ok(p.state === 'cityStart' && p.playing === p.SONG.play, 'NEW TOUR shows the intro (skipped here) and then the map, with the tour song');
+  vm.press('A'); ok(p.state === 'hub', 'A on the map starts week 1 on the hub');
   ok(p.tour.week === 1 && p.tour.cash === 400 && p.tour.pop === 18 && p.tour.fresh === 70, 'with $400, popularity 18 and freshness 70', JSON.stringify(p.tour));
 }
 
@@ -25,10 +26,11 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('B'); ok(p.state === 'venue', 'B goes back to the venues');
   vm.press('B'); ok(p.state === 'hub' && p.tour.week === 1 && p.tour.cash === 400, 'and B again to the hub, at no cost');
   vm.press('A'); vm.press('A'); sfxLog(vm); vm.press('A');
-  ok(p.state === 'result' && p.tour.week === 2 && p.tour.actions === 1, 'A plays the concert: a results screen, and the week advanced by one');
+  ok(p.state === 'show' && p.tour.week === 2 && p.tour.actions === 1, 'A plays the concert: the cutscene, and the week advanced by one');
   const s = p.show;
   ok(s.cash === p.tour.cash && s.cash === 400 + s.att * s.price - s.rent - s.ad, 'the cash is the old cash plus tickets minus rent and advertising', `${s.cash}`);
   ok(sfxLog(vm).length > 0, 'and it has a sound');
+  vm.run(12); vm.press('A'); ok(p.state === 'result', 'A skips the cutscene to the results screen');
   vm.press('A'); ok(p.state === 'result', 'A is ignored for a moment on the results screen');
   vm.run(25); vm.press('A'); ok(p.state === 'hub' && p.tour.week === 2, 'then A goes on to the next week');
 }
@@ -44,7 +46,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('UP'); vm.press('A'); ok(p.state === 'setup' && p.plan.venue === 0, 'the first venue ($35) is taken');
   vm.press('B'); ok(p.state === 'venue' && p.venueSel === 0, 'B from the setup returns to the picker, on the same venue');
   vm.press('B'); p.tour.cash = 400; vm.press('A'); vm.press('DOWN'); vm.press('A'); vm.press('A');
-  ok(p.state === 'result' && p.show.capacity === 50 && p.show.rent === 95, 'the venue chosen is the one played: Rivet Hall holds 50 and costs $95', `${p.show.capacity} ${p.show.rent}`);
+  ok(p.state === 'show' && p.show.capacity === 50 && p.show.rent === 95, 'the venue chosen is the one played: Rivet Hall holds 50 and costs $95', `${p.show.capacity} ${p.show.rent}`);
 }
 {
   let bad = 0, n = 0;
@@ -61,7 +63,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(12), p = vm.probe(); vm.run(3);
   p.tour.fatigue[0] = 50; p.tour.city = 0; vm.run(2);
   ok(p.fansWord(p.tour.fatigue[0]) === 'TIRED', 'fatigue 50 reads as TIRED fans on the hub');
-  vm.press('A'); vm.press('A'); vm.press('R'); vm.press('A'); vm.run(25); vm.press('A');
+  vm.press('A'); vm.press('A'); vm.press('R'); vm.press('A'); vm.run(12); vm.press('A'); vm.run(25); vm.press('A');
   ok(p.tour.fatigue[0] === 80 && p.tour.fatigue.slice(1).every((f) => f === 0), 'a concert adds 30 fatigue to its own city only');
 }
 {
@@ -95,7 +97,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(4), p = vm.probe(); vm.run(3);
   p.tour.cash = 80; vm.press('A'); vm.press('A'); vm.press('DOWN'); vm.press('R'); vm.press('R');
   ok(p.plan.ad === 40, 'with $80 and a $35 rent, advertising stops at $40 (cash after the rent, in tens)', `${p.plan.ad}`);
-  vm.press('A'); ok(p.state === 'result' && p.tour.cash >= 0, 'that show can be played and leaves a non-negative cash', `${p.tour.cash}`);
+  vm.press('A'); ok(p.state === 'show' && p.tour.cash >= 0, 'that show can be played and leaves a non-negative cash', `${p.tour.cash}`);
 }
 {
   const vm = newGame(5), p = vm.probe(); vm.run(3);
@@ -117,7 +119,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(7), p = vm.probe(); vm.run(3); musicLog(vm);
   for (let w = 1; w <= 10; w++) {
     ok(p.state === 'hub' && p.tour.week === w, `week ${w} starts on the hub`);
-    vm.press('A'); vm.press('A'); vm.press('R'); vm.press('A'); vm.run(25); vm.press('A');
+    vm.press('A'); vm.press('A'); vm.press('R'); vm.press('A'); vm.run(12); vm.press('A'); vm.run(25); vm.press('A');
   }
   ok(p.tour.actions === 10 && p.tour.concerts === 10, 'ten weeks use exactly ten actions');
   ok(p.state === 'final' && p.tour.week === 11, 'the tour ends right after week 10, on the final screen');
@@ -130,17 +132,18 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('START'); ok(p.paused, 'START pauses the hub');
   const t = p.timer; vm.run(30); ok(p.timer === t, 'and the clock stands still');
   vm.press('A'); ok(!p.paused && p.state === 'hub', 'RESUME goes back');
-  vm.press('A'); vm.press('A'); vm.press('R'); vm.press('A'); vm.run(25); vm.press('A');
-  vm.press('START'); vm.press('DOWN'); vm.press('A');
-  ok(!p.paused && p.tour.week === 1 && p.tour.cash === 400 && p.state === 'hub', 'RESTART starts a new tour');
-  vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
+  vm.press('A'); vm.press('A'); vm.press('R'); vm.press('A'); vm.run(12); vm.press('A'); vm.run(25); vm.press('A');
+  vm.press('START'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); vm.press('DOWN'); vm.press('A');
+  ok(!p.paused && p.state === 'cityStart' && p.tour.week === 1 && p.tour.cash === 400, 'RESTART (and YES) starts a new tour, on the map');
+  vm.press('A'); ok(p.state === 'hub', 'and A on the map starts it');
+  vm.press('START'); vm.press('UP'); vm.press('A'); vm.press('DOWN'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE (and YES) goes back to the title');
   ok(p.topTen().every((e) => e.score === 0), 'and records nothing');
 }
 
 // 9. The end of a tour, the top 10 and initials.
 {
   const vm = newGame(9), p = vm.probe(); vm.run(3);
-  for (let w = 1; w <= 10; w++) { vm.press('A'); vm.press('A'); vm.press('R'); vm.press('A'); vm.run(25); vm.press('A'); }
+  for (let w = 1; w <= 10; w++) { vm.press('A'); vm.press('A'); vm.press('R'); vm.press('A'); vm.run(12); vm.press('A'); vm.run(25); vm.press('A'); }
   const cash = p.tour.cash; vm.run(45); vm.press('A');
   ok(p.state === 'initials' && p.rank === 0, 'a finished tour with cash is a top-10 entry that asks for initials', `${cash}`);
   vm.run(25);

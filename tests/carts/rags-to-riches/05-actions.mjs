@@ -8,7 +8,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 const toItem = (vm, p, i) => { for (let k = 0; k < 3 && p.hubSel !== i; k++) vm.press('DOWN'); };
 const doSongs = (vm, p) => { toItem(vm, p, 1); vm.press('A'); vm.press('A'); vm.run(25); vm.press('A'); };
 const doTravel = (vm, p, dest) => { toItem(vm, p, 2); vm.press('A'); for (let k = 0; k < 4 && p.travelSel !== dest; k++) vm.press('DOWN'); vm.press('A'); vm.run(25); vm.press('A'); };
-const doConcert = (vm, p) => { toItem(vm, p, 0); vm.press('A'); vm.press('A'); vm.press('R'); vm.press('A'); vm.run(25); vm.press('A'); };
+const doConcert = (vm, p) => { toItem(vm, p, 0); vm.press('A'); vm.press('A'); vm.press('R'); vm.press('A'); vm.run(12); vm.press('A'); vm.run(25); vm.press('A'); };
 const start = (seed) => { const vm = newGame(seed), p = vm.probe(); vm.run(3); return [vm, p]; };
 
 // 1. Songwriting.
@@ -93,7 +93,7 @@ const start = (seed) => { const vm = newGame(seed), p = vm.probe(); vm.run(3); r
 for (const [name, get] of [['songs', (vm, p) => { toItem(vm, p, 1); vm.press('A'); }], ['travel', (vm, p) => { toItem(vm, p, 2); vm.press('A'); }], ['song result', (vm, p) => { toItem(vm, p, 1); vm.press('A'); vm.press('A'); vm.run(25); }], ['travel result', (vm, p) => { toItem(vm, p, 2); vm.press('A'); vm.press('A'); vm.run(25); }]]) {
   const [vm, p] = start(9); get(vm, p); const st = p.state;
   vm.press('START'); const paused = p.paused; vm.press('A'); ok(paused && !p.paused && p.state === st, `START pauses the ${name} screen and RESUME comes back to it`);
-  vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title', `and QUIT TO TITLE leaves from it`);
+  vm.press('START'); vm.press('UP'); vm.press('A'); vm.press('DOWN'); vm.press('A'); ok(p.state === 'title', `and QUIT TO TITLE (confirmed with YES) leaves from it`);
 }
 
 // 5. A whole tour of all three actions.
@@ -125,7 +125,7 @@ for (const [name, get] of [['songs', (vm, p) => { toItem(vm, p, 1); vm.press('A'
     for (let i = 0; i < 9; i++) doSongs(vm, p);
     p.tour.cash = cash; doSongs(vm, p); vm.run(2);
     ok(p.state === 'final' && p.tour.cash === cash && p.isWin(p.tour.cash) === win, `$${cash} at the end of week 10 is a ${win ? 'win' : 'loss'}`);
-    ok(has(vm, win ? 11 : 6, 34, 46) && !has(vm, win ? 6 : 11, 34, 46), `and the final screen says so (${win ? 'green YOU DID IT' : 'red TOUR OVER'})`);
+    ok(has(vm, win ? 11 : 6, 14, 26) && !has(vm, win ? 6 : 11, 14, 26), `and the final screen says so (${win ? 'green YOU DID IT' : 'red TOUR OVER'})`);
   }
 }
 
@@ -146,7 +146,7 @@ for (const [name, get] of [['songs', (vm, p) => { toItem(vm, p, 1); vm.press('A'
 
 // 8. Fuzz: random play over many seeds. Invariants every frame; every tour must reach the final screen.
 {
-  const STATES = new Set(['title', 'hub', 'venue', 'setup', 'result', 'songs', 'songResult', 'travel', 'travelResult', 'final', 'initials', 'records']);
+  const STATES = new Set(['title', 'intro', 'cityStart', 'show', 'hub', 'venue', 'setup', 'result', 'songs', 'songResult', 'travel', 'travelResult', 'final', 'initials', 'records']);
   let bad = '', finished = 0, n = 40, frames = 0;
   for (let seed = 1; seed <= n; seed++) {
     const vm = newGame(seed), p = vm.probe(); let r = seed * 7919 + 13; const rnd = () => (r = (r * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;

@@ -121,6 +121,8 @@ const canTravel = (cash) => cash >= TUNE.fare;
 const isWin = (cash) => cash >= TUNE.goal;
 /** Can the cash pay for a show in at least one venue of this city? */
 const canConcert = (cash, c) => cash >= Math.min(...c.venues.map((v) => v.rent));
+/** The words under a concert's cutscene, from how full the room was (percent). */
+const crowdVerdict = (occ) => (occ >= 100 ? 'SOLD OUT! THE ROOM ERUPTS!' : occ >= 75 ? 'WHAT A NIGHT!' : occ >= 45 ? 'A GOOD, LOUD CROWD' : occ >= 20 ? 'A THIN BUT KIND CROWD' : 'CRICKETS... AND ONE DOG');
 /** The most advertising the cash allows after the rent. */
 const maxAd = (cash, rent) => clamp(Math.floor((cash - rent) / TUNE.adStep) * TUNE.adStep, 0, TUNE.adMax);
 const canAfford = (cash, venue, ad) => venue.rent + ad <= cash;
@@ -145,23 +147,38 @@ const money = (n) => (n < 0 ? '-$' : '$') + String(Math.abs(n)).replace(/\B(?=(\
 const signed = (n) => (n < 0 ? '-' : '+') + money(Math.abs(n));
 const SONG_LINES = ['A CHORUS ABOUT A SANDWICH', 'THREE CHORDS, ZERO SLEEP', 'THE SYNTH PLAYER WENT WILD', 'A RHYME FOR "RENT" AT LAST', 'THE VAN HUMS ALONG: A HIT?', 'THE NEIGHBORS ARE HUMMING IT'];
 const ARRIVE_LINES = ['RUST, ROPES AND SEAGULLS', 'SO SUNNY THE VAN MELTS', 'SAWDUST IN THE AIR', 'ALL HONKING, NO PARKING', 'SURF, SAND AND SUNBURN'];
+const INTRO_PANELS = [
+  ['THE REHEARSAL ROOM', ['IT IS DAMP, IT IS LOUD, AND', 'IT IS YOURS. THEN THE', 'LANDLORD KNOCKS.']],
+  ['THE BAD NEWS', ['THE BUILDING IS BEING SOLD.', 'KEEP THE ROOM FOR $5,000,', 'IN TEN WEEKS. NOT ONE MORE.']],
+  ['THE PLAN', ['YOU HAVE $400, A BATTERED', 'VAN AND A FEW SONGS.', 'TIME TO HIT THE ROAD!']],
+];
+const HELP_PAGES = [
+  ['THE GOAL', ['RAISE $5,000 IN 10 WEEKS.', 'ONE ACTION A WEEK:', '', '- PLAY A CONCERT', '- WRITE NEW SONGS', '- TRAVEL TO ANOTHER CITY', '', 'END WEEK 10 WITH $5,000 OR', 'MORE TO WIN. YOUR SCORE IS', 'THE FINAL CASH.']],
+  ['CONCERTS', ['PICK A VENUE: BIG ROOMS HOLD', 'MORE BUT COST MORE.', 'HIGH PRICES THIN THE CROWD.', 'ADVERTISING BRINGS FANS IN', 'BUT COSTS CASH.', 'RENT AND ADS ARE PAID UP', 'FRONT. THE FORECAST SAYS', 'LOW, FAIR OR STRONG.']],
+  ['SONGS AND TRAVEL', ['SONGS: NO MONEY, BUT FANS', 'AND FRESHNESS GROW.', '', 'TRAVEL: $20 AND A WEEK, NO', 'CONCERT. FANS IN A CITY GET', 'TIRED OF YOU; A NEW CITY', 'STARTS FRESH.']],
+  ['CONTROLS', ['D-PAD: MOVE OR CHANGE', 'L / R: BIG STEPS', 'A: CONFIRM    B: BACK', 'START: PAUSE AND HELP', '', 'NOTHING IS SPENT UNTIL YOU', 'CONFIRM AN ACTION.']],
+];
 const two = (n) => String(n).padStart(2, '0');
 
 // --- Save slots (SPEC 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
-const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: final cash, initials, a spare (slots 10 to 39)
+const VERSION_SLOT = 0, SAVE_VERSION = 2, INITIALS_SLOT = 1, INTRO_SLOT = 2; // INTRO_SLOT: 1 once the intro was seen or skipped
+const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: final cash, initials, trips * 16 + concerts (slots 10 to 39)
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)) }; }
-function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); }
+function readEntry(i) { const s = TOP_SLOT + i * ENTRY, t = dget(s + 2); return { score: dget(s), initials: unpackInitials(dget(s + 1)), trips: t >> 4, concerts: t & 15 }; }
+function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); dset(s + 2, ((e.trips || 0) << 4) | (e.concerts || 0)); }
 const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
 
+/** Does tour result a rank above entry b? More cash first; on a tie fewer trips, then fewer concerts; a full tie ranks below. */
+const beats = (a, b) => a.score !== b.score ? a.score > b.score : (a.trips || 0) !== (b.trips || 0) ? (a.trips || 0) < (b.trips || 0) : (a.concerts || 0) < (b.concerts || 0);
+/** The row a result would take in the top 10, or -1 (a score of $0 never does). */
+const rankOf = (e) => (e.score ? topTen().findIndex((x) => beats(e, x)) : -1);
 /** Put a score into the top 10 if it makes it. Returns its row, or -1. */
 function insertTop(e) {
-  if (!e.score) return -1;
-  const list = topTen(), at = list.findIndex((x) => e.score > x.score);
+  const at = rankOf(e);
   if (at < 0) return -1;
+  const list = topTen();
   list.splice(at, 0, e);
   for (let i = at; i < TOP_N; i++) writeEntry(i, list[i]);
   return at;
@@ -184,12 +201,13 @@ let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let tour = null; // the run: week, cash, pop, fresh, city, fatigue per city, counts
+let helpOpen = false, helpPage = 0, pauseAsk = -1, askSel = 0, introPage = 0, introThen = 'tour', mapSel = 0;
 let hubSel = 0, venueSel = 0, plan = { row: 0, venue: 0, price: TUNE.priceStart, ad: 0 }, show = null, act = null, travelSel = 0;
 
 function newTour() {
   return {
     week: 1, cash: TUNE.startCash, pop: TUNE.startPop, fresh: TUNE.startFresh, city: 0,
-    fatigue: CITIES.map(() => 0), concerts: 0, songs: 0, trips: 0, best: 0, actions: 0,
+    fatigue: CITIES.map(() => 0), concerts: 0, songs: 0, trips: 0, best: 0, actions: 0, tickets: 0, earned: 0, spent: 0,
   };
 }
 const city = () => CITIES[tour.city];
@@ -203,25 +221,35 @@ function init() {
   }
   const f = ART.scenes.field; // the background: the scene's tiles in Map RAM, shown on layer 0
   bg(0, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, show: true });
-  if (skipTitle) startTour(); else toTitle();
+  if (skipTitle) startTour(true); else toTitle();
 }
 
 function go(s) { state = s; timer = 0; }
-function toTitle() { go('title'); titleSel = 0; paused = false; tour = null; play(SONG.title); }
+function toTitle() { go('title'); titleSel = 0; paused = false; helpOpen = false; pauseAsk = -1; tour = null; play(SONG.title); }
 
-function startTour() {
-  tour = newTour(); hubSel = 0; show = null; act = null; paused = false;
+/** A new tour: on the map to pick the first city (no fare, no week). direct (tests) lands on the hub in Rustport. */
+function startTour(direct = false) {
+  tour = newTour(); hubSel = 0; show = null; act = null; paused = false; helpOpen = false; pauseAsk = -1; mapSel = 0;
   plan = { row: 0, venue: 0, price: TUNE.priceStart, ad: 0 };
-  go('hub'); play(SONG.play);
+  go(direct ? 'hub' : 'cityStart'); play(SONG.play);
+}
+function startIntro(then) { introPage = 0; introThen = then; go('intro'); }
+function endIntro() {
+  dset(INTRO_SLOT, 1);
+  if (introThen === 'tour') startTour(); else toTitle();
 }
 
 // --- Update ---
 
 function update() {
   inputMask = readPad(); clock++;
-  if (!paused) timer++; // a state's clock: it stands still while paused
-  if (paused) updatePause();
+  if (!paused && !helpOpen) timer++; // a state's clock: it stands still while paused or reading the help
+  if (helpOpen) updateHelp();
+  else if (paused) updatePause();
   else if (state === 'title') updateTitle();
+  else if (state === 'intro') updateIntro();
+  else if (state === 'cityStart') updateCityStart();
+  else if (state === 'show') updateShow();
   else if (state === 'hub') updateHub();
   else if (state === 'venue') updateVenue();
   else if (state === 'setup') updateSetup();
@@ -234,12 +262,46 @@ function update() {
   prevMask = inputMask;
 }
 
+const TITLE_ITEMS = ['NEW TOUR', 'HOW TO PLAY', 'RECORDS', 'SEE THE INTRO'];
 function updateTitle() {
-  if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
+  if (pressed(UP)) { titleSel = (titleSel + TITLE_ITEMS.length - 1) % TITLE_ITEMS.length; fx(SFX.move); }
+  if (pressed(DOWN)) { titleSel = (titleSel + 1) % TITLE_ITEMS.length; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) startTour(); else { go('records'); hl = -1; }
+    if (titleSel === 0) { if (dget(INTRO_SLOT)) startTour(); else startIntro('tour'); } // the intro shows once, then it is skipped
+    else if (titleSel === 1) { helpOpen = true; helpPage = 0; }
+    else if (titleSel === 2) { go('records'); hl = -1; }
+    else startIntro('title');
   }
+}
+
+/** The intro: A turns the page, START or B skips it all at once. It is shown on the first tour only (or from the title). */
+function updateIntro() {
+  if (pressed(START) || pressed(B)) { fx(SFX.select); endIntro(); return; }
+  if (pressed(A)) { fx(SFX.select); if (++introPage >= INTRO_PANELS.length) endIntro(); }
+}
+
+/** The help: LEFT/RIGHT (or A) turn the page; B or START close it. It works over the title and over a paused tour. */
+function updateHelp() {
+  if (pressed(LEFT)) { helpPage = (helpPage + HELP_PAGES.length - 1) % HELP_PAGES.length; fx(SFX.move); }
+  if (pressed(RIGHT)) { helpPage = (helpPage + 1) % HELP_PAGES.length; fx(SFX.move); }
+  if (pressed(A)) { fx(SFX.move); if (helpPage + 1 < HELP_PAGES.length) helpPage++; else helpOpen = false; }
+  if (pressed(B) || pressed(START)) { helpOpen = false; fx(SFX.select); }
+}
+
+/** The map: the cities in order from west to east. LEFT/UP go to the one before, RIGHT/DOWN to the next. */
+function mapMove(list, cur) {
+  const i = list.indexOf(cur);
+  if (pressed(LEFT) || pressed(UP)) { fx(SFX.move); return list[(i + list.length - 1) % list.length]; }
+  if (pressed(RIGHT) || pressed(DOWN)) { fx(SFX.move); return list[(i + 1) % list.length]; }
+  return cur;
+}
+/** Before week 1: choose where the tour starts. No fare, no week; B goes back to the title. */
+function updateCityStart() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (pressed(B)) { fx(SFX.select); toTitle(); return; }
+  mapSel = mapMove(CITIES.map((_, i) => i), mapSel);
+  if (pressed(A)) { tour.city = mapSel; plan.venue = 0; fx(SFX.select); go('hub'); }
 }
 
 /** The hub: one action a week. An action that cannot be paid for is greyed, and the hub says why. */
@@ -271,19 +333,17 @@ function writeSongsNow() {
   go('songResult'); fx(SFX.point);
 }
 
-/** Travel: pick one of the other four cities (UP/DOWN), A pays the fare and goes, B goes back. */
+/** Travel: pick one of the other four cities on the map, A pays the fare and goes, B goes back. */
 function updateTravel() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   if (pressed(B)) { fx(SFX.select); go('hub'); return; }
-  const dests = otherCities(), i = dests.indexOf(travelSel);
-  if (pressed(UP)) { travelSel = dests[(i + dests.length - 1) % dests.length]; fx(SFX.move); }
-  if (pressed(DOWN)) { travelSel = dests[(i + 1) % dests.length]; fx(SFX.move); }
+  travelSel = mapMove(otherCities(), travelSel);
   if (pressed(A)) { if (canTravel(tour.cash)) travelNow(travelSel); else fx(SFX.hit); }
 }
 function travelNow(dest) {
   if (state !== 'travel' || tour.actions >= TUNE.weeks || dest === tour.city || !canTravel(tour.cash)) return;
   act = { kind: 'travel', week: tour.week, from: tour.city, to: dest, fare: TUNE.fare, cashBefore: tour.cash, cash: tour.cash - TUNE.fare };
-  tour.cash -= TUNE.fare; tour.city = dest; plan.venue = 0; tour.trips++; tour.actions++; tour.week++;
+  tour.cash -= TUNE.fare; tour.spent += TUNE.fare; tour.city = dest; plan.venue = 0; tour.trips++; tour.actions++; tour.week++;
   go('travelResult'); fx(SFX.select);
 }
 
@@ -323,11 +383,19 @@ function playConcert() {
   if (state !== 'setup' || tour.actions >= TUNE.weeks) return;
   const s = { cash: tour.cash, pop: tour.pop, fresh: tour.fresh, fatigue: tour.fatigue[tour.city] };
   show = settle(s, city(), venue(), plan.price, plan.ad, rndi(TUNE.rollMin, TUNE.rollMax));
-  show.week = tour.week;
+  show.week = tour.week; show.venue = venue().name;
   tour.cash = show.cash; tour.pop = show.pop; tour.fresh = show.fresh; tour.fatigue[tour.city] = show.fatigue;
   tour.concerts++; tour.best = Math.max(tour.best, show.net); tour.actions++; tour.week++;
-  go('result');
-  fx(show.net >= 0 ? SFX.point : SFX.hit);
+  tour.tickets += show.att; tour.earned += show.revenue; tour.spent += show.rent + show.ad;
+  go('show'); fx(SFX.select);
+}
+
+/** The concert cutscene (placeholder crowd, art in Phase 5): the show is already settled; this only presents it. START pauses,
+ *  A or B skips (after 10 frames, so the press that confirmed the show cannot skip it), and it ends by itself after SHOW_LEN frames. */
+const SHOW_LEN = 200;
+function updateShow() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (timer >= SHOW_LEN || (timer >= 10 && (pressed(A) || pressed(B)))) { go('result'); fx(show.net >= 0 ? SFX.point : SFX.hit); }
 }
 
 /** After any action's results screen: A (not in the first 20 frames) goes on to the next week, or to the end after week 10. */
@@ -344,7 +412,7 @@ function toFinal() { go('final'); play(-1); fx(isWin(tour.cash) ? SFX.record : S
 function updateFinal() {
   if (timer < 40 || !(pressed(A) || pressed(START))) return;
   fx(SFX.select);
-  rank = insertTop({ score: tour.cash, initials: lastInitials() });
+  rank = insertTop({ score: tour.cash, initials: lastInitials(), trips: tour.trips, concerts: tour.concerts });
   if (rank >= 0) { go('initials'); initials = { chars: lastInitials().split(''), pos: 0 }; fx(SFX.record); }
   else toTitle();
 }
@@ -369,15 +437,27 @@ function updateRecords() {
   if ((pressed(START) || pressed(A) || pressed(B)) && timer > 20) { fx(SFX.select); toTitle(); }
 }
 
+const PAUSE_ITEMS = ['RESUME', 'HOW TO PLAY', 'RESTART', 'QUIT TO TITLE'];
+/** The pause menu. RESTART and QUIT ask first (default NO): they throw the tour away, and a double press must not do it. */
 function updatePause() {
-  if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
-  if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
+  if (pauseAsk >= 0) {
+    if (pressed(UP) || pressed(DOWN)) { askSel ^= 1; fx(SFX.move); }
+    if (pressed(B)) { pauseAsk = -1; fx(SFX.select); return; }
+    if (!pressed(A)) return;
+    fx(SFX.select);
+    const yes = askSel === 1, what = pauseAsk; pauseAsk = -1;
+    if (yes) { if (what === 2) startTour(); else toTitle(); } // quitting abandons the tour: nothing is recorded
+    return;
+  }
+  const n = PAUSE_ITEMS.length;
+  if (pressed(UP)) { pauseSel = (pauseSel + n - 1) % n; fx(SFX.move); }
+  if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % n; fx(SFX.move); }
   if (pressed(B) || (pressed(START) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
   else if (pressed(A) || pressed(START)) {
     fx(SFX.select);
     if (pauseSel === 0) paused = false;
-    else if (pauseSel === 1) startTour(); // restart
-    else toTitle(); // quitting abandons the tour: nothing is recorded
+    else if (pauseSel === 1) { helpOpen = true; helpPage = 0; }
+    else { pauseAsk = pauseSel; askSel = 0; }
   }
 }
 
@@ -386,6 +466,9 @@ function updatePause() {
 function draw() {
   cls();
   if (state === 'title') drawTitle();
+  else if (state === 'intro') drawIntro();
+  else if (state === 'cityStart') drawCityStart();
+  else if (state === 'show') drawShow();
   else if (state === 'hub') drawHub();
   else if (state === 'venue') drawVenue();
   else if (state === 'setup') drawSetup();
@@ -398,13 +481,56 @@ function draw() {
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
   if (paused) drawPause();
+  if (helpOpen) drawHelp();
 }
 
 function drawTitle() {
-  sprite(ART.sprites.van, 120, 150);
-  ctxt('RAGS TO RICHES', 50, GOLD);
-  ctxt('RAISE $5,000 IN 10 WEEKS', 70, WHITE);
-  ['NEW TOUR', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
+  sprite(ART.sprites.van, 120, 168);
+  ctxt('RAGS TO RICHES', 40, GOLD);
+  ctxt('RAISE $5,000 IN 10 WEEKS', 58, WHITE);
+  TITLE_ITEMS.forEach((t, i) => txt(`${i === titleSel ? '> ' : '  '}${t}`, 80, 92 + i * 14, i === titleSel ? WHITE : DIM));
+  ctxt('A: SELECT', 206, DIM);
+}
+
+/** The intro, placeholder art: the van in the sky's window above three lines of story (Phase 5 draws the panels). */
+function drawIntro() {
+  const [head, lines] = INTRO_PANELS[introPage];
+  rectfill(8, 8, 240, 20, SHADOW); rect(8, 8, 240, 20, PANEL);
+  ctxt(`${head}  ${introPage + 1}/${INTRO_PANELS.length}`, 14, GOLD);
+  rect(24, 32, 208, 84, PANEL);
+  sprite(ART.sprites.van, 120, 84 - Math.floor(Math.abs(Math.sin(clock / 20)) * 4));
+  rectfill(8, 124, 240, 92, SHADOW); rect(8, 124, 240, 92, PANEL);
+  lines.forEach((l, i) => ctxt(l, 140 + i * 14, WHITE));
+  ctxt(introPage + 1 < INTRO_PANELS.length ? 'A: NEXT   START: SKIP' : 'A: HIT THE ROAD', 198, DIM);
+}
+
+/** The map, placeholder art (Phase 5): the five cities from west to east on a road. selectable: the cities the cursor can reach. */
+const MAP_POS = [[40, 50], [66, 90], [128, 38], [176, 68], [212, 94]];
+function drawMap(selectable, sel, here, header) {
+  panel(8, 8, 240, 112);
+  ctxt(header, 14, GOLD);
+  for (let i = 0; i + 1 < CITIES.length; i++) line(MAP_POS[i][0], MAP_POS[i][1], MAP_POS[i + 1][0], MAP_POS[i + 1][1], PANEL);
+  CITIES.forEach((c, i) => {
+    const [x, y] = MAP_POS[i], can = selectable.includes(i), on = i === sel;
+    circfill(x, y, on ? 5 : 3, on ? GOLD : can ? DIM : GREY);
+    if (on && clock % 30 < 20) circ(x, y, 8, GOLD);
+    txt(c.name, clamp(x - c.name.length * 4, 12, 244 - c.name.length * 8), y + 9, on ? WHITE : can ? DIM : GREY);
+  });
+  if (here >= 0) txt('YOU', MAP_POS[here][0] - 12, MAP_POS[here][1] - 14, CYAN);
+}
+/** What the highlighted city is like, under the map. */
+function drawCityCard(ci) {
+  const c = CITIES[ci];
+  panel(8, 124, 240, 92);
+  ctxt(c.name, 130, GOLD);
+  ctxt(`CROWD ${c.crowd}  ROOMS ${c.rooms}`, 146, WHITE);
+  ctxt(`RIVALS ${c.rivals}  FANS ${fansWord(tour.fatigue[ci])}`, 158, WHITE);
+}
+function drawCityStart() {
+  drawMap(CITIES.map((_, i) => i), mapSel, -1, 'WHERE DOES THE TOUR START?');
+  drawCityCard(mapSel);
+  ctxt('NO FARE AND NO WEEK USED', 176, DIM);
+  ctxt('A: START HERE   B: BACK', 194, WHITE);
 }
 
 /** The line of figures at the top of every tour screen. */
@@ -466,6 +592,23 @@ function drawSetup() {
   ctxt(ok ? 'A: PLAY  B: BACK  L/R: BIG' : "CAN'T PAY: B TO GO BACK", 194, ok ? WHITE : RED);
 }
 
+/** The concert cutscene, placeholder art: the band on a stage in the sky's window, a crowd of 48 heads filling to the room's turnout. */
+function drawShow() {
+  const r = show, occ = r.att / r.capacity, prog = Math.min(1, timer / 120), heads = Math.round(48 * occ * prog);
+  rectfill(8, 8, 240, 20, SHADOW); rect(8, 8, 240, 20, PANEL);
+  ctxt(`LIVE AT ${r.venue}`, 14, GOLD);
+  sprite(ART.sprites.van, 120, 52 + (clock % 16 < 8 ? 0 : -2));
+  rectfill(60, 70, 136, 4, PANEL);
+  for (let i = 0; i < 48; i++) {
+    const x = 22 + (i % 16) * 14, y = 96 + Math.floor(i / 16) * 14;
+    if (i < heads) circfill(x, y, 4, i % 3 === 0 ? GOLD : i % 3 === 1 ? CYAN : WHITE); else circ(x, y, 4, GREY);
+  }
+  rectfill(8, 148, 240, 68, SHADOW); rect(8, 148, 240, 68, PANEL);
+  ctxt(`${Math.floor(r.att * prog)} OF ${r.capacity} CAME`, 156, WHITE);
+  if (timer >= 130 && (timer < 150 || timer % 40 < 28)) ctxt(crowdVerdict(Math.floor(occ * 100)), 176, occ >= 0.45 ? GOLD : DIM);
+  if (timer >= 10 && timer % 60 < 40) ctxt('A: SKIP', 198, DIM);
+}
+
 function drawResult() {
   const r = show;
   panel(8, 8, 240, 208);
@@ -516,18 +659,10 @@ function drawSongResult() {
 }
 
 function drawTravel() {
-  drawStatus();
-  panel(8, 64, 240, 142);
-  ctxt(`WHERE TO?  ${money(TUNE.fare)} AND A WEEK`, 72, GOLD);
-  otherCities().forEach((ci, i) => {
-    const c = CITIES[ci], y = 88 + i * 14, on = ci === travelSel, f = tour.fatigue[ci];
-    txt(`${on ? '> ' : '  '}${c.name}`, 20, y, on ? WHITE : DIM);
-    if (f > 0) rtxt(`FANS ${fansWord(f)}`, 236, y, on ? WHITE : DIM);
-  });
-  const c = CITIES[travelSel];
-  ctxt(`CROWD ${c.crowd}  ROOMS ${c.rooms}`, 150, DIM);
-  ctxt(`RIVALS ${c.rivals}  FROM ${money(Math.min(...c.venues.map((v) => v.rent)))}`, 162, DIM);
-  ctxt(canTravel(tour.cash) ? `THIS USES WEEK ${tour.week} OF ${TUNE.weeks}` : `NEED ${money(TUNE.fare)} FOR THE BUS`, 178, canTravel(tour.cash) ? DIM : RED);
+  drawMap(otherCities(), travelSel, tour.city, `WHERE TO?  ${money(TUNE.fare)} AND A WEEK`);
+  drawCityCard(travelSel);
+  const ok = canTravel(tour.cash);
+  ctxt(ok ? `CASH ${money(tour.cash)} > ${money(tour.cash - TUNE.fare)}   WEEK ${tour.week}/${TUNE.weeks}` : `NEED ${money(TUNE.fare)} FOR THE BUS`, 176, ok ? DIM : RED);
   ctxt('A: GO   B: BACK', 194, WHITE);
 }
 
@@ -546,28 +681,31 @@ function drawTravelResult() {
 }
 
 function drawFinal() {
-  const win = isWin(tour.cash);
-  panel(24, 24, 208, 176);
-  ctxt(win ? 'YOU DID IT!' : 'TOUR OVER', 36, win ? GREEN : RED);
-  ctxt('FINAL CASH', 58, DIM);
-  ctxt(money(tour.cash), 72, win ? GREEN : WHITE);
-  ctxt(win ? `${money(tour.cash - TUNE.goal)} OVER THE GOAL` : `${money(TUNE.goal - tour.cash)} SHORT OF ${money(TUNE.goal)}`, 90, win ? GOLD : RED);
-  ctxt(`CONCERTS ${tour.concerts}  SONGS ${tour.songs}  TRIPS ${tour.trips}`, 116, WHITE);
-  ctxt(`BEST NIGHT  ${signed(tour.best)}`, 130, WHITE);
-  ctxt(`POPULARITY  ${tour.pop}`, 144, WHITE);
-  if (timer >= 40 && timer % 60 < 40) ctxt('A: CONTINUE', 176, WHITE);
+  const win = isWin(tour.cash), at = rankOf({ score: tour.cash, trips: tour.trips, concerts: tour.concerts });
+  panel(8, 8, 240, 208);
+  ctxt(win ? 'YOU DID IT!' : 'TOUR OVER', 16, win ? GREEN : RED);
+  ctxt('FINAL CASH', 34, DIM);
+  ctxt(money(tour.cash), 46, win ? GREEN : WHITE);
+  ctxt(win ? `${money(tour.cash - TUNE.goal)} OVER THE GOAL` : `${money(TUNE.goal - tour.cash)} SHORT OF ${money(TUNE.goal)}`, 62, win ? GOLD : RED);
+  row('CONCERTS', String(tour.concerts), 86); row('SONGS', String(tour.songs), 98); row('TRIPS', String(tour.trips), 110);
+  row('TICKETS SOLD', String(tour.tickets), 128); row('TICKET SALES', money(tour.earned), 140);
+  row('RENT, ADS, FARES', money(tour.spent), 152);
+  row('BEST NIGHT', signed(tour.best), 164); row('POPULARITY', String(tour.pop), 176);
+  ctxt(at >= 0 ? `TOP 10 PLACE: #${at + 1}` : 'NOT IN THE TOP 10', 192, at >= 0 ? GOLD : DIM);
+  if (timer >= 40 && timer % 60 < 40) ctxt('A: CONTINUE', 204, WHITE);
 }
 
 function drawRecords() {
   panel(24, 16, 208, 192);
-  ctxt('TOP 10', 24, GOLD);
+  ctxt('TOP 10 BY FINAL CASH', 24, GOLD);
   topTen().forEach((e, i) => {
     const y = 48 + i * 14, on = i === hl;
     if (on && timer % 40 < 30) rectfill(28, y - 2, 200, 12, PANEL);
     txt(String(i + 1).padStart(2), 40, y, i === 0 ? GOLD : DIM);
     txt(e.score ? e.initials : '---', 72, y, on ? GOLD : WHITE);
-    if (e.score) rtxt(money(e.score), 216, y, i === 0 ? GOLD : WHITE);
+    if (e.score) { rtxt(money(e.score), 168, y, i === 0 ? GOLD : WHITE); rtxt(`${e.concerts}C ${e.trips}T`, 224, y, DIM); }
   });
+  ctxt('TIE: FEWER TRIPS, CONCERTS', 176, DIM);
   if (timer % 60 < 40) ctxt('START: BACK', 192, DIM);
 }
 
@@ -586,9 +724,24 @@ function drawInitials() {
 }
 
 function drawPause() {
-  panel(64, 80, 128, 64);
-  ctxt('PAUSED', 88, GOLD);
-  ['RESUME', 'RESTART', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
+  panel(24, 64, 208, 104);
+  if (pauseAsk >= 0) {
+    ctxt(pauseAsk === 2 ? 'RESTART THE TOUR?' : 'QUIT TO THE TITLE?', 74, GOLD);
+    ctxt('THIS TOUR WILL BE LOST', 90, DIM);
+    ['NO, KEEP PLAYING', 'YES, DO IT'].forEach((t, i) => txt(`${i === askSel ? '>' : ' '} ${t}`, 64, 116 + i * 14, i === askSel ? WHITE : DIM));
+    return;
+  }
+  ctxt('PAUSED', 74, GOLD);
+  PAUSE_ITEMS.forEach((t, i) => txt(`${i === pauseSel ? '>' : ' '} ${t}`, 64, 94 + i * 14, i === pauseSel ? WHITE : DIM));
+}
+
+/** The help pages, over whatever is behind them. */
+function drawHelp() {
+  const [head, lines] = HELP_PAGES[helpPage];
+  panel(8, 8, 240, 208);
+  ctxt(`${head}  ${helpPage + 1}/${HELP_PAGES.length}`, 20, GOLD);
+  lines.forEach((l, i) => txt(l, 20, 46 + i * 12, WHITE));
+  ctxt('LEFT/RIGHT: PAGE   B: CLOSE', 198, DIM);
 }
 
 function panel(x, y, w, h) { rectfill(x, y, w, h, SHADOW); rect(x, y, w, h, PANEL); }
