@@ -19,10 +19,10 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 // 2. A piece appears, is steered and lands.
 {
   const vm = newGame(1), p = vm.probe(), y = p.yards[0];
-  vm.run(p.SPAWN_WAIT + 40 + 5);
+  vm.run(36); // the first piece comes after 30 frames
   ok(y.cur && y.cur.kind === p.seq[0], 'the first piece of the shared bag appears after a short wait');
-  const x0 = y.cur.x; vm.run(10, M('LEFT')); ok(y.cur.x < x0 - 10, 'LEFT slides it');
-  vm.run(20, M('RIGHT')); ok(y.cur.x > x0 - 20, 'and RIGHT');
+  const x0 = y.cur.x; vm.run(6, M('LEFT')); ok(y.cur.x < x0 - 7, 'LEFT slides it');
+  vm.run(10, M('RIGHT')); ok(y.cur.x > x0 - 7, 'and RIGHT');
   const r = y.rot; vm.press('A'); ok(y.rot === (r + 1) % 4, 'A turns it a quarter clockwise'); vm.press('B'); ok(y.rot === r, 'and B back');
   const y0 = y.cur.y; vm.run(8); const slow = y.cur.y - y0; const y1 = y.cur.y; vm.run(4, M('DOWN')); const fast = y.cur.y - y1;
   ok(Math.abs(slow - 8 * p.FALL) < 0.01 && Math.abs(fast - 4 * p.DROP) < 0.01, 'it falls at a steady speed, and faster with DOWN', `${slow.toFixed(1)} px in 8 frames and ${fast.toFixed(1)} in 4`);

@@ -11,8 +11,8 @@ const PROBE = `__expose(() => ({
   get yards() { return yards; }, get seq() { return seq; }, get raceT() { return raceT; }, get winner() { return winner; }, get finalScore() { return finalScore; },
   get rank() { return rank; }, get initials() { return initials; }, get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
   get ART() { return ART; }, mget: (x, y) => mget(x, y),
-  plan, ctl, mkWorld, mkBody, stepWorld, supportedSet, touchInfo, collideBodies, place, SHAPES, newYards, spawn, steer, land, outside, fmtTime,
-  BS, GRAV, MU, ITERS, FALL, DROP, MOVE, FINISH, HOLD, SPAWN_WAIT, SPAWN_ABOVE, COL_W, HALF, VY, VH,
+  plan, ctl, landing, fall, lose, SKILLS, mkWorld, mkBody, stepWorld, supportedSet, touchInfo, collideBodies, place, SHAPES, newYards, spawn, steer, land, outside, fmtTime,
+  BS, GRAV, MU, ITERS, FALL, DROP, MOVE, EDGE, WOBBLE, LOST_WAIT, FINISH, HOLD, SPAWN_WAIT, SPAWN_ABOVE, COL_W, HALF, VY, VH,
   SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
 }));`;
 

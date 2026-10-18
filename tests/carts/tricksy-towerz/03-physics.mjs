@@ -18,7 +18,7 @@ const hash = (W) => W.bodies.map((b) => [b.x, b.y, b.a].map((v) => v.toFixed(6))
   const w = T.v[0], side = Math.hypot(w[2] - w[0], w[3] - w[1]);
   ok(Math.abs(side - 8) < 1e-9, 'every block is 8 px square', `${side}`);
   const G = p.mkWorld().ground;
-  ok(G.im === 0 && G.n === 10 && Math.abs(Math.min(...G.v.map((v) => v[1])) ) < 1e-9 && Math.abs(Math.min(...G.v.map((v) => v[0])) + 20) < 1e-9, 'the platform is fixed: 5 blocks wide and 2 deep, its top at 0 and centred');
+  ok(G.im === 0 && G.n === 12 && Math.abs(Math.min(...G.v.map((v) => v[1]))) < 1e-9 && Math.abs(Math.min(...G.v.map((v) => v[0])) + 24) < 1e-9, 'the platform is fixed: 6 blocks wide and 2 deep, its top at 0 and centred');
 }
 
 // 2. Things come to rest.
@@ -36,7 +36,7 @@ const hash = (W) => W.bodies.map((b) => [b.x, b.y, b.a].map((v) => v.toFixed(6))
 {
   const W = p.mkWorld(), b = drop(W, 0, 16, -30); run(W, 300);
   ok(Math.abs(b.y + 4) < 0.1 && Math.abs(b.a) < 1e-3, 'a bar hanging over the edge stays put while its centre of mass is over the platform', `x ${b.x.toFixed(1)}`);
-  const W2 = p.mkWorld(), c = drop(W2, 0, 25, -30); run(W2, 200);
+  const W2 = p.mkWorld(), c = drop(W2, 0, 30, -30); run(W2, 200);
   ok(c.y > 20 && Math.abs(c.a) > 0.5, 'and tips off when it is not', `y ${c.y.toFixed(0)}, turned ${c.a.toFixed(1)} rad`);
 }
 
@@ -92,6 +92,14 @@ const setCur = (q, y, shape, rot, x, yy) => { const b = q.mkBody(q.SHAPES[shape]
   ok(done && Math.abs(b.y + 16) < 0.5 && b.x > 11.9, 'a piece brushing the side of the tower slides off it and lands beside it, not on a corner', `x ${b.x.toFixed(2)}, y ${b.y.toFixed(2)}`);
 }
 {
+  // a piece sliding off a corner, or off a side, never slides out of its column
+  const [v, q, y] = yardGame(2); y.cur = null; y.wait = 9999;
+  drop(y.W, 0, 12, -4); v.run(60); // a bar on the right of the platform, its end at x 28
+  const b = setCur(q, y, 1, 0, 22, -60); // a square over the very end of it, pushed right by the rule that slips it off a corner
+  let inside = true; for (let i = 0; i < 120 && y.cur; i++) { v.step(M('DOWN')); if (y.cur && q.outside(y.cur)) inside = false; }
+  ok(inside && !q.outside(b), 'a piece falling or landing at the edge of the column stays inside it', `x ${b.x.toFixed(1)}`);
+}
+{
   // turning next to a wall: the piece is nudged away from it
   const [v, q, y] = yardGame(1); const b = setCur(q, y, 0, 0, 0, -80);
   v.run(60, M('RIGHT')); const before = y.rot; v.press('A');
@@ -111,15 +119,15 @@ const setCur = (q, y, shape, rot, x, yy) => { const b = q.mkBody(q.SHAPES[shape]
 }
 {
   const [v, q, y] = yardGame(1); y.cur = null; y.wait = 9999;
-  const stack = []; for (let i = 0; i < 7; i++) stack.push(drop(y.W, 1, 0, -8 - 16 * i - i * 0.02)); // 7 squares: 112 px
+  const stack = []; for (let i = 0; i < 8; i++) stack.push(drop(y.W, 1, 0, -8 - 16 * i - i * 0.02)); // 8 squares: 128 px
   v.run(120);
-  ok(y.top < -111 && y.top > -113 && y.hold === 0, 'the height is the top of what is held up (112 px for seven squares), still under the line', `top ${y.top.toFixed(1)}`);
-  stack.push(drop(y.W, 1, 0, -8 - 16 * 7)); v.run(40);
-  ok(y.top <= -p.FINISH && y.hold > 20 && !y.done, 'an eighth square puts the tower over the line and the count of steady frames starts', `hold ${y.hold}`);
+  ok(y.top < -127 && y.top > -129 && y.hold === 0, 'the height is the top of what is held up (128 px for eight squares), still under the line of 130', `top ${y.top.toFixed(1)}`);
+  stack.push(drop(y.W, 1, 0, -8 - 16 * 8)); v.run(40);
+  ok(y.top <= -p.FINISH && y.hold > 20 && !y.done, 'a ninth square puts the tower over the line and the count of steady frames starts', `hold ${y.hold}`);
   ok(y.cam < 20 - 20, 'and the camera has climbed with it', `cam ${y.cam.toFixed(1)}`);
   y.W.bodies.pop(); v.run(2);
   ok(y.hold === 0, 'losing the top square drops it back under the line and the count starts again');
-  stack.push(drop(y.W, 1, 0, -8 - 16 * 7)); for (let i = 0; i < p.HOLD + 200 && v.probe().state === 'play'; i++) v.step(0);
+  stack.push(drop(y.W, 1, 0, -8 - 16 * 8)); for (let i = 0; i < p.HOLD + 200 && v.probe().state === 'play'; i++) v.step(0);
   ok(v.probe().state === 'over' && v.probe().winner === 0, 'staying over the line for the whole 120 frames wins the race', `at ${v.probe().raceT} frames`);
 }
 

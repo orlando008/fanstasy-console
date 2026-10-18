@@ -147,6 +147,7 @@ function collide(A, ka, B, kb, out) {
   if ((s0 < 0 && s1 < 0) || (s0 > BS && s1 > BS)) return;
   if (s0 < 0) { const f = -s0 / (s1 - s0); x0 += (x1 - x0) * f; y0 += (y1 - y0) * f; s0 = 0; } else if (s1 < 0) { const f = -s1 / (s0 - s1); x1 += (x0 - x1) * f; y1 += (y0 - y1) * f; s1 = 0; }
   if (s0 > BS) { const f = (s0 - BS) / (s0 - s1); x0 += (x1 - x0) * f; y0 += (y1 - y0) * f; } else if (s1 > BS) { const f = (s1 - BS) / (s1 - s0); x1 += (x0 - x1) * f; y1 += (y0 - y1) * f; }
+  if (Math.hypot(x1 - x0, y1 - y0) < 0.05) return; // blocks that only meet at a corner (the seam of two rows of blocks) do not catch on each other
   for (let i = 0; i < 2; i++) {
     const px = i ? x1 : x0, py = i ? y1 : y0, sep = (px - ox) * nx + (py - oy) * ny;
     if (sep > MARGIN) continue;
@@ -164,10 +165,11 @@ function collideBodies(A, B, out) {
 
 /** A world: a fixed ground, the bodies on it, and last frame's contacts (their impulses start the next frame's solve). */
 const mkWorld = () => ({ ground: mkGround(), bodies: [], prev: new Map(), cs: [] });
-/** The platform: 5 blocks wide, 2 deep, its top at y = 0 and centred on x = 0. */
+/** The platform: GW blocks wide, 2 deep, its top at y = 0 and centred on x = 0. */
+const GW = 6, GH = GW * H; // its width in blocks and half its width in px
 function mkGround() {
   const cells = [];
-  for (let r = 0; r < 2; r++) for (let c = 0; c < 5; c++) cells.push([c, r]);
+  for (let r = 0; r < 2; r++) for (let c = 0; c < GW; c++) cells.push([c, r]);
   return mkBody(cells, 0, BS, 0, true);
 }
 
@@ -246,11 +248,17 @@ function touchInfo(W, b) {
   return { gap, rests, nx, reach: hi - lo, mid: (hi + lo) / 2 }; // reach: how wide the resting contact is
 }
 
+/** The computer wizards' levels: how far off they aim (px), the frames they think before they move, the chance they take the second-best place, whether they drop pieces fast. */
+const SKILLS = [
+  { name: 'EASY', aim: 2.5, think: 55, slip: 0.2, fast: 0 }, { name: 'NORMAL', aim: 1.5, think: 40, slip: 0.1, fast: 0 },
+  { name: 'HARD', aim: 0.8, think: 30, slip: 0.04, fast: 1 }, { name: 'WIZARD', aim: 0.2, think: 6, slip: 0, fast: 1 },
+];
+
 // --- The game: a yard for each player (a world, the piece being steered, the camera) ---
 
-const FALL = 0.7, DROP = 3, MOVE = 1.3, EDGE = 1.6;     // the steered piece: how fast it falls, with DOWN, and moves sideways (px per frame); a piece resting on less than EDGE px slips off its corner
-const FINISH = 120, HOLD = 120;             // the finish line (px above the platform) and the frames the tower has to stay over it
-const SPAWN_WAIT = 20, SPAWN_ABOVE = 84;    // frames between a piece landing and the next one, and how far above the tower it appears
+const FALL = 1, DROP = 3, MOVE = 1.3, EDGE = 3;     // the steered piece: how fast it falls, with DOWN, and moves sideways (px per frame); a piece resting on less than EDGE px slips off its corner
+const FINISH = 130, HOLD = 120, WOBBLE = 0.25;             // the finish line (px above the platform) and the frames the tower has to stay over it
+const SPAWN_WAIT = 20, LOST_WAIT = 40, SPAWN_ABOVE = 72; // frames between a piece landing and the next one, the extra wait after losing a piece, and how far above the tower it appears
 const COL_W = 64, VY = 16, VH = 208, HALF = 32; // a yard's column on the screen: width, top, height; half its width
 
 let skipTitle = false; // tests set this to land straight in the game
@@ -266,7 +274,7 @@ function newYards(n) {
     for (let i = 6; i > 0; i--) { const j = rndi(0, i); [bag[i], bag[j]] = [bag[j], bag[i]]; }
     seq.push(...bag);
   }
-  yards = Array.from({ length: n }, (_, slot) => ({ slot, pad: slot, W: mkWorld(), cur: null, cam: 20, top: 0, wait: 30, placed: 0, lost: 0, hold: 0, done: false, spawned: 0, rot: 0, ai: false, plan: null }));
+  yards = Array.from({ length: n }, (_, slot) => ({ slot, pad: slot, W: mkWorld(), cur: null, cam: 20, top: 0, wait: 30, placed: 0, lost: 0, hold: 0, done: false, spawned: 0, rot: 0, ai: false, skill: 3, think: 0, plan: null, wob: 0, guide: null }));
 }
 
 function init() {
@@ -311,15 +319,15 @@ function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   raceT++;
   for (const y of yards) updateYard(y);
-  const w = yards.find((y) => y.done);
-  if (w) finish(w.slot);
+  const done = yards.filter((y) => y.done); // two on the same frame: the higher tower wins
+  if (done.length) finish(done.reduce((a, b) => (b.top < a.top ? b : a)).slot);
 }
 
 /** One yard for one frame: steer the piece, step the physics, count the height, move the camera. */
 function updateYard(y) {
   const W = y.W;
   if (!y.cur) {
-    if (--y.wait <= 0) spawn(y);
+    if (y.hold === 0 && --y.wait <= 0) spawn(y); // no new pieces while the tower is over the line: it only has to stand
   } else steer(y);
   stepWorld(W);
   for (let i = W.bodies.length - 1; i >= 0; i--) { // blocks that fall off the platform are lost
@@ -330,6 +338,9 @@ function updateYard(y) {
   let top = 0;
   for (const b of W.bodies) if (sup.has(b.id)) for (let k = 0; k < b.n; k++) top = Math.min(top, b.v[k][1], b.v[k][3], b.v[k][5], b.v[k][7]);
   y.top = top;
+  let wob = 0; // how much the tower is moving
+  for (const b of W.bodies) if (sup.has(b.id)) wob = Math.max(wob, Math.hypot(b.vx, b.vy) + Math.abs(b.w) * 6);
+  y.wob = wob;
   y.hold = top <= -FINISH ? y.hold + 1 : 0;
   if (y.hold >= HOLD) y.done = true;
   const want = Math.min(20, top + VH - 90);
@@ -348,49 +359,74 @@ function ctl(y) {
     const p = y.pad;
     return { dx: (held(RIGHT, p) ? 1 : 0) - (held(LEFT, p) ? 1 : 0), turn: (pressed(A, p) || pressed(R, p) ? 1 : 0) - (pressed(B, p) || pressed(L, p) ? 1 : 0), drop: held(DOWN, p) };
   }
-  if (!y.plan || y.plan.b !== y.cur) y.plan = { b: y.cur, ...plan(y) };
+  const sk = SKILLS[y.skill];
+  if (!y.plan || y.plan.b !== y.cur) {
+    const pl = plan(y), pick = pl.alt && rndi(0, 99) < sk.slip * 100 ? pl.alt : pl; // sometimes the second-best place
+    y.plan = { b: y.cur, rot: pick.rot, x: pick.x + rndi(-100, 100) / 100 * sk.aim, score: pick.score };
+    y.think = sk.think;
+  }
+  if (y.think > 0) { y.think--; return { dx: 0, turn: 0, drop: false }; }
   const pl = y.plan, turns = (pl.rot - y.rot + 4) % 4, off = pl.x - y.cur.x;
-  return { dx: clamp(off, -MOVE, MOVE) / MOVE, turn: turns === 0 ? 0 : turns === 3 ? -1 : 1, drop: turns === 0 && Math.abs(off) < 0.3 };
+  return { dx: clamp(off, -MOVE, MOVE) / MOVE, turn: turns === 0 ? 0 : turns === 3 ? -1 : 1, drop: sk.fast && turns === 0 && Math.abs(off) < 0.3 };
 }
 
 /**
- * Where should the piece go? Every way of turning it and every column it could fall in, judged on a map of the tower's top
- * in columns of one block (the platform is columns 0 to 4; -1 and 5 are air): fewest holes under it and overhang, then lowest.
- * Returns { rot, x } for the steered piece (x is its centre of mass).
+ * Where should the piece go? A map of the tower's top, a pixel at a time (what is held up, as it really lies, tilted or not), then
+ * every turn of the piece at every x: where it would come to rest, and how good that is (holes under it, air, whether its centre of
+ * mass is over what holds it, how wide that is, how high it is). Returns { rot, x, score, alt } (x is the centre of mass; alt is the
+ * best place that is really different, for a player that sometimes takes the second best).
  */
 function plan(y) {
-  const b = y.cur, sup = supportedSet(y.W), top = [60, 0, 0, 0, 0, 0, 60]; // columns -1 to 5: the height of the top (y, smaller is higher)
-  for (const o of y.W.bodies) if (sup.has(o.id)) for (let k = 0; k < o.n; k++) {
-    const i = Math.round((o.cx[k] + 16) / BS) + 1;
-    if (i >= 0 && i < 7) top[i] = Math.min(top[i], o.cy[k] - H);
+  const b = y.cur, sup = supportedSet(y.W), surf = new Array(COL_W).fill(60); // surf[i]: the top of the tower at x = i - HALF (60: nothing there)
+  for (const o of [y.W.ground, ...y.W.bodies]) {
+    if (o !== y.W.ground && !sup.has(o.id)) continue;
+    for (let k = 0; k < o.n; k++) {
+      const v = o.v[k];
+      for (let i = Math.max(0, Math.floor(Math.min(v[0], v[2], v[4], v[6]) + HALF)); i <= Math.min(COL_W - 1, Math.floor(Math.max(v[0], v[2], v[4], v[6]) + HALF)); i++) {
+        const xc = i - HALF + 0.5;
+        for (let e = 0; e < 4; e++) { // the highest point of the block's outline at this x
+          const f = (e + 1) & 3, ax = v[e * 2], ay = v[e * 2 + 1], bx = v[f * 2], by = v[f * 2 + 1];
+          if ((ax <= xc && bx > xc) || (bx <= xc && ax > xc)) surf[i] = Math.min(surf[i], ay + (xc - ax) / (bx - ax) * (by - ay));
+        }
+      }
+    }
   }
-  let best = null;
+  const cands = [];
   for (let rot = 0; rot < 4; rot++) {
     let cells = SHAPES[b.kind].map(([c, r]) => { for (let t = 0; t < rot; t++) [c, r] = [-r, c]; return [c, r]; });
     const c0 = Math.min(...cells.map((q) => q[0])), r0 = Math.min(...cells.map((q) => q[1]));
     cells = cells.map(([c, r]) => [c - c0, r - r0]);
-    const w = Math.max(...cells.map((q) => q[0])) + 1, mc = cells.reduce((a, q) => a + q[0], 0) / cells.length;
-    for (let L = -1; L + w <= 6; L++) {
-      const bot = new Array(w).fill(-1), tr = new Array(w).fill(9);
-      for (const [c, r] of cells) { bot[c] = Math.max(bot[c], r); tr[c] = Math.min(tr[c], r); }
-      let drop = 1e9;
-      for (let c = 0; c < w; c++) drop = Math.min(drop, top[L + c + 1] - (bot[c] + 1) * BS);
-      let holes = 0, air = 0, lo = 9, hi = -9;
-      const after = top.slice();
+    const w = Math.max(...cells.map((q) => q[0])) + 1, mc = cells.reduce((a, q) => a + q[0], 0) / 4, mr = cells.reduce((a, q) => a + q[1], 0) / 4;
+    const bot = new Array(w).fill(-1);
+    for (const [c, r] of cells) bot[c] = Math.max(bot[c], r);
+    const off = bot.map((r) => (r - mr + 0.5) * BS), half = w * H;
+    for (let x = -HALF + half + 0.5; x <= HALF - half - 0.5; x += 1) {
+      const under = [];
       for (let c = 0; c < w; c++) {
-        const t = top[L + c + 1], gap = Math.round((t - (bot[c] + 1) * BS - drop) / BS);
-        if (t >= 60) air++; else holes += gap;
-        if (gap === 0 && t < 60) { lo = Math.min(lo, c); hi = Math.max(hi, c); }
-        after[L + c + 1] = Math.min(t, drop + tr[c] * BS);
+        const cx = x + (c - mc) * BS;
+        let t = 60, n = 0;
+        const i0 = Math.max(0, Math.floor(cx - H + HALF)), i1 = Math.min(COL_W - 1, Math.ceil(cx + H + HALF) - 1);
+        for (let i = i0; i <= i1; i++) t = Math.min(t, surf[i]);
+        for (let i = i0; i <= i1; i++) if (surf[i] < t + 1.5) n++;
+        under.push(n < EDGE ? 60 : t); // resting on less than a corner's width is the same as nothing: it slips off
       }
-      let bump = 0;
-      for (let i = 1; i < 5; i++) bump += Math.abs(after[i] - after[i + 1]) / BS;
-      const lean = hi < lo ? 9 : Math.max(0, lo - 0.5 - mc, mc - hi - 0.5) * 8 + Math.abs(mc - (lo + hi) / 2) * 0.5; // the centre of mass over the part that rests
-      const score = holes * 10 + air * 30 + lean + bump * 0.6 - drop / BS * 2.5 + Math.abs(L + mc - 2) * 0.05;
-      if (!best || score < best.score) best = { score, rot, x: -16 + BS * (L + mc) };
+      let rest = 1e9;
+      for (let c = 0; c < w; c++) rest = Math.min(rest, under[c] - off[c]); // the centre of mass's y when it comes to rest
+      let holes = 0, air = 0, lo = 1e9, hi = -1e9;
+      for (let c = 0; c < w; c++) {
+        const gap = under[c] - off[c] - rest;
+        if (under[c] >= 60) air++; else holes += Math.min(gap, 24) / BS;
+        if (gap < 1.5 && under[c] < 60) { lo = Math.min(lo, x + (c - mc) * BS - H); hi = Math.max(hi, x + (c - mc) * BS + H); }
+      }
+      const lean = hi < lo ? 20 : Math.max(0, lo - x, x - hi) * 3 + (hi - lo < w * BS * 0.5 ? 4 : 0); // the centre of mass over what holds it
+      const height = -(rest - (mr + 0.5) * BS) / BS; // the top of the piece, in blocks above the platform
+      const score = holes * 10 + air * 30 + lean + height * 2.5 + Math.abs(x) * 0.02 + (Math.abs(x) > GH ? 25 + (Math.abs(x) - GH) * 2 : 0);
+      cands.push({ score, rot, x });
     }
   }
-  return best;
+  cands.sort((p, q) => p.score - q.score);
+  const alt = cands.find((q) => (q.rot !== cands[0].rot || Math.abs(q.x - cands[0].x) > 6) && Math.abs(q.x - cands[0].x) > 6);
+  return { ...cands[0], alt };
 }
 
 /** The steered piece: slide sideways, turn, fall at a steady speed; it lands (and the physics takes it) the moment it rests on something. */
@@ -409,17 +445,46 @@ function steer(y) {
     }
     if (!ok) { y.rot = old; b.a = old * Math.PI / 2; place(b); }
   }
-  let left = c.drop ? DROP : FALL, slid = 0;
-  while (left > 0) {
-    const d = Math.min(1, left); left -= d;
+  const r = fall(W, b, c.drop ? DROP : FALL);
+  if (r === 1) land(y); else if (r === 2) lose(y);
+}
+
+/** Move a steered piece down by dist px, 1 px at a time, by the rules of 5.2. Returns 0 (still falling), 1 (it landed: b is where it rests) or 2 (it missed everything). */
+function fall(W, b, dist) {
+  let slid = 0;
+  while (dist > 0) {
+    const d = Math.min(1, dist); dist -= d;
     b.y += d; place(b);
     let t = touchInfo(W, b);
-    if (t.gap < -0.05 && Math.abs(t.nx) > 0.7) { b.x += t.nx * (0.02 - t.gap); place(b); t = touchInfo(W, b); } // rubbing along a side: slide off it
-    if (t.rests && t.reach < EDGE && slid++ < 6) { b.x += (t.mid > b.x ? -1 : 1) * (t.reach + 0.05); place(b); continue; } // only a corner touches: slip off it and keep falling
-    if (t.gap < -0.05) { b.y -= d; place(b); land(y); return; }
-    if (t.rests) { land(y); return; }
-    if (b.y > 70) { y.cur = null; y.lost++; y.wait = SPAWN_WAIT; return; } // missed everything: it is gone
+    if (t.gap < -0.05 && Math.abs(t.nx) > 0.7 && shift(b, t.nx * (0.02 - t.gap))) t = touchInfo(W, b); // rubbing along a side: slide off it
+    if (t.rests && t.reach < EDGE && slid++ < 6 && shift(b, (t.mid > b.x ? -1 : 1) * (t.reach + 0.05))) continue; // only a corner touches: slip off it and keep falling
+    if (t.gap < -0.05) { b.y -= d; place(b); return 1; }
+    if (t.rests) return 1;
+    if (b.y > 70) return 2; // missed everything: it is gone
   }
+  return 0;
+}
+
+/** Move b sideways by dx, unless that would take it out of its column. Returns whether it moved. */
+function shift(b, dx) {
+  b.x += dx; place(b);
+  if (!outside(b)) return true;
+  b.x -= dx; place(b);
+  return false;
+}
+
+/** The piece is lost: it costs a pause before the next one. */
+function lose(y) { y.cur = null; y.lost++; y.wait = SPAWN_WAIT + LOST_WAIT; }
+
+/** Where the steered piece would land if it were dropped straight down from here: a copy of it run down through the same rules. Kept until the piece or the tower changes. */
+function landing(y) {
+  const b = y.cur, key = `${y.rot}|${Math.round(b.x * 2)}|${y.placed}|${y.lost}|${clock >> 4}`;
+  if (y.guide && y.guide.key === key) return y.guide.b;
+  const g = mkBody(SHAPES[b.kind], b.x, b.y, b.a);
+  let r = 0;
+  for (let n = 0; r === 0 && n < 140; n++) r = fall(y.W, g, 2);
+  y.guide = { key, b: r === 1 ? g : null };
+  return y.guide.b;
 }
 
 /** Does the piece stick out of its yard's column? */
@@ -510,12 +575,19 @@ function drawYard(y) {
   const gy = sy(0);
   line(x0, sy(-FINISH), x0 + COL_W, sy(-FINISH), y.hold > 0 ? ART.colors.goal : ART.colors.danger);
   for (const b of [y.W.ground, ...y.W.bodies]) drawBody(b, sx, sy, b === y.W.ground);
+  if (y.cur && !y.ai) { // the landing guide: where the piece would come to rest
+    const g = landing(y);
+    if (g) for (let k = 0; k < g.n; k++) for (let e = 0; e < 4; e++) { const v = g.v[k], f = (e + 1) & 3; line(sx(v[e * 2]), sy(v[e * 2 + 1]), sx(v[f * 2]), sy(v[f * 2 + 1]), ART.colors.shine); }
+  }
   if (y.cur) drawBody(y.cur, sx, sy, false);
   rectfill(x0, gy + 16, COL_W, 224 - gy, ART.colors.stoneDark);
   clip();
-  rect(x0, VY, COL_W, VH, PANEL);
+  rect(x0, VY, COL_W, VH, y.wob > WOBBLE ? RED : PANEL);
   txt(`P${y.slot + 1}`, x0 + 3, 4, WHITE);
-  txt(`${Math.max(0, Math.round(-y.top))}/${FINISH}`, x0 + 22, 4, y.hold > 0 ? GOLD : CYAN);
+  txt(String(Math.max(0, Math.round(-y.top))), x0 + 20, 4, y.hold > 0 ? GOLD : CYAN);
+  const nk = seq[y.spawned % seq.length]; // the piece after this one
+  for (const [c, r] of SHAPES[nk]) rectfill(x0 + 47 + c * 3, 3 + r * 3, 3, 3, ART.colors['p' + nk]);
+  if (y.lost) txt(`LOST ${y.lost}`, x0 + 3, 212, RED);
   if (y.hold > 0) rectfill(x0 + 2, VY + 2, Math.round((COL_W - 4) * y.hold / HOLD), 3, ART.colors.goal);
 }
 

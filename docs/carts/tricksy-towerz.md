@@ -1,7 +1,7 @@
 # Tricksy Towerz: Cart Specification
 
-**Version:** 0.2 (Phase 1 built)
-**Status:** In progress: Phase 1 of 8 (the physics and one playable tower) is built; the rest of the plan (section 15) is not
+**Version:** 0.3 (Phase 2 built)
+**Status:** In progress: Phases 1 and 2 of 8 (the physics and one playable tower; the race rules and feel) are built; the rest of the plan (section 15) is not
 **Cart source:** `carts/src/tricksy-towerz/` → `carts/tricksy-towerz.nova`
 
 A physics tower-building race for **one to four wizards at a time**. Falling pieces of blocks (the seven tetrominoes) are steered and turned,
@@ -14,7 +14,7 @@ is shared. The title, the Race mode and the four players are the user's brief.
 
 ## 1. Concept
 
-Each player has a **yard**: a 64 px wide column with a small stone platform at the bottom. A piece appears above the tower and falls slowly;
+Each player has a **yard**: a 64 px wide column with a stone platform (48 px wide) at the bottom. A piece appears above the tower and falls slowly;
 the player slides it sideways, turns it by quarter turns and can speed up its fall. When it touches the tower it is let go and the physics
 takes it from there, so a piece that was a little off may slide off, and a tall thin tower sways and falls. The pieces are the same for
 everyone (one shuffled bag of seven, over and over), so a race is a contest of steering, not of luck. A piece that is lost is gone: the tower
@@ -33,7 +33,7 @@ tower fall, and the magic (Phase 4) that lets a player steady their own tower or
 2. The player slides and turns it, and may drop it faster.
 3. It lands (rests on the tower or the platform) and becomes a free body; the next piece comes.
 4. The tower's height (the top of everything held up by the platform) is counted all the time.
-5. The first tower to stay over the finish line for 120 frames wins the race. The race is the whole game: a game is one race, or the best of a few
+5. The first tower to stay over the finish line for 120 frames wins the race (while it does, no new pieces come: it only has to stand). The race is the whole game: a game is one race, or the best of a few
    (Phase 5).
 
 ## 3. Controls
@@ -57,8 +57,8 @@ computer wizards (you cannot play with four on one keyboard: the others need gam
 
 | Region | What |
 |---|---|
-| y 0 to 15 | The HUD row of each column: P1 to P4, the height `n/120`, and (over the line) a bar that fills as the 120 frames pass |
-| y 16 to 223 | The yard (208 px): the sky, the platform, the blocks, the finish line; the camera follows the tower up |
+| y 0 to 15 | The HUD row of each column: `P1` to `P4`, the height in px (gold over the line), and the **next piece** drawn small (3 px squares) at the right |
+| y 16 to 223 | The yard (208 px): the sky, the platform, the blocks, the finish line (red under it, gold over it) with a bar under the top edge that fills as the 120 frames pass, the **landing guide** (a white outline), `LOST n` at the bottom when pieces have been lost; the frame is **red while the tower wobbles**; the camera follows the tower up |
 | Overlay | Everything the physics draws (blocks as filled, edged squares however they are turned), text and panels |
 | BG0 | Phase 1: the placeholder field. Phase 6: scenery behind the yards |
 | Sprites | Phase 6: wizards, sparks, spell effects |
@@ -100,30 +100,35 @@ The steered piece is not part of the world while it falls (it would shove the to
 
 - **Slide**: LEFT or RIGHT moves it 1.3 px per frame; a move that would overlap the tower, or leave the column (the whole piece stays inside the 64 px), is not made.
 - **Turn**: a quarter turn about its centre of mass; if that would overlap, it is tried again nudged by 2, then 4 px up, right or left; if nothing fits it does not turn.
-- **Fall**: 0.7 px per frame, or 3 with DOWN, in steps of 1 px. A piece **lands** when it rests on something: a contact under it (normal pointing up, gap under 0.15 px) or an overlap
+- **Fall** (`fall`): 1 px per frame, or 3 with DOWN, in steps of 1 px. A piece **lands** when it rests on something: a contact under it (normal pointing up, gap under 0.15 px) or an overlap
   from above. Then it becomes a body of the world with a speed of 0.3 px per frame down, and nothing steers it any more.
 - **Edges**: a piece brushing the side of the tower on its way down (the contact normal is sideways) is slid off it, not landed; and a piece that would rest on
-  **less than 1.6 px** (a corner) slips off the corner (by that much and 0.05) and goes on falling. So a near miss falls beside the tower, as a player means it to.
-- A piece that falls below the platform's level plus 70 px (it missed everything) is **lost**; so is a body of the world that goes below y = 70 or beyond 120 px sideways.
+  **less than 3 px** (`EDGE`: a corner) slips off the corner (by that much and 0.05) and goes on falling. So a near miss falls beside the tower, as a player means it to. Both
+  slides (`shift`) are only made if the piece stays inside its column; at the edge of the column it lands instead.
+- A piece that falls below y = 70 (the platform's top is 0: it missed everything) is **lost**, and so is a body of the world that goes below y = 70 or beyond 120 px sideways. A lost
+  piece costs a pause: the next piece comes **60 frames** after (20 + 40, `LOST_WAIT`), against 20 after one that landed.
+- **The landing guide** (`landing`): for a human's yard the game runs a copy of the piece down through `fall` from where it is, and draws where it stops as a white outline. It is found again
+  whenever the piece turns or moves by half a pixel, a piece lands or is lost, or every 16 frames (the tower wobbles); a piece that would miss everything has no guide. The guide is
+  where the piece *lands* (it then settles under the physics: in the tests, within 1 px of where it ends). It makes the 1 px fits a person cannot judge by eye possible, and costs about 1 ms a frame.
 
 ### 5.3 The pieces
 
 I, O, T, S, Z, J and L, in these cells (column, row): I `0,0 1,0 2,0 3,0`; O `0,0 1,0 0,1 1,1`; T `0,0 1,0 2,0 1,1`; S `1,0 2,0 0,1 1,1`; Z `0,0 1,0 1,1 2,1`;
 J `0,0 0,1 1,1 2,1`; L `2,0 0,1 1,1 2,1`. Colours are one for each kind (art.py: red, green, blue, yellow, orange, purple, cyan for I to L).
 
-The order is a **bag**: the seven in a random order (the console's seeded random number, Fisher-Yates), then another bag, 120 pieces in all and then round again;
-every yard of a race uses the same list, so everybody has the same pieces.
+The order is a **bag**: the seven in a random order (the console's seeded random number, Fisher-Yates), then another bag, 140 pieces in all and then round again;
+every yard of a race uses the same list, so everybody has the same pieces. The next piece to come is shown small in the HUD row.
 
 ### 5.4 The height and the finish
 
-The platform is 5 blocks wide (40 px) and 2 deep, its top at height 0, in the middle of the column; it is the only thing that does not move.
-A yard's **height** is how far above the platform the highest point of any held-up block is (in px, on screen as `n/120`).
+The platform is **6 blocks wide (48 px)** and 2 deep, its top at height 0, in the middle of the 64 px column (8 px of air each side); it is the only thing that does not move.
+A yard's **height** is how far above the platform the highest point of any held-up block is (in px).
 
-- The finish line is **120 px** (15 blocks) above the platform.
-- While the height is at least 120 a counter runs; if the height falls under it the counter goes back to 0.
-- At **120 frames** (two seconds) the yard has finished. The first to finish wins (the game checks the yards in order, so on the same frame the lowest slot wins: Phase 3 will
-  decide a tie by the height).
-- Numbers are the first guess and are tuned in Phase 2 (section 5.6).
+- The finish line is **130 px** above the platform (`FINISH`, a little over 16 blocks).
+- While the height is at least 130 a counter runs; if the height falls under it the counter goes back to 0. **While the counter runs no new piece comes** (a piece already falling lands as usual):
+  over the line a tower only has to stand.
+- At **120 frames** (two seconds, `HOLD`) the yard has finished. The first to finish wins; if two finish on the same frame the **higher** tower wins, and on a tie the lower slot.
+- Measured, how the numbers were chosen: section 5.6.
 
 ### 5.5 The camera
 
@@ -132,10 +137,42 @@ the top is kept at least 90 px under the top of the view), then it rises, easing
 
 ### 5.6 Tuning (Phase 2)
 
-Phase 1's numbers are first guesses. What the sweep says so far (`node tools/devkit/sweep.mjs tricksy-towerz --set sloppy=0,3`): the computer player, aiming exactly, finishes in about
-1,100 frames (19 s) with 19 pieces placed and about 1 lost; the same player aiming 3 px off at random takes about 4,000 frames (66 s) and loses most of its pieces. Phase 2 sets the line,
-the hold time and the speeds so a good human takes 60 to 90 seconds and a computer wizard of each skill level takes about the same, and decides whether lost pieces cost anything more
-than the height.
+The tuning is by the computer wizards of section 7, over many seeds (`node tools/devkit/sweep.mjs tricksy-towerz --seeds 12 --set skill=0,1,2,3`; the bot plays one yard with the cart's own planner), because a person
+cannot be swept. What was found, in the order it was found:
+
+| Change | Why |
+|---|---|
+| Aim to within 0.3 px, not 1.5; slide off sides and corners | Phase 1: a perfect plan lost nine pieces in ten (5.2) |
+| The planner reads the tower's real outline a pixel at a time, not a grid of blocks | on a tower with tilted pieces in it the grid placed pieces on corners |
+| A piece resting on less than 3 px is the same as air (`EDGE` 3, in the planner as well) | a computer player stacked pieces on a ledge it could not hold, again and again |
+| The planner puts a piece with its centre of mass beyond the platform's edge last | the same |
+| The platform 6 blocks wide, not 5 | the best player lost 19 of 34 pieces on 5 and 3 of 21 on 6; on 7 almost nothing is lost, but then the 4 px of air each side is no longer a risk |
+| Blocks that meet only at a corner do not touch (`collide`: a clipped contact shorter than 0.05 px is dropped) | a piece on a row of blocks whose seams matched the platform's could not slide: it caught on the seams |
+| Fall speed 1 px per frame (was 0.7), the next piece 72 px above the tower (was 84) | a piece took 2 s to arrive; now 1.2 s, and a race of 20 or so pieces takes about the time of a song |
+| The line at 130 px (was 120): the best computer player takes 23 s | a little more than the first guess, so the hold is a real test |
+| No new pieces while the tower is over the line | pieces kept coming on a tower that was only trying to stand still, and knocked it down |
+| A lost piece costs 40 frames more | losing a piece should cost time as well as height |
+
+The result, at the numbers of this document (12 seeds, the race ended at 150 s; the time is the median):
+
+| Level | Finished | Median | Fastest to slowest | Placed | Lost |
+|---|---|---|---|---|---|
+| EASY | 8 of 12 | 101 s | 50 to 143 s | 62 | 51 |
+| NORMAL | 12 of 12 | 41 s | 28 to 123 s | 29 | 11 |
+| HARD | 12 of 12 | 32 s | 22 to 60 s | 27 | 10 |
+| WIZARD | 12 of 12 | 23 s | 17 to 103 s | 27 | 8 |
+
+A person has the landing guide the computer does not, and uses the fast drop; the target for a good person is 40 to 70 seconds. The levels are only roughly spaced (the seeds vary a great deal: one
+tower in a dozen collapses near the top); Phase 8 balances them against a person and with more seeds. Whether the finish should be higher or lower, and the hold longer or shorter, is the one number a
+person's play will tell better than any sweep.
+
+### 5.7 What the yard tells you
+
+- **The landing guide** (5.2): a white outline of where the piece will land.
+- **The wobble**: `wob` is the largest speed (px per frame, plus 6 px for each radian per frame of turning) of any held-up body; above `WOBBLE` (0.25) the frame of the yard is red. A tower that has just been hit, or is about to fall, is red; a still one is not.
+- **The next piece**: drawn small in the HUD row.
+- **Lost pieces**: `LOST n` in red at the bottom of the yard.
+- **The finish line** is red; gold and with a filling bar while the tower is over it.
 
 ## 6. World and content
 
@@ -143,10 +180,21 @@ Phase 1: one yard. Phase 6: the yards stand in front of a scenery (a wizard's to
 
 ## 7. Opponents
 
-**Computer wizards** (`plan` in code.js): they look at the tower as a map of its top in columns of one block (the platform is columns 0 to 4; columns -1 and 5 are air), and for every turn of the piece and
-every column it could fall in they score the result (holes under the piece 10 each, air under it 30, the piece's centre of mass beyond the part that rests on the tower, how uneven the top
-is, how high it is) and take the best, then steer there (`ctl`: slide, turn, drop once aligned within 0.3 px). Phase 3 gives them a **skill** (how exact, how fast to decide, mistakes) and
-their names; Phase 4 makes them use magic.
+**Computer wizards** (`plan` and `ctl` in code.js). `plan` makes a map of the tower's top a pixel at a time (the outline of every held-up block, tilted or not), then for every turn of the piece and every x tries where it would
+come to rest and scores that: holes under it (10 for each block's height of gap), air under it (30), a column of the piece that rests on less than 3 px counts as air, its centre of mass beyond the part that holds it (3 a pixel, and 4
+more when what holds it is under half its width), how high it is (2.5 a block), a little for being off-centre, and 25 and more for a centre of mass beyond the platform's edge. It takes the best (and keeps the best place that is really
+different, for a player that slips). `ctl` steers there with the same buttons a person has: slide, turn, drop once aligned within 0.3 px.
+
+A wizard has a **level** (`SKILLS`, a yard's `skill`): the px it aims off by, the frames it thinks before it moves, the chance it takes the second-best place, and whether it uses the fast drop.
+
+| Level | Aim off by (px) | Thinks (frames) | Second best | Fast drop |
+|---|---|---|---|---|
+| 0 EASY | 2.5 | 55 | 20 % | no |
+| 1 NORMAL | 1.5 | 40 | 10 % | no |
+| 2 HARD | 0.8 | 30 | 4 % | yes |
+| 3 WIZARD | 0.2 | 6 | 0 | yes |
+
+The random numbers are the console's (`rndi`), so a race is the same every time for the same seed and the same buttons. Phase 3 gives the wizards names and fills the empty places with them; Phase 4 makes them use magic.
 
 ## 8. Modes
 
@@ -187,7 +235,7 @@ and `danger` (when it is not). Phase 6 replaces the placeholders with the real a
 
 | Asset | Budget |
 |---|---|
-| Code | 29 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
+| Code | 33 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
 | Tiles | 11 of 1,023 so far (the placeholder field and two sprites) |
 | Sprites | 2 so far (128 in OAM, 32 per line) |
 | Songs / SFX | 2 songs and 7 effects (the starter's, placeholders) |
@@ -212,7 +260,7 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
      screen, initials and the records (the starter's frame, with the time as the score). The art script makes the overlay colours (section 12). The tests are `01-flow.mjs` (the frame, a piece
      appearing, steered and landing, pause, finishing and the top 10, the frame time), `02-art.mjs` (the colours and the yard on the screen) and `03-physics.mjs` (the pieces, resting, stacks,
      overhangs, friction, speed, repeatability, held up, steering and its edge cases, the height and finish, the planner); `bot.mjs` plays the planner for `sweep.mjs`.
-   - **Results:** `node tools/verify.js tricksy-towerz` passes (71 test checks: 22 flow, 10 art, 39 physics and steering), the soak is clean and the smoke test in the real console reports no errors (60 fps).
+   - **Results:** `node tools/verify.js tricksy-towerz` passes (71 test checks), the soak is clean and the smoke test in the real console reports no errors (60 fps).
      `node tools/devkit/sweep.mjs tricksy-towerz --seeds 4 --set sloppy=0,3`: the planner aiming exactly finishes in 977 to 1,300 frames (17 to 21 pieces, 0 to 3 lost), and 3 px off it takes 1,593 to 5,562 frames
      (25 to 84 pieces, 10 to 75 lost); every run finished. Frame time with a tower of 15 bodies: 99th percentile 2.9 ms. Code: 28,765 of 65,536 bytes.
    - **Not done:** nobody has played it with a pad or a keyboard; whether it feels right (the speeds, the finish height, how forgiving the corners are) is a matter for a person, and Phase 2 begins there.
@@ -220,9 +268,27 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
      tower on its way down was counted as landed (in mid-air, on a corner), and the player aimed to within 1.5 px when the fits have no room at all. Two fixes (slide off a side, slip off a
      corner of less than 1.6 px) and aiming to 0.3 px made it finish every time. A person needs the same forgiveness: Phase 2 adds a guide that shows where the piece will land.
 
+2. **The race rules and feel.**
+
+   - **Built:** the landing guide (`landing`, with `fall` shared with the steered piece), the wobble frame, the next-piece preview, `LOST n`, the pause after a lost piece, no new pieces while over the line,
+     the tie rule (the higher tower), the computer wizards' four levels (`SKILLS`, `ctl`) and the planner rewritten to read the tower's real outline (`plan`), the 6-block platform, the corner and seam fixes in the
+     physics (`EDGE`, `shift`, the 0.05 px contact length), and the numbers of 5.2 to 5.4 (fall 1, line 130, platform 48 px). `bot.mjs` now plays one level of wizard (`--set skill=0,1,2,3`). The new tests are
+     `04-race.mjs` (the numbers of the spec, the guide against the real landing for ten pieces and places, the guide on the screen for a person and not for a wizard, its frame time, the wobble, the lost-piece pause, the
+     line and the pauses over it, the preview, ties, the four levels and their thinking time, slips and aim, the planner over a real tower); `03-physics.mjs` gained a test that a slide never leaves the column and the
+     platform is now 6 blocks.
+   - **Results:** `node tools/verify.js tricksy-towerz` passes (102 test checks: 31 flow, 10 art, 31 physics and steering, 30 race), the soak is clean and the smoke test in the real console reports no errors.
+     The sweep of 5.6 (12 seeds of each level): the WIZARD finishes all 12, median 23 s; HARD 12 of 12, 32 s; NORMAL 12 of 12, 41 s; EASY 8 of 12, 101 s. Frame time with the guide on and a small tower: 99th percentile 2.4 ms.
+     Code: 33,284 of 65,536 bytes.
+   - **What I learned:** two of the bugs were in the physics, not the planner, and both came from squares on a grid: a piece resting on a *corner* of another is one the physics will tip, and two aligned rows of blocks
+     have a *seam* that a sliding block catches on (a contact at a point where the blocks only touch corner to corner). A tower of tetrominoes is full of both. Also: the planner on a grid of blocks looked right on a tidy
+     tower and failed on a messy one; reading the real outline fixed it. What changed the game most was the width of the platform (5 to 6 blocks): the same player lost a third as many pieces.
+   - **Not done:** nobody has played it with a pad. The finish height, the hold and the speeds are tuned against computer players, not people; the guide is always on for people (there is no way to turn it off yet: Phase 5
+     could make it an option for people who want a harder race).
+
 ## 16. Open questions
 
-- The finish line's height and the hold time (guesses; Phase 2).
+- The finish line's height (130 px) and the hold time (120 frames) were tuned against computer players; a person's play may want them changed.
+- Whether the landing guide should be an option (it makes the race easier and the careful play possible).
 - Whether lost pieces should cost more than the height (a penalty of time, or of magic), and whether there should be a "too many lost, you are out" rule as in a survival mode.
 - Light and dark magic: which spells, and how they are earned (Phase 4).
 - The game's setting and the wizards' names (Phase 6).
