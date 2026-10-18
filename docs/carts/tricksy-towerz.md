@@ -1,7 +1,7 @@
 # Tricksy Towerz: Cart Specification
 
-**Version:** 0.4 (Phase 3 built)
-**Status:** In progress: Phases 1 to 3 of 8 (the physics and one tower; the race rules and feel; up to four players) are built; the rest of the plan (section 15) is not
+**Version:** 0.5 (Phase 4 built)
+**Status:** In progress: Phases 1 to 4 of 7 (the physics and one tower; the race rules and feel; up to four players; the flow) are built; the rest of the plan (section 15) is not
 **Cart source:** `carts/src/tricksy-towerz/` → `carts/tricksy-towerz.nova`
 
 A physics tower-building race for **one to four wizards at a time**. Falling pieces of blocks (the seven tetrominoes) are steered and turned,
@@ -104,7 +104,7 @@ The steered piece is not part of the world while it falls (it would shove the to
   slides (`shift`) are only made if the piece stays inside its column; at the edge of the column it lands instead.
 - A piece that falls below y = 70 (the platform's top is 0: it missed everything) is **lost**, and so is a body of the world that goes below y = 70 or beyond 120 px sideways. A lost
   piece costs a pause: the next piece comes **60 frames** after (20 + 40, `LOST_WAIT`), against 20 after one that landed.
-- **The landing guide** (`landing`): for a human's yard the game runs a copy of the piece down through `fall` from where it is, and draws where it stops as a white outline. It is found again
+- **The landing guide** (`landing`): for the yard of a person who has it on (their setting in the lobby, on by default; a wizard never has one) the game runs a copy of the piece down through `fall` from where it is, and draws where it stops as a white outline. It is found again
   whenever the piece turns or moves by half a pixel, a piece lands or is lost, or every 16 frames (the tower wobbles); a piece that would miss everything has no guide. The guide is
   where the piece *lands* (it then settles under the physics: in the tests, within 1 px of where it ends). It makes the 1 px fits a person cannot judge by eye possible, and costs about 1 ms a frame.
 
@@ -176,10 +176,14 @@ person's play will tell better than any sweep.
 **Places.** There are four, P1 to P4; a place is a human (on the pad of that number), a computer wizard of a level (EASY to WIZARD), or empty (`setup`: 4, 0 to 3, or -1). P1 is always a human (the keyboard or the first pad).
 A race has the places that are not empty, in order, and needs at least two (`MIN_RACERS`); a race of one exists only for the tests (`skipTitle`).
 
-**The lobby** (`updateLobby`, after PLAY on the title): P1 is shown first; the other three start as computer wizards of NORMAL. UP and DOWN move the cursor over places 2 to 4, LEFT and RIGHT change a place that is not
-a human (EMPTY, EASY, NORMAL, HARD, WIZARD and round). A pad joins by pressing **any button** on it (the console only counts a pad from its first press, so there is nothing to ask for first): its place becomes HUMAN;
-B on that pad puts the place back as a NORMAL wizard. START on any human's pad (or A on the first) begins; with fewer than two racers it says so for 2 seconds and stays. B on the first pad goes back to the title.
-The lobby keeps its setup between races.
+**The lobby** (`updateLobby`, after PLAY on the title): the four places are shown, P1 (always a person) first; the other three start as computer wizards of NORMAL. UP and DOWN move the cursor over all four, round, and LEFT
+and RIGHT **change the place under it**: for a person, their **landing guide** on or off (5.2: a person who wants a harder race, or a handicap for a friend who is better); for anything else the wizard's level (EMPTY, EASY, NORMAL,
+HARD, WIZARD and round). A pad joins by pressing **any button** on it (the console only counts a pad from its first press, so there is nothing to ask for first): its place becomes HUMAN; B on that pad puts the place back
+as it was (the wizard it last was, or empty). START on any person's pad (or A on the first) begins; with fewer than two racers it says so for 2 seconds and stays. B on the first pad goes back to the title.
+The lobby **remembers** (section 13): each person's guide and what each place was last set to as a wizard (a person is not remembered: which pads are plugged in is for the console to say), so the same friends do not set it up again.
+
+**How to play** (`HELP`, `updateHelp`): from the title, three pages (THE RACE, CONTROLS, TIPS) of at most 12 lines of 28 characters; LEFT and RIGHT turn the pages (round), A turns them and goes back to the title from the last, B or START
+go back. It says what the line is and how long to stay over it, the controls (and the keyboard), what the guide, the red frame and a lost piece mean.
 
 **The count** (`updateCount`): the yards are drawn and 3, 2, 1 are shown for 180 frames (`COUNT`) with nothing moving; then GO! for 45 frames while the race begins. The race time starts at GO.
 
@@ -225,8 +229,8 @@ initials are typed by the winner's pad): the stored score is `100000 - frames`, 
 
 ## 10. Screens and flow
 
-1. **Title:** PLAY, RECORDS (Phase 4: HOW TO PLAY).
-2. **Lobby** (5.8): who races, joining by pad, the level of each wizard.
+1. **Title:** PLAY, HOW TO PLAY, RECORDS.
+2. **Lobby** (5.8): who races, joining by pad, the level of each wizard, each person's guide.
 3. **Count** of three, then **Play** (up to four yards), with a **Pause** (START: the one who paused has the menu): RESUME, RESTART, QUIT TO TITLE.
 4. **Results** (the winner, the order, the time), then **initials** if a person's time is in the top 10, then the **records**, then the lobby again (for a race with no record: straight to the lobby).
 
@@ -247,14 +251,18 @@ and `danger` (when it is not). Phase 5 replaces the placeholders with the real a
 |---|---|
 | 0 | Format version |
 | 1 | Last initials entered |
+| 2–5 | Each player's landing guide: 1 is off, 0 (the default) on |
+| 6–9 | What each place was last set to as a computer wizard: its level + 2 (1 is empty, 0 not set yet, so NORMAL) |
 | 10–39 | Top 10 times, fastest first, 3 slots each: `100000 - frames`, initials, 1 spare |
 | 40–255 | Reserved |
+
+The format version stays 1: slots 2 to 9 were empty before, and zero means the default, so an older save keeps its table.
 
 ## 14. Asset budget
 
 | Asset | Budget |
 |---|---|
-| Code | 38 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
+| Code | 41 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
 | Tiles | 11 of 1,023 so far (the placeholder field and two sprites) |
 | Sprites | 2 so far (128 in OAM, 32 per line) |
 | Songs / SFX | 2 songs and 7 effects (the starter's, placeholders) |
@@ -264,7 +272,7 @@ and `danger` (when it is not). Phase 5 replaces the placeholders with the real a
 1. **Vertical slice:** the physics, one yard, steering, the pieces, the camera, the finish line, a computer player that builds a tower.
 2. **The race rules and feel:** tune the line, the hold time, the speeds and the loss of pieces; the landing guide and the wobble warning; the planner's skill levels.
 3. **Up to four players:** the four yards side by side, joining by gamepad (the lobby), computer wizards for the other places, the count of three, the pause of the one who paused, the results and the ranking.
-4. **Flow:** the title and its HOW TO PLAY page, the lobby polish, the records of the fastest wins, the saves, and whether the landing guide can be turned off.
+4. **Flow:** the title and its HOW TO PLAY pages, the lobby (each person's landing guide, remembered settings), the records of the fastest wins, the saves.
 5. **Art pass:** the wizards, scenery, the count and the results drawn properly.
 6. **Audio pass:** songs and effects.
 7. **Balance and polish:** the computer players over many seeds, the label, the PNG cart and the Library (`node tools/release.js tricksy-towerz`) and a README row.
@@ -319,9 +327,19 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
    - **Not done:** it has not been played with four real pads, so the console's pad seating (which pad becomes which player) and how it feels to join have not been seen; the lobby and the results are plain text on a panel (Phase 5 draws
      them); the count shows a digit in the system font (Phase 5 makes it big); a wizard has no name yet; there are no rounds (a race is a race, and will stay one); there is no help screen (Phase 4).
 
+4. **Flow.**
+
+   - **Built:** the three-item title (PLAY, HOW TO PLAY, RECORDS), the how-to-play pages (`HELP`, `updateHelp`, `drawHelp`), the lobby changed so that every place, P1 included, can be picked and LEFT and RIGHT change it (a person's
+     landing guide on or off; a wizard's level), the guide as a setting of each yard (`assist`), and the lobby's memory in the save (slots 2 to 9: `GUIDE_SLOT`, `LEVEL_SLOT`; `cpuLevel` is what a place was last set to, so a pad that
+     leaves gives its place back as it was). Records and saves were done in Phase 1 and 3 (the table of fastest wins, the winner's own initials); nothing new was needed there. The new tests are `06-flow.mjs` (35 checks); `01-flow.mjs`
+     and `05-players.mjs` follow the new menus.
+   - **Results:** `node tools/verify.js tricksy-towerz` passes (192 test checks: 32 flow, 10 art, 31 physics and steering, 30 race, 54 players, 35 new in `06-flow.mjs`: the title, the pages, their size, that they say what the rules
+     say, the guide of each person on the screen and in the work done, what the lobby remembers and gives back, a save from before the settings, a save with nothing in the new slots), the soak is clean and the smoke test in the real
+     console reports no errors. Code: 41,198 of 65,536 bytes.
+   - **Not done:** the screens are plain text; the pages have not been read by anyone but me; Phase 5 draws them.
+
 ## 16. Open questions
 
 - The finish line's height (130 px) and the hold time (120 frames) were tuned against computer players; a person's play may want them changed.
-- Whether the landing guide should be an option (it makes the race easier and the careful play possible).
 - Whether lost pieces should cost more than the height (a penalty of time), and whether there should be a "too many lost, you are out" rule as in a survival mode.
 - The game's setting and the wizards' names (Phase 5).

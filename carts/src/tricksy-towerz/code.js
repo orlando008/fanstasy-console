@@ -39,6 +39,7 @@ function play(song) {
 // --- Save slots (SPEC 13) ---
 
 const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
+const GUIDE_SLOT = 2, LEVEL_SLOT = 6; // slots 2 to 5: each player's landing guide (1 is off); slots 6 to 9: what each place was last set to as a computer wizard (level + 2; 0 is not set yet)
 const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
@@ -266,25 +267,31 @@ let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let yards = [], seq = [], raceT = 0, winner = -1, finalScore = 0, ranking = [];
 const OFF = -1, HUMAN = 4, COUNT = 180, MIN_RACERS = 2;
-let setup = [HUMAN, 1, 1, 1], lobbySel = 1, lobbyMsg = 0, countT = 0, pausePad = 0, ipad = 0, after = 'title';
+let setup = [HUMAN, 1, 1, 1], lobbySel = 1, lobbyMsg = 0, countT = 0, pausePad = 0, ipad = 0, after = 'title', helpPage = 0;
+let guideOn = [true, true, true, true], cpuLevel = [3, 1, 1, 1]; // for each place: whether a person has the landing guide, and the level it has as a computer wizard
 // setup: what each of the four places is: a human (on that pad), a computer wizard of a level (0 EASY to 3 WIZARD), or OFF
 
 /** A new game: the same pieces for everybody (a shuffled bag of the seven, over and over), one yard each. racers: a number (that many humans) or a list of { player, ai, skill }. */
 function newYards(racers) {
-  if (typeof racers === 'number') racers = Array.from({ length: racers }, (_, i) => ({ player: i, ai: false, skill: 3 }));
+  if (typeof racers === 'number') racers = Array.from({ length: racers }, (_, i) => ({ player: i, ai: false, skill: 3, assist: true }));
   seq = [];
   while (seq.length < 120) {
     const bag = [0, 1, 2, 3, 4, 5, 6];
     for (let i = 6; i > 0; i--) { const j = rndi(0, i); [bag[i], bag[j]] = [bag[j], bag[i]]; }
     seq.push(...bag);
   }
-  yards = racers.map((r, slot) => ({ slot, player: r.player, pad: r.player, W: mkWorld(), cur: null, cam: 20, top: 0, wait: 30, placed: 0, lost: 0, hold: 0, done: false, spawned: 0, rot: 0, ai: r.ai, skill: r.skill, think: 0, plan: null, wob: 0, guide: null }));
+  yards = racers.map((r, slot) => ({ slot, player: r.player, pad: r.player, assist: r.assist, W: mkWorld(), cur: null, cam: 20, top: 0, wait: 30, placed: 0, lost: 0, hold: 0, done: false, spawned: 0, rot: 0, ai: r.ai, skill: r.skill, think: 0, plan: null, wob: 0, guide: null }));
 }
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
     for (let i = 0; i < 256; i++) dset(i, 0);
     dset(VERSION_SLOT, SAVE_VERSION);
+  }
+  for (let p = 0; p < 4; p++) { // what the lobby was left as
+    guideOn[p] = dget(GUIDE_SLOT + p) !== 1;
+    if (dget(LEVEL_SLOT + p)) cpuLevel[p] = dget(LEVEL_SLOT + p) - 2;
+    if (p) setup[p] = cpuLevel[p];
   }
   const f = ART.scenes.field; // the background: the field's tiles in Map RAM, shown on layer 0
   bg(0, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, show: true });
@@ -294,7 +301,7 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 /** The racers the setup makes: every place that is not OFF, in order of player. */
-const racersOf = () => setup.map((v, player) => ({ v, player })).filter((o) => o.v !== OFF).map((o) => ({ player: o.player, ai: o.v !== HUMAN, skill: o.v === HUMAN ? 3 : o.v }));
+const racersOf = () => setup.map((v, player) => ({ v, player })).filter((o) => o.v !== OFF).map((o) => ({ player: o.player, ai: o.v !== HUMAN, skill: o.v === HUMAN ? 3 : o.v, assist: guideOn[o.player] }));
 
 /** Start a race with the setup (with the count of three, unless the tests say not). */
 function startRace(count = true) {
@@ -313,6 +320,7 @@ function update() {
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'lobby') updateLobby();
+  else if (state === 'help') updateHelp();
   else if (state === 'count') updateCount();
   else if (state === 'play') updatePlay();
   else if (state === 'over') updateOver();
@@ -321,10 +329,11 @@ function update() {
 }
 
 function updateTitle() {
-  if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
+  if (pressed(UP)) { titleSel = (titleSel + 2) % 3; fx(SFX.move); }
+  if (pressed(DOWN)) { titleSel = (titleSel + 1) % 3; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) toLobby(); else { state = 'records'; hl = -1; timer = 0; after = 'title'; }
+    if (titleSel === 0) toLobby(); else if (titleSel === 1) { state = 'help'; helpPage = 0; timer = 0; } else { state = 'records'; hl = -1; timer = 0; after = 'title'; }
   }
 }
 
@@ -334,21 +343,22 @@ const levelName = (v) => (v === HUMAN ? 'HUMAN' : v === OFF ? 'EMPTY' : `CPU ${S
 
 /**
  * The lobby: player 1 (the keyboard, or the first pad) is always in. Another pad joins by pressing any button on it (the console seats a
- * pad as the next player the first time it is used); B on that pad leaves. UP and DOWN pick a place, LEFT and RIGHT change what a place
- * that is not a human is (a computer wizard of a level, or empty); START (any human) starts the race.
+ * pad as the next player the first time it is used); B on that pad leaves. UP and DOWN pick a place and LEFT and RIGHT change it: for a person
+ * the landing guide on or off, for anything else the computer wizard's level (or empty). START (any human) starts the race.
  */
 function updateLobby() {
   if (lobbyMsg > 0) lobbyMsg--;
   for (let p = 1; p < 4; p++) {
     if (setup[p] !== HUMAN && anyPressed(p)) { setup[p] = HUMAN; fx(SFX.select); }
-    else if (setup[p] === HUMAN && pressed(B, p)) { setup[p] = 1; fx(SFX.move); }
+    else if (setup[p] === HUMAN && pressed(B, p)) { setup[p] = cpuLevel[p]; fx(SFX.move); }
   }
-  if (pressed(UP)) { lobbySel = lobbySel === 1 ? 3 : lobbySel - 1; fx(SFX.move); }
-  if (pressed(DOWN)) { lobbySel = lobbySel === 3 ? 1 : lobbySel + 1; fx(SFX.move); }
-  const d = (pressed(RIGHT) ? 1 : 0) - (pressed(LEFT) ? 1 : 0);
-  if (d && setup[lobbySel] !== HUMAN) { setup[lobbySel] = ((setup[lobbySel] + 6 + d) % 5) - 1; fx(SFX.move); } // OFF, 0, 1, 2, 3 and round
+  if (pressed(UP)) { lobbySel = (lobbySel + 3) % 4; fx(SFX.move); }
+  if (pressed(DOWN)) { lobbySel = (lobbySel + 1) % 4; fx(SFX.move); }
+  const d = (pressed(RIGHT) ? 1 : 0) - (pressed(LEFT) ? 1 : 0), p = lobbySel;
+  if (d && setup[p] === HUMAN) { guideOn[p] = !guideOn[p]; dset(GUIDE_SLOT + p, guideOn[p] ? 0 : 1); fx(SFX.move); }
+  else if (d) { setup[p] = cpuLevel[p] = ((setup[p] + 6 + d) % 5) - 1; dset(LEVEL_SLOT + p, cpuLevel[p] + 2); fx(SFX.move); } // EMPTY, EASY ... WIZARD and round
   if (pressed(B)) { fx(SFX.select); toTitle(); return; }
-  if (setup.some((v, p) => v === HUMAN && (pressed(START, p) || (p === 0 && pressed(A))))) {
+  if (setup.some((v, q) => v === HUMAN && (pressed(START, q) || (q === 0 && pressed(A))))) {
     if (racersOf().length < MIN_RACERS) { lobbyMsg = 120; fx(SFX.hit); return; }
     fx(SFX.select); startRace(true);
   }
@@ -583,6 +593,13 @@ function updateInitials() {
   state = 'records'; hl = rank; timer = 0; after = 'lobby';
 }
 
+/** The how-to-play pages: LEFT and RIGHT (or A) turn them, B or START go back to the title. */
+function updateHelp() {
+  if (pressed(LEFT)) { helpPage = (helpPage + HELP.length - 1) % HELP.length; fx(SFX.move); }
+  if (pressed(RIGHT) || pressed(A)) { if (pressed(A) && helpPage === HELP.length - 1) { toTitle(); fx(SFX.select); return; } helpPage = (helpPage + 1) % HELP.length; fx(SFX.move); }
+  if (pressed(B) || pressed(START)) { fx(SFX.select); toTitle(); }
+}
+
 function updateRecords() {
   if ((pressed(START) || pressed(A) || pressed(B)) && timer > 20) { fx(SFX.select); if (after === 'lobby') toLobby(); else toTitle(); }
 }
@@ -607,6 +624,7 @@ function draw() {
   if (state === 'play' || state === 'over' || state === 'count') drawPlay();
   else if (state === 'title') drawTitle();
   else if (state === 'lobby') drawLobby();
+  else if (state === 'help') drawHelp();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
   if (state === 'count') ctxt(String(Math.ceil(countT / 60)), 100, GOLD);
@@ -632,7 +650,7 @@ function drawYard(y) {
   const gy = sy(0);
   line(x0, sy(-FINISH), x0 + COL_W, sy(-FINISH), y.hold > 0 ? ART.colors.goal : ART.colors.danger);
   for (const b of [y.W.ground, ...y.W.bodies]) drawBody(b, sx, sy, b === y.W.ground);
-  if (y.cur && !y.ai) { // the landing guide: where the piece would come to rest
+  if (y.cur && !y.ai && y.assist) { // the landing guide: where the piece would come to rest
     const g = landing(y);
     if (g) for (let k = 0; k < g.n; k++) for (let e = 0; e < 4; e++) { const v = g.v[k], f = (e + 1) & 3; line(sx(v[e * 2]), sy(v[e * 2 + 1]), sx(v[f * 2]), sy(v[f * 2 + 1]), ART.colors.shine); }
   }
@@ -678,13 +696,14 @@ function drawLobby() {
   panel(16, 24, 224, 176);
   ctxt('GET READY', 34, GOLD);
   for (let i = 0; i < 4; i++) {
-    const y = 62 + i * 22, v = setup[i], on = i === lobbySel && i > 0;
+    const y = 62 + i * 22, v = setup[i], on = i === lobbySel;
     rect(24, y - 4, 208, 18, on ? GOLD : PANEL);
     txt(`P${i + 1}`, 32, y, v === HUMAN ? WHITE : CYAN);
-    txt(`${on ? '< ' : ''}${levelName(v)}${on ? ' >' : ''}`, 64, y, v === OFF ? DIM : v === HUMAN ? GREEN : WHITE);
+    const what = v === HUMAN ? `HUMAN  GUIDE ${guideOn[i] ? 'ON' : 'OFF'}` : levelName(v);
+    txt(`${on ? '< ' : ''}${what}${on ? ' >' : ''}`, 64, y, v === OFF ? DIM : v === HUMAN ? GREEN : WHITE);
   }
   ctxt('ANOTHER PAD: PRESS A BUTTON', 156, WHITE);
-  ctxt('U/D: PLACE   L/R: CPU LEVEL', 168, DIM);
+  ctxt('U/D: PLACE   L/R: CHANGE', 168, DIM);
   ctxt(lobbyMsg > 0 ? 'NEED TWO RACERS' : 'START: GO   B: BACK', 182, lobbyMsg > 0 ? RED : GOLD);
 }
 
@@ -702,9 +721,24 @@ function drawResults() {
   if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 152, DIM);
 }
 
+/** The how-to-play pages: [title, lines] (at most 12 lines of 28 characters). */
+const HELP = [
+  ['THE RACE', ['BUILD A TOWER HIGHER THAN', 'THE RED LINE AND KEEP IT', 'THERE FOR TWO SECONDS.', '', 'PIECES FALL ONE BY ONE.', 'STEER EACH ONE: THEY STACK', 'FOR REAL, SO A BAD FIT', 'SLIDES OFF OR TOPPLES THE', 'WHOLE TOWER.', '', 'EVERYONE GETS THE SAME', 'PIECES. FIRST OVER WINS.']],
+  ['CONTROLS', ['LEFT RIGHT: SLIDE', 'DOWN: FALL FASTER', 'A OR R: TURN CLOCKWISE', 'B OR L: TURN BACK', 'START: PAUSE', '', 'KEYBOARD: ARROWS, X IS A,', 'Z IS B, ENTER IS START.', '', 'ANOTHER PAD JOINS IN THE', 'LOBBY WITH ANY BUTTON.']],
+  ['TIPS', ['THE WHITE OUTLINE SHOWS', 'WHERE THE PIECE WILL LAND.', '', 'FLAT FITS STAY. A PIECE ON', 'A CORNER SLIPS OFF.', '', 'A RED FRAME MEANS THE', 'TOWER IS MOVING: WAIT.', '', 'A LOST PIECE COSTS TIME.', 'OVER THE LINE NO MORE', 'PIECES COME.']],
+];
+
+function drawHelp() {
+  const [head, lines] = HELP[helpPage];
+  panel(16, 16, 224, 192);
+  ctxt(`${head}  ${helpPage + 1}/${HELP.length}`, 24, GOLD);
+  lines.forEach((l, i) => txt(l, 28, 46 + i * 12, WHITE));
+  ctxt('L/R: PAGE   B: BACK', 192, DIM);
+}
+
 function drawTitle() {
   ctxt('TRICKSY TOWERZ', 50, GOLD);
-  ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? GOLD : WHITE));
+  ['PLAY', 'HOW TO PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 80, 100 + i * 14, i === titleSel ? GOLD : WHITE));
 }
 
 function drawRecords() {

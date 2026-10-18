@@ -16,7 +16,7 @@ const race = (setup, seed = 1) => { const [vm, p] = lobby(seed); p.setup = setup
 {
   const [vm, p] = lobby();
   ok(p.state === 'lobby' && p.setup.join() === '4,1,1,1' && p.lobbySel === 1, 'the lobby starts with you as P1 and three computer wizards of NORMAL, the cursor on P2', p.setup.join());
-  vm.press('DOWN'); vm.press('DOWN'); ok(p.lobbySel === 3, 'DOWN moves the cursor down the places'); vm.press('DOWN'); ok(p.lobbySel === 1, 'and round again: P1 is never picked');
+  vm.press('DOWN'); vm.press('DOWN'); ok(p.lobbySel === 3, 'DOWN moves the cursor down the places'); vm.press('DOWN'); ok(p.lobbySel === 0, 'and round again to P1');
   vm.press('UP'); ok(p.lobbySel === 3, 'UP goes up and round');
   vm.press('UP'); vm.press('UP'); // on P2
   const seen = []; for (let i = 0; i < 5; i++) { vm.press('RIGHT'); seen.push(p.setup[1]); }
@@ -31,7 +31,7 @@ const race = (setup, seed = 1) => { const [vm, p] = lobby(seed); p.setup = setup
   const [vm, p] = lobby();
   tap(vm, 2, 'UP'); ok(p.setup.join() === '4,1,4,1', 'a button on pad 3 puts a human in the third place (whatever the button)', p.setup.join());
   tap(vm, 1, 'A'); tap(vm, 3, 'DOWN'); ok(p.setup.join() === '4,4,4,4', 'and pads 2 and 4 the same: four humans');
-  vm.press('DOWN'); vm.press('RIGHT'); ok(p.setup.join() === '4,4,4,4', 'a human place does not change with LEFT and RIGHT');
+  vm.press('DOWN'); vm.press('RIGHT'); ok(p.setup.join() === '4,4,4,4' && p.guideOn.join() === 'true,true,false,true', 'LEFT and RIGHT on a human place switch that player\'s landing guide, not the place');
   tap(vm, 2, 'B'); ok(p.setup.join() === '4,4,1,4', 'B on a pad leaves: the place goes back to a computer wizard');
   vm.press('B'); ok(p.state === 'title', 'B on the first pad goes back to the title');
 }
