@@ -1,7 +1,7 @@
 # Rags to Riches: Cart Specification
 
-**Version:** 0.8 (Phase 7 built)
-**Status:** In progress: Phases 1 to 7 of 8 (the vertical slice, the economic rules, the full ten-week tour, the game flow and controls, the art, the sound, and the strategies and balance) are built; the rest of the plan (section 15) is not
+**Version:** 1.0 (released)
+**Status:** Released: all 8 phases are built. The cart is `carts/rags-to-riches.nova` and the PNG cartridge `carts/rags-to-riches.nova.png`, with a label, a Library entry and a README row. Open decisions are in section 16.
 **Cart source:** `carts/src/rags-to-riches/` → `carts/rags-to-riches.nova`
 
 A single-player, turn-based band-management game. It is a **spiritual successor** to an old web game about running an
@@ -111,7 +111,7 @@ On the start-city map the header is `WHERE DOES THE TOUR START?` and the footer 
 header is `WHERE TO?  $20 AND A WEEK`, the band's own city is marked `YOU` and cannot be picked, and the card ends with the cash before and
 after the fare and the week used.
 
-**Help:** four pages over whatever is behind it (the title or a paused tour): THE GOAL, CONCERTS, SONGS AND TRAVEL, CONTROLS.
+**Help:** five pages over whatever is behind it (the title or a paused tour): THE GOAL, CONCERTS, SONGS AND TRAVEL, TIPS, CONTROLS.
 At most 12 lines of 28 characters a page.
 
 **Concert cutscene:** the band (Zorp, Dot, Spike) on the stage of the venue the band is playing: a bar (brick wall, LIVE and BAND in neon, a dartboard),
@@ -641,7 +641,7 @@ between phases.
    - **Built:** the title with four items; the intro (three text panels, `intro`) with a saved "seen" preference (slot 2) and
      START or B to skip it at once; the start-city map (`cityStart`) and the travel map, one `drawMap` with the five cities
      west to east, moved with the D-pad (previous / next, wrapping, so no city is ever unreachable); the concert cutscene
-     (`show`, 200 frames, A or B skips after 10 frames, START pauses; placeholder crowd of 48 heads); the help (four pages, an
+     (`show`, 200 frames, A or B skips after 10 frames, START pauses; placeholder crowd of 48 heads); the help (five pages, an
      overlay that works over the title and over a paused tour); a pause menu with HOW TO PLAY and a confirm (default NO) before
      RESTART or QUIT TO TITLE; a final summary (tickets, ticket sales, rent / ads / fares, best night, the place in the top 10);
      and the records with the tie-break (cash, fewer trips, fewer concerts, insertion order) stored in the entry's third slot
@@ -729,6 +729,18 @@ between phases.
      "early concerts" as a second style is not met (the winning styles are all songs-first variants, and small rooms against big rooms). What I tried and why it
      failed is in 5.10; the likely fix changes the feel of the game, so it is yours to decide.
 8. **Polish and release.** Readability, skip speed, clarity, cart limits, PNG cartridge, label, Library entry, README row.
+
+   - **Built:** every screen of the game was captured as a picture and read. Menu rows now read the same everywhere: the row under the cursor is gold
+     (with the `>` mark), the others white, and a row that cannot be chosen dim (and says why when the cursor is on it); before, the unselected and the
+     disabled rows were a dim grey on the plum panel that was hard to read. The help has a fifth page, TIPS (small crowds at the start, so write songs early;
+     a full house wins fans; move on after two or three shows; big cities pay more but cost more). `meta.json` has the real description. `node tools/release.js
+     rags-to-riches --wait 2500` took the label from the title screen, exported `carts/rags-to-riches.nova.png` (the payload decodes to exactly the packed
+     cart), wrote `carts/labels/rags-to-riches.png` and rebuilt the Library (`carts/index.json`); the README has a row.
+   - **Results:** `node tools/verify.js rags-to-riches` passes (the same 411 checks, with the help test now for five pages), the soak is clean and the smoke test
+     in the real console reports no errors. The checks CI runs (`node --check` on the sources, `check-docs.js`, `check.js --all`, the art and new-cart selftests,
+     `soak.mjs --all`) pass. The cart is 49,409 of 65,536 bytes of code.
+   - **Not done:** nobody has played it by hand, listened to it or looked at it on a real screen; the screens were judged from captured pictures. Skip speed was
+     left as built (A or B skips the show after 10 frames and the intro at once).
 
 ## 16. Open questions
 

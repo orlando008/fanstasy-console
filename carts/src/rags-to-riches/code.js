@@ -5,7 +5,8 @@
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
-const SHADOW = 1, PANEL = 3, RED = 6, GREY = 7, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14, WHITE = 15;
+// Menu rows: the one under the cursor is GOLD (and has the > mark), the others WHITE, a row that cannot be chosen DIM (and says why when the cursor is on it).
+const SHADOW = 1, PANEL = 3, RED = 6, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14, WHITE = 15;
 
 // --- Art: made by art.py (tiles.txt, palette.txt, map.txt). The block below is rewritten each time it runs. ---
 
@@ -155,6 +156,7 @@ const HELP_PAGES = [
   ['THE GOAL', ['RAISE $5,000 IN 10 WEEKS.', 'ONE ACTION A WEEK:', '', '- PLAY A CONCERT', '- WRITE NEW SONGS', '- TRAVEL TO ANOTHER CITY', '', 'END WEEK 10 WITH $5,000 OR', 'MORE TO WIN. YOUR SCORE IS', 'THE FINAL CASH.']],
   ['CONCERTS', ['PICK A VENUE: BIG ROOMS HOLD', 'MORE BUT COST MORE.', 'HIGH PRICES THIN THE CROWD.', 'ADVERTISING BRINGS FANS IN', 'BUT COSTS CASH.', 'RENT AND ADS ARE PAID UP', 'FRONT. THE FORECAST SAYS', 'LOW, FAIR OR STRONG.']],
   ['SONGS AND TRAVEL', ['SONGS: NO MONEY, BUT FANS', 'AND FRESHNESS GROW.', '', 'TRAVEL: $20 AND A WEEK, NO', 'CONCERT. FANS IN A CITY GET', 'TIRED OF YOU; A NEW CITY', 'STARTS FRESH.']],
+  ['TIPS', ['A NEW BAND DRAWS SMALL', 'CROWDS, SO WRITE SONGS', 'EARLY: THEY BUILD FANS.', 'A FULL HOUSE WINS MORE FANS.', 'AFTER 2 OR 3 SHOWS HERE,', 'MOVE ON: FRESH CITIES PAY.', 'BIG CITIES PAY BETTER BUT', 'THEIR ROOMS COST MORE.']],
   ['CONTROLS', ['D-PAD: MOVE OR CHANGE', 'L / R: BIG STEPS', 'A: CONFIRM    B: BACK', 'START: PAUSE AND HELP', '', 'NOTHING IS SPENT UNTIL YOU', 'CONFIRM AN ACTION.']],
 ];
 const two = (n) => String(n).padStart(2, '0');
@@ -557,7 +559,7 @@ function drawRoadCrew(y) {
 function drawTitle() {
   drawRoadCrew(182);
   panel(64, 96, 128, 66);
-  TITLE_ITEMS.forEach((t, i) => txt(`${i === titleSel ? '> ' : '  '}${t}`, 76, 104 + i * 14, i === titleSel ? WHITE : DIM));
+  TITLE_ITEMS.forEach((t, i) => txt(`${i === titleSel ? '> ' : '  '}${t}`, 76, 104 + i * 14, i === titleSel ? GOLD : WHITE));
   ctxt('RAISE $5,000 IN 10 WEEKS', 172, WHITE);
 }
 
@@ -628,7 +630,7 @@ function drawHub() {
   drawRoadCrew(178);
   panel(24, 58, 208, 80);
   const items = ['PLAY A CONCERT', 'WRITE NEW SONGS', `TRAVEL (${money(TUNE.fare)})`], ok = hubOk();
-  items.forEach((t, i) => txt(`${i === hubSel ? '> ' : '  '}${t}`, 40, 66 + i * 14, !ok[i] ? GREY : i === hubSel ? WHITE : DIM));
+  items.forEach((t, i) => txt(`${i === hubSel ? '> ' : '  '}${t}`, 40, 66 + i * 14, !ok[i] ? DIM : i === hubSel ? GOLD : WHITE));
   if (!ok[hubSel]) {
     ctxt(hubSel === 0 ? `NEED ${money(cheapestRent())} FOR ANY ROOM` : `NEED ${money(TUNE.fare)} FOR THE BUS`, 114, RED);
   } else {
@@ -644,7 +646,7 @@ function drawVenue() {
   const rows = city().venues.map((_, i) => 62 + i * 46);
   holePanel(8, 56, 240, 152, rows.map((y) => [16, y + 4, 32, 32]));
   city().venues.forEach((v, i) => {
-    const y = rows[i], on = i === venueSel, ok = v.rent <= tour.cash, c = !ok ? GREY : on ? WHITE : DIM;
+    const y = rows[i], on = i === venueSel, ok = v.rent <= tour.cash, c = !ok ? DIM : on ? GOLD : WHITE;
     sp(VENUE_ART[i], 16, y + 4);
     txt(`${on ? '> ' : '  '}${v.name}`, 52, y + 6, c);
     if (!ok) rtxt(`NEED ${money(v.rent - tour.cash)}`, 240, y + 6, RED);
@@ -660,10 +662,10 @@ function drawSetup() {
   sp(VENUE_ART[plan.venue], 16, 62);
   txt(v.name, 56, 68, GOLD);
   txt(`ROOM FOR ${v.capacity}   RENT ${money(v.rent)}`, 56, 82, WHITE);
-  txt(`${plan.row === 0 ? '> ' : '  '}TICKET PRICE`, 20, 104, plan.row === 0 ? WHITE : DIM);
-  rtxt(`< ${money(plan.price)} >`, 236, 104, plan.row === 0 ? WHITE : DIM);
-  txt(`${plan.row === 1 ? '> ' : '  '}ADVERTISING`, 20, 118, plan.row === 1 ? WHITE : DIM);
-  rtxt(`< ${money(plan.ad)} >`, 236, 118, plan.row === 1 ? WHITE : DIM);
+  txt(`${plan.row === 0 ? '> ' : '  '}TICKET PRICE`, 20, 104, plan.row === 0 ? GOLD : WHITE);
+  rtxt(`< ${money(plan.price)} >`, 236, 104, plan.row === 0 ? GOLD : WHITE);
+  txt(`${plan.row === 1 ? '> ' : '  '}ADVERTISING`, 20, 118, plan.row === 1 ? GOLD : WHITE);
+  rtxt(`< ${money(plan.ad)} >`, 236, 118, plan.row === 1 ? GOLD : WHITE);
   txt('UPFRONT COST', 20, 136, WHITE); rtxt(money(v.rent + plan.ad), 236, 136, WHITE);
   txt('CASH AFTER', 20, 148, WHITE); rtxt(ok ? money(after) : `NEED ${money(-after)} MORE`, 236, 148, ok ? WHITE : RED);
   const f = forecast(city(), v, plan.price, plan.ad, tour.pop, tour.fresh, tour.fatigue[tour.city]);
@@ -819,11 +821,11 @@ function drawPause() {
   if (pauseAsk >= 0) {
     ctxt(pauseAsk === 2 ? 'RESTART THE TOUR?' : 'QUIT TO THE TITLE?', 74, GOLD);
     ctxt('THIS TOUR WILL BE LOST', 90, DIM);
-    ['NO, KEEP PLAYING', 'YES, DO IT'].forEach((t, i) => txt(`${i === askSel ? '>' : ' '} ${t}`, 64, 116 + i * 14, i === askSel ? WHITE : DIM));
+    ['NO, KEEP PLAYING', 'YES, DO IT'].forEach((t, i) => txt(`${i === askSel ? '>' : ' '} ${t}`, 64, 116 + i * 14, i === askSel ? GOLD : WHITE));
     return;
   }
   ctxt('PAUSED', 74, GOLD);
-  PAUSE_ITEMS.forEach((t, i) => txt(`${i === pauseSel ? '>' : ' '} ${t}`, 64, 94 + i * 14, i === pauseSel ? WHITE : DIM));
+  PAUSE_ITEMS.forEach((t, i) => txt(`${i === pauseSel ? '>' : ' '} ${t}`, 64, 94 + i * 14, i === pauseSel ? GOLD : WHITE));
 }
 
 /** The help pages, over whatever is behind them. */

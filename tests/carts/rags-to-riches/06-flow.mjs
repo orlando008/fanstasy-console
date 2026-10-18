@@ -16,11 +16,11 @@ const hub = (seed = 1) => { const vm = newGame(seed), p = vm.probe(); vm.run(3);
   vm.press('UP'); ok(p.titleSel === 3, 'UP from the top wraps to the bottom');
   vm.press('DOWN'); vm.press('DOWN'); vm.press('A');
   ok(p.helpOpen && p.helpPage === 0 && p.state === 'title', 'HOW TO PLAY opens the help over the title');
-  vm.press('RIGHT'); ok(p.helpPage === 1, 'RIGHT turns the page'); vm.press('LEFT'); vm.press('LEFT'); ok(p.helpPage === 3, 'LEFT from the first goes to the last');
+  vm.press('RIGHT'); ok(p.helpPage === 1, 'RIGHT turns the page'); vm.press('LEFT'); vm.press('LEFT'); ok(p.helpPage === 4, 'LEFT from the first goes to the last');
   vm.press('B'); ok(!p.helpOpen && p.state === 'title', 'B closes it');
-  vm.press('A'); for (let i = 0; i < 4; i++) vm.press('A'); ok(!p.helpOpen, 'A turns the pages and closes the help after the last');
+  vm.press('A'); for (let i = 0; i < 5; i++) vm.press('A'); ok(!p.helpOpen, 'A turns the pages and closes the help after the last');
   vm.press('A'); vm.press('START'); ok(!p.helpOpen, 'START closes it too');
-  ok(p.HELP_PAGES.length === 4 && p.HELP_PAGES.every(([h, l]) => h.length <= 22 && l.length <= 12 && l.every((t) => t.length <= 28)), 'the help is four pages of at most 12 lines of 28 characters');
+  ok(p.HELP_PAGES.length === 5 && p.HELP_PAGES.every(([h, l]) => h.length <= 22 && l.length <= 12 && l.every((t) => t.length <= 28)), 'the help is five pages of at most 12 lines of 28 characters');
   ok(p.INTRO_PANELS.length === 3 && p.INTRO_PANELS.every(([h, l]) => h.length <= 22 && l.length <= 3 && l.every((t) => t.length <= 28)), 'the intro is three panels of at most three lines of 28 characters');
 }
 
