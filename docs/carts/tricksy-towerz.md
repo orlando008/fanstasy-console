@@ -7,7 +7,7 @@
 A physics tower-building race for **one to four wizards at a time**. Falling pieces of blocks (the seven tetrominoes) are steered and turned,
 then they land and stack under real rigid-body physics: they slide, tip, topple and take the pieces under them with them. The first
 tower to climb over the finish line and stay there wins. It is a **spiritual successor** to *Tricky Towers* (WeirdBeard, 2016), not a copy: the
-wizards, names, art, music, spells and numbers are all original, and only the idea (stack falling bricks that obey physics, race your friends)
+wizards, names, art, music and numbers are all original, and only the idea (stack falling bricks that obey physics, race your friends)
 is shared. The title, the Race mode and the four players are the user's brief.
 
 ---
@@ -25,7 +25,7 @@ seconds in a row, so a tower that only just reaches it and then wobbles does not
 of their own; empty places are filled by computer wizards.
 
 What makes it fun: the tension between speed (drop pieces fast) and care (a perfect fit is stable, a rushed one is not), watching a rival's
-tower fall, and the magic (Phase 4) that lets a player steady their own tower or trouble a rival's.
+tower fall. **Only the stacking**: there are no items, power-ups, spells or other extras, by the user's decision (after Phase 3), and none will be added.
 
 ## 2. Core loop
 
@@ -33,8 +33,7 @@ tower fall, and the magic (Phase 4) that lets a player steady their own tower or
 2. The player slides and turns it, and may drop it faster.
 3. It lands (rests on the tower or the platform) and becomes a free body; the next piece comes.
 4. The tower's height (the top of everything held up by the platform) is counted all the time.
-5. The first tower to stay over the finish line for 120 frames wins the race (while it does, no new pieces come: it only has to stand). The race is the whole game: a game is one race, or the best of a few
-   (Phase 5).
+5. The first tower to stay over the finish line for 120 frames wins the race (while it does, no new pieces come: it only has to stand). The race is the whole game: a game is one race.
 
 ## 3. Controls
 
@@ -44,7 +43,6 @@ tower fall, and the magic (Phase 4) that lets a player steady their own tower or
 | DOWN | Drop it faster (3 px per frame instead of 0.7) |
 | A or R | Turn the piece a quarter clockwise |
 | B or L | Turn it a quarter counter-clockwise |
-| X, Y | Light and dark magic (Phase 4) |
 | START | Pause (RESUME, RESTART, QUIT TO TITLE); the player who paused has the menu |
 
 **Players.** The console reads up to four gamepads (SPEC 6): a pad becomes the next player the first time a button is pressed on it, and the keyboard always feeds player 1. So four people need four gamepads
@@ -59,8 +57,8 @@ tower fall, and the magic (Phase 4) that lets a player steady their own tower or
 | y 0 to 15 | The HUD row of each column: `P1` to `P4`, the height in px (gold over the line), and the **next piece** drawn small (3 px squares) at the right |
 | y 16 to 223 | The yard (208 px): the sky, the platform, the blocks, the finish line (red under it, gold over it) with a bar under the top edge that fills as the 120 frames pass, the **landing guide** (a white outline), `LOST n` at the bottom when pieces have been lost; the frame is **red while the tower wobbles**; the camera follows the tower up |
 | Overlay | Everything the physics draws (blocks as filled, edged squares however they are turned), text and panels |
-| BG0 | Phase 1: the placeholder field. Phase 6: scenery behind the yards |
-| Sprites | Phase 6: wizards, sparks, spell effects |
+| BG0 | Phase 1: the placeholder field. Phase 5: scenery behind the yards |
+| Sprites | Phase 5: the wizards (one beside each yard), small celebrations |
 
 The blocks are drawn on the **overlay**, not with sprites: a block can be at any angle, and the console has no rotated sprites, so each block is a
 filled quadrilateral (`fillQuad`: one overlay `line` for each row of pixels) with a dark edge. About 80 blocks are on screen in a four-player race;
@@ -162,7 +160,7 @@ The result, at the numbers of this document (12 seeds, the race ended at 150 s; 
 | WIZARD | 12 of 12 | 23 s | 17 to 103 s | 27 | 8 |
 
 A person has the landing guide the computer does not, and uses the fast drop; the target for a good person is 40 to 70 seconds. The levels are only roughly spaced (the seeds vary a great deal: one
-tower in a dozen collapses near the top); Phase 8 balances them against a person and with more seeds. Whether the finish should be higher or lower, and the hold longer or shorter, is the one number a
+tower in a dozen collapses near the top); Phase 7 balances them against a person and with more seeds. Whether the finish should be higher or lower, and the hold longer or shorter, is the one number a
 person's play will tell better than any sweep.
 
 ### 5.7 What the yard tells you
@@ -196,7 +194,7 @@ A and B to move, START to save); a wizard's win is not recorded. Then the record
 
 ## 6. World and content
 
-Phase 1: one yard. Phase 6: the yards stand in front of a scenery (a wizard's tower, a sky, a sea) with each column a different colour; the stone platform and the blocks are drawn in code.
+Phase 1: one yard. Phase 5: the yards stand in front of a scenery (a wizard's tower, a sky, a sea) with each column a different colour; the stone platform and the blocks are drawn in code.
 
 ## 7. Opponents
 
@@ -214,7 +212,7 @@ A wizard has a **level** (`SKILLS`, a yard's `skill`): the px it aims off by, th
 | 2 HARD | 0.8 | 30 | 4 % | yes |
 | 3 WIZARD | 0.2 | 6 | 0 | yes |
 
-The random numbers are the console's (`rndi`), so a race is the same every time for the same seed and the same buttons. Phase 3 gives the wizards names and fills the empty places with them; Phase 4 makes them use magic.
+The random numbers are the console's (`rndi`), so a race is the same every time for the same seed and the same buttons. Phase 3 fills the empty places with them; Phase 5 gives them names and faces.
 
 ## 8. Modes
 
@@ -227,21 +225,21 @@ initials are typed by the winner's pad): the stored score is `100000 - frames`, 
 
 ## 10. Screens and flow
 
-1. **Title:** PLAY, RECORDS (Phase 5: HOW TO PLAY).
+1. **Title:** PLAY, RECORDS (Phase 4: HOW TO PLAY).
 2. **Lobby** (5.8): who races, joining by pad, the level of each wizard.
 3. **Count** of three, then **Play** (up to four yards), with a **Pause** (START: the one who paused has the menu): RESUME, RESTART, QUIT TO TITLE.
 4. **Results** (the winner, the order, the time), then **initials** if a person's time is in the top 10, then the **records**, then the lobby again (for a race with no record: straight to the lobby).
 
 ## 11. Audio
 
-Phase 7. The starter's songs 0 (title) and 1 (race) and its seven effects are still the placeholders. Channel 1 is for effects (the songs only carry the tempo on it); effects with noise play on channel 4.
+Phase 6. The starter's songs 0 (title) and 1 (race) and its seven effects are still the placeholders. Channel 1 is for effects (the songs only carry the tempo on it); effects with noise play on channel 4.
 Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x where it enters (`node tools/devkit/music/loud.mjs carts/tricksy-towerz.nova --check`; playbook section 5).
 
 ## 12. Video layers and art
 
 Made by `carts/src/tricksy-towerz/art.py` (the art toolkit, `tools/devkit/art/kit.py`). So far: the starter's field and two sprites (placeholders), and **overlay colours** by name in CGRAM 113 to 127
 (`ART.colors`): `p0` to `p6` the fills of the seven pieces, `edge` (the dark edge of a block), `shine`, `stone`, `stoneDark` (the platform), `sky`, `skyHi`, `goal` (the finish line when the tower is over it)
-and `danger` (when it is not). Phase 6 replaces the placeholders with the real art.
+and `danger` (when it is not). Phase 5 replaces the placeholders with the real art.
 
 ## 13. Persistence (save slots)
 
@@ -266,11 +264,12 @@ and `danger` (when it is not). Phase 6 replaces the placeholders with the real a
 1. **Vertical slice:** the physics, one yard, steering, the pieces, the camera, the finish line, a computer player that builds a tower.
 2. **The race rules and feel:** tune the line, the hold time, the speeds and the loss of pieces; the landing guide and the wobble warning; the planner's skill levels.
 3. **Up to four players:** the four yards side by side, joining by gamepad (the lobby), computer wizards for the other places, the count of three, the pause of the one who paused, the results and the ranking.
-4. **Magic:** a light spell to steady your own tower and a dark spell to trouble a rival's, a meter that fills as pieces are placed well.
-5. **Flow:** the title, the join screen, the rounds (the best of three), the pause for the player who paused, the help, the fastest times and the saves.
-6. **Art pass:** wizards, scenery, effects.
-7. **Audio pass:** songs and effects.
-8. **Balance and polish:** the computer players over many seeds, the label, the PNG cart and the Library (`node tools/release.js tricksy-towerz`) and a README row.
+4. **Flow:** the title and its HOW TO PLAY page, the lobby polish, the records of the fastest wins, the saves, and whether the landing guide can be turned off.
+5. **Art pass:** the wizards, scenery, the count and the results drawn properly.
+6. **Audio pass:** songs and effects.
+7. **Balance and polish:** the computer players over many seeds, the label, the PNG cart and the Library (`node tools/release.js tricksy-towerz`) and a README row.
+
+The plan was eight steps. Step 4 was magic (a light and a dark spell); it was **dropped** at the user's request, who wants only the stacking, with no items, spells or other extras, and the later steps moved up by one.
 
 Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/test.js tricksy-towerz`, write its **Built** and **Results** notes under its number here, commit and push.
 
@@ -303,7 +302,7 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
    - **What I learned:** two of the bugs were in the physics, not the planner, and both came from squares on a grid: a piece resting on a *corner* of another is one the physics will tip, and two aligned rows of blocks
      have a *seam* that a sliding block catches on (a contact at a point where the blocks only touch corner to corner). A tower of tetrominoes is full of both. Also: the planner on a grid of blocks looked right on a tidy
      tower and failed on a messy one; reading the real outline fixed it. What changed the game most was the width of the platform (5 to 6 blocks): the same player lost a third as many pieces.
-   - **Not done:** nobody has played it with a pad. The finish height, the hold and the speeds are tuned against computer players, not people; the guide is always on for people (there is no way to turn it off yet: Phase 5
+   - **Not done:** nobody has played it with a pad. The finish height, the hold and the speeds are tuned against computer players, not people; the guide is always on for people (there is no way to turn it off yet: Phase 4
      could make it an option for people who want a harder race).
 
 3. **Up to four players.**
@@ -317,13 +316,12 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
      restart and quit, a wizard winning (not in the table), a person winning (in the table, initials typed on their own pad, then the lobby), a race of four wizards run to the end three times, and the frame time with four people and four
      landing guides), the soak is clean and the smoke test in the real console reports no errors. `node tools/devkit/sweep.mjs tricksy-towerz --seeds 24 --set racers=4,skill=2`: 24 races of four HARD wizards, all finished, 1,154 to 1,888
      frames (19 to 31 s), the winner is player 1 in 7 of 24 (about a quarter: no place is favoured). The frame time with two people (two guides) and two wizards: 99th percentile 3.8 ms.
-   - **Not done:** it has not been played with four real pads, so the console's pad seating (which pad becomes which player) and how it feels to join have not been seen; the lobby and the results are plain text on a panel (Phase 6 draws
-     them); the count shows a digit in the system font (Phase 6 makes it big); a wizard has no name yet; there are no rounds (a race is a race: Phase 5 adds the best of three); there is no help screen.
+   - **Not done:** it has not been played with four real pads, so the console's pad seating (which pad becomes which player) and how it feels to join have not been seen; the lobby and the results are plain text on a panel (Phase 5 draws
+     them); the count shows a digit in the system font (Phase 5 makes it big); a wizard has no name yet; there are no rounds (a race is a race, and will stay one); there is no help screen (Phase 4).
 
 ## 16. Open questions
 
 - The finish line's height (130 px) and the hold time (120 frames) were tuned against computer players; a person's play may want them changed.
 - Whether the landing guide should be an option (it makes the race easier and the careful play possible).
-- Whether lost pieces should cost more than the height (a penalty of time, or of magic), and whether there should be a "too many lost, you are out" rule as in a survival mode.
-- Light and dark magic: which spells, and how they are earned (Phase 4).
-- The game's setting and the wizards' names (Phase 6).
+- Whether lost pieces should cost more than the height (a penalty of time), and whether there should be a "too many lost, you are out" rule as in a survival mode.
+- The game's setting and the wizards' names (Phase 5).
