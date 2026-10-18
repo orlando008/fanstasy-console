@@ -1,0 +1,66 @@
+{
+ "colors": {
+  "danger": 127,
+  "edge": 120,
+  "goal": 126,
+  "p0": 113,
+  "p1": 114,
+  "p2": 115,
+  "p3": 116,
+  "p4": 117,
+  "p5": 118,
+  "p6": 119,
+  "shine": 121,
+  "sky": 124,
+  "skyHi": 125,
+  "stone": 122,
+  "stoneDark": 123
+ },
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "bloom": 4,
+    "dark": 1,
+    "light": 3,
+    "mid": 2
+   }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "amber": 7,
+    "edge": 1,
+    "fire": 5,
+    "gold": 6,
+    "hull": 2,
+    "shine": 3,
+    "white": 4
+   }
+  }
+ },
+ "scenes": {
+  "field": {
+   "h": 28,
+   "mx": 0,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  }
+ },
+ "sprites": {
+  "gem": {
+   "pal": 0,
+   "size": 16,
+   "tile": 258
+  },
+  "player": {
+   "pal": 0,
+   "size": 16,
+   "tile": 256
+  }
+ },
+ "tiles": {},
+ "used": 11,
+ "version": 1
+}
