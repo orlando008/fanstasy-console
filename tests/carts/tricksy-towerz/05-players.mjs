@@ -56,11 +56,11 @@ const race = (setup, seed = 1) => { const [vm, p] = lobby(seed); p.setup = setup
   vm.run(40); ok(p.yards.every((y) => y.cur), 'and the first pieces come');
   ok(p.yards.every((y) => y.cur.kind === p.seq[0]), 'the same piece for everybody');
   const xs = [0, 1, 2].map((i) => ((256 - 64 * 3) >> 1) + i * 64);
-  vm.run(1); ok(xs.every((x0) => count(vm, vm.probe().ART.colors.sky, x0 + 4, 30, x0 + 60, 90) > 1500), 'three yards stand side by side in the middle of the screen (x 32 to 224), each with its own sky', xs.join());
+  vm.run(1); const mg = (c) => vm.probe().mget(32 + c, 5); ok(xs.every((x0) => mg((x0 >> 3) + 3) !== 0 && mg((x0 >> 3) + 7) !== 0) && [0, 1, 2, 3, 28, 29, 30, 31].every((c) => mg(c) === 0), 'three yards stand side by side in the middle of the screen (x 32 to 224), each with its own backdrop, and nothing at the sides', xs.join());
 }
 {
   const [vm, p] = race([4, 1, 1, 1]); vm.run(60);
-  ok(p.yards.length === 4 && [0, 64, 128, 192].every((x0) => count(vm, p.ART.colors.sky, x0 + 4, 30, x0 + 60, 90) > 1500), 'four racers fill the screen, 64 px each');
+  ok(p.yards.length === 4 && [0, 8, 16, 24].every((c) => p.mget(32 + c + 3, 5) !== 0 && p.mget(32 + c + 7, 5) !== 0), 'four racers fill the screen, 64 px each');
 }
 
 // 5. Who steers what.

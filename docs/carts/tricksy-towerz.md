@@ -1,7 +1,7 @@
 # Tricksy Towerz: Cart Specification
 
-**Version:** 0.5 (Phase 4 built)
-**Status:** In progress: Phases 1 to 4 of 7 (the physics and one tower; the race rules and feel; up to four players; the flow) are built; the rest of the plan (section 15) is not
+**Version:** 0.6 (Phase 5 built)
+**Status:** In progress: Phases 1 to 5 of 7 (the physics and one tower; the race rules and feel; up to four players; the flow; the art) are built; the rest of the plan (section 15) is not
 **Cart source:** `carts/src/tricksy-towerz/` → `carts/tricksy-towerz.nova`
 
 A physics tower-building race for **one to four wizards at a time**. Falling pieces of blocks (the seven tetrominoes) are steered and turned,
@@ -54,16 +54,18 @@ tower fall. **Only the stacking**: there are no items, power-ups, spells or othe
 
 | Region | What |
 |---|---|
-| y 0 to 15 | The HUD row of each column: `P1` to `P4`, the height in px (gold over the line), and the **next piece** drawn small (3 px squares) at the right |
-| y 16 to 223 | The yard (208 px): the sky, the platform, the blocks, the finish line (red under it, gold over it) with a bar under the top edge that fills as the 120 frames pass, the **landing guide** (a white outline), `LOST n` at the bottom when pieces have been lost; the frame is **red while the tower wobbles**; the camera follows the tower up |
-| Overlay | Everything the physics draws (blocks as filled, edged squares however they are turned), text and panels |
-| BG0 | Phase 1: the placeholder field. Phase 5: scenery behind the yards |
-| Sprites | Phase 5: the wizards (one beside each yard), small celebrations |
+| y 0 to 15 | The HUD row of each column: the **wizard** of the yard (a 16 px sprite: the hat says whose it is), the height in px (white for a person, cyan for a computer wizard, gold over the line) and the **next piece** drawn small (3 px squares) at the right |
+| y 16 to 223 | The yard (208 px): its backdrop (BG1), the finish line (a chequered band, red under it and gold over it) with a bar under the top edge that fills as the 120 frames pass, the platform and the rock it stands on, the blocks, the **landing guide** (a white outline), `LOST n` at the bottom when pieces have been lost; the frame is **red while the tower wobbles**; the camera follows the tower up |
+| Overlay | Everything the physics draws (blocks as filled, edged squares with a light on two edges, however they are turned), the finish line, the rock, text and panels (hiding what is under them) |
+| BG2 | The night (scene `sky`): behind everything, on every screen |
+| BG1 | In a race, the backdrops of the yards: a canvas of Map RAM (32, 0) that `fillYards` fills with the 8 x 26 cells of scene `back` for each yard |
+| BG0 | The title picture (scene `title`) on the title, the lobby panel (scene `lobby`) in the lobby; nothing else (in a race it would hide the backdrops) |
+| Sprites | The wizards (16 sprites: standing and cheering, in 8 palettes): one in each yard's HUD, one for each place in the lobby, two cheering on the towers of the title; the winner jumps |
 
 The blocks are drawn on the **overlay**, not with sprites: a block can be at any angle, and the console has no rotated sprites, so each block is a
-filled quadrilateral (`fillQuad`: one overlay `line` for each row of pixels) with a dark edge. About 80 blocks are on screen in a four-player race;
-the cost is measured in 5.1. The overlay is under the console's text and above everything else, so wizards and effects (sprites) go beside and
-between the yards, never over a block.
+filled quadrilateral (`fillQuad`: one overlay `line` for each row of pixels) with a dark edge and a lighter line a little inside its top and left edges (`drawBody`). About 80 blocks are on screen in a four-player race;
+the cost is measured in 5.1. The overlay is above everything else (the console draws it last), so a sprite is never seen over a block or a panel: the wizards stand in the HUD row, on the lobby (whose panel is a picture on BG0, so that they can stand on it) and on the title, and
+the panels that come over a race (the pause, the results) are overlay, which hide what is under them.
 
 ## 5. The rules
 
@@ -198,7 +200,9 @@ A and B to move, START to save); a wizard's win is not recorded. Then the record
 
 ## 6. World and content
 
-Phase 1: one yard. Phase 5: the yards stand in front of a scenery (a wizard's tower, a sky, a sea) with each column a different colour; the stone platform and the blocks are drawn in code.
+A wizards' night: the towers are built in the sky over a dusk of six bands of purple and pink (dithered into each other), a moon, stars, two rows of hills and a castle with lit windows. Each yard is a column of lighter twilight blue with its own stars. The platform
+is stone, standing on a rock that narrows as it goes down, so the towers float. The four wizards are one picture in four hat colours (red, blue, green and gold, for players 1 to 4); a computer wizard has the same hat and a grey robe. The title has the
+logo TRICKSY TOWERZ (the console's font at three times its size, a colour of the pieces for each letter, with an edge and a shadow) and two rival towers of coloured blocks, one low and steady and one high and wobbling, with a wizard cheering on each.
 
 ## 7. Opponents
 
@@ -241,9 +245,21 @@ Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump
 
 ## 12. Video layers and art
 
-Made by `carts/src/tricksy-towerz/art.py` (the art toolkit, `tools/devkit/art/kit.py`). So far: the starter's field and two sprites (placeholders), and **overlay colours** by name in CGRAM 113 to 127
-(`ART.colors`): `p0` to `p6` the fills of the seven pieces, `edge` (the dark edge of a block), `shine`, `stone`, `stoneDark` (the platform), `sky`, `skyHi`, `goal` (the finish line when the tower is over it)
-and `danger` (when it is not). Phase 5 replaces the placeholders with the real art.
+Made by `carts/src/tricksy-towerz/art.py` (the art toolkit, `tools/devkit/art/kit.py`): `node tools/devkit/art/scene.mjs carts/tricksy-towerz.nova out.png --scene sky` (or `back`, `title`, `lobby`) and `node tools/devkit/art/sprites.mjs carts/tricksy-towerz.nova out.png`
+show it. What is where is in section 4. In Map RAM: `sky` at (0, 0), `back` at (0, 28), `title` at (0, 56), `lobby` at (0, 84), and BG1's canvas at (32, 0).
+
+| BG palette | Colours | Used by |
+|---|---|---|
+| 1 | six sky bands, moon and its shade, two stars, far hill, near hill, castle, lit window (14) | `sky` |
+| 2 | five bands of twilight and two stars (7) | `back` |
+| 3 | the seven piece colours, edge, shine, stone, stone dark, shadow (12) | `title` |
+| 4 | the panel, its edge, gold and dark gold, a row (5) | `lobby` |
+
+Sprite palettes 0 to 7 are the wizards (the hats of players 1 to 4 with a robe of the hat's dark colour, then the same hats with a grey robe). The overlay's colours are named too (`ART.colors`): `p0` to `p6` the fills of the seven pieces and `h0` to `h6` their lights
+(CGRAM 113 to 119 and 97 to 103), `edge`, `shine`, `stone`, `stoneDark` (the platform and the rock), `goal` (the finish line when the tower is over it) and `danger` (when it is not), in CGRAM 120 to 127 (`sky` and `skyHi` are left from Phase 1 and unused). BG palettes 5 to 7
+are not used for pictures (the overlay's own text colours are in palette 0, and the block colours above in 6 and 7).
+
+The big letters of the count (`bigText`) are drawn on the overlay, from a 5 x 7 bitmap of each of 1, 2, 3, G, O and ! at 6 px a pixel, with a shadow.
 
 ## 13. Persistence (save slots)
 
@@ -262,9 +278,9 @@ The format version stays 1: slots 2 to 9 were empty before, and zero means the d
 
 | Asset | Budget |
 |---|---|
-| Code | 41 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
-| Tiles | 11 of 1,023 so far (the placeholder field and two sprites) |
-| Sprites | 2 so far (128 in OAM, 32 per line) |
+| Code | 45 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
+| Tiles | 651 of 1,023: 587 background (limit 759 by the region) and 64 sprite (limit 264) |
+| Sprites | 16 pictures; at most 4 on screen in a race, 4 in the lobby, 2 on the title (128 in OAM, 32 per line) |
 | Songs / SFX | 2 songs and 7 effects (the starter's, placeholders) |
 
 ## 15. Implementation plan
@@ -337,6 +353,20 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
      say, the guide of each person on the screen and in the work done, what the lobby remembers and gives back, a save from before the settings, a save with nothing in the new slots), the soak is clean and the smoke test in the real
      console reports no errors. Code: 41,198 of 65,536 bytes.
    - **Not done:** the screens are plain text; the pages have not been read by anyone but me; Phase 5 draws them.
+
+5. **Art pass.**
+
+   - **Built:** `art.py` rewritten: the night (a dithered dusk, moon, stars, hills, a castle), the yard backdrop, the title (the logo in big letters and two towers of blocks), the lobby panel and the wizards (standing and cheering, eight palettes), and the overlay
+     colours for the lights of the blocks. In code: the layers for each screen (`layers`), the backdrops laid on BG1 for each yard (`fillYards`), the wizard in each yard's HUD (and the winner jumping), the lobby on its picture with a wizard on each place,
+     the two cheering wizards on the title, the lights on the blocks, the chequered finish line, the rock under the platform, the big count (`bigText`) and panels with a stud in each corner. `02-art.mjs` was rewritten (36 checks); two tests of `05-players.mjs`
+     look for the backdrops instead of the sky colour.
+   - **Results:** `node tools/verify.js tricksy-towerz` passes (218 test checks: 32 flow, 36 art, 31 physics and steering, 30 race, 54 players, 35 flow of Phase 4), the soak is clean and the smoke test in the real console reports no errors. The frame time with four people and four
+     guides (and the backdrops, the lights and the wizards) is still a 99th percentile of 2.8 ms. Code: 45,337 of 65,536 bytes; tiles 651 of 1,023 (587 background, 64 sprite). I looked at the sky, the title, the lobby, the race, the count, the results, the pause and the records as
+     pictures (`scene.mjs`, `sprites.mjs` and the harness's `png`).
+   - **Fixed on the way:** the pause panel was too narrow for QUIT TO TITLE (the text came out of it, which had been so since Phase 1: nobody had seen it); the player number next to the height read as one number (`1` `47` as 147), so the HUD now has the wizard and the height only;
+     the big GO! stayed under the pause panel (it is not drawn when paused).
+   - **Not done:** nobody has seen it on a screen but me, from the pictures: the colours and the look are a matter for your eyes. The scenery does not move (no drifting clouds or twinkling stars; added only if you want it). The results are plain text on a panel (a sprite cannot
+     be drawn over an overlay panel, so there are no wizards in them); the pages of the help have no pictures.
 
 ## 16. Open questions
 
