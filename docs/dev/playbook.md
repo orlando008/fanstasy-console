@@ -158,6 +158,12 @@ Build the cart with these in mind from the start:
   Crosser bot found a rider that sat on a bump for ever (it could not climb a steep slope from a standstill: the
   same thing could have happened to a player). Give the bot a skill option and sweep it (`--set skill=0.9,1`):
   a perfect run should win most races and a player 5% off the pace should place mid-field, not last.
+  **Balance by measuring, not guessing** (Ice Breakers' twelve levels, `tests/carts/ice-breakers/bot.mjs`): let the bot play
+  one level at a time (`--set level=N`), give it more moves than the level has (`--set moves=40`) and read how many it
+  `used`: that is the level's cost. Set the level's budget to the cost plus about 4.5 (scores vary by 3 or 4 moves from game
+  to game), then check the win rate over 40 seeds. A bot that loses with moves to spare is a weak bot, not a hard level:
+  make it chase the goal harder before changing the level. If one feature (a corner of ice that only three clears can reach)
+  decides a level, it is luck, not difficulty; take it out.
 
 
 Checks that proved their worth (the test files in `tests/carts/moto-crosser/` are the examples):
@@ -258,7 +264,12 @@ such a game's art, use `tiles.mjs`, `scene.mjs --rect x,y,w,h` and `sprites.mjs 
 
 **Look at the art, always.** `sprites.mjs` (every sprite at its real size, in its palette), `scene.mjs` (a map region, with
 `--holes`), `tiles.mjs` (the sheet with numbers) and `shots.mjs` (the game in place) all make PNGs to open with the Read tool.
-Do it after every change; a tile-aligned scene is easy to get slightly wrong. Count sprites per scanline in a test of a busy
+Do it after every change; a tile-aligned scene is easy to get slightly wrong. **Layering:** sprites are drawn between the
+background layers by priority (SPEC 4.8), and the overlay is always on top. To put something over a sprite (frost over a gem)
+use a background layer's high-priority tiles (bit 15 of the map entry; `art.scene(..., prio=1)`) and a lower sprite priority;
+a sprite can never appear over an overlay panel, so a picture for a banner cannot be a sprite. Layer 0 is on by default and
+shows the map from (0, 0): if the background goes on another layer, hide it (`bg(0, { show: false })`), or it covers the
+sprites (the gems and the ice vanished in Ice Breakers until it was). Count sprites per scanline in a test of a busy
 scene (`vm.ppu.oamCount`, `oamY`, `oamSize`), cap particles, and give the budget in the spec (Moto Crosser used 196 of 320
 tiles for three settings by designing a tile-aligned vocabulary, after an image-based approach overflowed).
 
@@ -272,6 +283,8 @@ tiles for three settings by designing a tile-aligned vocabulary, after an image-
 - A tool call stops after 2 minutes: run long jobs in the background (`run_in_background`) and wait for the
   notification, rather than sleeping.
 - Do not run suites in parallel (frame-time checks fail under load); `test.js` and `verify.js` run them one at a time.
+  Sweeps do not time frames, so a big grid can be split over several `sweep.mjs` processes (one per group of levels, no
+  more than there are cores) and the outputs put together.
 - A fix to the console's behaviour, to a cart's physics or to the AI changes what the sweep and the tests see: run both,
   and put the new numbers in the spec.
 - A label captured by `release.js` depends on frame timing, so each run is a new picture: use `--keep-label`
