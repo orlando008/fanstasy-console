@@ -21,12 +21,12 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 
 // --- Sound (SPEC 11). The channel decides the voice: 0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample. ---
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
-const SONG = { title: 0, play: 1 };
+const SFX = { move: 0, select: 1, pause: 2, lost: 3, crumble: 4, land: 5, record: 6, turn: 7, count: 8, go: 9, cross: 10, join: 11, refuse: 12 };
+const SONG = { title: 0, race: 1, tense: 2, win: 3 }; // the title, lobby, help and records; the race; a tower over the line; the finish (once)
 const SFX_CH = 1; // effects share channel 1 (pulse); the songs leave it free
 // Effects with noise (or saw or triangle) in them go on a channel with that voice. Fill this from audio.py:
 // node tools/devkit/music/sfx.mjs carts/tricksy-towerz.nova 1 shows what each effect is.
-const SFX_VOICE_CH = { [SFX.hit]: 4 };
+const SFX_VOICE_CH = { [SFX.lost]: 4, [SFX.crumble]: 4, [SFX.refuse]: 4 };
 function fx(n) { sfx(n, n in SFX_VOICE_CH ? SFX_VOICE_CH[n] : SFX_CH); }
 
 // A song is only started if it is not already playing.
@@ -268,6 +268,7 @@ let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let yards = [], seq = [], raceT = 0, winner = -1, finalScore = 0, ranking = [];
 const OFF = -1, HUMAN = 4, COUNT = 180, MIN_RACERS = 2;
 let setup = [HUMAN, 1, 1, 1], lobbySel = 1, lobbyMsg = 0, countT = 0, pausePad = 0, ipad = 0, after = 'title', helpPage = 0;
+let holdT = 0; // frames left of the tense music (a tower has been over the line)
 let guideOn = [true, true, true, true], cpuLevel = [3, 1, 1, 1]; // for each place: whether a person has the landing guide, and the level it has as a computer wizard
 // setup: what each of the four places is: a human (on that pad), a computer wizard of a level (0 EASY to 3 WIZARD), or OFF
 
@@ -321,7 +322,8 @@ const racersOf = () => setup.map((v, player) => ({ v, player })).filter((o) => o
 function startRace(count = true) {
   newYards(racersOf()); raceT = 0; winner = -1; ranking = []; rank = -1; paused = false; timer = 0; countT = count ? COUNT : 0;
   state = count ? 'count' : 'play';
-  play(SONG.play);
+  if (count) { play(-1); fx(SFX.count); } else play(SONG.race); // the count has no music, only its beeps (3, 2, 1 and GO)
+  holdT = 0;
 }
 
 function toLobby() { state = 'lobby'; timer = 0; paused = false; lobbySel = 1; lobbyMsg = 0; play(SONG.title); }
@@ -363,7 +365,7 @@ const levelName = (v) => (v === HUMAN ? 'HUMAN' : v === OFF ? 'EMPTY' : `CPU ${S
 function updateLobby() {
   if (lobbyMsg > 0) lobbyMsg--;
   for (let p = 1; p < 4; p++) {
-    if (setup[p] !== HUMAN && anyPressed(p)) { setup[p] = HUMAN; fx(SFX.select); }
+    if (setup[p] !== HUMAN && anyPressed(p)) { setup[p] = HUMAN; fx(SFX.join); }
     else if (setup[p] === HUMAN && pressed(B, p)) { setup[p] = cpuLevel[p]; fx(SFX.move); }
   }
   if (pressed(UP)) { lobbySel = (lobbySel + 3) % 4; fx(SFX.move); }
@@ -373,7 +375,7 @@ function updateLobby() {
   else if (d) { setup[p] = cpuLevel[p] = ((setup[p] + 6 + d) % 5) - 1; dset(LEVEL_SLOT + p, cpuLevel[p] + 2); fx(SFX.move); } // EMPTY, EASY ... WIZARD and round
   if (pressed(B)) { fx(SFX.select); toTitle(); return; }
   if (setup.some((v, q) => v === HUMAN && (pressed(START, q) || (q === 0 && pressed(A))))) {
-    if (racersOf().length < MIN_RACERS) { lobbyMsg = 120; fx(SFX.hit); return; }
+    if (racersOf().length < MIN_RACERS) { lobbyMsg = 120; fx(SFX.refuse); return; }
     fx(SFX.select); startRace(true);
   }
 }
@@ -381,7 +383,8 @@ function updateLobby() {
 /** The count of three before the race: the yards are there, nothing moves. */
 function updateCount() {
   if (startPressed() >= 0) { pause(startPressed()); return; }
-  if (--countT <= 0) { state = 'play'; fx(SFX.record); }
+  if (--countT % 60 === 0 && countT > 0) fx(SFX.count); // 3, 2, 1
+  if (countT <= 0) { state = 'play'; fx(SFX.go); play(SONG.race); }
 }
 
 /** The human pad that pressed START, or -1. */
@@ -392,6 +395,8 @@ function updatePlay() {
   if (startPressed() >= 0) { pause(startPressed()); return; }
   raceT++;
   for (const y of yards) updateYard(y);
+  if (yards.some((y) => y.hold >= 20)) holdT = 120; else if (holdT > 0) holdT--; // the music is tense while a tower is over the line, and for 2 s after
+  play(holdT > 0 ? SONG.tense : SONG.race);
   const done = yards.filter((y) => y.done); // two on the same frame: the higher tower wins
   if (done.length) finish(done.reduce((a, b) => (b.top < a.top ? b : a)));
 }
@@ -414,7 +419,9 @@ function updateYard(y) {
   let wob = 0; // how much the tower is moving
   for (const b of W.bodies) if (sup.has(b.id)) wob = Math.max(wob, Math.hypot(b.vx, b.vy) + Math.abs(b.w) * 6);
   y.wob = wob;
+  const held = y.hold;
   y.hold = top <= -FINISH ? y.hold + 1 : 0;
+  if (held === 0 && y.hold === 1) fx(SFX.cross); else if (held >= 30 && y.hold === 0) fx(SFX.crumble); // over the line; and the tower falls from it
   if (y.hold >= HOLD) y.done = true;
   const want = Math.min(20, top + VH - 90);
   y.cam += (want - y.cam) * 0.06;
@@ -516,7 +523,7 @@ function steer(y) {
       if (touchInfo(W, b).gap >= -0.05 && !outside(b)) { ok = true; break; }
       b.x -= kx; b.y -= ky;
     }
-    if (!ok) { y.rot = old; b.a = old * Math.PI / 2; place(b); }
+    if (!ok) { y.rot = old; b.a = old * Math.PI / 2; place(b); } else if (!y.ai) fx(SFX.turn);
   }
   const r = fall(W, b, c.drop ? DROP : FALL);
   if (r === 1) land(y); else if (r === 2) lose(y);
@@ -547,7 +554,7 @@ function shift(b, dx) {
 }
 
 /** The piece is lost: it costs a pause before the next one. */
-function lose(y) { y.cur = null; y.lost++; y.wait = SPAWN_WAIT + LOST_WAIT; }
+function lose(y) { y.cur = null; y.lost++; y.wait = SPAWN_WAIT + LOST_WAIT; if (!y.ai) fx(SFX.lost); }
 
 /** Where the steered piece would land if it were dropped straight down from here: a copy of it run down through the same rules. Kept until the piece or the tower changes. */
 function landing(y) {
@@ -571,13 +578,13 @@ function land(y) {
   const b = y.cur;
   b.vx = 0; b.vy = 0.3; b.w = 0;
   y.W.bodies.push(b); y.cur = null; y.placed++; y.wait = SPAWN_WAIT;
-  fx(SFX.point);
+  if (!y.ai) fx(SFX.land); // only the people's pieces make a sound (four yards of them would be a rattle)
 }
 
 function finish(w) {
   winner = w.player; finalScore = Math.max(1, 100000 - raceT);
   ranking = yards.slice().sort((a, b) => (a === w ? -1 : b === w ? 1 : a.top - b.top || a.slot - b.slot)); // the winner, then the rest by height
-  state = 'over'; timer = 0; play(-1); fx(SFX.over);
+  state = 'over'; timer = 0; play(SONG.win);
   ipad = w.pad; rank = w.ai ? -1 : insertTop({ score: finalScore, initials: lastInitials() }); // only a person's time goes in the table
 }
 

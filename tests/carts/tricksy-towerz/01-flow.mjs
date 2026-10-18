@@ -15,7 +15,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   ok(p.state === 'lobby', 'PLAY opens the lobby, where the racers are chosen');
   vm.press('B'); ok(p.state === 'title', 'B goes back to the title'); vm.press('A');
   vm.press('START');
-  ok(p.state === 'count' && p.playing === p.SONG.play && p.yards.length === 4, 'START in the lobby starts a race of four (you and three computer wizards) with the game song');
+  ok(p.state === 'count' && p.playing === -1 && p.yards.length === 4, 'START in the lobby starts a race of four (you and three computer wizards), with the count of three and no music');
 }
 
 // 2. A piece appears, is steered and lands.
@@ -29,7 +29,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const y0 = y.cur.y; vm.run(8); const slow = y.cur.y - y0; const y1 = y.cur.y; vm.run(4, M('DOWN')); const fast = y.cur.y - y1;
   ok(Math.abs(slow - 8 * p.FALL) < 0.01 && Math.abs(fast - 4 * p.DROP) < 0.01, 'it falls at a steady speed, and faster with DOWN', `${slow.toFixed(1)} px in 8 frames and ${fast.toFixed(1)} in 4`);
   sfxLog(vm); for (let i = 0; i < 300 && !y.placed; i++) vm.step(M('DOWN'));
-  ok(y.placed === 1 && y.W.bodies.length === 1 && sfxLog(vm).some(([n]) => n === p.SFX.point), 'it lands on the platform and becomes part of the world, with a sound');
+  ok(y.placed === 1 && y.W.bodies.length === 1 && sfxLog(vm).some(([n]) => n === p.SFX.land), 'it lands on the platform and becomes part of the world, with a sound');
   ok(!y.cur, 'the next one waits a moment'); vm.run(p.SPAWN_WAIT + 1);
   ok(y.cur && y.cur.kind === p.seq[1], 'and then the next piece of the bag follows');
 }
@@ -51,7 +51,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   y.done = true; vm.run(2);
   ok(p.state === 'over' && p.winner === 0 && p.rank === 0, 'a finished tower ends the race, and a time in the top 10 gets a rank', `rank ${p.rank}`);
   ok(p.finalScore === 100000 - p.raceT, 'the score is what is left of 100,000 frames after the time (faster is more)', `${p.finalScore}`);
-  ok(musicLog(vm).includes(-1), 'the game song stops');
+  ok(musicLog(vm).includes(p.SONG.win), 'the finish jingle plays');
   vm.run(70); vm.press('A');
   ok(p.state === 'initials', 'A asks for initials');
   vm.run(25);

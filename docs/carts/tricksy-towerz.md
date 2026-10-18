@@ -1,7 +1,7 @@
 # Tricksy Towerz: Cart Specification
 
-**Version:** 0.6 (Phase 5 built)
-**Status:** In progress: Phases 1 to 5 of 7 (the physics and one tower; the race rules and feel; up to four players; the flow; the art) are built; the rest of the plan (section 15) is not
+**Version:** 0.7 (Phase 6 built)
+**Status:** In progress: Phases 1 to 6 of 7 (the physics and one tower; the race rules and feel; up to four players; the flow; the art; the sound) are built; the rest of the plan (section 15) is not
 **Cart source:** `carts/src/tricksy-towerz/` → `carts/tricksy-towerz.nova`
 
 A physics tower-building race for **one to four wizards at a time**. Falling pieces of blocks (the seven tetrominoes) are steered and turned,
@@ -240,8 +240,43 @@ initials are typed by the winner's pad): the stored score is `100000 - frames`, 
 
 ## 11. Audio
 
-Phase 6. The starter's songs 0 (title) and 1 (race) and its seven effects are still the placeholders. Channel 1 is for effects (the songs only carry the tempo on it); effects with noise play on channel 4.
-Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x where it enters (`node tools/devkit/music/loud.mjs carts/tricksy-towerz.nova --check`; playbook section 5).
+Made by `carts/src/tricksy-towerz/audio.py` (the song toolkit, `tools/devkit/music/kit.py`) into `audio.json`. Channels: 0 the lead, 2 the bass, 3 the arpeggio, 5 the drums (samples); channel 1 is for the effects (a song only carries its tempo on it) and channel 4, which no
+song uses, for the effects with noise in them (`SFX_VOICE_CH`). Nobody has listened to it: it is measured (levels, clashes, lengths) and written to a plan.
+
+**Songs** (the numbers are `SONG` in code.js; the first three loop, the last plays once):
+
+| # | Name | Where | Key, tempo, length | What it is |
+|---|---|---|---|---|
+| 0 | Title | the title, the lobby, the help, the records | A minor, 128 bpm, 15 s | eight bars: four of a quiet horn over an arpeggio, four of the pulse lead; soft drums, then a plain beat |
+| 1 | Race | the race, from GO | C major, 150 bpm, 26 s | sixteen bars: the main tune twice, a calm middle with the horn, the main tune again with a driving beat |
+| 2 | Over the line | the race, while a tower has been over the line for 20 frames, and for 2 seconds after | A minor, 112 bpm, 17 s | long horn notes over a heartbeat of a kick and a fast thin arpeggio: tension, as the tower has only to stand |
+| 3 | The finish | when a race is won (by a person or a wizard) | C major, 180 bpm, 5 s, once | a fanfare with a march beat; the results screen is then quiet |
+
+The count of three has no music, only its beeps. A song is only started when it is not the one playing, so the title song runs on through the help, the records and the lobby, and the race song is not restarted while the race goes on.
+
+**Effects** (`SFX` in code.js; channel 1 unless said):
+
+| # | Name | When | Sound |
+|---|---|---|---|
+| 0 | move | a menu cursor moves | a short high blip |
+| 1 | select | a menu choice, A | two notes up (chime) |
+| 2 | pause | the pause opens or closes | two notes (chime) |
+| 3 | lost | a **person's** piece is lost | a noise falling in pitch (channel 4) |
+| 4 | crumble | a tower that has been over the line for half a second falls from it (any yard) | a longer falling noise (channel 4) |
+| 5 | land | a **person's** piece lands | a soft low tap |
+| 6 | record | a time goes in the table | a short fanfare |
+| 7 | turn | a **person's** piece turns (and it fits) | a tick |
+| 8 | count | 3, 2 and 1 | a low beep |
+| 9 | go | GO! | four notes up |
+| 10 | cross | a tower first goes over the line (any yard) | four notes up (chime) |
+| 11 | join | a pad joins in the lobby | two notes up (chime) |
+| 12 | refuse | START without two racers | a low buzz (channel 4) |
+
+Only people's pieces make landing, turning and losing sounds: four yards of computer wizards would be a rattle, and the sounds belong to the person hearing them (with four people it is still a lot, and they share channel 1, so a new one cuts the last).
+
+**Levels** (`node tools/devkit/music/loud.mjs carts/tricksy-towerz.nova --check`, `sfx.mjs`, `clash.py`): the songs' lead alone is 0.050 to 0.056 RMS, 0.61 to 0.66 of the mix, with no jump where it enters, loudest over median 1.0 to 1.05, peaks 0.22 to 0.24, medians 0.080 to 0.085 (the limits
+of playbook section 5 are 0.07, 0.75, 1.5, 2.2, 0.45 and 0.03 to 0.15); the effects are 0.012 to 0.058 RMS and 4 to 32 ticks (under 0.6 s). The very short ones (the menu blip, the tap, the tick, the beep) were too quiet at first (0.003 to 0.008) and were made louder and a tick longer. `clash.py` found two
+places where the lead was a semitone from the bass (an E over an F) and both were changed.
 
 ## 12. Video layers and art
 
@@ -278,10 +313,10 @@ The format version stays 1: slots 2 to 9 were empty before, and zero means the d
 
 | Asset | Budget |
 |---|---|
-| Code | 45 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
+| Code | 46 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
 | Tiles | 651 of 1,023: 587 background (limit 759 by the region) and 64 sprite (limit 264) |
 | Sprites | 16 pictures; at most 4 on screen in a race, 4 in the lobby, 2 on the title (128 in OAM, 32 per line) |
-| Songs / SFX | 2 songs and 7 effects (the starter's, placeholders) |
+| Songs / SFX | 4 of 8 songs, 9 of 64 patterns, 13 of 64 effects, 7,200 of 16,384 bytes of samples |
 
 ## 15. Implementation plan
 
@@ -367,6 +402,17 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
      the big GO! stayed under the pause panel (it is not drawn when paused).
    - **Not done:** nobody has seen it on a screen but me, from the pictures: the colours and the look are a matter for your eyes. The scenery does not move (no drifting clouds or twinkling stars; added only if you want it). The results are plain text on a panel (a sprite cannot
      be drawn over an overlay panel, so there are no wizards in them); the pages of the help have no pictures.
+
+6. **Audio pass.**
+
+   - **Built:** `audio.py` rewritten: four songs (title, race, over the line, the finish) and thirteen effects (section 11), and the cues in code.js: the title song through the title, help, records and lobby; no music in the count but its three beeps and GO!; the race song from GO and the tense one while
+     a tower is over the line (`holdT`: 20 frames over it to start, 120 frames after to end); the finish jingle for any winner; and the effects (`SFX`). Only people's pieces make landing, turning and losing sounds. The renamed effects (`hit` is now `lost`, `point` is `land`, `over` is gone: the jingle
+     is the finish) follow in the tests. The new tests are `07-audio.mjs` (37 checks).
+   - **Results:** `node tools/verify.js tricksy-towerz` passes (255 test checks: 32 flow, 36 art, 31 physics and steering, 30 race, 54 players, 35 flow of Phase 4, 37 sound), the soak is clean, `voices.mjs` says every effect played on a channel with its voice, and the smoke test in the real console reports no
+     errors. The sound checks cover the data (four songs, thirteen effects, the loops and the once, the tempos, the lengths, channel 1 for the tempo only and channel 4 for nothing, the noise effects and the table that sends them to channel 4, the effect lengths, the song levels and the effect levels
+     by the console's own synth through the tools) and the cues read from the audio command log (which song each screen plays and that none restarts; the three beeps and GO!; the people's sounds and the silence of the wizards'; the line, the tense song and its return; the crumble; the finish jingle and the title song
+     after it; the record fanfare; the menu sounds; and that every effect and every song of the cart is heard in the file).
+   - **Not done:** nobody has listened to it. Everything above is measurement and writing to a plan (levels, clashes, tempos, which note is over which): whether the tunes are good is a matter for your ears, and the notes are in `audio.py` as bars of text, so changing a melody is a one-line edit.
 
 ## 16. Open questions
 
