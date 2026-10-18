@@ -12,8 +12,10 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
   sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
-  ok(p.yards.length === 1 && p.yards[0].W.bodies.length === 0 && !p.yards[0].cur, 'in a yard with nothing built yet');
+  ok(p.state === 'lobby', 'PLAY opens the lobby, where the racers are chosen');
+  vm.press('B'); ok(p.state === 'title', 'B goes back to the title'); vm.press('A');
+  vm.press('START');
+  ok(p.state === 'count' && p.playing === p.SONG.play && p.yards.length === 4, 'START in the lobby starts a race of four (you and three computer wizards) with the game song');
 }
 
 // 2. A piece appears, is steered and lands.

@@ -3,7 +3,7 @@
 //
 //   import { boot, BTN } from '../../tools/devkit/harness.mjs';
 //   const vm = boot('carts/my-game.nova', { seed: 1, extra: 'skipTitle = true; __expose(() => ({ get state() { return state; } }));' });
-//   vm.step(mask); vm.run(n, mask); vm.press('START');   // mask: bits 1 << BTN.A and so on
+//   vm.step(mask); vm.run(n, mask); vm.press('START');   // mask: bits 1 << BTN.A and so on; vm.step(mask, [m1, m2, m3]) also drives pads 1 to 3
 //   vm.probe()      what the cart passed to __expose (read its variables, tweak its state)
 //   vm.audioLog     [frame, 'sfx', n, ch] and [frame, 'music', song, pos] commands, in order
 //   vm.ppu, vm.m    the PPU (layers, cgram, OAM) and the machine (save slots, stats.cpu: ms of the last frame)
@@ -44,9 +44,13 @@ export function boot(path, { seed = 1, save = null, extra = '' } = {}) {
   const audioLog = [];
   const vm = {
     m, ppu, probe: () => probe?.(), audioLog, out32, cart,
-    step(mask = 0) {
+    step(mask = 0, others = null) {
       m.pads[0] = mask;
       for (let b = 0; b < 12; b++) m.hold[b] = (mask >> b) & 1 ? m.hold[b] + 1 : 0;
+      for (let q = 1; q < 4; q++) { // pads 1 to 3, when a test passes [mask1, mask2, mask3]
+        m.pads[q] = others ? (others[q - 1] || 0) : 0;
+        for (let b = 0; b < 12; b++) m.hold[q * 16 + b] = (m.pads[q] >> b) & 1 ? m.hold[q * 16 + b] + 1 : 0;
+      }
       ppu.clearOam();
       const t0 = performance.now();
       hooks.update?.(); hooks.draw?.();

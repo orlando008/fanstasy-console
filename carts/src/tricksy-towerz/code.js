@@ -264,17 +264,21 @@ const COL_W = 64, VY = 16, VH = 208, HALF = 32; // a yard's column on the screen
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
-let yards = [], seq = [], raceT = 0, winner = -1, finalScore = 0;
+let yards = [], seq = [], raceT = 0, winner = -1, finalScore = 0, ranking = [];
+const OFF = -1, HUMAN = 4, COUNT = 180, MIN_RACERS = 2;
+let setup = [HUMAN, 1, 1, 1], lobbySel = 1, lobbyMsg = 0, countT = 0, pausePad = 0, ipad = 0, after = 'title';
+// setup: what each of the four places is: a human (on that pad), a computer wizard of a level (0 EASY to 3 WIZARD), or OFF
 
-/** A new game: the same pieces for everybody (a shuffled bag of the seven, over and over), one yard each. */
-function newYards(n) {
+/** A new game: the same pieces for everybody (a shuffled bag of the seven, over and over), one yard each. racers: a number (that many humans) or a list of { player, ai, skill }. */
+function newYards(racers) {
+  if (typeof racers === 'number') racers = Array.from({ length: racers }, (_, i) => ({ player: i, ai: false, skill: 3 }));
   seq = [];
   while (seq.length < 120) {
     const bag = [0, 1, 2, 3, 4, 5, 6];
     for (let i = 6; i > 0; i--) { const j = rndi(0, i); [bag[i], bag[j]] = [bag[j], bag[i]]; }
     seq.push(...bag);
   }
-  yards = Array.from({ length: n }, (_, slot) => ({ slot, pad: slot, W: mkWorld(), cur: null, cam: 20, top: 0, wait: 30, placed: 0, lost: 0, hold: 0, done: false, spawned: 0, rot: 0, ai: false, skill: 3, think: 0, plan: null, wob: 0, guide: null }));
+  yards = racers.map((r, slot) => ({ slot, player: r.player, pad: r.player, W: mkWorld(), cur: null, cam: 20, top: 0, wait: 30, placed: 0, lost: 0, hold: 0, done: false, spawned: 0, rot: 0, ai: r.ai, skill: r.skill, think: 0, plan: null, wob: 0, guide: null }));
 }
 
 function init() {
@@ -284,15 +288,22 @@ function init() {
   }
   const f = ART.scenes.field; // the background: the field's tiles in Map RAM, shown on layer 0
   bg(0, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, show: true });
-  if (skipTitle) startGame(); else toTitle();
+  if (skipTitle) { setup = [HUMAN, OFF, OFF, OFF]; startRace(false); } else toTitle();
 }
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
-function startGame() {
-  newYards(1); raceT = 0; winner = -1; paused = false; timer = 0; state = 'play';
+/** The racers the setup makes: every place that is not OFF, in order of player. */
+const racersOf = () => setup.map((v, player) => ({ v, player })).filter((o) => o.v !== OFF).map((o) => ({ player: o.player, ai: o.v !== HUMAN, skill: o.v === HUMAN ? 3 : o.v }));
+
+/** Start a race with the setup (with the count of three, unless the tests say not). */
+function startRace(count = true) {
+  newYards(racersOf()); raceT = 0; winner = -1; ranking = []; rank = -1; paused = false; timer = 0; countT = count ? COUNT : 0;
+  state = count ? 'count' : 'play';
   play(SONG.play);
 }
+
+function toLobby() { state = 'lobby'; timer = 0; paused = false; lobbySel = 1; lobbyMsg = 0; play(SONG.title); }
 
 // --- Update ---
 
@@ -301,6 +312,8 @@ function update() {
   if (!paused) timer++; // a state's clock: it stands still while paused
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
+  else if (state === 'lobby') updateLobby();
+  else if (state === 'count') updateCount();
   else if (state === 'play') updatePlay();
   else if (state === 'over') updateOver();
   else if (state === 'initials') updateInitials();
@@ -311,16 +324,52 @@ function updateTitle() {
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) startGame(); else { state = 'records'; hl = -1; timer = 0; }
+    if (titleSel === 0) toLobby(); else { state = 'records'; hl = -1; timer = 0; after = 'title'; }
   }
 }
 
+/** A button went down on pad p (any button). */
+const anyPressed = (p) => (masks[p] & ~prevMasks[p]) !== 0;
+const levelName = (v) => (v === HUMAN ? 'HUMAN' : v === OFF ? 'EMPTY' : `CPU ${SKILLS[v].name}`);
+
+/**
+ * The lobby: player 1 (the keyboard, or the first pad) is always in. Another pad joins by pressing any button on it (the console seats a
+ * pad as the next player the first time it is used); B on that pad leaves. UP and DOWN pick a place, LEFT and RIGHT change what a place
+ * that is not a human is (a computer wizard of a level, or empty); START (any human) starts the race.
+ */
+function updateLobby() {
+  if (lobbyMsg > 0) lobbyMsg--;
+  for (let p = 1; p < 4; p++) {
+    if (setup[p] !== HUMAN && anyPressed(p)) { setup[p] = HUMAN; fx(SFX.select); }
+    else if (setup[p] === HUMAN && pressed(B, p)) { setup[p] = 1; fx(SFX.move); }
+  }
+  if (pressed(UP)) { lobbySel = lobbySel === 1 ? 3 : lobbySel - 1; fx(SFX.move); }
+  if (pressed(DOWN)) { lobbySel = lobbySel === 3 ? 1 : lobbySel + 1; fx(SFX.move); }
+  const d = (pressed(RIGHT) ? 1 : 0) - (pressed(LEFT) ? 1 : 0);
+  if (d && setup[lobbySel] !== HUMAN) { setup[lobbySel] = ((setup[lobbySel] + 6 + d) % 5) - 1; fx(SFX.move); } // OFF, 0, 1, 2, 3 and round
+  if (pressed(B)) { fx(SFX.select); toTitle(); return; }
+  if (setup.some((v, p) => v === HUMAN && (pressed(START, p) || (p === 0 && pressed(A))))) {
+    if (racersOf().length < MIN_RACERS) { lobbyMsg = 120; fx(SFX.hit); return; }
+    fx(SFX.select); startRace(true);
+  }
+}
+
+/** The count of three before the race: the yards are there, nothing moves. */
+function updateCount() {
+  if (startPressed() >= 0) { pause(startPressed()); return; }
+  if (--countT <= 0) { state = 'play'; fx(SFX.record); }
+}
+
+/** The human pad that pressed START, or -1. */
+function startPressed() { for (const y of yards) if (!y.ai && pressed(START, y.pad)) return y.pad; return -1; }
+function pause(p) { paused = true; pauseSel = 0; pausePad = p; fx(SFX.pause); }
+
 function updatePlay() {
-  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (startPressed() >= 0) { pause(startPressed()); return; }
   raceT++;
   for (const y of yards) updateYard(y);
   const done = yards.filter((y) => y.done); // two on the same frame: the higher tower wins
-  if (done.length) finish(done.reduce((a, b) => (b.top < a.top ? b : a)).slot);
+  if (done.length) finish(done.reduce((a, b) => (b.top < a.top ? b : a)));
 }
 
 /** One yard for one frame: steer the piece, step the physics, count the height, move the camera. */
@@ -501,48 +550,53 @@ function land(y) {
   fx(SFX.point);
 }
 
-function finish(slot) {
-  winner = slot; finalScore = Math.max(1, 100000 - raceT);
+function finish(w) {
+  winner = w.player; finalScore = Math.max(1, 100000 - raceT);
+  ranking = yards.slice().sort((a, b) => (a === w ? -1 : b === w ? 1 : a.top - b.top || a.slot - b.slot)); // the winner, then the rest by height
   state = 'over'; timer = 0; play(-1); fx(SFX.over);
-  rank = insertTop({ score: finalScore, initials: lastInitials() });
+  ipad = w.pad; rank = w.ai ? -1 : insertTop({ score: finalScore, initials: lastInitials() }); // only a person's time goes in the table
 }
 
+/** Did any person press this button? */
+const anyHuman = (b) => yards.some((y) => !y.ai && pressed(b, y.pad));
+
 function updateOver() {
-  if (timer < 60 || !(pressed(A) || pressed(START))) return;
+  if (timer < 60 || !(anyHuman(A) || anyHuman(START))) return;
   fx(SFX.select);
   if (rank >= 0) { state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0 }; fx(SFX.record); }
-  else toTitle();
+  else toLobby();
 }
 
 /** UP/DOWN pick a letter, LEFT/RIGHT (or A and B) move, START saves (as does A on the last letter). */
 function updateInitials() {
   const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
-  if (pressed(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; fx(SFX.move); }
-  if (pressed(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; fx(SFX.move); }
-  if (pressed(LEFT) || pressed(B)) ini.pos = Math.max(0, ini.pos - 1);
-  if (pressed(RIGHT)) ini.pos = Math.min(2, ini.pos + 1);
-  const done = pressed(START) || (pressed(A) && ini.pos === 2);
-  if (pressed(A) && ini.pos < 2) ini.pos++;
+  if (pressed(UP, ipad)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; fx(SFX.move); }
+  if (pressed(DOWN, ipad)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; fx(SFX.move); }
+  if (pressed(LEFT, ipad) || pressed(B, ipad)) ini.pos = Math.max(0, ini.pos - 1);
+  if (pressed(RIGHT, ipad)) ini.pos = Math.min(2, ini.pos + 1);
+  const done = pressed(START, ipad) || (pressed(A, ipad) && ini.pos === 2);
+  if (pressed(A, ipad) && ini.pos < 2) ini.pos++;
   if (!done || timer < 20) return;
   const v = packInitials(ini.chars.join(''));
   dset(INITIALS_SLOT, v); dset(TOP_SLOT + rank * ENTRY + 1, v);
   fx(SFX.select);
-  state = 'records'; hl = rank; timer = 0;
+  state = 'records'; hl = rank; timer = 0; after = 'lobby';
 }
 
 function updateRecords() {
-  if ((pressed(START) || pressed(A) || pressed(B)) && timer > 20) { fx(SFX.select); toTitle(); }
+  if ((pressed(START) || pressed(A) || pressed(B)) && timer > 20) { fx(SFX.select); if (after === 'lobby') toLobby(); else toTitle(); }
 }
 
 function updatePause() {
-  if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
-  if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
-  if (pressed(B) || (pressed(START) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
-  else if (pressed(A) || pressed(START)) {
+  const q = pausePad; // the player who paused has the menu
+  if (pressed(UP, q)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
+  if (pressed(DOWN, q)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
+  if (pressed(B, q) || (pressed(START, q) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
+  else if (pressed(A, q) || pressed(START, q)) {
     fx(SFX.select);
     if (pauseSel === 0) paused = false;
-    else if (pauseSel === 1) startGame(); // restart
-    else toTitle(); // quitting abandons the game: nothing is recorded
+    else if (pauseSel === 1) startRace(racersOf().length > 1); // restart (a race of one, which only the tests start, goes straight in)
+    else toTitle(); // quitting abandons the race: nothing is recorded
   }
 }
 
@@ -550,11 +604,14 @@ function updatePause() {
 
 function draw() {
   cls();
-  if (state === 'play' || state === 'over') drawPlay();
+  if (state === 'play' || state === 'over' || state === 'count') drawPlay();
   else if (state === 'title') drawTitle();
+  else if (state === 'lobby') drawLobby();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  if (state === 'over') { panel(48, 80, 160, 64); ctxt('FINISHED!', 92, GOLD); ctxt(fmtTime(raceT), 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
+  if (state === 'count') ctxt(String(Math.ceil(countT / 60)), 100, GOLD);
+  if (state === 'play' && raceT < 45) ctxt('GO!', 100, GOLD);
+  if (state === 'over') drawResults();
   if (paused) drawPause();
 }
 
@@ -583,11 +640,12 @@ function drawYard(y) {
   rectfill(x0, gy + 16, COL_W, 224 - gy, ART.colors.stoneDark);
   clip();
   rect(x0, VY, COL_W, VH, y.wob > WOBBLE ? RED : PANEL);
-  txt(`P${y.slot + 1}`, x0 + 3, 4, WHITE);
-  txt(String(Math.max(0, Math.round(-y.top))), x0 + 20, 4, y.hold > 0 ? GOLD : CYAN);
+  txt(`P${y.player + 1}`, x0 + 3, 4, y.ai ? CYAN : WHITE);
+  txt(String(Math.max(0, Math.round(-y.top))), x0 + 22, 4, y.hold > 0 ? GOLD : CYAN);
   const nk = seq[y.spawned % seq.length]; // the piece after this one
   for (const [c, r] of SHAPES[nk]) rectfill(x0 + 47 + c * 3, 3 + r * 3, 3, 3, ART.colors['p' + nk]);
   if (y.lost) txt(`LOST ${y.lost}`, x0 + 3, 212, RED);
+  if (state === 'over' && y.player === winner) txt('WINNER', x0 + 8, VY + 40, GOLD);
   if (y.hold > 0) rectfill(x0 + 2, VY + 2, Math.round((COL_W - 4) * y.hold / HOLD), 3, ART.colors.goal);
 }
 
@@ -614,6 +672,34 @@ function fillQuad(q, c) {
     }
     if (xr > xl) line(Math.round(xl), py, Math.max(Math.round(xl), Math.round(xr) - 1), py, c);
   }
+}
+
+function drawLobby() {
+  panel(16, 24, 224, 176);
+  ctxt('GET READY', 34, GOLD);
+  for (let i = 0; i < 4; i++) {
+    const y = 62 + i * 22, v = setup[i], on = i === lobbySel && i > 0;
+    rect(24, y - 4, 208, 18, on ? GOLD : PANEL);
+    txt(`P${i + 1}`, 32, y, v === HUMAN ? WHITE : CYAN);
+    txt(`${on ? '< ' : ''}${levelName(v)}${on ? ' >' : ''}`, 64, y, v === OFF ? DIM : v === HUMAN ? GREEN : WHITE);
+  }
+  ctxt('ANOTHER PAD: PRESS A BUTTON', 156, WHITE);
+  ctxt('U/D: PLACE   L/R: CPU LEVEL', 168, DIM);
+  ctxt(lobbyMsg > 0 ? 'NEED TWO RACERS' : 'START: GO   B: BACK', 182, lobbyMsg > 0 ? RED : GOLD);
+}
+
+/** The finish: who won, and the others in order of how high they got. */
+function drawResults() {
+  panel(24, 56, 208, 112);
+  const w = yards.find((y) => y.player === winner);
+  ctxt(`${w.ai ? 'CPU ' : ''}P${winner + 1} WINS!`, 64, GOLD);
+  ranking.forEach((y, i) => {
+    const row = 84 + i * 14;
+    txt(String(i + 1), 36, row, i === 0 ? GOLD : DIM);
+    txt(`P${y.player + 1} ${y.ai ? SKILLS[y.skill].name : 'HUMAN'}`, 52, row, y.ai ? CYAN : WHITE);
+    txt(i === 0 ? fmtTime(raceT) : `${Math.max(0, Math.round(-y.top))} PX`, 152, row, i === 0 ? GOLD : WHITE);
+  });
+  if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 152, DIM);
 }
 
 function drawTitle() {

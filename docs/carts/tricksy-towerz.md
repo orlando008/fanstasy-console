@@ -1,7 +1,7 @@
 # Tricksy Towerz: Cart Specification
 
-**Version:** 0.3 (Phase 2 built)
-**Status:** In progress: Phases 1 and 2 of 8 (the physics and one playable tower; the race rules and feel) are built; the rest of the plan (section 15) is not
+**Version:** 0.4 (Phase 3 built)
+**Status:** In progress: Phases 1 to 3 of 8 (the physics and one tower; the race rules and feel; up to four players) are built; the rest of the plan (section 15) is not
 **Cart source:** `carts/src/tricksy-towerz/` → `carts/tricksy-towerz.nova`
 
 A physics tower-building race for **one to four wizards at a time**. Falling pieces of blocks (the seven tetrominoes) are steered and turned,
@@ -45,11 +45,10 @@ tower fall, and the magic (Phase 4) that lets a player steady their own tower or
 | A or R | Turn the piece a quarter clockwise |
 | B or L | Turn it a quarter counter-clockwise |
 | X, Y | Light and dark magic (Phase 4) |
-| START | Pause (RESUME, RESTART, QUIT TO TITLE) |
+| START | Pause (RESUME, RESTART, QUIT TO TITLE); the player who paused has the menu |
 
-**Players.** Pad 0 is player 1 (the keyboard always feeds it, and so does the first gamepad); other gamepads join as players 2 to 4 the first time a
-button is pressed on them (SPEC 6). Phase 3 adds the join screen, where each player presses A to join and START begins; the places nobody took are
-computer wizards (you cannot play with four on one keyboard: the others need gamepads). Version 1 phase 1 has one yard.
+**Players.** The console reads up to four gamepads (SPEC 6): a pad becomes the next player the first time a button is pressed on it, and the keyboard always feeds player 1. So four people need four gamepads
+(or three and the keyboard); the places nobody takes are computer wizards. In the lobby (5.8) a pad joins by pressing any button.
 
 ## 4. Screen layout
 
@@ -174,6 +173,27 @@ person's play will tell better than any sweep.
 - **Lost pieces**: `LOST n` in red at the bottom of the yard.
 - **The finish line** is red; gold and with a filling bar while the tower is over it.
 
+### 5.8 The lobby, the racers and the race
+
+**Places.** There are four, P1 to P4; a place is a human (on the pad of that number), a computer wizard of a level (EASY to WIZARD), or empty (`setup`: 4, 0 to 3, or -1). P1 is always a human (the keyboard or the first pad).
+A race has the places that are not empty, in order, and needs at least two (`MIN_RACERS`); a race of one exists only for the tests (`skipTitle`).
+
+**The lobby** (`updateLobby`, after PLAY on the title): P1 is shown first; the other three start as computer wizards of NORMAL. UP and DOWN move the cursor over places 2 to 4, LEFT and RIGHT change a place that is not
+a human (EMPTY, EASY, NORMAL, HARD, WIZARD and round). A pad joins by pressing **any button** on it (the console only counts a pad from its first press, so there is nothing to ask for first): its place becomes HUMAN;
+B on that pad puts the place back as a NORMAL wizard. START on any human's pad (or A on the first) begins; with fewer than two racers it says so for 2 seconds and stays. B on the first pad goes back to the title.
+The lobby keeps its setup between races.
+
+**The count** (`updateCount`): the yards are drawn and 3, 2, 1 are shown for 180 frames (`COUNT`) with nothing moving; then GO! for 45 frames while the race begins. The race time starts at GO.
+
+**Yards.** One for each racer, `COL_W` = 64 px wide, side by side and centred (2: x 64 to 192; 3: 32 to 224; 4: the whole screen). A person's yard is steered by the pad of their number; a wizard's by `ctl` and ignores every pad.
+Every yard gets the same pieces (5.3). The label at the top is P1 to P4 (white for a person, cyan for a wizard).
+
+**The pause.** START on a person's pad pauses (also during the count). The player who paused (`pausePad`) has the menu: no other pad moves it. RESUME, RESTART (the same racers, with the count again) or QUIT TO TITLE.
+
+**The end.** The first tower to finish wins (5.4); the race stops and the results panel shows the winner (`P2 WINS!`, `CPU P3 WINS!`), then every racer in order: the winner first with the time, the others by how high their
+tower was (the highest first, the lower place on a tie) with the height in px. A human winner's yard says WINNER. After a person wins in a top-10 time, that player's pad types the initials (UP and DOWN letters, LEFT and RIGHT or
+A and B to move, START to save); a wizard's win is not recorded. Then the records (after a finish) or the lobby.
+
 ## 6. World and content
 
 Phase 1: one yard. Phase 6: the yards stand in front of a scenery (a wizard's tower, a sky, a sea) with each column a different colour; the stone platform and the blocks are drawn in code.
@@ -198,18 +218,19 @@ The random numbers are the console's (`rndi`), so a race is the same every time 
 
 ## 8. Modes
 
-Version 1: **Race** only (1 to 4 players; the empty places are computer wizards). Other modes of the original (Survival, Puzzle) are not in this version.
+Version 1: **Race** only (1 to 4 players; the places nobody takes can be computer wizards or empty). Other modes of the original (Survival, Puzzle) are not in this version.
 
 ## 9. Scoring
 
-A race is won or lost; the score kept is the **time**: the frames from the start to the finish of the winner. The top 10 table (section 13) holds the fastest finishes of a human player
-(Phase 5): the stored score is `100000 - frames`, so a larger score is a faster time and the table logic of the starter is unchanged; the screens show minutes, seconds and hundredths.
+A race is won or lost; the score kept is the **time**: the frames from the start (GO) to the finish of the winner. The top 10 table (section 13) holds the fastest wins of a **person** (a wizard's win is not kept; the
+initials are typed by the winner's pad): the stored score is `100000 - frames`, so a larger score is a faster time and the table logic of the starter is unchanged; the screens show minutes, seconds and hundredths.
 
 ## 10. Screens and flow
 
-1. **Title:** PLAY, RECORDS (Phase 5: HOW TO PLAY, the join screen).
-2. **Play**, with a **Pause** (START): RESUME, RESTART, QUIT TO TITLE.
-3. **Finished** (the time), then **initials** if the time is in the top 10, then the **records**.
+1. **Title:** PLAY, RECORDS (Phase 5: HOW TO PLAY).
+2. **Lobby** (5.8): who races, joining by pad, the level of each wizard.
+3. **Count** of three, then **Play** (up to four yards), with a **Pause** (START: the one who paused has the menu): RESUME, RESTART, QUIT TO TITLE.
+4. **Results** (the winner, the order, the time), then **initials** if a person's time is in the top 10, then the **records**, then the lobby again (for a race with no record: straight to the lobby).
 
 ## 11. Audio
 
@@ -235,7 +256,7 @@ and `danger` (when it is not). Phase 6 replaces the placeholders with the real a
 
 | Asset | Budget |
 |---|---|
-| Code | 33 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
+| Code | 38 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
 | Tiles | 11 of 1,023 so far (the placeholder field and two sprites) |
 | Sprites | 2 so far (128 in OAM, 32 per line) |
 | Songs / SFX | 2 songs and 7 effects (the starter's, placeholders) |
@@ -244,7 +265,7 @@ and `danger` (when it is not). Phase 6 replaces the placeholders with the real a
 
 1. **Vertical slice:** the physics, one yard, steering, the pieces, the camera, the finish line, a computer player that builds a tower.
 2. **The race rules and feel:** tune the line, the hold time, the speeds and the loss of pieces; the landing guide and the wobble warning; the planner's skill levels.
-3. **Up to four players:** the four yards side by side, joining by gamepad, computer wizards for the empty places, the results and the ranking.
+3. **Up to four players:** the four yards side by side, joining by gamepad (the lobby), computer wizards for the other places, the count of three, the pause of the one who paused, the results and the ranking.
 4. **Magic:** a light spell to steady your own tower and a dark spell to trouble a rival's, a meter that fills as pieces are placed well.
 5. **Flow:** the title, the join screen, the rounds (the best of three), the pause for the player who paused, the help, the fastest times and the saves.
 6. **Art pass:** wizards, scenery, effects.
@@ -284,6 +305,20 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
      tower and failed on a messy one; reading the real outline fixed it. What changed the game most was the width of the platform (5 to 6 blocks): the same player lost a third as many pieces.
    - **Not done:** nobody has played it with a pad. The finish height, the hold and the speeds are tuned against computer players, not people; the guide is always on for people (there is no way to turn it off yet: Phase 5
      could make it an option for people who want a harder race).
+
+3. **Up to four players.**
+
+   - **Built:** the lobby (`updateLobby`, `drawLobby`), the racers from a setup (`racersOf`, `startRace`, `newYards` with racers), one yard for each (`yards[i].player`, `.pad`, `.ai`, `.skill`; `colX` already centred any number),
+     the count of three (`updateCount`), the pause of the player who paused (`pause`, `pausePad`), the results (`finish`, `ranking`, `drawResults`), the winner's own pad for the initials (`ipad`), the table only for a person's win,
+     and the flow title - lobby - count - race - results - (initials - records) - lobby. The harness (`tools/devkit/harness.mjs`) can now drive pads 1 to 3 (`vm.step(mask, [m1, m2, m3])`). The new tests are `05-players.mjs`; `bot.mjs`
+     plays a race of wizards (`--set racers=4,skill=2`).
+   - **Results:** `node tools/verify.js tricksy-towerz` passes (157 test checks: 32 flow, 10 art, 31 physics and steering, 30 race and 54 new ones in `05-players.mjs`: the lobby and its cursor and levels, joining and leaving by pad, starting with too few racers, the racers and their levels, the count, the same
+     pieces for everybody, three and four yards side by side on the screen, each person steering only their own yard, a wizard ignoring the pads, the pause menu belonging to the player who paused (and the count can be paused),
+     restart and quit, a wizard winning (not in the table), a person winning (in the table, initials typed on their own pad, then the lobby), a race of four wizards run to the end three times, and the frame time with four people and four
+     landing guides), the soak is clean and the smoke test in the real console reports no errors. `node tools/devkit/sweep.mjs tricksy-towerz --seeds 24 --set racers=4,skill=2`: 24 races of four HARD wizards, all finished, 1,154 to 1,888
+     frames (19 to 31 s), the winner is player 1 in 7 of 24 (about a quarter: no place is favoured). The frame time with two people (two guides) and two wizards: 99th percentile 3.8 ms.
+   - **Not done:** it has not been played with four real pads, so the console's pad seating (which pad becomes which player) and how it feels to join have not been seen; the lobby and the results are plain text on a panel (Phase 6 draws
+     them); the count shows a digit in the system font (Phase 6 makes it big); a wizard has no name yet; there are no rounds (a race is a race: Phase 5 adds the best of three); there is no help screen.
 
 ## 16. Open questions
 
