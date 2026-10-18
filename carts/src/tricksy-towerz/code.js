@@ -267,9 +267,9 @@ let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let yards = [], seq = [], raceT = 0, winner = -1, finalScore = 0, ranking = [];
 const OFF = -1, HUMAN = 4, COUNT = 180, MIN_RACERS = 2;
-let setup = [HUMAN, 1, 1, 1], lobbySel = 1, lobbyMsg = 0, countT = 0, pausePad = 0, ipad = 0, after = 'title', helpPage = 0;
+let setup = [HUMAN, 0, 1, 0], lobbySel = 1, lobbyMsg = 0, countT = 0, pausePad = 0, ipad = 0, after = 'title', helpPage = 0;
 let holdT = 0; // frames left of the tense music (a tower has been over the line)
-let guideOn = [true, true, true, true], cpuLevel = [3, 1, 1, 1]; // for each place: whether a person has the landing guide, and the level it has as a computer wizard
+let guideOn = [true, true, true, true], cpuLevel = [3, 0, 1, 0]; // for each place: whether a person has the landing guide, and the level it has as a computer wizard
 // setup: what each of the four places is: a human (on that pad), a computer wizard of a level (0 EASY to 3 WIZARD), or OFF
 
 /** A new game: the same pieces for everybody (a shuffled bag of the seven, over and over), one yard each. racers: a number (that many humans) or a list of { player, ai, skill }. */

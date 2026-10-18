@@ -59,18 +59,18 @@ const title = (seed = 1, save = null) => { const vm = newGame(seed, { title: tru
   vm.press('UP'); vm.press('UP'); vm.press('LEFT'); // P1 guide off
   const s = vm.m.save;
   ok(s[p.GUIDE_SLOT] === 1 && s[p.GUIDE_SLOT + 1] === 0, 'a guide switched off is kept in the save (slots 2 to 5)', Array.from(s.slice(2, 6)).join());
-  ok(s[p.LEVEL_SLOT + 1] === 5 && s[p.LEVEL_SLOT + 2] === 1, 'and what a place was set to as a wizard (slots 6 to 9: level + 2)', Array.from(s.slice(6, 10)).join());
+  ok(s[p.LEVEL_SLOT + 1] === 4 && s[p.LEVEL_SLOT + 2] === 1, 'and what a place was set to as a wizard (slots 6 to 9: level + 2)', Array.from(s.slice(6, 10)).join());
   const [v2, q2] = title(7, Int32Array.from(s)); v2.press('A');
-  ok(q2.guideOn.join() === 'false,true,true,true' && q2.setup.join() === '4,3,-1,1', 'a new game that starts from that save opens the lobby as it was left', `${q2.guideOn.join()} / ${q2.setup.join()}`);
+  ok(q2.guideOn.join() === 'false,true,true,true' && q2.setup.join() === '4,2,-1,0', 'a new game that starts from that save opens the lobby as it was left', `${q2.guideOn.join()} / ${q2.setup.join()}`);
   tap(v2, 2, 'UP'); ok(q2.setup[2] === 4, 'a pad joins the empty place');
   tap(v2, 2, 'B'); ok(q2.setup[2] === -1, 'and B puts it back as it was (empty), not as a computer wizard of NORMAL');
 }
 {
   const [vm, p] = title(); vm.press('A');
-  ok(p.cpuLevel.join() === '3,1,1,1' && p.setup.join() === '4,1,1,1' && Array.from(vm.m.save.slice(2, 10)).join() === '0,0,0,0,0,0,0,0', 'a save with nothing in those slots opens with the defaults (guides on, NORMAL wizards)');
+  ok(p.cpuLevel.join() === '3,0,1,0' && p.setup.join() === '4,0,1,0' && Array.from(vm.m.save.slice(2, 10)).join() === '0,0,0,0,0,0,0,0', 'a save with nothing in those slots opens with the defaults (guides on, EASY, NORMAL and EASY wizards)');
   const save = new Int32Array(256); save[0] = 1; const e = { score: 99000, initials: 'ABC' };
   const [v2, q2] = title(3, save); q2.insertTop(e); v2.press('A');
-  ok(q2.topTen()[0].score === 99000 && q2.setup.join() === '4,1,1,1', 'a save from before these settings keeps its table (the format version did not change)');
+  ok(q2.topTen()[0].score === 99000 && q2.setup.join() === '4,0,1,0', 'a save from before these settings keeps its table (the format version did not change)');
   const w = newGame(1, { title: true, save: Int32Array.from([1, 0, 0, 0, 0, 0, 0, 0, 0, 0]) }); w.run(2);
   ok(w.probe().state === 'title', 'and starts');
 }

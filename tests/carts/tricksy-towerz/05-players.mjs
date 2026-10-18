@@ -15,13 +15,13 @@ const race = (setup, seed = 1) => { const [vm, p] = lobby(seed); p.setup = setup
 // 1. The lobby.
 {
   const [vm, p] = lobby();
-  ok(p.state === 'lobby' && p.setup.join() === '4,1,1,1' && p.lobbySel === 1, 'the lobby starts with you as P1 and three computer wizards of NORMAL, the cursor on P2', p.setup.join());
+  ok(p.state === 'lobby' && p.setup.join() === '4,0,1,0' && p.lobbySel === 1, 'the lobby starts with you as P1 and three computer wizards (EASY, NORMAL, EASY: a table for a new player), the cursor on P2', p.setup.join());
   vm.press('DOWN'); vm.press('DOWN'); ok(p.lobbySel === 3, 'DOWN moves the cursor down the places'); vm.press('DOWN'); ok(p.lobbySel === 0, 'and round again to P1');
   vm.press('UP'); ok(p.lobbySel === 3, 'UP goes up and round');
   vm.press('UP'); vm.press('UP'); // on P2
   const seen = []; for (let i = 0; i < 5; i++) { vm.press('RIGHT'); seen.push(p.setup[1]); }
-  ok(seen.join() === '2,3,-1,0,1', 'RIGHT changes P2 through HARD, WIZARD, EMPTY, EASY and NORMAL again', seen.join());
-  vm.press('LEFT'); ok(p.setup[1] === 0, 'and LEFT goes back');
+  ok(seen.join() === '1,2,3,-1,0', 'RIGHT changes P2 through NORMAL, HARD, WIZARD, EMPTY and EASY again', seen.join());
+  vm.press('LEFT'); ok(p.setup[1] === -1, 'and LEFT goes back');
   ok(p.levelName(-1) === 'EMPTY' && p.levelName(3) === 'CPU WIZARD' && p.levelName(4) === 'HUMAN', 'the places are named EMPTY, CPU and the level, or HUMAN');
   ok(p.setup[0] === 4, 'P1 stays a human');
 }
@@ -29,7 +29,7 @@ const race = (setup, seed = 1) => { const [vm, p] = lobby(seed); p.setup = setup
 // 2. Another pad joins by pressing a button, and leaves with B.
 {
   const [vm, p] = lobby();
-  tap(vm, 2, 'UP'); ok(p.setup.join() === '4,1,4,1', 'a button on pad 3 puts a human in the third place (whatever the button)', p.setup.join());
+  tap(vm, 2, 'UP'); ok(p.setup.join() === '4,0,4,0', 'a button on pad 3 puts a human in the third place (whatever the button)', p.setup.join());
   tap(vm, 1, 'A'); tap(vm, 3, 'DOWN'); ok(p.setup.join() === '4,4,4,4', 'and pads 2 and 4 the same: four humans');
   vm.press('DOWN'); vm.press('RIGHT'); ok(p.setup.join() === '4,4,4,4' && p.guideOn.join() === 'true,true,false,true', 'LEFT and RIGHT on a human place switch that player\'s landing guide, not the place');
   tap(vm, 2, 'B'); ok(p.setup.join() === '4,4,1,4', 'B on a pad leaves: the place goes back to a computer wizard');

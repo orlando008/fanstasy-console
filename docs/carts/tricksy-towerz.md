@@ -1,7 +1,7 @@
 # Tricksy Towerz: Cart Specification
 
-**Version:** 0.7 (Phase 6 built)
-**Status:** In progress: Phases 1 to 6 of 7 (the physics and one tower; the race rules and feel; up to four players; the flow; the art; the sound) are built; the rest of the plan (section 15) is not
+**Version:** 1.0 (released)
+**Status:** Released: all 7 steps are built. The cart is `carts/tricksy-towerz.nova` and the PNG cartridge `carts/tricksy-towerz.nova.png`, with a label, a Library entry and a README row. Open decisions are in section 16.
 **Cart source:** `carts/src/tricksy-towerz/` → `carts/tricksy-towerz.nova`
 
 A physics tower-building race for **one to four wizards at a time**. Falling pieces of blocks (the seven tetrominoes) are steered and turned,
@@ -152,18 +152,34 @@ cannot be swept. What was found, in the order it was found:
 | No new pieces while the tower is over the line | pieces kept coming on a tower that was only trying to stand still, and knocked it down |
 | A lost piece costs 40 frames more | losing a piece should cost time as well as height |
 
-The result, at the numbers of this document (12 seeds, the race ended at 150 s; the time is the median):
+The result, at the numbers of this document: 24 races of each level alone (the race ended at 150 s; the time is the median):
 
 | Level | Finished | Median | Fastest to slowest | Placed | Lost |
 |---|---|---|---|---|---|
-| EASY | 8 of 12 | 101 s | 50 to 143 s | 62 | 51 |
-| NORMAL | 12 of 12 | 41 s | 28 to 123 s | 29 | 11 |
-| HARD | 12 of 12 | 32 s | 22 to 60 s | 27 | 10 |
-| WIZARD | 12 of 12 | 23 s | 17 to 103 s | 27 | 8 |
+| EASY | 18 of 24 | 69 s | 32 to 143 s | 52 | 39 |
+| NORMAL | 24 of 24 | 42 s | 26 to 123 s | 27 | 10 |
+| HARD | 24 of 24 | 32 s | 22 to 60 s | 27 | 9 |
+| WIZARD | 24 of 24 | 22 s | 16 to 103 s | 24 | 6 |
 
-A person has the landing guide the computer does not, and uses the fast drop; the target for a good person is 40 to 70 seconds. The levels are only roughly spaced (the seeds vary a great deal: one
-tower in a dozen collapses near the top); Phase 7 balances them against a person and with more seeds. Whether the finish should be higher or lower, and the hold longer or shorter, is the one number a
-person's play will tell better than any sweep.
+(An earlier run of 12 seeds said EASY 8 of 12 and 101 s; the spread between seeds is large, which is the nature of a tower: one in a dozen collapses near the top and starts again.) A person has the landing guide the computer does not, and can use the fast drop; the target for
+a good person is 30 to 60 seconds, so a person as good as the WIZARD wins and a beginner has a table to climb.
+
+**Races of wizards** (`fair.mjs`-style runs of whole races of four, the winners counted for each place):
+
+| Race | Races | Won by place 1, 2, 3, 4 | Median, fastest to slowest |
+|---|---|---|---|
+| four HARD | 60 | 14, 12, 17, 17 | 25 s, 18 to 33 s |
+| four WIZARD | 60 | 17, 14, 14, 15 | 21 s, 14 to 31 s |
+| WIZARD, HARD, NORMAL, EASY | 40 | 29, 8, 2, 1 | 23 s, 15 to 35 s |
+
+No place is favoured (the tie rule only matters on the same frame); the better level wins, and the order is the ladder. `node tools/devkit/sweep.mjs tricksy-towerz --seeds 6 --set racers=4,skill=2` runs a whole race of four through the sweep (6 of 6 finished, 1,194 to 1,517 frames).
+`08-balance.mjs` keeps these properties as guard rails with fewer seeds: the ladder (EASY slower than NORMAL, than HARD, than WIZARD), the best taking 10 to 40 seconds, no place winning more than 7 of 12 races of four WIZARDs, the better winning,
+and a WIZARD winning against the default table (EASY, NORMAL, EASY) at least six of eight.
+
+**The default table.** The lobby starts with three computer wizards of EASY, NORMAL and EASY (it was three of NORMAL until Phase 7): a person new to the game should not meet three that finish in half a minute. The person is at the top of the table's ladder, the NORMAL wizard in the middle,
+and the lobby changes any of them (and remembers).
+
+Whether the finish should be higher or lower, and the hold longer or shorter, is the one number a person's play will tell better than any sweep: nobody has played it with a pad.
 
 ### 5.7 What the yard tells you
 
@@ -178,7 +194,7 @@ person's play will tell better than any sweep.
 **Places.** There are four, P1 to P4; a place is a human (on the pad of that number), a computer wizard of a level (EASY to WIZARD), or empty (`setup`: 4, 0 to 3, or -1). P1 is always a human (the keyboard or the first pad).
 A race has the places that are not empty, in order, and needs at least two (`MIN_RACERS`); a race of one exists only for the tests (`skipTitle`).
 
-**The lobby** (`updateLobby`, after PLAY on the title): the four places are shown, P1 (always a person) first; the other three start as computer wizards of NORMAL. UP and DOWN move the cursor over all four, round, and LEFT
+**The lobby** (`updateLobby`, after PLAY on the title): the four places are shown, P1 (always a person) first; the other three start as computer wizards of EASY, NORMAL and EASY (5.6). UP and DOWN move the cursor over all four, round, and LEFT
 and RIGHT **change the place under it**: for a person, their **landing guide** on or off (5.2: a person who wants a harder race, or a handicap for a friend who is better); for anything else the wizard's level (EMPTY, EASY, NORMAL,
 HARD, WIZARD and round). A pad joins by pressing **any button** on it (the console only counts a pad from its first press, so there is nothing to ask for first): its place becomes HUMAN; B on that pad puts the place back
 as it was (the wizard it last was, or empty). START on any person's pad (or A on the first) begins; with fewer than two racers it says so for 2 seconds and stays. B on the first pad goes back to the title.
@@ -220,7 +236,7 @@ A wizard has a **level** (`SKILLS`, a yard's `skill`): the px it aims off by, th
 | 2 HARD | 0.8 | 30 | 4 % | yes |
 | 3 WIZARD | 0.2 | 6 | 0 | yes |
 
-The random numbers are the console's (`rndi`), so a race is the same every time for the same seed and the same buttons. Phase 3 fills the empty places with them; Phase 5 gives them names and faces.
+The random numbers are the console's (`rndi`), so a race is the same every time for the same seed and the same buttons. Phase 3 fills the empty places with them; Phase 5 gave them faces (a hat, a grey robe).
 
 ## 8. Modes
 
@@ -414,8 +430,19 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
      after it; the record fanfare; the menu sounds; and that every effect and every song of the cart is heard in the file).
    - **Not done:** nobody has listened to it. Everything above is measurement and writing to a plan (levels, clashes, tempos, which note is over which): whether the tunes are good is a matter for your ears, and the notes are in `audio.py` as bars of text, so changing a melody is a one-line edit.
 
+7. **Balance and polish.**
+
+   - **Built:** the levels measured again over many seeds (24 races of each level alone; 60 races of four HARD wizards and of four WIZARDs and 40 mixed, for the winners of each place), which showed the ladder is in order and no place is favoured; the default table of the lobby changed
+     to EASY, NORMAL, EASY (5.6); `08-balance.mjs` (7 checks) to keep these properties; `meta.json` has the description; the label was taken from the title screen (`node tools/release.js tricksy-towerz --wait 2500`), the PNG cartridge `carts/tricksy-towerz.nova.png` made (it decodes to exactly the
+     packed cart), `carts/labels/tricksy-towerz.png` and `carts/index.json` (the Library) written, and the README has a row.
+   - **Results:** `node tools/verify.js tricksy-towerz` passes (262 test checks: 32 flow, 36 art, 31 physics and steering, 30 race, 54 players, 35 flow of Phase 4, 37 sound, 7 balance), the soak is clean, the smoke test in the real console reports no errors, and so do the checks CI runs
+     (`node --check` on every source, `check-docs.js`, `check.js --all`, the art and new-cart self-tests and `soak.mjs --all`). Code 46,327 of 65,536 bytes; tiles 651 of 1,023 (587 background, 64 sprite); 4 songs, 9 patterns, 13 effects, 7,200 bytes of samples; the PNG payload 45,559 of 147,443 bytes.
+   - **Not done:** nobody has played it with a pad, heard it, or seen it on a screen but me from pictures. The finish line, the hold, the speeds and the levels were tuned against computer players, so whether the race feels right for a person is the open question. The four-pad seating of the console and the joining
+     in the lobby have only been tested in the harness.
+
 ## 16. Open questions
 
 - The finish line's height (130 px) and the hold time (120 frames) were tuned against computer players; a person's play may want them changed.
 - Whether lost pieces should cost more than the height (a penalty of time), and whether there should be a "too many lost, you are out" rule as in a survival mode.
-- The game's setting and the wizards' names (Phase 5).
+- The wizards have no names (the hat says whose they are) and the setting is a wizards' night; a name for each, or a story, could be added.
+- Whether to add a short series (the first to win two races) to the lobby: left out because the game is only the stacking.
