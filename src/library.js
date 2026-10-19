@@ -1,8 +1,10 @@
-// The Library (SPEC 11.1): the console's home page, a shelf of cartridges for
-// the carts in carts/index.json, led by the autosaved working cart and ending
-// with Open file and New cart. Arrows, a gamepad or the mouse pick a cart.
+// The Library (SPEC 11.1): the console's home page, the carts in carts/index.json
+// as cartridges on a shelf for each genre (src/genres.js), led by the autosaved
+// working cart and ending with Open file and New cart. Arrows, a gamepad or the
+// mouse pick a cart.
 
 import { PNG_H, PNG_W, drawCartridge, labelBitmap } from './formats/nova-png.js';
+import { GENRES } from './genres.js';
 import { h } from './ui/dom.js';
 
 const MANIFEST = 'carts/index.json';
@@ -26,7 +28,7 @@ export class Library {
     this.visible = false;
     this.pad = { held: 0, dir: 0, dirFrames: 0, hold: 0 };
 
-    this.shelf = h('div', { class: 'lib-shelf', attrs: { role: 'list' } });
+    this.shelf = h('div', { class: 'lib-shelf' });
     this.detailTitle = h('h2', { class: 'lib-detail-title' });
     this.detailBy = h('p', { class: 'lib-detail-by' });
     this.detailText = h('p', { class: 'lib-detail-text' });
@@ -65,15 +67,26 @@ export class Library {
     this.visible = false;
   }
 
+  /** The shelves, in order: your cart, one for each genre (a cart of no known genre on More carts, before the tech demos), and Make a cart. */
+  shelves() {
+    const mine = this.hooks.mine(), carts = this.manifest.map((m) => ({ kind: 'cart', ...m }));
+    const known = new Set(GENRES.map((g) => g.id)), demo = GENRES[GENRES.length - 1];
+    return [
+      { title: 'Your cart', entries: mine ? [{ kind: 'mine', title: mine.meta.title || 'Untitled', author: mine.meta.author || '',
+        description: mine.meta.description || '', cart: mine }] : [] },
+      ...GENRES.slice(0, -1).map((g) => ({ title: g.shelf, entries: carts.filter((c) => c.genre === g.id) })),
+      { title: 'More carts', entries: carts.filter((c) => !known.has(c.genre)) },
+      { title: demo.shelf, entries: carts.filter((c) => c.genre === demo.id) },
+      { title: 'Make a cart', entries: [
+        { kind: 'open', title: 'Open file', description: 'Open a .nova or .nova.png cart from your computer (Ctrl+O). You can also drop one onto the page.' },
+        { kind: 'new', title: 'New cart', description: 'Start a new cart in the editor.' },
+      ] },
+    ].filter((s) => s.entries.length);
+  }
+
   build() {
-    const mine = this.hooks.mine();
-    this.entries = [
-      ...(mine ? [{ kind: 'mine', title: mine.meta.title || 'Untitled', author: mine.meta.author || '',
-        description: mine.meta.description || '', cart: mine }] : []),
-      ...this.manifest.map((m) => ({ kind: 'cart', ...m })),
-      { kind: 'open', title: 'Open file', description: 'Open a .nova or .nova.png cart from your computer (Ctrl+O). You can also drop one onto the page.' },
-      { kind: 'new', title: 'New cart', description: 'Start a new cart in the editor.' },
-    ];
+    const shelves = this.shelves();
+    this.entries = shelves.flatMap((s) => s.entries);
     const current = this.hooks.current();
     this.cards = this.entries.map((entry, i) => {
       const name = entry.kind === 'mine' ? `Your cart: ${entry.title}` : entry.title;
@@ -83,7 +96,7 @@ export class Library {
         : h('div', { class: 'lib-action-art' }, entry.kind === 'open' ? 'OPEN' : 'NEW');
       const card = h('button', {
         type: 'button', class: `lib-card${playing ? ' playing' : ''}`,
-        attrs: { role: 'listitem', 'aria-label': name },
+        attrs: { role: 'listitem', 'aria-label': name, 'data-cart': entry.name || entry.kind },
         on: {
           click: () => this.activate(i),
           focus: () => this.select(i, false),
@@ -95,11 +108,14 @@ export class Library {
       entry.playing = playing;
       return card;
     });
-    this.shelf.replaceChildren(...this.cards);
+    let at = 0; // a heading and a row of cartridges for each shelf; this.cards stays one list, so the arrows cross shelves
+    this.shelf.replaceChildren(...shelves.map((s) => h('section', { class: 'lib-section', attrs: { 'aria-label': s.title } },
+      h('h2', { class: 'lib-section-title' }, s.title),
+      h('div', { class: 'lib-row', attrs: { role: 'list' } }, this.cards.slice(at, at += s.entries.length)))));
     if (this.loadError) this.shelf.prepend(h('p', { class: 'lib-error' }, this.loadError));
     // Start on the cart that is loaded, or the first one.
-    const at = this.entries.findIndex((e) => e.playing);
-    this.select(at >= 0 ? at : 0);
+    const playing = this.entries.findIndex((e) => e.playing);
+    this.select(playing >= 0 ? playing : 0);
   }
 
   /** A canvas drawn as the cart's cartridge; the label fills in once loaded. */
@@ -121,6 +137,8 @@ export class Library {
     const card = this.cards[this.sel], entry = this.entries[this.sel];
     this.cards.forEach((c, k) => c.classList.toggle('selected', k === this.sel));
     if (focus && document.activeElement !== card) card.focus({ preventScroll: true });
+    const row = card.parentElement; // on the first row of a shelf, bring its heading into view as well
+    if (row?.firstElementChild && card.offsetTop === row.firstElementChild.offsetTop) row.previousElementSibling?.scrollIntoView({ block: 'nearest' });
     card.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     this.detailTitle.textContent = entry.kind === 'mine' ? `Your cart: ${entry.title}` : entry.title;
     this.detailBy.textContent = entry.author ? `by ${entry.author}` : '';
