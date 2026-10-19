@@ -1,5 +1,6 @@
 {
   "title": "{{TITLE}}",
   "author": "NOVA-16",
-  "description": "A game in progress."
+  "description": "A game in progress.",
+  "genre": "{{GENRE}}"
 }

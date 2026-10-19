@@ -1,5 +1,6 @@
 {
   "title": "Water",
   "author": "NOVA-16",
-  "description": "M4 test: scanline() reflection with a per-line wobble and mid-frame palette swaps."
+  "description": "M4 test: scanline() reflection with a per-line wobble and mid-frame palette swaps.",
+  "genre": "Demo"
 }

@@ -1,5 +1,6 @@
 {
   "title": "Hello NOVA",
   "author": "NOVA-16",
-  "description": "M1 boot test: move the box with the d-pad or left stick."
+  "description": "M1 boot test: move the box with the d-pad or left stick.",
+  "genre": "Demo"
 }

@@ -6,7 +6,8 @@
 //
 // Errors (exit code 1): a .nova.png that does not hold exactly the packed cart (decoded here, no browser), code over 64 KB, a syntax error, audio over its limits, an instrument whose wave does
 // not suit the channel it is on in a song, a note out of range, an SFX that mixes voices, or a PNG cart that
-// would not fit. Warnings: code over 90% of the limit, a built .nova that is not what its source packs to, an SFX
+// would not fit, a source meta.json without a genre the Library knows (src/genres.js) or one carts/index.json does not
+// match (node tools/library.js). Warnings: code over 90% of the limit, a built .nova that is not what its source packs to, an SFX
 // that would sound wrong through the cart's SFX_CH (unless the code routes them: a table named SFX_VOICE_CH, or a comment "sfx-voice-routed"), a description that still says "work in progress", no label, a spec that is missing, has no Version/Status header, still has TODOs in a released cart, or states a code size more than 2 KB off.
 // Numbers worth knowing are printed for every cart (code size, tiles, sprites per scanline are a run-time limit:
 // see docs/dev/playbook.md for the harness check).
@@ -21,6 +22,7 @@ import { CHANNEL_VOICES, INSTRUMENTS, NOTE_COUNT, PATTERNS, SAMPLE_RAM, SAMPLE_S
 import { CODE_LIMIT, SHEET_W, codeBytes } from '../src/formats/cart.js';
 import { readNova } from '../src/formats/nova-json.js';
 import { MAX_PAYLOAD, cartPayload } from '../src/formats/nova-png.js';
+import { GENRE_IDS } from '../src/genres.js';
 import { readPngCart } from './devkit/pngcart.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -121,6 +123,14 @@ async function checkCart(arg) {
   if (!cart.label) warn('no label (F7 in the console, or node tools/release.js)');
   if (/work in progress/i.test(desc)) warn('the description still says it is a work in progress');
   if (!desc) warn('no description in meta.json');
+  // The Library's shelf: a genre in the source meta.json (not part of the cart), and the manifest up to date with it.
+  const metaFile = join(ROOT, 'carts', 'src', name, 'meta.json');
+  if (existsSync(metaFile)) {
+    const genre = JSON.parse(readFileSync(metaFile, 'utf8')).genre;
+    if (!GENRE_IDS.includes(genre)) err(`carts/src/${name}/meta.json needs a "genre", one of ${GENRE_IDS.join(', ')} (the Library's shelves, src/genres.js)${genre ? `, not "${genre}"` : ''}`);
+    const listed = JSON.parse(readFileSync(join(ROOT, 'carts', 'index.json'), 'utf8')).carts.find((c) => c.name === name);
+    if (listed && listed.genre !== (GENRE_IDS.includes(genre) ? genre : null)) err(`carts/index.json has the genre ${listed.genre} for ${name}, meta.json ${genre}: run node tools/library.js`);
+  }
   // The spec: present, with a header, no TODOs once released, and a code budget that matches the code.
   const specFile = join(ROOT, 'docs', 'carts', `${name}.md`), released = existsSync(join(ROOT, 'carts', `${name}.nova.png`));
   if (!existsSync(specFile)) { if (released) warn(`no spec: docs/carts/${name}.md`); }
