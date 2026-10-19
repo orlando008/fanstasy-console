@@ -22,7 +22,7 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 11). The channel decides the voice: 0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample. ---
 
 const SFX = { move: 0, select: 1, pause: 2, lost: 3, crumble: 4, land: 5, record: 6, turn: 7, count: 8, go: 9, cross: 10, join: 11, refuse: 12 };
-const SONG = { title: 0, race: 1, tense: 2, win: 3 }; // the title, lobby, help and records; the race; a tower over the line; the finish (once)
+const SONG = { title: 0, race: 1, tense: 2, win: 3 }; // the title, lobby, help and records; the race; a tower over the line; the finish (a fanfare, then a calm loop under the results)
 const SFX_CH = 1; // effects share channel 1 (pulse); the songs leave it free
 // Effects with noise (or saw or triangle) in them go on a channel with that voice. Fill this from audio.py:
 // node tools/devkit/music/sfx.mjs carts/tricksy-towerz.nova 1 shows what each effect is.

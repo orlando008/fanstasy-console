@@ -259,16 +259,16 @@ initials are typed by the winner's pad): the stored score is `100000 - frames`, 
 Made by `carts/src/tricksy-towerz/audio.py` (the song toolkit, `tools/devkit/music/kit.py`) into `audio.json`. Channels: 0 the lead, 2 the bass, 3 the arpeggio, 5 the drums (samples); channel 1 is for the effects (a song only carries its tempo on it) and channel 4, which no
 song uses, for the effects with noise in them (`SFX_VOICE_CH`). Nobody has listened to it: it is measured (levels, clashes, lengths) and written to a plan.
 
-**Songs** (the numbers are `SONG` in code.js; the first three loop, the last plays once):
+**Songs** (the numbers are `SONG` in code.js; all four loop: the finish loops back past its fanfare, so the fanfare is heard once). Rewritten in the polish pass (16):
 
 | # | Name | Where | Key, tempo, length | What it is |
 |---|---|---|---|---|
-| 0 | Title | the title, the lobby, the help, the records | A minor, 128 bpm, 15 s | eight bars: four of a quiet horn over an arpeggio, four of the pulse lead; soft drums, then a plain beat |
-| 1 | Race | the race, from GO | C major, 150 bpm, 26 s | sixteen bars: the main tune twice, a calm middle with the horn, the main tune again with a driving beat |
-| 2 | Over the line | the race, while a tower has been over the line for 20 frames, and for 2 seconds after | A minor, 112 bpm, 17 s | long horn notes over a heartbeat of a kick and a fast thin arpeggio: tension, as the tower has only to stand |
-| 3 | The finish | when a race is won (by a person or a wizard) | C major, 180 bpm, 5 s, once | a fanfare with a march beat; the results screen is then quiet |
+| 0 | Title | the title, the lobby, the help, the records | A minor, 128 bpm, 30 s | sixteen bars: the horn over a sparkling arpeggio (soft drums, a held bass); the tune on the pulse lead in sixteenths with a walking bass; a bridge (iv, i, VI, V) over held strings, a bouncy beat and a snare roll; the horn's tune again, higher, with a driving beat |
+| 1 | Race | the race, from GO | C major, 150 bpm, 51 s | thirty-two bars, so a race of a minute hears it about once: a plucked riff (intro); the main tune (eight bars, in sixteenths); a second theme in the minor on the pluck over held strings and a bouncy beat; a breakdown with the horn; the main tune again with a driving beat and a roll back to the top |
+| 2 | Over the line | the race, while a tower has been over the line for 20 frames, and for 2 seconds after | A minor, 112 bpm, 17 s | a bass in eighths that falls a step a bar (A, G, F, E, D, C, F, E) under a horn that climbs, a heartbeat that stumbles at the end of each bar and a ticking arpeggio; then a beat and a roll: tension, as the tower has only to stand |
+| 3 | The finish | when a race is won (by a person or a wizard), then on through the results, the initials and the records | C major, 180 bpm, 5 s and a loop of 21 s | a fanfare (brass, a march beat, a roll) that ends on a held chord and lets it go; then a slow, soft tune at half the pace over a harp arpeggio and a half-time beat, round and round (its bass and lead softer: 0.063 against the fanfare's 0.085) |
 
-The count of three has no music, only its beeps. A song is only started when it is not the one playing, so the title song runs on through the help, the records and the lobby, and the race song is not restarted while the race goes on.
+The count of three has no music, only its beeps. (Before the polish pass the finish played once and stopped, and the console left its last notes sounding for ever under the results and the initials: the console now releases a song's notes when a song that plays once ends, SPEC 5.3, and the finish no longer ends.) A song is only started when it is not the one playing, so the title song runs on through the help, the records and the lobby, and the race song is not restarted while the race goes on.
 
 **Effects** (`SFX` in code.js; channel 1 unless said):
 
@@ -290,7 +290,7 @@ The count of three has no music, only its beeps. A song is only started when it 
 
 Only people's pieces make landing, turning and losing sounds: four yards of computer wizards would be a rattle, and the sounds belong to the person hearing them (with four people it is still a lot, and they share channel 1, so a new one cuts the last).
 
-**Levels** (`node tools/devkit/music/loud.mjs carts/tricksy-towerz.nova --check`, `sfx.mjs`, `clash.py`): the songs' lead alone is 0.050 to 0.056 RMS, 0.61 to 0.66 of the mix, with no jump where it enters, loudest over median 1.0 to 1.05, peaks 0.22 to 0.24, medians 0.080 to 0.085 (the limits
+**Levels** (`node tools/devkit/music/loud.mjs carts/tricksy-towerz.nova --check`, `sfx.mjs`, `clash.py`): the songs' lead alone is 0.051 to 0.057 RMS, 0.63 to 0.66 of the mix, with no jump where it enters, loudest over median 1.02 to 1.36 (the finish's fanfare over its calm loop), peaks 0.24 to 0.25, medians 0.063 to 0.083 (the limits
 of playbook section 5 are 0.07, 0.75, 1.5, 2.2, 0.45 and 0.03 to 0.15); the effects are 0.012 to 0.058 RMS and 4 to 32 ticks (under 0.6 s). The very short ones (the menu blip, the tap, the tick, the beep) were too quiet at first (0.003 to 0.008) and were made louder and a tick longer. `clash.py` found two
 places where the lead was a semitone from the bass (an E over an F) and both were changed.
 
@@ -332,7 +332,7 @@ The format version stays 1: slots 2 to 9 were empty before, and zero means the d
 | Code | 46 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
 | Tiles | 651 of 1,023: 587 background (limit 759 by the region) and 64 sprite (limit 264) |
 | Sprites | 16 pictures; at most 4 on screen in a race, 4 in the lobby, 2 on the title (128 in OAM, 32 per line) |
-| Songs / SFX | 4 of 8 songs, 9 of 64 patterns, 13 of 64 effects, 7,200 of 16,384 bytes of samples |
+| Songs / SFX | 4 of 8 songs, 19 of 64 patterns, 13 of 64 effects, 20 of 32 instruments, 7,200 of 16,384 bytes of samples |
 
 ## 15. Implementation plan
 
