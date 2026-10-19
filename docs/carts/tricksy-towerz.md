@@ -29,7 +29,7 @@ tower fall. **Only the stacking**: there are no items, power-ups, spells or othe
 
 ## 2. Core loop
 
-1. A piece appears 112 px above the tower (its centre, `SPAWN_ABOVE`; near the top of the view), 20 frames after the last one landed, and starts to fall: about 1.8 s to reach the tower, or a third of that with DOWN.
+1. A piece appears 112 px above the tower (its centre, `SPAWN_ABOVE`; near the top of the view), 20 frames after the last one landed, and starts to fall, slowly (0.4 px a frame): about 4.7 s to reach the tower, time to turn it and put it where it should go; DOWN drops it at 3 px a frame.
 2. The player slides and turns it, and may drop it faster.
 3. It lands (rests on the tower or the platform) and becomes a free body; the next piece comes.
 4. The tower's height (the top of everything held up by the platform) is counted all the time.
@@ -40,7 +40,7 @@ tower fall. **Only the stacking**: there are no items, power-ups, spells or othe
 | Button | Use |
 |---|---|
 | LEFT / RIGHT | Slide the piece (1.3 px per frame) |
-| DOWN | Drop it faster (3 px per frame instead of 0.7) |
+| DOWN | Drop it faster (3 px per frame instead of 0.4) |
 | A or R | Turn the piece a quarter clockwise |
 | B or L | Turn it a quarter counter-clockwise |
 | START | Pause (RESUME, RESTART, QUIT TO TITLE); the player who paused has the menu |
@@ -99,7 +99,7 @@ The steered piece is not part of the world while it falls (it would shove the to
 
 - **Slide**: LEFT or RIGHT moves it 1.3 px per frame; a move that would overlap the tower, or leave the column (the whole piece stays inside the 64 px), is not made.
 - **Turn**: a quarter turn about its centre of mass; if that would overlap, it is tried again nudged by 2, then 4 px up, right or left; if nothing fits it does not turn.
-- **Fall** (`fall`): 1 px per frame, or 3 with DOWN, in steps of 1 px. A piece **lands** when it rests on something: a contact under it (normal pointing up, gap under 0.15 px) or an overlap
+- **Fall** (`fall`): 0.4 px per frame (`FALL`), or 3 with DOWN (`DROP`), in steps of at most 1 px. The slow fall is for steering: the game is hard because of where the pieces go, not because there is no time to turn them (the user's call, after release). A piece **lands** when it rests on something: a contact under it (normal pointing up, gap under 0.15 px) or an overlap
   from above. Then it becomes a body of the world with a speed of 0.3 px per frame down, and nothing steers it any more.
 - **Edges**: a piece brushing the side of the tower on its way down (the contact normal is sideways) is slid off it, not landed; and a piece that would rest on
   **less than 3 px** (`EDGE`: a corner) slips off the corner (by that much and 0.05) and goes on falling. So a near miss falls beside the tower, as a player means it to. Both
@@ -149,6 +149,7 @@ cannot be swept. What was found, in the order it was found:
 | Blocks that meet only at a corner do not touch (`collide`: a clipped contact shorter than 0.05 px is dropped) | a piece on a row of blocks whose seams matched the platform's could not slide: it caught on the seams |
 | Fall speed 1 px per frame (was 0.7), the next piece 72 px above the tower (was 84) | a piece took 2 s to arrive; now 1.2 s, and a race of 20 or so pieces takes about the time of a song |
 | After release: the next piece 112 px above the tower, the camera keeping 136 px of sky above it (was 72 and 90) | the user's play: a piece appeared so close to the tower that there was no time to react (about 1 s to land); now about 1.8 s, and DOWN still drops it at 3 px a frame |
+| Then: the fall 0.4 px a frame (was 1); every computer wizard drops its piece fast once it is turned and in place, after waiting 90, 30, 0 and 0 frames by level (only HARD and WIZARD used the fast drop) | the user: still not enough time to turn a piece and put it where it should go; the difficulty should be in arranging the pieces. A piece now takes about 4.7 s to come down unless DOWN is held. At the slow fall, wizards that never dropped fast would take minutes; the waits keep the levels about as far apart as before |
 | The line at 130 px (was 120): the best computer player takes 23 s | a little more than the first guess, so the hold is a real test |
 | No new pieces while the tower is over the line | pieces kept coming on a tower that was only trying to stand still, and knocked it down |
 | A lost piece costs 40 frames more | losing a piece should cost time as well as height |
@@ -237,16 +238,16 @@ logo TRICKSY TOWERZ (the console's font at three times its size, a colour of the
 **Computer wizards** (`plan` and `ctl` in code.js). `plan` makes a map of the tower's top a pixel at a time (the outline of every held-up block, tilted or not), then for every turn of the piece and every x tries where it would
 come to rest and scores that: holes under it (10 for each block's height of gap), air under it (30), a column of the piece that rests on less than 3 px counts as air, its centre of mass beyond the part that holds it (3 a pixel, and 4
 more when what holds it is under half its width), how high it is (2.5 a block), a little for being off-centre, and 25 and more for a centre of mass beyond the platform's edge. It takes the best (and keeps the best place that is really
-different, for a player that slips). `ctl` steers there with the same buttons a person has: slide, turn, drop once aligned within 0.3 px.
+different, for a player that slips). `ctl` steers there with the same buttons a person has: slide, turn, and drop fast once turned and aligned within 0.3 px and its level's wait is over.
 
-A wizard has a **level** (`SKILLS`, a yard's `skill`): the px it aims off by, the frames it thinks before it moves, the chance it takes the second-best place, and whether it uses the fast drop.
+A wizard has a **level** (`SKILLS`, a yard's `skill`): the px it aims off by, the frames it thinks before it moves, the chance it takes the second-best place, and how long it waits, once its piece is turned and in place, before it drops it fast (`wait`; every level drops fast, as a person who knows the game would).
 
-| Level | Aim off by (px) | Thinks (frames) | Second best | Fast drop |
+| Level | Aim off by (px) | Thinks (frames) | Second best | Waits, then drops fast (frames) |
 |---|---|---|---|---|
-| 0 EASY | 2.5 | 55 | 20 % | no |
-| 1 NORMAL | 1.5 | 40 | 10 % | no |
-| 2 HARD | 0.8 | 30 | 4 % | yes |
-| 3 WIZARD | 0.2 | 6 | 0 | yes |
+| 0 EASY | 2.5 | 55 | 20 % | 90 |
+| 1 NORMAL | 1.5 | 40 | 10 % | 30 |
+| 2 HARD | 0.8 | 30 | 4 % | 0 |
+| 3 WIZARD | 0.2 | 6 | 0 | 0 |
 
 The random numbers are the console's (`rndi`), so a race is the same every time for the same seed and the same buttons. Phase 3 fills the empty places with them; Phase 5 gave them faces (a hat, a grey robe).
 
