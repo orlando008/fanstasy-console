@@ -11,7 +11,7 @@ The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/ca
 node tools/new-cart.js my-game "My Game"      # a working cart, art and audio scripts, tests and spec template
 # for a puzzle game, start from a whole match-3 game instead:  node tools/new-cart.js my-game "My Game" --kind puzzle
 # write docs/carts/my-game.md, then replace updatePlay/drawPlay in carts/src/my-game/code.js, and the art in art.py
-# set the genre in carts/src/my-game/meta.json: the Library's shelf (one of src/genres.js)
+# set the genre and players in carts/src/my-game/meta.json: the Library's shelf (one of src/genres.js) and its badge ("1", "1-4")
 node tools/pack.js carts/src/my-game carts/my-game.nova
 node tools/verify.js --fast                   # audio and art scripts, pack, checks, soak, music levels (add the tests: leave out --fast)
 node tools/devkit/smoke.mjs my-game           # the real console, headless
@@ -64,7 +64,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an art script (a field, a ship and a gem, drawn with the art kit), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--kind puzzle` starts from a whole match-3 game instead (see "Starters by kind"). `--selftest` checks every starter (CI does) |
 | `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder |
 | `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the music levels (`loud.mjs --check`), the docs check, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
-| `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser), the spec (header, TODOs in a released cart, code size in the budget table), label and description, and a `genre` in `meta.json` (the Library's shelf: one of `src/genres.js`) that `carts/index.json` matches |
+| `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser), the spec (header, TODOs in a released cart, code size in the budget table), label and description, and a `genre` and `players` in `meta.json` (the Library's shelf, one of `src/genres.js`, and the badge on the cartridge) that `carts/index.json` matches |
 | `node tools/test.js <name> [filter] [-v]` | Run `tests/carts/<name>/NN-*.mjs` one at a time (about 3 minutes for Moto Crosser: run it in the background) |
 | `node tools/site.js check` | The hosted site (GitHub Pages, `.github/workflows/pages.yml`): builds it as it is published (`index.html`, `style.css`, `src/`, `carts/` without the sources), lays it out as the gh-pages branch (main at the root, previews in `pr/<n>/`), publishes it through git to a throwaway remote, and loads the main site and a preview in headless Chromium under a subpath: the Library, the labels, a cart running, the preview's own saves, no errors. Run it after changing what the site loads |
 | `node tools/check-docs.js` | Every `tools/`, `tests/`, `carts/`, `docs/` and `src/` path the documentation mentions must exist (placeholders like `<name>` are skipped), and every `--flag` on a documented `node tools/...` command must exist in that tool |
@@ -106,7 +106,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | Command | What it does |
 |---|---|
 | `node tools/release.js <name> [--keep-label]` | Pack, capture the F7 label in headless Chromium, export `.nova.png`, verify it decodes to the packed cart, rebuild the Library index, run the checks |
-| `node tools/library.js` | Rebuild `carts/index.json` and `carts/labels/` (release.js does it): the carts in the order of the Library's shelves, with each one's genre from its `meta.json` |
+| `node tools/library.js` | Rebuild `carts/index.json` and `carts/labels/` (release.js does it): the carts in the order of the Library's shelves, with each one's genre and players from its `meta.json` |
 
 The starter's template is `tools/templates/cart/` (`code.js` is the frame to build on; its `01-flow.mjs` is the
 first test file and its `bot.mjs` the first bot).

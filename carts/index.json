@@ -6,6 +6,7 @@
       "author": "NOVA-16",
       "description": "A snake game through a jungle and into a lost temple: 16 levels in 4 zones, with fruit, five power-ups, rolling boulders, scorpions and falling rocks, a song for every zone and a top 10.",
       "genre": "Arcade",
+      "players": "1",
       "label": "carts/labels/python-pass.png",
       "png": "carts/python-pass.nova.png"
     },
@@ -15,6 +16,7 @@
       "author": "NOVA-16",
       "description": "A cartoon demolition Breakout: knock down 16 stages in 4 worlds, from the house to the castle, with walls, glass, dented steel and girders, seven power-up capsules, a song for every world and a top 10.",
       "genre": "Arcade",
+      "players": "1",
       "label": "carts/labels/smashy-smash.png",
       "png": "carts/smashy-smash.nova.png"
     },
@@ -24,6 +26,7 @@
       "author": "NOVA-16",
       "description": "Climb the eight rooms of a wizard's tower. Drop 2x2 blocks of two colors, build one-color squares, and let the timeline sweep them away in time with each room's song.",
       "genre": "Puzzle",
+      "players": "1",
       "label": "carts/labels/block-wizard.png",
       "png": "carts/block-wizard.nova.png"
     },
@@ -33,6 +36,7 @@
       "author": "NOVA-16",
       "description": "A match-3 puzzle across twelve frozen levels: swap gems to break the ice, collect a colour or reach a score before the moves run out, with a hint when you are stuck, a song for the early levels and a faster one for the late ones.",
       "genre": "Puzzle",
+      "players": "1",
       "label": "carts/labels/ice-breakers.png",
       "png": "carts/ice-breakers.nova.png"
     },
@@ -42,6 +46,7 @@
       "author": "NOVA-16",
       "description": "A physics tower-building race for one to four wizards: steer and turn falling blocks that really slide, tip and topple, and keep your tower over the finish line for two seconds. Computer wizards fill empty places.",
       "genre": "Puzzle",
+      "players": "1-4",
       "label": "carts/labels/tricksy-towerz.png",
       "png": "carts/tricksy-towerz.nova.png"
     },
@@ -51,6 +56,7 @@
       "author": "NOVA-16",
       "description": "An Excitebike-style dirt-bike racer: race five rivals down four lanes over ramps, hurdles, mud, arrows and cooling pads, hold the turbo without overheating the engine, and win the three-track Championship with a song for every track.",
       "genre": "Racing",
+      "players": "1",
       "label": "carts/labels/moto-crosser.png",
       "png": "carts/moto-crosser.nova.png"
     },
@@ -60,6 +66,7 @@
       "author": "NOVA-16",
       "description": "A Mode 7 Grand Prix where the racers are the eight planets: eight tracks, each with its own hazards and its own song after Holst's The Planets, three rivals a race and a championship.",
       "genre": "Racing",
+      "players": "1",
       "label": "carts/labels/planet-racers.png",
       "png": "carts/planet-racers.nova.png"
     },
@@ -69,6 +76,7 @@
       "author": "NOVA-16",
       "description": "Race an AI model up the mountain. Pick one of seven models, collect electricity, GPU, CPU and RAM, and dodge protesters, red tape, high prices and legislation. Three stages: Base Camp, the Treeline and the Summit.",
       "genre": "Racing",
+      "players": "1",
       "label": "carts/labels/summit-rush.png",
       "png": "carts/summit-rush.nova.png"
     },
@@ -78,6 +86,7 @@
       "author": "NOVA-16",
       "description": "A space tower defense: hold back the alien swarm with five kinds of gun tower across 8 maps on 4 planets, 15 waves each with a Queen to finish, with stars, a hard mode and a song for every planet.",
       "genre": "Strategy",
+      "players": "1",
       "label": "carts/labels/alien-swarm.png",
       "png": "carts/alien-swarm.nova.png"
     },
@@ -87,6 +96,7 @@
       "author": "NOVA-16",
       "description": "Save the rehearsal room: take Dot, Zorp and Spike on a 10-week tour and raise $5,000. Each week play a concert, write songs or travel. Set the venue, price and ads, and keep each town fresh.",
       "genre": "Strategy",
+      "players": "1",
       "label": "carts/labels/rags-to-riches.png",
       "png": "carts/rags-to-riches.nova.png"
     },
@@ -96,6 +106,7 @@
       "author": "NOVA-16",
       "description": "M7 test: a six-channel song and sound effects. Open the Music and SFX tabs to see and edit them.",
       "genre": "Demo",
+      "players": null,
       "label": "carts/labels/chiptune.png",
       "png": null
     },
@@ -105,6 +116,7 @@
       "author": "NOVA-16",
       "description": "M1 boot test: move the box with the d-pad or left stick.",
       "genre": "Demo",
+      "players": null,
       "label": "carts/labels/hello.png",
       "png": null
     },
@@ -114,6 +126,7 @@
       "author": "NOVA-16",
       "description": "M4 test: per-scanline BG2 affine perspective floor with a sky gradient and a rotating horizon.",
       "genre": "Demo",
+      "players": null,
       "label": "carts/labels/mode7.png",
       "png": null
     },
@@ -123,6 +136,7 @@
       "author": "NOVA-16",
       "description": "M3 test: three background layers scrolling at different speeds, sub-palettes and tile priority.",
       "genre": "Demo",
+      "players": null,
       "label": "carts/labels/parallax.png",
       "png": null
     },
@@ -132,6 +146,7 @@
       "author": "NOVA-16",
       "description": "M2 test: animated sprites, sizes, flips, palettes, priorities and the per-line limit.",
       "genre": "Demo",
+      "players": null,
       "label": "carts/labels/sprites.png",
       "png": null
     },
@@ -141,6 +156,7 @@
       "author": "NOVA-16",
       "description": "M4 test: scanline() reflection with a per-line wobble and mid-frame palette swaps.",
       "genre": "Demo",
+      "players": null,
       "label": "carts/labels/water.png",
       "png": null
     }

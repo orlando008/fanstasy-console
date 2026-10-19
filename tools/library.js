@@ -3,9 +3,11 @@
 //   node tools/library.js
 //
 // Reads every carts/<name>.nova and writes carts/index.json (name, title,
-// author, description, genre, label image, PNG cart) and carts/labels/<name>.png
-// for each cart with a label. The genre is the Library's shelf: it is not part of
-// the cart, but comes from carts/src/<name>/meta.json (one of src/genres.js).
+// author, description, genre, players, label image, PNG cart) and carts/labels/<name>.png
+// for each cart with a label. The genre (the Library's shelf, one of src/genres.js)
+// and the players ("1", or a range such as "1-4": the badge on the cartridge; the
+// tech demos have none) are not part of the cart: they come from
+// carts/src/<name>/meta.json.
 // Carts are in the order of the shelves (src/genres.js), then released games
 // (carts with a .nova.png) before the rest, then by title.
 
@@ -13,7 +15,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readNova } from '../src/formats/nova-json.js';
-import { GENRE_IDS } from '../src/genres.js';
+import { GENRE_IDS, PLAYERS } from '../src/genres.js';
 
 const carts = fileURLToPath(new URL('../carts/', import.meta.url));
 const labels = join(carts, 'labels');
@@ -26,7 +28,7 @@ const entries = readdirSync(carts)
     const name = f.slice(0, -'.nova'.length);
     const cart = readNova(readFileSync(join(carts, f), 'utf8'));
     const metaFile = join(carts, 'src', name, 'meta.json');
-    const genre = existsSync(metaFile) ? JSON.parse(readFileSync(metaFile, 'utf8')).genre : undefined;
+    const { genre, players } = existsSync(metaFile) ? JSON.parse(readFileSync(metaFile, 'utf8')) : {};
     if (cart.label) writeFileSync(join(labels, `${name}.png`), Buffer.from(cart.label, 'base64'));
     return {
       name,
@@ -34,6 +36,7 @@ const entries = readdirSync(carts)
       author: cart.meta.author || '',
       description: cart.meta.description || '',
       genre: GENRE_IDS.includes(genre) ? genre : null,
+      players: PLAYERS.test(players || '') ? players : null,
       label: cart.label ? `carts/labels/${name}.png` : null,
       png: existsSync(join(carts, `${name}.nova.png`)) ? `carts/${name}.nova.png` : null,
     };

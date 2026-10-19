@@ -143,8 +143,9 @@ cart runs there is nothing on screen but the game.
     `carts/index.json` by `tools/library.js`; the Library shows a shelf for each genre, with the tech demos on a shelf of
     their own at the end.
   - **Check:** `tools/check.js` asks for a genre.
-- [ ] **Badges on each card**: players (1, 1 to 4), "gamepads recommended", new or updated.
-  - **What:** a `players` field in `meta.json` next to `genre`.
+- [x] **A players badge on each card** (1, 1 to 4). Done in [orlando008/fanstasy-console#45](https://github.com/orlando008/fanstasy-console/pull/45),
+  2026-10-19: a `players` field in `meta.json` next to `genre`; `1 PLAYER`, or `1–4 PLAYERS` in green.
+- [ ] **More badges on each card**: "gamepads recommended", new or updated.
 - [ ] **Recently played.**
   - **What:** a shelf at the front with the last few carts played; the Library opens on the last cart chosen.
 - [ ] **Your best in the Library.**

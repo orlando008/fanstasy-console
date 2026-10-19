@@ -6,7 +6,7 @@
 //   node tests/console/library.mjs
 import { readFileSync } from 'node:fs';
 import { playwright, serve, ROOT } from '../../tools/devkit/browser.mjs';
-import { GENRES } from '../../src/genres.js';
+import { GENRES, playersLabel } from '../../src/genres.js';
 
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
@@ -31,6 +31,17 @@ try {
   ok(manifest.length === 16 && !misplaced.length, 'every cart is on the shelf of its genre', misplaced.map((c) => c.name).join(', '));
   ok(manifest.every((c) => c.genre), 'and every cart in the manifest has a genre');
   ok(JSON.stringify(s.at(-1).carts) === '["open","new"]', 'Open file and New cart are on the last shelf');
+
+  // The players badge.
+  const badges = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.lib-card')].map((c) => [c.dataset.cart, c.querySelector('.lib-players')?.textContent || ''])));
+  const games = manifest.filter((c) => c.genre !== 'Demo');
+  ok(games.length === 10 && games.every((c) => c.players && badges[c.name] === playersLabel(c.players)), 'every game shows how many can play under its name', games.map((c) => `${c.name}: ${badges[c.name]}`).slice(0, 3).join(', '));
+  ok(badges['tricksy-towerz'] === '1\u20134 PLAYERS' && await page.locator('.lib-card[data-cart="tricksy-towerz"] .lib-players.multi').count() === 1, 'Tricksy Towerz: 1-4 PLAYERS, marked out as a game for several', badges['tricksy-towerz']);
+  ok(badges['ice-breakers'] === '1 PLAYER' && await page.locator('.lib-card[data-cart="ice-breakers"] .lib-players.multi').count() === 0, 'a game for one: 1 PLAYER, plain');
+  ok(manifest.filter((c) => c.genre === 'Demo').every((c) => !badges[c.name]) && !badges.open && !badges.new, 'the tech demos, Open file and New cart have no badge');
+  await page.locator('.lib-card[data-cart="tricksy-towerz"]').hover(); await page.waitForTimeout(100);
+  ok(/1\u20134 players/.test(await page.locator('.lib-detail-by').textContent()), 'the selected cart\'s detail says how many can play too', await page.locator('.lib-detail-by').textContent());
+  await page.locator('.lib-card').first().hover(); await page.mouse.move(5, 5); await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(100);
   ok(!s.some((x) => x.title === 'Your cart'), 'with no autosaved cart there is no Your cart shelf');
 
   // The arrows: down goes to the next shelf, in the same column where there is a cart there.
