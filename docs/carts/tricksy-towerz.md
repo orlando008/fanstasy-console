@@ -29,7 +29,7 @@ tower fall. **Only the stacking**: there are no items, power-ups, spells or othe
 
 ## 2. Core loop
 
-1. A piece appears above the tower (20 frames after the last one landed) and starts to fall.
+1. A piece appears 112 px above the tower (its centre, `SPAWN_ABOVE`; near the top of the view), 20 frames after the last one landed, and starts to fall: about 1.8 s to reach the tower, or a third of that with DOWN.
 2. The player slides and turns it, and may drop it faster.
 3. It lands (rests on the tower or the platform) and becomes a free body; the next piece comes.
 4. The tower's height (the top of everything held up by the platform) is counted all the time.
@@ -131,8 +131,8 @@ A yard's **height** is how far above the platform the highest point of any held-
 
 ### 5.5 The camera
 
-The view shows 208 px. The camera follows the tower: its bottom edge is at the platform's top + 20 px until the tower is higher than 118 px less than the view (in other words,
-the top is kept at least 90 px under the top of the view), then it rises, easing by 6 % of the difference each frame.
+The view shows 208 px. The camera follows the tower: its bottom edge is at the platform's top + 20 px until the tower is higher than 72 px less than that (in other words,
+the top is kept at least 136 px under the top of the view, `HEADROOM`, so a new piece appears inside the view), then it rises, easing by 6 % of the difference each frame. Measured over whole races: a new piece's top is always 7 px or more under the top of the view.
 
 ### 5.6 Tuning (Phase 2)
 
@@ -148,6 +148,7 @@ cannot be swept. What was found, in the order it was found:
 | The platform 6 blocks wide, not 5 | the best player lost 19 of 34 pieces on 5 and 3 of 21 on 6; on 7 almost nothing is lost, but then the 4 px of air each side is no longer a risk |
 | Blocks that meet only at a corner do not touch (`collide`: a clipped contact shorter than 0.05 px is dropped) | a piece on a row of blocks whose seams matched the platform's could not slide: it caught on the seams |
 | Fall speed 1 px per frame (was 0.7), the next piece 72 px above the tower (was 84) | a piece took 2 s to arrive; now 1.2 s, and a race of 20 or so pieces takes about the time of a song |
+| After release: the next piece 112 px above the tower, the camera keeping 136 px of sky above it (was 72 and 90) | the user's play: a piece appeared so close to the tower that there was no time to react (about 1 s to land); now about 1.8 s, and DOWN still drops it at 3 px a frame |
 | The line at 130 px (was 120): the best computer player takes 23 s | a little more than the first guess, so the hold is a real test |
 | No new pieces while the tower is over the line | pieces kept coming on a tower that was only trying to stand still, and knocked it down |
 | A lost piece costs 40 frames more | losing a piece should cost time as well as height |

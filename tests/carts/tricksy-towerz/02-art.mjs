@@ -83,10 +83,13 @@ const tileEmpty = (vm, t) => { for (let y = 0; y < 8; y++) for (let x = 0; x < 8
 // 3. The big letters and the winner.
 {
   const vm = newGame(2), p = vm.probe(); p.setup = [4, 1, 1, 1]; p.startRace(true); vm.run(10);
-  const gold = 14, dark = count(vm, gold, 96, 70, 160, 130);
-  ok(dark > 100, 'the count is a big 3, 2 or 1 in the middle of the screen', `${dark} px`);
-  vm.run(p.COUNT); ok(count(vm, gold, 96, 70, 160, 130) > 100, 'and GO! when the race begins');
-  vm.run(60); ok(count(vm, gold, 96, 70, 160, 130) < 20, 'which goes');
+  const gold = 14, dark = count(vm, gold, 96, 20, 160, 72);
+  ok(dark > 100, 'the count is a big 3, 2 or 1 high in the middle of the screen', `${dark} px`);
+  vm.run(p.COUNT); ok(count(vm, gold, 96, 20, 160, 72) > 100, 'and GO! when the race begins');
+  for (let i = 0; i < 40 && !p.yards[0].cur; i++) vm.step(0); // the first piece comes while GO! is still up
+  const first = p.yards[0].cur, sy = (wy) => 224 + wy - p.yards[0].cam; let top = 1e9; for (const v of first.v) for (let i = 1; i < 8; i += 2) top = Math.min(top, v[i]);
+  ok(sy(top) > 72, 'above the first piece, which is never hidden under it', `the piece's top at y ${sy(top).toFixed(0)}, ${p.raceT} frames after GO`);
+  vm.run(60); ok(count(vm, gold, 96, 20, 160, 72) < 20, 'which goes');
   p.finish(p.yards[1]); vm.run(30);
   ok(vm.ppu.oamCount === 4, 'the winner\'s wizard is drawn cheering (still one for each yard)');
 }

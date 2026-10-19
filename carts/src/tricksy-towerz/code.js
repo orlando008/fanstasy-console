@@ -259,7 +259,7 @@ const SKILLS = [
 
 const FALL = 1, DROP = 3, MOVE = 1.3, EDGE = 3;     // the steered piece: how fast it falls, with DOWN, and moves sideways (px per frame); a piece resting on less than EDGE px slips off its corner
 const FINISH = 130, HOLD = 120, WOBBLE = 0.25;             // the finish line (px above the platform) and the frames the tower has to stay over it
-const SPAWN_WAIT = 20, LOST_WAIT = 40, SPAWN_ABOVE = 72; // frames between a piece landing and the next one, the extra wait after losing a piece, and how far above the tower it appears
+const SPAWN_WAIT = 20, LOST_WAIT = 40, SPAWN_ABOVE = 112, HEADROOM = 136; // frames between a piece landing and the next one, the extra wait after losing a piece, how far above the tower it appears (its centre), and the sky the camera keeps above the tower (the piece appears inside the view, with time to steer)
 const COL_W = 64, VY = 16, VH = 208, HALF = 32; // a yard's column on the screen: width, top, height; half its width
 
 let skipTitle = false; // tests set this to land straight in the game
@@ -430,7 +430,7 @@ function updateYard(y) {
   y.hold = top <= -FINISH ? y.hold + 1 : 0;
   if (held === 0 && y.hold === 1) fx(SFX.cross); else if (held >= 30 && y.hold === 0) fx(SFX.crumble); // over the line; and the tower falls from it
   if (y.hold >= HOLD) y.done = true;
-  const want = Math.min(20, top + VH - 90);
+  const want = Math.min(20, top + VH - HEADROOM);
   y.cam += (want - y.cam) * 0.06;
 }
 
@@ -656,8 +656,8 @@ function draw() {
   else if (state === 'help') drawHelp();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  if (state === 'count' && !paused) bigText(String(Math.ceil(countT / 60)), 78, 6, GOLD);
-  if (state === 'play' && raceT < 45 && !paused) bigText('GO!', 78, 6, GOLD);
+  if (state === 'count' && !paused) bigText(String(Math.ceil(countT / 60)), 26, 6, GOLD); // high in the yards: clear of the first piece and the line
+  if (state === 'play' && raceT < 45 && !paused) bigText('GO!', 26, 6, GOLD);
   if (state === 'over') drawResults();
   if (paused) drawPause();
 }

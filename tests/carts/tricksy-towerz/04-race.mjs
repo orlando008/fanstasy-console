@@ -12,7 +12,7 @@ const drop = (y, q, shape, x, yy, a = 0) => { const b = q.mkBody(q.SHAPES[shape]
 // 1. The numbers of the spec.
 {
   const p = newGame(1).probe();
-  ok(p.FALL === 1 && p.DROP === 3 && p.MOVE === 1.3 && p.FINISH === 130 && p.HOLD === 120 && p.SPAWN_WAIT === 20 && p.LOST_WAIT === 40 && p.SPAWN_ABOVE === 72 && p.EDGE === 3 && p.WOBBLE === 0.25, 'the speeds, the line and the waits are the ones of the spec (5.2 and 5.4)');
+  ok(p.FALL === 1 && p.DROP === 3 && p.MOVE === 1.3 && p.FINISH === 130 && p.HOLD === 120 && p.SPAWN_WAIT === 20 && p.LOST_WAIT === 40 && p.SPAWN_ABOVE === 112 && p.EDGE === 3 && p.WOBBLE === 0.25, 'the speeds, the line and the waits are the ones of the spec (5.2 and 5.4)');
   ok(p.SKILLS.map((s) => s.name).join() === 'EASY,NORMAL,HARD,WIZARD' && p.SKILLS.every((s, i) => i === 0 || (s.aim < p.SKILLS[i - 1].aim && s.slip <= p.SKILLS[i - 1].slip && s.think < p.SKILLS[i - 1].think)), 'the four levels of computer wizard are each more exact, quicker to think and less given to slips than the last');
   ok(p.SKILLS.map((s) => s.fast).join() === '0,0,1,1', 'only the two best drop their pieces fast');
 }
@@ -82,11 +82,26 @@ const drop = (y, q, shape, x, yy, a = 0) => { const b = q.mkBody(q.SHAPES[shape]
   ok(y2.wait === q2.SPAWN_WAIT || y2.wait === q2.SPAWN_WAIT - 1 || y2.wait < q2.SPAWN_WAIT, 'a piece that lands is followed by one after 20 frames');
 }
 
+// 4b. A new piece appears high, with time to steer it, and always inside the view (the camera keeps HEADROOM px of sky over the tower).
+{
+  const [v, q] = yardGame(2); const p = v.probe(); p.setup = [3, 3, 1, 0]; p.startRace(false);
+  const seen = new Set(); let worst = 1e9, n = 0;
+  for (let f = 0; f < 1500 && p.state === 'play'; f++) {
+    v.step(0);
+    for (const y of p.yards) if (y.cur && !seen.has(y.cur.id)) {
+      seen.add(y.cur.id); n++;
+      let top = 1e9; for (const b of y.cur.v) for (let i = 1; i < 8; i += 2) top = Math.min(top, b[i]);
+      worst = Math.min(worst, 224 + top - y.cam - q.VY);
+    }
+  }
+  ok(n > 30 && worst >= 2, 'every new piece appears inside its yard\'s view, all the way up the towers', `${n} pieces, the closest ${worst.toFixed(1)} px under the top`);
+}
+
 // 5. The line: no new pieces while the tower is over it, and the next piece is shown.
 {
-  const [v, q, y] = yardGame(1); y.cur = null; y.wait = 0;
+  const [v, q, y] = yardGame(1); y.cur = null; y.wait = 9999; // no piece while the squares settle
   for (let i = 0; i < 9; i++) drop(y, q, 1, 0, -8 - 16 * i - i * 0.02); // 9 squares: 144 px
-  v.run(40);
+  v.run(35); y.wait = 0; v.run(5);
   ok(y.hold > 0 && y.hold < q.HOLD && !y.cur, 'while the tower is over the line no new piece comes, though the wait is over', `hold ${y.hold}`);
   y.W.bodies.splice(5, 4); y.wait = 0; v.run(5);
   ok(y.hold === 0, 'losing the top of the tower puts it back under the line'); v.run(2);
