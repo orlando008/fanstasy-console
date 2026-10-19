@@ -11,6 +11,7 @@ import { readNova, writeNova } from './formats/nova-json.js';
 import { Input } from './input.js';
 import { Library } from './library.js';
 import { Machine } from './machine.js';
+import { PauseMenu } from './pause-menu.js';
 import { CLIP_MAX_SECONDS, ClipRecorder } from './record/clip.js';
 import { InputLog } from './record/replay.js';
 import { loadAutosave, loadSave, storeAutosave, storeSave } from './storage.js';
@@ -75,6 +76,7 @@ const app = {
   saveKey: '',
   mode: 'run',
   current: null, // what the Library knows the working cart as: a cart name, 'mine', or null
+  fromEditor: false, // the game was started from the editor (Esc goes back to it) rather than from the Library or a link
 
   /** Called by the editors after any change to the working cart. */
   changed(kind) {
@@ -88,12 +90,27 @@ const app = {
 
   /** Esc from Edit: resume the game, or restart it if the cart changed. */
   run() {
+    if (this.mode === 'edit') this.fromEditor = true;
     setMode('run');
     if (!machine.running || this.revision !== this.launchedRevision) this.launch();
     else resumeGame();
   },
 
-  /** Esc from Run: pause and show the editor, at the error line if there is one. */
+  /**
+   * Esc in Run: the pause menu for a player; straight back to the code for someone working on the cart in the
+   * editor, or after the cart stopped with an error (SPEC 11.2).
+   */
+  escape() {
+    if (this.hasError || this.fromEditor) this.edit();
+    else menu.open();
+  },
+
+  /** A key in Run mode while the pause menu is open: the menu takes it. Returns true if it did. */
+  menuKey(e) {
+    return menu.onKey(e);
+  },
+
+  /** Pause and show the editor, at the error line if there is one. */
   edit() {
     pauseGame();
     setMode('edit');
@@ -364,10 +381,14 @@ const library = new Library(document.getElementById('library'), {
       notify(String(e.message || e));
     }
   },
-  resume: () => app.run(),
+  resume() {
+    // the address names the cart again, as it did when it was first played, so the browser's Back returns here
+    if (app.current && app.current !== 'mine' && !location.search) history.pushState(null, '', `?cart=${app.current}`);
+    app.run();
+  },
   openFile: () => app.open(),
   newCart: () => app.newCart(),
-  back: () => app.library(),
+  menu: () => { if (app.mode === 'run' && machine.running) menu.open(); }, // Select + Start held in Run
   mine() {
     const saved = loadAutosave();
     if (!saved) return null;
@@ -381,6 +402,33 @@ const library = new Library(document.getElementById('library'), {
   mode: () => app.mode,
 });
 
+const menu = new PauseMenu(screenEl, {
+  pause() { pauseGame(); input.enabled = false; input.clear(); },
+  resume() {
+    if (app.mode !== 'run' || menu.isOpen) return;
+    input.enabled = true;
+    resumeGame();
+    machine.canvas?.focus();
+  },
+  restart: () => app.restart(),
+  library: () => app.library(),
+  editor: () => app.edit(),
+  volume: (dir) => apu.stepLevel(dir),
+  mute: () => apu.toggleMute(),
+  level: () => apu.level,
+  title: () => app.cart.meta.title,
+});
+
+/** The first time a player starts a cart in this browser, say how to get to the menu and back to the Library. */
+const HINT_KEY = 'nova16.hint.menu';
+function menuHint() {
+  try {
+    if (localStorage.getItem(HINT_KEY)) return;
+    localStorage.setItem(HINT_KEY, '1');
+  } catch { return; } // storage blocked: no hint rather than one every time
+  flashStatus('Esc: menu  ·  Backspace: Library  (on a gamepad, hold Select + Start)', 5000);
+}
+
 /**
  * Make a cart the working cart. autosave says whether it should replace the
  * autosaved cart right away; a demo opened by URL only does once edited.
@@ -390,6 +438,7 @@ const library = new Library(document.getElementById('library'), {
 function loadCart(cart, { fileName = '', handle = null, autosave = false, current = null } = {}) {
   if (app.mode === 'library') setMode('run');
   app.current = current;
+  app.fromEditor = false;
   app.cart = cart;
   app.fileHandle = handle;
   app.fileName = fileName;
@@ -398,7 +447,7 @@ function loadCart(cart, { fileName = '', handle = null, autosave = false, curren
   app.autosaveDue = autosave;
   shell.setCart(cart, fileName);
   updateDocumentTitle();
-  if (app.mode === 'run') app.launch();
+  if (app.mode === 'run') { app.launch(); if (current) menuHint(); }
   else pauseGame();
 }
 
@@ -413,6 +462,7 @@ function resumeGame() {
 }
 
 function setMode(mode) {
+  menu.close(false); // a mode change (restart, the Library, the editor) closes the pause menu
   app.mode = mode;
   shell.setMode(mode);
   if (mode !== 'library') library.hide();
@@ -447,13 +497,13 @@ function notify(text) {
   }
 }
 
-/** Show a short message over the game for two seconds. */
+/** Show a short message over the game for two seconds (or ms). */
 let flashTimer = 0;
-function flashStatus(text) {
+function flashStatus(text, ms = 2000) {
   statusEl.textContent = text;
   statusEl.hidden = false;
   clearTimeout(flashTimer);
-  flashTimer = setTimeout(hideStatus, 2000);
+  flashTimer = setTimeout(hideStatus, ms);
 }
 
 /** Show what is recording in the corner of the game screen. */

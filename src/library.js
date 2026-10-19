@@ -7,14 +7,14 @@ import { h } from './ui/dom.js';
 
 const MANIFEST = 'carts/index.json';
 const REPEAT_DELAY = 18, REPEAT_RATE = 6; // gamepad d-pad auto-repeat, in frames
-const HOLD_FRAMES = 50; // Select + Start held this long in Run mode returns here
+const HOLD_FRAMES = 50; // Select + Start held this long in Run mode opens the pause menu
 const DEADZONE = 0.5;
 
 export class Library {
   /**
    * @param {HTMLElement} root container for the Library view
    * @param {object} hooks play(entry), resume(), openFile(), newCart(),
-   *   back() (from Run), mine() (the autosaved cart or null),
+   *   menu() (the pause menu, from Run), mine() (the autosaved cart or null),
    *   current() (the name of the loaded cart, 'mine', or null), mode() (the shell mode)
    */
   constructor(root, hooks) {
@@ -186,10 +186,10 @@ export class Library {
 
   pollPads() {
     const mask = this.padButtons(), p = this.pad;
-    // In Run mode, Select + Start held together comes back to the Library.
+    // In Run mode, Select + Start held together opens the pause menu (which has the way back here).
     if (this.hooks.mode() === 'run') {
       p.hold = (mask & 96) === 96 ? p.hold + 1 : 0;
-      if (p.hold === HOLD_FRAMES) this.hooks.back();
+      if (p.hold === HOLD_FRAMES) this.hooks.menu();
       p.held = mask;
       return;
     }

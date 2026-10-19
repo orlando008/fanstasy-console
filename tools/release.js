@@ -54,7 +54,9 @@ try {
   for (const k of keys) { const [key, ms] = k.split(':'); await page.keyboard.press(key); await page.waitForTimeout(Number(ms || 300)); }
   await page.waitForTimeout(wait);
   if (!keep) { await page.keyboard.press('F7'); await page.waitForTimeout(500); }
-  await page.keyboard.press('Escape'); // to the editor
+  await page.keyboard.press('Escape'); // a game opened from a link: Esc opens the pause menu, whose last item is the editor
+  await page.waitForTimeout(300);
+  if (await page.locator('.pause-menu').isVisible()) await page.locator('[data-item=editor]').click();
   await page.waitForTimeout(400);
   await page.getByRole('button', { name: 'Cart', exact: true }).click().catch(async () => { await page.getByText('Cart', { exact: true }).first().click(); });
   await page.waitForTimeout(400);

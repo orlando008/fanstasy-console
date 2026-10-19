@@ -77,8 +77,8 @@ Shell shortcuts:
 
 | Key | Action |
 |---|---|
-| Backspace | Back to the Library from a running cart; choosing the same cart there resumes it |
-| Esc | Switch between the game and the editor. Leaving the editor resumes the game, or restarts it if the cart changed. After an error, Esc opens the code at the failing line. |
+| Esc | The pause menu over a running game: Resume, Restart, Controls, Volume, Library, Code editor (a gamepad: hold Select + Start; the mouse: the Menu button in the top left corner). In the editor, Esc runs the game (resuming it, or restarting it if the cart changed), and for a game started from the editor Esc goes straight back to the code. After an error, Esc opens the code at the failing line. |
+| Backspace | Back to the Library from a running cart (also the Library button in the top left corner, or the browser's Back); choosing the same cart there resumes it |
 | Ctrl+R | Restart the cart with the current code |
 | Ctrl+S / Ctrl+Shift+S | Save / save as `.nova` |
 | Ctrl+O | Open a `.nova` file or a `.nova.png` PNG cart |

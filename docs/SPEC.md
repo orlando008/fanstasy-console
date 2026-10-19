@@ -431,7 +431,7 @@ Cart code runs in a dedicated worker with no DOM, no cookies and no `localStorag
 
 ## 11. Built-in tools
 
-The shell has two modes. **Run** shows the game full-screen. **Edit** shows the tabs below. Esc toggles between them, and Ctrl+R restarts the cart. In Run mode the player has a volume control of their own: `-` and `=` (or `+`) step it down and up in tenths, `M` mutes and restores it, and the level is remembered in the browser. It is a square-law gain after the whole APU (so every game is covered with no cart code), separate from the cart's `volume(v)`; clip recordings are taken before it. It does nothing in the editor.
+The shell has two modes. **Run** shows the game full-screen. **Edit** shows the tabs below. In Edit, Esc runs the game; in Run, Esc opens the pause menu (11.2), except for a game started from the editor or one stopped by an error, where it goes straight back to the code. Ctrl+R restarts the cart. In Run mode the player has a volume control of their own: `-` and `=` (or `+`) step it down and up in tenths, `M` mutes and restores it, and the level is remembered in the browser. It is a square-law gain after the whole APU (so every game is covered with no cart code), separate from the cart's `volume(v)`; clip recordings are taken before it. It does nothing in the editor.
 
 | Tab | Features |
 |---|---|
@@ -453,8 +453,10 @@ built in HTML like the editor, not inside the console.
 
 - **When it shows.** Opening the page without `?cart=` shows the Library;
   `?cart=<name>` still boots that cart straight away. Backspace in Run mode,
-  holding a gamepad's Select and Start together for about a second, or the
-  Library button in the editor's bar returns to it, pausing the game.
+  the Library item of the pause menu (11.2, which holding a gamepad's Select and
+  Start together for about a second opens), the Library button in the corner of
+  the play screen or in the editor's bar, or the browser's Back button returns to
+  it, pausing the game.
 - **The shelf.** Each cart is drawn as a cartridge, the same picture a
   `.nova.png` export makes: its label, title and author, or a NO LABEL plate.
   The selected cart's description shows below the shelf. The first slot is
@@ -478,6 +480,27 @@ built in HTML like the editor, not inside the console.
   both from the `.nova` files in `carts/`: released games (carts with a
   `.nova.png`) first, then the rest, each by title.
 
+### 11.2 Pause menu
+
+The console's own menu over a running game (`src/pause-menu.js`), for players: no cart code is involved, and a cart's
+own pause menu (on its START) is separate.
+
+- **Opening it.** Esc in Run mode; holding a gamepad's Select and Start together for about a second; or the **Menu**
+  button that shows with a **Library** button in the top left corner while the mouse moves over the play screen (they
+  fade after a couple of seconds). For a game started from the editor, or one stopped by an error, Esc goes to the
+  code instead, so working on a cart keeps its one-key toggle; the menu is then on Select + Start and the corner button.
+  The first time a player starts a cart in a browser, a line under the screen says how to reach the menu and the
+  Library.
+- **While it is open** the game and its sound are paused, and no key or gamepad button reaches the cart.
+- **Items.** **Resume**; **Restart**; **Controls** (the keyboard key of each console button, and the console's own
+  keys); **Volume** (left and right step the player's volume, choosing it mutes; with the mouse, the left and right
+  thirds of the row turn it down and up); **Library**; **Code editor**.
+- **Controls.** Arrows or the d-pad move, Enter, Space, X or a gamepad's A choose, Esc, Z, or a gamepad's B or Start
+  resume, Backspace goes to the Library; `-`, `=` and `M` still set the volume. The mouse picks and clicks; a click
+  outside the panel resumes. The menu opens on Resume, and a mouse resting where it opens does not move the selection.
+- **Resuming with a gamepad.** When a gamepad button closes the menu, the game goes on only once every button is let
+  go, so the cart never sees the press that closed it.
+
 ## 12. Repository layout
 
 ```
@@ -488,6 +511,7 @@ built in HTML like the editor, not inside the console.
 ├── src/
 │   ├── main.js             # Boot and wiring: machine, shell, library, files, autosave
 │   ├── library.js          # The Library: the home page's shelf of carts (11.1)
+│   ├── pause-menu.js       # The pause menu over a running game, and the corner buttons (11.2)
 │   ├── machine.js          # Console worker lifecycle and 60 Hz frame clock
 │   ├── files.js            # .nova save/open (File System Access API, download fallback)
 │   ├── input.js            # Keyboard and gamepad sampling
@@ -534,7 +558,7 @@ built in HTML like the editor, not inside the console.
 ├── carts/                  # Demo and game carts (.nova, .nova.png), index.json and labels/ for the Library
 │   └── src/<name>/         # A cart's source: code.js, meta.json, tiles.txt, palette.txt, map.txt, audio.json (made
 │                           #   by audio.py where there is one; tiles.txt, palette.txt, map.txt, art.json by art.py), label.png
-├── tests/console/          # Checks of the console itself (node tests/console/volume.mjs in headless Chromium; node tests/console/song-end.mjs)
+├── tests/console/          # Checks of the console itself (node tests/console/volume.mjs and menu.mjs in headless Chromium; node tests/console/song-end.mjs)
 ├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs: 01-flow, 02-art ...), its lib.mjs and its bot.mjs for the sweep tool
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/
