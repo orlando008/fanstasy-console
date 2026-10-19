@@ -6,8 +6,8 @@
 //
 // Errors (exit code 1): a .nova.png that does not hold exactly the packed cart (decoded here, no browser), code over 64 KB, a syntax error, audio over its limits, an instrument whose wave does
 // not suit the channel it is on in a song, a note out of range, an SFX that mixes voices, or a PNG cart that
-// would not fit, a source meta.json without a genre the Library knows (src/genres.js) or one carts/index.json does not
-// match (node tools/library.js). Warnings: code over 90% of the limit, a built .nova that is not what its source packs to, an SFX
+// would not fit, a source meta.json without a genre the Library knows (src/genres.js), or a game's without a players
+// value ("1", "1-4"), or ones carts/index.json does not match (node tools/library.js). Warnings: code over 90% of the limit, a built .nova that is not what its source packs to, an SFX
 // that would sound wrong through the cart's SFX_CH (unless the code routes them: a table named SFX_VOICE_CH, or a comment "sfx-voice-routed"), a description that still says "work in progress", no label, a spec that is missing, has no Version/Status header, still has TODOs in a released cart, or states a code size more than 2 KB off.
 // Numbers worth knowing are printed for every cart (code size, tiles, sprites per scanline are a run-time limit:
 // see docs/dev/playbook.md for the harness check).
@@ -22,7 +22,7 @@ import { CHANNEL_VOICES, INSTRUMENTS, NOTE_COUNT, PATTERNS, SAMPLE_RAM, SAMPLE_S
 import { CODE_LIMIT, SHEET_W, codeBytes } from '../src/formats/cart.js';
 import { readNova } from '../src/formats/nova-json.js';
 import { MAX_PAYLOAD, cartPayload } from '../src/formats/nova-png.js';
-import { GENRE_IDS } from '../src/genres.js';
+import { GENRE_IDS, PLAYERS } from '../src/genres.js';
 import { readPngCart } from './devkit/pngcart.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -126,10 +126,15 @@ async function checkCart(arg) {
   // The Library's shelf: a genre in the source meta.json (not part of the cart), and the manifest up to date with it.
   const metaFile = join(ROOT, 'carts', 'src', name, 'meta.json');
   if (existsSync(metaFile)) {
-    const genre = JSON.parse(readFileSync(metaFile, 'utf8')).genre;
+    const { genre, players } = JSON.parse(readFileSync(metaFile, 'utf8'));
     if (!GENRE_IDS.includes(genre)) err(`carts/src/${name}/meta.json needs a "genre", one of ${GENRE_IDS.join(', ')} (the Library's shelves, src/genres.js)${genre ? `, not "${genre}"` : ''}`);
     const listed = JSON.parse(readFileSync(join(ROOT, 'carts', 'index.json'), 'utf8')).carts.find((c) => c.name === name);
     if (listed && listed.genre !== (GENRE_IDS.includes(genre) ? genre : null)) err(`carts/index.json has the genre ${listed.genre} for ${name}, meta.json ${genre}: run node tools/library.js`);
+    // How many can play: the badge on the cartridge. Every game has one; a tech demo may go without.
+    const m = PLAYERS.exec(players || '');
+    if (players != null && (!m || (m[2] && Number(m[2]) < Number(m[1])))) err(`carts/src/${name}/meta.json: "players" is "1", or a range such as "1-4" (at most 4), not "${players}"`);
+    else if (players == null && genre !== 'Demo') err(`carts/src/${name}/meta.json needs "players": "1", or a range such as "1-4" (the badge on its cartridge in the Library)`);
+    if (listed && (listed.players ?? null) !== (m ? players : null)) err(`carts/index.json has players ${listed.players} for ${name}, meta.json ${players}: run node tools/library.js`);
   }
   // The spec: present, with a header, no TODOs once released, and a code budget that matches the code.
   const specFile = join(ROOT, 'docs', 'carts', `${name}.md`), released = existsSync(join(ROOT, 'carts', `${name}.nova.png`));

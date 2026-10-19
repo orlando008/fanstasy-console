@@ -463,7 +463,10 @@ built in HTML like the editor, not inside the console.
   on a shelf for each genre, each with its heading, in the order of
   `src/genres.js`: Arcade, Puzzle, Racing, Strategy, then **Tech demos** (the
   console's test carts) last; a cart of no known genre goes on **More carts**,
-  before the tech demos. First comes **Your cart**, the autosaved working cart,
+  before the tech demos. Under each cartridge's name a badge says how many can
+  play (`1 PLAYER`, or `1–4 PLAYERS` marked out in green for a game for several;
+  the tech demos have none), and the detail below says it too. First comes
+  **Your cart**, the autosaved working cart,
   when there is one; **Open file** and **New cart** are on the last shelf, Make
   a cart. Dropping a `.nova` or `.nova.png` onto the page still loads and runs
   it.
@@ -478,14 +481,16 @@ built in HTML like the editor, not inside the console.
   confirmed first, as when opening a file.
 - **The manifest.** The page is static and can't list a folder, so the shelf
   comes from `carts/index.json`: each cart's file name, title, author,
-  description, genre and label image, and its `.nova.png` if one exists. Labels are
+  description, genre, players and label image, and its `.nova.png` if one exists. Labels are
   copied out of the carts into `carts/labels/<name>.png`, so the shelf loads a
   few small images rather than every cart. `node tools/library.js` regenerates
   both from the `.nova` files in `carts/`, in the order of the shelves, released
   games (carts with a `.nova.png`) first on each, then by title. The genre is
   not part of the cart (a `.nova` keeps only title, author and description): it
   is the `genre` in the cart's source `carts/src/<name>/meta.json`, one of
-  `src/genres.js`, and `tools/check.js` insists on it.
+  `src/genres.js`, and `tools/check.js` insists on it. So is `players`: `"1"`, or a
+  range such as `"1-4"` (at most four, the console's pads), which every game must
+  have and a tech demo may leave out.
 
 ### 11.2 Pause menu
 
