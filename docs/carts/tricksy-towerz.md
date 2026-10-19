@@ -29,7 +29,7 @@ tower fall. **Only the stacking**: there are no items, power-ups, spells or othe
 
 ## 2. Core loop
 
-1. A piece appears above the tower (20 frames after the last one landed) and starts to fall.
+1. A piece appears 112 px above the tower (its centre, `SPAWN_ABOVE`; near the top of the view), 20 frames after the last one landed, and starts to fall: about 1.8 s to reach the tower, or a third of that with DOWN.
 2. The player slides and turns it, and may drop it faster.
 3. It lands (rests on the tower or the platform) and becomes a free body; the next piece comes.
 4. The tower's height (the top of everything held up by the platform) is counted all the time.
@@ -131,8 +131,8 @@ A yard's **height** is how far above the platform the highest point of any held-
 
 ### 5.5 The camera
 
-The view shows 208 px. The camera follows the tower: its bottom edge is at the platform's top + 20 px until the tower is higher than 118 px less than the view (in other words,
-the top is kept at least 90 px under the top of the view), then it rises, easing by 6 % of the difference each frame.
+The view shows 208 px. The camera follows the tower: its bottom edge is at the platform's top + 20 px until the tower is higher than 72 px less than that (in other words,
+the top is kept at least 136 px under the top of the view, `HEADROOM`, so a new piece appears inside the view), then it rises, easing by 6 % of the difference each frame. Measured over whole races: a new piece's top is always 7 px or more under the top of the view.
 
 ### 5.6 Tuning (Phase 2)
 
@@ -148,6 +148,7 @@ cannot be swept. What was found, in the order it was found:
 | The platform 6 blocks wide, not 5 | the best player lost 19 of 34 pieces on 5 and 3 of 21 on 6; on 7 almost nothing is lost, but then the 4 px of air each side is no longer a risk |
 | Blocks that meet only at a corner do not touch (`collide`: a clipped contact shorter than 0.05 px is dropped) | a piece on a row of blocks whose seams matched the platform's could not slide: it caught on the seams |
 | Fall speed 1 px per frame (was 0.7), the next piece 72 px above the tower (was 84) | a piece took 2 s to arrive; now 1.2 s, and a race of 20 or so pieces takes about the time of a song |
+| After release: the next piece 112 px above the tower, the camera keeping 136 px of sky above it (was 72 and 90) | the user's play: a piece appeared so close to the tower that there was no time to react (about 1 s to land); now about 1.8 s, and DOWN still drops it at 3 px a frame |
 | The line at 130 px (was 120): the best computer player takes 23 s | a little more than the first guess, so the hold is a real test |
 | No new pieces while the tower is over the line | pieces kept coming on a tower that was only trying to stand still, and knocked it down |
 | A lost piece costs 40 frames more | losing a piece should cost time as well as height |
@@ -160,6 +161,17 @@ The result, at the numbers of this document: 24 races of each level alone (the r
 | NORMAL | 24 of 24 | 42 s | 26 to 123 s | 27 | 10 |
 | HARD | 24 of 24 | 32 s | 22 to 60 s | 27 | 9 |
 | WIZARD | 24 of 24 | 22 s | 16 to 103 s | 24 | 6 |
+
+**After the pieces were raised** (112 px above the tower, the camera keeping 136 px of sky: 5.2, 5.5), the same 24 races of each level alone (`node tools/devkit/sweep.mjs tricksy-towerz --seeds 24 --frames 9000 --set skill=0,1,2,3 -v`; placed and lost are medians):
+
+| Level | Finished | Median | Fastest to slowest | Placed | Lost |
+|---|---|---|---|---|---|
+| EASY | 21 of 24 | 79 s | 44 to 146 s | 31 | 15 |
+| NORMAL | 23 of 24 | 57 s | 39 to 134 s | 24 | 6 |
+| HARD | 24 of 24 | 37 s | 28 to 137 s | 24 | 6 |
+| WIZARD | 24 of 24 | 31 s | 20 to 68 s | 23 | 4 |
+
+Each piece takes about 0.7 s longer to arrive, so the levels that never use the fast drop (EASY, NORMAL) are slowed most; the ladder is unchanged and a race of four HARD wizards takes a median of 29 s (23 to 47 s, 24 races; won by places 1 to 4 6, 8, 4 and 6 times), against 25 s before.
 
 (An earlier run of 12 seeds said EASY 8 of 12 and 101 s; the spread between seeds is large, which is the nature of a tower: one in a dozen collapses near the top and starts again.) A person has the landing guide the computer does not, and can use the fast drop; the target for
 a good person is 30 to 60 seconds, so a person as good as the WIZARD wins and a beginner has a table to climb.
@@ -448,12 +460,20 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
      tense song with a falling lament bass; the finish a fanfare that resolves, then a soft victory loop under the screens after a race (the song loops back past the fanfare). *The art* (`art.py`, sections 4, 6 and 12): the
      yards are the night itself in a lighter palette (the separate backdrop picture is gone), the night has clouds, a halo round the moon, pines and twinkling stars and flickering windows (palette changes, `twinkle`), the
      blocks a bevel and a glint, the platform carved stones, a floating rock with moss and crystals (`drawRock`), the panels a night indigo with a light inner line instead of the default brown and grey, the wizards redrawn
-     (hat light, cheeks, moustache, belt), the wizards on the results and initials panels (`blit`), a plate under the title's menu and outlined big letters. `02-art.mjs` (45 checks) and `07-audio.mjs` (40) follow; a check of
+     (hat light, cheeks, moustache, belt), the wizards on the results and initials panels (`blit`), a plate under the title's menu and outlined big letters. `02-art.mjs` (45 checks) and `07-audio.mjs` (39) follow; a check of
      `06-flow.mjs` counts the blocks' white glints apart from the guide's outline.
-   - **Results:** `node tools/verify.js tricksy-towerz` passes (274 test checks), the soak is clean, the smoke test in the real console reports no errors (60 fps), `loud.mjs --check` passes (leads 0.051 to 0.057 RMS, 0.63 to
+   - **Results:** `node tools/verify.js tricksy-towerz` passes (273 test checks), the soak is clean, the smoke test in the real console reports no errors (60 fps), `loud.mjs --check` passes (leads 0.051 to 0.057 RMS, 0.63 to
      0.66 of the mix) and `clash.py` finds nothing. The frame time with four people and four guides is a 99th percentile of 4.2 ms (2.8 before: the bevel is two more lines a block). Code 49,771 of 65,536 bytes; tiles 715 of 1,023;
      19 of 64 patterns. The rules, the physics and the computer wizards did not change, so the balance of 5.6 stands. The release was made again with the same label (`node tools/release.js tricksy-towerz --keep-label`).
    - **Not done:** nobody has heard the new songs or seen the new pictures on a screen but as measurements and PNGs; the tunes and colours are a matter for your ears and eyes, and each is a line of text in `audio.py` or `art.py`.
+
+9. **Pieces higher** (after the polish pass, from the user's play: a piece appeared so close to the tower that there was no time to react).
+
+   - **Built:** `SPAWN_ABOVE` 72 to 112 px and the camera's `HEADROOM` 90 to 136 px (5.2, 5.5): a piece takes about 1.8 s to reach the tower instead of about 1 s, and appears inside the view. The big count and GO! moved
+     up to the top of the yards (y 26), as GO! now covered the first piece. New checks: every new piece inside the view over whole races (`04-race.mjs`), GO! above the first piece (`02-art.mjs`); the check that no piece
+     comes over the line now holds the spawn until the tower is there (a piece from higher up was still falling).
+   - **Results:** `node tools/verify.js tricksy-towerz` passes (275 test checks, among them `08-balance.mjs`'s guard rails), the soak is clean; the sweeps of 5.6 (above): every level slower (WIZARD 22 to 31 s, EASY 69 to 79 s), the
+     ladder kept, no place favoured. Over whole races a new piece's top was never closer than 7 px to the top of the view.
 
 ## 16. Open questions
 
