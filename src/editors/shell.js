@@ -117,6 +117,10 @@ export class Shell {
       }
       return;
     }
+    if (this.mode === 'run' && this.app.menuKey(e)) { // the pause menu is open: it has the keys
+      e.stopPropagation();
+      return;
+    }
     if (this.mode === 'run' && e.key === 'Backspace' && !mod) {
       e.preventDefault();
       this.app.library();
@@ -138,7 +142,7 @@ export class Shell {
         return;
       }
       e.stopPropagation();
-      if (this.mode === 'run') this.app.edit();
+      if (this.mode === 'run') this.app.escape(); // the pause menu, or the editor when working on the cart there
       else this.app.run();
     } else if (mod && key === 'r') {
       e.preventDefault();
