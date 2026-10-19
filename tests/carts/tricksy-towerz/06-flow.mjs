@@ -47,7 +47,8 @@ const title = (seed = 1, save = null) => { const vm = newGame(seed, { title: tru
   ok(p.yards.map((y) => y.assist).join() === 'false,true,false,true', 'the race gives each person their own setting', p.yards.map((y) => y.assist).join());
   const white = (i) => count(vm, p.ART.colors.shine, i * 64 + 2, 100, i * 64 + 62, 215);
   const n = [0, 1, 2, 3].map(white);
-  ok(n[1] > 20 && n[0] < 4 && n[2] < 4 && n[3] < 4, 'only that person\'s yard has the white outline on the screen', n.join());
+  const glints = p.yards.map((y) => 4 * (y.W.bodies.length + (y.cur ? 1 : 0))); // each block has a white glint of one pixel
+  ok(n[1] > glints[1] + 20 && [0, 2, 3].every((i) => n[i] <= glints[i]), 'only that person\'s yard has the white outline on the screen (the others only their blocks\' glints)', `${n.join()} (glints ${glints.join()})`);
   ok(p.yards[0].cur && p.yards[0].guide === null, 'and it is not even worked out for a yard without one (no cost)');
 }
 

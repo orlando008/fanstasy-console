@@ -341,7 +341,11 @@ export class Engine {
       if (++m.row >= PATTERN_ROWS) {
         m.row = 0;
         if (++m.pos >= song.order.length) {
-          if (song.loop == null) { this.song = null; return; }
+          if (song.loop == null) { // a song that plays once: its last notes ring out through their release, then stop
+            this.song = null;
+            for (const c of this.channels) c.music.release();
+            return;
+          }
           m.pos = Math.min(song.loop, song.order.length - 1);
         }
       }

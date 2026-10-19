@@ -18,6 +18,8 @@ jobs:
         with: { node-version: 20 }
       # Limits and the mistakes in docs/dev/playbook.md
       - run: node tools/check.js --all
+      # The console's synth: a song that plays once falls silent at its end
+      - run: node tests/console/song-end.mjs
       # The art kit: drawing, palettes, tile sharing, scenes, sprites, the files it writes and the viewers
       - run: python3 tools/devkit/art/selftest.py
       # The starter: scaffolds a throwaway cart, packs, checks and tests it, and deletes it

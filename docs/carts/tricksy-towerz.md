@@ -1,7 +1,7 @@
 # Tricksy Towerz: Cart Specification
 
 **Version:** 1.0 (released)
-**Status:** Released: all 7 steps are built. The cart is `carts/tricksy-towerz.nova` and the PNG cartridge `carts/tricksy-towerz.nova.png`, with a label, a Library entry and a README row. Open decisions are in section 16.
+**Status:** Released: all 7 steps are built, and a polish pass of the art and the music (step 8). The cart is `carts/tricksy-towerz.nova` and the PNG cartridge `carts/tricksy-towerz.nova.png`, with a label, a Library entry and a README row. Open decisions are in section 16.
 **Cart source:** `carts/src/tricksy-towerz/` → `carts/tricksy-towerz.nova`
 
 A physics tower-building race for **one to four wizards at a time**. Falling pieces of blocks (the seven tetrominoes) are steered and turned,
@@ -56,14 +56,14 @@ tower fall. **Only the stacking**: there are no items, power-ups, spells or othe
 |---|---|
 | y 0 to 15 | The HUD row of each column: the **wizard** of the yard (a 16 px sprite: the hat says whose it is), the height in px (white for a person, cyan for a computer wizard, gold over the line) and the **next piece** drawn small (3 px squares) at the right |
 | y 16 to 223 | The yard (208 px): its backdrop (BG1), the finish line (a chequered band, red under it and gold over it) with a bar under the top edge that fills as the 120 frames pass, the platform and the rock it stands on, the blocks, the **landing guide** (a white outline), `LOST n` at the bottom when pieces have been lost; the frame is **red while the tower wobbles**; the camera follows the tower up |
-| Overlay | Everything the physics draws (blocks as filled, edged squares with a light on two edges, however they are turned), the finish line, the rock, text and panels (hiding what is under them) |
+| Overlay | Everything the physics draws (blocks as filled, edged squares with a light on two edges, a shade on the other two and a glint, however they are turned), the finish line, the rock, text and panels (hiding what is under them), and the wizards on the results and initials panels (drawn a pixel at a time from the tile sheet, `blit`) |
 | BG2 | The night (scene `sky`): behind everything, on every screen |
-| BG1 | In a race, the backdrops of the yards: a canvas of Map RAM (32, 0) that `fillYards` fills with the 8 x 26 cells of scene `back` for each yard |
+| BG1 | In a race, the backdrops of the yards: a canvas of Map RAM (32, 0) that `fillYards` fills, under each yard, with the night's own cells (scene `sky`) in BG palette 2, the same roles in lighter colours: each yard is a lit window onto the same night, and costs no tiles |
 | BG0 | The title picture (scene `title`) on the title, the lobby panel (scene `lobby`) in the lobby; nothing else (in a race it would hide the backdrops) |
 | Sprites | The wizards (16 sprites: standing and cheering, in 8 palettes): one in each yard's HUD, one for each place in the lobby, two cheering on the towers of the title; the winner jumps |
 
 The blocks are drawn on the **overlay**, not with sprites: a block can be at any angle, and the console has no rotated sprites, so each block is a
-filled quadrilateral (`fillQuad`: one overlay `line` for each row of pixels) with a dark edge and a lighter line a little inside its top and left edges (`drawBody`). About 80 blocks are on screen in a four-player race;
+filled quadrilateral (`fillQuad`: one overlay `line` for each row of pixels) with a dark edge, a lighter line a pixel inside its top and left edges, a darker one inside its bottom and right edges and a white glint near its top left corner (`drawBody`). About 80 blocks are on screen in a four-player race;
 the cost is measured in 5.1. The overlay is above everything else (the console draws it last), so a sprite is never seen over a block or a panel: the wizards stand in the HUD row, on the lobby (whose panel is a picture on BG0, so that they can stand on it) and on the title, and
 the panels that come over a race (the pause, the results) are overlay, which hide what is under them.
 
@@ -216,9 +216,9 @@ A and B to move, START to save); a wizard's win is not recorded. Then the record
 
 ## 6. World and content
 
-A wizards' night: the towers are built in the sky over a dusk of six bands of purple and pink (dithered into each other), a moon, stars, two rows of hills and a castle with lit windows. Each yard is a column of lighter twilight blue with its own stars. The platform
-is stone, standing on a rock that narrows as it goes down, so the towers float. The four wizards are one picture in four hat colours (red, blue, green and gold, for players 1 to 4); a computer wizard has the same hat and a grey robe. The title has the
-logo TRICKSY TOWERZ (the console's font at three times its size, a colour of the pieces for each letter, with an edge and a shadow) and two rival towers of coloured blocks, one low and steady and one high and wobbling, with a wizard cheering on each.
+A wizards' night: the towers are built in the sky over a dusk of six bands of purple and pink (dithered into each other), long thin clouds, a moon with a soft halo, stars (a group of them and six bright ones with crosses of light twinkle, and the castle's windows flicker: `twinkle` changes their palette entries each frame), two rows of hills with pines on the near one and a castle with lit windows. Each yard is the same night, lit (BG1 in BG palette 2), so the hills and the castle run on through the yards. The platform
+is carved stone (each block with a light and a shade), standing on a floating rock, lit on the left and shaded on the right, with moss along its top and crystals hanging from its tip (`drawRock`), so the towers float. The four wizards are one picture in four hat colours (red, blue, green and gold, for players 1 to 4; the hat with a light on its left and a tip that leans, rosy cheeks, a moustache, a gold belt); a computer wizard has the same hat and a grey robe. The title has the
+logo TRICKSY TOWERZ (the console's font at three times its size, a colour of the pieces for each letter, with an edge and a shadow) and two rival towers of coloured blocks, one low and steady and one high and wobbling, with a wizard cheering on each; the menu stands on a plate of night with gold studs. The panels (pause, results, initials, records, help) are a night indigo with a slate-violet frame, a light violet inner line and gold studs: the overlay's colours 1 and 3 (`SHADOW`, `PANEL`) are set by art.py, which were the default palette's brown and grey. The results put each racer's wizard beside their row (the winner cheering and jumping on a lit row); the initials have the winner's wizard cheering either side, with sparkles. The big count has a dark outline, a shadow and a light along the top of each stroke.
 
 ## 7. Opponents
 
@@ -259,16 +259,16 @@ initials are typed by the winner's pad): the stored score is `100000 - frames`, 
 Made by `carts/src/tricksy-towerz/audio.py` (the song toolkit, `tools/devkit/music/kit.py`) into `audio.json`. Channels: 0 the lead, 2 the bass, 3 the arpeggio, 5 the drums (samples); channel 1 is for the effects (a song only carries its tempo on it) and channel 4, which no
 song uses, for the effects with noise in them (`SFX_VOICE_CH`). Nobody has listened to it: it is measured (levels, clashes, lengths) and written to a plan.
 
-**Songs** (the numbers are `SONG` in code.js; the first three loop, the last plays once):
+**Songs** (the numbers are `SONG` in code.js; all four loop: the finish loops back past its fanfare, so the fanfare is heard once). Rewritten in the polish pass (section 15, step 8):
 
 | # | Name | Where | Key, tempo, length | What it is |
 |---|---|---|---|---|
-| 0 | Title | the title, the lobby, the help, the records | A minor, 128 bpm, 15 s | eight bars: four of a quiet horn over an arpeggio, four of the pulse lead; soft drums, then a plain beat |
-| 1 | Race | the race, from GO | C major, 150 bpm, 26 s | sixteen bars: the main tune twice, a calm middle with the horn, the main tune again with a driving beat |
-| 2 | Over the line | the race, while a tower has been over the line for 20 frames, and for 2 seconds after | A minor, 112 bpm, 17 s | long horn notes over a heartbeat of a kick and a fast thin arpeggio: tension, as the tower has only to stand |
-| 3 | The finish | when a race is won (by a person or a wizard) | C major, 180 bpm, 5 s, once | a fanfare with a march beat; the results screen is then quiet |
+| 0 | Title | the title, the lobby, the help, the records | A minor, 128 bpm, 30 s | sixteen bars: the horn over a sparkling arpeggio (soft drums, a held bass); the tune on the pulse lead in sixteenths with a walking bass; a bridge (iv, i, VI, V) over held strings, a bouncy beat and a snare roll; the horn's tune again, higher, with a driving beat |
+| 1 | Race | the race, from GO | C major, 150 bpm, 51 s | thirty-two bars, so a race of a minute hears it about once: a plucked riff (intro); the main tune (eight bars, in sixteenths); a second theme in the minor on the pluck over held strings and a bouncy beat; a breakdown with the horn; the main tune again with a driving beat and a roll back to the top |
+| 2 | Over the line | the race, while a tower has been over the line for 20 frames, and for 2 seconds after | A minor, 112 bpm, 17 s | a bass in eighths that falls a step a bar (A, G, F, E, D, C, F, E) under a horn that climbs, a heartbeat that stumbles at the end of each bar and a ticking arpeggio; then a beat and a roll: tension, as the tower has only to stand |
+| 3 | The finish | when a race is won (by a person or a wizard), then on through the results, the initials and the records | C major, 180 bpm, 5 s and a loop of 21 s | a fanfare (brass, a march beat, a roll) that ends on a held chord and lets it go; then a slow, soft tune at half the pace over a harp arpeggio and a half-time beat, round and round (its bass and lead softer: 0.063 against the fanfare's 0.085) |
 
-The count of three has no music, only its beeps. A song is only started when it is not the one playing, so the title song runs on through the help, the records and the lobby, and the race song is not restarted while the race goes on.
+The count of three has no music, only its beeps. (Before the polish pass the finish played once and stopped, and the console left its last notes sounding for ever under the results and the initials: the console now releases a song's notes when a song that plays once ends, SPEC 5.3, and the finish no longer ends.) A song is only started when it is not the one playing, so the title song runs on through the help, the records and the lobby, and the race song is not restarted while the race goes on.
 
 **Effects** (`SFX` in code.js; channel 1 unless said):
 
@@ -290,27 +290,27 @@ The count of three has no music, only its beeps. A song is only started when it 
 
 Only people's pieces make landing, turning and losing sounds: four yards of computer wizards would be a rattle, and the sounds belong to the person hearing them (with four people it is still a lot, and they share channel 1, so a new one cuts the last).
 
-**Levels** (`node tools/devkit/music/loud.mjs carts/tricksy-towerz.nova --check`, `sfx.mjs`, `clash.py`): the songs' lead alone is 0.050 to 0.056 RMS, 0.61 to 0.66 of the mix, with no jump where it enters, loudest over median 1.0 to 1.05, peaks 0.22 to 0.24, medians 0.080 to 0.085 (the limits
+**Levels** (`node tools/devkit/music/loud.mjs carts/tricksy-towerz.nova --check`, `sfx.mjs`, `clash.py`): the songs' lead alone is 0.051 to 0.057 RMS, 0.63 to 0.66 of the mix, with no jump where it enters, loudest over median 1.02 to 1.36 (the finish's fanfare over its calm loop), peaks 0.24 to 0.25, medians 0.063 to 0.083 (the limits
 of playbook section 5 are 0.07, 0.75, 1.5, 2.2, 0.45 and 0.03 to 0.15); the effects are 0.012 to 0.058 RMS and 4 to 32 ticks (under 0.6 s). The very short ones (the menu blip, the tap, the tick, the beep) were too quiet at first (0.003 to 0.008) and were made louder and a tick longer. `clash.py` found two
 places where the lead was a semitone from the bass (an E over an F) and both were changed.
 
 ## 12. Video layers and art
 
-Made by `carts/src/tricksy-towerz/art.py` (the art toolkit, `tools/devkit/art/kit.py`): `node tools/devkit/art/scene.mjs carts/tricksy-towerz.nova out.png --scene sky` (or `back`, `title`, `lobby`) and `node tools/devkit/art/sprites.mjs carts/tricksy-towerz.nova out.png`
-show it. What is where is in section 4. In Map RAM: `sky` at (0, 0), `back` at (0, 28), `title` at (0, 56), `lobby` at (0, 84), and BG1's canvas at (32, 0).
+Made by `carts/src/tricksy-towerz/art.py` (the art toolkit, `tools/devkit/art/kit.py`): `node tools/devkit/art/scene.mjs carts/tricksy-towerz.nova out.png --scene sky` (or `title`, `lobby`) and `node tools/devkit/art/sprites.mjs carts/tricksy-towerz.nova out.png`
+show it. What is where is in section 4. In Map RAM: `sky` at (0, 0), `title` at (0, 56), `lobby` at (0, 84), and BG1's canvas at (32, 0) (rows 28 to 55, where the yard's own picture was until the polish pass, are empty).
 
 | BG palette | Colours | Used by |
 |---|---|---|
-| 1 | six sky bands, moon and its shade, two stars, far hill, near hill, castle, lit window (14) | `sky` |
-| 2 | five bands of twilight and two stars (7) | `back` |
-| 3 | the seven piece colours, edge, shine, stone, stone dark, shadow (12) | `title` |
-| 4 | the panel, its edge, gold and dark gold, a row (5) | `lobby` |
+| 1 | six sky bands, moon and its shade, two stars, far hill, near hill, castle, lit window, the twinkling star (15) | `sky` |
+| 2 | the same fifteen roles at the same indices, lighter (the lit night; `twinkle` and `win` change each frame here too) | the yards (`fillYards`) |
+| 3 | the seven piece colours, edge, shine, stone, stone dark, shadow, rock, rock dark, moss (15) | `title` |
+| 4 | the panel (the overlay's night indigo), its edge, gold and dark gold, a row (5) | `lobby` |
 
 Sprite palettes 0 to 7 are the wizards (the hats of players 1 to 4 with a robe of the hat's dark colour, then the same hats with a grey robe). The overlay's colours are named too (`ART.colors`): `p0` to `p6` the fills of the seven pieces and `h0` to `h6` their lights
-(CGRAM 113 to 119 and 97 to 103), `edge`, `shine`, `stone`, `stoneDark` (the platform and the rock), `goal` (the finish line when the tower is over it) and `danger` (when it is not), in CGRAM 120 to 127 (`sky` and `skyHi` are left from Phase 1 and unused). BG palettes 5 to 7
-are not used for pictures (the overlay's own text colours are in palette 0, and the block colours above in 6 and 7).
+(CGRAM 113 to 119 and 97 to 103) and `d0` to `d6` their shades (104 to 110), `goldHi` (111, the light on the big letters), `stoneHi` (112), `edge`, `shine`, `stone`, `stoneDark` (the platform), `rock` and `rockDark` (the floating rock), `goal` (the finish line when the tower is over it) and `danger` (when it is not), in CGRAM 120 to 127; `panelHi`, `moss`, `mossHi` and `crystal` in 81 to 84; and `twinkle`, `twinkleLit`, `win`, `winLit`, the night's entries that `twinkle` changes. Entries 1 and 3 (`SHADOW` and `PANEL` in code.js) are a night indigo and a slate violet. BG palettes 5 to 7
+are not used for pictures (the overlay's own text colours are in palette 0, a few overlay colours in 5, and the block colours above in 6 and 7).
 
-The big letters of the count (`bigText`) are drawn on the overlay, from a 5 x 7 bitmap of each of 1, 2, 3, G, O and ! at 6 px a pixel, with a shadow.
+The big letters of the count (`bigText`) are drawn on the overlay, from a 5 x 7 bitmap of each of 1, 2, 3, G, O and ! at 6 px a pixel, with a dark outline, a shadow and a light (`goldHi`) along the top of each stroke.
 
 ## 13. Persistence (save slots)
 
@@ -329,10 +329,10 @@ The format version stays 1: slots 2 to 9 were empty before, and zero means the d
 
 | Asset | Budget |
 |---|---|
-| Code | 46 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
-| Tiles | 651 of 1,023: 587 background (limit 759 by the region) and 64 sprite (limit 264) |
+| Code | 50 KB of the 64 KB limit (`node tools/check.js tricksy-towerz`) |
+| Tiles | 715 of 1,023: 651 background (limit 759 by the region) and 64 sprite (limit 264) |
 | Sprites | 16 pictures; at most 4 on screen in a race, 4 in the lobby, 2 on the title (128 in OAM, 32 per line) |
-| Songs / SFX | 4 of 8 songs, 9 of 64 patterns, 13 of 64 effects, 7,200 of 16,384 bytes of samples |
+| Songs / SFX | 4 of 8 songs, 19 of 64 patterns, 13 of 64 effects, 20 of 32 instruments, 7,200 of 16,384 bytes of samples |
 
 ## 15. Implementation plan
 
@@ -439,6 +439,21 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
      (`node --check` on every source, `check-docs.js`, `check.js --all`, the art and new-cart self-tests and `soak.mjs --all`). Code 46,327 of 65,536 bytes; tiles 651 of 1,023 (587 background, 64 sprite); 4 songs, 9 patterns, 13 effects, 7,200 bytes of samples; the PNG payload 45,559 of 147,443 bytes.
    - **Not done:** nobody has played it with a pad, heard it, or seen it on a screen but me from pictures. The finish line, the hold, the speeds and the levels were tuned against computer players, so whether the race feels right for a person is the open question. The four-pad seating of the console and the joining
      in the lobby have only been tested in the harness.
+
+8. **Polish pass** (after release, at the user's request: the art was not beautiful enough, the songs a little basic, and a note was held for ever on the initials screen).
+
+   - **Built:** *The held note* was the console's: a song that plays once stopped at its end but left its voices sounding, so the finish jingle's last bass and horn notes rang on under the results, the initials and the records
+     (and the same in Rags to Riches and Summit Rush). `src/audio/synth.js` now releases every music voice when such a song ends (SPEC 5.3), checked by `tests/console/song-end.mjs` (in CI; it fails without the fix). *The music*
+     (`audio.py`, section 11): every song rewritten and longer (title 30 s, race 51 s), with walking and syncopated bass lines, a counter-melody of held strings, a plucked second theme, breakdowns, drum fills and more chords; the
+     tense song with a falling lament bass; the finish a fanfare that resolves, then a soft victory loop under the screens after a race (the song loops back past the fanfare). *The art* (`art.py`, sections 4, 6 and 12): the
+     yards are the night itself in a lighter palette (the separate backdrop picture is gone), the night has clouds, a halo round the moon, pines and twinkling stars and flickering windows (palette changes, `twinkle`), the
+     blocks a bevel and a glint, the platform carved stones, a floating rock with moss and crystals (`drawRock`), the panels a night indigo with a light inner line instead of the default brown and grey, the wizards redrawn
+     (hat light, cheeks, moustache, belt), the wizards on the results and initials panels (`blit`), a plate under the title's menu and outlined big letters. `02-art.mjs` (45 checks) and `07-audio.mjs` (40) follow; a check of
+     `06-flow.mjs` counts the blocks' white glints apart from the guide's outline.
+   - **Results:** `node tools/verify.js tricksy-towerz` passes (274 test checks), the soak is clean, the smoke test in the real console reports no errors (60 fps), `loud.mjs --check` passes (leads 0.051 to 0.057 RMS, 0.63 to
+     0.66 of the mix) and `clash.py` finds nothing. The frame time with four people and four guides is a 99th percentile of 4.2 ms (2.8 before: the bevel is two more lines a block). Code 49,771 of 65,536 bytes; tiles 715 of 1,023;
+     19 of 64 patterns. The rules, the physics and the computer wizards did not change, so the balance of 5.6 stands. The release was made again with the same label (`node tools/release.js tricksy-towerz --keep-label`).
+   - **Not done:** nobody has heard the new songs or seen the new pictures on a screen but as measurements and PNGs; the tunes and colours are a matter for your ears and eyes, and each is a line of text in `audio.py` or `art.py`.
 
 ## 16. Open questions
 

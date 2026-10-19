@@ -2,6 +2,7 @@
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { newGame, M, CART } from './lib.mjs';
+import { render, loadCart, rms as rmsOf, SR } from '../../../tools/devkit/music/lib.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
@@ -21,17 +22,23 @@ const drop = (y, q, shape, x, yy) => { const b = q.mkBody(q.SHAPES[shape], x, yy
   const vm = newGame(1), cart = vm.cart, p = vm.probe();
   const used = cart.songs.filter((x) => x.order.length), usedSfx = cart.sfx.filter((e) => e.rows.some(Boolean));
   ok(used.length === 4 && usedSfx.length === 13 && cart.songs.slice(4).every((x) => !x.order.length), 'there are four songs and thirteen effects', `${used.length} songs, ${usedSfx.length} effects`);
-  ok(used.slice(0, 3).every((x) => x.loop === 0) && used[3].loop === null, 'the title, race and tense songs loop; the finish jingle plays once');
+  ok(used.slice(0, 3).every((x) => x.loop === 0), 'the title, race and tense songs loop');
+  ok(used[3].loop === 1 && used[3].order.length === 5 && !used[3].order.slice(1).includes(used[3].order[0]), 'the finish is a fanfare heard once, then a calm tune that goes round (it loops back past the fanfare, so no note is left held under the results)');
   const speed = (si) => cart.patterns[cart.songs[si].order[0]][0][1].fx & 255;
   ok([0, 1, 2, 3].map(speed).join() === '7,6,8,5', 'at 128, 150, 112 and 180 beats a minute (speeds 7, 6, 8 and 5)');
   const secs = (si) => cart.songs[si].order.length * 64 * speed(si) / 60;
-  ok(secs(0) > 14 && secs(0) < 16 && secs(1) > 25 && secs(1) < 26 && secs(2) > 16 && secs(2) < 18 && secs(3) > 5 && secs(3) < 6, 'about 15, 26, 17 and 5 seconds long', [0, 1, 2, 3].map((i) => secs(i).toFixed(1)).join(' '));
+  ok(secs(0) > 29 && secs(0) < 31 && secs(1) > 50 && secs(1) < 52 && secs(2) > 16 && secs(2) < 18 && secs(3) > 26 && secs(3) < 27, 'about 30, 51, 17 and 27 seconds long (the finish: a fanfare of 5 s and a loop of 21 s)', [0, 1, 2, 3].map((i) => secs(i).toFixed(1)).join(' '));
   ok(used.every((s) => s.order.every((o) => cart.patterns[o].every((r, i) => (i === 0 || !r[1]) && !r[4]))), 'channel 1 carries only the tempo and channel 4 nothing, in every song (they are the effects\')');
   const wave = (n) => cart.instruments[cart.sfx[n].rows.find((r) => r && r.i !== null).i].wave;
   const noisy = [...Array(13).keys()].filter((n) => wave(n) === 'noise');
   ok(noisy.join() === '3,4,12' && Object.keys(p.SFX_VOICE_CH).map(Number).sort((a, b) => a - b).join() === '3,4,12', 'the effects with noise in them (a piece lost, the tower falling, not allowed) are the ones on the noise channel');
   const ticks = (n) => cart.sfx[n].speed * (cart.sfx[n].rows.findIndex((r) => r && r.n === -2) + 1);
   ok([...Array(13).keys()].every((n) => ticks(n) <= 40 && ticks(n) >= 4), 'every effect is between 4 and 40 ticks (under 0.7 s)', [...Array(13).keys()].map(ticks).join(' '));
+  { // the finish heard by the console's own synth, as long as a slow player takes over the results, the initials and the records
+    const [L] = render(loadCart(CART), [['music', 3, 0]], 60), at = (a, b) => rmsOf(L, Math.floor(a * SR), Math.floor(b * SR));
+    const lv = [at(0, 5), at(6, 26), at(28, 48), at(50, 60)];
+    ok(lv.every((v) => v > 0.03 && v < 0.12), 'the finish song goes on under the screens after the race: the fanfare, then the calm tune round and round', lv.map((v) => v.toFixed(3)).join(' '));
+  }
   const out = tool('tools/devkit/music/loud.mjs', 'carts/tricksy-towerz.nova', '--check');
   ok(/all songs within the limits/.test(out), 'the songs are within the level limits (lead, mix, surges, peaks)', out.split('\n').filter((l) => /lead/.test(l)).map((l) => l.match(/lead ([\d.]+)/)[1]).join(' '));
   const lv = tool('tools/devkit/music/sfx.mjs', 'carts/tricksy-towerz.nova', '1', '0', '1', '2', '5', '6', '7', '8', '9', '10', '11') + tool('tools/devkit/music/sfx.mjs', 'carts/tricksy-towerz.nova', '4', '3', '4', '12');
@@ -106,12 +113,12 @@ const drop = (y, q, shape, x, yy) => { const b = q.mkBody(q.SHAPES[shape], x, yy
 }
 {
   const [vm, p] = race([4, 1, 1, 1], 3); vm.run(60); log(vm); p.finish(p.yards[0]); vm.run(2);
-  const c = log(vm); ok(songsOf(c).join() === '3' && p.playing === 3, 'the finish jingle plays, once');
+  const c = log(vm); ok(songsOf(c).join() === '3' && p.playing === 3, 'the finish fanfare plays, once');
   vm.run(70); vm.press('A'); const d = log(vm);
   ok(p.state === 'initials' && fxOf(d).some(([n]) => n === p.SFX.record), 'a time for the table has the record fanfare');
   vm.run(25); vm.press('START'); vm.run(25); vm.press('START'); const e = log(vm);
   ok(p.state === 'lobby' && songsOf(e).join() === '0' && p.playing === 0, 'and the title song comes back in the lobby');
-  const [v2, p2] = race([4, 1, 1, 1], 3); v2.run(60); p2.finish(p2.yards[1]); v2.run(5); ok(p2.playing === 3, 'a computer wizard winning has the same jingle');
+  const [v2, p2] = race([4, 1, 1, 1], 3); v2.run(60); p2.finish(p2.yards[1]); v2.run(5); ok(p2.playing === 3, 'a computer wizard winning has the same fanfare');
 }
 
 // 5. The menus.

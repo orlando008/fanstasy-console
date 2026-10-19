@@ -9,11 +9,13 @@
 #
 # What is where (SPEC section 12):
 #   BG2  the night: sky, moon, stars, hills and a castle (scene `sky`, Map RAM 0,0), behind everything
-#   BG1  the backdrop of the yards: the code copies the cells of scene `back` (8 x 26 cells) into a canvas of its own at map (32, 0) once for each yard
+#   BG1  the backdrop of the yards: the code copies the night's own cells into a canvas at map (32, 0), under each yard, with BG palette 2 (the same
+#        roles in lighter colours): each yard is a lit window onto the same night, and costs no tiles
 #   BG0  the title picture (scene `title`) and the lobby panel (scene `lobby`), in front
 #   Sprites: the wizard, in two poses, in 8 palettes (the hats of players 1 to 4, then the same with grey robes for the computer wizards)
-#   The overlay draws the blocks (the physics turns them any angle), so its colours are named here too: CGRAM 97 to 103 (the lights of the blocks)
-#   and 113 to 127 (their fills, the edge, the stone, the finish line)
+#   The overlay draws the blocks (the physics turns them any angle), so its colours are named here too: CGRAM 97 to 103 (the lights of the blocks),
+#   104 to 110 (their shades), 111 and 112 (light gold, light stone), 113 to 127 (their fills, the edge, the stone, the rock, the finish line) and
+#   81 to 84 (the panels' inner line, the moss on the rock, the crystals under it). Entries 1 and 3, the overlay's SHADOW and PANEL, are made night colours.
 import math, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *
@@ -30,21 +32,30 @@ def mix(h, to, k):
 for i, h in enumerate(BLOCK_FILL):
     art.color(113 + i, h, 'p%d' % i)            # the fill
     art.color(97 + i, mix(h, 'ffffff', 0.45), 'h%d' % i)   # the light on its top and left edges
+    art.color(104 + i, mix(h, '1a1030', 0.38), 'd%d' % i)  # the shade on its bottom and right edges
+art.color(111, 'fff3b0', 'goldHi')              # the light on the big gold letters
+art.color(112, 'c2cad6', 'stoneHi')             # the light on the platform's stones
 art.color(120, '2c1e31', 'edge')
 art.color(121, 'f4f4f4', 'shine')
 art.color(122, '8595a1', 'stone')
 art.color(123, '4e4a4e', 'stoneDark')
-art.color(124, '29366f', 'sky')
-art.color(125, '3b5dc9', 'skyHi')
+art.color(124, '6b5f86', 'rock')                # the floating rock under the platform: its lit side
+art.color(125, '3b3152', 'rockDark')            # and its shaded side
 art.color(126, 'ffcd75', 'goal')
 art.color(127, 'b13e53', 'danger')
+art.color(81, '6a5fb0', 'panelHi')              # the inner line of a panel
+art.color(82, '4f7a3a', 'moss')                 # moss on the rock's top
+art.color(83, '7fbf5a', 'mossHi')
+art.color(84, '9ee6ff', 'crystal')              # crystals hanging under the rock
+art.color(1, '140f2b')                          # SHADOW in code.js: text shadows and panel fills, a night indigo (was the default brown)
+art.color(3, '4a4a8c')                          # PANEL: frames and edges, a slate violet (was the default grey)
 
 # =====================================================================================================================
 # The night (BG2): a sky in six bands, a moon, stars, two rows of hills and a castle on the far one
 # =====================================================================================================================
 night = art.palette(1, {'s0': '171a45', 's1': '23266a', 's2': '3a2d78', 's3': '5a3a88', 's4': '84488f', 's5': 'b05a8e',
                         'moon': 'f4efd8', 'moonShade': 'cfc9ac', 'star': 'f4f4f4', 'starDim': '9aa0d8',
-                        'hillFar': '3a2a66', 'hillNear': '241a47', 'castle': '1a1236', 'win': 'ffcd75'})
+                        'hillFar': '3a2a66', 'hillNear': '241a47', 'castle': '1a1236', 'win': 'ffcd75', 'twinkle': 'f4f4f4'})   # twinkle: code.js changes it each frame
 BANDS = [(0, night.s0), (30, night.s1), (60, night.s2), (88, night.s3), (112, night.s4), (134, night.s5)]
 def band_colour(x, y):
     """The sky, with a dither between one band and the next."""
@@ -63,6 +74,20 @@ def sky_px(x, y):
     if y >= far: return night.hillFar
     return band_colour(x, y)
 sky = Img.make(256, 224, sky_px)
+# a soft halo round the moon: the next band's colour, dithered thinner as it goes out
+for y in range(0, 90):
+    for x in range(150, 256):
+        d = math.hypot(x - 206, y - 40)
+        if 14 < d < 34 and sky.px[y][x] in (night.s0, night.s1) and dither(x, y, int(12 * (34 - d) / 20)): sky.pset(x, y, night.s2 if sky.px[y][x] == night.s1 else night.s1)
+# long thin clouds across the dusk, each a band a shade lighter than the sky round it, with dithered ends
+for (cx, cy, half, th) in ((70, 70, 46, 3), (150, 96, 60, 3), (40, 104, 34, 2), (226, 120, 40, 2), (120, 128, 52, 2)):
+    for y in range(cy - th, cy + th + 1):
+        for x in range(cx - half, cx + half + 1):
+            if not 0 <= x < 256: continue
+            edge = 1 - abs(x - cx) / half - abs(y - cy) / (th + 1) * 0.6
+            here = sky.px[y][x]
+            if here in (night.s1, night.s2, night.s3, night.s4) and edge > 0 and dither(x, y, min(16, int(edge * 40))):
+                sky.pset(x, y, {night.s1: night.s2, night.s2: night.s3, night.s3: night.s4, night.s4: night.s5}[here])
 # the moon
 sky.disc(206, 40, 14, night.moon)
 for (cx, cy, r) in ((201, 36, 3), (212, 45, 2), (208, 33, 2)): sky.disc(cx, cy, r, night.moonShade)
@@ -71,8 +96,12 @@ for y in range(0, 118):
     for x in range(0, 256):
         if (x - 206) ** 2 + (y - 40) ** 2 < 22 ** 2: continue
         h = hsh(x * 7919 + y * 104729)
-        if h % 233 == 0 and sky.px[y][x] != night.moon: sky.pset(x, y, night.star if (h >> 8) % 3 else night.starDim)
+        if h % 233 == 0 and sky.px[y][x] != night.moon: sky.pset(x, y, (night.star, night.twinkle, night.starDim)[(h >> 8) % 3])
         elif h % 411 == 1: sky.pset(x, y, night.starDim)
+# a few bright stars with a cross of light, that twinkle
+for (x, y) in ((24, 18), (118, 10), (166, 30), (88, 44), (246, 76), (10, 62)):
+    sky.pset(x, y, night.twinkle)
+    for (dx, dy) in ((1, 0), (-1, 0), (0, 1), (0, -1)): sky.pset(x + dx, y + dy, night.starDim)
 # the castle on the far hill: a wall, three towers with pointed roofs, and a few lit windows
 def castle(img, x0, ground):
     c = night.castle
@@ -84,36 +113,37 @@ def castle(img, x0, ground):
     for (wx, wy) in ((x0 + 3, ground - 40), (x0 + 29, ground - 50), (x0 + 49, ground - 38), (x0 + 15, ground - 18), (x0 + 36, ground - 16)):
         img.rect(wx, wy, 2, 4, night.win)
 castle(sky, 34, int(hill(60, 162, 12, 33, 13, 0.4)) + 2)
-# the near hills draw over the foot of the castle again
+# the near hills draw over the foot of the castle again, with a few pines on their crest
 for y in range(150, 224):
     for x in range(256):
         if y >= hill(x, 186, 7, 21, 9, 1.0): sky.pset(x, y, night.hillNear)
+for x0 in (6, 14, 112, 121, 128, 168, 176, 236, 246):
+    base = int(hill(x0, 186, 7, 21, 9, 1.0)) + 2
+    hgt = 9 + hsh(x0 * 13) % 6
+    for j in range(hgt):
+        w = (j * 5) // hgt + (1 if j % 3 == 2 else 0)
+        sky.rect(x0 - w, base - hgt + j, 2 * w + 1, 1, night.hillNear)
+    sky.rect(x0, base, 1, 2, night.hillNear)
 art.scene('sky', sky, pal=night, at=(0, 0), solid=True)
 
 # =====================================================================================================================
-# The backdrop of a yard (BG1): a column of twilight, a little lighter towards the bottom, with a few stars
+# The backdrop of a yard (BG1): the night's own tiles in BG palette 2, the same roles in lighter colours (code.js's fillYards lays them
+# under each yard with palette 2), so each yard is a lit window onto the same dusk: the hills and the castle go on through it
 # =====================================================================================================================
-back = art.palette(2, {'b0': '1f2656', 'b1': '262f6e', 'b2': '2e3a82', 'b3': '364593', 'b4': '3f51a3', 'star': 'c8d0ff', 'starDim': '7f8ccc'})
-BB = [(0, back.b0), (40, back.b1), (84, back.b2), (128, back.b3), (168, back.b4)]
-def back_px(x, y):
-    for k in range(len(BB) - 1, -1, -1):
-        y0, c = BB[k]
-        if y >= y0:
-            if k > 0 and y < y0 + 8 and dither(x, y, 16 - (y - y0) * 2): return BB[k - 1][1]
-            return c
-panel = Img.make(64, 208, back_px)
-for y in range(0, 208):
-    for x in range(64):
-        h = hsh(x * 31 + y * 977 + 5)
-        if h % 331 == 0: panel.pset(x, y, back.star)
-        elif h % 277 == 1: panel.pset(x, y, back.starDim)
-art.scene('back', panel, pal=back, at=(0, 28), solid=True)
+LIT = {'s0': '262a66', 's1': '313684', 's2': '473c90', 's3': '664a9c', 's4': '9157a0', 's5': 'bb6e9c', 'moon': 'fbf7e6', 'moonShade': 'd8d2b8',
+       'star': 'ffffff', 'starDim': 'b4b9ea', 'hillFar': '4b3b80', 'hillNear': '342a5e', 'castle': '2a2150', 'win': 'ffd98f', 'twinkle': 'ffffff'}
+lit = art.palette(2, {k: LIT[k] for k in ('s0', 's1', 's2', 's3', 's4', 's5', 'moon', 'moonShade', 'star', 'starDim', 'hillFar', 'hillNear', 'castle', 'win', 'twinkle')})
+assert all(getattr(lit, k) == getattr(night, k) for k in LIT), 'the lit night must have the night\'s roles at the same indices'
+# the entries code.js changes each frame (the twinkling stars and the flickering windows), named so it can find them
+art.color(16 + night.twinkle, 'f4f4f4', 'twinkle'); art.color(32 + lit.twinkle, LIT['twinkle'], 'twinkleLit')
+art.color(16 + night.win, 'ffcd75', 'win'); art.color(32 + lit.win, LIT['win'], 'winLit')
 
 # =====================================================================================================================
 # The logo and the towers (BG0): TRICKSY / TOWERZ in big letters, one piece colour for each, and two rival towers either side
 # =====================================================================================================================
 logo = art.palette(3, {'p0': BLOCK_FILL[0], 'p1': BLOCK_FILL[1], 'p2': BLOCK_FILL[2], 'p3': BLOCK_FILL[3], 'p4': BLOCK_FILL[4], 'p5': BLOCK_FILL[5], 'p6': BLOCK_FILL[6],
-                       'edge': '2c1e31', 'shine': 'f4f4f4', 'stone': '8595a1', 'stoneDark': '4e4a4e', 'shadow': '15101f'})
+                       'edge': '2c1e31', 'shine': 'f4f4f4', 'stone': '8595a1', 'stoneDark': '4e4a4e', 'shadow': '15101f',
+                       'rock': '6b5f86', 'rockDark': '3b3152', 'moss': '7fbf5a'})
 PC = [logo.p0, logo.p1, logo.p2, logo.p3, logo.p4, logo.p5, logo.p6]
 def big_text(img, text, x, y, scale, colours):
     """The console's font scaled up, a letter in each colour, with a dark edge and a shadow."""
@@ -185,17 +215,22 @@ def tower(img, x0, rows, seed, top_tilt):
             img.blit(b, start + c * 8 - 3, y - 3)
 tower(title, 8, 9, 11, 2)       # the left one: low and steady
 tower(title, 200, 13, 29, 4)    # the right one: higher, wobbling at the top
-# the floating rock under each platform
+# the floating rock under each platform: lit on the left, shaded on the right, moss along its top
 for x0 in (8, 200):
     for y in range(212, 224):
-        w = 48 - (y - 212) * 2
-        title.rect(x0 + (48 - w) // 2, y, w, 1, logo.stoneDark)
+        r = y - 212
+        w = 48 - r * 3 - (hsh(x0 + r * 7) % 3)
+        left = x0 + (48 - w) // 2 + (hsh(x0 * 3 + r) % 2)
+        title.rect(left, y, w, 1, logo.rockDark)
+        title.rect(left, y, max(1, w * 3 // 5), 1, logo.rock)
+        title.pset(left, y, logo.edge); title.pset(left + w - 1, y, logo.edge)
+    for x in range(x0, x0 + 48, 2): title.pset(x + (hsh(x) % 2), 212, logo.moss)
 art.scene('title', title, pal=logo, at=(0, 56))
 
 # =====================================================================================================================
 # The lobby: a panel on BG0 (the sprites of the wizards stand on it)
 # =====================================================================================================================
-pan = art.palette(4, {'fill': '15101f', 'edge': '4a4a8c', 'gold': 'dad45e', 'goldDark': '8a6f30', 'row': '1e1830'})
+pan = art.palette(4, {'fill': '140f2b', 'edge': '4a4a8c', 'gold': 'dad45e', 'goldDark': '8a6f30', 'row': '1e1830'})
 lobby = Img(256, 224)
 lobby.rect(16, 24, 224, 176, pan.fill)
 lobby.rect(16, 24, 224, 176, pan.edge, fill=False)
@@ -208,45 +243,45 @@ art.scene('lobby', lobby, pal=pan, at=(0, 84))
 # =====================================================================================================================
 HATS = [('d04648', '8c2a3a', '7b2d3a'), ('597dce', '34508c', '2c3f6e'), ('6daa2c', '3e6e1c', '2c5a1e'), ('dad45e', '9a8e2c', '7a6e1c')]   # hat, its shadow, the robe
 def wizard_palette(sub, hat, dark, robe, grey):
-    return art.sprite_palette(sub, {'edge': '140c1c', 'hat': hat, 'hatDark': dark, 'star': 'ffcd75', 'skin': 'f0c8a0', 'eye': '140c1c',
-                                    'beard': 'f4f4f4', 'beardDark': 'b4b8c8', 'robe': '6e7078' if grey else robe, 'robeDark': '45474e' if grey else dark})
+    return art.sprite_palette(sub, {'edge': '140c1c', 'hat': hat, 'hatDark': dark, 'hatHi': mix(hat, 'ffffff', 0.4), 'star': 'ffcd75', 'skin': 'f0c8a0', 'eye': '140c1c',
+                                    'beard': 'f4f4f4', 'beardDark': 'b4b8c8', 'cheek': 'e8907a', 'robe': '6e7078' if grey else robe, 'robeDark': '45474e' if grey else dark})
 pals = [wizard_palette(i, *HATS[i], False) for i in range(4)] + [wizard_palette(4 + i, *HATS[i], True) for i in range(4)]
 P0 = pals[0]
-KEY = lambda p: {'o': p.edge, 'h': p.hat, 'd': p.hatDark, 's': p.star, 'k': p.skin, 'e': p.eye, 'b': p.beard, 'B': p.beardDark, 'r': p.robe, 'R': p.robeDark}
+KEY = lambda p: {'o': p.edge, 'h': p.hat, 'd': p.hatDark, 'l': p.hatHi, 's': p.star, 'k': p.skin, 'e': p.eye, 'b': p.beard, 'B': p.beardDark, 'c': p.cheek, 'r': p.robe, 'R': p.robeDark}
 STAND = [
-    '.......oo.......',
-    '......ohho......',
-    '.....ohhhho.....',
-    '.....ohshho.....',
-    '....ohhhhhho....',
-    '...ohhhhhhhho...',
+    '........oo......',
+    '.......ohdo.....',
+    '......olhho.....',
+    '.....olhshho....',
+    '.....olhhhho....',
+    '....olhhhhhho...',
     '..oddddddddddo..',
     '...okkkkkkkko...',
     '...okekkkkeko...',
-    '...obbkkkkbbo...',
+    '...ockkBBkkco...',
     '..obbbbbbbbbbo..',
     '..orbbbbbbbbro..',
     '.orrrBbbbbBrrro.',
-    '.orrrrrbbrrrrro.',
-    '.orrRrrrrrrRrro.',
+    '.orrrrBbbBrrrro.',
+    '.orrRrsssssRrro.',
     '..oooooooooooo..',
 ]
 CHEER = [
-    '.kk....oo....kk.',
-    '.rr...ohho...rr.',
-    '.rr..ohhhho..rr.',
-    '..rr.ohshho.rr..',
-    '..rrohhhhhhorr..',
-    '..orrhhhhhhrro..',
+    '.kk.....oo...kk.',
+    '.rr....ohdo..rr.',
+    '.rr...olhho..rr.',
+    '..rr.olhshhorr..',
+    '..rrolhhhhhorr..',
+    '..orlhhhhhhhro..',
     '..oddddddddddo..',
     '...okkkkkkkko...',
     '...okekkkkeko...',
-    '...obbkkkkbbo...',
+    '...ockkBBkkco...',
     '..obbbbbbbbbbo..',
     '..orbbbbbbbbro..',
-    '.orrrBbbbBrrro..',
-    '.orrrrrbbrrrrro.',
-    '.orrRrrrrrrRrro.',
+    '.orrrBbbbbBrrro.',
+    '.orrrrBbbBrrrro.',
+    '.orrRrsssssRrro.',
     '..oooooooooooo..',
 ]
 for i, p in enumerate(pals):

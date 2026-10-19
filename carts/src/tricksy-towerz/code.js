@@ -12,8 +12,8 @@ const SHADOW = 1, PANEL = 3, RED = 6, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14
 const ART = {
   tiles: {},
   sprites: {"wiz0": {"pal": 0, "size": 16, "tile": 768}, "wiz1": {"pal": 1, "size": 16, "tile": 772}, "wiz2": {"pal": 2, "size": 16, "tile": 776}, "wiz3": {"pal": 3, "size": 16, "tile": 780}, "wiz4": {"pal": 4, "size": 16, "tile": 800}, "wiz5": {"pal": 5, "size": 16, "tile": 804}, "wiz6": {"pal": 6, "size": 16, "tile": 808}, "wiz7": {"pal": 7, "size": 16, "tile": 812}, "wizWin0": {"pal": 0, "size": 16, "tile": 770}, "wizWin1": {"pal": 1, "size": 16, "tile": 774}, "wizWin2": {"pal": 2, "size": 16, "tile": 778}, "wizWin3": {"pal": 3, "size": 16, "tile": 782}, "wizWin4": {"pal": 4, "size": 16, "tile": 802}, "wizWin5": {"pal": 5, "size": 16, "tile": 806}, "wizWin6": {"pal": 6, "size": 16, "tile": 810}, "wizWin7": {"pal": 7, "size": 16, "tile": 814}},
-  scenes: {"back": {"h": 26, "mx": 0, "my": 28, "pal": 2, "w": 8}, "lobby": {"h": 28, "mx": 0, "my": 84, "pal": 4, "w": 32}, "sky": {"h": 28, "mx": 0, "my": 0, "pal": 1, "w": 32}, "title": {"h": 28, "mx": 0, "my": 56, "pal": 3, "w": 32}},
-  colors: {"danger": 127, "edge": 120, "goal": 126, "h0": 97, "h1": 98, "h2": 99, "h3": 100, "h4": 101, "h5": 102, "h6": 103, "p0": 113, "p1": 114, "p2": 115, "p3": 116, "p4": 117, "p5": 118, "p6": 119, "shine": 121, "sky": 124, "skyHi": 125, "stone": 122, "stoneDark": 123},
+  scenes: {"lobby": {"h": 28, "mx": 0, "my": 84, "pal": 4, "w": 32}, "sky": {"h": 28, "mx": 0, "my": 0, "pal": 1, "w": 32}, "title": {"h": 28, "mx": 0, "my": 56, "pal": 3, "w": 32}},
+  colors: {"crystal": 84, "d0": 104, "d1": 105, "d2": 106, "d3": 107, "d4": 108, "d5": 109, "d6": 110, "danger": 127, "edge": 120, "goal": 126, "goldHi": 111, "h0": 97, "h1": 98, "h2": 99, "h3": 100, "h4": 101, "h5": 102, "h6": 103, "moss": 82, "mossHi": 83, "p0": 113, "p1": 114, "p2": 115, "p3": 116, "p4": 117, "p5": 118, "p6": 119, "panelHi": 81, "rock": 124, "rockDark": 125, "shine": 121, "stone": 122, "stoneDark": 123, "stoneHi": 112, "twinkle": 31, "twinkleLit": 47, "win": 30, "winLit": 46},
 };
 // END ART
 /** Queue one of ART.sprites at (x, y), above the background; opts as for spr (fx, fy ...). */
@@ -22,7 +22,7 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 11). The channel decides the voice: 0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample. ---
 
 const SFX = { move: 0, select: 1, pause: 2, lost: 3, crumble: 4, land: 5, record: 6, turn: 7, count: 8, go: 9, cross: 10, join: 11, refuse: 12 };
-const SONG = { title: 0, race: 1, tense: 2, win: 3 }; // the title, lobby, help and records; the race; a tower over the line; the finish (once)
+const SONG = { title: 0, race: 1, tense: 2, win: 3 }; // the title, lobby, help and records; the race; a tower over the line; the finish (a fanfare, then a calm loop under the results)
 const SFX_CH = 1; // effects share channel 1 (pulse); the songs leave it free
 // Effects with noise (or saw or triangle) in them go on a channel with that voice. Fill this from audio.py:
 // node tools/devkit/music/sfx.mjs carts/tricksy-towerz.nova 1 shows what each effect is.
@@ -307,10 +307,17 @@ function layers() {
   bg(0, { mx: pic ? pic.mx : 0, my: pic ? pic.my : 0, mw: 32, mh: 28, show: !!pic });
 }
 
-/** Lay the backdrop of every yard on BG1's canvas (each is 8 x 26 cells, copied from the picture `back`). */
+/** Lay the backdrop of every yard on BG1's canvas: the night's own cells under the yard (8 x 26), in BG palette 2 (the same colours, lit). */
 function fillYards() {
   for (let cy = 0; cy < 28; cy++) for (let cx = 0; cx < 32; cx++) mset(CANVAS.mx + cx, CANVAS.my + cy, 0);
-  for (const y of yards) for (let cy = 0; cy < SC.back.h; cy++) for (let cx = 0; cx < SC.back.w; cx++) mset(CANVAS.mx + (colX(y) >> 3) + cx, CANVAS.my + (VY >> 3) + cy, mget(SC.back.mx + cx, SC.back.my + cy));
+  for (const y of yards) for (let cy = VY >> 3; cy < 28; cy++) for (let cx = colX(y) >> 3, e = cx + 8; cx < e; cx++) mset(CANVAS.mx + cx, CANVAS.my + cy, (mget(SC.sky.mx + cx, SC.sky.my + cy) & ~0x1c00) | (2 << 10));
+}
+
+/** The night moves a little: one group of stars twinkles (in the sky and in the yards) and the castle's windows flicker, by changing palette entries. */
+function twinkle() {
+  const k = 0.55 + 0.45 * Math.sin(clock / 11), f = 0.85 + 0.15 * Math.sin(clock / 5) * Math.sin(clock / 13), C = ART.colors;
+  for (const i of [C.twinkle, C.twinkleLit]) color(i, 31 * k | 0, 31 * k | 0, Math.min(31, 31 * k + 6) | 0);
+  for (const i of [C.win, C.winLit]) color(i, 31 * f | 0, 26 * f | 0, 15 * f | 0);
 }
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
@@ -642,7 +649,7 @@ function updatePause() {
 
 function draw() {
   cls();
-  layers();
+  layers(); twinkle();
   if (state === 'play' || state === 'over' || state === 'count') drawPlay();
   else if (state === 'title') drawTitle();
   else if (state === 'lobby') drawLobby();
@@ -659,8 +666,10 @@ function draw() {
 const BIG = { 1: '..#..,.##..,..#..,..#..,..#..,..#..,.###.', 2: '.###.,#...#,....#,...#.,..#..,.#...,#####', 3: '.###.,#...#,....#,..##.,....#,#...#,.###.',
   G: '.###.,#...#,#....,#.###,#...#,#...#,.###.', O: '.###.,#...#,#...#,#...#,#...#,#...#,.###.', '!': '..#..,..#..,..#..,..#..,..#..,.....,..#..' };
 function bigText(str, y, k, c) {
-  const x0 = 128 - ((str.length * 6 - 1) * k >> 1);
-  [[2, SHADOW], [0, c]].forEach(([d, col]) => [...str].forEach((ch, i) => BIG[ch].split(',').forEach((row, j) => [...row].forEach((v, x) => { if (v === '#') rectfill(x0 + (i * 6 + x) * k + (d ? k >> 1 : 0), y + j * k + (d ? k >> 1 : 0), k, k, col); }))));
+  const x0 = 128 - ((str.length * 6 - 1) * k >> 1), each = (f) => [...str].forEach((ch, i) => BIG[ch].split(',').forEach((row, j) => [...row].forEach((v, x) => { if (v === '#') f(x0 + (i * 6 + x) * k, y + j * k, j, BIG[ch].split(',')[j - 1]?.[x] === '#'); })));
+  each((x, yy) => rectfill(x + (k >> 1) - 2, yy + (k >> 1) - 2, k + 4, k + 4, SHADOW)); // the shadow, with the outline round it
+  each((x, yy) => rectfill(x - 2, yy - 2, k + 4, k + 4, SHADOW));
+  each((x, yy, j, above) => { rectfill(x, yy, k, k, c); if (!above) rectfill(x, yy, k, 2, ART.colors.goldHi); }); // the light on the top of each stroke
 }
 
 const fmtTime = (f) => `${Math.floor(f / 3600)}:${String(Math.floor(f / 60) % 60).padStart(2, '0')}.${String(Math.floor((f % 60) * 5 / 3)).padStart(2, '0')}`;
@@ -678,7 +687,7 @@ function drawYard(y) {
   clip(x0, VY, COL_W, VH);
   const gy = sy(0), fy = sy(-FINISH);
   for (let i = 0; i < COL_W; i += 4) for (let j = 0; j < 2; j++) rectfill(x0 + i, fy - 3 + j * 3, 4, 3, (i / 4 + j) % 2 ? C.shine : y.hold > 0 ? C.goal : C.danger); // the finish line: a chequered band
-  for (let r = 0; r < 224 - gy - 14; r += 2) { const w = Math.max(10, 48 - r), x1 = x0 + HALF - (w >> 1); rectfill(x1, gy + 16 + r, w, 2, r % 8 < 2 ? C.stone : C.stoneDark); } // the rock the platform stands on, narrowing as it goes down
+  drawRock(x0 + HALF, gy + 16);
   for (const b of [y.W.ground, ...y.W.bodies]) drawBody(b, sx, sy, b === y.W.ground);
   if (y.cur && !y.ai && y.assist) { // the landing guide: where the piece would come to rest
     const g = landing(y);
@@ -693,22 +702,39 @@ function drawYard(y) {
   const nk = seq[y.spawned % seq.length]; // the piece after this one
   for (const [c, r] of SHAPES[nk]) rectfill(x0 + 51 + c * 3, 3 + r * 3, 3, 3, C['p' + nk]);
   if (y.lost) txt(`LOST ${y.lost}`, x0 + 3, 212, RED);
-  if (win) txt('WINNER', x0 + 8, VY + 40, GOLD);
+  if (win) txt('WINNER', x0 + 8, VY + 8, GOLD); // above the results panel
   if (y.hold > 0) rectfill(x0 + 2, VY + 2, Math.round((COL_W - 4) * y.hold / HOLD), 3, C.goal);
 }
 
-/** A body: its blocks as filled squares with a dark edge, however they are turned. */
+const ROCK = [0, 1, 1, 2, 4, 5, 7, 8, 10, 12, 13, 15, 16, 17, 18, 19, 20, 21, 21, 22, 22, 23]; // how far in from each side the rock is on each row of 2 px
+/** The floating rock under a platform (centre x, top y): lit on the left, shaded on the right, moss along the top, crystals at the tip. */
+function drawRock(cx, top) {
+  const C = ART.colors;
+  ROCK.forEach((d, i) => {
+    const y = top + i * 2, w = 48 - d * 2, x1 = cx - (w >> 1), j = (i * 7) % 3 - 1; // j: a jag, so the sides are not straight
+    if (y > 224) return;
+    rectfill(x1 + j, y, w - j, 2, C.rockDark); rectfill(x1 + j, y, (w * 3 >> 2) - j, 2, C.rock);
+    pset(x1 + j, y, C.edge); pset(x1 + w - 1, y + 1, C.edge);
+    if (i % 4 === 2 && w > 12) pset(cx - 6 + i, y + 1, C.rockDark);
+  });
+  rectfill(cx - 24, top, 48, 1, ART.colors.moss); for (let x = -23; x < 24; x += 3) pset(cx + x, top + 1 + (x & 1), x % 2 ? C.mossHi : C.moss);
+  const tip = top + ROCK.length * 2;
+  for (const [dx, h] of [[-3, 4], [0, 7], [3, 3]]) { line(cx + dx, tip, cx + dx, tip + h, C.crystal); pset(cx + dx, tip, C.shine); }
+}
+
+/** A body: its blocks as filled squares with a dark edge, a light on the top and left, a shade on the bottom and right and a glint, however they are turned. */
 function drawBody(b, sx, sy, ground) {
-  const C = ART.colors, fill = ground ? C.stone : C['p' + b.kind], edge = ground ? C.stoneDark : C.edge, light = ground ? C.shine : C['h' + b.kind];
+  const C = ART.colors, fill = ground ? C.stone : C['p' + b.kind], edge = ground ? C.stoneDark : C.edge, light = ground ? C.stoneHi : C['h' + b.kind], shade = ground ? C.stoneDark : C['d' + b.kind];
   for (let k = 0; k < b.n; k++) {
     const v = b.v[k], q = [sx(v[0]), sy(v[1]), sx(v[2]), sy(v[3]), sx(v[4]), sy(v[5]), sx(v[6]), sy(v[7])];
     fillQuad(q, fill);
-    for (let e = 0; e < 4; e++) { const f = (e + 1) & 3; line(q[e * 2], q[e * 2 + 1], q[f * 2], q[f * 2 + 1], edge); }
-    if (ground) continue;
-    const cx = sx(b.cx[k]), cy = sy(b.cy[k]); // the light: the top edge and the left edge, a little inside
-    const t = (i) => [cx + (q[i * 2] - cx) * 0.62, cy + (q[i * 2 + 1] - cy) * 0.62];
-    const [a0, a1, a3] = [t(0), t(1), t(3)];
+    const cx = sx(b.cx[k]), cy = sy(b.cy[k]); // the bevel: lines a pixel inside the edges (corners 0 to 3 are top left, top right, bottom right, bottom left)
+    const t = (i) => [cx + (q[i * 2] - cx) * 0.7, cy + (q[i * 2 + 1] - cy) * 0.7];
+    const [a0, a1, a2, a3] = [t(0), t(1), t(2), t(3)];
+    line(a1[0], a1[1], a2[0], a2[1], shade); line(a2[0], a2[1], a3[0], a3[1], shade);
     line(a3[0], a3[1], a0[0], a0[1], light); line(a0[0], a0[1], a1[0], a1[1], light);
+    for (let e = 0; e < 4; e++) { const f = (e + 1) & 3; line(q[e * 2], q[e * 2 + 1], q[f * 2], q[f * 2 + 1], edge); }
+    if (!ground) pset(Math.round(a0[0] + (cx - a0[0]) * 0.35), Math.round(a0[1] + (cy - a0[1]) * 0.35), C.shine);
   }
 }
 
@@ -744,16 +770,18 @@ function drawLobby() { // the panel is a picture on BG0; the wizards stand on it
 
 /** The finish: who won, and the others in order of how high they got. */
 function drawResults() {
-  panel(24, 56, 208, 112);
+  panel(24, 44, 208, 140);
   const w = yards.find((y) => y.player === winner);
-  ctxt(`${w.ai ? 'CPU ' : ''}P${winner + 1} WINS!`, 64, GOLD);
+  ctxt(`${w.ai ? 'CPU ' : ''}P${winner + 1} WINS!`, 54, GOLD);
   ranking.forEach((y, i) => {
-    const row = 84 + i * 14;
+    const row = 80 + i * 20, face = y.player + (y.ai ? 4 : 0);
+    if (i === 0) rectfill(30, row - 7, 196, 20, ART.colors.edge);
     txt(String(i + 1), 36, row, i === 0 ? GOLD : DIM);
-    txt(`P${y.player + 1} ${y.ai ? SKILLS[y.skill].name : 'HUMAN'}`, 52, row, y.ai ? CYAN : WHITE);
-    txt(i === 0 ? fmtTime(raceT) : `${Math.max(0, Math.round(-y.top))} PX`, 152, row, i === 0 ? GOLD : WHITE);
+    blit(ART.sprites[(i ? 'wiz' : 'wizWin') + face], 50, row - 5 - (i ? 0 : Math.round(Math.abs(Math.sin(timer / 7)) * 3))); // the winner jumps
+    txt(`P${y.player + 1} ${y.ai ? SKILLS[y.skill].name : 'HUMAN'}`, 72, row, y.ai ? CYAN : WHITE);
+    txt(i === 0 ? fmtTime(raceT) : `${Math.max(0, Math.round(-y.top))} PX`, 160, row, i === 0 ? GOLD : WHITE);
   });
-  if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 152, DIM);
+  if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 168, DIM);
 }
 
 /** The how-to-play pages: [title, lines] (at most 12 lines of 28 characters). */
@@ -767,15 +795,16 @@ function drawHelp() {
   const [head, lines] = HELP[helpPage];
   panel(16, 16, 224, 192);
   ctxt(`${head}  ${helpPage + 1}/${HELP.length}`, 24, GOLD);
-  lines.forEach((l, i) => txt(l, 28, 46 + i * 12, WHITE));
+  lines.forEach((l, i) => txt(l, 24, 46 + i * 12, WHITE));
   ctxt('L/R: PAGE   B: BACK', 192, DIM);
 }
 
 function drawTitle() { // the logo and the two towers are a picture on BG0
   sprite(ART.sprites.wizWin1, 26, 103 + Math.round(Math.sin(timer / 9) * 2)); // a wizard on each tower, cheering the other down
   sprite(ART.sprites.wizWin0, 218, 71 + Math.round(Math.sin(timer / 9 + 2) * 2));
+  panel(60, 92, 136, 52);
   ctxt('UP TO FOUR PLAYERS', 176, DIM);
-  ['PLAY', 'HOW TO PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 80, 100 + i * 14, i === titleSel ? GOLD : WHITE));
+  ['PLAY', 'HOW TO PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 72, 100 + i * 14, i === titleSel ? GOLD : WHITE));
 }
 
 function drawRecords() {
@@ -795,6 +824,9 @@ function drawInitials() {
   const ini = initials;
   panel(24, 40, 208, 144);
   ctxt(rank === 0 ? 'NEW BEST TIME!' : `TOP 10: #${rank + 1}`, 52, GOLD);
+  const hop = (d) => 104 - Math.round(Math.abs(Math.sin(timer / 7 + d)) * 4);
+  blit(ART.sprites['wizWin' + winner], 40, hop(0)); blit(ART.sprites['wizWin' + winner], 200, hop(1.5));
+  for (let i = 0; i < 6; i++) { const a = timer / 20 + i * 1.05, r = 14 + (i & 1) * 4; if ((timer + i * 9) % 30 < 20) pset(48 + (i < 3 ? 0 : 160) + Math.round(Math.cos(a) * r), 112 + Math.round(Math.sin(a) * r), i % 2 ? GOLD : ART.colors.goldHi); }
   ctxt(fmtTime(raceT), 68, WHITE);
   ctxt('ENTER YOUR INITIALS', 90, DIM);
   for (let i = 0; i < 3; i++) {
@@ -812,8 +844,14 @@ function drawPause() {
 }
 
 function panel(x, y, w, h) {
-  rectfill(x, y, w, h, SHADOW); rect(x, y, w, h, PANEL); rect(x + 2, y + 2, w - 4, h - 4, ART.colors.stoneDark);
-  for (const [cx, cy] of [[x, y], [x + w - 3, y], [x, y + h - 3], [x + w - 3, y + h - 3]]) rectfill(cx, cy, 3, 3, GOLD); // a stud in each corner
+  rectfill(x, y, w, h, SHADOW); rect(x, y, w, h, PANEL); rect(x + 2, y + 2, w - 4, h - 4, ART.colors.panelHi);
+  for (const [cx, cy] of [[x, y], [x + w - 3, y], [x, y + h - 3], [x + w - 3, y + h - 3]]) { rectfill(cx, cy, 3, 3, GOLD); pset(cx, cy, ART.colors.goldHi); } // a stud in each corner
+}
+
+/** One of ART.sprites drawn on the overlay, a pixel at a time from the tile sheet (so it can stand on a panel, which a sprite cannot). */
+function blit(s, x, y) {
+  const tx = (s.tile & 15) << 3, ty = (s.tile >> 4) << 3, base = 128 + 16 * s.pal;
+  for (let j = 0; j < s.size; j++) for (let i = 0; i < s.size; i++) { const c = sget(tx + i, ty + j); if (c) pset(x + i, y + j, base + c); }
 }
 function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }
 const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
