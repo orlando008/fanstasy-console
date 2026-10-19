@@ -1,0 +1,66 @@
+name: pages
+# The hosted console on GitHub Pages, served from the gh-pages branch (Settings, Pages: deploy from the gh-pages branch,
+# root folder). Main is the site at https://<owner>.github.io/<repo>/; each pull request from this repository gets a
+# playable preview at .../pr/<number>/, with a comment on the pull request giving the link, and the preview is removed
+# when the pull request closes. The layout, the commit and the push are `node tools/site.js publish ...`, which can be
+# run and checked locally (node tools/site.js check); this file only picks the target and writes the comment.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: write        # push to gh-pages
+  pull-requests: write   # the preview comment
+
+# One run at a time for each target (main, or one pull request): a newer push replaces a waiting run for the same
+# target, and runs for different targets never cancel each other. Runs that push to gh-pages at the same moment are
+# handled by tools/site.js, which fetches again and redoes a push that was turned away.
+concurrency:
+  group: pages-${{ github.event.pull_request.number || 'main' }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # A pull request from a fork gets a read-only token and cannot push a preview.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # a closed pull request's merge ref may be gone: removing its preview only needs the default branch
+          ref: ${{ github.event.action == 'closed' && github.event.repository.default_branch || '' }}
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      - name: Publish to gh-pages
+        env:
+          EVENT: ${{ github.event_name }}
+          ACTION: ${{ github.event.action }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "$EVENT" = push ]; then node tools/site.js publish main
+          elif [ "$ACTION" = closed ]; then node tools/site.js publish remove "$PR"
+          else node tools/site.js publish pr "$PR"; fi
+
+      - name: Comment the preview link on the pull request
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          ACTION: ${{ github.event.action }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          owner="${REPO%%/*}"; name="${REPO#*/}"
+          url="https://${owner,,}.github.io/${name}/pr/${PR}/"
+          marker='<!-- pages-preview -->'
+          if [ "$ACTION" = closed ]; then
+            body=$(printf '%s\n%s' "$marker" "The preview of this pull request has been removed.")
+          else
+            body=$(printf '%s\n**Play the preview:** %s\n\nBuilt from %s. GitHub Pages publishes it a minute or two after this run. The preview keeps its own saves, apart from the main site'"'"'s.' "$marker" "$url" "${SHA:0:7}")
+          fi
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -n 1)
+          if [ -n "$id" ]; then gh api -X PATCH "repos/$REPO/issues/comments/$id" -f body="$body" > /dev/null
+          else gh api "repos/$REPO/issues/$PR/comments" -f body="$body" > /dev/null; fi

@@ -27,7 +27,8 @@ that gap.
   - **Why:** the user records the moment ("this note never stops", "no time to turn it") and hands it to an agent, who
     then sees exactly what the user saw. The console records replays already; no tool reads them.
   - **Notes:** the harness already drives four pads (`vm.step(mask, [m1, m2, m3])`) and takes a save.
-- [ ] **A hosted build.**
+- [x] **A hosted build.** Done in [orlando008/fanstasy-console#42](https://github.com/orlando008/fanstasy-console/pull/42),
+  2026-10-19: `.github/workflows/pages.yml` and `tools/site.js` (README, "Playing it online").
   - **What:** a GitHub Pages deploy of `main`, and a preview build for each pull request.
   - **Why:** playing a branch today means running a local web server. With a preview link, the user plays a change on
     any device before it merges, and feedback comes per PR instead of after release.

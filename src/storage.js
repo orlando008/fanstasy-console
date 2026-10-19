@@ -1,7 +1,13 @@
 // Save data persistence in localStorage. Only the main thread touches storage;
 // the console worker sends save data here when it changes.
 
-const SAVE_PREFIX = 'nova16.save.';
+// A pull request's preview (served from .../pr/<n>/ next to the main site, on the
+// same origin) keeps its own saves and working cart, so a change under test can
+// never overwrite the main site's records. Everything else shares one scope.
+const preview = /\/pr\/(\d+)\//.exec(globalThis.location?.pathname || '');
+export const SCOPE = preview ? `nova16.pr${preview[1]}.` : 'nova16.';
+
+const SAVE_PREFIX = `${SCOPE}save.`;
 
 /** Load a cart's 256 save slots, or zeros if none are stored. */
 export function loadSave(id) {
@@ -32,7 +38,7 @@ export function storeSave(id, data) {
   }
 }
 
-const AUTOSAVE_KEY = 'nova16.autosave';
+const AUTOSAVE_KEY = `${SCOPE}autosave`;
 
 /** The autosaved working cart as .nova text, or null. */
 export function loadAutosave() {
