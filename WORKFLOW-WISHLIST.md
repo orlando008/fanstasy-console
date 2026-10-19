@@ -157,14 +157,17 @@ cart runs there is nothing on screen but the game.
 
 **Playing**
 
-- [ ] **A visible way back to the Library.**
+- [x] **A visible way back to the Library.** Done in [orlando008/fanstasy-console#43](https://github.com/orlando008/fanstasy-console/pull/43), 2026-10-19: corner Menu and Library buttons,
+  the one-time hint, and the browser's Back fixed for a game resumed from the Library.
   - **Today:** Backspace, holding a gamepad's Select and Start, or the Library button in the editor's bar. While a game
     runs nothing on screen says so.
   - **What:**
     - a small Library button in a corner of the play screen that shows when the mouse moves and hides again;
     - a one-time hint when a cart starts ("Backspace or hold Select + Start: Library");
     - the browser's Back button returning to the Library (check that it does).
-- [ ] **A console pause menu for players.**
+- [x] **A console pause menu for players.** Done in [orlando008/fanstasy-console#43](https://github.com/orlando008/fanstasy-console/pull/43), 2026-10-19 (`src/pause-menu.js`, SPEC 11.2). Not
+  done: the developer mode; instead Esc goes to the code only for a game started from the editor, and to the menu
+  otherwise.
   - **What:** a menu over the game with Resume, Restart, Controls, Volume and Library, opened by Esc or a gamepad's
     Select (held).
   - **Why:** today Esc opens the code editor, which is what a developer wants and not what a player expects.
