@@ -4,7 +4,7 @@
 // mouse pick a cart.
 
 import { PNG_H, PNG_W, drawCartridge, labelBitmap } from './formats/nova-png.js';
-import { GENRES } from './genres.js';
+import { GENRES, playersLabel } from './genres.js';
 import { h } from './ui/dom.js';
 
 const MANIFEST = 'carts/index.json';
@@ -104,6 +104,7 @@ export class Library {
         },
       }, art,
       h('span', { class: 'lib-card-name' }, name),
+      players(entry),
       playing ? h('span', { class: 'lib-badge' }, 'PAUSED') : null);
       entry.playing = playing;
       return card;
@@ -141,7 +142,8 @@ export class Library {
     if (row?.firstElementChild && card.offsetTop === row.firstElementChild.offsetTop) row.previousElementSibling?.scrollIntoView({ block: 'nearest' });
     card.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     this.detailTitle.textContent = entry.kind === 'mine' ? `Your cart: ${entry.title}` : entry.title;
-    this.detailBy.textContent = entry.author ? `by ${entry.author}` : '';
+    const who = playersLabel(entry.players).toLowerCase();
+    this.detailBy.textContent = [entry.author ? `by ${entry.author}` : '', who].filter(Boolean).join('  ·  ');
     this.detailText.textContent = entry.description || '';
     this.detailHint.textContent = entry.kind === 'open' || entry.kind === 'new' ? 'Enter or A to choose'
       : entry.playing ? 'Paused: Enter or A to resume' : 'Enter or A to play';
@@ -227,4 +229,11 @@ export class Library {
     p.held = mask;
     if (pressed & (16 | 64)) this.activate();
   }
+}
+
+/** The badge under a cartridge's name saying how many can play (none for a cart without a players value, such as a tech demo). */
+function players(entry) {
+  const label = playersLabel(entry.players);
+  if (!label) return null;
+  return h('span', { class: `lib-players${/[2-4]$/.test(entry.players) ? ' multi' : ''}`, attrs: { 'data-players': entry.players } }, label);
 }
