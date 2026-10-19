@@ -174,6 +174,17 @@ The result, at the numbers of this document: 24 races of each level alone (the r
 
 Each piece takes about 0.7 s longer to arrive, so the levels that never use the fast drop (EASY, NORMAL) are slowed most; the ladder is unchanged and a race of four HARD wizards takes a median of 29 s (23 to 47 s, 24 races; won by places 1 to 4 6, 8, 4 and 6 times), against 25 s before.
 
+**After the slow fall** (0.4 px a frame, every level dropping fast once its piece is in place after waiting 90, 30, 0 and 0 frames: 5.2 and section 7), the same 24 races of each level alone (`node tools/devkit/sweep.mjs tricksy-towerz --seeds 24 --frames 9000 --set skill=0,1,2,3 -v`; placed and lost are medians):
+
+| Level | Finished | Median | Fastest to slowest | Placed | Lost |
+|---|---|---|---|---|---|
+| EASY | 14 of 24 | 81 s | 53 to 134 s | 31 | 14 |
+| NORMAL | 22 of 24 | 60 s | 36 to 114 s | 25 | 8 |
+| HARD | 24 of 24 | 37 s | 27 to 76 s | 22 | 3 |
+| WIZARD | 24 of 24 | 35 s | 21 to 72 s | 22 | 4 |
+
+Races of four: four HARD wizards a median of 32 s (25 to 51 s, 24 races; won by places 1 to 4 5, 9, 4 and 6 times), four WIZARDs 26 s (20 to 32 s, 12 races; 5, 1, 2 and 4). The ladder holds and no place is favoured. EASY is the one that changed most: it finishes alone within 150 s only 14 times in 24 (it was 21), since it waits 1.5 s before dropping each piece and loses more pieces; as the beginner's opponent that is meant, but if people find it too slow, its `wait` is the number to lower.
+
 (An earlier run of 12 seeds said EASY 8 of 12 and 101 s; the spread between seeds is large, which is the nature of a tower: one in a dozen collapses near the top and starts again.) A person has the landing guide the computer does not, and can use the fast drop; the target for
 a good person is 30 to 60 seconds, so a person as good as the WIZARD wins and a beginner has a table to climb.
 
@@ -475,6 +486,11 @@ Each step: build it, run `node tools/check.js tricksy-towerz` and `node tools/te
      comes over the line now holds the spawn until the tower is there (a piece from higher up was still falling).
    - **Results:** `node tools/verify.js tricksy-towerz` passes (275 test checks, among them `08-balance.mjs`'s guard rails), the soak is clean; the sweeps of 5.6 (above): every level slower (WIZARD 22 to 31 s, EASY 69 to 79 s), the
      ladder kept, no place favoured. Over whole races a new piece's top was never closer than 7 px to the top of the view.
+
+10. **The slow fall** (from the user's play: still not enough time to turn a piece; the difficulty should be in arranging the pieces).
+
+    - **Built:** `FALL` 1 to 0.4 px a frame (DOWN still 3); every computer wizard drops fast once its piece is turned and in place, after `SKILLS[].wait` frames (90, 30, 0, 0) instead of only HARD and WIZARD dropping fast. `04-race.mjs` checks the slow fall while a wizard thinks and the fast drop once in place.
+    - **Results:** `node tools/verify.js tricksy-towerz` passes (276 test checks, the balance guard rails among them), the soak is clean and the smoke test in the real console reports no errors (60 fps). The sweeps of 5.6 (above): EASY 81 s (14 of 24 finish in 150 s), NORMAL 60 s, HARD 37 s, WIZARD 35 s; races of four HARD 32 s and four WIZARD 26 s, no place favoured.
 
 ## 16. Open questions
 
