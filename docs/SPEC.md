@@ -156,7 +156,7 @@ Attack, decay and release are lengths in frames (0–255) and sustain is a level
 
 - **Timing.** 60 ticks per second. Speed is the number of ticks per row (default 6).
 - **Patterns.** 64 patterns, each 64 rows × 6 channels. A cell holds a note, instrument, volume and effect plus parameter.
-- **Songs.** 8 songs, each an order list of up to 128 pattern indices with a loop point.
+- **Songs.** 8 songs, each an order list of up to 128 pattern indices with a loop point. A song whose loop point is `null` plays once: at its end every note still sounding is released (it rings out through its release and stops).
 - **SFX.** 64 slots. Each is a single-channel pattern of up to 32 rows with its own speed. A playing SFX temporarily takes over a channel, and music on that channel is muted until the SFX ends.
 
 Pattern effects:
@@ -534,7 +534,7 @@ built in HTML like the editor, not inside the console.
 ├── carts/                  # Demo and game carts (.nova, .nova.png), index.json and labels/ for the Library
 │   └── src/<name>/         # A cart's source: code.js, meta.json, tiles.txt, palette.txt, map.txt, audio.json (made
 │                           #   by audio.py where there is one; tiles.txt, palette.txt, map.txt, art.json by art.py), label.png
-├── tests/console/          # Checks of the console itself in headless Chromium (node tests/console/volume.mjs)
+├── tests/console/          # Checks of the console itself (node tests/console/volume.mjs in headless Chromium; node tests/console/song-end.mjs)
 ├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs: 01-flow, 02-art ...), its lib.mjs and its bot.mjs for the sweep tool
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/
