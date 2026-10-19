@@ -457,15 +457,19 @@ built in HTML like the editor, not inside the console.
   Start together for about a second opens), the Library button in the corner of
   the play screen or in the editor's bar, or the browser's Back button returns to
   it, pausing the game.
-- **The shelf.** Each cart is drawn as a cartridge, the same picture a
+- **The shelves.** Each cart is drawn as a cartridge, the same picture a
   `.nova.png` export makes: its label, title and author, or a NO LABEL plate.
-  The selected cart's description shows below the shelf. The first slot is
-  **Your cart**, the autosaved working cart, when there is one; after it come
-  the carts in the manifest. **Open file** and **New cart** sit at the end of
-  the shelf. Dropping a `.nova` or `.nova.png` onto the page still loads and
-  runs it.
+  The selected cart's description shows below the shelves. The cartridges stand
+  on a shelf for each genre, each with its heading, in the order of
+  `src/genres.js`: Arcade, Puzzle, Racing, Strategy, then **Tech demos** (the
+  console's test carts) last; a cart of no known genre goes on **More carts**,
+  before the tech demos. First comes **Your cart**, the autosaved working cart,
+  when there is one; **Open file** and **New cart** are on the last shelf, Make
+  a cart. Dropping a `.nova` or `.nova.png` onto the page still loads and runs
+  it.
 - **Controls.** Arrows or a gamepad's d-pad and left stick move between
-  cartridges; Enter, Space or a gamepad's A, B or Start plays the selected
+  cartridges, from shelf to shelf (up and down keep to the nearest column, and a
+  shelf's heading scrolls into view with its first row); Enter, Space or a gamepad's A, B or Start plays the selected
   one; the mouse picks and clicks. Choosing the cart that is already loaded
   resumes it where it was paused.
 - **Opening a cart.** It loads exactly as `?cart=<name>` does, and the address
@@ -474,11 +478,14 @@ built in HTML like the editor, not inside the console.
   confirmed first, as when opening a file.
 - **The manifest.** The page is static and can't list a folder, so the shelf
   comes from `carts/index.json`: each cart's file name, title, author,
-  description and label image, and its `.nova.png` if one exists. Labels are
+  description, genre and label image, and its `.nova.png` if one exists. Labels are
   copied out of the carts into `carts/labels/<name>.png`, so the shelf loads a
   few small images rather than every cart. `node tools/library.js` regenerates
-  both from the `.nova` files in `carts/`: released games (carts with a
-  `.nova.png`) first, then the rest, each by title.
+  both from the `.nova` files in `carts/`, in the order of the shelves, released
+  games (carts with a `.nova.png`) first on each, then by title. The genre is
+  not part of the cart (a `.nova` keeps only title, author and description): it
+  is the `genre` in the cart's source `carts/src/<name>/meta.json`, one of
+  `src/genres.js`, and `tools/check.js` insists on it.
 
 ### 11.2 Pause menu
 
@@ -510,7 +517,8 @@ own pause menu (on its START) is separate.
 ├── package.json            # { "type": "module" } only, for node --check; no dependencies
 ├── src/
 │   ├── main.js             # Boot and wiring: machine, shell, library, files, autosave
-│   ├── library.js          # The Library: the home page's shelf of carts (11.1)
+│   ├── library.js          # The Library: the home page's shelves of carts (11.1)
+│   ├── genres.js           # The Library's shelves: the genres and their order (11.1)
 │   ├── pause-menu.js       # The pause menu over a running game, and the corner buttons (11.2)
 │   ├── machine.js          # Console worker lifecycle and 60 Hz frame clock
 │   ├── files.js            # .nova save/open (File System Access API, download fallback)

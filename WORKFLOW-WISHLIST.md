@@ -137,7 +137,8 @@ cart runs there is nothing on screen but the game.
 
 **Finding a game**
 
-- [ ] **Group the Library by genre.**
+- [x] **Group the Library by genre.** Done in [orlando008/fanstasy-console#44](https://github.com/orlando008/fanstasy-console/pull/44),
+  2026-10-19 (`src/genres.js`: Arcade, Puzzle, Racing, Strategy, Demo).
   - **What:** a `genre` in each cart's `meta.json` (puzzle, racing, action, strategy...), carried into
     `carts/index.json` by `tools/library.js`; the Library shows a shelf for each genre, with the tech demos on a shelf of
     their own at the end.

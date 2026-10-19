@@ -40,13 +40,14 @@ the repository root:
 python3 -m http.server 8000
 ```
 
-Then open <http://localhost:8000/>. The home page is the **Library**: a shelf
-of cartridges for every cart below, led by your autosaved working cart. Pick
-one with the arrows or a gamepad's d-pad and play it with Enter or A. Backspace
-while a cart runs (or holding a gamepad's Select and Start for a second)
-returns to the Library. `?cart=<name>` opens a cart directly, and `?seed=<n>`
-pins the random seed. You can also drop a `.nova` file or a `.nova.png` PNG
-cart onto the page.
+Then open <http://localhost:8000/>. The home page is the **Library**: the carts
+below as cartridges on a shelf for each genre (Arcade, Puzzle, Racing, Strategy,
+then the tech demos), led by your autosaved working cart. Pick one with the
+arrows or a gamepad's d-pad and play it with Enter or A. While a cart runs, Esc
+(or holding a gamepad's Select and Start for a second) opens the pause menu, and
+Backspace, the browser's Back or the Library button in the corner returns to the
+Library. `?cart=<name>` opens a cart directly, and `?seed=<n>` pins the random
+seed. You can also drop a `.nova` file or a `.nova.png` PNG cart onto the page.
 
 | Cart | Shows |
 |---|---|

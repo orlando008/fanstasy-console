@@ -176,7 +176,7 @@ body[data-mode="library"] #library {
   display: flex;
   align-items: baseline;
   gap: 16px;
-  padding: 16px 24px 4px;
+  padding: 16px 24px 10px;
 }
 .lib-logo {
   margin: 0;
@@ -190,11 +190,26 @@ body[data-mode="library"] #library {
 .lib-shelf {
   flex: 1;
   overflow-y: auto;
+  padding: 4px 24px 24px;
+}
+.lib-section { margin-top: 12px; }
+.lib-section-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 4px;
+  color: var(--dim);
+  font: bold 13px/1.6 var(--code-font);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.lib-section-title::after { content: ''; flex: 1; border-top: 1px solid var(--line); }
+.lib-row {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   align-content: start;
   gap: 20px;
-  padding: 16px 24px 24px;
+  padding: 6px 0;
 }
 
 .lib-card {
@@ -239,7 +254,7 @@ body[data-mode="library"] #library {
   font: bold 24px var(--code-font);
   letter-spacing: 4px;
 }
-.lib-error { grid-column: 1 / -1; color: var(--error); margin: 0; }
+.lib-error { color: var(--error); margin: 12px 0 0; }
 
 .lib-detail {
   padding: 12px 24px 16px;

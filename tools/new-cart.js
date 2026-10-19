@@ -12,7 +12,8 @@
 //   tests/carts/<name>/lib.mjs, 01-flow.mjs, 02-art.mjs, bot.mjs (a bot for tools/devkit/sweep.mjs), and a kind's own tests
 //   docs/carts/<name>.md             the spec template, with the implementation plan
 // Then: write the spec, replace the placeholder game, and build step by step (docs/dev/playbook.md). The template files
-// are plain text with {{NAME}}, {{TITLE}} and {{TITLE_UPPER}}.
+// are plain text with {{NAME}}, {{TITLE}}, {{TITLE_UPPER}} and {{GENRE}} (the Library's shelf: the kind's, or Arcade; see
+// src/genres.js, and change it in meta.json).
 //
 // KINDS: tools/templates/cart/ is the generic starter (a dodge-the-blocks placeholder). A kind in tools/templates/kinds/<kind>/
 // is a whole game of that type on the same frame, with its own art, sound, rules tests, bot and spec; any file it does not
@@ -44,7 +45,8 @@ function scaffold(name, title, kind = null) {
   const dirs = { src: join(ROOT, 'carts', 'src', name), tests: join(ROOT, 'tests', 'carts', name), spec: join(ROOT, 'docs', 'carts', `${name}.md`), nova: join(ROOT, 'carts', `${name}.nova`) };
   for (const p of Object.values(dirs)) if (existsSync(p)) throw new Error(`${p} already exists`);
   if (title.length > 30) console.warn('   note: a long title will not fit the title screen at one line (it is centred at 8 px a letter)');
-  const fill = (s) => s.replaceAll('{{NAME}}', name).replaceAll('{{TITLE_UPPER}}', title.toUpperCase()).replaceAll('{{TITLE}}', title);
+  const genre = { puzzle: 'Puzzle' }[kind] || 'Arcade';
+  const fill = (s) => s.replaceAll('{{NAME}}', name).replaceAll('{{TITLE_UPPER}}', title.toUpperCase()).replaceAll('{{TITLE}}', title).replaceAll('{{GENRE}}', genre);
   const kindDir = kind ? join(KINDS_DIR, kind) : null;
   const source = (file) => (kindDir && existsSync(join(kindDir, file)) ? join(kindDir, file) : join(TEMPLATES, file));
   const put = (file, to) => { mkdirSync(join(to, '..'), { recursive: true }); writeFileSync(to, fill(readFileSync(source(file), 'utf8'))); };
