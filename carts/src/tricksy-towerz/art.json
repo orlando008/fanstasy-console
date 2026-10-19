@@ -1,8 +1,17 @@
 {
  "colors": {
+  "crystal": 84,
+  "d0": 104,
+  "d1": 105,
+  "d2": 106,
+  "d3": 107,
+  "d4": 108,
+  "d5": 109,
+  "d6": 110,
   "danger": 127,
   "edge": 120,
   "goal": 126,
+  "goldHi": 111,
   "h0": 97,
   "h1": 98,
   "h2": 99,
@@ -10,6 +19,8 @@
   "h4": 101,
   "h5": 102,
   "h6": 103,
+  "moss": 82,
+  "mossHi": 83,
   "p0": 113,
   "p1": 114,
   "p2": 115,
@@ -17,11 +28,17 @@
   "p4": 117,
   "p5": 118,
   "p6": 119,
+  "panelHi": 81,
+  "rock": 124,
+  "rockDark": 125,
   "shine": 121,
-  "sky": 124,
-  "skyHi": 125,
   "stone": 122,
-  "stoneDark": 123
+  "stoneDark": 123,
+  "stoneHi": 112,
+  "twinkle": 31,
+  "twinkleLit": 47,
+  "win": 30,
+  "winLit": 46
  },
  "palettes": {
   "bg1": {
@@ -40,25 +57,35 @@
     "s5": 6,
     "star": 9,
     "starDim": 10,
+    "twinkle": 15,
     "win": 14
    }
   },
   "bg2": {
    "base": 32,
    "colors": {
-    "b0": 1,
-    "b1": 2,
-    "b2": 3,
-    "b3": 4,
-    "b4": 5,
-    "star": 6,
-    "starDim": 7
+    "castle": 13,
+    "hillFar": 11,
+    "hillNear": 12,
+    "moon": 7,
+    "moonShade": 8,
+    "s0": 1,
+    "s1": 2,
+    "s2": 3,
+    "s3": 4,
+    "s4": 5,
+    "s5": 6,
+    "star": 9,
+    "starDim": 10,
+    "twinkle": 15,
+    "win": 14
    }
   },
   "bg3": {
    "base": 48,
    "colors": {
     "edge": 8,
+    "moss": 15,
     "p0": 1,
     "p1": 2,
     "p2": 3,
@@ -66,6 +93,8 @@
     "p4": 5,
     "p5": 6,
     "p6": 7,
+    "rock": 13,
+    "rockDark": 14,
     "shadow": 12,
     "shine": 9,
     "stone": 10,
@@ -85,132 +114,141 @@
   "spr0": {
    "base": 128,
    "colors": {
-    "beard": 7,
-    "beardDark": 8,
+    "beard": 8,
+    "beardDark": 9,
+    "cheek": 10,
     "edge": 1,
-    "eye": 6,
+    "eye": 7,
     "hat": 2,
     "hatDark": 3,
-    "robe": 9,
-    "robeDark": 10,
-    "skin": 5,
-    "star": 4
+    "hatHi": 4,
+    "robe": 11,
+    "robeDark": 12,
+    "skin": 6,
+    "star": 5
    }
   },
   "spr1": {
    "base": 144,
    "colors": {
-    "beard": 7,
-    "beardDark": 8,
+    "beard": 8,
+    "beardDark": 9,
+    "cheek": 10,
     "edge": 1,
-    "eye": 6,
+    "eye": 7,
     "hat": 2,
     "hatDark": 3,
-    "robe": 9,
-    "robeDark": 10,
-    "skin": 5,
-    "star": 4
+    "hatHi": 4,
+    "robe": 11,
+    "robeDark": 12,
+    "skin": 6,
+    "star": 5
    }
   },
   "spr2": {
    "base": 160,
    "colors": {
-    "beard": 7,
-    "beardDark": 8,
+    "beard": 8,
+    "beardDark": 9,
+    "cheek": 10,
     "edge": 1,
-    "eye": 6,
+    "eye": 7,
     "hat": 2,
     "hatDark": 3,
-    "robe": 9,
-    "robeDark": 10,
-    "skin": 5,
-    "star": 4
+    "hatHi": 4,
+    "robe": 11,
+    "robeDark": 12,
+    "skin": 6,
+    "star": 5
    }
   },
   "spr3": {
    "base": 176,
    "colors": {
-    "beard": 7,
-    "beardDark": 8,
+    "beard": 8,
+    "beardDark": 9,
+    "cheek": 10,
     "edge": 1,
-    "eye": 6,
+    "eye": 7,
     "hat": 2,
     "hatDark": 3,
-    "robe": 9,
-    "robeDark": 10,
-    "skin": 5,
-    "star": 4
+    "hatHi": 4,
+    "robe": 11,
+    "robeDark": 12,
+    "skin": 6,
+    "star": 5
    }
   },
   "spr4": {
    "base": 192,
    "colors": {
-    "beard": 7,
-    "beardDark": 8,
+    "beard": 8,
+    "beardDark": 9,
+    "cheek": 10,
     "edge": 1,
-    "eye": 6,
+    "eye": 7,
     "hat": 2,
     "hatDark": 3,
-    "robe": 9,
-    "robeDark": 10,
-    "skin": 5,
-    "star": 4
+    "hatHi": 4,
+    "robe": 11,
+    "robeDark": 12,
+    "skin": 6,
+    "star": 5
    }
   },
   "spr5": {
    "base": 208,
    "colors": {
-    "beard": 7,
-    "beardDark": 8,
+    "beard": 8,
+    "beardDark": 9,
+    "cheek": 10,
     "edge": 1,
-    "eye": 6,
+    "eye": 7,
     "hat": 2,
     "hatDark": 3,
-    "robe": 9,
-    "robeDark": 10,
-    "skin": 5,
-    "star": 4
+    "hatHi": 4,
+    "robe": 11,
+    "robeDark": 12,
+    "skin": 6,
+    "star": 5
    }
   },
   "spr6": {
    "base": 224,
    "colors": {
-    "beard": 7,
-    "beardDark": 8,
+    "beard": 8,
+    "beardDark": 9,
+    "cheek": 10,
     "edge": 1,
-    "eye": 6,
+    "eye": 7,
     "hat": 2,
     "hatDark": 3,
-    "robe": 9,
-    "robeDark": 10,
-    "skin": 5,
-    "star": 4
+    "hatHi": 4,
+    "robe": 11,
+    "robeDark": 12,
+    "skin": 6,
+    "star": 5
    }
   },
   "spr7": {
    "base": 240,
    "colors": {
-    "beard": 7,
-    "beardDark": 8,
+    "beard": 8,
+    "beardDark": 9,
+    "cheek": 10,
     "edge": 1,
-    "eye": 6,
+    "eye": 7,
     "hat": 2,
     "hatDark": 3,
-    "robe": 9,
-    "robeDark": 10,
-    "skin": 5,
-    "star": 4
+    "hatHi": 4,
+    "robe": 11,
+    "robeDark": 12,
+    "skin": 6,
+    "star": 5
    }
   }
  },
  "scenes": {
-  "back": {
-   "h": 26,
-   "mx": 0,
-   "my": 28,
-   "pal": 2,
-   "w": 8
-  },
   "lobby": {
    "h": 28,
    "mx": 0,
@@ -316,6 +354,6 @@
   }
  },
  "tiles": {},
- "used": 651,
+ "used": 715,
  "version": 1
 }
