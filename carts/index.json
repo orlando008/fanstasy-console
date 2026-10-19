@@ -73,6 +73,14 @@
       "png": "carts/summit-rush.nova.png"
     },
     {
+      "name": "tricksy-towerz",
+      "title": "Tricksy Towerz",
+      "author": "NOVA-16",
+      "description": "A physics tower-building race for one to four wizards: steer and turn falling blocks that really slide, tip and topple, and keep your tower over the finish line for two seconds. Computer wizards fill empty places.",
+      "label": "carts/labels/tricksy-towerz.png",
+      "png": "carts/tricksy-towerz.nova.png"
+    },
+    {
       "name": "chiptune",
       "title": "Chiptune",
       "author": "NOVA-16",

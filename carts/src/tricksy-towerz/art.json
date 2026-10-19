@@ -1,0 +1,321 @@
+{
+ "colors": {
+  "danger": 127,
+  "edge": 120,
+  "goal": 126,
+  "h0": 97,
+  "h1": 98,
+  "h2": 99,
+  "h3": 100,
+  "h4": 101,
+  "h5": 102,
+  "h6": 103,
+  "p0": 113,
+  "p1": 114,
+  "p2": 115,
+  "p3": 116,
+  "p4": 117,
+  "p5": 118,
+  "p6": 119,
+  "shine": 121,
+  "sky": 124,
+  "skyHi": 125,
+  "stone": 122,
+  "stoneDark": 123
+ },
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "castle": 13,
+    "hillFar": 11,
+    "hillNear": 12,
+    "moon": 7,
+    "moonShade": 8,
+    "s0": 1,
+    "s1": 2,
+    "s2": 3,
+    "s3": 4,
+    "s4": 5,
+    "s5": 6,
+    "star": 9,
+    "starDim": 10,
+    "win": 14
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "b0": 1,
+    "b1": 2,
+    "b2": 3,
+    "b3": 4,
+    "b4": 5,
+    "star": 6,
+    "starDim": 7
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "edge": 8,
+    "p0": 1,
+    "p1": 2,
+    "p2": 3,
+    "p3": 4,
+    "p4": 5,
+    "p5": 6,
+    "p6": 7,
+    "shadow": 12,
+    "shine": 9,
+    "stone": 10,
+    "stoneDark": 11
+   }
+  },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "edge": 2,
+    "fill": 1,
+    "gold": 3,
+    "goldDark": 4,
+    "row": 5
+   }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "beard": 7,
+    "beardDark": 8,
+    "edge": 1,
+    "eye": 6,
+    "hat": 2,
+    "hatDark": 3,
+    "robe": 9,
+    "robeDark": 10,
+    "skin": 5,
+    "star": 4
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "beard": 7,
+    "beardDark": 8,
+    "edge": 1,
+    "eye": 6,
+    "hat": 2,
+    "hatDark": 3,
+    "robe": 9,
+    "robeDark": 10,
+    "skin": 5,
+    "star": 4
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "beard": 7,
+    "beardDark": 8,
+    "edge": 1,
+    "eye": 6,
+    "hat": 2,
+    "hatDark": 3,
+    "robe": 9,
+    "robeDark": 10,
+    "skin": 5,
+    "star": 4
+   }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "beard": 7,
+    "beardDark": 8,
+    "edge": 1,
+    "eye": 6,
+    "hat": 2,
+    "hatDark": 3,
+    "robe": 9,
+    "robeDark": 10,
+    "skin": 5,
+    "star": 4
+   }
+  },
+  "spr4": {
+   "base": 192,
+   "colors": {
+    "beard": 7,
+    "beardDark": 8,
+    "edge": 1,
+    "eye": 6,
+    "hat": 2,
+    "hatDark": 3,
+    "robe": 9,
+    "robeDark": 10,
+    "skin": 5,
+    "star": 4
+   }
+  },
+  "spr5": {
+   "base": 208,
+   "colors": {
+    "beard": 7,
+    "beardDark": 8,
+    "edge": 1,
+    "eye": 6,
+    "hat": 2,
+    "hatDark": 3,
+    "robe": 9,
+    "robeDark": 10,
+    "skin": 5,
+    "star": 4
+   }
+  },
+  "spr6": {
+   "base": 224,
+   "colors": {
+    "beard": 7,
+    "beardDark": 8,
+    "edge": 1,
+    "eye": 6,
+    "hat": 2,
+    "hatDark": 3,
+    "robe": 9,
+    "robeDark": 10,
+    "skin": 5,
+    "star": 4
+   }
+  },
+  "spr7": {
+   "base": 240,
+   "colors": {
+    "beard": 7,
+    "beardDark": 8,
+    "edge": 1,
+    "eye": 6,
+    "hat": 2,
+    "hatDark": 3,
+    "robe": 9,
+    "robeDark": 10,
+    "skin": 5,
+    "star": 4
+   }
+  }
+ },
+ "scenes": {
+  "back": {
+   "h": 26,
+   "mx": 0,
+   "my": 28,
+   "pal": 2,
+   "w": 8
+  },
+  "lobby": {
+   "h": 28,
+   "mx": 0,
+   "my": 84,
+   "pal": 4,
+   "w": 32
+  },
+  "sky": {
+   "h": 28,
+   "mx": 0,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  },
+  "title": {
+   "h": 28,
+   "mx": 0,
+   "my": 56,
+   "pal": 3,
+   "w": 32
+  }
+ },
+ "sprites": {
+  "wiz0": {
+   "pal": 0,
+   "size": 16,
+   "tile": 768
+  },
+  "wiz1": {
+   "pal": 1,
+   "size": 16,
+   "tile": 772
+  },
+  "wiz2": {
+   "pal": 2,
+   "size": 16,
+   "tile": 776
+  },
+  "wiz3": {
+   "pal": 3,
+   "size": 16,
+   "tile": 780
+  },
+  "wiz4": {
+   "pal": 4,
+   "size": 16,
+   "tile": 800
+  },
+  "wiz5": {
+   "pal": 5,
+   "size": 16,
+   "tile": 804
+  },
+  "wiz6": {
+   "pal": 6,
+   "size": 16,
+   "tile": 808
+  },
+  "wiz7": {
+   "pal": 7,
+   "size": 16,
+   "tile": 812
+  },
+  "wizWin0": {
+   "pal": 0,
+   "size": 16,
+   "tile": 770
+  },
+  "wizWin1": {
+   "pal": 1,
+   "size": 16,
+   "tile": 774
+  },
+  "wizWin2": {
+   "pal": 2,
+   "size": 16,
+   "tile": 778
+  },
+  "wizWin3": {
+   "pal": 3,
+   "size": 16,
+   "tile": 782
+  },
+  "wizWin4": {
+   "pal": 4,
+   "size": 16,
+   "tile": 802
+  },
+  "wizWin5": {
+   "pal": 5,
+   "size": 16,
+   "tile": 806
+  },
+  "wizWin6": {
+   "pal": 6,
+   "size": 16,
+   "tile": 810
+  },
+  "wizWin7": {
+   "pal": 7,
+   "size": 16,
+   "tile": 814
+  }
+ },
+ "tiles": {},
+ "used": 651,
+ "version": 1
+}
