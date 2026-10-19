@@ -128,3 +128,72 @@ that gap.
 - [ ] **More starter kinds** (`node tools/new-cart.js <name> "Title" --kind <kind>`).
   - **What:** add platformer, shooter, racer and physics stacker kinds; only `puzzle` exists.
   - **Why:** those genres cover most of the library, and a kind is a whole working game to start from.
+
+## 7. The console site: quality of life for players
+
+The Library (`src/library.js`) is one flat shelf of 16 carts, with the six tech demos mixed in among the games. While a
+cart runs there is nothing on screen but the game.
+
+**Finding a game**
+
+- [ ] **Group the Library by genre.**
+  - **What:** a `genre` in each cart's `meta.json` (puzzle, racing, action, strategy...), carried into
+    `carts/index.json` by `tools/library.js`; the Library shows a shelf for each genre, with the tech demos on a shelf of
+    their own at the end.
+  - **Check:** `tools/check.js` asks for a genre.
+- [ ] **Badges on each card**: players (1, 1 to 4), "gamepads recommended", new or updated.
+  - **What:** a `players` field in `meta.json` next to `genre`.
+- [ ] **Recently played.**
+  - **What:** a shelf at the front with the last few carts played; the Library opens on the last cart chosen.
+- [ ] **Your best in the Library.**
+  - **What:** the detail panel shows the player's best score or time for the selected cart ("Your best: 0:31.10 AAA").
+  - **Needs:** a convention for where a cart keeps its best (a field in `meta.json` naming the save slots and the format),
+    since each cart lays out its saves its own way.
+- [ ] **A moving preview.**
+  - **What:** the selected card plays a short clip of the game (recorded with the console's own GIF or WebM recorder,
+    `src/record/`) instead of only the still label.
+- [ ] **Search and sort**, once the shelf is long: type to filter by title; sort by genre, name or newest.
+
+**Playing**
+
+- [ ] **A visible way back to the Library.**
+  - **Today:** Backspace, holding a gamepad's Select and Start, or the Library button in the editor's bar. While a game
+    runs nothing on screen says so.
+  - **What:**
+    - a small Library button in a corner of the play screen that shows when the mouse moves and hides again;
+    - a one-time hint when a cart starts ("Backspace or hold Select + Start: Library");
+    - the browser's Back button returning to the Library (check that it does).
+- [ ] **A console pause menu for players.**
+  - **What:** a menu over the game with Resume, Restart, Controls, Volume and Library, opened by Esc or a gamepad's
+    Select (held).
+  - **Why:** today Esc opens the code editor, which is what a developer wants and not what a player expects.
+  - **Also:** the editor becomes a developer mode turned on in the settings (or by a key chord), so a player never lands
+    in the code by accident.
+- [ ] **Controls for each game.**
+  - **What:** each cart's controls in its `meta.json` (`controls: {"A": "turn", "DOWN": "drop"}`), shown in the
+    Library's detail panel and in the pause menu, with the keyboard keys beside the buttons (X is A, Z is B, Enter is
+    Start...).
+  - **Why:** the keyboard mapping is only in the README.
+- [ ] **Fullscreen and scaling.**
+  - **What:** a fullscreen button and key; a choice of sharp whole-number scaling or fit-to-window.
+  - **Option:** a scanline (CRT) filter.
+
+**Settings and controllers**
+
+- [ ] **A settings panel**, from the Library and the pause menu:
+  - volume (today only `-`, `=` and `M`, with nothing on screen to show them);
+  - key remapping;
+  - the developer mode above.
+- [ ] **Which gamepad is which player.**
+  - **What:** the Library header shows the pads connected and the player each one is (P1 to P4), and lets a pad be
+    moved to another player.
+  - **Why:** the console seats pads in the order they are first pressed, so for a four-player game like Tricksy Towerz
+    nobody can see who is who.
+
+**Phones and sharing** (with the hosted build of section 1)
+
+- [ ] **Touch controls**: an on-screen d-pad and buttons on phones and tablets, laid out around the screen.
+- [ ] **A share link**: a button that copies the link to the selected cart (`?cart=<name>` already opens a cart
+  directly).
+- [ ] **Works offline and installs as an app** (a service worker and a web app manifest), so the Library opens without a
+  connection once visited.
