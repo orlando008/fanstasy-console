@@ -42,9 +42,13 @@ try {
   await page.keyboard.press('Minus'); await page.waitForTimeout(100);
   ok((await stored()) === '0.7', 'and a change after a reload starts from it');
 
-  await page.keyboard.press('Escape'); await page.waitForTimeout(300); // the editor
+  await page.keyboard.press('Escape'); await page.waitForTimeout(300); // the pause menu (a game opened from a link)
+  await page.keyboard.press('Minus'); await page.waitForTimeout(100);
+  ok((await stored()) === '0.6', 'in the pause menu the keys still set the volume', await stored());
+  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter'); await page.waitForTimeout(300); // its last item: the code editor
   await page.keyboard.press('Minus');
-  ok((await stored()) === '0.7', 'in the editor the keys do nothing to the volume');
+  ok((await stored()) === '0.6' && await page.evaluate(() => document.body.dataset.mode) === 'edit', 'in the editor the keys do nothing to the volume');
   const logged = await page.evaluate(() => [...document.querySelectorAll('li.log-error')].map((e) => e.textContent));
   ok(errors.length === 0 && logged.length === 0, 'no page errors, and nothing logged as an error (audio started)', [...errors, ...logged].join('; '));
 } finally { await browser.close(); close(); }
