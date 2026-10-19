@@ -249,15 +249,15 @@ function touchInfo(W, b) {
   return { gap, rests, nx, reach: hi - lo, mid: (hi + lo) / 2 }; // reach: how wide the resting contact is
 }
 
-/** The computer wizards' levels: how far off they aim (px), the frames they think before they move, the chance they take the second-best place, whether they drop pieces fast. */
+/** The computer wizards' levels: how far off they aim (px), the frames they think before they move, the chance they take the second-best place, and the frames they wait, once the piece is turned and in place, before they drop it fast. */
 const SKILLS = [
-  { name: 'EASY', aim: 2.5, think: 55, slip: 0.2, fast: 0 }, { name: 'NORMAL', aim: 1.5, think: 40, slip: 0.1, fast: 0 },
-  { name: 'HARD', aim: 0.8, think: 30, slip: 0.04, fast: 1 }, { name: 'WIZARD', aim: 0.2, think: 6, slip: 0, fast: 1 },
+  { name: 'EASY', aim: 2.5, think: 55, slip: 0.2, wait: 90 }, { name: 'NORMAL', aim: 1.5, think: 40, slip: 0.1, wait: 30 },
+  { name: 'HARD', aim: 0.8, think: 30, slip: 0.04, wait: 0 }, { name: 'WIZARD', aim: 0.2, think: 6, slip: 0, wait: 0 },
 ];
 
 // --- The game: a yard for each player (a world, the piece being steered, the camera) ---
 
-const FALL = 1, DROP = 3, MOVE = 1.3, EDGE = 3;     // the steered piece: how fast it falls, with DOWN, and moves sideways (px per frame); a piece resting on less than EDGE px slips off its corner
+const FALL = 0.4, DROP = 3, MOVE = 1.3, EDGE = 3;     // the steered piece: how fast it falls, with DOWN, and moves sideways (px per frame); a piece resting on less than EDGE px slips off its corner
 const FINISH = 130, HOLD = 120, WOBBLE = 0.25;             // the finish line (px above the platform) and the frames the tower has to stay over it
 const SPAWN_WAIT = 20, LOST_WAIT = 40, SPAWN_ABOVE = 112, HEADROOM = 136; // frames between a piece landing and the next one, the extra wait after losing a piece, how far above the tower it appears (its centre), and the sky the camera keeps above the tower (the piece appears inside the view, with time to steer)
 const COL_W = 64, VY = 16, VH = 208, HALF = 32; // a yard's column on the screen: width, top, height; half its width
@@ -450,11 +450,12 @@ function ctl(y) {
   if (!y.plan || y.plan.b !== y.cur) {
     const pl = plan(y), pick = pl.alt && rndi(0, 99) < sk.slip * 100 ? pl.alt : pl; // sometimes the second-best place
     y.plan = { b: y.cur, rot: pick.rot, x: pick.x + rndi(-100, 100) / 100 * sk.aim, score: pick.score };
-    y.think = sk.think;
+    y.think = sk.think; y.ready = 0;
   }
   if (y.think > 0) { y.think--; return { dx: 0, turn: 0, drop: false }; }
   const pl = y.plan, turns = (pl.rot - y.rot + 4) % 4, off = pl.x - y.cur.x;
-  return { dx: clamp(off, -MOVE, MOVE) / MOVE, turn: turns === 0 ? 0 : turns === 3 ? -1 : 1, drop: sk.fast && turns === 0 && Math.abs(off) < 0.3 };
+  y.ready = turns === 0 && Math.abs(off) < 0.3 ? (y.ready || 0) + 1 : 0; // frames the piece has been turned and in place: after `wait` of them, the fast drop
+  return { dx: clamp(off, -MOVE, MOVE) / MOVE, turn: turns === 0 ? 0 : turns === 3 ? -1 : 1, drop: y.ready > sk.wait };
 }
 
 /**
