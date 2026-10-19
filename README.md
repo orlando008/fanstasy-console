@@ -22,6 +22,15 @@ limits.
 
 The full cart API from SPEC section 8 is callable.
 
+## Playing it online
+
+The console is hosted on GitHub Pages: **<https://orlando008.github.io/fanstasy-console/>**, published from
+`main` on every merge. Each pull request gets a playable preview at
+`https://orlando008.github.io/fanstasy-console/pr/<number>/` (a comment on the pull request gives the link;
+the preview is removed when it closes), with its own saves, apart from the main site's. The workflow is
+`.github/workflows/pages.yml`, and `node tools/site.js check` builds the site and tries it in headless Chromium
+under the same paths.
+
 ## Running locally
 
 Module workers and AudioWorklets need HTTP, so `file://` will not work. From

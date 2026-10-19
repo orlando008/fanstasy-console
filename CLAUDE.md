@@ -15,6 +15,8 @@
   `art.py`, with `tools/devkit/art/kit.py`) and look at it with `tools/devkit/art/sprites.mjs`, `scene.mjs`, `tiles.mjs`
   and `shots.mjs` (open the PNGs with the Read tool).
 - Commit and push after every build step. Open a pull request only when the user asks, and merge only when told to.
+  When you open one, give the user its preview link (`https://orlando008.github.io/fanstasy-console/pr/<number>/`) and
+  what to try in it.
 - `WORKFLOW-WISHLIST.md` lists tooling and docs still to build; when you build one, tick it there in the same pull request.
 - Keep the game's spec in step with the code (numbers, tables, the step's Built and Results notes), and keep the docs
   true: `node tools/check-docs.js` fails on a mention of a file or a tool flag that does not exist.

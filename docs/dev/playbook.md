@@ -65,6 +65,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the music levels (`loud.mjs --check`), the docs check, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
 | `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser), the spec (header, TODOs in a released cart, code size in the budget table), label and description |
 | `node tools/test.js <name> [filter] [-v]` | Run `tests/carts/<name>/NN-*.mjs` one at a time (about 3 minutes for Moto Crosser: run it in the background) |
+| `node tools/site.js check` | The hosted site (GitHub Pages, `.github/workflows/pages.yml`): builds it as it is published (`index.html`, `style.css`, `src/`, `carts/` without the sources), lays it out as the gh-pages branch (main at the root, previews in `pr/<n>/`), publishes it through git to a throwaway remote, and loads the main site and a preview in headless Chromium under a subpath: the Library, the labels, a cart running, the preview's own saves, no errors. Run it after changing what the site loads |
 | `node tools/check-docs.js` | Every `tools/`, `tests/`, `carts/`, `docs/` and `src/` path the documentation mentions must exist (placeholders like `<name>` are skipped), and every `--flag` on a documented `node tools/...` command must exist in that tool |
 
 **Play it, automatically**
@@ -295,6 +296,12 @@ tiles for three settings by designing a tile-aligned vocabulary, after an image-
 - Work on the branch you are given; commit after every step (the stop hook asks for it) and push.
 - Never open a pull request until asked. When asked, open it, then merge when the user says so. A merged
   branch is finished: start follow-up work from the latest `main` on the same branch name.
+- **Every pull request gets a playable preview** at `https://orlando008.github.io/fanstasy-console/pr/<number>/`
+  (`.github/workflows/pages.yml`; a comment on the pull request gives the link a minute or two after it opens, and each
+  push updates it). When you open a pull request, give the user that link with what to try in it: playing the change
+  before it merges is how the problems no check can see get found (a held note, a piece that falls too fast). The
+  preview keeps its own saves, so trying it cannot touch the main site's records. Main is published to
+  `https://orlando008.github.io/fanstasy-console/` on every merge.
 - Commit the cart (`carts/<name>.nova`, `.nova.png`, `labels/`, `index.json`), its source folder, its spec and the
   README row together.
 

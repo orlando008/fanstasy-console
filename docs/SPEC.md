@@ -443,7 +443,7 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 | Music | 6-channel tracker, order list editor, instrument editor with a live ADSR graph |
 | Cart | Title, author and description; label capture (F7 while running grabs the current frame); export and import of `.nova` and `.nova.png` with a capacity meter |
 
-**Saving.** Ctrl+S saves a `.nova` file using the File System Access API where available, with a plain download as the fallback. The working cart also autosaves to `localStorage` every 10 seconds.
+**Saving.** Ctrl+S saves a `.nova` file using the File System Access API where available, with a plain download as the fallback. The working cart also autosaves to `localStorage` every 10 seconds. Save data and the working cart are kept under keys starting `nova16.`; a page served from a path containing `/pr/<n>/` (a pull request's preview, hosted next to the main site on the same origin) uses `nova16.pr<n>.` instead, so a preview never reads or overwrites the main site's saves. The volume level is shared.
 
 ### 11.1 Library
 
