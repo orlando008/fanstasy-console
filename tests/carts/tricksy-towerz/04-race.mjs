@@ -12,9 +12,9 @@ const drop = (y, q, shape, x, yy, a = 0) => { const b = q.mkBody(q.SHAPES[shape]
 // 1. The numbers of the spec.
 {
   const p = newGame(1).probe();
-  ok(p.FALL === 1 && p.DROP === 3 && p.MOVE === 1.3 && p.FINISH === 130 && p.HOLD === 120 && p.SPAWN_WAIT === 20 && p.LOST_WAIT === 40 && p.SPAWN_ABOVE === 112 && p.EDGE === 3 && p.WOBBLE === 0.25, 'the speeds, the line and the waits are the ones of the spec (5.2 and 5.4)');
+  ok(p.FALL === 0.4 && p.DROP === 3 && p.MOVE === 1.3 && p.FINISH === 130 && p.HOLD === 120 && p.SPAWN_WAIT === 20 && p.LOST_WAIT === 40 && p.SPAWN_ABOVE === 112 && p.EDGE === 3 && p.WOBBLE === 0.25, 'the speeds, the line and the waits are the ones of the spec (5.2 and 5.4)');
   ok(p.SKILLS.map((s) => s.name).join() === 'EASY,NORMAL,HARD,WIZARD' && p.SKILLS.every((s, i) => i === 0 || (s.aim < p.SKILLS[i - 1].aim && s.slip <= p.SKILLS[i - 1].slip && s.think < p.SKILLS[i - 1].think)), 'the four levels of computer wizard are each more exact, quicker to think and less given to slips than the last');
-  ok(p.SKILLS.map((s) => s.fast).join() === '0,0,1,1', 'only the two best drop their pieces fast');
+  ok(p.SKILLS.map((s) => s.wait).join() === '90,30,0,0', 'every level drops its piece fast once it is turned and in place, after waiting 90, 30, 0 and 0 frames');
 }
 
 // 2. The landing guide shows where the piece will land.
@@ -136,7 +136,10 @@ const drop = (y, q, shape, x, yy, a = 0) => { const b = q.mkBody(q.SHAPES[shape]
 }
 {
   const [v, q, y] = yardGame(1); y.ai = true; y.skill = 1; y.cur = null; y.wait = 0; v.run(1);
-  const y0 = y.cur.y; v.run(80); ok(Math.abs((y.cur ? y.cur.y : 999) - y0 - 80 * q.FALL) < 0.01 || !y.cur, 'a wizard of NORMAL or lower never uses the fast drop: its piece falls 1 px a frame', `${y.cur && (y.cur.y - y0).toFixed(2)}`);
+  const y0 = y.cur.y, think = q.SKILLS[1].think; v.run(think - 2);
+  ok(Math.abs(y.cur.y - y0 - (think - 2) * q.FALL) < 0.01, 'while a wizard thinks its piece falls at the slow speed', `${(y.cur.y - y0).toFixed(2)} px in ${think - 2} frames`);
+  const n0 = y.placed; let f = think - 2; while (y.placed === n0 && f < 2000) { v.step(0); f++; }
+  ok(f < q.SPAWN_ABOVE / q.FALL * 0.75, 'and once the piece is turned and in place, every level drops it fast (as a person would: the slow fall is for steering)', `landed after ${f} frames, against ${Math.round(q.SPAWN_ABOVE / q.FALL)} at the slow speed`);
 }
 {
   // slips: with a level that slips, some pieces go to the second-best place
