@@ -205,6 +205,27 @@ All synthesis, mixing and sequencing run in an `AudioWorklet`, so timing is samp
 - The main thread samples input once per frame and sends it to the console as a 12-bit mask per pad. Carts never read devices directly, which keeps input deterministic.
 - `btnp` is true on the first frame of a press, then repeats after 15 frames, then every 4 frames.
 
+### 6.1 Touch controls
+
+On a phone or tablet the play screen gets an on-screen pad (`src/touch.js`) that presses the console's buttons for
+player 0, alongside the keyboard: the cart sees ordinary button presses and needs no code for it.
+
+- **When they show.** From the first touch on the page, or from the start on a device whose main pointer is a finger
+  (`(hover: none) and (pointer: coarse)`); only over a running cart (not in the Library or the editors). A desktop never
+  shows them.
+- **The buttons.** A d-pad, A and B (A to the right, as on the pad), Start and Select, and ☰ for the pause menu
+  (section 11.2). There are no X, Y, L or R: a game meant for phones plays on the d-pad, A, B, Start and Select, and
+  keeps the other buttons for extras.
+- **Layout.** In portrait the game is at the top and the pad fills the space under it (the d-pad on the left, B and A on
+  the right, Select, Start and ☰ between). In landscape the game is in the middle with the d-pad to its left, B and A
+  to its right and Select, Start and ☰ in the top right corner; nothing covers the game either way. With room for less
+  than twice the size, the picture is scaled to fill its space at any factor rather than a whole one.
+- **Fingers.** Several at once (the d-pad and A together). The d-pad reads eight directions from where the thumb is,
+  with a dead middle of 18% of its size, and the thumb can roll round it without lifting; a finger can slide from one
+  button to the next. A tap shorter than a frame still counts as a press for one frame. Each new press gives a short
+  buzz where the phone allows it. A press on the pad does not count as a tap on the game (which shows the corner
+  buttons).
+
 ## 7. Programming model
 
 ### 7.1 Lifecycle
@@ -497,7 +518,8 @@ built in HTML like the editor, not inside the console.
 The console's own menu over a running game (`src/pause-menu.js`), for players: no cart code is involved, and a cart's
 own pause menu (on its START) is separate.
 
-- **Opening it.** Esc in Run mode; holding a gamepad's Select and Start together for about a second; or the **Menu**
+- **Opening it.** Esc in Run mode; holding a gamepad's Select and Start together for about a second; ☰ on the touch
+  controls (section 6.1); or the **Menu**
   button that shows with a **Library** button in the top left corner while the mouse moves over the play screen (they
   fade after a couple of seconds). For a game started from the editor, or one stopped by an error, Esc goes to the
   code instead, so working on a cart keeps its one-key toggle; the menu is then on Select + Start and the corner button.
@@ -525,6 +547,7 @@ own pause menu (on its START) is separate.
 │   ├── library.js          # The Library: the home page's shelves of carts (11.1)
 │   ├── genres.js           # The Library's shelves: the genres and their order (11.1)
 │   ├── pause-menu.js       # The pause menu over a running game, and the corner buttons (11.2)
+│   ├── touch.js            # The touch controls on phones and tablets (6.1)
 │   ├── machine.js          # Console worker lifecycle and 60 Hz frame clock
 │   ├── files.js            # .nova save/open (File System Access API, download fallback)
 │   ├── input.js            # Keyboard and gamepad sampling
@@ -571,7 +594,7 @@ own pause menu (on its START) is separate.
 ├── carts/                  # Demo and game carts (.nova, .nova.png), index.json and labels/ for the Library
 │   └── src/<name>/         # A cart's source: code.js, meta.json, tiles.txt, palette.txt, map.txt, audio.json (made
 │                           #   by audio.py where there is one; tiles.txt, palette.txt, map.txt, art.json by art.py), label.png
-├── tests/console/          # Checks of the console itself (node tests/console/volume.mjs and menu.mjs in headless Chromium; node tests/console/song-end.mjs)
+├── tests/console/          # Checks of the console itself (volume.mjs, menu.mjs, library.mjs and touch.mjs in headless Chromium; song-end.mjs)
 ├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs: 01-flow, 02-art ...), its lib.mjs and its bot.mjs for the sweep tool
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/
@@ -629,7 +652,8 @@ jobs:
 
 ## 15. Non-goals for v1
 
-- Mouse or touch input for carts (the editors use the mouse)
+- Mouse or touch input for carts (the editors use the mouse; the touch controls of section 6.1 press the console's
+  buttons, they are not a touch screen for the cart)
 - Online multiplayer. The deterministic core leaves room for rollback netplay later.
 - Raw memory `peek`/`poke`
 - 3D beyond affine BG2

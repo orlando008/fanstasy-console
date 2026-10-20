@@ -12,6 +12,7 @@ import { Input } from './input.js';
 import { Library } from './library.js';
 import { Machine } from './machine.js';
 import { PauseMenu } from './pause-menu.js';
+import { TouchControls } from './touch.js';
 import { CLIP_MAX_SECONDS, ClipRecorder } from './record/clip.js';
 import { InputLog } from './record/replay.js';
 import { loadAutosave, loadSave, storeAutosave, storeSave } from './storage.js';
@@ -419,6 +420,11 @@ const menu = new PauseMenu(screenEl, {
   title: () => app.cart.meta.title,
 });
 
+const touch = new TouchControls(screenEl, input, {
+  menu: () => { if (app.mode === 'run' && machine.running) menu.open(); },
+  activated: () => machine.fit(), // the controls take part of the screen: fit the picture to what is left
+});
+
 /** The first time a player starts a cart in this browser, say how to get to the menu and back to the Library. */
 const HINT_KEY = 'nova16.hint.menu';
 function menuHint() {
@@ -426,7 +432,9 @@ function menuHint() {
     if (localStorage.getItem(HINT_KEY)) return;
     localStorage.setItem(HINT_KEY, '1');
   } catch { return; } // storage blocked: no hint rather than one every time
-  flashStatus('Esc: menu  ·  Backspace: Library  (on a gamepad, hold Select + Start)', 5000);
+  flashStatus(document.body.classList.contains('touch')
+    ? '☰: menu  ·  tap the game for the Library button'
+    : 'Esc: menu  ·  Backspace: Library  (on a gamepad, hold Select + Start)', 5000);
 }
 
 /**
@@ -546,6 +554,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     autosave();
     input.clear();
+    touch.release();
     if (app.mode === 'run' && !machine.paused) {
       pauseGame();
       hiddenPause = true;

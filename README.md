@@ -74,6 +74,10 @@ Enter = Start, Shift = Select.
 Gamepads join as players in the order you first press a button on them, so
 press a button on a controller after the page loads to make it P1.
 
+On a phone or tablet the game gets touch controls: a d-pad, A, B, Start,
+Select and ☰ for the pause menu, under the game in portrait and either side of
+it in landscape (SPEC section 6.1).
+
 Shell shortcuts:
 
 | Key | Action |

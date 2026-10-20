@@ -26,7 +26,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `carts/src/<name>/` | A cart's source: `code.js`, `meta.json`, `tiles.txt`, `palette.txt`, `map.txt` and `art.json` (made by `art.py`), `audio.json` (made by `audio.py`), `label.png` |
 | `carts/<name>.nova`, `.nova.png`, `labels/`, `index.json` | What `pack.js`, `release.js` and `library.js` build from the source: commit them with it |
 | `tests/carts/<name>/` | `lib.mjs` (boots the cart with its variables exposed), `NN-*.mjs` (check scripts, one per build step), `bot.mjs` (the bot for `sweep.mjs`) |
-| `tests/console/` | Checks of the console itself: the player's volume keys, the pause menu and ways back to the Library, and the Library's genre shelves (`volume.mjs`, `menu.mjs`, `library.mjs`: headless Chromium), a song that plays once falling silent at its end (`song-end.mjs`, in CI); not part of a cart build |
+| `tests/console/` | Checks of the console itself: the player's volume keys, the pause menu and ways back to the Library, the Library's genre shelves and the touch controls (`volume.mjs`, `menu.mjs`, `library.mjs`, `touch.mjs`: headless Chromium), a song that plays once falling silent at its end (`song-end.mjs`, in CI); not part of a cart build |
 | `docs/carts/<name>.md` | The game's spec, with each step's **Built** and **Results** notes |
 | `tools/` | `pack`, `library`, `new-cart`, `verify`, `check`, `test`, `release`, `check-docs` (section 2) |
 | `tools/devkit/` | The headless harness, soak, smoke, sweep, shots, tiles, voices, the random player; `music/`: the song toolkit, loudness checks, effect levels and lead lowering; `art/`: the art toolkit and the scene and sprite viewers |
@@ -39,7 +39,8 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 0. **Start from the starter**: `node tools/new-cart.js <name> "Title"` creates the cart, its tests, its art and audio scripts and
    the spec template (section 2). Do not copy another game's code to begin with. If the game is of a kind that has a
    starter (`--kind`, below), start from that: it is a whole small game of that type, to change into yours.
-1. **Write the spec first** (`docs/carts/<name>.md`, scaffolded): concept, controls, screen layout, the rules with
+1. **Write the spec first** (`docs/carts/<name>.md`, scaffolded): concept, controls (playable on the d-pad, A, B, Start
+   and Select, the buttons a phone's touch controls have; X, Y, L and R only for extras), screen layout, the rules with
    numbers, scoring, screens and flow, audio, video layers, save slots, asset budget, and a numbered
    **implementation plan** of about 8 steps. Ask the user the few design questions that really change the
    game (modes, number of levels, features); choose sensible defaults for the rest.
