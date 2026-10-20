@@ -25,6 +25,10 @@ export class Input {
     this.tapped = new Set();
     this.enabled = true;
     this.masks = new Uint16Array(4);
+    // The touch controls (src/touch.js): the buttons held now, and those pressed since the last sample (a tap
+    // shorter than a frame still registers), for player 1 like the keyboard.
+    this.touch = 0;
+    this.touchTapped = 0;
     // Gamepad index assigned to each player, or null. A pad joins the first
     // free player slot when one of its buttons is pressed, so P1 is the first
     // pad used rather than whatever the browser put in slot 0 (Steam's
@@ -67,8 +71,10 @@ export class Input {
     if (this.enabled) {
       for (const code of this.held) masks[0] |= 1 << KEYS[code];
       for (const code of this.tapped) masks[0] |= 1 << KEYS[code];
+      masks[0] |= this.touch | this.touchTapped;
     }
     this.tapped.clear();
+    this.touchTapped = 0;
     return masks;
   }
 
@@ -87,9 +93,16 @@ export class Input {
     }
   }
 
+  /** The touch controls' buttons for player 1 (a mask of console button bits). */
+  setTouch(mask) {
+    this.touchTapped |= mask & ~this.touch;
+    this.touch = mask;
+  }
+
   clear() {
     this.held.clear();
     this.tapped.clear();
+    this.touchTapped = 0;
   }
 }
 
