@@ -202,7 +202,8 @@ cart runs there is nothing on screen but the game.
   [orlando008/fanstasy-console#46](https://github.com/orlando008/fanstasy-console/pull/46): `src/touch.js` (SPEC 6.1),
   checked by `tests/console/touch.mjs`.
 - [x] **A share link**: a button that copies the link to the selected cart (`?cart=<name>` already opens a cart
-  directly). Done: `src/share.js` (SPEC 11.4), checked by `tests/console/share.mjs`.
+  directly). Done in [orlando008/fanstasy-console#48](https://github.com/orlando008/fanstasy-console/pull/48):
+  `src/share.js` (SPEC 11.4), checked by `tests/console/share.mjs`.
 - [x] **Works offline and installs as an app** (a service worker and a web app manifest), so the Library opens without a
   connection once visited. Done in
   [orlando008/fanstasy-console#47](https://github.com/orlando008/fanstasy-console/pull/47): `sw.js`,
