@@ -495,7 +495,8 @@ built in HTML like the editor, not inside the console.
   cartridges, from shelf to shelf (up and down keep to the nearest column, and a
   shelf's heading scrolls into view with its first row); Enter, Space or a gamepad's A, B or Start plays the selected
   one; the mouse picks and clicks. Choosing the cart that is already loaded
-  resumes it where it was paused.
+  resumes it where it was paused. **Share link** in the details (or S, or a
+  gamepad's Select) shares the selected cart (section 11.4).
 - **Opening a cart.** It loads exactly as `?cart=<name>` does, and the address
   bar changes to match, so a cart's link can be shared and the browser's Back
   button returns to the Library. Unsaved changes to the working cart are
@@ -527,7 +528,8 @@ own pause menu (on its START) is separate.
 - **While it is open** the game and its sound are paused, and no key or gamepad button reaches the cart.
 - **Items.** **Resume**; **Restart**; **Controls** (the keyboard key of each console button, and the console's own
   keys); **Volume** (left and right step the player's volume, choosing it mutes; with the mouse, the left and right
-  thirds of the row turn it down and up); **Library**; **Code editor**.
+  thirds of the row turn it down and up); **Share link** (section 11.4; only for a Library cart, and the arrows step
+  over it otherwise); **Library**; **Code editor**.
 - **Controls.** Arrows or the d-pad move, Enter, Space, X or a gamepad's A choose, Esc, Z, or a gamepad's B or Start
   resume, Backspace goes to the Library; `-`, `=` and `M` still set the volume. The mouse picks and clicks; a click
   outside the panel resumes. The menu opens on Resume, and a mouse resting where it opens does not move the selection.
@@ -560,6 +562,22 @@ has been visited, and installs as an app.
 - **Locally**, the repository served as it is has no mark on its page and registers no worker, so a kept copy never
   hides an edit.
 
+### 11.4 Sharing a cart
+
+**Share link** (`src/share.js`) gives the link that opens a Library cart directly: the site's own address with
+`?cart=<name>`, so a preview's link opens the preview. It is in the Library's details for the selected cart (and on S,
+or a gamepad's Select there) and in the pause menu for the game being played. Your cart and an opened file have no
+link (they are only in this browser), so neither shows it.
+
+- **On a phone or tablet** (a coarse pointer, with the Web Share API) it opens the device's share sheet with the link
+  and "Play <title> on NOVA-16".
+- **Elsewhere** it copies the link and shows it in a panel: "Link copied", with Copy, **Share…** where the browser has
+  a share sheet, and Close. It closes itself four seconds after copying. Where the browser will not copy (a gamepad
+  press is not a click to it), the panel says "Share <title>" and selects the link to copy by hand.
+- **While the panel is open** every key and gamepad button is its own: Esc, Backspace, any gamepad button or a click
+  outside it closes it, back on the cart in the Library or on Share link in the pause menu, and the press that closed
+  it does not reach them.
+
 ## 12. Repository layout
 
 ```
@@ -575,6 +593,7 @@ has been visited, and installs as an app.
 │   ├── library.js          # The Library: the home page's shelves of carts (11.1)
 │   ├── genres.js           # The Library's shelves: the genres and their order (11.1)
 │   ├── pause-menu.js       # The pause menu over a running game, and the corner buttons (11.2)
+│   ├── share.js            # A cart's link: the share sheet, or copied and shown (11.4)
 │   ├── touch.js            # The touch controls on phones and tablets (6.1)
 │   ├── machine.js          # Console worker lifecycle and 60 Hz frame clock
 │   ├── files.js            # .nova save/open (File System Access API, download fallback)
@@ -622,7 +641,7 @@ has been visited, and installs as an app.
 ├── carts/                  # Demo and game carts (.nova, .nova.png), index.json and labels/ for the Library
 │   └── src/<name>/         # A cart's source: code.js, meta.json, tiles.txt, palette.txt, map.txt, audio.json (made
 │                           #   by audio.py where there is one; tiles.txt, palette.txt, map.txt, art.json by art.py), label.png
-├── tests/console/          # Checks of the console itself (volume.mjs, menu.mjs, library.mjs, touch.mjs and offline.mjs in headless Chromium; song-end.mjs)
+├── tests/console/          # Checks of the console itself (volume.mjs, menu.mjs, library.mjs, touch.mjs, offline.mjs and share.mjs in headless Chromium; song-end.mjs)
 ├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs: 01-flow, 02-art ...), its lib.mjs and its bot.mjs for the sweep tool
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/

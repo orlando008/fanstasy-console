@@ -51,7 +51,8 @@ arrows or a gamepad's d-pad and play it with Enter or A. While a cart runs, Esc
 (or holding a gamepad's Select and Start for a second) opens the pause menu, and
 Backspace, the browser's Back or the Library button in the corner returns to the
 Library. `?cart=<name>` opens a cart directly, and `?seed=<n>` pins the random
-seed. You can also drop a `.nova` file or a `.nova.png` PNG cart onto the page.
+seed; **Share link** (in the Library, S, or in the pause menu) copies that link for
+a cart, or opens a phone's share sheet. You can also drop a `.nova` file or a `.nova.png` PNG cart onto the page.
 
 | Cart | Shows |
 |---|---|

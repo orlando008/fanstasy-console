@@ -85,7 +85,7 @@ try {
 
   // The ways back to the Library.
   await page.keyboard.press('Escape'); await wait(100);
-  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowDown');
+  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowDown'); // past Share link (SPEC 11.4: tests/console/share.mjs)
   ok(await selected() === 'library', 'the menu has Library');
   await page.keyboard.press('Enter'); await wait(800);
   ok(await mode() === 'library' && !(await menuOpen()), 'which goes to the Library');
@@ -127,7 +127,7 @@ try {
 
   // The editor: from the menu, and Esc as a developer's toggle once the game was started from there.
   await page.keyboard.press('Escape'); await wait(100);
-  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowDown');
+  for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowDown');
   ok(await selected() === 'editor', 'the last item is the code editor');
   await page.keyboard.press('Enter'); await wait(500);
   ok(await mode() === 'edit' && !(await menuOpen()), 'which opens the editor');

@@ -12,6 +12,7 @@ import { Input } from './input.js';
 import { Library } from './library.js';
 import { Machine } from './machine.js';
 import { PauseMenu } from './pause-menu.js';
+import { SharePanel } from './share.js';
 import { TouchControls } from './touch.js';
 import { CLIP_MAX_SECONDS, ClipRecorder } from './record/clip.js';
 import { InputLog } from './record/replay.js';
@@ -365,6 +366,9 @@ const app = {
   },
 };
 
+// First, so its key listener runs before the shell's: while it is open every key is its own.
+const sharePanel = new SharePanel();
+
 const shell = new Shell(document.getElementById('editor'), app);
 
 const library = new Library(document.getElementById('library'), {
@@ -401,6 +405,8 @@ const library = new Library(document.getElementById('library'), {
   },
   current: () => app.current,
   mode: () => app.mode,
+  share: (entry, onClose) => sharePanel.share(entry, onClose),
+  sharing: () => sharePanel.busy,
 });
 
 const menu = new PauseMenu(screenEl, {
@@ -418,6 +424,9 @@ const menu = new PauseMenu(screenEl, {
   mute: () => apu.toggleMute(),
   level: () => apu.level,
   title: () => app.cart.meta.title,
+  shareable: () => app.current && app.current !== 'mine', // a Library cart (Your cart and opened files have no link)
+  share: (onClose) => sharePanel.share({ name: app.current, title: app.cart.meta.title || app.current }, onClose),
+  sharing: () => sharePanel.busy,
 });
 
 const touch = new TouchControls(screenEl, input, {

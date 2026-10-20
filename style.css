@@ -336,15 +336,45 @@ body[data-mode="library"] #library {
 .lib-error { color: var(--error); margin: 12px 0 0; }
 
 .lib-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
   padding: 12px 24px 16px;
   border-top: 1px solid var(--line);
   background: var(--panel);
   min-height: 108px;
 }
+.lib-detail-main { flex: 1; min-width: 0; }
+.lib-share { flex: none; margin-top: 2px; }
+.lib-share[hidden] { display: none; }
 .lib-detail-title { margin: 0; font-size: 18px; }
 .lib-detail-by { margin: 2px 0 0; color: var(--dim); }
 .lib-detail-text { margin: 6px 0 0; max-width: 72ch; }
 .lib-detail-hint { margin: 6px 0 0; color: var(--accent); font: 13px var(--code-font); }
+
+/* Sharing a cart's link (SPEC 11.4, src/share.js) */
+
+.share-pop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 10;
+}
+.share-pop[hidden] { display: none; }
+.share-panel {
+  width: min(460px, calc(100% - 32px));
+  padding: 16px 18px 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+.share-head { margin: 0 0 10px; font-size: 17px; }
+.share-link { width: 100%; font: 13px var(--code-font); padding: 8px; }
+.share-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.share-buttons [hidden] { display: none; }
 
 /* --- Shell ---------------------------------------------------------------- */
 
