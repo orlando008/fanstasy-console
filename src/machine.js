@@ -106,12 +106,18 @@ export class Machine {
     });
   }
 
-  /** Scale the screen by the largest integer factor that fits its box. */
+  /**
+   * Scale the screen by the largest integer factor that fits its box (inside its padding, which the touch controls
+   * use). On a touch screen with room for less than twice the size, it fills the box instead, at any factor: a phone
+   * would otherwise show a small picture at 1x.
+   */
   fit() {
     if (!this.canvas) return;
-    const w = this.screenEl.clientWidth || innerWidth;
-    const h = this.screenEl.clientHeight || innerHeight;
-    const scale = Math.max(1, Math.floor(Math.min(w / 256, h / 224)));
+    const cs = getComputedStyle(this.screenEl), px = (v) => parseFloat(v) || 0;
+    const w = (this.screenEl.clientWidth - px(cs.paddingLeft) - px(cs.paddingRight)) || innerWidth;
+    const h = (this.screenEl.clientHeight - px(cs.paddingTop) - px(cs.paddingBottom)) || innerHeight;
+    const room = Math.min(w / 256, h / 224);
+    const scale = document.body.classList.contains('touch') && room < 2 ? Math.max(0.5, room) : Math.max(1, Math.floor(room));
     this.canvas.style.width = `${256 * scale}px`;
     this.canvas.style.height = `${224 * scale}px`;
   }

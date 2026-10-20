@@ -198,7 +198,8 @@ cart runs there is nothing on screen but the game.
 
 **Phones and sharing** (with the hosted build of section 1)
 
-- [ ] **Touch controls**: an on-screen d-pad and buttons on phones and tablets, laid out around the screen.
+- [x] **Touch controls**: an on-screen d-pad and buttons on phones and tablets, laid out around the screen. Done:
+  `src/touch.js` (SPEC 6.1), checked by `tests/console/touch.mjs`.
 - [ ] **A share link**: a button that copies the link to the selected cart (`?cart=<name>` already opens a cart
   directly).
 - [ ] **Works offline and installs as an app** (a service worker and a web app manifest), so the Library opens without a

@@ -148,6 +148,75 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .screen-buttons.shown { opacity: 1; pointer-events: auto; }
 .screen-buttons button { background: rgba(20, 18, 28, 0.85); }
 
+/* Touch controls (SPEC 6.1, src/touch.js): only on a touch screen (body.touch), only in Run mode (they live in #screen) */
+
+.touch-controls { display: none; }
+body.touch .touch-controls {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 2;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+body.touch #screen { touch-action: none; }
+.t-left, .t-right, .t-middle { display: flex; align-items: center; touch-action: none; }
+.t-middle { flex-direction: column; gap: 10px; align-self: center; }
+.t-dpad {
+  --size: var(--dpad-size, 160px);
+  position: relative;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02) 70%);
+  border: 1px solid var(--line);
+  touch-action: none;
+}
+.t-arm {
+  position: absolute;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
+.t-arm-up, .t-arm-down { left: 34%; width: 32%; height: 36%; }
+.t-arm-left, .t-arm-right { top: 34%; height: 32%; width: 36%; }
+.t-arm-up { top: 4%; border-radius: 8px 8px 2px 2px; }
+.t-arm-down { bottom: 4%; border-radius: 2px 2px 8px 8px; }
+.t-arm-left { left: 4%; border-radius: 8px 2px 2px 8px; }
+.t-arm-right { right: 4%; border-radius: 2px 8px 8px 2px; }
+.t-dpad.on-up .t-arm-up, .t-dpad.on-down .t-arm-down, .t-dpad.on-left .t-arm-left, .t-dpad.on-right .t-arm-right { background: var(--accent); }
+.t-btn {
+  display: grid;
+  place-items: center;
+  font: bold 18px var(--code-font);
+  color: var(--fg);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  touch-action: none;
+}
+.t-a, .t-b { width: var(--ab-size, 68px); height: var(--ab-size, 68px); border-radius: 50%; }
+.t-a { background: #8c2a3a; border-color: #d04648; margin-bottom: calc(var(--ab-size, 68px) * 0.7); }
+.t-b { background: #2c3f6e; border-color: #597dce; margin-right: 8px; }
+.t-select, .t-start { padding: 6px 12px; border-radius: 999px; font-size: 11px; letter-spacing: 0.08em; }
+.t-btn.on { filter: brightness(1.6); transform: scale(0.94); }
+.t-menu { padding: 4px 14px; border-radius: 999px; font-size: 16px; background: transparent; }
+
+@media (orientation: portrait) {
+  body.touch { --touch-h: clamp(190px, 38vh, 320px); --dpad-size: min(34vw, 170px); --ab-size: min(14vw, 74px); }
+  body.touch #screen { padding-bottom: var(--touch-h); }
+  body.touch .touch-controls { left: 0; right: 0; bottom: 0; height: var(--touch-h); gap: 8px; padding: 0 max(12px, 4vw) max(12px, env(safe-area-inset-bottom)); }
+}
+@media (orientation: landscape) {
+  body.touch { --dpad-size: min(36vh, 160px); --ab-size: min(15vh, 66px); }
+  body.touch .touch-controls { inset: 0; padding: 0 max(16px, env(safe-area-inset-left)) 5vh; align-items: flex-end; pointer-events: none; }
+  body.touch .touch-controls > * { pointer-events: auto; opacity: 0.85; }
+  /* Select, Start and the menu go to the top of the right-hand margin, above A and B, clear of the game */
+  body.touch .t-middle { position: absolute; top: max(12px, 4vh); right: max(16px, env(safe-area-inset-right)); flex-direction: column; align-items: flex-end; gap: 8px; }
+}
+
 #editor { display: none; }
 
 body[data-mode="edit"] #screen { display: none; }
