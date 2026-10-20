@@ -203,5 +203,7 @@ cart runs there is nothing on screen but the game.
   checked by `tests/console/touch.mjs`.
 - [ ] **A share link**: a button that copies the link to the selected cart (`?cart=<name>` already opens a cart
   directly).
-- [ ] **Works offline and installs as an app** (a service worker and a web app manifest), so the Library opens without a
-  connection once visited.
+- [x] **Works offline and installs as an app** (a service worker and a web app manifest), so the Library opens without a
+  connection once visited. Done in
+  [orlando008/fanstasy-console#47](https://github.com/orlando008/fanstasy-console/pull/47): `sw.js`,
+  `manifest.webmanifest` and `tools/icons.js` (SPEC 11.3), checked by `tests/console/offline.mjs`.

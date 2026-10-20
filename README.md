@@ -31,6 +31,10 @@ the preview is removed when it closes), with its own saves, apart from the main 
 `.github/workflows/pages.yml`, and `node tools/site.js check` builds the site and tries it in headless Chromium
 under the same paths.
 
+Once visited, the site works offline: the whole Library, every game and your saves (SPEC section 11.3). It also
+installs as an app with its own icon, full screen: in Chrome or Edge, Install app (Android: the ⋮ menu; desktop: the
+icon in the address bar); on an iPhone or iPad, Share, then Add to Home Screen.
+
 ## Running locally
 
 Module workers and AudioWorklets need HTTP, so `file://` will not work. From

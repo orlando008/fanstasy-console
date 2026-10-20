@@ -549,6 +549,14 @@ async function fetchCart(name) {
 
 window.addEventListener('resize', () => machine.fit());
 
+// The hosted site works offline and installs as an app (SPEC 11.3). tools/site.js build writes the service worker and
+// marks the page; a copy of the repository served locally has no mark, so a cached file never hides an edit.
+if (document.body.hasAttribute('data-offline') && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch((e) => console.warn('offline copy not set up:', e.message));
+  // Installed, ask the browser to keep the saves and the copy when it is short of space (a tab would ask the player).
+  if (matchMedia('(display-mode: standalone)').matches) navigator.storage?.persist?.().catch(() => {});
+}
+
 let hiddenPause = false;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
