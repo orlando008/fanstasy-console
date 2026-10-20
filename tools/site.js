@@ -2,8 +2,10 @@
 // branch the way .github/workflows/pages.yml publishes it (the main site at the root, each pull request's preview in
 // pr/<number>/).
 //
-//   node tools/site.js build <dir>              the site alone: index.html, style.css, src/ and carts/ (without
-//                                               carts/src, the carts' sources) and a .nojekyll file
+//   node tools/site.js build <dir>              the site alone: index.html, style.css, src/, carts/ (without
+//                                               carts/src, the carts' sources), the app manifest and icons, a
+//                                               .nojekyll file, and the service worker that keeps it offline (sw.js,
+//                                               with this build's version and file list; SPEC 11.3)
 //   node tools/site.js main <pages-dir>         replace the root of a gh-pages checkout with the site, keeping pr/
 //   node tools/site.js pr <n> <pages-dir>       write the site to pr/<n>/ only
 //   node tools/site.js remove <n> <pages-dir>   delete pr/<n>/
@@ -13,27 +15,71 @@
 //                                               fetch again and redo it, up to 5 times. What the workflow runs.
 //   node tools/site.js check                    build the site and load it in headless Chromium under a subpath, as
 //                                               Pages serves it (the main site and a preview): the Library, a cart
-//                                               running, a PNG cart's label, no errors, and the preview's own saves; and
-//                                               `publish` against a throwaway git remote
+//                                               running, a PNG cart's label, no errors, and the preview's own saves; the
+//                                               offline copy's file list and the icons; and `publish` against a
+//                                               throwaway git remote
 //
 // Every path in the site is relative, so it works under https://<owner>.github.io/<repo>/ and under .../pr/<n>/.
 // A preview keeps its own saves and working cart (src/storage.js), so playing it cannot touch the main site's records.
 import { execFileSync, spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
-const SITE = ['index.html', 'style.css', 'src', 'carts']; // what the console needs, from the repository root
+const SITE = ['index.html', 'style.css', 'src', 'carts', 'manifest.webmanifest', 'icons', 'sw.js']; // what the console needs, from the repository root
 const SKIP = [join(ROOT, 'carts', 'src')];                 // the carts' sources: not served
 
-/** Write the site into dir (made empty first). */
-export function build(dir) {
+/**
+ * Write the site into dir (made empty first). preview: a pull request's number, for its preview, whose app is named for
+ * it so a preview installed on a phone is not taken for the console itself.
+ */
+export function build(dir, { preview } = {}) {
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   for (const f of SITE) cpSync(join(ROOT, f), join(dir, f), { recursive: true, filter: (src) => !SKIP.some((s) => src === s || src.startsWith(s + '/')) });
   writeFileSync(join(dir, '.nojekyll'), ''); // Pages would otherwise run Jekyll, which drops some files and slows each deploy
+  if (preview) {
+    const manifest = JSON.parse(readFileSync(join(dir, 'manifest.webmanifest'), 'utf8'));
+    manifest.name = `NOVA-16 (preview ${preview})`; manifest.short_name = `NOVA-16 PR ${preview}`;
+    writeFileSync(join(dir, 'manifest.webmanifest'), `${JSON.stringify(manifest, null, 2)}\n`);
+  }
+  offline(dir);
+}
+
+/**
+ * The files the offline copy keeps: everything in the site but the service worker itself, .nojekyll and the PNG carts
+ * (downloads for sharing: the Library plays the .nova), with './' for the page at the site's own address.
+ */
+export function offlineFiles(dir) {
+  const files = [];
+  const walk = (d) => {
+    for (const f of readdirSync(d).sort()) {
+      const p = join(d, f);
+      if (d === dir && (f === 'pr' || f === '.git')) continue; // a gh-pages checkout: the previews have their own
+      if (statSync(p).isDirectory()) walk(p); else files.push(relative(dir, p).split('\\').join('/'));
+    }
+  };
+  walk(dir);
+  return ['./', ...files.filter((f) => f !== 'sw.js' && f !== '.nojekyll' && !f.endsWith('.nova.png'))];
+}
+
+/**
+ * Mark the page so main.js registers the service worker, and write sw.js with this build's version and files (again
+ * after a file in dir changes, for a new version).
+ */
+export function offline(dir) {
+  const page = join(dir, 'index.html'), html = readFileSync(page, 'utf8');
+  if (!html.includes('<body data-mode="run"')) throw new Error('index.html: no <body data-mode="run"> to mark for the service worker');
+  if (!html.includes('data-offline')) writeFileSync(page, html.replace('<body data-mode="run"', '<body data-mode="run" data-offline'));
+  const files = offlineFiles(dir), hash = createHash('sha256');
+  for (const f of files.slice(1)) hash.update(`${f}\0`).update(readFileSync(join(dir, f)));
+  const sw = readFileSync(join(ROOT, 'sw.js'), 'utf8');
+  if (!sw.includes("const VERSION = 'dev';") || !sw.includes('const FILES = [];')) throw new Error('sw.js: no VERSION or FILES to fill in');
+  writeFileSync(join(dir, 'sw.js'), sw.replace("const VERSION = 'dev';", `const VERSION = '${hash.digest('hex').slice(0, 12)}';`)
+    .replace('const FILES = [];', `const FILES = ${JSON.stringify(files, null, 2)};`));
 }
 
 /** Replace everything at the root of a gh-pages checkout with the site, but keep .git and the previews in pr/. */
@@ -48,7 +94,7 @@ export function main(pages) {
 /** Write a pull request's preview to pr/<n>/ (and a .nojekyll at the root, in case the main site was never published). */
 export function pr(n, pages) {
   if (!/^\d+$/.test(String(n))) throw new Error(`not a pull request number: ${n}`);
-  build(join(pages, 'pr', String(n)));
+  build(join(pages, 'pr', String(n)), { preview: n });
   writeFileSync(join(pages, '.nojekyll'), '');
 }
 
@@ -99,7 +145,6 @@ export function publish(target, n, { remote = process.env.PAGES_REMOTE || 'origi
 async function check() {
   const { playwright } = await import('./devkit/browser.mjs');
   const { createServer } = await import('node:http');
-  const { readFileSync } = await import('node:fs');
   const { extname, normalize } = await import('node:path');
   let fails = 0;
   const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
@@ -111,6 +156,21 @@ async function check() {
   ok(existsSync(join(pages, 'pr', '1', 'index.html')), 'a preview survives the main site being published again');
   ok(!existsSync(join(pages, 'pr', '2')), 'and a removed preview is gone');
   ok(!existsSync(join(pages, 'carts', 'src')) && !existsSync(join(pages, 'tests')) && !existsSync(join(pages, 'tools')) && existsSync(join(pages, 'carts', 'index.json')), 'only the site is published (no carts/src, tests or tools)');
+
+  // The offline copy (SPEC 11.3): its list is every file the console loads, and the icons are what tools/icons.js draws.
+  {
+    const sw = readFileSync(join(pages, 'sw.js'), 'utf8'), files = JSON.parse(sw.split('const FILES = ')[1].split(';\n')[0]);
+    const carts = JSON.parse(readFileSync(join(pages, 'carts', 'index.json'), 'utf8')).carts;
+    const want = ['./', 'index.html', 'style.css', 'src/main.js', 'src/console/worker.js', 'src/audio/worklet.js', 'manifest.webmanifest', 'icons/icon-192.png', 'carts/index.json',
+      ...carts.map((c) => `carts/${c.name}.nova`), ...carts.filter((c) => c.label).map((c) => c.label)];
+    const lacking = want.filter((f) => !files.includes(f));
+    ok(!lacking.length && /const VERSION = '[0-9a-f]{12}'/.test(sw), 'the service worker keeps every cart, its label and the console\'s code, under a version', lacking.join(' ') || `${files.length} files`);
+    ok(files.every((f) => f === './' || existsSync(join(pages, f))) && !files.some((f) => f.startsWith('pr/') || f.endsWith('.nova.png') || f === 'sw.js'), 'and only files that are there (not the previews, the PNG carts or itself)');
+    const pv = JSON.parse(readFileSync(join(pages, 'pr', '1', 'manifest.webmanifest'), 'utf8'));
+    ok(pv.name === 'NOVA-16 (preview 1)' && JSON.parse(readFileSync(join(pages, 'manifest.webmanifest'), 'utf8')).name === 'NOVA-16', 'a preview\'s app is named for its pull request', pv.name);
+    const icons = spawnSync(process.execPath, [join(ROOT, 'tools', 'icons.js'), '--check'], { encoding: 'utf8' });
+    ok(icons.status === 0, 'the icons are what tools/icons.js draws', icons.stdout.trim());
+  }
 
   // The same steps through git, against a throwaway remote: the branch is started, previews come and go, main keeps them.
   {
@@ -137,7 +197,7 @@ async function check() {
 
   // Serve it under /fanstasy-console/, as Pages serves a project site.
   const PREFIX = '/fanstasy-console';
-  const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.nova': 'application/json', '.png': 'image/png' };
+  const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.nova': 'application/json', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
   const missing = [];
   const server = createServer((req, res) => {
     const url = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -190,11 +250,13 @@ async function check() {
   process.exit(fails ? 1 : 0);
 }
 
-const [cmd, a, b] = process.argv.slice(2);
-if (cmd === 'build' && a) build(resolve(a));
-else if (cmd === 'main' && a) main(resolve(a));
-else if (cmd === 'pr' && a && b) pr(a, resolve(b));
-else if (cmd === 'remove' && a && b) remove(a, resolve(b));
-else if (cmd === 'publish' && a) console.log(publish(a, b));
-else if (cmd === 'check') await check();
-else { console.error('usage: node tools/site.js build <dir> | main <pages-dir> | pr <n> <pages-dir> | remove <n> <pages-dir> | publish main|pr <n>|remove <n> | check'); process.exit(1); }
+if (process.argv[1] === fileURLToPath(import.meta.url)) { // run, not imported (tests/console/offline.mjs builds with it)
+  const [cmd, a, b] = process.argv.slice(2);
+  if (cmd === 'build' && a) build(resolve(a));
+  else if (cmd === 'main' && a) main(resolve(a));
+  else if (cmd === 'pr' && a && b) pr(a, resolve(b));
+  else if (cmd === 'remove' && a && b) remove(a, resolve(b));
+  else if (cmd === 'publish' && a) console.log(publish(a, b));
+  else if (cmd === 'check') await check();
+  else { console.error('usage: node tools/site.js build <dir> | main <pages-dir> | pr <n> <pages-dir> | remove <n> <pages-dir> | publish main|pr <n>|remove <n> | check'); process.exit(1); }
+}

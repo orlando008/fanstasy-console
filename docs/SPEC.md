@@ -519,9 +519,8 @@ The console's own menu over a running game (`src/pause-menu.js`), for players: n
 own pause menu (on its START) is separate.
 
 - **Opening it.** Esc in Run mode; holding a gamepad's Select and Start together for about a second; ☰ on the touch
-  controls (section 6.1); or the **Menu**
-  button that shows with a **Library** button in the top left corner while the mouse moves over the play screen (they
-  fade after a couple of seconds). For a game started from the editor, or one stopped by an error, Esc goes to the
+  controls (section 6.1); or the **Menu** button that shows with a **Library** button in the top left corner while the
+  mouse moves over the play screen (they fade after a couple of seconds). For a game started from the editor, or one stopped by an error, Esc goes to the
   code instead, so working on a cart keeps its one-key toggle; the menu is then on Select + Start and the corner button.
   The first time a player starts a cart in a browser, a line under the screen says how to reach the menu and the
   Library.
@@ -535,12 +534,41 @@ own pause menu (on its START) is separate.
 - **Resuming with a gamepad.** When a gamepad button closes the menu, the game goes on only once every button is let
   go, so the cart never sees the press that closed it.
 
+### 11.3 Offline and installing
+
+The hosted console (GitHub Pages: the main site and each pull request's preview) works without a connection once it
+has been visited, and installs as an app.
+
+- **Installing.** `manifest.webmanifest` names the app NOVA-16 (a preview's is named for its pull request) and opens it
+  full screen at the Library, with the icons in `icons/` (a pixel-art cartridge drawn by `tools/icons.js`, with a
+  square one for Android to crop). Chrome and Edge offer to install it (on Android, Install app in the menu; on a
+  desktop, the icon in the address bar); on an iPhone or iPad it is Share, then Add to Home Screen.
+- **Offline.** The service worker (`sw.js`) keeps a copy of everything the console loads when it installs: the page,
+  its code, the manifest and icons, the Library's index, every cart (`.nova`) and every label, about 3.7 MB. The PNG
+  carts are not kept (downloads for sharing; the Library plays the `.nova`). After that every request goes to the
+  network as before, and only if the network fails, or has not answered in 4 seconds, is it answered from the copy:
+  online the site is always as published, offline it is the version the worker was built with. Every cart plays
+  offline, even one never opened, from the Library or from a `?cart=` link.
+- **Updates.** `tools/site.js build` writes the worker with the list of files and a version (a hash of them), and marks
+  the page (`data-offline` on its body) so `src/main.js` registers it. A new deploy is a new version: on the next visit
+  online the browser installs the new worker, which takes over at once, keeps the new copy and deletes the old.
+- **Previews.** Each preview (`pr/<n>/`) has its own worker and copy; the main site's leaves `pr/` alone. Its saves
+  were already its own (section 11.1).
+- **Saves** are in the browser's storage (`src/storage.js`) and need no network. Installed, the console asks the
+  browser to keep its storage when space runs short. On an iPhone, Safari clears a website's storage after seven days
+  of use without a visit to it, but not an app on the home screen's: installing keeps the saves.
+- **Locally**, the repository served as it is has no mark on its page and registers no worker, so a kept copy never
+  hides an edit.
+
 ## 12. Repository layout
 
 ```
 /
 ├── index.html              # Shell page, CSP meta tag
 ├── style.css
+├── manifest.webmanifest    # The app's name, icons and start page, for installing it (11.3)
+├── sw.js                   # The service worker that keeps the hosted site offline; tools/site.js fills it in (11.3)
+├── icons/                  # The app's icons, drawn by tools/icons.js
 ├── package.json            # { "type": "module" } only, for node --check; no dependencies
 ├── src/
 │   ├── main.js             # Boot and wiring: machine, shell, library, files, autosave
@@ -594,7 +622,7 @@ own pause menu (on its START) is separate.
 ├── carts/                  # Demo and game carts (.nova, .nova.png), index.json and labels/ for the Library
 │   └── src/<name>/         # A cart's source: code.js, meta.json, tiles.txt, palette.txt, map.txt, audio.json (made
 │                           #   by audio.py where there is one; tiles.txt, palette.txt, map.txt, art.json by art.py), label.png
-├── tests/console/          # Checks of the console itself (volume.mjs, menu.mjs, library.mjs and touch.mjs in headless Chromium; song-end.mjs)
+├── tests/console/          # Checks of the console itself (volume.mjs, menu.mjs, library.mjs, touch.mjs and offline.mjs in headless Chromium; song-end.mjs)
 ├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs: 01-flow, 02-art ...), its lib.mjs and its bot.mjs for the sweep tool
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/
@@ -605,6 +633,8 @@ own pause menu (on its START) is separate.
 │   ├── test.js             # Runs a cart's check scripts one at a time
 │   ├── release.js          # Label (F7), .nova.png export, Library index and checks in headless Chromium
 │   ├── check-docs.js       # Documentation may only mention files that exist
+│   ├── site.js             # The hosted site: builds it (with the offline copy's list), publishes it to gh-pages, checks it
+│   ├── icons.js            # Draws the app's icons
 │   ├── templates/cart/     # The starter's files ({{NAME}}, {{TITLE}} placeholders)
 │   ├── templates/kinds/    # A whole game for a kind of game (puzzle); --kind <kind> on new-cart.js
 │   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader; music/: song toolkit, loudness, lead lowering; art/: art toolkit, scene and sprite viewers
