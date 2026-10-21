@@ -78,8 +78,8 @@ As section 5. The top 10 keeps the score, the initials and the level reached (sa
 ## 11. Audio
 
 Songs: 0 the title, 1 the game (calm: it plays for a long time). Effects (SFX in code.js): cursor and menu move, pick up, pause, swap, a swap that
-makes nothing (noise: channel 4), a match in five steps (higher for each link of a chain), level clear, game over, a reshuffle (noise: channel 4), a high score.
-Channel 1 is for effects (the songs only carry the tempo on it). Levels: the lead alone at most 0.07 RMS and 0.75 of the mix (`node tools/devkit/music/loud.mjs
+makes nothing (noise), a match in five steps (higher for each link of a chain), level clear, game over, a reshuffle (noise), a high score.
+On the new sound chip (sampled instruments and echo; SPEC 5): songs use channels 0 to 5, effects take turns on 6 and 7. Levels: the lead alone at most 0.07 RMS and 0.75 of the mix (`node tools/devkit/music/loud.mjs
 carts/{{NAME}}.nova --check`). TODO: the real songs and effects.
 
 ## 12. Video layers

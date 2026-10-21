@@ -81,7 +81,7 @@ const swap = (vm, p, from, dir) => { p.cursor = from; tap(vm, 'A'); tap(vm, dir)
   swap(vm, p, 0, 'RIGHT'); const phases = new Set(); for (let i = 0; i < 60; i++) { vm.step(0); phases.add(p.phase); }
   ok(phases.has('swap') && phases.has('unswap') && p.phase === 'idle', 'it slides across, and then back');
   ok(JSON.stringify(p.typesNow()) === JSON.stringify(DEAD) && p.moves === 5 && p.score === 0, 'the board is as it was and no move was spent');
-  const log = sfxLog(vm); ok(log.some(([n, ch]) => n === p.SFX.bad && ch === 4), 'with the bad-swap sound, on the noise channel (channel 4)');
+  const log = sfxLog(vm); ok(log.some(([n, ch]) => n === p.SFX.bad && ch >= 6), 'with the bad-swap sound, on an effects channel (6 or 7)');
 }
 
 // 6. The pad: the cursor, picking up, putting down, the edges.
@@ -141,7 +141,7 @@ const swap = (vm, p, from, dir) => { p.cursor = from; tap(vm, 'A'); tap(vm, dir)
 {
   const { vm, p } = play(); p.setTypes(DEAD); p.moves = 5; sfxLog(vm); p.settle(); vm.step(0);
   ok(p.phase === 'fall', 'a board with no move left is dealt again (the gems drop in)');
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.shuffle && ch === 4), 'with the shuffle sound, on the noise channel');
+  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.shuffle && ch >= 6), 'with the shuffle sound, on an effects channel');
   rest(vm, p); ok(p.hasMoves(p.typesNow()) && p.findRuns(p.typesNow()).length === 0 && p.moves === 5, 'and the new board has a move; no move was spent');
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

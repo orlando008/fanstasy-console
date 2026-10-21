@@ -23,7 +23,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const lives = p.lives; sfxLog(vm);
   p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
   ok(p.lives === lives - 1, 'a block that lands on the player costs a life');
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch === 4), 'with the hit sound, on the noise channel (channel 4)');
+  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch >= 6), 'with the hit sound, on an effects channel (6 or 7)');
 }
 
 // 3. Pause.

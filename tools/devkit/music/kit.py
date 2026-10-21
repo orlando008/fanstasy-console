@@ -225,10 +225,11 @@ class Song:
     def __init__(s, audio, key, speed, echo=None):
         s.audio, s.key, s.speed, s.rows, s.echo = audio, key, speed, [], echo
     def bar(s, length, chord, lead=None, li='LEAD', grid=2, drums='none', bass=None, bgrid=None, upper=None,
-            counter=None, ci='COUNTER', cgrid=None, cbase=48, lv=None, fill=False):
+            counter=None, ci='COUNTER', cgrid=None, cbase=48, lv=None, fill=False, pi='PAD', ai='ARP', bi='BASS'):
         """One bar. lead/bass/counter: a line of tokens, one per `grid` rows ('-' holds, '.' releases, '1358' chord tones).
         bass: 'long' for one held root. upper: 'pad', 'arp' (every 2 rows) or 'arp1' (every row). fill: the last half
-        bar is a snare roll. Instruments are by name: li, ci; BASS, PAD, ARP, KICK, SNARE, HAT, OHAT are expected to exist.
+        bar is a snare roll. Instruments are by name: li, ci, pi (pad), ai (arpeggio), bi (bass); KICK, SNARE, HAT, OHAT
+        are expected to exist.
         On the new chip the counter-melody has its own channel (1), so it plays alongside upper, and 'pad' is the
         third and fifth held together on channels 3 and 4."""
         I, chip2 = s.audio.I, s.audio.chip == 2
@@ -246,18 +247,18 @@ class Song:
                 rows[k * g][ch] = cell(n, I[inst], v)
         if lead: line(lead, grid, 0, li, v=lv)
         if bass:
-            if bass == 'long': rows[0][2] = cell(tones[0] + 24, I['BASS'])
-            else: line(bass, bgrid or grid, 2, 'BASS', 24)
+            if bass == 'long': rows[0][2] = cell(tones[0] + 24, I[bi])
+            else: line(bass, bgrid or grid, 2, bi, 24)
         if counter: line(counter, cgrid or grid, 1 if chip2 else 3, ci, cbase)
         if counter and not chip2: pass   # on the old chip the counter-melody takes the upper channel
         elif upper == 'pad' and chip2:
-            rows[0][3] = cell(tones[1] + 48, I['PAD']); rows[0][4] = cell(tones[2] + 48, I['PAD'])
+            rows[0][3] = cell(tones[1] + 48, I[pi]); rows[0][4] = cell(tones[2] + 48, I[pi])
         elif upper == 'pad':
-            rows[0][3] = cell(tones[1] + 48, I['PAD']); rows[length // 2][3] = cell(tones[2] + 48, I['PAD'])
+            rows[0][3] = cell(tones[1] + 48, I[pi]); rows[length // 2][3] = cell(tones[2] + 48, I[pi])
         elif upper in ('arp', 'arp1'):
             seq = [0, 1, 2, 3, 2, 1]
             for k, r in enumerate(range(0, length, 1 if upper == 'arp1' else 2)):
-                rows[r][3] = cell(tones[seq[k % 6]] + 48, I['ARP'])
+                rows[r][3] = cell(tones[seq[k % 6]] + 48, I[ai])
         smp, noi = DRUMS[length][drums]
         for r in range(length):
             if fill and r >= length // 2:

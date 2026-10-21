@@ -681,6 +681,7 @@ every file the prompt names exists, and `tests/console/make.mjs` the tools it sa
 │   └── src/<name>/         # A cart's source: code.js, meta.json, tiles.txt, palette.txt, map.txt, audio.json (made
 │                           #   by audio.py where there is one; tiles.txt, palette.txt, map.txt, art.json by art.py), label.png
 ├── tests/console/          # Checks of the console itself (volume.mjs, menu.mjs, library.mjs, touch.mjs, offline.mjs, share.mjs and make.mjs in headless Chromium; song-end.mjs)
+├── tests/audio/            # The sound chip's checks (chip.mjs) and the frozen old chip (legacy-synth.js) that compat.mjs compares old carts with
 ├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs: 01-flow, 02-art ...), its lib.mjs and its bot.mjs for the sweep tool
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/
@@ -696,7 +697,7 @@ every file the prompt names exists, and `tests/console/make.mjs` the tools it sa
 │   ├── icons.js            # Draws the app's icons
 │   ├── templates/cart/     # The starter's files ({{NAME}}, {{TITLE}} placeholders)
 │   ├── templates/kinds/    # A whole game for a kind of game (puzzle); --kind <kind> on new-cart.js
-│   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader; music/: song toolkit, loudness, lead lowering; art/: art toolkit, scene and sprite viewers
+│   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader; music/: song toolkit and sampled instruments, loudness, clashes, old-cart compatibility, audio scripts from audio.json, lead lowering; art/: art toolkit, scene and sprite viewers
 ├── docs/
 │   ├── SPEC.md             # This document (the cart-facing API is section 8)
 │   ├── carts/<name>.md     # Each game's specification, with its build notes
@@ -711,7 +712,9 @@ every file the prompt names exists, and `tests/console/make.mjs` the tools it sa
 - Use native ES modules everywhere. Module workers and AudioWorklets need HTTP, so `file://` will not work. Serve locally with `python3 -m http.server` or any static server.
 - Deploy with GitHub Pages from the repository root on `main`.
 - Keep modules small and single-purpose. Every cart-facing API function has a JSDoc comment; the cart-facing API reference is section 8 of this document.
-- The console itself is validated by syntax only: CI runs `node --check` on every `.js` file in `src/`.
+- The console itself is validated by syntax (CI runs `node --check` on every `.js` file in `src/`) and by a few checks
+  of its own: the sound chip (`tests/audio/chip.mjs`), old carts sounding as they did on the old chip
+  (`tools/devkit/music/compat.mjs`, with and without `--converted`) and a song that plays once ending (`tests/console/song-end.mjs`).
 - Carts are validated by tools (docs/dev/playbook.md): `tools/check.js` (limits, voices, the PNG cart, the spec),
   `tools/devkit/soak.mjs` (random play), `tools/new-cart.js --selftest` and `tools/verify.js` (the carts a pull request
   changes, with their tests). `tools/check-docs.js` keeps the documentation's file and tool-flag references true.
@@ -721,7 +724,7 @@ name: check
 on: [push, pull_request]
 jobs:
   syntax:   # node --check on src/, tools/ and tests/; the documentation's file references
-  carts:    # check.js --all, the starters' self-test, soak.mjs --all
+  carts:    # check.js --all, the sound chip's checks, the starters' self-test, soak.mjs --all
   verify:   # pull requests only: tools/verify.js for the carts the PR changes
 ```
 

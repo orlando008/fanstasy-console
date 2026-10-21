@@ -780,7 +780,7 @@ select, .num, .hex-input {
 .trk-head, .trk-row { display: flex; gap: 0; }
 .trk-head { position: sticky; top: 0; z-index: 1; background: var(--panel-2); color: var(--dim); border-bottom: 1px solid var(--line); }
 .trk-num { width: 34px; flex: none; padding: 0 6px; color: #4e4a5e; text-align: right; }
-.trk-cell { flex: none; width: calc(12ch + 21px); padding: 0 10px; border-left: 1px solid var(--line); cursor: text; overflow: hidden; }
+.trk-cell { flex: none; width: calc(12ch + 11px); padding: 0 5px; border-left: 1px solid var(--line); cursor: text; overflow: hidden; }
 .trk-head-cell { line-height: 20px; }
 .trk-row.beat { background: rgba(255, 255, 255, 0.025); }
 .trk-row.beat .trk-num { color: #8595a1; }

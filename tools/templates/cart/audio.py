@@ -2,40 +2,41 @@
 #   python3 carts/src/{{NAME}}/audio.py carts/src/{{NAME}}/audio.json
 # Two songs (0 the title, 1 the game) and the effects numbered as SFX in code.js. Written with the song
 # toolkit (tools/devkit/music/kit.py; its header explains the bar() arguments). Rules (playbook section 5):
-# leads are quiet pulses with no vibrato; channel 1 is for effects; the drums are samples on channel 5.
+# leads are quiet, with no vibrato; songs use channels 0 to 5 and effects 6 and 7 (code.js takes turns); the drums are
+# samples on channel 5. The new sound chip (SPEC 5): sampled instruments from samples.py (a.voice) and an echo per song.
 # After a change: node tools/devkit/music/loud.mjs carts/{{NAME}}.nova --check (levels; the lead alone must stay at most
 # 0.07 RMS and 0.75 of the mix) and python3 tools/devkit/music/clash.py on the json.
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/music'))
 from kit import *
 
-a = Audio()
+a = Audio(chip=2)
 a.sample(kick()); a.sample(snare()); a.sample(hat(0.05, 70, 3)); a.sample(hat(0.15, 22, 5))
 
-a.instrument('LEAD', 'pulse25', 0, 10, 8, 8, 6, pan=-0.15)
-a.instrument('BASS', 'triangle', 0, 0, 15, 3, 10)
+a.voice('LEAD', 'flute', 5, -0.15)
+a.voice('BASS', 'bass', 12)
 a.instrument('HAT', 'sample', 0, 0, 15, 0, 4, pan=0.25, sample=2)
 a.instrument('OHAT', 'sample', 0, 0, 15, 0, 4, pan=0.25, sample=3)
-a.instrument('PAD', 'saw', 8, 24, 6, 14, 5, (1, 4), 0.2)
-a.instrument('ARP', 'saw', 0, 4, 0, 0, 5, pan=0.25)
-a.instrument('KICK', 'sample', 0, 0, 15, 0, 12, sample=0)
-a.instrument('SNARE', 'sample', 0, 0, 15, 0, 10, sample=1)
-a.instrument('SOFTHORN', 'pulse25', 6, 20, 10, 12, 6, pan=-0.15)
+a.voice('PAD', 'strings', 5, 0.2)
+a.voice('ARP', 'pluck', 13, 0.25)
+a.instrument('KICK', 'sample', 0, 0, 15, 0, 12, sample=0, echo=2)
+a.instrument('SNARE', 'sample', 0, 0, 15, 0, 10, sample=1, echo=5)
+a.voice('SOFTHORN', 'brass', 7, -0.15, a=6)
 a.instrument('BLIP', 'pulse12', 0, 3, 0, 0, 8)                 # effects from here on
 a.instrument('CHIME', 'pulse50', 0, 6, 5, 6, 9)
 a.instrument('THUD', 'pulse50', 0, 4, 0, 0, 11)
-a.instrument('CRUNCH', 'noise', 0, 8, 3, 6, 9)                  # noise: plays on channel 4 (SFX_VOICE_CH in code.js)
+a.instrument('CRUNCH', 'noise', 0, 8, 3, 6, 9)
 a.instrument('FANFARE', 'pulse25', 0, 6, 11, 6, 9)
 
 # --- 0 The title: A minor, 150 bpm ---
-S = a.song(Key('A', MINOR), 6)
+S = a.song(Key('A', MINOR), 6, echo=(5, 4, 5, 9))
 CH = ['1', '6', '3', '7']
 bars(S, 16, CH, None, drums='soft', bass='long', upper='arp1')
 bars(S, 16, CH, ['A4 - C5 - E5 - A5 -', 'A5 - G5 - F5 - C5 -', 'E5 - G5 - C6 - G5 -', 'D5 - G5 - B5 - G5 -'], li='SOFTHORN', drums='drive', bass='1 - - - 5 - - -', upper='arp1')
 S.finish()
 
 # --- 1 The game: C major, 128 bpm ---
-S = a.song(Key('C', MAJOR), 7)
+S = a.song(Key('C', MAJOR), 7, echo=(5, 4, 5, 9))
 CH = ['1', '5', '6', '4']
 bars(S, 16, CH, ['C5 - E5 - G5 - E5 -', 'D5 - G5 - B5 - G5 -', 'E5 - A5 - C6 - A5 -', 'C5 - F5 - A5 - F5 -'], li='LEAD', drums='basic', bass='1 - 5 - 1 - 5 -', upper='arp')
 bars(S, 16, CH, ['G5 - E5 - C5 - E5 -', 'B5 - G5 - D5 - G5 -', 'A5 - C6 - E6 - C6 -', 'A5 - F5 - C5 - F5 .'], li='SOFTHORN', drums='basic', bass='1 - 5 - 1 - 5 -', upper='arp1')
