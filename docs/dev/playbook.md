@@ -101,6 +101,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `node tools/devkit/music/render.mjs carts/<name>.nova out/` | WAV files of the songs, with level and clipping |
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level and pitch (centroid) of effects, on the channel the game uses |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and saw on the beat |
+| `node tools/devkit/music/compat.mjs [carts/<name>.nova...]` | Carts in the old format (version 1) played on the frozen old chip (`tests/audio/legacy-synth.js`) and on the console's: they must give the same samples. Run it after any change to `src/audio/` (CI does). See `docs/dev/sound-chip.md` |
 | `node tools/devkit/voices.mjs carts/<name>.nova [frames] [seed]` | Just the wrong-voice check (soak does this too) |
 
 **Release**

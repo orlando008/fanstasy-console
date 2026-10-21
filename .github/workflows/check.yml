@@ -20,6 +20,8 @@ jobs:
       - run: node tools/check.js --all
       # The console's synth: a song that plays once falls silent at its end
       - run: node tests/console/song-end.mjs
+      # Old carts (format version 1) sound exactly as they did on the old chip (docs/dev/sound-chip.md)
+      - run: node tools/devkit/music/compat.mjs
       # The art kit: drawing, palettes, tile sharing, scenes, sprites, the files it writes and the viewers
       - run: python3 tools/devkit/art/selftest.py
       # The starter: scaffolds a throwaway cart, packs, checks and tests it, and deletes it
