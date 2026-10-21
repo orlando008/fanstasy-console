@@ -3,7 +3,7 @@ and read back), the code.js block, and the viewers (scene.mjs, sprites.mjs). CI 
 
     python3 tools/devkit/art/selftest.py
 """
-import json, os, shutil, subprocess, sys, tempfile
+import ast, json, os, shutil, subprocess, sys, tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from kit import *
 
@@ -177,6 +177,20 @@ console.log(JSON.stringify(out));""" % ROOT)
     scene_png = os.path.join(work, 'scene.png'); spr_png = os.path.join(work, 'sprites.png')
     node('tools/devkit/art/scene.mjs', out, scene_png, '--rect', '2,3,8,4', '--scale', '2')
     node('tools/devkit/art/sprites.mjs', out, spr_png, '--tile', '256', '--size', '16', '--pal', '1', '--scale', '4')
+    def ascii_rows(text):
+        """The rows and the key that sprites.mjs --ascii prints, rulers cut off."""
+        cut = [l.split() for l in text.split('\n')]
+        w = next(len(c[0]) for c in cut if len(c) == 1 and c[0].isdigit())   # the x ruler's units line
+        rows = [c[1] for c in cut if len(c) == 2 and c[0].isdigit() and len(c[1]) == w]
+        keys = [ast.literal_eval(' '.join(c)[4:]) for c in cut if c and c[0].startswith('key=')]
+        return rows, keys[0] if keys else {}
+    rows, key = ascii_rows(node('tools/devkit/art/sprites.mjs', out, '--ascii', '--tile', '256', '--size', '16'))
+    ok(Img.from_rows(rows, key=key) == hero and not key, 'sprites.mjs --ascii --tile prints a sprite as hex rows that from_rows reads back as drawn', str(rows[:2]))
+    text_ = node('tools/devkit/art/sprites.mjs', 'carts/ice-breakers.nova', '--ascii', 'gem0')
+    rows, key = ascii_rows(text_)
+    tiles_ = [node('tools/devkit/tiles.mjs', 'carts/ice-breakers.nova', '--ascii', str(t)).split('\n')[:8] for t in (256, 257, 272, 273)]
+    gem = Img.from_rows([tiles_[0][y] + tiles_[1][y] for y in range(8)] + [tiles_[2][y] + tiles_[3][y] for y in range(8)])
+    ok(Img.from_rows(rows, key=key) == gem and 'e edge' in text_ and '0123456789012345' in text_, 'sprites.mjs --ascii <name> prints role letters with rulers and a legend, and its key reads it back', str(key))
     px = os.path.join(work, 'px.mjs')
     open(px, 'w').write("""import { readFileSync } from 'node:fs';
 import { decodePng } from '%s/tools/devkit/pngcart.mjs';

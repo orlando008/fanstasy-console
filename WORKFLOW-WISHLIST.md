@@ -119,10 +119,18 @@ tile grid, and its `outline` grows a 16 px sprite to 18 px), but these parts of 
   - **What:** each changed sprite as it was, as it is, and the changed pixels highlighted; a line that says which sprites
     changed and by how many pixels, and which did not change at all.
   - **Why:** catches an edit that did nothing, or touched more than intended, without comparing two PNGs by eye.
-- [ ] **One sprite as text with rulers** (`tools/devkit/art/sprites.mjs --ascii <name>`).
+- [x] **A colour report** (`tools/devkit/art/colors.mjs`).
+  - **What:** play a cart with random buttons, measure its screens in OKLab: muddy panels (checked, limit 0.3), palette
+    ramps out of order (checked), and as information mud, contrast, faint edges and the overlay's default colours; a PNG
+    with the mud and faint edges marked.
+  - **Why:** the PNG viewers show the art, but not whether it reads as muddy: Tricksy Towerz's brown and grey panels
+    measured 0.97 before its polish and 0.12 after.
+- [x] **One sprite as text with rulers** (`tools/devkit/art/sprites.mjs --ascii <name>`).
   - **What:** the sprite's pixels as role letters (from `art.json`), with x and y rulers, whatever its size.
   - **Why:** cheaper than an image for checking exact pixels; `tiles.mjs --ascii` shows one 8 x 8 tile at a time, as
     indices, without rulers.
+  - **Built:** role letters, rulers and a legend that is a `key` for `Img.from_rows`; `--ascii --tile n --size s` for
+    games without `art.json`; a round trip in `selftest.py`.
 
 ## 5. Make the older games safe to polish
 

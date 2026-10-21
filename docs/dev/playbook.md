@@ -85,9 +85,10 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | Command | What it does |
 |---|---|
 | `python3 carts/src/<name>/art.py carts/src/<name>` | Regenerate the cart's `tiles.txt`, `palette.txt`, `map.txt`, `art.json` and the `ART` block of its `code.js` from its art script, written with the toolkit in `tools/devkit/art/kit.py` (its header lists what it checks) |
-| `node tools/devkit/art/sprites.mjs carts/<name>.nova out.png [--names a,b]` | The cart's sprites (from `art.json`) at their real sizes in their sprite palettes, with names, scaled up; or one with `--tile n --size 16 --pal 0` (open the PNG with the Read tool) |
+| `node tools/devkit/art/sprites.mjs carts/<name>.nova out.png [--names a,b]` | The cart's sprites (from `art.json`) at their real sizes in their sprite palettes, with names, scaled up; or one with `--tile n --size 16 --pal 0` (open the PNG with the Read tool). `--ascii hero` prints a sprite as text instead: a letter for each role, x and y rulers, and a `key={...}` for `Img.from_rows` (`--ascii --tile n --size s` prints hex indices, no manifest needed) |
 | `node tools/devkit/art/scene.mjs carts/<name>.nova out.png --scene field [--holes]` | A Map RAM region as the map places it (palettes, flips); `--rect x,y,w,h` for any region; `--holes` paints empty cells magenta |
 | `node tools/devkit/tiles.mjs carts/<name>.nova out.png --from 640 --count 64 --pal 0 [--sprite] [--skip-empty]` | A contact sheet of tiles with their numbers in a palette. `--ascii <n>` prints one tile as `tiles.txt` rows; `--palette out.png` shows all 256 entries |
+| `node tools/devkit/art/colors.mjs carts/<name>.nova [--png out.png] [--check]` | How the colours read: plays the cart with random buttons and measures its screens in OKLab. Muddy panels (dull brown or grey on overlay panels; limit 0.3), palette ramps out of order (`art.json`), and as information mud, contrast, faint edges and the overlay's default colours; `--png` marks mud magenta and faint edges cyan (in the PNG only); `--extra "src"` as in `shots.mjs` |
 | `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons, `--extra "skipTitle = true;"`) |
 | `python3 tools/devkit/art/selftest.py` | The kit's own checks (CI runs it) |
 
@@ -295,7 +296,10 @@ such a game's art, use `tiles.mjs`, `scene.mjs --rect x,y,w,h` and `sprites.mjs 
 
 **Look at the art, always.** `sprites.mjs` (every sprite at its real size, in its palette), `scene.mjs` (a map region, with
 `--holes`), `tiles.mjs` (the sheet with numbers) and `shots.mjs` (the game in place) all make PNGs to open with the Read tool.
-Do it after every change; a tile-aligned scene is easy to get slightly wrong. **Layering:** sprites are drawn between the
+Do it after every change; a tile-aligned scene is easy to get slightly wrong. To check exact pixels (is the outline
+one pixel wide, is the highlight where the light comes from, is the sprite centred), `sprites.mjs --ascii <name>` is cheaper than
+an image: count along the rulers. Before a release, run `colors.mjs --check`: the PNGs show what a picture looks like, the report says whether its
+colours are muddy (the default palette's brown and grey panels are what made Tricksy Towerz look unfinished). **Layering:** sprites are drawn between the
 background layers by priority (SPEC 4.8), and the overlay is always on top. To put something over a sprite (frost over a gem)
 use a background layer's high-priority tiles (bit 15 of the map entry; `art.scene(..., prio=1)`) and a lower sprite priority;
 a sprite can never appear over an overlay panel, so a picture for a banner cannot be a sprite. Layer 0 is on by default and
