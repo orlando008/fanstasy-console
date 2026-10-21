@@ -90,6 +90,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `node tools/devkit/tiles.mjs carts/<name>.nova out.png --from 640 --count 64 --pal 0 [--sprite] [--skip-empty]` | A contact sheet of tiles with their numbers in a palette. `--ascii <n>` prints one tile as `tiles.txt` rows; `--palette out.png` shows all 256 entries |
 | `node tools/devkit/art/colors.mjs carts/<name>.nova [--png out.png] [--check]` | How the colours read: plays the cart with random buttons and measures its screens in OKLab. Muddy panels (dull brown or grey on overlay panels; limit 0.3), palette ramps out of order (`art.json`), and as information mud, contrast, faint edges and the overlay's default colours; `--png` marks mud magenta and faint edges cyan (in the PNG only); `--extra "src"` as in `shots.mjs` |
 | `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons, `--extra "skipTitle = true;"`) |
+| `node tools/devkit/gif.mjs carts/<name>.nova out.gif --from 60 --to 240` | An animated GIF of the cart (`--hold`, `--crop x,y,w,h`, `--every 2`): to show a person an animation you cannot watch |
 | `python3 tools/devkit/art/selftest.py` | The kit's own checks (CI runs it) |
 
 **Hear it** (measure it: you cannot listen)
@@ -334,6 +335,13 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   with a material (grass, dirt, stone, brick, tiles, planks, leaves, water, fence ...) that repeats seamlessly, and
   `variants()` with `tile_fill()` break up a big area for a few tiles. `floor()` lays a texture in perspective. A sky
   can cost no tiles at all: `art.gradient()` and `gradientLine()` in `scanline()`.
+- **Characters that move: rig them.** `Rig('brawler' | 'boxer' | 'hero', height, skin=, shirt=, pants=, shoes=,
+  hair=, hands=)` is a skeleton dressed in sculpted shapes; a pose is a dict of joint angles (`pose(GUARD, arm_n=80)`),
+  and `rig.animate(WALK, 8)` makes the frames between key poses (WALK, PUNCH, KICK, IDLE-like pairs; give at least a
+  frame a key). `filmstrip(path, rig, poses, pal)` shows every frame with an onion skin of the one before and the
+  skeleton (near limbs pink, far limbs blue): check it for a limb that jumps or a foot that slides. `art.animation()`
+  makes the frames big sprites that share every piece that does not change (the `street` cart's brawler: 18 frames in about
+  410 tiles). Then `gif.mjs` makes a GIF for the person to judge the timing, which a still cannot show.
 - **HUD and titles:** `big_text()` (smooth scaled, gradient-filled, outlined, shadowed), `hud_bar()`, `frame()`.
 - **Look while you work:** `Sheet().add(name, img, pal)` (and `add_layers()` for a stack of layers) saves a PNG from
   art.py without packing.

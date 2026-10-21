@@ -91,7 +91,7 @@ that gap.
   - **What:** each cart lists its screens in `tests/carts/<name>/screens.mjs` (title, lobby, mid-game, results, initials,
     pause...); the tool writes one contact sheet and zoomed crops.
   - **Why:** for Tricksy Towerz I wrote a throwaway gallery script and used Python's image library (PIL) to zoom.
-- [ ] **Animated capture.**
+- [x] **Animated capture.** Built as `tools/devkit/gif.mjs` with the character rig (`docs/dev/snes-picture.md`).
   - **What:** a GIF or animated PNG from the harness (`src/record/gif.js` already exists in the console).
   - **Why:** screenshots cannot show motion such as twinkling stars or a jumping winner.
 - [ ] **A release polish bar in the playbook**, a checklist before release:

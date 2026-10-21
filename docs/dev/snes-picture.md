@@ -104,4 +104,5 @@ VALLEY (a sky gradient line by line, clouds, snowy mountains, hills, trees and g
 | A3 | built | `mosaic()` (SPEC 4.12); in the tests (blocks of columns and of lines); demo page MOSAIC. The fingerprints of every old cart matched again. |
 | B | built | Eight modules (above), each with self-tests in `tools/devkit/art/selftest.py` (the big sprite and the gradient are packed into a cart and checked on the console's screen). Existing carts' art scripts make the same files as before. |
 | D | built | The `showcase` cart. |
+| Rig | built | `rig.py`: a skeleton with presets (brawler, boxer, hero) dressed in sculpted shapes, poses as joint angles, `animate()` with easing and mirrored walk cycles, built-in WALK, PUNCH, KICK, GUARD, HIT, JUMP, a `filmstrip()` with onion skin and bones; `Art.animation()` (frames sharing their pieces; 8 px pieces where a 16 px one would be mostly empty, which also took the showcase from 939 to 881 tiles); `tools/devkit/gif.mjs`. The `street` cart: a brawler that walks, punches and kicks on a night street. |
 | C | not started | |

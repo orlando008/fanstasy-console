@@ -15,9 +15,9 @@ texture(kind, w, h, ramp, seed=0, **options): kinds and their options
   sand      fine speckle and ripples                                    ripples=True
   snow      soft drifts, blue-grey hollows
   stone     cobbles: rounded stones with dark gaps                      size=10
-  brick     bricks in courses, mortar the darkest step, each lit on top  w=16, h=8
+  brick     bricks in courses, mortar the darkest step, each lit on top  bw=16, bh=8 (a brick's size)
   tiles     glazed square tiles, grout lines, a shine on each tile       size=16
-  paving    paving slabs in offset rows (a pavement, a plaza)           w=24, h=12
+  paving    paving slabs in offset rows (a pavement, a plaza)           bw=24, bh=12 (a slab's size)
   planks    boards with grain, dark seams and nails                     h=8, vertical=False
   bark      vertical grain and cracks
   leaves    foliage: clumps of small lit leaves (a hedge, a tree crown)  size=4
@@ -153,7 +153,7 @@ def texture(kind, w, h, ramp, seed=0, **o):
                 I = 0.5 + 0.45 * ((-dx - dy) / (r * 1.6)) + 0.25 * (nz - 0.5) + 0.25 * (_hash(cid, seed) - 0.5)
                 put(x, y, level(ramp[1:] if n > 3 else ramp, I, x, y))
     elif kind in ('brick', 'paving'):
-        bw, bh = o.get('w', 16 if kind == 'brick' else 24), o.get('h', 8 if kind == 'brick' else 12)
+        bw, bh = o.get('bw', 16 if kind == 'brick' else 24), o.get('bh', 8 if kind == 'brick' else 12)
         for y in range(h):
             row = y // bh
             off = (bw // 2) * (row % 2)

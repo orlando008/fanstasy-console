@@ -37,8 +37,9 @@ of it). Each is a module of its own here, and comes with `from kit import *`:
   texture.py    texture(kind, w, h, ramp): seamless materials; variants(), tile_fill(); noise(), fbm(), level()
   scenery.py    sky(), stars(), orb(), clouds(), mountains(), hills(), treeline(), floor(), rope(), ellipse()
   lettering.py  big_text(), hud_bar(), frame(), scale2x()
+  rig.py        Rig, pose(), filmstrip(), WALK, PUNCH, KICK ...: characters on a skeleton, posed and animated
   preview.py    Sheet: a PNG of pictures, ramps and layer stacks, straight from art.py
-  and here      art.big_sprite() (bigSprite() in code.js), art.gradient() (gradientLine() in scanline()), art.variant(),
+  and here      art.big_sprite() (bigSprite() in code.js), art.animation(), art.gradient() (gradientLine() in scanline()), art.variant(),
                 Img.from_rows(mirror='x')
 
 Files: art.py owns tiles.txt, palette.txt, map.txt and art.json of its cart (do not edit them by hand); the ART block in
@@ -280,6 +281,8 @@ class Art:
         s.sprites = {}               # name -> {tile, size, pal}
         s.scenes = {}                # name -> {mx, my, w, h, pal}
         s.big = {}                   # big sprites: name -> {w, h, parts: [[dx, dy, tile, size, pal, flip], ...]}
+        s.pieces = {}                # big sprites' pieces, shared between them: (region, pal, size, picture) -> tile
+        s.anims = {}                 # animations: name -> [big sprite names, one a frame]
         s.gradients = {}             # per-line colours: name -> {entry, y0, lines: [RGB555, ...]}
         s.exact = {}                 # tile picture -> number (for sharing identical tiles)
         s.palettes = {}              # (kind, sub) -> Roles
@@ -505,25 +508,29 @@ class Art:
     def big_sprite(s, name, img, pal=None, region=None, piece='auto'):
         """A sprite of any size, drawn as several hardware sprites: `img` is a picture (in sprite palette `pal`), or a
         dict {palette: picture} of the same size (what Sculpt.render() gives for parts in several palettes), the higher
-        palette numbers drawn over the lower. It is cut into 32 px pieces where they are full enough and 16 px ones elsewhere (piece=32 or 16
-        forces one size), empty pieces are skipped, and a piece equal to another one, or to it flipped, reuses its
-        tiles. In code.js: bigSprite(ART.big.name, x, y, { fx, fy, prio, pal }). Returns the entry."""
+        palette numbers drawn over the lower. It is cut into 32 px pieces where they are full, 16 px ones elsewhere and
+        8 px ones where a 16 px piece would be mostly empty (piece=32 or 16 forces one size); empty pieces are skipped,
+        and a piece equal to one already made for any big sprite (an animation's other frames), or to it flipped,
+        reuses its tiles. In code.js: bigSprite(ART.big.name, x, y, { fx, fy, prio, pal }). Returns the entry."""
         if name in s.big: raise ValueError('big sprite %r already exists' % name)
         layers = img if isinstance(img, dict) else {pal if not isinstance(pal, Roles) else pal.sub: img}
         if any(p is None for p in layers): raise ValueError('big sprite %r: give pal= (a sprite palette) for a single picture' % name)
         sizes = {(im.w, im.h) for im in layers.values()}
         if len(sizes) != 1: raise ValueError('big sprite %r: the pictures for its palettes must be the same size, got %s' % (name, sorted(sizes)))
         W, H = sizes.pop()
-        parts, made = [], {}
+        # Pieces are shared across every big sprite in the region (the frames of an animation reuse the pieces that
+        # did not change), flipped or not.
+        parts, made = [], s.pieces
         def place(cell, sub, dx, dy, size):
             key = cell.key()
             for flip, c in ((0, cell), (1, cell.flip_h()), (2, cell.flip_v()), (3, cell.flip_h().flip_v())):
-                hit = made.get((sub, size, c.key()))
+                hit = made.get((region, sub, size, c.key()))
                 if hit is not None:
                     parts.append([dx, dy, hit, size, sub, flip]); s.shared += 1; return
-            n = s.sprite('%s#%d' % (name, len(made)), cell, pal=sub, region=region)
-            del s.sprites['%s#%d' % (name, len(made))]
-            made[(sub, size, key)] = n
+            tmp = '%s#%d' % (name, len(made))
+            n = s.sprite(tmp, cell, pal=sub, region=region)
+            del s.sprites[tmp]
+            made[(region, sub, size, key)] = n
             parts.append([dx, dy, n, size, sub, 0])
         for sub, im in sorted(layers.items()):
             roles = s._roles('spr', sub)
@@ -536,13 +543,30 @@ class Art:
                     if piece == 32 or (piece == 'auto' and len(quads) == 4):
                         place(block, sub, bx, by, 32)
                     else:
-                        for qx, qy in quads: place(block.crop(qx, qy, 16, 16), sub, bx + qx, by + qy, 16)
+                        for qx, qy in quads:
+                            q = block.crop(qx, qy, 16, 16)
+                            eighths = [(ex, ey) for ey in (0, 8) for ex in (0, 8) if not q.crop(ex, ey, 8, 8).is_empty()]
+                            if piece == 'auto' and len(eighths) <= 2:     # mostly empty: 8 px pieces cost fewer tiles
+                                for ex, ey in eighths: place(q.crop(ex, ey, 8, 8), sub, bx + qx + ex, by + qy + ey, 8)
+                            else: place(q, sub, bx + qx, by + qy, 16)
         # Among sprites of one priority the first drawn is on top, so the last palette's parts (drawn over the others)
         # go first.
         order = {sub: k for k, sub in enumerate(sorted(layers))}
         parts.sort(key=lambda p: -order[p[4]])
         s.big[name] = {'w': W, 'h': H, 'parts': parts}
         return s.big[name]
+
+    def animation(s, name, frames, pal=None, region=None):
+        """The frames of an animation (pictures, or {palette: picture} each, all the same size, e.g. a Rig's renders) as
+        big sprites name0, name1 ..., sharing every piece that does not change between them. In code.js:
+        bigSprite(ART.big[ART.anims.name[f]], x, y, { fx }). Returns the names."""
+        names = []
+        for k, im in enumerate(frames):
+            n = '%s%d' % (name, k)
+            s.big_sprite(n, im, pal=pal, region=region)
+            names.append(n)
+        s.anims[name] = names
+        return names
 
     def gradient(s, name, stops, y0=0, y1=223, entry=0):
         """Per-line colours for CGRAM `entry` (0, the backdrop, by default) from line y0 to y1: `stops` is a list of
@@ -587,6 +611,7 @@ class Art:
              'palettes': {'%s%d' % k: {'base': r.base, 'colors': r.names()} for k, r in sorted(s.palettes.items())},
              'used': len(s.used) - 1}
         if s.big: m['big'] = dict(sorted(s.big.items()))
+        if s.anims: m['anims'] = dict(sorted(s.anims.items()))
         if s.gradients: m['gradients'] = sorted(s.gradients)
         return m
 
@@ -615,6 +640,7 @@ class Art:
         j = lambda v: json.dumps(v, separators=(', ', ': '), sort_keys=True)
         extra = ''
         if s.big: extra += '\n  big: %s,' % j(dict(sorted(s.big.items())))
+        if s.anims: extra += '\n  anims: %s,' % j(dict(sorted(s.anims.items())))
         if s.gradients: extra += '\n  gradients: %s,' % json.dumps(dict(sorted(s.gradients.items())), separators=(',', ':'), sort_keys=True)
         out = 'const ART = {\n  tiles: %s,\n  sprites: %s,\n  scenes: %s,\n  colors: %s,%s\n};' % (j(dict(sorted(s.tiles.items()))), j(dict(sorted(s.sprites.items()))), j(dict(sorted(s.scenes.items()))), j(dict(sorted(s.colors.items()))), extra)
         if s.big:
@@ -678,3 +704,4 @@ from sculpt import Sculpt, Mat       # noqa: E402  sprites sculpted from 3D shap
 from texture import noise, fbm, level, texture, variants, tile_fill  # noqa: E402  materials that tile seamlessly
 from scenery import sky, stars, orb, clouds, mountains, hills, treeline, floor, rope, ellipse  # noqa: E402  backgrounds
 from lettering import big_text, hud_bar, frame, scale2x, smooth_scale  # noqa: E402  HUD lettering, bars and frames
+from rig import Rig, pose, filmstrip, lerp_pose, mirror_sides, STAND, GUARD, WALK, PUNCH, KICK, HIT, JUMP  # noqa: E402  characters from a skeleton
