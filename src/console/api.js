@@ -1,7 +1,7 @@
 // The public cart API (SPEC section 8). Every function here is visible to
 // cart code as a global.
 
-import { SRC } from './ppu.js';
+import { MASK_TARGETS, SRC } from './ppu.js';
 
 export const BUTTONS = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'A', 'B', 'X', 'Y', 'L', 'R', 'START', 'SELECT'];
 
@@ -10,7 +10,7 @@ export const BUTTONS = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'A', 'B', 'X', 'Y', 'L', 
  * math helpers are allowed too, as the SPEC 8 example cart relies on flr().
  */
 const SCANLINE_SAFE = new Set([
-  'bgscroll', 'bg', 'affine', 'color', 'palcopy', 'blend', 'brightness', 't',
+  'bgscroll', 'bg', 'affine', 'color', 'palcopy', 'blend', 'brightness', 'winpos', 'winmask', 'mosaic', 't',
   'flr', 'ceil', 'abs', 'sgn', 'mid', 'clamp', 'lerp',
 ]);
 
@@ -145,6 +145,49 @@ export function buildApi(m) {
 
     /** Master brightness of the whole picture, overlay included: 0 (black) to 15 (full). */
     brightness: (level) => { ppu.bright = clamp(int(level), 0, 15); },
+
+    /** Window n (0 or 1) covers columns left to right, inclusive, from this line on (SPEC 4.11); left > right is empty. */
+    winpos: (n, left, right) => {
+      n = int(n);
+      if (n !== 0 && n !== 1) throw new RangeError(`winpos: the windows are 0 and 1, got ${n}`);
+      ppu.win[n] = [clamp(int(left), -1, 256), clamp(int(right), -1, 256)];
+    },
+
+    /**
+     * Hide a target inside the windows' area: winmask(target, { w0: 'in' | 'out', w1: 'in' | 'out', op }) with op
+     * 'or' (default), 'and', 'xor' or 'xnor' when both windows are used; winmask(target, null) removes the mask.
+     */
+    winmask: (target, spec) => {
+      const t = MASK_TARGETS.indexOf(target);
+      if (t < 0) throw new RangeError(`winmask: targets are ${MASK_TARGETS.join(', ')}; got ${target}`);
+      let entry = null;
+      if (spec != null) {
+        const side = (v, k) => {
+          if (v == null || v === false) return 0;
+          if (v === 'in') return 1;
+          if (v === 'out') return 2;
+          throw new RangeError(`winmask: ${k} must be 'in' or 'out', got ${v}`);
+        };
+        const op = spec.op ?? 'or';
+        if (!['or', 'and', 'xor', 'xnor'].includes(op)) throw new RangeError(`winmask: op must be 'or', 'and', 'xor' or 'xnor', got ${op}`);
+        entry = { w0: side(spec.w0, 'w0'), w1: side(spec.w1, 'w1'), op };
+      }
+      const masks = ppu.masks ? ppu.masks.slice() : MASK_TARGETS.map(() => null);
+      masks[t] = entry;
+      ppu.masks = masks.some((m) => m) ? masks : null;
+    },
+
+    /** Mosaic (SPEC 4.12): blocks of size 1-16 pixels on the named background layers (all three by default). */
+    mosaic: (size, layers = ['bg0', 'bg1', 'bg2']) => {
+      let m = 0;
+      for (const name of layers) {
+        const l = ['bg0', 'bg1', 'bg2'].indexOf(name);
+        if (l < 0) throw new RangeError(`mosaic: layers are bg0, bg1, bg2; got ${name}`);
+        m |= 1 << l;
+      }
+      ppu.mosaicSize = clamp(int(size), 1, 16);
+      ppu.mosaicMask = m;
+    },
 
     // --- Sprites -----------------------------------------------------------
 

@@ -1,4 +1,4 @@
-// The PPU's effects (SPEC 4.10): colour blending and brightness, on a scene built here, and the promise that old carts
+// The PPU's effects (SPEC 4.10-4.12): colour blending and brightness, windows and mosaic, on a scene built here, and the promise that old carts
 // render exactly as before: every cart, played with random buttons, renders the same through the effects path (with
 // no effect on) as through the plain one. CI runs it.
 //
@@ -110,6 +110,59 @@ const eq = (a, b) => a.join() === b.join();
   ok(ppu.blendState === null && eq(frame()(70, 100), [0, 12, 0]), 'blend(null) turns it off');
   ok(raises(() => api.blend({ layers: ['bg3'] }), 'layers are') && raises(() => api.blend({ op: 'mul' }), "op must be 'add' or 'sub'"), 'a wrong layer name or op is an error that says what is allowed');
   api.brightness(99); ok(ppu.bright === 15, 'brightness is clamped to 0-15');
+}
+
+// --- Windows (SPEC 4.11): BG0 (green, columns 64-127) over BG1 (red) ----------------------------------------------------
+const RED = [10, 0, 0], GREEN = [0, 12, 0];
+const hides = (setup, at) => { const { frame } = scene(); const px = frame(setup); return at.map((x) => eq(px(x, 100), RED)); };
+ok(hides((a) => { a.winpos(0, 70, 79); a.winmask('bg0', { w0: 'in' }); }, [65, 75, 85]).join() === 'false,true,false', 'a mask hides a layer inside window 0');
+ok(hides((a) => { a.winpos(0, 70, 79); a.winmask('bg0', { w0: 'out' }); }, [65, 75, 85]).join() === 'true,false,true', "and with 'out', outside it");
+const two = (op, w1 = 'in') => hides((a) => { a.winpos(0, 64, 79); a.winpos(1, 72, 90); a.winmask('bg0', { w0: 'in', w1, op }); }, [66, 75, 85, 100]).join();
+ok(two('or') === 'true,true,true,false' && two('and') === 'false,true,false,false' && two('xor') === 'true,false,true,false' && two('xnor') === 'false,true,false,true',
+  'two windows combine by or, and, xor and xnor', `${two('or')} / ${two('and')} / ${two('xor')} / ${two('xnor')}`);
+{
+  const { frame } = scene();
+  const px = frame((a) => { a.winpos(0, 70, 79); a.winmask('screen', { w0: 'in' }); a.rectfill(76, 98, 2, 4, 113); });
+  ok(eq(px(72, 100), [0, 0, 0]) && eq(px(76, 100), [31, 31, 31]) && eq(px(85, 100), GREEN), "'screen' is black inside the window, and the overlay still draws there");
+}
+{
+  const { frame } = scene();
+  const px = frame((a) => { a.winpos(0, 70, 79); a.winmask('overlay', { w0: 'in' }); a.winmask('spr', { w0: 'out' }); a.rectfill(60, 98, 30, 4, 113); a.spr(2, 72, 120, { prio: 3 }); a.spr(2, 90, 120, { prio: 3 }); });
+  ok(eq(px(75, 100), GREEN) && eq(px(65, 100), [31, 31, 31]), "'overlay' hides the overlay inside the window");
+  ok(eq(px(75, 124), [0, 0, 20]) && eq(px(94, 124), GREEN), "'spr' with 'out' keeps only the sprites inside it");
+}
+{
+  const { frame } = scene();
+  const px = frame((a) => { a.blend({ layers: ['bg0'] }); a.winpos(0, 70, 79); a.winmask('blend', { w0: 'in' }); });
+  ok(eq(px(75, 100), GREEN) && eq(px(85, 100), [10, 12, 0]), "'blend' stops the blending inside the window");
+}
+{
+  const { ppu, frame } = scene();
+  const px = frame((a) => a.winmask('bg0', { w0: 'in' }), (a, y) => { if (y === 100) a.winpos(0, 70, 79); if (y === 110) a.winpos(0, 1, 0); });
+  ok(eq(px(75, 99), GREEN) && eq(px(75, 100), RED) && eq(px(75, 109), RED) && eq(px(75, 110), GREEN), 'winpos() in scanline() moves the window from that line');
+  ok(ppu.win[0][0] === 1 && ppu.win[0][1] === 0 && ppu.masks !== null, 'and the window goes back to where draw() left it at the end of the frame');
+}
+{
+  const { ppu, api } = scene();
+  api.winmask('bg0', { w0: 'in' }); api.winmask('bg0', null);
+  ok(ppu.masks === null, 'winmask(target, null) removes the mask (and with none left, the windows cost nothing)');
+  ok(raises(() => api.winpos(2, 0, 9), 'the windows are 0 and 1') && raises(() => api.winmask('bg9', {}), 'targets are') && raises(() => api.winmask('bg0', { w0: 'up' }), "must be 'in' or 'out'") && raises(() => api.winmask('bg0', { w0: 'in', op: 'nand' }), 'op must be'),
+    'a wrong window, target, side or op is an error that says what is allowed');
+}
+
+// --- Mosaic (SPEC 4.12): BG0 scrolled 5 px right and 5 px down, so its edges fall inside the 16 px blocks --------------
+{
+  const { api, frame } = scene();
+  const plain = frame((a) => a.bgscroll(0, -5, -5));
+  ok(eq(plain(66, 100), RED) && eq(plain(80, 100), GREEN) && !eq(plain(134, 100), GREEN) && eq(plain(80, 10), GREEN), 'BG0 scrolled: its left edge at 69, its right at 132, and lines 0-4 empty');
+  const px = frame((a) => { a.bgscroll(0, -5, -5); a.mosaic(16, ['bg0']); });
+  ok(eq(px(66, 100), RED) && eq(px(80, 100), GREEN) && eq(px(134, 100), GREEN), 'mosaic 16: each block of columns is its first pixel (block 128-143 is green, as column 128 is)');
+  ok(eq(px(80, 10), RED) && eq(px(80, 16), GREEN), 'and each block of lines is its first line (lines 0-15 are line 0, which is empty)');
+  ok(eq(px(5, 100), RED), 'a layer not named is not touched');
+  api.mosaic(1);
+  const off = frame((a) => a.bgscroll(0, -5, -5));
+  ok(!eq(off(134, 100), GREEN) && eq(off(80, 10), GREEN), 'mosaic(1) turns it off');
+  ok(raises(() => api.mosaic(4, ['spr']), 'layers are bg0, bg1, bg2'), 'mosaic is for the background layers only');
 }
 
 // --- Every cart: the effects path with no effect on is the plain path, pixel for pixel ---------------------------------

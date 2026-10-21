@@ -305,6 +305,11 @@ whole picture. Use them for what made SNES games look like SNES games, instead o
 
 One blend setting holds for a whole line; `scanline()` can change it part way down the screen.
 
+**Windows and mosaic** (SPEC 4.11, 4.12): two windows, each a span of columns set line by line in `scanline()`, hide a
+layer, the sprites, the overlay, the blending or the whole picture inside or outside them: spotlights, iris and
+diamond wipes, a letterbox, light through a pane of glass. `mosaic(size)` is the pixelating scene change. Use them for
+scene changes instead of a cut.
+
 **Look at the art, always.** `sprites.mjs` (every sprite at its real size, in its palette), `scene.mjs` (a map region, with
 `--holes`), `tiles.mjs` (the sheet with numbers) and `shots.mjs` (the game in place) all make PNGs to open with the Read tool.
 Do it after every change; a tile-aligned scene is easy to get slightly wrong. To check exact pixels (is the outline

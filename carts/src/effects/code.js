@@ -1,18 +1,24 @@
-// Effects: the PPU's colour blending and brightness (SPEC 4.10), one page each. LEFT and RIGHT change the page.
+// Effects: the PPU's colour blending and brightness, windows and mosaic (SPEC 4.10-4.12), one page each. LEFT and RIGHT
+// change the page.
 //   SEE-THROUGH PANEL  the overlay in colours 192-255, half added to the picture under it
 //   SHADOWS            sprites in palettes 4-7 subtracted from the ground
 //   LIGHT              sprites in palettes 4-7 added to a night scene
 //   WATER              BG0 half added to what is under it: the ground and a fish show through
 //   FADES              brightness() to black, and a fixed colour added to everything for a fade to white
+//   SPOTLIGHT          two round windows (set line by line in scanline()); the screen is black outside both
+//   IRIS WIPE          a diamond window that closes and opens: the SNES's scene change
+//   COLOURED GLASS     a window where a fixed colour is added: blending only inside it
+//   MOSAIC             the background layers in blocks of 1 to 16 pixels (the sprites stay sharp)
 // All the art is drawn in code in init().
 
-const PAGES = ['SEE-THROUGH PANEL', 'SHADOWS', 'LIGHT', 'WATER', 'FADES'];
+const PAGES = ['SEE-THROUGH PANEL', 'SHADOWS', 'LIGHT', 'WATER', 'FADES', 'SPOTLIGHT', 'IRIS WIPE', 'COLOURED GLASS', 'MOSAIC'];
 const HILL = 1, GRASS = 3, DIRT = 4, WAVE = 5, DEEP = 6;
 const HERO = 64, FISH = 66, SHADOW = 68, GLOW = 96, SPARK = 70;
 const GROUND = 23; // the grass row
 const WATER_ROW = 20;
 
 let page = 0, enter = 0, fadeNote = '';
+let spots = [], iris = 0, glass = 0;
 const walkers = [{ x: 40, d: 1 }, { x: 150, d: -1 }, { x: 210, d: 1 }];
 
 /** Draw a w x h picture at tile n with fn(x, y) giving each pixel's colour 0-15. */
@@ -124,6 +130,8 @@ function draw() {
   bgscroll(0, flr(now / 3), 0);
   blend(null);
   brightness(15);
+  for (const target of ['bg0', 'bg1', 'bg2', 'spr', 'overlay', 'blend', 'screen']) winmask(target, null);
+  mosaic(1);
 
   if (page === 0) {
     blend({ layers: ['overlay'], op: 'add', half: true });
@@ -149,6 +157,24 @@ function draw() {
       const fx = (now * (0.6 + k * 0.2) + k * 90) % 300 - 20;
       spr(FISH, flr(fx), WATER_ROW * 8 + 14 + k * 12 + flr(2 * Math.sin(now / 10 + k)), { size: 16, pal: 1, prio: 1 });
     }
+  } else if (page === 5) {
+    // Two spotlights: one on the first walker, one wandering; black where neither is.
+    spots = [[walkers[0].x + 8, GROUND * 8 - 8, 36], [128 + 90 * Math.sin(now / 70), 110 + 50 * Math.sin(now / 45), 44]];
+    winmask('screen', { w0: 'out', w1: 'out', op: 'and' });
+  } else if (page === 6) {
+    const p = (now - enter) % 200;
+    iris = p < 100 ? 240 - p * 2.4 : (p - 100) * 2.4;
+    winmask('screen', { w0: 'out' });
+  } else if (page === 7) {
+    glass = 128 + 80 * Math.sin(now / 60);
+    blend({ layers: ['bg0', 'bg1', 'bg2', 'spr', 'back'], op: 'add', color: [12, 6, 0] });
+    winmask('blend', { w0: 'out' });
+    rect(flr(glass) - 41, 47, 82, 122, 114);
+  } else if (page === 8) {
+    const p = flr((now - enter) / 8) % 30;
+    const size = p < 15 ? p + 1 : 30 - p;
+    mosaic(size);
+    fadeNote = `MOSAIC(${size})`;
   } else {
     const p = (now - enter) % 240;
     if (p < 120) {
@@ -170,7 +196,7 @@ function draw() {
 
   rectfill(0, 0, 256, 12, 117);
   centre(`< ${PAGES[page]} >`, 2, 114);
-  if (page === 4) { rectfill(0, 212, 256, 12, 117); centre(fadeNote, 214, 113); }
+  if (page === 4 || page === 8) { rectfill(0, 212, 256, 12, 117); centre(fadeNote, 214, 113); }
 }
 
 function scanline(y) {
@@ -178,4 +204,17 @@ function scanline(y) {
   const k = y / 224;
   if (page === 2) color(0, flr(1 + 3 * k), flr(1 + 2 * k), flr(5 + 6 * k));
   else color(0, flr(10 + 14 * k), flr(16 + 10 * k), flr(29 - 2 * k));
+  // The windows' shapes, a line at a time: circles, a diamond, a rectangle.
+  if (page === 5) {
+    for (let n = 0; n < 2; n++) {
+      const [cx, cy, r] = spots[n], dy = y - cy;
+      if (Math.abs(dy) < r) { const h = Math.sqrt(r * r - dy * dy); winpos(n, flr(cx - h), flr(cx + h)); }
+      else winpos(n, 1, 0);
+    }
+  } else if (page === 6) {
+    const h = iris - Math.abs(y - 112) * 1.15;
+    if (h > 0) winpos(0, flr(128 - h), flr(128 + h)); else winpos(0, 1, 0);
+  } else if (page === 7) {
+    if (y >= 48 && y < 168) winpos(0, flr(glass) - 40, flr(glass) + 39); else winpos(0, 1, 0);
+  }
 }

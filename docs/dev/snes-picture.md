@@ -39,14 +39,16 @@ Both hold from frame to frame until changed, like `bg()` and `affine()`.
 
 ### A2. Windows
 
-Two windows, each a span of columns that can change on every line in `scanline()` (spotlights, circles, wipes, a
-letterbox). Each layer, the sprites, the overlay and the blending can be masked inside or outside a window, or a
-combination of both. Designed when A1 is done.
+`winpos(n, left, right)`: two windows, each a span of columns that can change on every line in `scanline()`
+(spotlights, circles, diamonds, wipes, a letterbox). `winmask(target, { w0, w1, op })` hides a target inside the area
+of window 0, window 1 or both (each `'in'` or `'out'`, combined by `'or'`, `'and'`, `'xor'` or `'xnor'`), as the SNES's
+window logic does. Targets: each background layer, the sprites, the overlay, the blending (so a blend applies only
+inside or outside a window) and the screen (black there).
 
 ### A3. Mosaic
 
 `mosaic(size, layers)`: blocks of 1 to 16 pixels on the chosen background layers, for the SNES's pixelating transition.
-Designed when A1 is done.
+Sprites, the overlay and the backdrop stay sharp, as on the SNES.
 
 ## Part B: art tools (`tools/devkit/art/kit.py`)
 
@@ -79,7 +81,7 @@ One screen that shows all of it, to judge in the pull request preview.
 
 | Step | State | Notes |
 |---|---|---|
-| A1 | built | `blend()` and `brightness()` in `src/console/ppu.js` and `src/console/api.js` (SPEC 4.10, 4.9, 8); `tests/console/effects.mjs` (20 checks of the maths, and every cart renders through the effects path as through the plain one) in CI; the fingerprints of every cart matched before and after (36 runs). The effects path costs up to 0.5 ms a frame more. Demo: the `effects` cart (see-through panel, shadows, light, water, fades). The playbook's art section says when to use them. |
-| A2 | not started | |
-| A3 | not started | |
+| A1 | built | `blend()` and `brightness()` in `src/console/ppu.js` and `src/console/api.js` (SPEC 4.10, 4.9, 8); `tests/console/effects.mjs` (37 checks: each effect on a built scene, and every cart renders through the effects path as through the plain one) in CI; the fingerprints of every cart matched before and after (36 runs). The effects path costs up to 0.5 ms a frame more. Demo: the `effects` cart (see-through panel, shadows, light, water, fades). The playbook's art section says when to use them. |
+| A2 | built | `winpos()` and `winmask()` (SPEC 4.11); in the tests (each target, inside and outside, the four ways to combine two windows, a window moved in `scanline()`); demo pages SPOTLIGHT, IRIS WIPE, COLOURED GLASS. |
+| A3 | built | `mosaic()` (SPEC 4.12); in the tests (blocks of columns and of lines); demo page MOSAIC. The fingerprints of every old cart matched again. |
 | B, C, D | not started | |
