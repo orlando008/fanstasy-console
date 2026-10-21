@@ -12,6 +12,14 @@ export const SPRITES_PER_LINE = 32;
 
 const LAYERS = 3;
 
+// What drew a pixel, as bits of the blend() mask (SPEC 4.10). SOLID is a sprite in palettes 0-3: never translucent.
+export const SRC = { bg0: 1, bg1: 2, bg2: 4, spr: 8, back: 16, overlay: 32 };
+const SOLID = 64;
+// What a window mask can hide (SPEC 4.11), in the order of this.masks.
+export const MASK_TARGETS = ['bg0', 'bg1', 'bg2', 'spr', 'overlay', 'blend', 'screen'];
+const M_SPR = 3, M_OVERLAY = 4, M_BLEND = 5, M_SCREEN = 6;
+const E5 = Array.from({ length: 32 }, (_, v) => (v << 3) | (v >> 2));
+
 /** Default region each layer views: side by side, 64x32 tiles each. */
 function defaultLayer(n) {
   return { mx: n * 64, my: 0, mw: 64, mh: 32, x: 0, y: 0, wrap: true, show: true };
@@ -45,6 +53,13 @@ export class Ppu {
     this.sprIdx = new Uint8Array(SCREEN_W);
     this.sprPrio = new Uint8Array(SCREEN_W);
     this.line = new Uint8Array(SCREEN_W);
+    // For the effects: the pixel under each one and what drew it.
+    this.below = new Uint8Array(SCREEN_W);
+    this.src = new Uint8Array(SCREEN_W);
+    // Each mask target's area on the line, when it has a mask: 1 where it is hidden.
+    this.area = MASK_TARGETS.map(() => new Uint8Array(SCREEN_W));
+    // Tests set this to render through the effects path with no effect on (it must match the plain path).
+    this.forceEffects = false;
 
     this.reset();
   }
@@ -53,7 +68,18 @@ export class Ppu {
   reset() {
     this.layers = [0, 1, 2].map(defaultLayer);
     this.affineState = null;
+    this.blendState = null;   // { mask, sub, half, fixed (RGB555, or -1 for the pixel below) }
+    this.bright = 15;
+    this.win = [[1, 0], [1, 0]];   // windows 0 and 1: [left, right] columns, inclusive; left > right is empty
+    this.masks = null;             // null, or one entry a target: null, or { w0, w1 (0 unused, 1 in, 2 out), op }
+    this.mosaicSize = 1;
+    this.mosaicMask = 0;           // bits 0-2: BG0-BG2
     this.oamCount = 0;
+  }
+
+  /** True when any effect is on (SPEC 4.10-4.12), so a line needs the effects path. */
+  effectsOn() {
+    return this.blendState !== null || this.bright !== 15 || this.masks !== null || this.mosaicSize > 1 || this.forceEffects;
   }
 
   // --- Color RAM -----------------------------------------------------------
@@ -165,6 +191,11 @@ export class Ppu {
     return {
       layers: this.layers.map((l) => ({ ...l })),
       affine: this.affineState && { ...this.affineState },
+      blend: this.blendState && { ...this.blendState },
+      bright: this.bright,
+      win: this.win.map((w) => [...w]),
+      masks: this.masks && this.masks.map((m) => m && { ...m }),
+      mosaic: [this.mosaicSize, this.mosaicMask],
       cgram: this.cgram.slice(),
     };
   }
@@ -172,6 +203,11 @@ export class Ppu {
   restore(s) {
     this.layers = s.layers;
     this.affineState = s.affine;
+    this.blendState = s.blend;
+    this.bright = s.bright;
+    this.win = s.win;
+    this.masks = s.masks;
+    [this.mosaicSize, this.mosaicMask] = s.mosaic;
     this.cgram.set(s.cgram);
     for (let i = 0; i < 256; i++) this.updateLut(i);
   }
@@ -194,16 +230,14 @@ export class Ppu {
   }
 
   renderLine(sy, out32, overlay) {
+    if (this.effectsOn()) {
+      this.renderLineEffects(sy, out32, overlay);
+      return;
+    }
     const line = this.line;
     line.fill(0);
 
-    const shown = [false, false, false];
-    for (let l = 0; l < LAYERS; l++) {
-      if (!this.layers[l].show) continue;
-      shown[l] = true;
-      if (l === 2 && this.affineState) this.bgLineAffine(sy);
-      else this.bgLine(l, sy);
-    }
+    const shown = this.layerLines(sy);
     const hasSpr = this.lineSprCount[sy] > 0;
     if (hasSpr) this.spriteLine(sy);
 
@@ -223,6 +257,108 @@ export class Ppu {
     for (let x = 0; x < SCREEN_W; x++) {
       const o = ov[row + x];
       out32[row + x] = lut[o !== 0 ? o : line[x]];
+    }
+  }
+
+  /** Decode the shown layers' pixels for line sy; returns which layers are shown. */
+  layerLines(sy) {
+    const shown = [false, false, false];
+    for (let l = 0; l < LAYERS; l++) {
+      if (!this.layers[l].show) continue;
+      shown[l] = true;
+      if (l === 2 && this.affineState) this.bgLineAffine(sy);
+      else this.bgLine(l, sy);
+    }
+    return shown;
+  }
+
+  /**
+   * The same line with the effects (SPEC 4.10-4.12): the mosaic and the window masks act on each layer's pixels; then
+   * every pixel keeps the one under it and what drew it, so translucent pixels can be mixed in RGB555; then the overlay
+   * goes on top and the brightness scales the result.
+   */
+  renderLineEffects(sy, out32, overlay) {
+    const line = this.line, below = this.below, src = this.src;
+    line.fill(0); below.fill(0); src.fill(SRC.back);
+    const ms = this.mosaicSize;
+    const shown = [false, false, false];
+    for (let l = 0; l < LAYERS; l++) {
+      if (!this.layers[l].show) continue;
+      shown[l] = true;
+      // Mosaic: the layer as on the first line of its block of lines, each block of columns its first pixel.
+      const m = ms > 1 && (this.mosaicMask >> l) & 1, y = m ? sy - (sy % ms) : sy;
+      if (l === 2 && this.affineState) this.bgLineAffine(y);
+      else this.bgLine(l, y);
+      if (m) {
+        const idx = this.bgIdx[l], high = this.bgHigh[l];
+        for (let x = 0; x < SCREEN_W; x++) { const x0 = x - (x % ms); idx[x] = idx[x0]; high[x] = high[x0]; }
+      }
+    }
+    const hasSpr = this.lineSprCount[sy] > 0;
+    if (hasSpr) this.spriteLine(sy);
+    const masks = this.masks, area = this.area;
+    if (masks) {
+      for (let t = 0; t < MASK_TARGETS.length; t++) if (masks[t]) this.maskArea(masks[t], area[t]);
+      for (let l = 0; l < LAYERS; l++) if (masks[l] && shown[l]) clearWhere(this.bgIdx[l], area[l]);
+      if (masks[M_SPR] && hasSpr) clearWhere(this.sprIdx, area[M_SPR]);
+    }
+    if (shown[2]) this.putBgFx(2, 0);
+    if (hasSpr) this.putSprFx(0);
+    if (shown[2]) this.putBgFx(2, 1);
+    if (shown[1]) this.putBgFx(1, 0);
+    if (hasSpr) this.putSprFx(1);
+    if (shown[1]) this.putBgFx(1, 1);
+    if (shown[0]) this.putBgFx(0, 0);
+    if (hasSpr) this.putSprFx(2);
+    if (shown[0]) this.putBgFx(0, 1);
+    if (hasSpr) this.putSprFx(3);
+
+    const ov = overlay.buf, row = sy * SCREEN_W, cg = this.cgram, bs = this.blendState, k = this.bright;
+    const mask = bs ? bs.mask : 0;
+    const noBlend = masks && masks[M_BLEND] ? area[M_BLEND] : null, black = masks && masks[M_SCREEN] ? area[M_SCREEN] : null;
+    const noOverlay = masks && masks[M_OVERLAY] ? area[M_OVERLAY] : null;
+    for (let x = 0; x < SCREEN_W; x++) {
+      let c = cg[line[x]];
+      const blends = mask !== 0 && !(noBlend && noBlend[x]);
+      if (black && black[x]) c = 0;
+      else if (blends && (mask & src[x])) c = mix(c, bs.fixed >= 0 ? bs.fixed : src[x] === SRC.back ? 0 : cg[below[x]], bs);
+      const o = noOverlay && noOverlay[x] ? 0 : ov[row + x];
+      if (o !== 0) c = blends && (mask & SRC.overlay) && o >= 192 ? mix(cg[o], bs.fixed >= 0 ? bs.fixed : c, bs) : cg[o];
+      let r = c & 31, g = (c >> 5) & 31, b = (c >> 10) & 31;
+      if (k !== 15) { r = (r * k / 15) | 0; g = (g * k / 15) | 0; b = (b * k / 15) | 0; }
+      out32[row + x] = (0xff000000 | (E5[b] << 16) | (E5[g] << 8) | E5[r]) >>> 0;
+    }
+  }
+
+  /** Fill out with the area a mask hides on this line: each window it uses, inside or out, combined by its op. */
+  maskArea(mk, out) {
+    const [l0, r0] = this.win[0], [l1, r1] = this.win[1];
+    for (let x = 0; x < SCREEN_W; x++) {
+      const a = mk.w0 ? (x >= l0 && x <= r0) !== (mk.w0 === 2) : null;
+      const b = mk.w1 ? (x >= l1 && x <= r1) !== (mk.w1 === 2) : null;
+      let v;
+      if (a === null) v = b === true;
+      else if (b === null) v = a;
+      else if (mk.op === 'and') v = a && b;
+      else if (mk.op === 'xor') v = a !== b;
+      else if (mk.op === 'xnor') v = a === b;
+      else v = a || b;
+      out[x] = v ? 1 : 0;
+    }
+  }
+
+  putBgFx(l, high) {
+    const idx = this.bgIdx[l], hi = this.bgHigh[l], line = this.line, below = this.below, src = this.src, bit = 1 << l;
+    for (let x = 0; x < SCREEN_W; x++) {
+      if (idx[x] !== 0 && hi[x] === high) { below[x] = line[x]; line[x] = idx[x]; src[x] = bit; }
+    }
+  }
+
+  putSprFx(prio) {
+    const idx = this.sprIdx, pr = this.sprPrio, line = this.line, below = this.below, src = this.src;
+    for (let x = 0; x < SCREEN_W; x++) {
+      // Sprite palettes 4-7 are CGRAM 192-255: the ones blend() can make translucent, as on the SNES.
+      if (idx[x] !== 0 && pr[x] === prio) { below[x] = line[x]; line[x] = idx[x]; src[x] = idx[x] >= 192 ? SRC.spr : SOLID; }
     }
   }
 
@@ -335,6 +471,21 @@ export class Ppu {
       }
     }
   }
+}
+
+function clearWhere(idx, area) {
+  for (let x = 0; x < SCREEN_W; x++) if (area[x]) idx[x] = 0;
+}
+
+/** Colour math on two RGB555 colours, per 5-bit channel, clamped: a + b or a - b, halved if asked. */
+function mix(a, b, bs) {
+  let r = a & 31, g = (a >> 5) & 31, bl = (a >> 10) & 31;
+  const r2 = b & 31, g2 = (b >> 5) & 31, b2 = (b >> 10) & 31;
+  if (bs.sub) { r = r > r2 ? r - r2 : 0; g = g > g2 ? g - g2 : 0; bl = bl > b2 ? bl - b2 : 0; }
+  else { r += r2; g += g2; bl += b2; }
+  if (bs.half) { r >>= 1; g >>= 1; bl >>= 1; }
+  else { if (r > 31) r = 31; if (g > 31) g = 31; if (bl > 31) bl = 31; }
+  return r | (g << 5) | (bl << 10);
 }
 
 /** Offset of sheet pixel (x, y) in the per-tile decoded array. */
