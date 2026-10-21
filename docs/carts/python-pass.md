@@ -1,6 +1,6 @@
 # Python Pass: Cart Specification
 
-**Version:** 1.1
+**Version:** 1.2 (the new sound chip)
 **Status:** Released: all 7 steps of the plan (15) are built, and the cart is also released as the PNG cart `python-pass.nova.png`
 **Cart source:** `carts/src/python-pass/` → `carts/python-pass.nova`
 
@@ -210,8 +210,12 @@ In the menus START or A goes on and B goes back, as in Smashy Smash.
 
 ## 11. Audio
 
-**Songs** (5): the title, and one for each zone (8.1), looping. Channel 1 is kept for
-sound effects. The effect numbers are in `SFX` in the code.
+**Songs** (5): the title, and one for each zone (8.1), looping, on the console's SNES-style sound chip (SPEC 5;
+converted in v1.2): sampled instruments (flute, marimba and soft-horn leads, strings, a harp, electric-piano chords, a
+sampled bass, the kick and snare samples, noise hats) and an echo for each song, deeper towards the temple (80 ms in
+the jungle, 160 ms in the temple). The songs use channels 0 to 5; the effects have 7 and each step's tick 6. The effect
+numbers are in `SFX` in the code. The music is in `carts/src/python-pass/audio.py` (made from the `audio.json` by
+`tools/devkit/music/script.py`: every pattern and effect as tracker text).
 
 **Lead levels** (after two rounds of player feedback: a louder, wobbly section of notes, then the title's lead at
 8 s): the leads are quiet pulses with no vibrato and soft entrances (pulse25 at volume 5 or 6, pulse50 at 5), and the kick
@@ -219,11 +223,13 @@ and snare are 12 and 10. The lead alone is 0.04 to 0.05 RMS, about 0.5 to 0.7 of
 (1.4x in the temple); the first version was 0.08 to 0.13, 0.8 to 0.9 of the mix, up to 2.4x. These numbers became the limits of
 `tools/devkit/music/loud.mjs --check`.
 
-**Effects on a channel with their voice** (v1.1): the channel decides the voice, so an effect with noise in it
-sounds like noise only on a noise channel. The shield break (11), the rock landing (14), the scorpion's skitter (22) and each step's tick (23) play on channel 4 (noise) through the `SFX_VOICE_CH` table and `sfxv()` in the code; every other effect plays on
-channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sounded like pulse tones. A noise effect
-briefly mutes the music's channel 4 while it plays. (`tools/check.js` and `tools/devkit/soak.mjs` check this; see
-`docs/dev/playbook.md`, section 5.)
+**The new sound chip** (v1.2): the leads (channel 0) are an octave lower than they were written, since a lead up in
+octaves 5 and 6 pierces (`loud.mjs` measures it: 0.004 to 0.005 at 2 to 5 kHz now, 0.014 to 0.022 for the pulse leads);
+the soft flute that opens the title and the ruins is a step quieter, so it enters at 1.4 to 1.5x; the harp and the
+electric-piano chords are short, as the saw stabs they replace were. Effects: celesta chimes, horn fanfares, a tom for
+the thuds; the noises stay noise. All five songs are within the limits of `loud.mjs --check` (the lead 0.58 to 0.71 of the
+mix) and `clash.py` finds nothing. (Until v1.1 the noisy effects went through the pulse channel and sounded like tones;
+on the old chip v1.1 sent them to channel 4. On the new chip every channel plays every voice.)
 
 **SFX:** each step's soft tick (very quiet), fruit eaten (rising
 with the combo), golden fruit, power-up taken and ended, shield break, gate opens, level

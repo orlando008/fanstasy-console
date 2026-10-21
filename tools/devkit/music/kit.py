@@ -145,15 +145,19 @@ def parse_cell(t):
     if v != '.': c['v'] = int(v, 16)
     if fx != '...': c['fx'] = fx
     return c or None
+def pitch_cell(n):
+    """'C-4' or 'C#4' (tracker style) to a note index."""
+    return int(n[2:]) * 12 + NAMES.index(n[:2])
 def cell_text(c):
     if not c: return '--- .. . ...'
     return '%s %s %s %s' % (c.get('n', '---'), '%02X' % c['i'] if 'i' in c else '..', '%X' % c['v'] if 'v' in c else '.', c.get('fx', '...'))
 def parse_rows(text, width):
+    """Rows of tracker text; a row with fewer cells than width (an old chip's 6) gets empty ones at the end."""
     rows = []
     for line in text.strip('\n').split('\n'):
         parts = line.split()
-        assert len(parts) == 4 * width, (line, width)
-        rows.append([parse_cell(' '.join(parts[k * 4:k * 4 + 4])) for k in range(width)])
+        assert len(parts) % 4 == 0 and len(parts) <= 4 * width, (line, width)
+        rows.append([parse_cell(' '.join(parts[k * 4:k * 4 + 4])) for k in range(len(parts) // 4)] + [None] * (width - len(parts) // 4))
     return rows
 
 
@@ -206,6 +210,14 @@ class Audio:
         """An SFX from tracker text: one cell a line, up to 32."""
         rows = [r[0] for r in parse_rows(text, 1)]
         s.sfx.append({'speed': speed, 'rows': rows + [None] * (32 - len(rows))}); return len(s.sfx) - 1
+    def transpose(s, semis, channels=(0,), patterns=None):
+        """Move the notes on these channels of these patterns (all by default) by semis (-12: an octave down)."""
+        for k, p in enumerate(s.patterns):
+            if patterns is not None and k not in patterns: continue
+            for row in p['rows']:
+                for ch in channels:
+                    c = row[ch]
+                    if c and c.get('n') not in (None, 'OFF'): c['n'] = nn(pitch_cell(c['n']) + semis)
     def order(s, order, loop=0, echo=None):
         """A song from an order list of pattern numbers. echo: (delay, feedback, volume, tone) on the new chip."""
         song = {'order': list(order), 'loop': loop}

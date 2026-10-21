@@ -15,8 +15,8 @@ def m(n): return N.index(n[:2]) + 12 * int(n[2:])
 for si, s in enumerate(A['songs']):
     rows = [r for p in s['order'] for r in A['patterns'][p]['rows']]
     others = (1, 2, 3, 4) if A.get('chip') == 2 else (2, 3)
-    # Drums (an instrument playing a sample that does not loop) have no pitch to clash with.
-    drum = {k for k, ins in enumerate(A['instruments']) if ins and ins.get('wave') == 'sample' and not (A['samples'][ins.get('sample', 0)] or {}).get('loop')}
+    # Drums (noise, or an instrument playing a sample that does not loop) have no pitch to clash with.
+    drum = {k for k, ins in enumerate(A['instruments']) if ins and (ins.get('wave', '').startswith('noise') or ins.get('wave') == 'sample' and not (A['samples'][ins.get('sample', 0)] or {}).get('loop'))}
     speed = next((int(c['fx'][1:], 16) for c in rows[0] if c and c.get('fx', '').startswith('F')), 6)
     cur = [None] * 8; ends = [None] * 8; bad = []
     for k, r in enumerate(rows):

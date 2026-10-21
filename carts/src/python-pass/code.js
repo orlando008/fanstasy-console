@@ -388,7 +388,7 @@ function step() {
   if (grow > 0) grow--;
   else { popped = body.pop(); occSub(popped); }
   body.unshift(n); occAdd(n);
-  if (clock - lastFx > 20) sfxv(SFX.step, SFX_CH); // a very quiet tick, unless an effect is playing (and it never counts as one)
+  if (clock - lastFx > 20) sfx(SFX.step, STEP_CH); // a very quiet tick, unless an effect is playing (and it never counts as one)
   if (popped >= 0 && !occ[popped]) clearCell(popped);
   if (ovl > 0 || power === GHOST) repaintAll();
   else { paintSeg(0); paintSeg(1); paintSeg(body.length - 1); }
@@ -696,15 +696,13 @@ function enterInitials() {
 
 const SFX = { eat: [0, 5, 6, 7], die: 1, gate: 2, clear: 3, over: 4, golden: 8, power: 9, oneUp: 10, shield: 11, bounce: 12, shadow: 13, rock: 14,
   move: 15, select: 16, pause: 17, tick: 18, temple: 19, thud: 20, powerEnd: 21, skitter: 22, step: 23 };
-const SFX_CH = 1; // effects share one channel; the songs leave it free
-// Effects with noise (or saw or triangle) in them go on a channel with that voice: the channel decides the voice.
-const SFX_VOICE_CH = {11: 4, 14: 4, 22: 4, 23: 4};
-function sfxv(n, ch) { sfx(n, n in SFX_VOICE_CH ? SFX_VOICE_CH[n] : ch); }
+// The songs use channels 0 to 5; the effects have 7 and the steps' tick 6 (any channel plays any voice: SPEC 5).
+const SFX_CH = 7, STEP_CH = 6;
 const SONG_TITLE = 0; // then 1 + zone while playing (SPEC 11)
 let song = -1, lastFx = -99; // the song playing; the frame of the last effect
 
 /** An effect on the effects channel. */
-function fx(n) { lastFx = clock; sfxv(n, SFX_CH); }
+function fx(n) { lastFx = clock; sfx(n, SFX_CH); }
 
 /** Start a song unless it is already playing; -1 stops the music. */
 function play(n) {
