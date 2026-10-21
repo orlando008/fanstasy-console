@@ -304,16 +304,21 @@ ok(si.get(6, 5) == 1 and si.get(5, 5) == 3 and si.get(9, 5) == 4, 'seam: the edg
 ok(speckle(Img.make(10, 10, lambda x, y: 1 + (x + y) % 2)) == 1.0 and speckle(Img.make(10, 10, lambda x, y: 1)) == 0.0, 'speckle: 1 for a checker, 0 for a flat fill')
 fp = Art().sprite_palette(0, {'line': '180c14', 'skin': ramp('e0a070', 4, at=2), 'hair': ramp('c89038', 3, at=1), 'shirt': ramp('e0e0ec', 3, at=1),
                               'pants': ramp('3858b0', 3, at=1), 'white': 'f0ece0'})
-for view in ('side', 'front', 'back'):
+for view in ('side', 'three', 'front', 'back'):
     hc = Canvas(48, 56); head(hc, 24, 26, 32, fp.skin, fp.hair, view=view, line=fp.line, white=fp.white, style='swept')
     him = hc.render(outline=fp.line)
     ok(set(fp.hair) & him.colors() and (view == 'back' or fp.white in him.colors()) and speckle(him) < 0.12, 'head %s: hair, eyes, clean (speckle %.2f)' % (view, speckle(him)))
+    if view == 'three': ok(sum(1 for r in him.px for v in r if v == fp.white) >= 6, 'three-quarters: both eyes show')
 ok(raises(lambda: head(Canvas(8, 8), 4, 4, 8, fp.skin, view='top'), 'view is'), 'head: an unknown view is an error')
 fg = Figure('brawler', height=64, line=fp.line, skin=fp.skin, hair=fp.hair, shirt=fp.shirt, pants=fp.pants, shoes=fp.hair, face='angry', hair_style='swept')
 frames = [fg.render(p) for p in fg.animate(PUNCH, 4, loop=False)]
 ok(all(f.w == fg.w and fp.line in f.colors() and set(fp.shirt) & f.colors() for f in frames), 'Figure: frames of a punch in the palette, outlined in the shared line colour')
 ok(max(x for y in range(frames[2].h) for x in range(frames[2].w) if frames[2].px[y][x]) > max(x for y in range(frames[0].h) for x in range(frames[0].w) if frames[0].px[y][x]), 'and the hit frame reaches further')
 ok(all(speckle(f) < 0.15 for f in frames), 'and they are clean (speckle %s)' % ' '.join('%.2f' % speckle(f) for f in frames))
+Jt, Js = fg.joints(STAND), Figure('brawler', height=64, line=fp.line, skin=fp.skin, view='side').joints(STAND)
+ok(Jt['shoulder_n'][0] < Js['shoulder_n'][0] and Jt['shoulder_f'][0] > Js['shoulder_f'][0], "view='three' (the default): the shoulders spread, the chest cheated towards us")
+ok(fg.joints(PUNCH[2])['hand_n'][0] >= Js['shoulder_n'][0] + 0.9 * (fg.L('upper') + fg.L('fore')) - 1, 'and the body twists into a punch, so it keeps its reach')
+ok(raises(lambda: Figure('brawler', skin=fp.skin, view='top'), "view is"), 'an unknown figure view is an error')
 
 # --- Files: written, packed and read back ---
 work = tempfile.mkdtemp(prefix='art-selftest-')

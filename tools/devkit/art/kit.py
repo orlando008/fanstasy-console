@@ -41,7 +41,7 @@ of it). Each is a module of its own here, and comes with `from kit import *`:
   detail.py     face(), hair(), crease(), stroke(), bunch(): the hand-drawn layer on top of the volumes
   draw.py       Canvas, oval(), blob(), brush() ...: figures drawn in designed shapes and flat tones, a pixel at a time
                 where it matters (the way to draw characters; speckle() measures what is left to clean)
-  figure.py     head() (side, front, back; four expressions, seven hair styles), Figure: a drawn body on a rig's skeleton
+  figure.py     head() (side, three-quarters, front, back; four expressions, seven hair styles), Figure: a drawn body on a rig's skeleton
   preview.py    Sheet: a PNG of pictures, ramps and layer stacks, straight from art.py
   and here      art.big_sprite() (bigSprite() in code.js), art.animation(), art.gradient() (gradientLine() in scanline()), art.variant(),
                 Img.from_rows(mirror='x')

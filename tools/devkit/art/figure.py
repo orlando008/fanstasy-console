@@ -10,7 +10,7 @@ view, in head units, so it works at any size; below 20 px tall a head drops the 
 
 x, y is the middle of the head (eye height), H its height from crown to chin. Ramps are dark to light, 5 steps or
 more (pal.skin as a palette gives it): the darkest is the line colour, then deep shadow, shadow, base and light.
-view     'side' (three-quarter profile, the beat 'em up view), 'front', 'back'
+view     'side' (near profile), 'three' (three-quarters: the face cheated towards the camera, both eyes), 'front', 'back'
 facing   1 (right) or -1 (left); for 'front', the side the light comes from
 expression  'neutral', 'angry', 'hurt' (eyes squeezed shut, mouth open), 'shout' (mouth open, teeth)
 style    hair: 'swept', 'short', 'spiky', 'long', 'mohawk', 'flat', 'bald'
@@ -85,7 +85,7 @@ def _spikes(n, a0, a1, r_in, r_out, cx=-0.02, cy=-0.12, lean=-25):
 def head(d, x, y, H, skin, hair=None, view='side', facing=1, expression='neutral', style='short', white=None,
          iris=None, part='head', light=None, tilt=0, line=None):
     """Draw a head on canvas d (see the module's header)."""
-    if view not in ('side', 'front', 'back'): raise ValueError("view is 'side', 'front' or 'back'")
+    if view not in ('side', 'three', 'front', 'back'): raise ValueError("view is 'side', 'three', 'front' or 'back'")
     if expression not in ('neutral', 'angry', 'hurt', 'shout'): raise ValueError("expression is 'neutral', 'angry', 'hurt' or 'shout'")
     if style not in ('swept', 'short', 'spiky', 'long', 'mohawk', 'flat', 'bald'): raise ValueError('hair style %r' % style)
     f = 1 if facing >= 0 else -1
@@ -97,8 +97,21 @@ def head(d, x, y, H, skin, hair=None, view='side', facing=1, expression='neutral
     hp = part + '_hair'
     small = H < 20
     if view == 'side': _side(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp, small)
-    elif view == 'front': _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp, small)
-    else: _back(d, H, S, Hr, P, Ps, f, lit, style, part, hp)
+    elif view == 'front': _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp, small, Ps, lambda u: True)
+    elif view == 'back': _back(d, H, S, Hr, P, Ps, f, lit, style, part, hp)
+    else:
+        # three-quarters: the front template turned on the skull, as fighting games cheat a face towards the camera.
+        # A feature at u turns round a head of radius R; the outline turns from the brow down (the jaw and
+        # chin come round, the crown stays where it is), and what turns past the edge is not drawn.
+        R, tau = 0.42, math.radians(28)
+        th = lambda u: math.asin(max(-1.0, min(1.0, u / R)))
+        rot = lambda u: R * math.sin(th(u) + tau)
+        w = lambda v: max(0.0, min(1.0, (v + 0.30) / 0.35))
+        Pf = lambda u, v: P(rot(u), v)
+        Psf = lambda pts: [Pf(u, v) for u, v in pts]
+        Pso = lambda pts: [P(u + (rot(u) - u) * w(v) * 0.8, v) for u, v in pts]
+        seen = lambda u: th(u) + tau < math.radians(80)
+        _front(d, H, S, Hr, Pf, Psf, f, lit, expression, style, white, iris, part, hp, small, Pso, seen)
     return d
 
 
@@ -183,12 +196,13 @@ def _side(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp, 
     d.seam(part, seam_tone(S), under=part + '_neck', sides=[(0, 1), (-f, 1)])
 
 
-def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp, small):
+def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp, small, Po, seen):
     def sym(pts): return pts + [(-u, v) for u, v in reversed(pts)]
     head = sym([(0.0, -0.50), (0.22, -0.46), (0.36, -0.30), (0.38, -0.08), (0.36, 0.14), (0.33, 0.30), (0.24, 0.43), (0.10, 0.50)])
-    d.fill(blob(Ps(head)), S['base'], part=part)
+    d.fill(blob(Po(head)), S['base'], part=part)
     ear = part + '_ear'
     for s in (1, -1):
+        if not seen(s * 0.40): continue
         d.fill(blob(Ps([(s * 0.35, -0.04), (s * 0.43, -0.06), (s * 0.44, 0.08), (s * 0.38, 0.20), (s * 0.34, 0.14)])), S['base'], part=ear)
         d.fill(blob(Ps([(s * 0.38, 0.0), (s * 0.41, 0.0), (s * 0.40, 0.09), (s * 0.37, 0.10)])), S['deep'], inside=ear)
     d.shadow(part, S['shade'], light=lit, depth=H * 0.10)
@@ -202,11 +216,11 @@ def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp,
         d.fill(brush(Ps([(0.04, -0.09), (0.16, -0.12), (0.30, -0.11)]), H * 0.04, H * 0.03), S['light'], inside=part)
     # nose: the shadow side (away from the light), the underside, a lit ridge on the light side
     d.fill(poly(Ps([(-0.04, 0.0), (-0.07, 0.15), (-0.09, 0.20), (0.0, 0.22), (0.09, 0.20), (0.07, 0.15), (0.04, 0.0)])), None, part=part + '_nose', inside=part)
-    d.fill(poly(Ps([(-f * 0.02, 0.0), (-f * 0.08, 0.17), (-f * 0.09, 0.21), (0.08 * f, 0.22), (0.07 * f, 0.20), (0.0, 0.17)])), S['shade'], inside=part)
+    d.fill(poly(Ps([(-0.02, 0.0), (-0.08, 0.17), (-0.09, 0.21), (0.08, 0.22), (0.07, 0.20), (0.0, 0.17)])), S['shade'], inside=part)
     if not small:
-        d.fill(poly(Ps([(f * 0.0, 0.02), (f * 0.04, 0.02), (f * 0.07, 0.15), (f * 0.03, 0.16)])), S['light'], inside=part)
+        d.fill(poly(Ps([(0.0, 0.02), (0.04, 0.02), (0.07, 0.15), (0.03, 0.16)])), S['light'], inside=part)
         # cheekbones, the light one lit; the lip and the chin
-        d.fill(brush(Ps([(f * 0.10, 0.10), (f * 0.20, 0.08), (f * 0.30, 0.06)]), H * 0.045, H * 0.02), S['light'], inside=part)
+        d.fill(brush(Ps([(0.10, 0.10), (0.20, 0.08), (0.30, 0.06)]), H * 0.045, H * 0.02), S['light'], inside=part)
         d.fill(blob(Ps([(-0.08, 0.345), (0.08, 0.345), (0.06, 0.38), (-0.06, 0.38)])), S['shade'], inside=part)
         d.fill(blob(Ps([(-0.07, 0.43), (0.07, 0.43), (0.05, 0.48), (-0.05, 0.48)])), S['light'], inside=part)
     line, deep = S['line'], (Hr['deep'] if Hr is not None else S['deep'])
@@ -218,7 +232,6 @@ def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp,
         mass = [(0.0, top)] + side + [(0.12, -0.33), (0.05, -0.27), (-0.02, -0.31), (-0.14, -0.32)] + [(-u, v) for u, v in reversed(side)]
         if style == 'swept':       # a lock falling across the forehead from the parting
             mass = [(0.0, top)] + side + [(0.12, -0.33), (0.05, -0.28), (-0.06, -0.22), (-0.20, -0.18), (-0.30, -0.24)] + [(-u, v) for u, v in reversed(side)]
-        mass = [(f * u, v) for u, v in mass]
         if style == 'long':
             mass = sym([(0.0, top), (0.30, top + 0.04), (0.46, -0.30), (0.50, 0.20), (0.46, 0.62), (0.34, 0.66), (0.36, 0.0), (0.30, -0.22), (0.12, line_v), (0.0, line_v + 0.01)])
         if style == 'flat':
@@ -231,15 +244,15 @@ def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp,
                 sp.append((0.0 + math.cos(a) * r * 1.05, -0.12 + math.sin(a) * r))
             mass = [(0.44, -0.10), (0.38, -0.02), (0.35, -0.18), (0.24, -0.24), (0.0, -0.26), (-0.24, -0.24), (-0.35, -0.18), (-0.38, -0.02), (-0.44, -0.10)] + sp
         if style == 'mohawk':
-            d.fill(blob(Ps(sym([(0.0, -0.56), (0.26, -0.52), (0.40, -0.34), (0.40, -0.12), (0.34, -0.18), (0.24, -0.24), (0.0, -0.25)]))), S['shade'], inside=part)
+            d.fill(blob(Po(sym([(0.0, -0.56), (0.26, -0.52), (0.40, -0.34), (0.40, -0.12), (0.34, -0.18), (0.24, -0.24), (0.0, -0.25)]))), S['shade'], inside=part)
             mass = [(-0.10, -0.24), (-0.12, -0.50), (-0.08, -0.72), (0.0, -0.76), (0.08, -0.72), (0.12, -0.50), (0.10, -0.24)]
         clumps = [([(0.0, top + 0.04), (0.16, -0.40), (0.24, -0.26)], 0.04), ([(-0.06, top + 0.06), (-0.20, -0.42), (-0.30, -0.24)], 0.04),
                   ([(0.24, -0.50), (0.38, -0.30), (0.40, -0.08)], 0.035)]
         if style == 'long': clumps += [([(0.40, -0.10), (0.42, 0.30), (0.40, 0.60)], 0.04), ([(-0.40, -0.10), (-0.42, 0.30), (-0.40, 0.60)], 0.04)]
         if style in ('spiky', 'mohawk'): clumps = []
-        _hair_mass(d, H, Hr, Ps, P, f, lit, style, part, hp, mass, clumps)
+        _hair_mass(d, H, Hr, Po, P, f, lit, style, part, hp, mass, clumps)
     elif style == 'bald':
-        d.light(part, S['light'], light=(f * 0.3, -1), inset=H * 0.04, width=H * 0.05)
+        d.light(part, S['light'], light=(0.3, -1), inset=H * 0.04, width=H * 0.05)
     # eyes
     for s in (1, -1):
         if expression == 'hurt':
@@ -252,12 +265,12 @@ def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp,
             d.ink(Ps([(s * 0.07, lid + 0.015), (s * 0.17, lid - 0.008), (s * 0.28, lid + 0.015)]), line)
             d.dot(*P(s * 0.165 + 0.01, 0.006), line)
         else:
-            d.ink(Ps([(s * 0.08, 0.0), (s * 0.17, -0.015), (s * 0.26, 0.0)]), line)
-            d.dot(*P(s * 0.17, 0.02), line)
+            d.ink(Ps([(s * 0.17, -0.02), (s * 0.17, 0.03)]), line)       # small: the eye a short dark mark
     for s in (1, -1):
         brow = [(s * 0.05, -0.06), (s * 0.16, -0.09), (s * 0.29, -0.10)] if angry else [(s * 0.06, -0.09), (s * 0.17, -0.11), (s * 0.29, -0.095)]
         if expression == 'hurt': brow = [(s * 0.05, -0.12), (s * 0.16, -0.10), (s * 0.28, -0.07)]
-        d.ink(Ps(brow), deep)
+        if small: brow = [(u, v - 0.05) for u, v in brow]               # a pixel of skin between brow and eye
+        d.ink(Ps(brow), Hr['shade'] if small and Hr is not None else deep)
     if expression in ('hurt', 'shout'):
         r = 0.12 if expression == 'shout' else 0.09
         d.fill(blob(Ps([(-r, 0.28), (r, 0.28), (r * 0.8, 0.37), (-r * 0.8, 0.37)])), line, inside=part, pri=4)
@@ -303,6 +316,11 @@ _PROFILES = {
 _TORSO = [(0.0, -0.02), (0.075, 0.04), (0.09, 0.12), (0.115, 0.19), (0.125, 0.235), (0.10, 0.278), (0.05, 0.30),
           (-0.02, 0.305), (-0.10, 0.295), (-0.135, 0.255), (-0.13, 0.19), (-0.095, 0.11), (-0.085, 0.03), (-0.065, -0.02)]
 _HIPS = [(-0.075, -0.075), (0.08, -0.075), (0.085, 0.0), (0.075, 0.055), (-0.08, 0.055), (-0.088, 0.0)]
+# turned towards us (view='three'): both shoulders, the chest square to the camera, hips a little wider
+_TORSO3 = [(-0.07, -0.02), (0.075, -0.02), (0.09, 0.06), (0.10, 0.13), (0.125, 0.20), (0.135, 0.245), (0.11, 0.28),
+           (0.045, 0.30), (-0.03, 0.303), (-0.065, 0.30), (-0.12, 0.285), (-0.155, 0.255), (-0.145, 0.20), (-0.11, 0.13),
+           (-0.085, 0.05)]
+_HIPS3 = [(-0.088, -0.075), (0.085, -0.075), (0.092, 0.0), (0.08, 0.055), (-0.088, 0.055), (-0.098, 0.0)]
 
 
 def _frame(a, b):
@@ -340,13 +358,19 @@ class Figure:
              4 adds a light step); without it each ramp's darkest step outlines it (ramps of 5)
     top      'tee' (short sleeves), 'tank' (bare arms), 'long' (sleeves to the wrist), 'bare' (no shirt)
     hands    a ramp for gloves (or None: skin)
-    face, hair_style, white, iris   as head() takes them; the head is drawn in the side view, tilted with the neck
+    view     'three' (the default): the chest and face cheated towards the camera, as Streets of Rage and Street
+             Fighter draw them (both shoulders show, the near arm hangs at the back of the chest instead of over it,
+             both eyes show), the legs and the moves still side on; 'side': a true profile
+    face, hair_style, white, iris   as head() takes them; the head is tilted with the neck
     """
     def __init__(s, preset='brawler', height=64, skin=None, hair=None, shirt=None, pants=None, shoes=None, hands=None,
-                 line=None, face='neutral', hair_style='short', top='tee', white=None, iris=None, margin=6, **overrides):
+                 line=None, face='neutral', hair_style='short', top='tee', white=None, iris=None, margin=6, view='three',
+                 **overrides):
         from rig import Rig
         if skin is None: raise ValueError('figure: give at least skin= (a ramp such as pal.skin)')
         if top not in ('tee', 'tank', 'long', 'bare'): raise ValueError("top is 'tee', 'tank', 'long' or 'bare'")
+        if view not in ('three', 'side'): raise ValueError("a figure's view is 'three' or 'side'")
+        s.view = view
         s.rig = Rig(preset, height=height, skin=skin, margin=margin, **overrides)
         s.w, s.h, s.height, s.margin = s.rig.w, s.rig.h, height, margin
         s.line = line
@@ -360,11 +384,18 @@ class Figure:
         s.face, s.hair_style, s.top, s.white, s.iris = face, hair_style, top, white, iris
 
     def joints(s, p):
-        """The rig's joints, the far arm moved forward and up (the figure is turned a little towards us, as in Streets of
-        Rage: the far shoulder shows past the chest, and a far fist in a guard is ahead of the near one)."""
+        """The rig's joints, the shoulders spread for the view: turned towards us ('three'), the near shoulder goes back
+        and the far one forward, each arm with it (the near one comes forward again as it punches); in profile the far arm still moves a little forward and up (a far
+        fist in a guard is ahead of the near one)."""
         J = s.rig.joints(p)
-        dx, dy = s.L('r_chest') * 0.3, -s.L('r_chest') * 0.1
-        for k in ('shoulder_f', 'elbow_f', 'hand_f'): J[k] = (J[k][0] + dx, J[k][1] + dy)
+        r = s.L('r_chest')
+        if s.view == 'three':
+            # the body twists into a punch: as the near arm comes up past a guard, its shoulder comes forward
+            twist = max(0.0, min(1.0, (p.get('arm_n', 0) - 30) / 55))
+            moves = {'n': (-r * 0.75 + r * 0.95 * twist, r * 0.12), 'f': (r * 0.75, r * 0.05)}
+        else: moves = {'n': (0.0, 0.0), 'f': (r * 0.3, -r * 0.1)}
+        for side, (dx, dy) in moves.items():
+            for k in ('shoulder_', 'elbow_', 'hand_'): J[k + side] = (J[k + side][0] + dx, J[k + side][1] + dy)
         return J
     def animate(s, keys, frames, loop=True, mirror=None): return s.rig.animate(keys, frames, loop, mirror)
     def L(s, k): return s.rig.L(k)
@@ -396,7 +427,8 @@ class Figure:
             # the leg: thigh and shin in the pants, the shoe
             leg = 'leg_' + side
             hip = J['hip']
-            hip_side = (hip[0] + (0.25 if far else -0.1) * R('r_thigh'), hip[1])
+            spread = (0.55, -0.45) if s.view == 'three' else (0.25, -0.1)
+            hip_side = (hip[0] + spread[0 if far else 1] * R('r_thigh'), hip[1])
             d.fill(blob(_limb(hip_side, J['knee_' + side], R('r_thigh'), _PROFILES['thigh'])), pa['base'], part=leg + '_thigh')
             d.fill(blob(_limb(J['knee_' + side], J['ankle_' + side], R('r_shin'), _PROFILES['shin'])), pa['base'], part=leg + '_shin')
             for seg, r in (('_thigh', R('r_thigh')), ('_shin', R('r_shin'))): s._shade_part(d, leg + seg, pa, r, light)
@@ -420,13 +452,32 @@ class Figure:
         d.fill(blob(_limb(T(0.0, 0.26), neck_top, R('r_neck'), _PROFILES['neck'])), sk['shade'], part='head_neck')
         d.fill(blob(_limb(T(0.0, 0.26), neck_top, R('r_neck'), _PROFILES['neck'], upto=0.6)), sk['deep'], inside='head_neck')
         # the hips (pants) and the torso
-        d.fill(blob([T(u, v) for u, v in _HIPS]), pa['base'], part='hips')
+        three = s.view == 'three'
+        d.fill(blob([T(u, v) for u, v in (_HIPS3 if three else _HIPS)]), pa['base'], part='hips')
         s._shade_part(d, 'hips', pa, R('r_waist'), light)
         torso_c = sk if s.top == 'bare' else sh
-        d.fill(blob([T(u, v) for u, v in _TORSO]), torso_c['base'], part='torso')
+        d.fill(blob([T(u, v) for u, v in (_TORSO3 if three else _TORSO)]), torso_c['base'], part='torso')
         d.shadow('torso', torso_c['shade'], light=light, depth=R('r_chest') * 0.45)
         d.light('torso', torso_c['light'], light=light, inset=R('r_chest') * 0.12, width=R('r_chest') * 0.22)
-        if s.top == 'bare':
+        if three and s.top == 'bare':
+            # two pecs and the line under them, the breastbone, abdominals in two rows
+            for a0, a1 in (((-0.12, 0.215), (-0.02, 0.19)), ((0.0, 0.19), (0.11, 0.215))):
+                d.fill(brush([T(*a0), T((a0[0] + a1[0]) / 2, 0.18), T(*a1)], H * 0.012, H * 0.006), sk['shade'], inside='torso')
+            d.fill(brush([T(-0.01, 0.27), T(-0.01, 0.19)], H * 0.008, H * 0.004), sk['shade'], inside='torso')
+            for v in (0.10, 0.14):
+                for u0 in (-0.06, 0.02):
+                    d.fill(brush([T(u0, v), T(u0 + 0.04, v + 0.004)], H * 0.008, H * 0.004), sk['shade'], inside='torso')
+        elif three:
+            # folds from each armpit towards the waist, the hem over the belt, a collar round the neck (a tank top:
+            # the chest bare in a scoop)
+            d.fill(brush([T(0.10, 0.20), T(0.07, 0.13), T(0.04, 0.07)], H * 0.012, 0.3), sh['shade'], inside='torso')
+            d.fill(brush([T(-0.11, 0.20), T(-0.08, 0.13), T(-0.06, 0.07)], H * 0.012, 0.3), sh['shade'], inside='torso')
+            d.fill(brush([T(-0.08, 0.02), T(0.0, 0.025), T(0.08, 0.02)], H * 0.012), sh['shade'], inside='torso')
+            if s.top == 'tank':
+                d.fill(blob([T(-0.06, 0.31), T(0.05, 0.31), T(0.04, 0.26), T(0.0, 0.235), T(-0.05, 0.26)]), sk['base'], inside='torso')
+            else:
+                d.fill(brush([T(-0.055, 0.298), T(-0.01, 0.283), T(0.04, 0.298)], H * 0.014), sh['shade'], inside='torso')
+        elif s.top == 'bare':
             # pec and the line under it, abdominals as two short plane edges
             d.fill(brush([T(0.03, 0.205), T(0.07, 0.19), T(0.105, 0.2)], H * 0.012, H * 0.006), sk['shade'], inside='torso')
             for v in (0.10, 0.14):
@@ -444,7 +495,7 @@ class Figure:
         d.fill(poly([T(-0.09, 0.0), T(0.09, 0.0), T(0.09, 0.03), T(-0.09, 0.03)]), pa['deep'], inside='hips', pri=2)
         d.fill(poly([T(0.045, 0.0), T(0.07, 0.0), T(0.07, 0.03), T(0.045, 0.03)]), s.pants['light'], inside='hips', pri=3)
         # the head
-        head(d, J['head'][0], J['head'][1], s.L('head') * 2.1, s.raw['skin'], s.raw['hair'], view='side', facing=1,
+        head(d, J['head'][0], J['head'][1], s.L('head') * 2.1, s.raw['skin'], s.raw['hair'], view=s.view, facing=1,
              expression=s.face, style=s.hair_style, white=s.white, iris=s.iris, tilt=p.get('lean', 0) + p.get('neck', 0) + p.get('head', 0),
              line=s.line)
         d.seam('torso', seam_tone(sh if s.top != 'bare' else sk), under='head_neck', sides=[(0, -1), (1, -1), (-1, -1)])

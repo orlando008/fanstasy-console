@@ -323,10 +323,11 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   in flat tones, as named parts; `shadow(part, tone, light, depth)` gives a part its shadow side as one clean crescent,
   `light()` a lit band, `seam()` a line where one part overlaps another, `ink()` and `dot()` pixel-exact lines and
   glints (eyes, mouths); `render()` counts the samples into pixels, outlines and tidies (folds stray pixels away).
-  `head(d, x, y, H, skin, hair, view='side' | 'front' | 'back', expression=, style=)` draws a head from templates of
+  `head(d, x, y, H, skin, hair, view='side' | 'three' | 'front' | 'back', expression=, style=)` draws a head from templates of
   planes (brow ridge, sockets, nose, cheekbone, jaw) at any size, and `Figure('brawler', height, line=, skin=, hair=,
   shirt=, pants=, shoes=, top='tee' | 'tank' | 'long' | 'bare')` a whole character on a rig's skeleton, posed and
-  animated like a rig. Give it one `line` colour for all its outlines (Streets of Rage does): one sprite palette then
+  animated like a rig. Its default `view='three'` cheats the chest and face towards the camera as Streets of Rage and
+  Street Fighter do (a pure profile hides the chest behind a bulky near shoulder: the user's note on the first one). Give it one `line` colour for all its outlines (Streets of Rage does): one sprite palette then
   holds skin, hair, shirt and pants. `speckle(img)` measures the clutter (the share of pixels in clusters of one or two: about 0.10 for a 64 px figure,
   0.05 for a head 32 px tall; more means noise). Look at it at 6x
   with a Sheet and criticise it as an artist would: the faces, the hair, the torso.
