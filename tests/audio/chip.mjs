@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { Engine, TICK_HZ, engineData } from '../../src/audio/synth.js';
 import { CHANNELS, convertToChip2, emptyAudio, parseNote, readAudio, writeAudio } from '../../src/formats/audio.js';
-import { createCart } from '../../src/formats/cart.js';
+import { CART_VERSION, createCart } from '../../src/formats/cart.js';
 import { readNova, writeNova } from '../../src/formats/nova-json.js';
 
 const SR = 22050;
@@ -146,7 +146,7 @@ const crossings = (x) => { let n = 0; for (let i = 1; i < x.length; i++) if ((x[
   check(back.patterns[0][3][7]?.i === 4, 'and a note on channel 7');
   check(writeNova(back) === text, 'written again it is the same');
   let refused = '';
-  try { readNova(text.replace('"version": 2', '"version": 3')); } catch (e) { refused = e.message; }
+  try { readNova(text.replace('"version": 2', `"version": ${CART_VERSION + 1}`)); } catch (e) { refused = e.message; }
   check(/newer than this console supports/.test(refused), 'a cart from a newer console is refused, not played wrong');
   const fromJson = readAudio({ instruments: [{ wave: 'noise', echo: 9 }] });
   check(fromJson.chip === 1 && fromJson.instruments[0].echo === 0, 'an audio.json without "chip": 2 is an old-chip one (and has no echo sends)');
