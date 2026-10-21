@@ -85,7 +85,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | Command | What it does |
 |---|---|
 | `python3 carts/src/<name>/art.py carts/src/<name>` | Regenerate the cart's `tiles.txt`, `palette.txt`, `map.txt`, `art.json` and the `ART` block of its `code.js` from its art script, written with the toolkit in `tools/devkit/art/kit.py` (its header lists what it checks) |
-| `node tools/devkit/art/sprites.mjs carts/<name>.nova out.png [--names a,b]` | The cart's sprites (from `art.json`) at their real sizes in their sprite palettes, with names, scaled up; or one with `--tile n --size 16 --pal 0` (open the PNG with the Read tool). `--ascii hero` prints a sprite as text instead: a letter for each role, x and y rulers, and a `key={...}` for `Img.from_rows` (`--ascii --tile n --size s` prints hex indices, no manifest needed) |
+| `node tools/devkit/art/sprites.mjs carts/<name>.nova out.png [--names a,b]` | The cart's sprites (from `art.json`) at their real sizes in their sprite palettes, with names, scaled up, and its big sprites assembled from their parts; or one with `--tile n --size 16 --pal 0` (open the PNG with the Read tool). `--ascii hero` prints a sprite as text instead: a letter for each role, x and y rulers, and a `key={...}` for `Img.from_rows` (`--ascii --tile n --size s` prints hex indices, no manifest needed) |
 | `node tools/devkit/art/scene.mjs carts/<name>.nova out.png --scene field [--holes]` | A Map RAM region as the map places it (palettes, flips); `--rect x,y,w,h` for any region; `--holes` paints empty cells magenta |
 | `node tools/devkit/tiles.mjs carts/<name>.nova out.png --from 640 --count 64 --pal 0 [--sprite] [--skip-empty]` | A contact sheet of tiles with their numbers in a palette. `--ascii <n>` prints one tile as `tiles.txt` rows; `--palette out.png` shows all 256 entries |
 | `node tools/devkit/art/colors.mjs carts/<name>.nova [--png out.png] [--check]` | How the colours read: plays the cart with random buttons and measures its screens in OKLab. Muddy panels (dull brown or grey on overlay panels; limit 0.3), palette ramps out of order (`art.json`), and as information mud, contrast, faint edges and the overlay's default colours; `--png` marks mud magenta and faint edges cyan (in the PNG only); `--extra "src"` as in `shots.mjs` |
@@ -309,6 +309,34 @@ One blend setting holds for a whole line; `scanline()` can change it part way do
 layer, the sprites, the overlay, the blending or the whole picture inside or outside them: spotlights, iris and
 diamond wipes, a letterbox, light through a pane of glass. `mosaic(size)` is the pixelating scene change. Use them for
 scene changes instead of a cut.
+
+**The SNES look, with the kit** (`docs/dev/snes-picture.md`; the `showcase` cart's `art.py` uses every one of these).
+The difference between NES-looking and SNES-looking art is mostly shading, depth and size, and the kit does the work:
+- **Colour by ramps, never single colours.** `ramp('d2aa99', 5)` gives shades of one colour, even to the eye, cooler in
+  the shadows and warmer in the light, already in the console's 5-bit colour; a palette takes ramps (`pal.skin`, dark
+  to light) and `pal.step(i, 1)` moves along one. Give a material 4 to 6 steps. Push backgrounds back with
+  `recede(ramp, 0.5, haze)`, so sprites stand out.
+- **Characters: sculpt them.** `Sculpt(w, h)` builds a figure from spheres, ellipsoids, capsules (limbs) and reliefs (any
+  2D shape inflated), with `smooth=` to blend muscles together, and `render()` lights it from the upper left, shades it
+  along each part's ramp, outlines it in each part's own darkest step (lighter on the lit side) and draws contours
+  where parts overlap. Draw faces and small details by hand on the result. What the showcase's first hero got wrong
+  (the user: "that hero looks really strange"): a body of round parts reads as balloons. Cut the main silhouette as a
+  flat shape (a V for a torso) and give it depth with `relief()`, keep muscles as low bumps blended in, and draw the
+  definition (the spine, the shoulder blades) as lines one step darker; get the proportions from the reference
+  (fighting-game boxers have big heads and short, thick necks); and look at it at 4x before it goes in the game. For flat shapes, `shaded(mask, ramp,
+  kind)`, then `inline()` or `outline_sel()`, `rim()` for a back light, `clean_lines()` and `despeckle()`.
+- **Big characters are big sprites.** `art.big_sprite(name, picture or {palette: picture})` cuts any size into parts
+  and code.js draws it with `bigSprite(ART.big.name, x, y, { fx })`. Animate the part that moves as a big sprite of its
+  own (the showcase's boxer breathes with his top half: two whole frames cost about 300 tiles, the split costs none).
+  Several palettes give a character more than 15 colours (skin in one, clothes in another).
+- **Backgrounds in layers, never flat.** `sky()`, `clouds()`, `mountains()`, `hills()`, `treeline()`, `stars()`,
+  `orb()` draw the far layers (they wrap, for scrolling); `texture(kind, w, h, ramp)` fills ground, walls and floors
+  with a material (grass, dirt, stone, brick, tiles, planks, leaves, water, fence ...) that repeats seamlessly, and
+  `variants()` with `tile_fill()` break up a big area for a few tiles. `floor()` lays a texture in perspective. A sky
+  can cost no tiles at all: `art.gradient()` and `gradientLine()` in `scanline()`.
+- **HUD and titles:** `big_text()` (smooth scaled, gradient-filled, outlined, shadowed), `hud_bar()`, `frame()`.
+- **Look while you work:** `Sheet().add(name, img, pal)` (and `add_layers()` for a stack of layers) saves a PNG from
+  art.py without packing.
 
 **Look at the art, always.** `sprites.mjs` (every sprite at its real size, in its palette), `scene.mjs` (a map region, with
 `--holes`), `tiles.mjs` (the sheet with numbers) and `shots.mjs` (the game in place) all make PNGs to open with the Read tool.

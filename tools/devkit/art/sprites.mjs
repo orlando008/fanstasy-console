@@ -10,6 +10,7 @@
 // palette (an index no role names is an upper-case hex digit) and a legend that is also a key for kit.py's
 // Img.from_rows(rows, key={...}), so rows can be copied into an art.py once the rulers are cut off.
 //
+// Big sprites (art.big_sprite) are shown after the others, each assembled from its parts at its own size.
 // A sprite of size s at tile n uses the s/8 x s/8 block of tiles from n (n, n+1, n+16, n+17 for 16 px). Sprite
 // palette p is CGRAM entries 128+16p.. (the `pal` of spr()). Transparent pixels are a dark checker.
 import { writeFileSync } from 'node:fs';
@@ -21,26 +22,45 @@ const [path, out] = argv;
 if (path && !path.startsWith('--') && argv.includes('--ascii')) { ascii(); process.exit(0); }
 if (!path || !out) { console.error('usage: node tools/devkit/art/sprites.mjs <cart.nova> <out.png> [--names a,b] [--scale 4] [--cols 8]  |  --tile n --size 8|16|32 --pal p  |  <cart.nova> --ascii name[,name] | --ascii --tile n --size s'); process.exit(1); }
 const { cart, name, manifest } = loadArt(path);
-let list;
+let list, bigList = [];
 if (argv.includes('--tile')) list = [{ name: `tile ${opt('--tile')}`, tile: Number(opt('--tile')), size: Number(opt('--size', 16)), pal: Number(opt('--pal', 0)) }];
 else {
   if (!manifest) { console.error(`no carts/src/${name}/art.json (made by art.py); use --tile n --size s --pal p for one sprite`); process.exit(1); }
-  const want = opt('--names') ? opt('--names').split(',') : Object.keys(manifest.sprites);
-  const missing = want.filter((n) => !manifest.sprites[n]);
-  if (missing.length) { console.error(`no sprite(s) ${missing.join(', ')} in art.json (it has: ${Object.keys(manifest.sprites).join(', ') || 'none'})`); process.exit(1); }
-  list = want.map((n) => ({ name: n, ...manifest.sprites[n] }));
+  const bigs = manifest.big || {};
+  const want = opt('--names') ? opt('--names').split(',') : [...Object.keys(manifest.sprites), ...Object.keys(bigs)];
+  const missing = want.filter((n) => !manifest.sprites[n] && !bigs[n]);
+  if (missing.length) { console.error(`no sprite(s) ${missing.join(', ')} in art.json (it has: ${[...Object.keys(manifest.sprites), ...Object.keys(bigs)].join(', ') || 'none'})`); process.exit(1); }
+  list = want.filter((n) => manifest.sprites[n]).map((n) => ({ name: n, ...manifest.sprites[n] }));
+  bigList = want.filter((n) => bigs[n]).map((n) => ({ name: n, ...bigs[n] }));
 }
 const scale = Number(opt('--scale', 4)), cols = Number(opt('--cols', 8));
 const cw = Math.max(32 * scale, 88) + 6, rows = Math.ceil(list.length / cols), ch = 32 * scale + 24;
-const c = canvas(Math.min(cols, list.length) * cw + 4, rows * ch + 4, COLORS.bg);
+// Big sprites (art.big_sprite) go in a row of their own below, each at its size, assembled from its parts.
+const bigW = bigList.reduce((w, b) => w + Math.max(b.w * scale, 88) + 6, 0), bigH = bigList.length ? Math.max(...bigList.map((b) => b.h * scale)) + 24 : 0;
+const c = canvas(Math.max(Math.min(cols, list.length) * cw, bigW) + 4, rows * ch + bigH + 4, COLORS.bg);
 list.forEach((s, n) => {
   const ox = 2 + (n % cols) * cw, oy = 2 + Math.floor(n / cols) * ch, t = s.size / 8;
   text(c, s.name.slice(0, Math.floor((cw - 6) / 8)), ox, oy, COLORS.label);
   text(c, `${s.size}px t${s.tile} p${s.pal}`, ox, oy + 10, 0xff909090);
   for (let j = 0; j < t; j++) for (let i = 0; i < t; i++) drawTile(c, cart, s.tile + j * 16 + i, ox + i * 8 * scale, oy + 22 + j * 8 * scale, scale, 128 + 16 * s.pal);
 });
+let bx = 2;
+for (const b of bigList) {
+  const oy = 2 + rows * ch;
+  text(c, b.name.slice(0, Math.floor(Math.max(b.w * scale, 88) / 8)), bx, oy, COLORS.label);
+  text(c, `${b.w}x${b.h} ${b.parts.length} parts`, bx, oy + 10, 0xff909090);
+  for (let y = 0; y < b.h * scale; y++) for (let x = 0; x < b.w * scale; x++) c.px[(oy + 22 + y) * c.w + bx + x] = COLORS.dark[(Math.floor(x / scale) + Math.floor(y / scale)) & 1];
+  for (const [dx, dy, t, size, pal, f] of b.parts) {
+    const k = size / 8;
+    for (let j = 0; j < k; j++) for (let i = 0; i < k; i++) {
+      const pi = f & 1 ? k - 1 - i : i, pj = f & 2 ? k - 1 - j : j;
+      drawTile(c, cart, t + j * 16 + i, bx + (dx + pi * 8) * scale, oy + 22 + (dy + pj * 8) * scale, scale, 128 + 16 * pal, { fx: f & 1, fy: f & 2, transparent: 'none' });
+    }
+  }
+  bx += Math.max(b.w * scale, 88) + 6;
+}
 writeFileSync(out, png(c.px, c.w, c.h, 1));
-console.log(`${out}: ${list.length} sprite(s)`);
+console.log(`${out}: ${list.length} sprite(s)${bigList.length ? `, ${bigList.length} big` : ''}`);
 
 function ascii() {
   const { cart, name, manifest } = loadArt(path);
