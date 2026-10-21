@@ -10,7 +10,7 @@
 // The main site and each pull request's preview (pr/<n>/, on the same origin) have a worker each, with its own copy:
 // the main site's leaves pr/ alone.
 
-const VERSION = '587d4e95e9cf';
+const VERSION = 'b468fc25673f';
 const FILES = [
   "./",
   "carts/alien-swarm.nova",
@@ -84,11 +84,13 @@ const FILES = [
   "src/library.js",
   "src/machine.js",
   "src/main.js",
+  "src/make-prompt.js",
   "src/pause-menu.js",
   "src/record/clip.js",
   "src/record/gif.js",
   "src/record/replay.js",
   "src/record/webm-duration.js",
+  "src/share.js",
   "src/storage.js",
   "src/touch.js",
   "src/ui/dom.js",

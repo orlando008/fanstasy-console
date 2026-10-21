@@ -1,6 +1,6 @@
 // The pause menu (SPEC 11.2): the console's own menu over a running cart, for
-// players. Resume, Restart, Controls, Volume, Library and Code editor, by
-// keyboard, mouse or gamepad. While it is open the game and its sound are paused
+// players. Resume, Restart, Controls, Volume, Share link (for a Library cart),
+// Library and Code editor, by keyboard, mouse or gamepad. While it is open the game and its sound are paused
 // and no key reaches the cart. Also the two corner buttons (Menu and Library)
 // that show over the game while the mouse moves, so a player can always see the
 // way out.
@@ -12,6 +12,7 @@ const ITEMS = [
   ['restart', 'Restart'],
   ['controls', 'Controls'],
   ['volume', 'Volume'],
+  ['share', 'Share link'],
   ['library', 'Library'],
   ['editor', 'Code editor'],
 ];
@@ -33,7 +34,8 @@ export class PauseMenu {
   /**
    * @param {HTMLElement} screen the Run mode screen element
    * @param {object} hooks pause(), resume(), restart(), library(), editor(),
-   *   volume(dir) and mute() (both return the new level, 0-1), level(), title()
+   *   volume(dir) and mute() (both return the new level, 0-1), level(), title(),
+   *   shareable() (the running cart is a Library cart, so it has a link), share(onClose), sharing()
    */
   constructor(screen, hooks) {
     this.hooks = hooks;
@@ -88,6 +90,7 @@ export class PauseMenu {
     this.list.hidden = false;
     this.footer.hidden = false;
     this.title.textContent = this.hooks.title() || '';
+    this.buttons[ITEMS.findIndex(([id]) => id === 'share')].hidden = !this.hooks.shareable();
     this.corner.classList.remove('shown');
     this.el.hidden = false;
     this.pad.held = padMask(); // a button held as the menu opens (Start, after Select + Start) is not a press
@@ -106,8 +109,11 @@ export class PauseMenu {
     else this.hooks.resume();
   }
 
-  select(i) {
-    this.sel = (i + ITEMS.length) % ITEMS.length;
+  /** Select item i, or the next shown one in the direction dir (Share link is hidden for a cart with no link). */
+  select(i, dir = 1) {
+    i = (i + ITEMS.length) % ITEMS.length;
+    while (this.buttons[i].hidden) i = (i + dir + ITEMS.length) % ITEMS.length;
+    this.sel = i;
     this.buttons.forEach((b, k) => b.classList.toggle('selected', k === this.sel));
     this.buttons[this.sel].focus({ preventScroll: true });
   }
@@ -124,6 +130,7 @@ export class PauseMenu {
     else if (id === 'restart') { this.close(false); this.hooks.restart(); }
     else if (id === 'controls') this.showControls(true);
     else if (id === 'volume') this.volume('mute');
+    else if (id === 'share') this.hooks.share(() => { if (this.isOpen) this.select(this.sel); });
     else if (id === 'library') { this.close(false); this.hooks.library(); }
     else if (id === 'editor') { this.close(false); this.hooks.editor(); }
   }
@@ -155,7 +162,7 @@ export class PauseMenu {
     if (this.page === 'controls') { this.showControls(false); return true; }
     const id = ITEMS[this.sel][0];
     switch (e.key) {
-      case 'ArrowUp': this.select(this.sel - 1); break;
+      case 'ArrowUp': this.select(this.sel - 1, -1); break;
       case 'ArrowDown': this.select(this.sel + 1); break;
       case 'ArrowLeft': if (id === 'volume') this.volume('down'); break;
       case 'ArrowRight': if (id === 'volume') this.volume('up'); break;
@@ -178,13 +185,13 @@ export class PauseMenu {
       p.held = mask;
       return;
     }
-    if (!this.isOpen) { p.held = mask; return; }
+    if (!this.isOpen || this.hooks.sharing()) { p.held = mask; return; } // the share panel has the pad while it is open
     const pressed = mask & ~p.held;
     p.held = mask;
     if (!pressed) return;
     if (this.page === 'controls') { this.showControls(false); return; }
     const id = ITEMS[this.sel][0];
-    if (pressed & PAD.up) this.select(this.sel - 1);
+    if (pressed & PAD.up) this.select(this.sel - 1, -1);
     else if (pressed & PAD.down) this.select(this.sel + 1);
     else if (pressed & PAD.left && id === 'volume') this.volume('down');
     else if (pressed & PAD.right && id === 'volume') this.volume('up');
