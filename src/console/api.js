@@ -1,6 +1,8 @@
 // The public cart API (SPEC section 8). Every function here is visible to
 // cart code as a global.
 
+import { SRC } from './ppu.js';
+
 export const BUTTONS = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'A', 'B', 'X', 'Y', 'L', 'R', 'START', 'SELECT'];
 
 /**
@@ -8,7 +10,7 @@ export const BUTTONS = ['UP', 'DOWN', 'LEFT', 'RIGHT', 'A', 'B', 'X', 'Y', 'L', 
  * math helpers are allowed too, as the SPEC 8 example cart relies on flr().
  */
 const SCANLINE_SAFE = new Set([
-  'bgscroll', 'bg', 'affine', 'color', 'palcopy', 't',
+  'bgscroll', 'bg', 'affine', 'color', 'palcopy', 'blend', 'brightness', 't',
   'flr', 'ceil', 'abs', 'sgn', 'mid', 'clamp', 'lerp',
 ]);
 
@@ -117,6 +119,32 @@ export function buildApi(m) {
         cx: fix88(opts.cx ?? 0), cy: fix88(opts.cy ?? 0),
       };
     },
+
+    // --- Effects -----------------------------------------------------------
+
+    /**
+     * Colour blending (SPEC 4.10): blend({ layers, op, half, color }) makes the pixels of the named layers translucent;
+     * blend(null) turns it off.
+     */
+    blend: (opts) => {
+      if (opts == null) { ppu.blendState = null; return; }
+      let mask = 0;
+      for (const name of opts.layers ?? []) {
+        if (!(name in SRC)) throw new RangeError(`blend: layers are ${Object.keys(SRC).join(', ')}; got ${name}`);
+        mask |= SRC[name];
+      }
+      const op = opts.op ?? 'add';
+      if (op !== 'add' && op !== 'sub') throw new RangeError(`blend: op must be 'add' or 'sub', got ${op}`);
+      let fixed = -1;
+      if (opts.color != null) {
+        const [r, g, b] = opts.color;
+        fixed = clamp(int(r), 0, 31) | (clamp(int(g), 0, 31) << 5) | (clamp(int(b), 0, 31) << 10);
+      }
+      ppu.blendState = { mask, sub: op === 'sub', half: !!opts.half, fixed };
+    },
+
+    /** Master brightness of the whole picture, overlay included: 0 (black) to 15 (full). */
+    brightness: (level) => { ppu.bright = clamp(int(level), 0, 15); },
 
     // --- Sprites -----------------------------------------------------------
 
