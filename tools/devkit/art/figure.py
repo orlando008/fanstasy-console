@@ -111,7 +111,8 @@ def head(d, x, y, H, skin, hair=None, view='side', facing=1, expression='neutral
         Psf = lambda pts: [Pf(u, v) for u, v in pts]
         Pso = lambda pts: [P(u + (rot(u) - u) * w(v) * 0.8, v) for u, v in pts]
         seen = lambda u: th(u) + tau < math.radians(80)
-        _front(d, H, S, Hr, Pf, Psf, f, lit, expression, style, white, iris, part, hp, small, Pso, seen)
+        # the hair stays on the skull (turned, its sideburn would land on the cheek)
+        _front(d, H, S, Hr, Pf, Psf, f, lit, expression, style, white, iris, part, hp, small, Pso, seen, Ps)
     return d
 
 
@@ -196,7 +197,8 @@ def _side(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp, 
     d.seam(part, seam_tone(S), under=part + '_neck', sides=[(0, 1), (-f, 1)])
 
 
-def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp, small, Po, seen):
+def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp, small, Po, seen, Ph=None):
+    Ph = Ph or Po
     def sym(pts): return pts + [(-u, v) for u, v in reversed(pts)]
     head = sym([(0.0, -0.50), (0.22, -0.46), (0.36, -0.30), (0.38, -0.08), (0.36, 0.14), (0.33, 0.30), (0.24, 0.43), (0.10, 0.50)])
     d.fill(blob(Po(head)), S['base'], part=part)
@@ -204,7 +206,7 @@ def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp,
     for s in (1, -1):
         if not seen(s * 0.40): continue
         d.fill(blob(Ps([(s * 0.35, -0.04), (s * 0.43, -0.06), (s * 0.44, 0.08), (s * 0.38, 0.20), (s * 0.34, 0.14)])), S['base'], part=ear)
-        d.fill(blob(Ps([(s * 0.38, 0.0), (s * 0.41, 0.0), (s * 0.40, 0.09), (s * 0.37, 0.10)])), S['deep'], inside=ear)
+        d.fill(blob(Ps([(s * 0.38, 0.0), (s * 0.41, 0.0), (s * 0.40, 0.09), (s * 0.37, 0.10)])), S['shade'] if small else S['deep'], inside=ear)
     d.shadow(part, S['shade'], light=lit, depth=H * 0.10)
     d.shadow(ear, S['shade'], light=lit, depth=H * 0.05)
     angry = expression == 'angry'
@@ -230,7 +232,7 @@ def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp,
         line_v = -0.26
         side = [(0.26, top + 0.05), (0.41, -0.36), (0.42, -0.16), (0.39, 0.0), (0.355, 0.0), (0.345, -0.16), (0.26, -0.29)]
         mass = [(0.0, top)] + side + [(0.12, -0.33), (0.05, -0.27), (-0.02, -0.31), (-0.14, -0.32)] + [(-u, v) for u, v in reversed(side)]
-        if style == 'swept':       # a lock falling across the forehead from the parting
+        if style == 'swept' and not small:       # a lock falling across the forehead from the parting (small: it would cover an eye)
             mass = [(0.0, top)] + side + [(0.12, -0.33), (0.05, -0.28), (-0.06, -0.22), (-0.20, -0.18), (-0.30, -0.24)] + [(-u, v) for u, v in reversed(side)]
         if style == 'long':
             mass = sym([(0.0, top), (0.30, top + 0.04), (0.46, -0.30), (0.50, 0.20), (0.46, 0.62), (0.34, 0.66), (0.36, 0.0), (0.30, -0.22), (0.12, line_v), (0.0, line_v + 0.01)])
@@ -244,17 +246,18 @@ def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp,
                 sp.append((0.0 + math.cos(a) * r * 1.05, -0.12 + math.sin(a) * r))
             mass = [(0.44, -0.10), (0.38, -0.02), (0.35, -0.18), (0.24, -0.24), (0.0, -0.26), (-0.24, -0.24), (-0.35, -0.18), (-0.38, -0.02), (-0.44, -0.10)] + sp
         if style == 'mohawk':
-            d.fill(blob(Po(sym([(0.0, -0.56), (0.26, -0.52), (0.40, -0.34), (0.40, -0.12), (0.34, -0.18), (0.24, -0.24), (0.0, -0.25)]))), S['shade'], inside=part)
+            d.fill(blob(Ph(sym([(0.0, -0.56), (0.26, -0.52), (0.40, -0.34), (0.40, -0.12), (0.34, -0.18), (0.24, -0.24), (0.0, -0.25)]))), S['shade'], inside=part)
             mass = [(-0.10, -0.24), (-0.12, -0.50), (-0.08, -0.72), (0.0, -0.76), (0.08, -0.72), (0.12, -0.50), (0.10, -0.24)]
         clumps = [([(0.0, top + 0.04), (0.16, -0.40), (0.24, -0.26)], 0.04), ([(-0.06, top + 0.06), (-0.20, -0.42), (-0.30, -0.24)], 0.04),
                   ([(0.24, -0.50), (0.38, -0.30), (0.40, -0.08)], 0.035)]
         if style == 'long': clumps += [([(0.40, -0.10), (0.42, 0.30), (0.40, 0.60)], 0.04), ([(-0.40, -0.10), (-0.42, 0.30), (-0.40, 0.60)], 0.04)]
         if style in ('spiky', 'mohawk'): clumps = []
-        _hair_mass(d, H, Hr, Po, P, f, lit, style, part, hp, mass, clumps)
+        _hair_mass(d, H, Hr, Ph, P, f, lit, style, part, hp, mass, clumps)
     elif style == 'bald':
-        d.light(part, S['light'], light=(0.3, -1), inset=H * 0.04, width=H * 0.05)
-    # eyes
+        d.light(part, S['light'], light=(f * 0.3, -1), inset=H * 0.04, width=H * 0.05)
+    # eyes (a small head turned three-quarters keeps only the near one: the far one would sit on the outline)
     for s in (1, -1):
+        if small and not seen(s * 0.40): continue
         if expression == 'hurt':
             d.ink(Ps([(s * 0.08, -0.02), (s * 0.17, 0.01), (s * 0.27, -0.01)]), line)
             continue
@@ -277,7 +280,8 @@ def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp,
         if not small: d.ink(Ps([(-r + 0.02, 0.285), (r - 0.02, 0.285)]), white if white is not None else S['light'])
     else:
         m = [(-0.10, 0.31), (0.0, 0.30), (0.10, 0.31)] if angry else [(-0.10, 0.30), (0.0, 0.31), (0.10, 0.30)]
-        d.ink(Ps(m), line)
+        if small: d.ink(Ps([(-0.06, 0.27), (0.06, 0.27)]), S['deep'])      # small: 2 px, off the chin's outline
+        else: d.ink(Ps(m), line)
     d.seam(part, S['deep'], under=part + '_neck', sides=[(0, 1)])
 
 
