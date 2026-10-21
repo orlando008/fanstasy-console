@@ -319,7 +319,11 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
 - **Characters: sculpt them.** `Sculpt(w, h)` builds a figure from spheres, ellipsoids, capsules (limbs) and reliefs (any
   2D shape inflated), with `smooth=` to blend muscles together, and `render()` lights it from the upper left, shades it
   along each part's ramp, outlines it in each part's own darkest step (lighter on the lit side) and draws contours
-  where parts overlap. Draw faces and small details by hand on the result. For flat shapes, `shaded(mask, ramp,
+  where parts overlap. Draw faces and small details by hand on the result. What the showcase's first hero got wrong
+  (the user: "that hero looks really strange"): a body of round parts reads as balloons. Cut the main silhouette as a
+  flat shape (a V for a torso) and give it depth with `relief()`, keep muscles as low bumps blended in, and draw the
+  definition (the spine, the shoulder blades) as lines one step darker; get the proportions from the reference
+  (fighting-game boxers have big heads and short, thick necks); and look at it at 4x before it goes in the game. For flat shapes, `shaded(mask, ramp,
   kind)`, then `inline()` or `outline_sel()`, `rim()` for a back light, `clean_lines()` and `despeckle()`.
 - **Big characters are big sprites.** `art.big_sprite(name, picture or {palette: picture})` cuts any size into parts
   and code.js draws it with `bigSprite(ART.big.name, x, y, { fx })`. Animate the part that moves as a big sprite of its

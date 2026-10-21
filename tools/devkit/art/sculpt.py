@@ -15,7 +15,7 @@ Shapes (x and y are canvas pixels, y down; z towards the viewer, any scale you l
   sphere(x, y, z, r, mat)
   ellipsoid(x, y, z, rx, ry, rz, mat, rot=0)       rot turns it in the picture (degrees, clockwise)
   capsule(a, b, ra, rb=None, mat)                   a limb from a to b ((x, y, z) each), radius ra at a and rb at b
-  relief(img, x, y, z, height, mat, profile)        any 2D shape (the non-zero pixels of an Img), inflated to `height`:
+  relief(img, x, y, z, height, mat, profile, soften) any 2D shape (the non-zero pixels of an Img), inflated to `height`:
                                                     profile 'dome' (round), 'soft' (a pillow), 'ridge' (a crease down
                                                     the middle) or 'flat'
 Each takes smooth=k (blend into what is already there of the same material, over k pixels: muscles, a belly into a
@@ -183,8 +183,10 @@ class Sculpt:
                 s._put(py * s.w + px, z, dx / r, dy / r, dz / r, mat, part, smooth, front)
         return s
 
-    def relief(s, img, x, y, z, height, mat, profile='dome', smooth=0, front=False):
-        """A 2D shape (the non-zero pixels of img, placed with its top left at x, y) inflated towards the viewer."""
+    def relief(s, img, x, y, z, height, mat, profile='dome', smooth=0, front=False, soften=2):
+        """A 2D shape (the non-zero pixels of img, placed with its top left at x, y) inflated towards the viewer. Its
+        height map is blurred `soften` times inside the shape, which takes out the creases a distance map leaves along
+        the shape's corners (0 keeps them: a faceted look)."""
         mat, part = _mat(mat), s._new()
         from shade import inner_distance
         d = inner_distance(img)
@@ -195,6 +197,18 @@ class Sculpt:
             if profile == 'ridge': return t
             return 1.0 if t > 0 else 0.0
         hh = [[height * prof(min(1.0, v / dmax)) for v in r] for r in d]
+        for _ in range(soften):                       # a 3 x 3 blur, inside the shape only (the edge stays at its height)
+            nh = [r[:] for r in hh]
+            for j in range(img.h):
+                for i in range(img.w):
+                    if not img.px[j][i]: continue
+                    acc = n = 0
+                    for dj in (-1, 0, 1):
+                        for di in (-1, 0, 1):
+                            jj, ii = j + dj, i + di
+                            if 0 <= jj < img.h and 0 <= ii < img.w and img.px[jj][ii]: acc += hh[jj][ii]; n += 1
+                    nh[j][i] = acc / n
+            hh = nh
         for j in range(img.h):
             for i in range(img.w):
                 if not img.px[j][i]: continue
