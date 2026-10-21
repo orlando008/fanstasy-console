@@ -81,6 +81,8 @@ function boot(save) {
   ppu.loadPalette(cart.palette);
   ppu.loadSheet(cart.tiles);
   ppu.map.set(cart.map);
+  m.rom = cart.rom || {};
+  m.romViews = null;
   overlay.clip();
   overlay.cls();
   prng.seed(seed);

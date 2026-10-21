@@ -2,7 +2,7 @@
 
 import { readAudio, writeAudio } from './audio.js';
 import {
-  CART_FORMAT, CART_VERSION, MAP_H, MAP_W, PALETTE_SIZE, SHEET_H, SHEET_W, createCart,
+  CART_FORMAT, CART_VERSION, MAP_H, MAP_W, PALETTE_SIZE, SHEET_H, SHEET_W, checkRom, createCart,
 } from './cart.js';
 
 /** Parse .nova text into a cart object. Throws on malformed input. */
@@ -54,6 +54,14 @@ export function readNova(text) {
   }
 
   Object.assign(cart, readAudio(j, j.version >= 2 ? 2 : 1)); // version 1 is a cart made for the old sound chip
+  if (j.rom != null) {
+    if (typeof j.rom !== 'object' || Array.isArray(j.rom)) throw new Error('Bad ROM: an object of name -> base64');
+    for (const [name, b64] of Object.entries(j.rom)) {
+      if (typeof b64 !== 'string' || !/^[A-Za-z0-9+/]*={0,2}$/.test(b64)) throw new Error(`Bad base64 in rom.${name}`);
+      cart.rom[name] = fromBase64(b64);
+    }
+    checkRom(cart.rom);
+  }
   return cart;
 }
 
@@ -64,7 +72,8 @@ export function readNova(text) {
 export function writeNova(cart, { minify = false } = {}) {
   const obj = {
     format: CART_FORMAT,
-    version: cart.chip === 1 ? 1 : CART_VERSION, // an old-chip cart stays version 1 until it is converted
+    // an old-chip cart stays version 1 until it is converted; a cart without ROM stays version 2
+    version: cart.chip === 1 ? 1 : hasRom(cart) ? CART_VERSION : 2,
     meta: { title: cart.meta.title, author: cart.meta.author, description: cart.meta.description },
     label: cart.label || null,
     code: cart.code,
@@ -73,6 +82,10 @@ export function writeNova(cart, { minify = false } = {}) {
     map: trimRows(mapRows(cart.map)),
   };
   Object.assign(obj, writeAudio(cart));
+  if (hasRom(cart)) {
+    obj.rom = {};
+    for (const name of Object.keys(cart.rom).sort()) obj.rom[name] = toBase64(cart.rom[name]);
+  }
 
   if (minify) return JSON.stringify(obj);
   return `${pretty(obj, '')}\n`;
@@ -101,6 +114,33 @@ function pretty(v, indent) {
 function isFlat(v) {
   if (v === null || typeof v !== 'object') return true;
   return !Array.isArray(v) && Object.values(v).every((x) => x === null || typeof x !== 'object');
+}
+
+function hasRom(cart) {
+  return !!cart.rom && Object.keys(cart.rom).length > 0;
+}
+
+const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+/** Base64 without btoa (the worker and Node both run this). */
+export function toBase64(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 3) {
+    const n = (bytes[i] << 16) | ((bytes[i + 1] ?? 0) << 8) | (bytes[i + 2] ?? 0);
+    s += B64[n >> 18] + B64[(n >> 12) & 63] + (i + 1 < bytes.length ? B64[(n >> 6) & 63] : '=') + (i + 2 < bytes.length ? B64[n & 63] : '=');
+  }
+  return s;
+}
+
+export function fromBase64(s) {
+  const clean = s.replace(/=+$/, '');
+  const out = new Uint8Array((clean.length * 3) >> 2);
+  let o = 0, acc = 0, bits = 0;
+  for (const ch of clean) {
+    acc = (acc << 6) | B64.indexOf(ch); bits += 6;
+    if (bits >= 8) { bits -= 8; out[o++] = (acc >> bits) & 255; }
+  }
+  return out;
 }
 
 function sheetRows(tiles) {

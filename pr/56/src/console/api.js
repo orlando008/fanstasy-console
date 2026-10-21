@@ -56,6 +56,18 @@ export function buildApi(m) {
     /** Print to the console's debug panel. */
     log: (...args) => m.log(args.map(fmt).join(' ')),
 
+    /** rom(name): a ROM blob of the cart as a Uint8Array (the same object each call; a copy made at boot, so the
+     * cart's ROM never changes); rom(): the names. */
+    rom: (name) => {
+      const r = m.rom || {};
+      if (name === undefined) return Object.keys(r).sort();
+      if (!Object.prototype.hasOwnProperty.call(r, name)) {
+        throw new Error(`rom('${name}'): no such blob (the cart has ${Object.keys(r).sort().join(', ') || 'no ROM'})`);
+      }
+      if (!m.romViews) m.romViews = {};
+      return m.romViews[name] || (m.romViews[name] = r[name].slice());
+    },
+
     // --- Color -------------------------------------------------------------
 
     /** color(i, r, g, b) sets CGRAM entry i (channels 0-31); color(i) returns [r, g, b]. */
@@ -344,3 +356,4 @@ function fmt(v) {
 export function apiNames() {
   return Object.keys(buildApi({}));
 }
+
