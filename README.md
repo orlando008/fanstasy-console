@@ -52,7 +52,9 @@ arrows or a gamepad's d-pad and play it with Enter or A. While a cart runs, Esc
 Backspace, the browser's Back or the Library button in the corner returns to the
 Library. `?cart=<name>` opens a cart directly, and `?seed=<n>` pins the random
 seed; **Share link** (in the Library, S, or in the pause menu) copies that link for
-a cart, or opens a phone's share sheet. You can also drop a `.nova` file or a `.nova.png` PNG cart onto the page.
+a cart, or opens a phone's share sheet. **Make your own game with AI**, at the top
+of the Library, copies a prompt to paste into an AI agent (Claude Code, Codex,
+Cursor) or a chat, which then makes a game with you from this repository. You can also drop a `.nova` file or a `.nova.png` PNG cart onto the page.
 
 | Cart | Shows |
 |---|---|

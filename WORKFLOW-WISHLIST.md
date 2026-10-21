@@ -204,6 +204,9 @@ cart runs there is nothing on screen but the game.
 - [x] **A share link**: a button that copies the link to the selected cart (`?cart=<name>` already opens a cart
   directly). Done in [orlando008/fanstasy-console#48](https://github.com/orlando008/fanstasy-console/pull/48):
   `src/share.js` (SPEC 11.4), checked by `tests/console/share.mjs`.
+- [x] **Make your own game with AI**: a button that copies a ready-made prompt for an AI agent, pointing it at this
+  repository. Done in [orlando008/fanstasy-console#48](https://github.com/orlando008/fanstasy-console/pull/48):
+  `src/make-prompt.js` (SPEC 11.5), checked by `tests/console/make.mjs`.
 - [x] **Works offline and installs as an app** (a service worker and a web app manifest), so the Library opens without a
   connection once visited. Done in
   [orlando008/fanstasy-console#47](https://github.com/orlando008/fanstasy-console/pull/47): `sw.js`,

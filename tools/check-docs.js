@@ -2,8 +2,9 @@
 //
 //   node tools/check-docs.js
 //
-// Scans README.md, CLAUDE.md, docs/**/*.md and the header comments of tools/**/*.{js,mjs,py} for paths that start
-// with tools/, tests/, carts/, docs/ or src/ (in backticks or plain text) and reports the ones that do not exist.
+// Scans README.md, CLAUDE.md, docs/**/*.md, the prompt for making a game with AI (src/make-prompt.js) and the header
+// comments of tools/**/*.{js,mjs,py} for paths that start with tools/, tests/, carts/, docs/ or src/ (in backticks or
+// plain text) and reports the ones that do not exist.
 // A path with a placeholder (<name>, {{NAME}}, a glob, "...") is skipped, and so are a few names used as examples
 // (see EXAMPLES). On a line of a .md file that runs `node tools/<tool>`, every --flag must also appear in that tool's
 // source. CI runs it; verify.js runs it too.
@@ -24,7 +25,7 @@ function walk(dir, ok, out = []) {
   return out;
 }
 const files = [
-  join(ROOT, 'README.md'), join(ROOT, 'CLAUDE.md'),
+  join(ROOT, 'README.md'), join(ROOT, 'CLAUDE.md'), join(ROOT, 'src', 'make-prompt.js'),
   ...walk(join(ROOT, 'docs'), (f) => f.endsWith('.md')),
   ...walk(join(ROOT, 'tools'), (f) => /\.(js|mjs|py|md)$/.test(f)),
   ...walk(join(ROOT, 'tests'), (f) => /\.mjs$/.test(f)),

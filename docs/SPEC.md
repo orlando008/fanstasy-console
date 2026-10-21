@@ -488,8 +488,8 @@ built in HTML like the editor, not inside the console.
   play (`1 PLAYER`, or `1–4 PLAYERS` marked out in green for a game for several;
   the tech demos have none), and the detail below says it too. First comes
   **Your cart**, the autosaved working cart,
-  when there is one; **Open file** and **New cart** are on the last shelf, Make
-  a cart. Dropping a `.nova` or `.nova.png` onto the page still loads and runs
+  when there is one; **Open file**, **New cart** and **Make it with AI**
+  (section 11.5) are on the last shelf, Make a cart. Dropping a `.nova` or `.nova.png` onto the page still loads and runs
   it.
 - **Controls.** Arrows or a gamepad's d-pad and left stick move between
   cartridges, from shelf to shelf (up and down keep to the nearest column, and a
@@ -578,6 +578,20 @@ link (they are only in this browser), so neither shows it.
   outside it closes it, back on the cart in the Library or on Share link in the pause menu, and the press that closed
   it does not reach them.
 
+### 11.5 Making a game with AI
+
+**Make your own game with AI**, a button in the Library's header and the **Make it with AI** card on the Make a cart
+shelf, copies a ready-made prompt (`src/make-prompt.js`) for a player to paste into an AI agent (Claude Code, Codex,
+Cursor) or a chat, and shows it in the share panel (section 11.4), which stays open to be read until Close, Esc or a
+click outside.
+
+The prompt points the agent at the repository: clone or fork it, read `CLAUDE.md` and `docs/dev/playbook.md` first,
+ask the player what game they want before writing code, write the game's spec, start it with `tools/new-cart.js`, build
+and check it a step at a time with the repository's tools, give the player a local link to try each step, and say how to
+share it (drop the `.nova` on the hosted site, or a pull request for the Library). An AI that cannot clone a repository
+reads the specification instead and writes one file for the Code tab of a New cart. `tools/check-docs.js` checks that
+every file the prompt names exists, and `tests/console/make.mjs` the tools it says to run.
+
 ## 12. Repository layout
 
 ```
@@ -594,6 +608,7 @@ link (they are only in this browser), so neither shows it.
 │   ├── genres.js           # The Library's shelves: the genres and their order (11.1)
 │   ├── pause-menu.js       # The pause menu over a running game, and the corner buttons (11.2)
 │   ├── share.js            # A cart's link: the share sheet, or copied and shown (11.4)
+│   ├── make-prompt.js      # The prompt for making a game with an AI agent (11.5)
 │   ├── touch.js            # The touch controls on phones and tablets (6.1)
 │   ├── machine.js          # Console worker lifecycle and 60 Hz frame clock
 │   ├── files.js            # .nova save/open (File System Access API, download fallback)
@@ -641,7 +656,7 @@ link (they are only in this browser), so neither shows it.
 ├── carts/                  # Demo and game carts (.nova, .nova.png), index.json and labels/ for the Library
 │   └── src/<name>/         # A cart's source: code.js, meta.json, tiles.txt, palette.txt, map.txt, audio.json (made
 │                           #   by audio.py where there is one; tiles.txt, palette.txt, map.txt, art.json by art.py), label.png
-├── tests/console/          # Checks of the console itself (volume.mjs, menu.mjs, library.mjs, touch.mjs, offline.mjs and share.mjs in headless Chromium; song-end.mjs)
+├── tests/console/          # Checks of the console itself (volume.mjs, menu.mjs, library.mjs, touch.mjs, offline.mjs, share.mjs and make.mjs in headless Chromium; song-end.mjs)
 ├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs: 01-flow, 02-art ...), its lib.mjs and its bot.mjs for the sweep tool
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/
