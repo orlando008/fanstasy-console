@@ -568,3 +568,4 @@ from colour import *                 # noqa: E402  OKLab, hue-shifted ramps, mix
 from preview import Sheet, write_png  # noqa: E402  a PNG of pictures and ramps, straight from art.py
 from shade import inner_distance, shaded, outline_sel, inline, rim, clean_lines, mirrored, recolour  # noqa: E402
 from sculpt import Sculpt, Mat       # noqa: E402  sprites sculpted from 3D shapes, rendered as pixel art
+from texture import noise, fbm, level, texture, variants, tile_fill  # noqa: E402  materials that tile seamlessly

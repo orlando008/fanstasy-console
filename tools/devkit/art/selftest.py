@@ -184,6 +184,24 @@ ok(isinstance(split, dict) and sorted(split) == [0, 3], 'parts in different pale
 lim = Sculpt(40, 20).capsule((5, 10, 0), (35, 10, 0), 5, 3, spal.g).render(outline=None, dither=0)
 ok(len({lim.get(x, 8) for x in range(10, 30)}) <= 2, 'a capsule is smooth along its length (no stripes)', str([lim.get(x, 8) for x in range(10, 30)]))
 
+# --- Textures (texture.py) ---
+tr = (1, 2, 3, 4, 5)
+KINDS = ('grass', 'dirt', 'sand', 'snow', 'stone', 'brick', 'paving', 'tiles', 'planks', 'bark', 'leaves', 'water', 'metal', 'fence', 'rope')
+texs = {k: texture(k, 32, 16, tr, seed=2) for k in KINDS}
+ok(all(t.colors() <= set(tr) for t in texs.values()), 'every texture stays in its ramp', ', '.join(k for k, t in texs.items() if not t.colors() <= set(tr)))
+ok(all(len(t.colors()) >= 3 for t in texs.values()), 'and uses at least three of its steps (not flat)', ', '.join(k for k, t in texs.items() if len(t.colors()) < 3))
+ok(abs(noise(0, 5, 8, 1, (32, 32)) - noise(32, 5, 8, 1, (32, 32))) < 1e-9 and abs(noise(5, 0, 8, 1, (32, 32)) - noise(5, 32, 8, 1, (32, 32))) < 1e-9, 'noise with a period repeats exactly')
+br = texture('brick', 32, 16, tr)
+ok(br.get(15, 3) == tr[0] and br.get(3, 7) == tr[0], 'brick: the mortar is the darkest step')
+ok(0 in texture('fence', 16, 16, tr).px[3], 'fence: transparent between the wires')
+vs = variants('dirt', tr, 4, size=8, seed=1)
+ok(len(vs) == 4 and all(v.px[0] == vs[0].px[0] and [r[0] for r in v.px] == [r[0] for r in vs[0].px] for v in vs) and len({v.key() for v in vs}) > 1, 'variants: different inside, the same edges (so they join in any order)')
+tf = tile_fill(64, 32, vs, seed=3)
+ok(tf.w == 64 and len({tf.crop(x, y, 8, 8).key() for y in range(0, 32, 8) for x in range(0, 64, 8)}) > 1, 'tile_fill: an area covered by the variants in a mixed order')
+try: texture('lava', 8, 8, tr); bad_kind = False
+except ValueError as e: bad_kind = 'no kind' in str(e)
+ok(bad_kind, 'an unknown kind is an error that lists the kinds')
+
 # --- Files: written, packed and read back ---
 work = tempfile.mkdtemp(prefix='art-selftest-')
 try:
