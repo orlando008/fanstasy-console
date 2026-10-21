@@ -1,11 +1,13 @@
 // The Library (SPEC 11.1): the console's home page, the carts in carts/index.json
 // as cartridges on a shelf for each genre (src/genres.js), led by the autosaved
 // working cart and ending with Open file and New cart. Arrows, a gamepad or the
-// mouse pick a cart.
+// mouse pick a cart; Share link (S, or a gamepad's Select) shares the selected one
+// (SPEC 11.4). Make your own game with AI, in the header and on the last shelf,
+// copies instructions for an AI agent (SPEC 11.5).
 
 import { PNG_H, PNG_W, drawCartridge, labelBitmap } from './formats/nova-png.js';
 import { GENRES, playersLabel } from './genres.js';
-import { h } from './ui/dom.js';
+import { button, h } from './ui/dom.js';
 
 const MANIFEST = 'carts/index.json';
 const REPEAT_DELAY = 18, REPEAT_RATE = 6; // gamepad d-pad auto-repeat, in frames
@@ -17,7 +19,9 @@ export class Library {
    * @param {HTMLElement} root container for the Library view
    * @param {object} hooks play(entry), resume(), openFile(), newCart(),
    *   menu() (the pause menu, from Run), mine() (the autosaved cart or null),
-   *   current() (the name of the loaded cart, 'mine', or null), mode() (the shell mode)
+   *   current() (the name of the loaded cart, 'mine', or null), mode() (the shell mode),
+   *   share(entry, onClose) (share a Library cart), sharing() (the share panel is open),
+   *   makeWithAI(onClose) (copy and show the prompt for an AI agent)
    */
   constructor(root, hooks) {
     this.hooks = hooks;
@@ -33,12 +37,15 @@ export class Library {
     this.detailBy = h('p', { class: 'lib-detail-by' });
     this.detailText = h('p', { class: 'lib-detail-text' });
     this.detailHint = h('p', { class: 'lib-detail-hint' });
+    this.shareBtn = button('Share link', () => this.share(), { class: 'lib-share', attrs: { tabindex: '-1' } });
     root.append(
       h('header', { class: 'lib-head' },
         h('h1', { class: 'lib-logo' }, 'NOVA-16'),
-        h('p', { class: 'lib-sub' }, 'Pick a cart. Arrows or d-pad to choose, Enter or A to play.')),
+        h('p', { class: 'lib-sub' }, 'Pick a cart. Arrows or d-pad to choose, Enter or A to play.'),
+        button('✦ Make your own game with AI', () => hooks.makeWithAI(() => this.select(this.sel)), { class: 'lib-ai', attrs: { tabindex: '-1' } })),
       this.shelf,
-      h('footer', { class: 'lib-detail' }, this.detailTitle, this.detailBy, this.detailText, this.detailHint));
+      h('footer', { class: 'lib-detail' },
+        h('div', { class: 'lib-detail-main' }, this.detailTitle, this.detailBy, this.detailText, this.detailHint), this.shareBtn));
 
     window.addEventListener('keydown', (e) => this.onKey(e));
     const loop = () => { this.pollPads(); requestAnimationFrame(loop); };
@@ -80,6 +87,7 @@ export class Library {
       { title: 'Make a cart', entries: [
         { kind: 'open', title: 'Open file', description: 'Open a .nova or .nova.png cart from your computer (Ctrl+O). You can also drop one onto the page.' },
         { kind: 'new', title: 'New cart', description: 'Start a new cart in the editor.' },
+        { kind: 'ai', title: 'Make it with AI', description: 'Want to make your own game? Copy instructions to paste into your favorite AI agent (Claude Code, Codex, Cursor or a chat), and it makes the game with you: it asks what you want, then builds it with the console\'s own tools.' },
       ] },
     ].filter((s) => s.entries.length);
   }
@@ -93,7 +101,7 @@ export class Library {
       const playing = entry.kind === 'mine' ? current === 'mine' : entry.kind === 'cart' && entry.name === current;
       const art = entry.kind === 'mine' || entry.kind === 'cart'
         ? this.cartridge(entry)
-        : h('div', { class: 'lib-action-art' }, entry.kind === 'open' ? 'OPEN' : 'NEW');
+        : h('div', { class: 'lib-action-art' }, { open: 'OPEN', new: 'NEW', ai: 'AI' }[entry.kind]);
       const card = h('button', {
         type: 'button', class: `lib-card${playing ? ' playing' : ''}`,
         attrs: { role: 'listitem', 'aria-label': name, 'data-cart': entry.name || entry.kind },
@@ -145,8 +153,17 @@ export class Library {
     const who = playersLabel(entry.players).toLowerCase();
     this.detailBy.textContent = [entry.author ? `by ${entry.author}` : '', who].filter(Boolean).join('  ·  ');
     this.detailText.textContent = entry.description || '';
-    this.detailHint.textContent = entry.kind === 'open' || entry.kind === 'new' ? 'Enter or A to choose'
-      : entry.playing ? 'Paused: Enter or A to resume' : 'Enter or A to play';
+    this.detailHint.textContent = entry.kind === 'ai' ? 'Enter or A to copy the instructions'
+      : entry.kind === 'open' || entry.kind === 'new' ? 'Enter or A to choose'
+      : (entry.playing ? 'Paused: Enter or A to resume' : 'Enter or A to play') + (entry.kind === 'cart' ? '  ·  S or Select to share' : '');
+    this.shareBtn.hidden = entry.kind !== 'cart'; // only a Library cart has a link (Your cart lives in this browser)
+  }
+
+  /** Share the selected cart's link, if it is a Library cart; then back to its cartridge. */
+  share() {
+    const entry = this.entries[this.sel];
+    if (entry?.kind !== 'cart') return;
+    this.hooks.share(entry, () => this.select(this.sel));
   }
 
   activate(i = this.sel) {
@@ -154,6 +171,7 @@ export class Library {
     if (!entry) return;
     if (entry.kind === 'open') this.hooks.openFile();
     else if (entry.kind === 'new') this.hooks.newCart();
+    else if (entry.kind === 'ai') this.hooks.makeWithAI(() => this.select(this.sel));
     else if (entry.playing) this.hooks.resume();
     else this.hooks.play(entry);
   }
@@ -181,6 +199,9 @@ export class Library {
     if (moves[e.key]) {
       e.preventDefault();
       this.move(...moves[e.key]);
+    } else if ((e.key === 's' || e.key === 'S') && !e.repeat) {
+      e.preventDefault();
+      this.share();
     }
     // Enter and Space press the focused card through the browser's own button handling.
   }
@@ -214,7 +235,7 @@ export class Library {
       return;
     }
     p.hold = 0;
-    if (!this.visible) { p.held = mask; return; }
+    if (!this.visible || this.hooks.sharing()) { p.held = mask; return; } // the share panel has the pad while it is open
     const pressed = mask & ~p.held;
     const dir = mask & 15;
     if (dir && dir === p.dir) p.dirFrames++;
@@ -228,6 +249,7 @@ export class Library {
     }
     p.held = mask;
     if (pressed & (16 | 64)) this.activate();
+    else if (pressed & 32) this.share();
   }
 }
 

@@ -30,7 +30,7 @@ try {
   const misplaced = manifest.filter((c) => shelfOf(c.name) !== GENRES.find((g) => g.id === c.genre).shelf);
   ok(manifest.length === 16 && !misplaced.length, 'every cart is on the shelf of its genre', misplaced.map((c) => c.name).join(', '));
   ok(manifest.every((c) => c.genre), 'and every cart in the manifest has a genre');
-  ok(JSON.stringify(s.at(-1).carts) === '["open","new"]', 'Open file and New cart are on the last shelf');
+  ok(JSON.stringify(s.at(-1).carts) === '["open","new","ai"]', 'Open file, New cart and Make it with AI are on the last shelf');
 
   // The players badge.
   const badges = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.lib-card')].map((c) => [c.dataset.cart, c.querySelector('.lib-players')?.textContent || ''])));
