@@ -23,7 +23,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 
 | Path | What |
 |---|---|
-| `carts/src/<name>/` | A cart's source: `code.js`, `meta.json`, `tiles.txt`, `palette.txt`, `map.txt` and `art.json` (made by `art.py`), `audio.json` (made by `audio.py`), `label.png` |
+| `carts/src/<name>/` | A cart's source: `code.js`, `meta.json`, `tiles.txt`, `palette.txt`, `map.txt` and `art.json` (made by `art.py`), `audio.json` (made by `audio.py`), `label.png`, `rom/<name>.bin` (the cart's ROM: 128 KB of data read with `rom(name)`; SPEC 9.1) |
 | `carts/<name>.nova`, `.nova.png`, `labels/`, `index.json` | What `pack.js`, `release.js` and `library.js` build from the source: commit them with it |
 | `tests/carts/<name>/` | `lib.mjs` (boots the cart with its variables exposed), `NN-*.mjs` (check scripts, one per build step), `bot.mjs` (the bot for `sweep.mjs`) |
 | `tests/console/` | Checks of the console itself: the player's volume keys, the pause menu and ways back to the Library, the Library's genre shelves, the touch controls, the site offline and installable, sharing a cart's link and the prompt for making a game with AI (`volume.mjs`, `menu.mjs`, `library.mjs`, `touch.mjs`, `offline.mjs`, `share.mjs`, `make.mjs`: headless Chromium), a song that plays once falling silent at its end (`song-end.mjs`, in CI); not part of a cart build |
@@ -355,9 +355,10 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
 - **Big fighters: stream their frames.** Tiles cost grows with a character's area: the same 18 frames at 96 px take
   1,008 tiles as big sprites, the whole budget. `art.stream(name, {clip: [frames]}, pal=)` loads each frame into a slot
   of tile rows as it plays, as SNES games did, and `streamSprite(ART.streams.name, frame, x, y, { fx, slot })` draws it
-  (`ART.streams.name.clips.walk` is [first frame, count]). The `street` brawler (96 px, 18 frames): 128 tiles and
-  about 20 KB of `code.js` (the frames are packed there, so mind the 64 KB code limit: about two such characters a
-  game). One slot per copy on screen at once (`slots=`); loading costs no measurable time.
+  (`ART.streams.name.clips.walk` is [first frame, count]). Give it `rom=True` and the frames go in the cart's ROM
+  (`rom/<name>.bin`, 128 KB in all: docs/dev/rom-plan.md), out of the 64 KB of code: the `street` brawler (96 px, 18
+  frames) is 128 tiles and 18.5 KB of ROM, so six or so such fighters fit (without `rom=True` the same frames are
+  20 KB of `code.js`). One slot per copy on screen at once (`slots=`); loading costs no measurable time.
 - **Details on sculpted figures** (`detail.py`): `face()`, `hair()`, `crease()`, `bunch()`, `stroke()` draw on a
   rendered Sculpt or Rig (`Rig(..., face='angry', hair_style='swept', folds=True)`). For a character, prefer `Figure`.
 - **HUD and titles:** `big_text()` (smooth scaled, gradient-filled, outlined, shadowed), `hud_bar()`, `frame()`.

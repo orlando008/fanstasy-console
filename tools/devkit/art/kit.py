@@ -44,7 +44,7 @@ of it). Each is a module of its own here, and comes with `from kit import *`:
   figure.py     head() (side, three-quarters, front, back; four expressions, seven hair styles), Figure: a drawn body on a rig's skeleton
   preview.py    Sheet: a PNG of pictures, ramps and layer stacks, straight from art.py
   and here      art.big_sprite() (bigSprite() in code.js), art.animation(), art.stream() (frames loaded as they play:
-                streamSprite()), art.gradient() (gradientLine() in scanline()), art.variant(),
+                streamSprite(); rom=True keeps them in the cart's ROM, rom/<name>.bin), art.gradient() (gradientLine() in scanline()), art.variant(),
                 Img.from_rows(mirror='x')
 
 Files: art.py owns tiles.txt, palette.txt, map.txt and art.json of its cart (do not edit them by hand); the ART block in
@@ -288,7 +288,9 @@ class Art:
         s.big = {}                   # big sprites: name -> {w, h, parts: [[dx, dy, tile, size, pal, flip], ...]}
         s.pieces = {}                # big sprites' pieces, shared between them: (region, pal, size, picture) -> tile
         s.anims = {}                 # animations: name -> [big sprite names, one a frame]
-        s.streams = {}               # streamed animations: name -> {w, h, base, rows, slots, pool, frames}
+        s.streams = {}               # streamed animations: name -> {w, h, base, rows, slots, pool, frames} (or rom: name)
+        s.stream_frames = {}
+        s.rom = {}                   # ROM blobs this script makes: name -> bytes (written to rom/<name>.bin)
         s.gradients = {}             # per-line colours: name -> {entry, y0, lines: [RGB555, ...]}
         s.exact = {}                 # tile picture -> number (for sharing identical tiles)
         s.palettes = {}              # (kind, sub) -> Roles
@@ -574,7 +576,7 @@ class Art:
         s.anims[name] = names
         return names
 
-    def stream(s, name, frames, pal=None, region=None, slots=1):
+    def stream(s, name, frames, pal=None, region=None, slots=1, rom=False):
         """An animation whose frames are loaded into tile memory as they play, as SNES games did: only a slot (enough
         tile rows for its biggest frame) is taken from the tile budget, however many frames there are, and the frames'
         pixels live in code.js as a packed string (8 x 8 tiles shared between frames are stored once). For big
@@ -582,7 +584,9 @@ class Art:
         picture}), or {clip: [pictures]} for several animations in one stream (in code.js ART.streams.name.clips.walk
         is [first frame, count]). slots= how many can show at once, each with its own frame (two fighters of the same
         character). In code.js: streamSprite(ART.streams.name, frame, x, y, { fx, prio, pal, slot }). Returns the
-        entry; the report gives its slot tiles and code bytes (about 20 KB for a 96 px fighter with 18 frames)."""
+        entry; the report gives its slot tiles and code bytes (about 20 KB for a 96 px fighter with 18 frames).
+        rom=True keeps the frames in the cart's ROM instead (rom/<name>.bin, read with rom(); denser, about 15 KB, and
+        out of the 64 KB of code), which is the way for big fighters."""
         if name in s.streams: raise ValueError('stream %r already exists' % name)
         clips = None
         if isinstance(frames, dict):                           # {clip: [frames]}: one stream, its clips in order
@@ -600,7 +604,7 @@ class Art:
             k = im.key()
             if k not in pool_ix: pool_ix[k] = len(pool); pool.append(im)
             return pool_ix[k]
-        out_frames, rows = [], 0
+        out_frames, raw_frames, rows = [], [], 0
         for L in layers0:
             pieces = []                                        # (size, img, sub, dx, dy)
             for sub, im in sorted(L.items()):
@@ -636,6 +640,7 @@ class Art:
             ixs = [i for p in parts for i in p.pop()]
             if W > 63 * 8 or H > 63 * 8: raise ValueError('stream %r: frames up to 504 px' % name)
             out_frames.append(_pack_frame(parts, ixs))
+            raw_frames.append((parts, ixs))
         rows = (rows + 3) // 4 * 4                              # whole 32 px rows, so every slot is aligned like the first
         first, last = s._span(region)
         need = rows * TILES_X * slots
@@ -646,11 +651,19 @@ class Art:
         if base is None: raise MemoryError('stream %r: no room for %d slot(s) of %d tile rows in region %s' % (name, slots, rows, region or 'all'))
         s.used.update(range(base, base + need))
         if len(pool) > 4096: raise ValueError('stream %r: %d different tiles, and a stream holds 4,096' % (name, len(pool)))
-        packed = _pack_tiles(pool[1:])
-        s.streams[name] = {'w': W, 'h': H, 'base': base, 'rows': rows, 'slots': slots, 'pool': packed, 'frames': out_frames}
+        if rom:
+            blob = _stream_blob(W, H, pool[1:], raw_frames)
+            s.rom[name] = blob
+            s.streams[name] = {'w': W, 'h': H, 'base': base, 'rows': rows, 'slots': slots, 'rom': name}
+            where = '%d bytes of ROM (rom/%s.bin)' % (len(blob), name)
+        else:
+            packed = _pack_tiles(pool[1:])
+            s.streams[name] = {'w': W, 'h': H, 'base': base, 'rows': rows, 'slots': slots, 'pool': packed, 'frames': out_frames}
+            where = '%d bytes of code' % (len(packed) + sum(len(f) for f in out_frames))
         if clips: s.streams[name]['clips'] = clips
-        s.notes.append('stream %s: %d frames in %d slot(s) of %d tiles; %d unique tiles packed in %d bytes of code' % (
-            name, len(frames), slots, rows * TILES_X, len(pool) - 1, len(packed)))
+        s.stream_frames[name] = len(frames)
+        s.notes.append('stream %s: %d frames in %d slot(s) of %d tiles; %d unique tiles packed in %s' % (
+            name, len(frames), slots, rows * TILES_X, len(pool) - 1, where))
         return s.streams[name]
 
     def gradient(s, name, stops, y0=0, y1=223, entry=0):
@@ -697,8 +710,9 @@ class Art:
              'used': len(s.used) - 1}
         if s.big: m['big'] = dict(sorted(s.big.items()))
         if s.anims: m['anims'] = dict(sorted(s.anims.items()))
-        if s.streams: m['streams'] = {k: {'base': v['base'], 'rows': v['rows'], 'slots': v['slots'], 'frames': len(v['frames'])} for k, v in sorted(s.streams.items())}
+        if s.streams: m['streams'] = {k: {'base': v['base'], 'rows': v['rows'], 'slots': v['slots'], 'frames': s.stream_frames[k], 'rom': 'rom' in v} for k, v in sorted(s.streams.items())}
         if s.gradients: m['gradients'] = sorted(s.gradients)
+        if s.rom: m['rom'] = sorted(s.rom)
         return m
 
     def tiles_txt(s):
@@ -749,6 +763,14 @@ class Art:
                 if os.path.exists(p): os.remove(p)
             else: open(p, 'w', encoding='utf8', newline='\n').write(text)
         put('tiles.txt', s.tiles_txt()); put('palette.txt', s.palette_txt()); put('map.txt', s.map_txt())
+        # ROM blobs: rom/<name>.bin; a blob this script made before and no longer makes is removed (art.json lists them)
+        old = os.path.join(outdir, 'art.json')
+        before = set(json.load(open(old)).get('rom', [])) if os.path.exists(old) else set()
+        if s.rom: os.makedirs(os.path.join(outdir, 'rom'), exist_ok=True)
+        for n, b in s.rom.items(): open(os.path.join(outdir, 'rom', n + '.bin'), 'wb').write(bytes(b))
+        for n in before - set(s.rom):
+            f = os.path.join(outdir, 'rom', n + '.bin')
+            if os.path.exists(f): os.remove(f)
         put('art.json', json.dumps(s.manifest(), indent=1, sort_keys=True) + '\n')
         code = os.path.join(outdir, 'code.js')
         if os.path.exists(code): inject(code, s.constants())
@@ -792,6 +814,36 @@ def _pack_tiles(tiles):
     return ''.join(out)
 
 
+def _stream_blob(W, H, tiles, frames):
+    """A stream as ROM bytes: a header (width, height, frames, tiles: 16 bits each, little-endian), the tiles (a byte
+    a run: 0 to 63 copy 1 to 64 pixels from the row above; 64 to 255 a colour for 1 to 12 pixels, 64 + colour * 12 +
+    length - 1), then each frame: its number of parts, each part as x / 8, y / 8, its slot tile (16 bits), size code
+    * 16 + palette (size code 0: 8, 1: 16, 2: 32), then the pool index of each of its tiles (16 bits)."""
+    u16 = lambda v: [v & 255, v >> 8]
+    out = u16(W) + u16(H) + u16(len(frames)) + u16(len(tiles))
+    for im in tiles:
+        flat = [v for row in im.px for v in row]
+        above = lambda i: flat[i - 8] if i >= 8 else 0
+        i = 0
+        while i < 64:
+            if flat[i] == above(i):
+                r = 1
+                while i + r < 64 and flat[i + r] == above(i + r): r += 1
+                out.append(r - 1)
+            else:
+                r = 1
+                while i + r < 64 and r < 12 and flat[i + r] == flat[i] and flat[i + r] != above(i + r): r += 1
+                out.append(64 + flat[i] * 12 + r - 1)
+            i += r
+    for parts, ixs in frames:
+        if len(parts) > 255: raise ValueError('a stream frame of more than 255 pieces')
+        out.append(len(parts))
+        for dx, dy, off, size, pal, _ in parts:
+            out += [dx // 8, dy // 8] + u16(off) + [{8: 0, 16: 1, 32: 2}[size] * 16 + pal]
+        for i in ixs: out += u16(i)
+    return bytes(out)
+
+
 def _pack_frame(parts, ixs):
     """A frame as a string: its number of parts (2 characters), each part as x / 8, y / 8, its slot tile (2), its size
     (0: 8, 1: 16, 2: 32) and palette; then the pool index of each of their tiles (2 characters each)."""
@@ -805,7 +857,8 @@ def _pack_frame(parts, ixs):
 
 STREAM_JS = """
 /** Draw frame k of a streamed animation from ART.streams at (x, y), its top left: its tiles are copied into the
- * animation's slot first (only those that changed since the slot's last frame). opts { fx, prio (default 3), pal,
+ * animation's slot first (only those that changed since the slot's last frame); its frames come from the cart's
+ * ROM (rom()) or, without ROM, from the packed strings here. opts { fx, prio (default 3), pal,
  * slot (0 to slots - 1: one for each copy on screen at once) } (generated by art.py). */
 function streamSprite(st, k, x, y, opts = {}) {
   const A = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/', d = (s, i, n = 1) => {
@@ -813,6 +866,30 @@ function streamSprite(st, k, x, y, opts = {}) {
     for (let j = 0; j < n; j++) v = v * 64 + A.indexOf(s[i + j]);
     return v;
   };
+  if (!st.px && st.rom) {                          // frames kept in ROM: unpack them from rom(), once
+    const b = rom(st.rom), u = (i) => b[i] | (b[i + 1] << 8), nf = u(4), nt = u(6);
+    st.px = [new Uint8Array(64)]; st.loaded = []; st.f = [];
+    let p = 8;
+    for (let k = 0; k < nt; k++) {
+      const cur = new Uint8Array(64);
+      for (let n = 0; n < 64; p++) {
+        const s = b[p], r = s < 64 ? s + 1 : (s - 64) % 12 + 1, v = s < 64 ? -1 : ((s - 64) / 12) | 0;
+        for (let q = 0; q < r; q++, n++) cur[n] = v >= 0 ? v : n >= 8 ? cur[n - 8] : 0;
+      }
+      st.px.push(cur);
+    }
+    for (let k = 0; k < nf; k++) {
+      const np = b[p++], parts = [], ix = [];
+      let tiles = 0;
+      for (let q = 0; q < np; q++, p += 5) {
+        const size = 8 << (b[p + 4] >> 4);
+        parts.push([b[p] * 8, b[p + 1] * 8, u(p + 2), size, b[p + 4] & 15]);
+        tiles += (size >> 3) * (size >> 3);
+      }
+      for (let q = 0; q < tiles; q++, p += 2) ix.push(u(p));
+      st.f.push({ parts, ix });
+    }
+  }
   if (!st.px) {                                    // unpack the tiles and the frames, once
     st.px = [new Uint8Array(64)]; st.loaded = []; st.f = [];
     let cur = new Uint8Array(64), n = 0;

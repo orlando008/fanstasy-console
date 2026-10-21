@@ -432,31 +432,34 @@ console.log(JSON.stringify({ body: at(108, 80), eye: at(111, 61), eyeR: at(160 +
     ok(bv['body'] == rgb555(bart.palettes[('spr', 0)].hexes['body2']) and bv['eye'] == rgb555('ffffff') and bv['eyeR'] == rgb555('ffffff'), 'the console draws the big sprite, and flipped with fx its eye lands mirrored', str(bv))
     ok(bv['gem'] == rgb555(bart.palettes[('spr', 5)].hexes['gem2']), 'with the part in the other palette over it')
     ok(bv['sky0'] != bv['sky99'] and bv['sky0'] == rgb555('102040'), 'and gradientLine() in scanline() paints the backdrop line by line', str((bv['sky0'], bv['sky99'])))
-    # streams: frames loaded into a slot as they play
-    sart = Art(); sart.region('spr', 256, 1023)
-    spal = sart.sprite_palette(0, {'a': ramp('c04040', 3), 'b': ramp('4060c0', 3)})
-    fa = Img(40, 40).rect(0, 0, 40, 40, spal.a[1]).rect(4, 4, 8, 8, spal.a[2])
-    fb = Img(40, 40).rect(0, 0, 40, 20, spal.b[1]).rect(20, 20, 20, 20, spal.b[0])
-    sst = sart.stream('box', {'one': [fa], 'two': [fb, fa]}, pal=spal, slots=2)
-    ok(sst['clips'] == {'one': [0, 1], 'two': [1, 2]} and sst['rows'] % 4 == 0 and len(sart.used) - 1 == sst['rows'] * 16 * 2, 'stream: clips, and only its slots taken from the tile budget', str((sst['rows'], len(sart.used))))
-    ok(raises(lambda: sart.stream('bad', [fa, Img(8, 8)], pal=spal), 'same size'), 'stream: frames of different sizes are an error')
-    ssrc = os.path.join(work, 'stream'); os.makedirs(ssrc)
-    open(os.path.join(ssrc, 'code.js'), 'w').write('%s\n%s\nlet t = 0;\nfunction update() { t++; }\nfunction draw() { cls(); const s = ART.streams.box; streamSprite(s, t < 2 ? 0 : 1, 10, 10); streamSprite(s, 2, 100, 10, { slot: 1, fx: true }); }\n' % (ART_BEGIN, ART_END))
-    open(os.path.join(ssrc, 'meta.json'), 'w').write('{"title": "Stream"}')
-    sart.write(ssrc, quiet=True)
-    sout = os.path.join(work, 'stream.nova'); node('tools/pack.js', ssrc, sout)
-    sprobe = os.path.join(work, 'sprobe.mjs')
-    open(sprobe, 'w').write("""import { boot } from '%s/tools/devkit/harness.mjs';
-const vm = boot(process.argv[2]);
-const at = (x, y) => { const v = vm.out32[y * 256 + x]; return [v & 255, (v >> 8) & 255, (v >> 16) & 255]; };
-vm.step(0); const a = { fill: at(30, 40), spot: at(16, 16), other: at(105, 30), flipspot: at(132, 16) };
-vm.run(4); const b = { top: at(15, 15), corner: at(45, 45), low: at(15, 45), back: at(250, 200), other: at(105, 30) };
-console.log(JSON.stringify({ a, b }));""" % ROOT)
-    sv = json.loads(node(sprobe, sout))
-    hx = lambda r, i: rgb555(sart.palettes[('spr', 0)].hexes['%s%d' % (r, i)])
-    ok(sv['a']['fill'] == hx('a', 1) and sv['a']['spot'] == hx('a', 2), 'streamSprite: the frame is loaded and drawn', str(sv['a']))
-    ok(sv['b']['top'] == hx('b', 1) and sv['b']['corner'] == hx('b', 0) and sv['b']['low'] == sv['b']['back'], 'and the next frame replaces it in the same slot (its empty part shows the backdrop)', str(sv['b']))
-    ok(sv['a']['other'] == hx('a', 1) and sv['b']['other'] == hx('a', 1) and sv['a']['flipspot'] == hx('a', 2), 'a second slot shows its own frame meanwhile, flipped with fx')
+    # streams: frames loaded into a slot as they play; their frames in code.js, then in the cart's ROM
+    for in_rom in (False, True):
+        sart = Art(); sart.region('spr', 256, 1023)
+        spal = sart.sprite_palette(0, {'a': ramp('c04040', 3), 'b': ramp('4060c0', 3)})
+        fa = Img(40, 40).rect(0, 0, 40, 40, spal.a[1]).rect(4, 4, 8, 8, spal.a[2])
+        fb = Img(40, 40).rect(0, 0, 40, 20, spal.b[1]).rect(20, 20, 20, 20, spal.b[0])
+        sst = sart.stream('box', {'one': [fa], 'two': [fb, fa]}, pal=spal, slots=2, rom=in_rom)
+        ok(sst['clips'] == {'one': [0, 1], 'two': [1, 2]} and sst['rows'] % 4 == 0 and len(sart.used) - 1 == sst['rows'] * 16 * 2, 'stream: clips, and only its slots taken from the tile budget', str((sst['rows'], len(sart.used))))
+        ok(raises(lambda: sart.stream('bad', [fa, Img(8, 8)], pal=spal), 'same size'), 'stream: frames of different sizes are an error')
+        ssrc = os.path.join(work, 'stream%d' % in_rom); os.makedirs(ssrc)
+        open(os.path.join(ssrc, 'code.js'), 'w').write('%s\n%s\nlet t = 0;\nfunction update() { t++; }\nfunction draw() { cls(); const s = ART.streams.box; streamSprite(s, t < 2 ? 0 : 1, 10, 10); streamSprite(s, 2, 100, 10, { slot: 1, fx: true }); }\n' % (ART_BEGIN, ART_END))
+        open(os.path.join(ssrc, 'meta.json'), 'w').write('{"title": "Stream"}')
+        sart.write(ssrc, quiet=True)
+        if in_rom:
+            ok(os.path.exists(os.path.join(ssrc, 'rom', 'box.bin')) and 'pool' not in sst and sst['rom'] == 'box', 'stream(rom=True): the frames go to rom/box.bin, not into code.js')
+        sout = os.path.join(work, 'stream%d.nova' % in_rom); node('tools/pack.js', ssrc, sout)
+        sprobe = os.path.join(work, 'sprobe%d.mjs' % in_rom)
+        open(sprobe, 'w').write("""import { boot } from '%s/tools/devkit/harness.mjs';
+    const vm = boot(process.argv[2]);
+    const at = (x, y) => { const v = vm.out32[y * 256 + x]; return [v & 255, (v >> 8) & 255, (v >> 16) & 255]; };
+    vm.step(0); const a = { fill: at(30, 40), spot: at(16, 16), other: at(105, 30), flipspot: at(132, 16) };
+    vm.run(4); const b = { top: at(15, 15), corner: at(45, 45), low: at(15, 45), back: at(250, 200), other: at(105, 30) };
+    console.log(JSON.stringify({ a, b }));""" % ROOT)
+        sv = json.loads(node(sprobe, sout))
+        hx = lambda r, i: rgb555(sart.palettes[('spr', 0)].hexes['%s%d' % (r, i)])
+        ok(sv['a']['fill'] == hx('a', 1) and sv['a']['spot'] == hx('a', 2), 'streamSprite (frames in %s): the frame is loaded and drawn' % ('ROM' if in_rom else 'code'), str(sv['a']))
+        ok(sv['b']['top'] == hx('b', 1) and sv['b']['corner'] == hx('b', 0) and sv['b']['low'] == sv['b']['back'], 'and the next frame replaces it in the same slot (its empty part shows the backdrop)', str(sv['b']))
+        ok(sv['a']['other'] == hx('a', 1) and sv['b']['other'] == hx('a', 1) and sv['a']['flipspot'] == hx('a', 2), 'a second slot shows its own frame meanwhile, flipped with fx')
     gifp = os.path.join(work, 'bigs.gif')
     node('tools/devkit/gif.mjs', bout, gifp, '--from', '0', '--to', '10', '--crop', '90,40,120,80')
     ok(open(gifp, 'rb').read(6) == b'GIF89a', 'tools/devkit/gif.mjs records the cart as an animated GIF')

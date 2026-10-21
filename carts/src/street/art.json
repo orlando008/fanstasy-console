@@ -111,6 +111,9 @@
    }
   }
  },
+ "rom": [
+  "hero"
+ ],
  "scenes": {
   "city": {
    "h": 16,
@@ -139,6 +142,7 @@
   "hero": {
    "base": 512,
    "frames": 18,
+   "rom": true,
    "rows": 8,
    "slots": 1
   }

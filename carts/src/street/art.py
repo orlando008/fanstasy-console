@@ -2,8 +2,8 @@
 #   python3 carts/src/street/art.py carts/src/street
 # The test of the art kit's drawn figures (tools/devkit/art/figure.py on rig.py's skeleton; docs/dev/snes-picture.md):
 # a 96 px brawler drawn in designed shapes, with idle, walk, punch and kick animations rendered from poses and streamed
-# into tile memory as they play (art.stream()), on a night street after Streets of Rage 2: a city under a sky
-# gradient, a chain-link fence, paving in perspective.
+# into tile memory from the cart's ROM as they play (art.stream()), on a night street after Streets of Rage 2: a city
+# under a sky gradient, a chain-link fence, paving in perspective.
 import os, sys, math
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *
@@ -74,10 +74,10 @@ hero = Figure('brawler', height=96, line=BR.line, skin=BR.skin, hair=BR.hair, sh
               face='angry', hair_style='swept', top='tee')
 IDLE = [GUARD, pose(GUARD, y=1, arm_n=27, arm_f=42)]
 # His 18 frames are a stream: loaded into a slot of 128 tiles as they play (as big sprites they would take over 1,000
-# tiles); their pixels are packed into code.js.
+# tiles); their pixels are kept in the cart's ROM (rom/hero.bin).
 art.stream('hero', {name: [hero.render(p) for p in hero.animate(keys, n, loop=loop)]
                     for name, keys, n, loop in (('idle', IDLE, 2, True), ('walk', WALK, 8, True), ('punch', PUNCH, 4, False), ('kick', KICK, 4, False))},
-           pal=BR, region='spr')
+           pal=BR, region='spr', rom=True)
 
 SHADOW = art.sprite_palette(4, {'shade': '302830'})
 art.big_sprite('shadow', ellipse(56, 10, SHADOW.shade), pal=SHADOW, region='spr')
