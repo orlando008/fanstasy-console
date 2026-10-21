@@ -67,9 +67,10 @@ for y in range(141, 150):
 art.scene('ground', ground, pal=FLOOR, at=(64, 0), region='bg')
 
 # --- The brawler: one sprite palette, built on the rig, posed and animated. ---
-BR = art.sprite_palette(0, {'skin': ramp('e8a878', 4), 'hair': ramp('e0b040', 3), 'shirt': ramp('e8e8f0', 3, at=2),
+BR = art.sprite_palette(0, {'skin': ramp('e8a878', 4), 'hair': ramp('e0b040', 3), 'shirt': ramp('e0e0ec', 3, at=1),
                             'pants': ramp('3050a0', 3), 'shoe': ramp('503030', 2)})
-hero = Rig('brawler', height=64, skin=BR.skin, hair=BR.hair, shirt=BR.shirt, pants=BR.pants, shoes=BR.shoe)
+hero = Rig('brawler', height=64, skin=BR.skin, hair=BR.hair, shirt=BR.shirt, pants=BR.pants, shoes=BR.shoe,
+           face='angry', hair_style='swept', folds=True)        # the hand-drawn layer (detail.py), in every frame
 IDLE = [GUARD, pose(GUARD, y=1, arm_n=27, arm_f=42)]
 for name, keys, n, loop in (('idle', IDLE, 2, True), ('walk', WALK, 8, True), ('punch', PUNCH, 4, False), ('kick', KICK, 4, False)):
     art.animation(name, [hero.render(p) for p in hero.animate(keys, n, loop=loop)], pal=BR, region='spr')

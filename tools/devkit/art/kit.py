@@ -38,6 +38,7 @@ of it). Each is a module of its own here, and comes with `from kit import *`:
   scenery.py    sky(), stars(), orb(), clouds(), mountains(), hills(), treeline(), floor(), rope(), ellipse()
   lettering.py  big_text(), hud_bar(), frame(), scale2x()
   rig.py        Rig, pose(), filmstrip(), WALK, PUNCH, KICK ...: characters on a skeleton, posed and animated
+  detail.py     face(), hair(), crease(), stroke(), bunch(): the hand-drawn layer on top of the volumes
   preview.py    Sheet: a PNG of pictures, ramps and layer stacks, straight from art.py
   and here      art.big_sprite() (bigSprite() in code.js), art.animation(), art.gradient() (gradientLine() in scanline()), art.variant(),
                 Img.from_rows(mirror='x')
@@ -704,4 +705,5 @@ from sculpt import Sculpt, Mat       # noqa: E402  sprites sculpted from 3D shap
 from texture import noise, fbm, level, texture, variants, tile_fill  # noqa: E402  materials that tile seamlessly
 from scenery import sky, stars, orb, clouds, mountains, hills, treeline, floor, rope, ellipse  # noqa: E402  backgrounds
 from lettering import big_text, hud_bar, frame, scale2x, smooth_scale  # noqa: E402  HUD lettering, bars and frames
+from detail import face, hair, crease, stroke, bunch  # noqa: E402  the hand-drawn layer: faces, hair, folds
 from rig import Rig, pose, filmstrip, lerp_pose, mirror_sides, STAND, GUARD, WALK, PUNCH, KICK, HIT, JUMP  # noqa: E402  characters from a skeleton

@@ -342,6 +342,11 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   skeleton (near limbs pink, far limbs blue): check it for a limb that jumps or a foot that slides. `art.animation()`
   makes the frames big sprites that share every piece that does not change (the `street` cart's brawler: 18 frames in about
   410 tiles). Then `gif.mjs` makes a GIF for the person to judge the timing, which a still cannot show.
+- **Then draw the details by hand, with the kit** (`detail.py`): volumes alone look like mannequins. `face(img, x, y,
+  r, skin, view='side' | 'front', expression='neutral' | 'angry' | 'hurt' | 'happy')` (eyes with lids and sockets,
+  brows, a lip, from a head radius of 8; dots below 5), `hair(..., style='short' | 'spiky' | 'swept' | 'mohawk' | 'long'
+  | 'bald')` in lit clumps with highlight streaks, `crease()` and `bunch()` for cloth, `stroke()` for lines of muscle.
+  A rig draws them in every frame from its joints: `Rig(..., face='angry', hair_style='swept', folds=True)`.
 - **HUD and titles:** `big_text()` (smooth scaled, gradient-filled, outlined, shadowed), `hud_bar()`, `frame()`.
 - **Look while you work:** `Sheet().add(name, img, pal)` (and `add_layers()` for a stack of layers) saves a PNG from
   art.py without packing.

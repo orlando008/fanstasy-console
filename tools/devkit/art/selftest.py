@@ -261,6 +261,32 @@ ok(names == ['walk%d' % k for k in range(8)] and ra.anims['walk'] == names and c
 fsp = os.path.join(tempfile.mkdtemp(), 'f.png'); filmstrip(fsp, rg, walk[:3], rp)
 ok(open(fsp, 'rb').read(8) == b'\x89PNG\r\n\x1a\n', 'filmstrip writes a PNG')
 
+# --- The hand-drawn layer (detail.py) ---
+dp = Art().sprite_palette(0, {'skin': ramp('e8a878', 5), 'hair': ramp('6a3a20', 4), 'white': 'f8f8f0'})
+def hd():
+    return Sculpt(32, 34).ellipsoid(16, 18, 0, 10, 11, 10, dp.skin).render(contours=3)
+plain = hd()
+fc = face(hd(), 16, 18, 10, dp.skin, view='front', expression='neutral', white=dp.white)
+ok(fc.colors() <= set(dp.skin) | {dp.white} and sum(1 for r in fc.px for v in r if v == dp.white) >= 8, 'face: two eyes with whites (front, r 10), in the skin and white only')
+ok(fc.get(16, 30) == plain.get(16, 30) and fc.get(0, 0) == 0, 'and it draws only on the face, never outside the head')
+hurt = face(hd(), 16, 18, 10, dp.skin, view='front', expression='hurt', white=dp.white)
+ok(sum(1 for r in hurt.px for v in r if v == dp.white) < 4, 'hurt: the eyes are shut (no whites)')
+side = face(hd(), 16, 18, 10, dp.skin, view='side', expression='angry', white=dp.white)
+ok(any(side.get(x, y) == dp.white for x in range(18, 24) for y in range(15, 22)), 'side: the eye is towards the front of the head')
+for st in ('short', 'spiky', 'swept', 'mohawk', 'long', 'bald'):
+    hh = hair(hd(), 16, 17, 10, dp.hair, style=st, view='side')
+    ok(st == 'bald' or (set(dp.hair) & hh.colors()) and sum(1 for r in hh.px for v in r if v in dp.hair) > 40, 'hair %s: drawn in the hair ramp' % st)
+lh = hair(Img(48, 60), 24, 17, 10, dp.hair, style='long', view='side')
+ok(max(y for y in range(60) for x in range(48) if lh.px[y][x]) > 30, 'long hair hangs below the head')
+ok(raises(lambda: hair(hd(), 16, 17, 10, dp.hair, style='afro'), 'styles are'), 'an unknown hair style is an error that lists them')
+cl = Img(20, 10).rect(0, 0, 20, 10, dp.skin[2])
+crease(cl, dp.skin, [(2, 5), (18, 5)])
+ok(cl.get(10, 5) < dp.skin[2] and cl.get(10, 4) > dp.skin[2] and cl.get(10, 8) == dp.skin[2], 'crease: a dark line with a lit edge on the light\'s side, the rest untouched')
+on_only = Img(20, 10).rect(0, 0, 10, 10, dp.skin[2]); stroke(on_only, dp.skin, [(0, 5), (19, 5)], -1)
+ok(on_only.get(15, 5) == 0 and on_only.get(5, 5) == dp.skin[1], 'stroke changes only pixels of its ramp')
+rgd = Rig('brawler', height=64, skin=dp.skin, hair=dp.hair, face='angry', hair_style='swept', folds=True, white=dp.white)
+ok(set(dp.hair) & rgd.render(GUARD).colors() and dp.white in rgd.render(GUARD).colors(), 'Rig(face=, hair_style=, folds=): the details in every frame')
+
 # --- Files: written, packed and read back ---
 work = tempfile.mkdtemp(prefix='art-selftest-')
 try:
