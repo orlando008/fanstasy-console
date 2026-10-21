@@ -20,15 +20,14 @@ const ART = {
 ART.cityPos = [[40, 50], [66, 90], [128, 38], [176, 68], [212, 94]];
 // END ART
 
-// --- Sound (SPEC 5). The channel decides the voice: 0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample. ---
+// --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
+// so they never cut into the music and two can sound at once (the takings and the crowd's cheer).
 
 const SFX = { move: 0, select: 1, back: 2, pause: 3, refuse: 4, coin: 5, loss: 6, soldout: 7, cheer: 8, roll: 9, horn: 10, record: 11 };
 const SONG = { title: 0, tour: 1, concert: 2, writing: 3, road: 4, victory: 5, defeat: 6 };
-const SFX_CH = 1; // effects share channel 1 (pulse); the songs leave it free
-// Effects with noise (or saw or triangle) in them go on a channel with that voice. Fill this from audio.py:
-// node tools/devkit/music/sfx.mjs carts/rags-to-riches.nova 1 shows what each effect is.
-const SFX_VOICE_CH = { [SFX.refuse]: 4, [SFX.cheer]: 4, [SFX.roll]: 4 };
-function fx(n) { sfx(n, n in SFX_VOICE_CH ? SFX_VOICE_CH[n] : SFX_CH); }
+const SFX_CH = [7, 6];
+let fxNext = 0;
+function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
 
 // A song is only started if it is not already playing.
 let playing = -1;

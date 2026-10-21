@@ -1,9 +1,10 @@
 // Instrument panel shared by the SFX and Music tabs: waveform, ADSR envelope
-// with a live graph, volume, vibrato, pan, and importing samples into the
-// 16 KB Sample RAM (SPEC 5.2 and 5.4).
+// and its curve with a live graph, volume, vibrato, pan, echo send, and
+// importing samples into the 32 KB Sample RAM (SPEC 5.2, 5.4 and 5.6). A cart
+// made for the old chip (SPEC 5.7) has no curve or echo, and 16 KB.
 
 import {
-  DEFAULT_SAMPLE_RATE, INSTRUMENTS, SAMPLE_RAM, SAMPLE_SLOTS, WAVES, sampleBytes,
+  CURVES, DEFAULT_SAMPLE_RATE, INSTRUMENTS, SAMPLE_RAM, SAMPLE_SLOTS, WAVES, sampleBytes,
 } from '../formats/audio.js';
 import { button, h } from '../ui/dom.js';
 
@@ -49,7 +50,14 @@ export class InstrumentPanel {
       vol: num('vol', 'Volume', 15, 'Base volume (0-15)'),
       vibDepth: num('vibDepth', 'Vib depth', 15, 'Vibrato depth in 1/8 semitones'),
       vibSpeed: num('vibSpeed', 'Vib speed', 15, 'Vibrato speed'),
+      echo: num('echo', 'Echo', 15, 'How much goes into the echo unit (0-15); the song or echo() sets the echo itself'),
     };
+    this.curve = h('select', {
+      attrs: { 'aria-label': 'Envelope curve' },
+      on: { change: () => this.set('curve', this.curve.value) },
+    }, CURVES.map((c) => h('option', { value: c }, c === 'exp' ? 'Exponential (dies away)' : 'Straight lines')));
+    this.curveField = h('label', { class: 'inst-field wide' }, h('span', {}, 'Curve'), this.curve);
+    this.hint = h('p', { class: 'hint' });
 
     this.panFixed = h('input', { type: 'checkbox', on: { change: () => this.set('pan', this.panFixed.checked ? Number(this.pan.value) : null) } });
     this.pan = h('input', {
@@ -79,10 +87,11 @@ export class InstrumentPanel {
       h('div', { class: 'toolbar' }, this.select, button('Test', () => this.o.preview(this.index), { title: 'Play C-4 with this instrument' })),
       h('label', { class: 'inst-field wide' }, h('span', {}, 'Waveform'), this.wave),
       h('div', { class: 'inst-grid' }, Object.values(this.fields).map((f) => f.el)),
+      this.curveField,
       h('label', { class: 'inst-field wide' }, h('span', {}, 'Fixed pan'), h('span', { class: 'pan-row' }, this.panFixed, this.pan)),
       this.graph,
       this.sampleBox,
-      h('p', { class: 'hint' }, 'The channel decides the voice: pulse waves play on Pulse 1-2, noise on Noise, samples on PCM. The waveform also picks which channel sfx() uses.'));
+      this.hint);
   }
 
   setCart(cart) {
@@ -107,7 +116,14 @@ export class InstrumentPanel {
     this.select.value = String(this.index);
     const ins = this.inst;
     this.wave.value = ins.wave;
-    for (const k of ['a', 'd', 's', 'r', 'vol']) this.fields[k].input.value = ins[k];
+    for (const k of ['a', 'd', 's', 'r', 'vol', 'echo']) this.fields[k].input.value = ins[k];
+    const old = this.cart.chip === 1;
+    this.fields.echo.el.hidden = old;
+    this.curveField.hidden = old;
+    this.curve.value = ins.curve;
+    this.hint.textContent = old
+      ? 'This cart is for the old sound chip, where the channel decides the voice: pulse waves play on Pulse 1-2, noise on Noise, samples on PCM. The waveform also picks which channel sfx() uses.'
+      : 'Any channel plays any waveform. Samples are smoothed as they play; Echo sends the instrument into the echo unit.';
     this.fields.vibDepth.input.value = ins.vib[0];
     this.fields.vibSpeed.input.value = ins.vib[1];
     this.panFixed.checked = ins.pan != null;
@@ -117,7 +133,7 @@ export class InstrumentPanel {
     const s = this.cart.samples[ins.sample];
     this.sampleLoop.checked = !!s.loop;
     this.sampleInfo.textContent = `${s.data.length ? `${s.data.length} bytes at ${s.rate} Hz` : 'Empty'}. ` +
-      `Sample RAM: ${sampleBytes(this.cart.samples)} of ${SAMPLE_RAM} bytes used.`;
+      `Sample RAM: ${sampleBytes(this.cart.samples)} of ${this.ramMax} bytes used.`;
     this.drawGraph();
   }
 
@@ -130,8 +146,13 @@ export class InstrumentPanel {
     this.refresh();
   }
 
+  /** Bytes of Sample RAM: the old chip had 16 KB. */
+  get ramMax() {
+    return this.cart.chip === 1 ? 16384 : SAMPLE_RAM;
+  }
+
   drawGraph() {
-    const { a, d, s, r } = this.inst;
+    const { a, d, s, r } = this.inst, exp = this.inst.curve === 'exp' && this.cart.chip !== 1;
     const g = this.graph.getContext('2d'), W = this.graph.width, H = this.graph.height;
     const hold = 20;
     const total = Math.max(1, a + d + hold + r);
@@ -149,9 +170,15 @@ export class InstrumentPanel {
     g.beginPath();
     g.moveTo(x(0), y(0));
     g.lineTo(x(a), y(15));
-    g.lineTo(x(a + d), y(s));
-    g.lineTo(x(a + d + hold), y(s));
-    g.lineTo(x(a + d + hold + r), y(0));
+    if (exp) { // falls by 99% of the way over d frames, and to 1% over r frames (SPEC 5.2)
+      for (let f = 1; f <= d; f++) g.lineTo(x(a + f), y(s + (15 - s) * 0.01 ** (f / Math.max(1, d))));
+      g.lineTo(x(a + d + hold), y(s));
+      for (let f = 1; f <= r; f++) g.lineTo(x(a + d + hold + f), y(s * 0.01 ** (f / Math.max(1, r))));
+    } else {
+      g.lineTo(x(a + d), y(s));
+      g.lineTo(x(a + d + hold), y(s));
+      g.lineTo(x(a + d + hold + r), y(0));
+    }
     g.stroke();
     g.lineWidth = 1;
     g.fillStyle = '#8595a1';
@@ -170,7 +197,7 @@ export class InstrumentPanel {
     try {
       const ctx = new OfflineAudioContext(1, 1, DEFAULT_SAMPLE_RATE);
       const buf = await ctx.decodeAudioData(await file.arrayBuffer());
-      const free = SAMPLE_RAM - sampleBytes(this.cart.samples) + this.cart.samples[slot].data.length;
+      const free = this.ramMax - sampleBytes(this.cart.samples) + this.cart.samples[slot].data.length;
       const data = toPcm8(buf, DEFAULT_SAMPLE_RATE, free);
       this.o.editSample(slot, () => ({ rate: DEFAULT_SAMPLE_RATE, loop: null, data }));
       this.refresh();

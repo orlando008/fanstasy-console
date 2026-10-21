@@ -15,15 +15,14 @@ const ART = { tiles: {}, sprites: {}, scenes: {}, colors: {} };
 /** Queue one of ART.sprites at (x, y), above the background; opts as for spr (fx, fy ...). */
 function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.pal, prio: 3, ...opts }); }
 
-// --- Sound (SPEC 5). The channel decides the voice: 0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample. ---
+// --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
+// so they never cut into the music and two can sound at once.
 
 const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
 const SONG = { title: 0, play: 1 };
-const SFX_CH = 1; // effects share channel 1 (pulse); the songs leave it free
-// Effects with noise (or saw or triangle) in them go on a channel with that voice. Fill this from audio.py:
-// node tools/devkit/music/sfx.mjs carts/{{NAME}}.nova 1 shows what each effect is.
-const SFX_VOICE_CH = { [SFX.hit]: 4 };
-function fx(n) { sfx(n, n in SFX_VOICE_CH ? SFX_VOICE_CH[n] : SFX_CH); }
+const SFX_CH = [7, 6];
+let fxNext = 0;
+function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
 
 // A song is only started if it is not already playing.
 let playing = -1;

@@ -195,14 +195,14 @@ function drawBrick(c, r) {
 /** Hit brick i with a ball (or a nail): returns whether the ball bounces off it. */
 function hitBrick(i, nail = false) {
   const k = kind[i], wreck = wreckT > 0 && !nail;
-  if (k === GIRDER) { sfxv(SFX.girder, SFX_CH); ring(i); return true; }
+  if (k === GIRDER) { sfxv(SFX.girder); ring(i); return true; }
   quiet = 0; // only breakable bricks count: a ball can loop between girders forever
   if (k === STEEL) {
     hp[i] = Math.max(0, hp[i] - (wreck ? WRECK_STEEL : 1));
-    if (hp[i] > 0) { drawBrick(i % COLS, flr(i / COLS)); sfxv(SFX.dent, SFX_CH); ring(i); return true; }
+    if (hp[i] > 0) { drawBrick(i % COLS, flr(i / COLS)); sfxv(SFX.dent); ring(i); return true; }
   }
   addScore(k === WALL ? POINTS.wall : k === GLASS ? POINTS.glass : POINTS.steel);
-  sfxv(k === WALL ? SFX.wall : k === GLASS ? SFX.glass : SFX.steel, SFX_CH);
+  sfxv(k === WALL ? SFX.wall : k === GLASS ? SFX.glass : SFX.steel);
   burst(i, k);
   kind[i] = EMPTY;
   drawBrick(i % COLS, flr(i / COLS));
@@ -233,7 +233,7 @@ function newBall() {
 function launch(b) {
   b.stuck = false;
   [b.ux, b.uy] = [DIRS[b.dir][0], -DIRS[b.dir][1]];
-  sfxv(SFX.launch, SFX_CH);
+  sfxv(SFX.launch);
 }
 
 const paddleW = () => (power === PLANK ? PLANK_W : PADDLE_W);
@@ -271,9 +271,9 @@ function paddleBounce(b) {
   const zone = mid(0, flr((b.x - px) / (paddleW() / 8)), 7);
   [b.ux, b.uy] = [DIRS[zone][0], -DIRS[zone][1]];
   b.y = PADDLE_Y - BALL_R;
-  if (power === GLUE) { b.stuck = true; b.at = b.x - px; b.dir = zone; b.glueT = 0; sfxv(SFX.glue, SFX_CH); }
+  if (power === GLUE) { b.stuck = true; b.at = b.x - px; b.dir = zone; b.glueT = 0; sfxv(SFX.glue); }
   if (++paddleHits % SPEEDUP_HITS === 0) speed = Math.min(baseSpeed() + SPEEDUP_MAX, speed + SPEEDUP);
-  sfxv(SFX.paddle, SFX_CH);
+  sfxv(SFX.paddle);
 }
 
 const baseSpeed = () => BASE_SPEED + STAGE_SPEED * stage;
@@ -305,7 +305,7 @@ function updateCapsule() {
 
 function takePower(k) {
   addScore(CAPSULE_POINTS);
-  sfxv(SFX.capsule, SFX_CH);
+  sfxv(SFX.capsule);
   if (k <= GLUE) {
     // A paddle power replaces the last one; the paddle keeps its middle when it changes width.
     const mid0 = px + paddleW() / 2;
@@ -317,18 +317,18 @@ function takePower(k) {
     if (!b.stuck) {
       // Two more balls, 15 degrees either side of this one.
       for (const s of [S15, -S15]) balls.push({ ...b, ux: b.ux * C15 - b.uy * s, uy: b.ux * s + b.uy * C15 });
-      sfxv(SFX.triple, SFX_CH);
+      sfxv(SFX.triple);
     }
   } else if (k === SLOW) slowT = SLOW_FRAMES;
   else if (k === WRECKER) wreckT = WRECK_FRAMES;
-  else if (k === HARDHAT && lives < MAX_LIVES) { lives++; sfxv(SFX.oneUp, SFX_CH); }
+  else if (k === HARDHAT && lives < MAX_LIVES) { lives++; sfxv(SFX.oneUp); }
 }
 
 /** NAILS: A fires a nail from each end of the paddle. */
 function fireNails() {
   if (nails.length > NAIL_MAX - 2) return;
   nails.push({ x: px + 4, y: PADDLE_Y - 2 }, { x: px + paddleW() - 4, y: PADDLE_Y - 2 });
-  sfxv(SFX.nail, SFX_CH);
+  sfxv(SFX.nail);
 }
 
 function updateNails() {
@@ -347,7 +347,7 @@ function updateNails() {
 function clearPowers() {
   power = -1; slowT = 0; wreckT = 0; capsule = null; nails = [];
 }
-function bounce() { sfxv(SFX.wallBounce, SFX_CH); }
+function bounce() { sfxv(SFX.wallBounce); }
 
 // --- Flow ---
 
@@ -387,12 +387,12 @@ function addScore(n) {
   const at = nextLife < EXTRA_LIVES.length ? EXTRA_LIVES[nextLife] : 50000 * (nextLife);
   if (score >= at) {
     nextLife++;
-    if (lives < MAX_LIVES) { lives++; sfxv(SFX.oneUp, SFX_CH); }
+    if (lives < MAX_LIVES) { lives++; sfxv(SFX.oneUp); }
   }
 }
 
 function loseLife() {
-  sfxv(SFX.lost, SFX_CH);
+  sfxv(SFX.lost);
   clearPowers();
   if (--lives <= 0) { gameOver(); return; }
   speed = baseSpeed(); paddleHits = 0;
@@ -406,14 +406,14 @@ function nextStage() {
   lifeBonus = LIFE_BONUS * lives; // kept: the bonus itself can earn a life
   addScore(lifeBonus);
   play(-1);
-  sfxv(SFX.complete, SFX_CH);
+  sfxv(SFX.complete);
   finish(STAGES + 1);
 }
 
 function gameOver() {
   state = 'over'; timer = 0; balls = [];
   play(-1);
-  sfxv(SFX.over, SFX_CH);
+  sfxv(SFX.over);
   finish(stage + 1);
 }
 
@@ -433,7 +433,7 @@ function stageClear() {
   const sec = flr(stageT / 60), clock = `${flr(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
   play(-1);
   tally = { rows: [['BRICKS SMASHED', smashed], ['CLEAR TIME', clock], ['STAGE BONUS', bonus], ['TIME BONUS', time]], owed: bonus + time };
-  sfxv(SFX.clear, SFX_CH);
+  sfxv(SFX.clear);
 }
 
 const TALLY_ROW = 15, TALLY_PAY = 90, TALLY_STEP = 100; // frames per row; the frame the bonus starts paying
@@ -445,7 +445,7 @@ function updateTally() {
     const pay = go ? tally.owed : Math.min(tally.owed, TALLY_STEP);
     addScore(pay); tally.owed -= pay;
     if (go) timer = Math.max(timer, TALLY_PAY);
-    if (timer % 4 === 0 || !tally.owed) sfxv(SFX.tick, SFX_CH);
+    if (timer % 4 === 0 || !tally.owed) sfxv(SFX.tick);
     tally.paidAt = timer;
   } else if (!tally.owed && (go || timer >= tally.paidAt + 60)) nextStage();
 }
@@ -482,8 +482,8 @@ const lastInitials = () => (dget(INITIALS_SLOT) ? unpackInitials(dget(INITIALS_S
 /** UP/DOWN pick a letter, LEFT/RIGHT (or A and B) move, START saves (as does A on the last). */
 function enterInitials() {
   const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
-  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; sfxv(SFX.move, SFX_CH); }
-  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; sfxv(SFX.move, SFX_CH); }
+  if (btnp(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; sfxv(SFX.move); }
+  if (btnp(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; sfxv(SFX.move); }
   if (pressed(LEFT) || pressed(B)) ini.pos = Math.max(0, ini.pos - 1);
   if (pressed(RIGHT)) ini.pos = Math.min(2, ini.pos + 1);
   const done = pressed(START) || (pressed(A) && ini.pos === 2);
@@ -492,7 +492,7 @@ function enterInitials() {
   const v = packInitials(ini.chars.join(''));
   dset(INITIALS_SLOT, v);
   dset(TOP_SLOT + rank * ENTRY + 2, v);
-  sfxv(SFX.select, SFX_CH);
+  sfxv(SFX.select);
   showScores(rank);
 }
 
@@ -519,12 +519,12 @@ function updateTitle() {
       const h = hash(n * 13 + k);
       debris.push({ x: x + ((h & 31) - 16), y, vx: ((h >> 5 & 255) / 255 - 0.5) * 2, vy: -((h >> 13) & 255) / 255 * 1.2, c: DUST, t: 24, f: 'dust' });
     }
-    sfxv(SFX.thud, SFX_CH);
+    sfxv(SFX.thud);
   }
   const go = pressed(START) || pressed(A);
   if (timer < LOGO_DONE) { if (go) timer = LOGO_DONE; return; }
-  if (pressed(UP) || pressed(DOWN)) { menu ^= 1; sfxv(SFX.move, SFX_CH); }
-  if (go) { sfxv(SFX.select, SFX_CH); if (menu === 0) startRun(); else showScores(-1); }
+  if (pressed(UP) || pressed(DOWN)) { menu ^= 1; sfxv(SFX.move); }
+  if (go) { sfxv(SFX.select); if (menu === 0) startRun(); else showScores(-1); }
 }
 
 // --- Update ---
@@ -547,24 +547,24 @@ function update() {
   else if (state === 'clear') updateTally();
   else if (state === 'over' || state === 'done') {
     if (timer > 60 && (pressed(START) || pressed(A))) {
-      sfxv(SFX.select, SFX_CH);
+      sfxv(SFX.select);
       if (rank >= 0) { state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0 }; play(TITLE_SONG); }
       else toTitle();
     }
   } else if (state === 'initials') enterInitials();
-  else if (state === 'scores') { if (pressed(START) || pressed(A) || pressed(B)) { sfxv(SFX.select, SFX_CH); toTitle(); } }
+  else if (state === 'scores') { if (pressed(START) || pressed(A) || pressed(B)) { sfxv(SFX.select); toTitle(); } }
   updateDebris();
   prevMask = inputMask;
 }
 
 function updatePlay() {
   if (paused) {
-    if (pressed(UP) || pressed(DOWN)) { pauseSel ^= 1; sfxv(SFX.move, SFX_CH); }
-    if (pressed(B)) { paused = false; sfxv(SFX.pause, SFX_CH); }
-    else if (pressed(START) || pressed(A)) { sfxv(pauseSel === 0 ? SFX.pause : SFX.select, SFX_CH); if (pauseSel === 0) paused = false; else toTitle(); }
+    if (pressed(UP) || pressed(DOWN)) { pauseSel ^= 1; sfxv(SFX.move); }
+    if (pressed(B)) { paused = false; sfxv(SFX.pause); }
+    else if (pressed(START) || pressed(A)) { sfxv(pauseSel === 0 ? SFX.pause : SFX.select); if (pauseSel === 0) paused = false; else toTitle(); }
     return;
   }
-  if (pressed(START)) { paused = true; pauseSel = 0; sfxv(SFX.pause, SFX_CH); return; }
+  if (pressed(START)) { paused = true; pauseSel = 0; sfxv(SFX.pause); return; }
   stageT++;
   // The paddle: LEFT/RIGHT, faster with B held.
   const v = inputMask & BIT(B) ? DASH_SPEED : PADDLE_SPEED;
@@ -673,10 +673,11 @@ function play(n) {
   song = n;
   music(n);
 }
-const SFX_CH = 1;
-// Effects with noise (or saw or triangle) in them go on a channel with that voice: the channel decides the voice.
-const SFX_VOICE_CH = {3: 4, 4: 4};
-function sfxv(n, ch) { sfx(n, n in SFX_VOICE_CH ? SFX_VOICE_CH[n] : ch); }
+// The songs use channels 0 to 5; effects take turns on 7 and 6, so they never cut into the music and two can sound at once
+// (any channel plays any voice: SPEC 5).
+const FX_CHS = [7, 6];
+let fxNext = 0;
+function sfxv(n) { sfx(n, FX_CHS[fxNext]); fxNext ^= 1; }
 
 // --- Draw ---
 

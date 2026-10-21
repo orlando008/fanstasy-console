@@ -1,4 +1,5 @@
 {
+ "chip": 2,
  "instruments": [
   {
    "wave": "pulse25",
@@ -37,7 +38,8 @@
     0,
     0
    ],
-   "pan": 0.2
+   "pan": 0.2,
+   "echo": 2
   },
   {
    "wave": "noise",
@@ -58,7 +60,7 @@
    "d": 0,
    "s": 15,
    "r": 6,
-   "vol": 12,
+   "vol": 7,
    "vib": [
     0,
     0
@@ -84,7 +86,7 @@
    "d": 4,
    "s": 10,
    "r": 8,
-   "vol": 11,
+   "vol": 10,
    "vib": [
     0,
     0
@@ -110,7 +112,7 @@
    "d": 0,
    "s": 15,
    "r": 3,
-   "vol": 12,
+   "vol": 8,
    "vib": [
     0,
     0
@@ -144,43 +146,52 @@
    "pan": null
   },
   {
-   "wave": "pulse12",
+   "wave": "sample",
    "a": 0,
-   "d": 3,
-   "s": 6,
-   "r": 2,
-   "vol": 9,
+   "d": 24,
+   "s": 0,
+   "r": 12,
+   "vol": 10,
    "vib": [
     0,
     0
    ],
-   "pan": null
+   "pan": null,
+   "sample": 0,
+   "echo": 6,
+   "curve": "exp"
   },
   {
-   "wave": "saw",
-   "a": 18,
-   "d": 12,
-   "s": 6,
+   "wave": "sample",
+   "a": 12,
+   "d": 0,
+   "s": 15,
    "r": 24,
    "vol": 6,
    "vib": [
-    1,
-    3
+    0,
+    0
    ],
-   "pan": null
+   "pan": null,
+   "sample": 1,
+   "echo": 6,
+   "curve": "exp"
   },
   {
-   "wave": "pulse50",
-   "a": 1,
-   "d": 8,
-   "s": 11,
-   "r": 12,
-   "vol": 7,
+   "wave": "sample",
+   "a": 4,
+   "d": 10,
+   "s": 13,
+   "r": 10,
+   "vol": 6,
    "vib": [
     0,
     0
    ],
-   "pan": null
+   "pan": null,
+   "sample": 2,
+   "echo": 6,
+   "curve": "exp"
   },
   {
    "wave": "noise",
@@ -209,17 +220,20 @@
    "pan": null
   },
   {
-   "wave": "pulse25",
-   "a": 1,
-   "d": 11,
+   "wave": "sample",
+   "a": 2,
+   "d": 20,
    "s": 11,
-   "r": 4,
-   "vol": 7,
+   "r": 10,
+   "vol": 6,
    "vib": [
     0,
     0
    ],
-   "pan": null
+   "pan": null,
+   "sample": 3,
+   "echo": 4,
+   "curve": "exp"
   },
   {
    "wave": "noise-short",
@@ -232,7 +246,8 @@
     0,
     0
    ],
-   "pan": null
+   "pan": null,
+   "echo": 4
   },
   {
    "wave": "noise-short",
@@ -248,30 +263,35 @@
    "pan": null
   },
   {
-   "wave": "pulse50",
-   "a": 2,
-   "d": 6,
-   "s": 9,
-   "r": 8,
-   "vol": 9,
+   "wave": "sample",
+   "a": 0,
+   "d": 12,
+   "s": 0,
+   "r": 20,
+   "vol": 8,
    "vib": [
     0,
     0
    ],
-   "pan": null
+   "pan": null,
+   "sample": 4,
+   "echo": 6,
+   "curve": "exp"
   },
   {
-   "wave": "triangle",
+   "wave": "sample",
    "a": 0,
-   "d": 0,
-   "s": 15,
-   "r": 2,
-   "vol": 15,
+   "d": 60,
+   "s": 6,
+   "r": 6,
+   "vol": 13,
    "vib": [
     0,
     0
    ],
-   "pan": null
+   "pan": null,
+   "sample": 5,
+   "curve": "exp"
   }
  ],
  "patterns": [
@@ -301,9 +321,13 @@
      null,
      {
       "fx": "F0B"
-     }
+     },
+     null,
+     null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -321,9 +345,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -341,9 +369,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -361,9 +393,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -385,9 +421,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -405,9 +445,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -425,9 +469,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -445,9 +493,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -477,9 +529,13 @@
       "v": 5
      },
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -497,9 +553,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -517,9 +577,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -537,9 +601,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -561,9 +629,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -581,9 +653,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -605,9 +681,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -625,9 +705,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -657,9 +741,13 @@
       "v": 5
      },
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -677,9 +765,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -697,9 +789,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -717,9 +813,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -741,9 +841,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -761,9 +865,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -781,9 +889,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -801,9 +913,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -833,9 +949,13 @@
       "v": 5
      },
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -853,9 +973,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -873,9 +997,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -893,9 +1021,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -917,9 +1049,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -937,9 +1073,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -957,9 +1097,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -977,9 +1121,13 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -1015,7 +1163,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1029,7 +1179,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1047,7 +1199,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1067,7 +1221,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1085,7 +1241,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1099,7 +1257,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1125,7 +1285,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1139,7 +1301,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1161,7 +1325,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1175,7 +1341,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1197,7 +1365,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1213,7 +1383,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1239,7 +1411,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1253,7 +1427,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1275,7 +1451,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1289,7 +1467,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1315,7 +1495,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1329,7 +1511,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1347,7 +1531,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1367,7 +1553,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1385,7 +1573,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1399,7 +1589,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1425,7 +1617,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1439,7 +1633,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1461,7 +1657,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1475,7 +1673,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1497,7 +1697,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1513,7 +1715,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1539,7 +1743,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1553,7 +1759,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1575,7 +1783,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1589,7 +1799,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1615,7 +1827,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1629,7 +1843,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1647,7 +1863,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1667,7 +1885,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1685,7 +1905,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1699,7 +1921,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1725,7 +1949,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1739,7 +1965,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1761,7 +1989,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1775,7 +2005,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1797,7 +2029,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1813,7 +2047,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1839,7 +2075,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1853,7 +2091,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1875,7 +2115,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1889,7 +2131,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1915,7 +2159,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1929,7 +2175,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1947,7 +2195,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1963,7 +2213,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -1985,7 +2237,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -1999,7 +2253,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2021,7 +2277,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2035,7 +2293,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2061,7 +2321,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2075,7 +2337,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2093,7 +2357,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2109,7 +2375,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2135,7 +2403,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2149,7 +2419,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2171,7 +2443,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2185,7 +2459,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ]
    ]
   },
@@ -2219,7 +2495,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2233,7 +2511,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2255,7 +2535,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2271,7 +2553,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2293,7 +2577,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2307,7 +2593,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2329,7 +2617,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2343,7 +2633,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2369,7 +2661,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2383,7 +2677,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2401,7 +2697,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2417,7 +2715,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2443,7 +2743,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2457,7 +2759,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2483,7 +2787,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2497,7 +2803,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2527,7 +2835,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2541,7 +2851,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2559,7 +2871,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2575,7 +2889,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2597,7 +2913,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2611,7 +2929,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2633,7 +2953,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2647,7 +2969,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2673,7 +2997,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2687,7 +3013,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2705,7 +3033,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2721,7 +3051,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2747,7 +3079,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2761,7 +3095,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2787,7 +3123,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2801,7 +3139,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2831,7 +3171,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2845,7 +3187,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2863,7 +3207,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2879,7 +3225,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2901,7 +3249,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2915,7 +3265,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2937,7 +3289,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2951,7 +3305,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -2977,7 +3333,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -2991,7 +3349,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3009,7 +3369,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3025,7 +3387,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -3051,7 +3415,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3065,7 +3431,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -3091,7 +3459,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3105,7 +3475,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -3135,7 +3507,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3149,7 +3523,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3167,7 +3543,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3183,7 +3561,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3201,7 +3581,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3215,7 +3597,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3237,7 +3621,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3251,7 +3637,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      {
@@ -3277,7 +3665,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3291,7 +3681,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3309,7 +3701,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3325,7 +3719,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3347,7 +3743,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3361,7 +3759,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3383,7 +3783,9 @@
      },
      {
       "fx": "F07"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3397,7 +3799,9 @@
      null,
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ]
    ]
   },
@@ -3427,7 +3831,9 @@
      },
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -3436,6 +3842,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3459,6 +3867,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -3472,6 +3882,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3495,6 +3907,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -3504,6 +3918,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3531,6 +3947,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -3543,6 +3961,8 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
@@ -3563,6 +3983,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -3572,6 +3994,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3599,6 +4023,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -3608,6 +4034,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3635,6 +4063,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -3644,6 +4074,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3667,6 +4099,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -3676,6 +4110,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3703,6 +4139,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -3712,6 +4150,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3735,6 +4175,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -3748,6 +4190,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3771,6 +4215,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -3780,6 +4226,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3807,6 +4255,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -3819,6 +4269,8 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
@@ -3839,6 +4291,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -3848,6 +4302,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3875,6 +4331,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -3884,6 +4342,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3911,6 +4371,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -3920,6 +4382,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3943,6 +4407,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -3952,6 +4418,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -3979,6 +4447,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -3988,6 +4458,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4011,6 +4483,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -4024,6 +4498,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4047,6 +4523,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -4056,6 +4534,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4083,6 +4563,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -4092,6 +4574,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4115,6 +4599,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -4124,6 +4610,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4151,6 +4639,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -4160,6 +4650,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4187,6 +4679,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -4196,6 +4690,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4219,6 +4715,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -4228,6 +4726,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4255,6 +4755,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -4264,6 +4766,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4287,6 +4791,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -4296,6 +4802,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4323,6 +4831,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -4332,6 +4842,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4355,6 +4867,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -4364,6 +4878,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4391,6 +4907,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -4400,6 +4918,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4423,6 +4943,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -4432,6 +4954,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4459,6 +4983,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
@@ -4475,6 +5001,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
@@ -4495,6 +5023,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
@@ -4511,6 +5041,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ]
    ]
@@ -4541,7 +5073,9 @@
      },
      {
       "fx": "F06"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -4550,6 +5084,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4577,6 +5113,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -4586,6 +5124,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4613,6 +5153,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -4622,6 +5164,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4645,6 +5189,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -4654,6 +5200,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4681,6 +5229,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -4690,6 +5240,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4717,6 +5269,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -4726,6 +5280,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4753,6 +5309,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -4762,6 +5320,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4789,6 +5349,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -4798,6 +5360,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4825,6 +5389,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -4834,6 +5400,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4857,6 +5425,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -4866,6 +5436,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4893,6 +5465,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -4902,6 +5476,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4925,6 +5501,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -4934,6 +5512,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4961,6 +5541,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -4970,6 +5552,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -4997,6 +5581,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5006,6 +5592,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5033,6 +5621,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -5042,6 +5632,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5065,6 +5657,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5074,6 +5668,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5101,6 +5697,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5110,6 +5708,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5137,6 +5737,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5146,6 +5748,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5173,6 +5777,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -5182,6 +5788,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5205,6 +5813,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5214,6 +5824,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5241,6 +5853,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5250,6 +5864,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5273,6 +5889,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5282,6 +5900,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5309,6 +5929,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -5318,6 +5940,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5345,6 +5969,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5354,6 +5980,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5381,6 +6009,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5390,6 +6020,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5413,6 +6045,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5422,6 +6056,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5445,6 +6081,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -5454,6 +6092,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5481,6 +6121,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5493,6 +6135,8 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
@@ -5513,6 +6157,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5522,6 +6168,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5549,6 +6197,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5558,6 +6208,8 @@
       "i": 11,
       "v": 4
      },
+     null,
+     null,
      null,
      null,
      null,
@@ -5585,6 +6237,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
@@ -5601,6 +6255,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
@@ -5621,6 +6277,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
@@ -5637,6 +6295,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ]
    ]
@@ -5671,7 +6331,9 @@
      },
      {
       "fx": "F05"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -5689,6 +6351,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5709,6 +6373,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5733,6 +6399,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5753,6 +6421,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -5771,6 +6441,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5795,6 +6467,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5815,6 +6489,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5835,6 +6511,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5853,6 +6531,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5877,6 +6557,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5897,6 +6579,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5921,6 +6605,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -5939,6 +6625,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -5959,6 +6647,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -5979,6 +6669,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -6007,6 +6699,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6025,6 +6719,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6045,6 +6741,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6069,6 +6767,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6089,6 +6789,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -6107,6 +6809,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6131,6 +6835,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6151,6 +6857,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6171,6 +6879,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6189,6 +6899,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6213,6 +6925,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6233,6 +6947,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6257,6 +6973,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -6275,6 +6993,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6295,6 +7015,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6315,6 +7037,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -6343,6 +7067,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6361,6 +7087,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6381,6 +7109,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6405,6 +7135,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6425,6 +7157,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -6443,6 +7177,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6467,6 +7203,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6487,6 +7225,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6507,6 +7247,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6525,6 +7267,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6549,6 +7293,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6569,6 +7315,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6593,6 +7341,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -6611,6 +7361,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6631,6 +7383,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6651,6 +7405,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -6679,6 +7435,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6697,6 +7455,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6717,6 +7477,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6737,6 +7499,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6761,6 +7525,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -6779,6 +7545,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6799,6 +7567,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6819,6 +7589,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6843,6 +7615,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6861,6 +7635,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6881,6 +7657,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -6901,6 +7679,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6925,6 +7705,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
@@ -6943,6 +7725,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
@@ -6963,6 +7747,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -6983,6 +7769,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ]
    ]
@@ -7017,7 +7805,9 @@
      },
      {
       "fx": "F05"
-     }
+     },
+     null,
+     null
     ],
     [
      null,
@@ -7035,6 +7825,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7055,6 +7847,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7079,6 +7873,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7099,6 +7895,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -7117,6 +7915,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7141,6 +7941,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7161,6 +7963,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7185,6 +7989,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7203,6 +8009,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7227,6 +8035,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7247,6 +8057,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7271,6 +8083,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -7289,6 +8103,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7313,6 +8129,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7333,6 +8151,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -7361,6 +8181,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7379,6 +8201,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7399,6 +8223,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7419,6 +8245,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7443,6 +8271,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -7461,6 +8291,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7481,6 +8313,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7501,6 +8335,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7525,6 +8361,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7543,6 +8381,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7563,6 +8403,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7583,6 +8425,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7607,6 +8451,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -7625,6 +8471,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7649,6 +8497,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7669,6 +8519,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -7697,6 +8549,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7715,6 +8569,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7735,6 +8591,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7759,6 +8617,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7779,6 +8639,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -7797,6 +8659,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7821,6 +8685,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7841,6 +8707,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7865,6 +8733,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7883,6 +8753,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7907,6 +8779,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7927,6 +8801,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -7951,6 +8827,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -7969,6 +8847,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -7993,6 +8873,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -8013,6 +8895,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -8041,6 +8925,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -8059,6 +8945,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -8079,6 +8967,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -8099,6 +8989,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -8123,6 +9015,8 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
@@ -8141,6 +9035,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -8161,6 +9057,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -8181,6 +9079,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -8205,6 +9105,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -8223,6 +9125,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -8243,6 +9147,8 @@
       "i": 2,
       "v": 3
      },
+     null,
+     null,
      null
     ],
     [
@@ -8263,6 +9169,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -8287,6 +9195,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
@@ -8305,6 +9215,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
@@ -8325,6 +9237,8 @@
       "i": 10,
       "v": 10
      },
+     null,
+     null,
      null
     ],
     [
@@ -8345,6 +9259,8 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ]
    ]
@@ -8371,9 +9287,13 @@
      },
      {
       "fx": "F03"
-     }
+     },
+     null,
+     null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -8387,12 +9307,6 @@
      null,
      null,
      null,
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8403,9 +9317,23 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
      null,
      null,
      null,
@@ -8431,12 +9359,6 @@
       "i": 10,
       "v": 10
      },
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8444,12 +9366,6 @@
     [
      null,
      null,
-     null,
-     null,
-     null,
-     null
-    ],
-    [
      null,
      null,
      null,
@@ -8463,9 +9379,33 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
      null,
      null,
      null,
@@ -8491,12 +9431,6 @@
       "i": 10,
       "v": 10
      },
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8504,12 +9438,6 @@
     [
      null,
      null,
-     null,
-     null,
-     null,
-     null
-    ],
-    [
      null,
      null,
      null,
@@ -8523,12 +9451,6 @@
      null,
      null,
      null,
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8539,9 +9461,43 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
      null,
      null,
      null,
@@ -8567,12 +9523,6 @@
       "i": 10,
       "v": 10
      },
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8583,9 +9533,23 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
      null,
      null,
      null,
@@ -8611,9 +9575,13 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -8631,9 +9599,13 @@
       "i": 3,
       "v": 6
      },
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -8651,9 +9623,13 @@
       "i": 3,
       "v": 7
      },
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -8671,9 +9647,13 @@
       "i": 3,
       "v": 8
      },
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
      null,
      null,
      null,
@@ -8708,12 +9688,6 @@
       "i": 17,
       "v": 8
      },
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8721,12 +9695,6 @@
     [
      null,
      null,
-     null,
-     null,
-     null,
-     null
-    ],
-    [
      null,
      null,
      null,
@@ -8740,12 +9708,6 @@
      null,
      null,
      null,
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8753,12 +9715,6 @@
     [
      null,
      null,
-     null,
-     null,
-     null,
-     null
-    ],
-    [
      null,
      null,
      null,
@@ -8772,12 +9728,6 @@
      null,
      null,
      null,
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8785,12 +9735,6 @@
     [
      null,
      null,
-     null,
-     null,
-     null,
-     null
-    ],
-    [
      null,
      null,
      null,
@@ -8804,12 +9748,6 @@
      null,
      null,
      null,
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8817,12 +9755,6 @@
     [
      null,
      null,
-     null,
-     null,
-     null,
-     null
-    ],
-    [
      null,
      null,
      null,
@@ -8836,12 +9768,6 @@
      null,
      null,
      null,
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8849,12 +9775,6 @@
     [
      null,
      null,
-     null,
-     null,
-     null,
-     null
-    ],
-    [
      null,
      null,
      null,
@@ -8868,12 +9788,6 @@
      null,
      null,
      null,
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8881,12 +9795,6 @@
     [
      null,
      null,
-     null,
-     null,
-     null,
-     null
-    ],
-    [
      null,
      null,
      null,
@@ -8900,12 +9808,6 @@
      null,
      null,
      null,
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8916,9 +9818,143 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
      null,
      null,
      null,
@@ -8940,12 +9976,6 @@
       "n": "OFF"
      },
      null,
-     null
-    ],
-    [
-     null,
-     null,
-     null,
      null,
      null,
      null
@@ -8956,9 +9986,23 @@
      null,
      null,
      null,
+     null,
+     null,
      null
     ],
     [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ],
+    [
+     null,
+     null,
      null,
      null,
      null,
@@ -8977,7 +10021,13 @@
     2,
     1
    ],
-   "loop": 1
+   "loop": 1,
+   "echo": {
+    "delay": 6,
+    "feedback": 5,
+    "volume": 6,
+    "tone": 9
+   }
   },
   {
    "order": [
@@ -8986,7 +10036,13 @@
     2,
     1
    ],
-   "loop": 0
+   "loop": 0,
+   "echo": {
+    "delay": 5,
+    "feedback": 4,
+    "volume": 5,
+    "tone": 9
+   }
   },
   {
    "order": [
@@ -8995,7 +10051,13 @@
     3,
     4
    ],
-   "loop": 0
+   "loop": 0,
+   "echo": {
+    "delay": 7,
+    "feedback": 5,
+    "volume": 6,
+    "tone": 8
+   }
   },
   {
    "order": [
@@ -9004,13 +10066,25 @@
     5,
     6
    ],
-   "loop": 0
+   "loop": 0,
+   "echo": {
+    "delay": 8,
+    "feedback": 6,
+    "volume": 6,
+    "tone": 8
+   }
   },
   {
    "order": [
     7
    ],
-   "loop": null
+   "loop": null,
+   "echo": {
+    "delay": 6,
+    "feedback": 5,
+    "volume": 6,
+    "tone": 9
+   }
   }
  ],
  "sfx": [
@@ -9028,7 +10102,35 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9045,7 +10147,35 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9062,7 +10192,35 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9079,7 +10237,35 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9105,7 +10291,33 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9130,7 +10342,34 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9149,7 +10388,35 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9191,7 +10458,31 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9204,7 +10495,36 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9219,7 +10539,34 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9242,7 +10589,33 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9277,7 +10650,29 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9301,7 +10696,34 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9324,7 +10746,35 @@
     },
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9349,7 +10799,34 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9369,7 +10846,34 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9398,7 +10902,33 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9411,7 +10941,37 @@
     },
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9430,7 +10990,35 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
   },
   {
@@ -9447,8 +11035,85 @@
     null,
     {
      "n": "OFF"
-    }
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
    ]
+  }
+ ],
+ "samples": [
+  {
+   "rate": 8372,
+   "loop": [
+    960,
+    992
+   ],
+   "data": "HRb0DR3AiAHVuzcWSCAp1QNEJj8+0Bcc6qASBCpZU3ZJLxEPFuu63trKAQspJCb+ACIkMTcEDRT/0PH7EjVEXFJBKRwZAt7e3NPq+xIbIQ8IFRwnLxkTFAnt7/UEHDBGTEY3KSER+Ovk3OPvAA4XEw0RFx4mIBkWEP739v0MHjI/QjwzKh0K++/l5Or1AQwQDhATGR8fHBkUCQD7/AQRITA5OjYwJhgJ/PHr6vD5AgkMDhAUGhwcGxcQCAL/AQkVIi00NTIsIhYJ/fTv8PT7AgcKDREVGRoaGRUOCAMCBg0YIiswMS4oHxQI/vfz9Pj9AgYKDREVFxkZFxINCAUFCREZIiksLSokHBII//n39/r+AgYJDREUFhcXFREMCQcIDBMaIScqKichGhEIAfz5+vz/AgYJDRETFRYVExAMCgkLDxQbISUnJyQfGBAIAv78/P0AAwYKDRATFBUUEg8MCgoMEBUbICMlJCEcFg8IA//+/f8BAwYKDRASExMSEQ4MCwwOEhYbHyIjIh8aFQ4JBAH//wACBAcKDQ8REhIREA4NDA0PExcbHiAhIB0ZFA4JBQIAAAECBQcKDQ8QEREQDw4NDQ4QExcbHR8fHhsXEw4JBgMCAQIDBQcKDA4QEBAQDw4NDg8RFBcaHR4eHBoWEg4KBgQDAgMEBggKDA4PEBAPDg4ODhASFBcaHB0cGxgVEQ0KBwUDAwMFBggKDA0ODw8PDg4ODxASFRcZGxwbGhcUEQ0KBwUEBAQFBwgKDA0ODg4ODg4ODxETFRcZGhsaGRYTEA0KCAYFBAUGBwgKCw0NDg4ODg4PDxETFRcYGRoZGBUTEA0KCAYFBQUGBwkKCwwNDQ4ODg4PEBETFRYYGRkYFxUSDw0KCAcGBgYHCAkKCwwNDQ0ODg4PEBETFRYXGBgXFhQSDw0KCQcGBgYHCAkKCwwMDQ0NDg4PEBETFBYXFxcWFRMRDw0LCQgHBwcHCAkKCwwMDQ0NDg4PEBITFBUWFxYWFBMRDw0LCQgHBwcHCAkKCwsMDA0NDg4PEBITFBUWFhYVFBIQDgwLCQgIBwcICAkKCwsMDA0NDg4PEBITFBUVFRUUExIQDgwLCQgICAgICAkKCgsMDA0NDg4PEBETFBQVFRQUExEQDgwLCgkICAgICQkKCgsLDAwNDg4PEBESExQUFBQTEhEPDgwLCgkICAgICQkKCgsLDAwNDg4PEBESExQUFBMTEhAPDgwLCgkJCAgICQkKCgsLDAwNDg4PEBESExMTExMSERAPDQwLCgkJCAgJCQkKCgsLDAwNDg4PEBESEhMTExISERAPDQw="
+  },
+  {
+   "rate": 6279,
+   "loop": [
+    0,
+    3072
+   ],
+   "data": "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"
+  },
+  {
+   "rate": 8372,
+   "loop": [
+    512,
+    544
+   ],
+   "data": "ChMYJBMi2v0kDCDh/uwEBtnp7iIV5RjjCeLYHunpJx7wJQcT8SkWKiX3++zp4vMJ2gzy7xT67fgJ1xzVDBTXFPcK5uz3L/ohLCsA/woa6RQVF9sZ2+v9EecP9OTl3trjDCf29DQYEAUaKA0J7yXoAxblCRT9Bdbp1QHc5wwGE/b/Fw8KFggXOzcgFgn3/xob+A0I//r94vTY4vLu2AT4/OUOByYgNy41GScpKgsiHxAaFPby2vv94Ono58nt6PTxBhsgLhEbKjMaLicFFgX29Pfp5Nbn3uXgyum6z8zZ1AT6+iIWMiw4SD4nNCgWBRMLFQ725PbIyNjWvdHey9XW5xMNND87MU86Myo/JhcYAg7+7/r0zdvL4NW8u7fdyuPtBRcuJkc8RTs2ODAmLB8DAf4F+ubL38zLysO8zL7I5+L6IB1ESkhFUVAzNjEnGgsOCeji6+HWu8nLx7uoxr7b+AUPKUpCVFBHTTgyMSEXGRIK6+fZ18zPuaq1pbK1y9Tr+xstSlJRVVRWQ0Y8JygRBgLu7tvNzbW7pqKvq6iz1+kFFzhJVV5jXFZKTEA4JyEOAfPo1se7tKmuoaKYp7vM4gAbN01eZm1iXFRJQDUrGRT/9eTWyMKwrJ+cmZWdq8PdACM+VWZucm5kW1NJPC4iDv7x4M/Fu66jmJGSkZynwN0AI0NcbXZ4dGxiV0w/MSIRAO/ez8G0qZ6UjIiKk6S93Q=="
+  },
+  {
+   "rate": 8372,
+   "loop": [
+    192,
+    224
+   ],
+   "data": "AC9SZnBycGpiWE1CNSgbDgDy5djLvrOonpaQjpCartEANFhqcnNwaWFXTEA0JxoNAPPm2czAtKmfl5CNjpaozAA4XW50dG9pYFZLPzMnGg0A8+bZzcG1qqCXkYyMkqPIAD1hcHV0b2hfVUo+MiYaDQDz5trOwraroZiRjIuQn8MAQGVydnVvZ15UST4xJhkMAPTn2s/Ct6yimZGLio6bwABEaHR3dW5nXlNIPTElGQwA9Ofbz8O4raKZkouJjJi8AEdrdXh1bmdeUkg9MCUZDAD059vQw7iuopmSi4iLlbk="
+  },
+  {
+   "rate": 8372,
+   "loop": [
+    1280,
+    1312
+   ],
+   "data": "AGhsLhMhC72IptfIk5jgEwDtIGhtOClaeEP13+3SlJgAY2kzGycRxZKs2MqZnuIRAO8eYmc2KFRuO+/Z5c2XnQBeZzgiLhfOnLLazaCl5BAA8BxbYDMmTmQy6dLeyJmiAFplOykzHdenud3Qp6zmDwDxGlRZMCNHWSnjzdfFm6YAVWI/MDkj4LHA4dSusukOAPIXTlIsH0BPIN3H0MGeqwBRYEI1PinqvMjk2LW56w0A8xVHSygcOEQW18LLvqCvAE1eRDtDLvPH0OncvL/tDAD0E0FEJBcwOQ3SvcW8orMASVtHP0cz+9HY7eHDxu8LAPUROj0fEygvBc25wbmltwBGWUlDSzgE3ODy5srM8QsA9Q80NhoOICT8yLW9t6e6AEJWSkdPPQzm6Pfr0NLzCgD2DS4wFQkYGvTDsbm2qr4AP1RLSlJCFPDw/PDX2PYKAPYKKCkQBBAQ7L6utrWswQA8UkxNVUYb+fgB9d3d+AkA9wgjIwv/CAfluquztK7EADlPTU9XSSIC/wb64+P6CQD3Bh0dBvoB/t63qbGzsccANk1NUVlNKQoGC//q6PwJAPcEGBYB9fr217Onr7OzygAzS05TW1AvEg0QA+/t/ggA+AITEf3w8+7RsKWtsrXNADFJTlRcUjQaExQI9fIACAD4AA4L+Ozt5syupKyyt88ALkdOVV1UOSEaGQz69gEIAPj/Cgb05+bfx6yjq7K50gAsRU1WXlY+Jx8dEf/6AwgA+P0GAe/j4dnCqqKqs7vUACpDTVZeWEItJSEVBP4FCAD4+wL869/b076ooqqzvdYAKEFMV19ZRjIqJRkJAgcIAPj5/vfn29bOuqehqbS/2AAmP0xXX1tJNy4pHA0GCAgA+Pj68+TX0sm3paGptMHaACU9S1ZfW0w8MywgEQkKCQD39vfv4NTNxLSloaq1w9sAIztKVl9cT0A2LyMVDQsJAPf18+vd0crAsaShqrbF3QAiOklWXl1RQzoyJhgQDQkA9/Pw6NrOxr2vo6Kqt8beACA4SVVeXVNGPTUpGxIOCQD38u7l18vDuq2joqu3yOAAHzdIVV1dVElANyweFRAKAPbw6+LUycC3rKOjq7jJ4QAeNkdUXV1WTEM6LiEXEQoA9u/p39LGvbSqo6OsucriAB00RlRcXVdORTwwJBkSCgD27ufc0MS7sqmjpKy6zOMAHDNFU1xdWFBHPjImGxMKAPbt5drOwrmwqKOkrbvN5AAbMkRSW11ZUUlANCgdFAsA9ezj2MzAt6+no6WuvM7lABoxRFFaXVpTS0E2Kh8VCwD16+HWyr+1raajpq+8z+YAGjBDUVpdWlRMQzcrIBYLAPXq4NXJvbSspqOmr73Q5gAZMEJQWV1bVU1EOS0hFgsA9erf08e8s6ulo6ewvtDnABkvQlBZXFtWTkU6LiIXDAD06d7SxruyqqWkp7C+0ecAGC5BT1hcW1ZPRjsvIxgMAPTo3dHFurGqpaSosb/S6AAYLkBPWFxbV1BHPDAkGAwA9Ojc0MS5sKmlpKixwNLoABguQE5YXFxXUEc8MSUZDAD059vPxLmwqaSkqLLA0ugAFy1ATldcXFhRSD0xJRkMAPTn28/DuK+opKSpssDT6QAXLT9OV1xcWFFIPTImGQ0A8+fazsO4r6ikpKmywdPpABctP05XXFxYUUg+MiYZDQDz59rOwrivqKSkqbLB0+kAFy0/TVdcXFhRSD4yJhkNAPPn2s7CuK+opKSps8HT6Q=="
+  },
+  {
+   "rate": 8372,
+   "loop": [
+    640,
+    672
+   ],
+   "data": "AE13eGJOR0U/NCwoIxoNBAD88+bd2NTMwbu5sp6IibMASHJ2Y1FJRj80LCciGQ4FAPvy597Z1MzBurevnYqOuABFbXNkVEtHPzUsJiEYDgUA+/Lo39rUy8G5taycjZO7AEFpcWRWTUhANSslIBgOBgD68ujg29XLwLizqpyPl78APWRuZVhPSUA1KyQeFw4GAPry6eLc1cvAt7Gom5KcwwA6YGxlWlFKQTUrJB0WDgYA+vLq49zVy7+2r6ablKDGADdcamZcU0tBNisjHBYOBgD68urk3dXKv7WtpJqWpMkANFlnZl1VTEI2KyIcFQ4GAPry6+Te1cq+tKujmpmnzAAyVWVmX1ZNQjYrIhsUDQYA+vPs5d7Vyr6zqqGam6vOAC9SY2ZgWE5DNishGhMNBgD68+3m39XKvbKooJqdrtEALU9hZWFaUEQ3KyEZEgwGAPr07uff1cm8sKafm5+x0wArTF9lY1tRRTcrIBgRCwYA+vXv6ODVybuvpZ2bobTVAClJXWVjXVJFOCsgFxALBQD79fDp4NXIu66jnZujt9cAJ0dbZGReU0Y4Kx8WDwoFAPv28erh1ci6raKcnKW52QAlRFlkZV9VRzkrHxYOCQQA/Pfy6uHVx7mroZucp7zbACRCWGNlYFZIOSsfFQ0IBAD8+PPr4dXHuKqgm52ovtwAIkBWYmZhV0k6Kx4UDAcDAP359Ozi1ca3qZ+anqrA3gAhPlRhZmJYSzssHhMLBgIA/vr17eLUxbWonpqfrMLfACA9U2FmY1pMPCweEgoFAgD++/bu4tTEtKadmp+tw+AAHztRYGZkW009LB0RCQQBAP/89+/j1MOzpZyaoK/F4QAeOlBfZmRcTz4tHRAHAgAAAP758OPTwrGknJqhsMbi"
   }
  ]
 }

@@ -24,10 +24,11 @@ export function render(cart, cmds, seconds) {
   return [L, R];
 }
 
-/** A song's ticks a row: the tempo effect (F0x) on row 0 of its first pattern, channel 1; the default is 6. */
+/** A song's ticks a row: the tempo effect (F0x) on row 0 of its first pattern (the kit puts it on channel 1, or 7 on the
+ * new chip); the default is 6. */
 export function songSpeed(cart, s) {
-  const row = cart.patterns[cart.songs[s].order[0]][0][1];
-  return row && (row.fx >> 8) === 0xF && (row.fx & 255) ? row.fx & 255 : 6;
+  const row = cart.patterns[cart.songs[s].order[0]][0].find((c) => c && (c.fx >> 8) === 0xF && (c.fx & 255));
+  return row ? row.fx & 255 : 6;
 }
 /** The seconds one pass of the song lasts. */
 export const songSeconds = (cart, s) => cart.songs[s].order.length * 64 * songSpeed(cart, s) / TICK_HZ;

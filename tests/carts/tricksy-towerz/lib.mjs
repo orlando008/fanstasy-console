@@ -10,7 +10,7 @@ const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
   get setup() { return setup; }, set setup(v) { setup = v; }, get lobbySel() { return lobbySel; }, get lobbyMsg() { return lobbyMsg; }, get countT() { return countT; }, get ranking() { return ranking; }, get pausePad() { return pausePad; }, get ipad() { return ipad; }, get after() { return after; },
   get guideOn() { return guideOn; }, get cpuLevel() { return cpuLevel; }, get helpPage() { return helpPage; }, HELP, GUIDE_SLOT, LEVEL_SLOT, updateHelp,
-  get holdT() { return holdT; }, SFX_VOICE_CH, startRace, racersOf, finish, toLobby, levelName, OFF, HUMAN, COUNT, MIN_RACERS,
+  get holdT() { return holdT; }, SFX_CH, startRace, racersOf, finish, toLobby, levelName, OFF, HUMAN, COUNT, MIN_RACERS,
   get yards() { return yards; }, get seq() { return seq; }, get raceT() { return raceT; }, get winner() { return winner; }, get finalScore() { return finalScore; },
   get rank() { return rank; }, get initials() { return initials; }, get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
   get ART() { return ART; }, mget: (x, y) => mget(x, y),

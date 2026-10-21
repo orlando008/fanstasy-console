@@ -1,6 +1,6 @@
 # Block Wizard: Cart Specification
 
-**Version:** 1.1
+**Version:** 1.2 (the new sound chip)
 **Status:** Complete (version 1.0). Playable end to end with art and audio, and released as `carts/block-wizard.nova` and the PNG cart `carts/block-wizard.nova.png`.
 **Cart source:** `carts/src/block-wizard/` → `carts/block-wizard.nova`
 
@@ -274,17 +274,25 @@ not worked around here.
 **Lead levels** (v1.2, after players found the leads loud and wobbly): the lead instruments have no vibrato and their
 volumes were lowered so that the lead alone is at most 0.05 RMS in its loudest section (it was 0.035 to 0.095), which is
 about half the mix (it was 0.7 to 0.9), with the mix rising no more than 1.4x where the lead comes in. Done with
-`tools/devkit/music/lower-leads.mjs` (the games have no audio script); `tools/devkit/music/loud.mjs --check` holds the limits.
+a script, `lower-leads.mjs` (the games had no audio script then; it was removed once they had one); `tools/devkit/music/loud.mjs --check` holds the limits.
 
-**Channel plan:** songs use channels 0 and 2–5: 0 lead (pulse), 2 bass
-(triangle), 3 pad, arpeggio or counter-line (saw), 4 hats, open hats and rolls
-(noise), 5 kick and snare (PCM samples). **Channel 1 (pulse) is reserved for
-sound effects**; it only carries each pattern's tempo effect. Every SFX plays
-with `sfx(n, 1)` on a pulse instrument, so effects never mute the music.
+**The sound chip** (v1.2): the console's SNES-style one (SPEC 5), with sampled instruments: flute, celesta, marimba
+and horn leads, a choir pad, strings for the held chords and the counter-lines, a harp arpeggio, short electric-piano
+chords, a sampled bass, and an echo for each room, deeper as the tower climbs (from 80 ms at the Tower Gate to 176 ms
+at the top). The leads (channel 0) are an octave lower than they were written, since a lead up in octaves 5 and 6
+pierces (`loud.mjs` measures it: 0.001 to 0.005 at 2 to 5 kHz now, 0.011 to 0.020 for the pulse leads); all eight songs
+are within the limits of `loud.mjs --check` and `clash.py` lists the same passing notes as before. The notes and their
+timing are as they were, so the sync check and `LAG` still hold. The music is in `carts/src/block-wizard/audio.py`
+(made from the `audio.json` by `tools/devkit/music/script.py`: every pattern and effect as tracker text).
+
+**Channel plan:** songs use channels 0 and 2–5: 0 lead, 2 bass, 3 pad, arpeggio or counter-line, 4 hats, open hats
+and rolls (noise), 5 kick and snare (PCM samples). Channel 1 only carries each pattern's tempo effect. **Channels 7
+and 6 are the sound effects'**: `snd()` plays them there in turn, so effects never mute the music and two can sound
+at once. The effects are celesta chimes, tom thuds and chip blips, 0.007 to 0.042 RMS.
 
 **Samples:** a kick (a sine sweeping 170 → 50 Hz with a beater click) and a
-snare (a 185 Hz tone plus noise), synthesized at 16 kHz: 5,760 bytes of the
-16 KB Sample RAM. The fills play the snare pitched up.
+snare (a 185 Hz tone plus noise), synthesized at 16 kHz, and the sampled instruments: 18,272 bytes of the
+32 KB Sample RAM. The fills play the snare pitched up.
 
 **Song form:** each song has an intro (drums, bass and pad, with a hit on every
 beat), an A theme and its answer, a B theme and a variation with a

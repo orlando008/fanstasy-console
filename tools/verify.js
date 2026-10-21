@@ -60,7 +60,7 @@ if (docs.status) console.log(docs.stdout.trim().split('\n').map((l) => `       $
 if (!carts.size) { console.log('Nothing more to verify.'); process.exit(docs.status ? 1 : 0); }
 
 // Carts whose songs are over the limits in tools/devkit/music/loud.mjs and are left as they are (the chiptune demo is
-// a loud sound test), so for them the check only warns. The games were brought within the limits by lower-leads.mjs.
+// a loud sound test, and a cart for the old chip), so for them the check only warns.
 const LEGACY_LOUD = ['chiptune'];
 const node = (...a) => spawnSync('node', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 });
 let failed = 0;

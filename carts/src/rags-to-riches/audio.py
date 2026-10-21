@@ -6,52 +6,57 @@
 #   0 title (A minor, 150 bpm, loops)   1 the tour: hub, venues, setup, map (C major, 128 bpm, loops)
 #   2 the concert and its result (E minor, 180 bpm, loops)   3 new songs (F major jingle)   4 the road (G major jingle)
 #   5 victory (C major fanfare)   6 defeat (A minor, slow)       the jingles play once (no loop) Rules (playbook section 5):
-# leads are quiet pulses with no vibrato; channel 1 is for effects; the drums are samples on channel 5.
+# leads are quiet, with no vibrato, in octave 4 (up high they pierce); songs use channels 0 to 5 and the effects take
+# turns on 6 and 7 (fx() in code.js). The new sound chip (SPEC 5): sampled instruments (a horn lead and a flute, strings,
+# a harp, a sampled bass) and an echo for each song; the band's comic sounds (the van's horn, the sad slide) stay chip.
 # After a change: node tools/devkit/music/loud.mjs carts/rags-to-riches.nova --check (levels; the lead alone must stay at most
 # 0.07 RMS and 0.75 of the mix) and python3 tools/devkit/music/clash.py on the json.
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/music'))
 from kit import *
+_bars = bars
+def bars(S, n, chords, leads, **kw):
+    """Every lead line an octave lower than it was written (up in octaves 5 and 6 a lead pierces), but the defeat's."""
+    return _bars(S, n, chords, octave(leads) if leads else None, **kw)
 
-a = Audio()
+a = Audio(chip=2)
 a.sample(kick()); a.sample(snare()); a.sample(hat(0.05, 70, 3)); a.sample(hat(0.15, 22, 5))
 
-a.instrument('LEAD', 'pulse25', 0, 10, 8, 8, 6, pan=-0.15)
-a.instrument('BASS', 'triangle', 0, 0, 15, 3, 10)
+a.voice('LEAD', 'brass', 6, -0.15)
+a.voice('BASS', 'bass', 12)
 a.instrument('HAT', 'sample', 0, 0, 15, 0, 4, pan=0.25, sample=2)
-a.instrument('OHAT', 'sample', 0, 0, 15, 0, 4, pan=0.25, sample=3)
-a.instrument('PAD', 'saw', 8, 24, 6, 14, 5, (1, 4), 0.2)
-a.instrument('ARP', 'saw', 0, 4, 0, 0, 5, pan=0.25)
-a.instrument('KICK', 'sample', 0, 0, 15, 0, 12, sample=0)
-a.instrument('SNARE', 'sample', 0, 0, 15, 0, 10, sample=1)
-a.instrument('SOFTHORN', 'pulse25', 6, 20, 10, 12, 6, pan=-0.15)
-a.instrument('BLIP', 'pulse25', 0, 4, 3, 2, 9)                 # effects from here on
-a.instrument('CHIME', 'pulse50', 0, 6, 5, 6, 9)
-a.instrument('THUD', 'pulse50', 0, 4, 0, 0, 11)
-a.instrument('CRUNCH', 'noise', 0, 8, 3, 6, 9)                  # noise: plays on channel 4 (SFX_VOICE_CH in code.js)
-a.instrument('FANFARE', 'pulse25', 0, 6, 11, 6, 9)
-a.instrument('COIN', 'pulse50', 0, 5, 6, 8, 8)                   # a coin: two bright notes that ring
-a.instrument('WAH', 'pulse50', 2, 10, 8, 8, 8)                   # the sad slide of a loss
-a.instrument('ROAR', 'noise', 8, 30, 7, 14, 9)                   # a crowd (noise: channel 4)
-a.instrument('ROLL', 'noise', 0, 2, 0, 1, 11)                     # a drum roll (noise: channel 4)
+a.instrument('OHAT', 'sample', 0, 0, 15, 0, 4, pan=0.25, sample=3, echo=3)
+a.voice('PAD', 'strings', 5, 0.2)
+a.voice('ARP', 'pluck', 12, 0.25)
+a.instrument('KICK', 'sample', 0, 0, 15, 0, 12, sample=0, echo=2)
+a.instrument('SNARE', 'sample', 0, 0, 15, 0, 10, sample=1, echo=5)
+a.voice('SOFTHORN', 'flute', 5, -0.15, a=6)
+a.instrument('BLIP', 'pulse25', 0, 4, 3, 2, 9, echo=4)         # effects from here on
+a.voice('CHIME', 'celesta', 12)
+a.instrument('CRUNCH', 'noise', 0, 8, 3, 6, 8)
+a.voice('FANFARE', 'brass', 10, d=6, s=11, r=6)
+a.voice('COIN', 'celesta', 12, d=20, r=10)                      # a coin: two bright notes that ring
+a.instrument('WAH', 'pulse50', 2, 10, 8, 8, 7)                   # the sad slide of a loss
+a.instrument('ROAR', 'noise', 8, 30, 7, 14, 8, echo=8)           # a crowd (noise), in the hall's echo
+a.instrument('ROLL', 'noise', 0, 2, 0, 1, 11, echo=4)             # a drum roll (noise)
 a.instrument('HONK', 'pulse50', 0, 3, 12, 3, 8)                  # the van's horn
 
 # --- 0 The title: A minor, 150 bpm ---
-S = a.song(Key('A', MINOR), 6)
+S = a.song(Key('A', MINOR), 6, echo=(6, 5, 6, 9))
 CH = ['1', '6', '3', '7']
-bars(S, 16, CH, None, drums='soft', bass='long', upper='arp1')
+bars(S, 16, CH, None, drums='soft', bass='1 - - - 5 - - -', upper='pad', counter='1 3 5 8 5 3 5 1', ci='ARP')   # the pad first: the lead does not arrive with a jump
 bars(S, 16, CH, ['A4 - C5 - E5 - A5 -', 'A5 - G5 - F5 - C5 -', 'E5 - G5 - C6 - G5 -', 'D5 - G5 - B5 - G5 -'], li='SOFTHORN', drums='drive', bass='1 - - - 5 - - -', upper='arp1')
 S.finish()
 
 # --- 1 The tour: C major, 128 bpm ---
-S = a.song(Key('C', MAJOR), 7)
+S = a.song(Key('C', MAJOR), 7, echo=(5, 4, 5, 9))
 CH = ['1', '5', '6', '4']
 bars(S, 16, CH, ['C5 - E5 - G5 - E5 -', 'D5 - G5 - B5 - G5 -', 'E5 - A5 - C6 - A5 -', 'C5 - F5 - A5 - F5 -'], li='LEAD', drums='basic', bass='1 - 5 - 1 - 5 -', upper='arp')
 bars(S, 16, CH, ['G5 - E5 - C5 - E5 -', 'B5 - G5 - D5 - G5 -', 'A5 - C6 - E6 - C6 -', 'A5 - F5 - C5 - F5 .'], li='SOFTHORN', drums='basic', bass='1 - 5 - 1 - 5 -', upper='arp1')
 S.finish()
 
 # --- 2 The concert: E minor, 180 bpm: a punk riff over a driving bass, then the same a little higher ---
-S = a.song(Key('E', MINOR), 5)
+S = a.song(Key('E', MINOR), 5, echo=(4, 3, 5, 10))
 CH = ['1', '1', '6', '7', '1', '6', '7', '5+']
 bars(S, 16, CH, ['E5 - G5 - B5 - E6 -', 'E5 - G5 - B5 - A5 G5', 'G5 - G5 E5 - C5 E5 G5', 'A5 - A5 F#5 - D5 F#5 A5',
                  'B5 - B5 G5 - E5 G5 B5', 'C6 - C6 G5 - E5 G5 C6', 'D6 - A5 F#5 - A5 D6 -', 'D#6 - B5 F#5 - B5 D#6 .'],
@@ -60,26 +65,26 @@ bars(S, 16, CH, ['E5 - G5 - B5 - E6 -', 'E5 - G5 - B5 - A5 G5', 'G5 - G5 E5 - C5
 S.finish()
 
 # --- 3 New songs: F major, 150 bpm, one pattern, played once ---
-S = a.song(Key('F', MAJOR), 6)
+S = a.song(Key('F', MAJOR), 6, echo=(6, 5, 6, 9))
 bars(S, 16, ['1', '4', '5', '1'], ['F5 - A5 - C6 - A5 -', 'D6 C6 A5 C6 D6 - F6 -', 'E6 D6 C6 D6 E6 G6 E6 C6', 'F6 - C6 - A5 - F5 .'],
      li='LEAD', drums=['soft', 'soft', 'basic', 'soft'], fill=[False, False, False, False], bass='1 - 5 - 1 - 5 -', upper='arp')
 S.finish(); a.songs[-1]['loop'] = None
 
 # --- 4 The road: G major, 150 bpm, one pattern, played once: the motor in the kick, the motif on top ---
-S = a.song(Key('G', MAJOR), 6)
+S = a.song(Key('G', MAJOR), 6, echo=(5, 4, 5, 9))
 bars(S, 16, ['1', '1', '4', '5'], ['D5 - G5 - B5 - G5 -', 'D5 - G5 - B5 - D6 -', 'E5 - G5 - C6 - G5 -', 'F#5 - A5 - D6 - A5 .'],
      li='SOFTHORN', drums='kick', bass='1 - 1 - 1 - 1 -', upper='arp')
 S.finish(); a.songs[-1]['loop'] = None
 
 # --- 5 Victory: C major, 180 bpm, one pattern, played once ---
-S = a.song(Key('C', MAJOR), 5)
+S = a.song(Key('C', MAJOR), 5, echo=(7, 5, 6, 9))
 bars(S, 16, ['1', '4', '5', '1'], ['C5 - E5 - G5 - C6 -', 'F5 - A5 - C6 - F6 -', 'G5 - B5 - D6 - G6 -', 'E6 - G6 - C6 - - -'],
      li='LEAD', drums=['basic', 'basic', 'heavy', 'basic'], fill=[False, False, True, False], bass='1 - 5 - 1 - 5 -', upper='arp1')
 S.finish(); a.songs[-1]['loop'] = None
 
 # --- 6 Defeat: A minor, 100 bpm, one pattern, played once: the motif falls instead of climbing ---
-S = a.song(Key('A', MINOR), 9)
-bars(S, 16, ['1', '6', '4', '1'], ['E5 - D5 - C5 - A4 -', 'C5 - A4 - C5 - F4 -', 'A4 - G4 - F4 - E4 -', 'E4 - - - A3 - - -'],
+S = a.song(Key('A', MINOR), 9, echo=(12, 8, 9, 7))
+_bars(S, 16, ['1', '6', '4', '1'], ['E5 - D5 - C5 - A4 -', 'C5 - A4 - C5 - F4 -', 'A4 - G4 - F4 - E4 -', 'E4 - - - A3 - - -'],
      li='SOFTHORN', drums='none', bass='long', upper='arp')
 S.finish(); a.songs[-1]['loop'] = None
 

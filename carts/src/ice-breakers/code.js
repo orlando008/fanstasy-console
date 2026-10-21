@@ -25,14 +25,14 @@ const ART = {
 /** Queue one of ART.sprites at (x, y); opts as for spr (fx, fy, pal, prio ...). Priority 1: above the background, under the ice (BG1, high priority). */
 function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.pal, prio: 1, ...opts }); }
 
-// --- Sound (SPEC 5). The channel decides the voice: 0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample. ---
+// --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
+// so they never cut into the music and two can sound at once (an ice crack and the pieces falling).
 
 const SFX = { move: 0, select: 1, pause: 2, swap: 3, bad: 4, match: 5, clear: 10, over: 11, shuffle: 12, record: 13, ice: 14, shatter: 15, win: 16, level: 17 }; // match: 5 to 9, higher in a chain
 const SONG = { title: 0, play: 1, late: 2 }; // the game song is `play` for levels 1 to 6 and `late` for 7 to 12
-const SFX_CH = 1; // effects share channel 1 (pulse); the songs leave it free
-// Effects with noise (or saw or triangle) in them go on a channel with that voice (audio.py makes them).
-const SFX_VOICE_CH = { [SFX.bad]: 4, [SFX.shuffle]: 4, [SFX.ice]: 4 };
-function fx(n) { sfx(n, n in SFX_VOICE_CH ? SFX_VOICE_CH[n] : SFX_CH); }
+const SFX_CH = [7, 6];
+let fxNext = 0;
+function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
 
 // A song is only started if it is not already playing.
 let playing = -1;

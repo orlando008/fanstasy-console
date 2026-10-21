@@ -151,6 +151,16 @@
       "png": null
     },
     {
+      "name": "sound-test",
+      "title": "Sound Test",
+      "author": "NOVA-16",
+      "description": "The new sound chip: three songs through the echo unit, and every sampled instrument (strings, choir, brass, flute, electric piano, harp, orchestra hit and more) to play on its own.",
+      "genre": "Demo",
+      "players": null,
+      "label": null,
+      "png": null
+    },
+    {
       "name": "sprites",
       "title": "Sprite Test",
       "author": "NOVA-16",

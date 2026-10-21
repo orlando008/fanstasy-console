@@ -1,6 +1,6 @@
 # Smashy Smash: Cart Specification
 
-**Version:** 1.2
+**Version:** 1.3 (the new sound chip)
 **Status:** Released: all 7 steps of the plan (15) are built; also as the PNG cart `carts/smashy-smash.nova.png`
 **Cart source:** `carts/src/smashy-smash/` → `carts/smashy-smash.nova`
 
@@ -213,20 +213,24 @@ In the menus START or A goes on and B goes back (A is the game's action button).
 
 ## 11. Audio
 
-**Songs** (5): the title, and one for each world (8.1), looping. Channel 1 is kept
-for sound effects, as in our other carts.
+**Songs** (5): the title, and one for each world (8.1), looping, on the console's SNES-style sound chip (SPEC 5;
+converted in v1.3): sampled instruments (horn, marimba and flute leads, strings, a harp, electric-piano off-beats, a
+sampled bass, the kick and snare samples, noise hats) and an echo for each song (the castle's the deepest, 176 ms). The
+songs use channels 0 to 5; the effects take turns on 7 and 6 (`sfxv()`), so they never cut into the music and two can
+sound at once. The music is in `carts/src/smashy-smash/audio.py` (made from the `audio.json` by
+`tools/devkit/music/script.py`: every pattern and effect as tracker text).
 
-**Effects on a channel with their voice** (v1.1): the channel decides the voice, so an effect with noise in it
-sounds like noise only on a noise channel. The wall (3) and glass (4) hits play on channel 4 (noise) through the `SFX_VOICE_CH` table and `sfxv()` in the code; every other effect plays on
-channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sounded like pulse tones. A noise effect
-briefly mutes the music's channel 4 while it plays. (`tools/check.js` and `tools/devkit/soak.mjs` check this; see
-`docs/dev/playbook.md`, section 5.) Also in v1.1: the wave of instrument 27 in song 2 was declared as a pulse but sits
-on the saw channel, where it always sounded as a saw; it is now declared as a saw (the sound is unchanged).
+**The new sound chip** (v1.3): the leads (channel 0) are an octave lower than they were written, since a lead up in
+octaves 5 and 6 pierces (`loud.mjs` measures it: 0.002 to 0.005 at 2 to 5 kHz now, 0.012 to 0.016 for the pulse leads);
+all five songs are within the limits of `loud.mjs --check` (the lead 0.43 to 0.62 of the mix) and `clash.py` finds
+nothing. Effects: celesta chimes, horn fanfares, a tom for the thuds; the wall and glass hits stay noise, the blips
+chip sounds, all 0.009 to 0.055 RMS. (On the old chip, v1.1 sent the noisy effects to its noise channel; the new chip
+plays every voice on every channel.)
 
 **Lead levels** (v1.2, after players found the leads loud and wobbly): the lead instruments have no vibrato and their
 volumes were lowered so that the lead alone is at most 0.05 RMS in its loudest section (it was 0.088 to 0.128), which is
 about half the mix (it was 0.7 to 0.9), with the mix rising no more than 1.4x where the lead comes in. One lead instrument was also used by an effect, so it was copied (instrument 29) and the effect did not change. Done with
-`tools/devkit/music/lower-leads.mjs` (the games have no audio script); `tools/devkit/music/loud.mjs --check` holds the limits.
+a script, `lower-leads.mjs` (the games had no audio script then; it was removed once they had one); `tools/devkit/music/loud.mjs --check` holds the limits.
 
 | Song | Tempo | Style |
 |---|---|---|

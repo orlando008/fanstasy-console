@@ -191,20 +191,22 @@ time and the top 10 championship scores.
 
 ## 11. Audio
 
-**Channels.** 0 is the lead, 1 is kept for sound effects (it is a pulse channel, and the songs
-only use it for the tempo), 2 the bass, 3 the saw (arpeggios and off-beat chords), 4 the engine
-and the noisy effects, and 5 the drums. The kick, snare and both hi-hats are samples (4 samples,
-7 KB of the 16 KB Sample RAM), so the songs never touch channel 4.
+**The sound chip** is the console's SNES-style one (SPEC 5; converted from the old chip in step 9): sampled
+instruments, each song with its own echo. **Channels.** 0 is the lead, 1 the counter-melody and the off-beat
+chords, 2 the bass, 3 the harp arpeggio or the strings pad, 4 the hats (or the pad's fifth) and 5 the kick and
+snare; 6 is the engine's and 7 the effects' (the songs only put the tempo on 7). Sample RAM holds 20 KB of the
+32 KB: the four drums, and strings, horn, flute, harp, electric piano, bass, celesta, a tom and a cymbal.
 
-**Songs** (5), each about 25 seconds and looping, with a quiet, steady lead (pulse at volume 4 to 7,
-no vibrato) that comes in after a bar-length intro of bass, arpeggio and drums:
+**Songs** (5), each about 25 seconds and looping, with a quiet, steady lead (a soft horn or a flute in octave 4,
+at volume 5 to 7, no vibrato) that comes in after a four-bar intro; the title's intro already has the strings and
+the harp, so the lead does not arrive with a jump:
 
 | Song | Where | Key and tempo |
 |---|---|---|
 | 0 | Title, track select, the records, the results and the points | A minor, 150 bpm: a revving build, drum fills at the end |
 | 1 | Stadium Dirt | D major, 150 bpm: bright and bouncy, staccato lead, off-beat chords |
 | 2 | Desert Run | A minor, 150 bpm, in 6/8: a gallop over the Andalusian cadence (Am, G, F, E) |
-| 3 | Night Mountain | C# minor, 180 bpm: a driving bass pulse and a soft brass lead |
+| 3 | Night Mountain | C# minor, 180 bpm: a driving bass pulse and a soft brass lead, in a long echo |
 | 4 | The podium | C major, 128 bpm: proud, 8 bars |
 
 A song starts with the race card, plays through the lights and GO, and stops at the line (the finish
@@ -212,7 +214,7 @@ fanfare plays instead). The title tune returns with the results. DID NOT QUALIFY
 its jingle. Quitting to the title, or the end of a championship, brings the title tune back.
 
 **Engine.** The API cannot change the pitch of a note that is playing, so the engine is a short
-looping effect (about 30 frames) on the noise channel, restarted every 28 frames at one of six
+looping noise effect (about 30 frames) on channel 6, restarted every 28 frames at one of six
 pitches: idle (on the grid), slow (under 1.5), cruising (under 2.4), fast, turbo and "revving" in
 the air. Each step up is a lower, rougher rumble becoming a higher, faster buzz: the notes retrigger
 every 4, 3, 2 and then 1 frame, and turbo uses the metallic noise mode. A change of pitch is
@@ -220,9 +222,9 @@ made only once it has held for 4 frames, so a flickering turbo button does not c
 is silent when the bike crashes, when it overheats and the rider pushes, in the pause menu and in
 the menus, and it comes back on its own. It sits at about a third of the music's level.
 
-**Effects** (30). Effects with noise in them (the take-off whoosh, a rough landing, a crash, mud,
-a hurdle smash, the engine overheating, a false start) go on the noise channel and cut the engine
-for their length; the rest are on channel 1: gate lights and GO, landing (clean), arrow boost,
+**Effects** (30), all on channel 7, so the engine keeps going under them: the take-off whoosh, a rough
+landing, a crash (a tom and a cymbal), mud, a hurdle smash, the engine overheating, a false start,
+gate lights (chip beeps) and GO (the horn), landing (clean), arrow boost,
 cooling pad, engine restart, a bump, menu move and select, pause, the finish and podium fanfares,
 the tally tick, the logo's thuds, **a rival passed** (a rising three-note blip) and **a rival
 passing you** (a falling thud), with 90 frames between the two so that bikes side by side do not
@@ -594,6 +596,24 @@ the landing.
      all pass, with a check added that a bike at a standstill on the steepest part of a bump, hill,
      medium ramp and large ramp gets going (it fails without the fix, on the bump and the large ramp).
 
+
+9. **The new sound chip** (October 2026; `docs/dev/sound-chip.md`): the console's sound became SNES-style, and this
+   game was converted to it.
+   - **Built:**
+     - **Songs:** the same notes, re-voiced in `audio.py` (`Audio(chip=2)`): the leads (GLASS, SOFTHORN, SOLO,
+       STACC, BRASS) are a soft horn or a flute, an octave lower (`octave()`: a lead up in octaves 5 and 6
+       pierces); the saw arpeggio a harp, the off-beat chords short electric-piano stabs, the pad and counter
+       strings, the triangle bass a sampled bass. Each song has its own echo: the title (80 ms), the stadium
+       (64 ms, bright), the desert (112 ms), Night Mountain (144 ms, dark) and the podium (96 ms). The title's
+       intro has the strings, a harp figure and a moving bass, so the lead's entrance is not a jump.
+     - **Effects:** the chimes are a celesta, GO and the fanfares the horn, the thuds a tom, a crash a cymbal;
+       the start lights and the blips stay chip sounds (with a little echo); the engine and the noises are noise.
+     - **Channels:** `fx()` plays every effect on 7 and the engine is on 6 (`SFX_CH`, `ENGINE_CH`), so the noisy
+       effects no longer cut the engine (the table of their lengths is gone).
+   - **Results:** `loud.mjs --check`: all five songs within the limits; the leads 0.038 to 0.040 RMS, 0.60 to
+     0.71 of the mix, entering at most 1.43x; pierce (the lead at 2 to 5 kHz) 0.005 to 0.008, where the pulse
+     leads were 0.016 to 0.025; `clash.py`: no clashes. `07-audio.mjs` checks the new channels (the engine on 6,
+     effects on 7, the songs leaving both alone), that every song has an echo, and the levels as before.
 ## 16. Open questions
 
 - **Engine sound:** answered in step 7: a held note's pitch cannot be changed, so the engine

@@ -42,7 +42,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('DOWN'); ok(p.venueSel === 1, 'DOWN moves to the next'); vm.press('UP'); vm.press('UP'); ok(p.venueSel === 2, 'UP from the first wraps to the last');
   vm.press('DOWN'); vm.press('DOWN'); ok(p.venueSel === 1, 'and DOWN from the last wraps to the first');
   p.tour.cash = 60; sfxLog(vm); vm.press('A');
-  ok(p.state === 'venue' && p.tour.cash === 60 && sfxLog(vm).some(([n, ch]) => n === p.SFX.refuse && ch === 4), 'a venue whose rent ($95) is over the cash ($60) is refused with a buzz');
+  ok(p.state === 'venue' && p.tour.cash === 60 && sfxLog(vm).some(([n, ch]) => n === p.SFX.refuse && ch >= 6), 'a venue whose rent ($95) is over the cash ($60) is refused with a buzz');
   vm.press('UP'); vm.press('A'); ok(p.state === 'setup' && p.plan.venue === 0, 'the first venue ($35) is taken');
   vm.press('B'); ok(p.state === 'venue' && p.venueSel === 0, 'B from the setup returns to the picker, on the same venue');
   vm.press('B'); p.tour.cash = 400; vm.press('A'); vm.press('DOWN'); vm.press('A'); vm.press('A');
@@ -102,14 +102,14 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 {
   const vm = newGame(5), p = vm.probe(); vm.run(3);
   p.tour.cash = 30; vm.run(1); sfxLog(vm); vm.press('A');
-  ok(p.state === 'hub' && sfxLog(vm).some(([n, ch]) => n === p.SFX.refuse && ch === 4), 'with $30 (less than the rent) the hub refuses the concert, with a buzz: the tour goes on');
+  ok(p.state === 'hub' && sfxLog(vm).some(([n, ch]) => n === p.SFX.refuse && ch >= 6), 'with $30 (less than the rent) the hub refuses the concert, with a buzz: the tour goes on');
 }
 {
   const vm = newGame(5), p = vm.probe(); vm.run(3);
   p.tour.cash = 100; vm.press('A'); vm.press('A'); vm.press('DOWN'); vm.press('R'); vm.press('R'); vm.press('R');
   p.tour.cash = 40; p.plan.ad = 20; vm.run(1); sfxLog(vm); vm.press('A');
   ok(p.state === 'setup' && p.tour.cash === 40 && p.tour.week === 1, 'a show that costs more than the cash is refused: nothing is spent and the week stays', `${p.state}`);
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.refuse && ch === 4), 'with the refusal sound, on the noise channel');
+  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.refuse && ch >= 6), 'with the refusal sound, on an effects channel');
 }
 
 // 6. A broke band is not stuck: see 05-actions.mjs (songwriting is always possible).

@@ -113,33 +113,38 @@ initials and the level reached (save slots 10 to 39); a game that cleared all tw
 
 Written by `audio.py` with the song toolkit; every number below is measured (`loud.mjs --check`, `sfx.mjs`, `clash.py`; the tests read the data).
 
-**Songs** (the drums are samples on channel 5, the leads quiet pulses with no vibrato; channel 1 is for effects and carries only the tempo):
+**Songs**, on the console's SNES-style sound chip (SPEC 5; converted in step 9): an icy set of sampled instruments
+(the lead a celesta, the second lead a flute, harp arpeggios, a strings pad, a sampled bass, the kit's drums) and an
+echo for each song. Channels: 0 the lead, 2 the bass, 3 and 4 the arpeggio or the pad and the hats, 5 the drums; 6
+and 7 are the effects' (the songs only put the tempo on 7). The leads are in octave 4, with no vibrato.
 
-| Song | Plays | Key and tempo | Length | Median level | Lead |
-|---|---|---|---|---|---|
-| 0 | the title | A minor, 150 bpm | 12.8 s | 0.085 | 0.055 RMS, 0.65 of the mix |
-| 1 | levels 1 to 6 (and the start of every game) | F major, 120 bpm: calm; 8 bars of the starter's tune, then 8 that go to D minor and back | 29.9 s | 0.082 | 0.054, 0.65 |
-| 2 | levels 7 to 12 | D minor, 150 bpm: a little faster and lower, the drums driving; Dm Bb F C, then Gm Dm Bb C | 25.6 s | 0.084 | 0.055, 0.65 |
+| Song | Plays | Key and tempo | Echo | Length | Median level | Lead |
+|---|---|---|---|---|---|---|
+| 0 | the title | A minor, 150 bpm: the strings and a harp figure, then the flute | 96 ms | 12.8 s | 0.046 | 0.031 RMS, 0.64 of the mix |
+| 1 | levels 1 to 6 (and the start of every game) | F major, 120 bpm: calm; 8 bars of the starter's tune, then 8 that go to D minor and back | 160 ms, long (a frozen hall) | 29.9 s | 0.051 | 0.034, 0.63 |
+| 2 | levels 7 to 12 | D minor, 150 bpm: a little faster and lower, the drums driving; Dm Bb F C, then Gm Dm Bb C | 80 ms | 25.6 s | 0.049 | 0.033, 0.66 |
 
-The three songs are within the limits (the lead alone at most 0.07 RMS and 0.75 of the mix, no surge) and equally loud, so the change at level 7 is not a jump. The song changes once, at level 7: a level never restarts the song already playing (`play`). `clash.py` finds nothing. The title returns when the player quits or after the records.
+The three songs are within the limits (the lead alone at most 0.07 RMS and 0.75 of the mix, no surge, and it does
+not pierce: 0.002 to 0.005 at 2 to 5 kHz, the limit 0.012) and about equally loud, so the change at level 7 is not a
+jump. The song changes once, at level 7: a level never restarts the song already playing (`play`). `clash.py` finds nothing. The title returns when the player quits or after the records.
 
 **Effects** (SFX in code.js; levels in RMS, effects 0.01 to 0.06):
 
 | # | Effect | Channel | Length | Level | When |
 |---|---|---|---|---|---|
-| 0 to 3 | cursor and menu move, pick up, pause, swap | 1 | 2 to 6 ticks | 0.005 to 0.03 | as named |
-| 4 | a swap that makes nothing | 4 (noise) | 9 ticks | 0.042 | the gems slide back |
-| 5 to 9 | a match, a step higher for each link of a chain | 1 | 8 ticks | 0.034 | each clear |
-| 10 | level clear (the goal reached) | 1 | 36 ticks | 0.050 | the goal met and the board at rest |
-| 11 | game over | 1 | 48 ticks | 0.047 | out of moves |
-| 12 | the board is stuck: reshuffled | 4 (noise) | 8 ticks | 0.053 | no move left |
-| 13 | a high score | 1 | 32 ticks | 0.049 | the initials |
-| 14 | **ice cracks** | 4 (noise) | 3 ticks | 0.019 | any ice breaks (once for each clear, not for each cell) |
-| 15 | **the pieces fall** | 1 | 8 ticks | 0.023 | three or more cells of ice break at once, as well as 14 |
-| 16 | **the game is won** | 1 | 115 ticks (1.9 s) | 0.053 | the last level cleared (instead of the game-over jingle) |
-| 17 | **a level opens** | 1 | 12 ticks | 0.034 | the banner appears |
+| 0 to 3 | cursor and menu move, pick up (a celesta), pause, swap | 6 or 7 | 2 to 6 ticks | 0.008 to 0.032 | as named |
+| 4 | a swap that makes nothing (noise) | 6 or 7 | 9 ticks | 0.044 | the gems slide back |
+| 5 to 9 | a match, a step higher for each link of a chain (celesta) | 6 or 7 | 8 ticks | 0.037 | each clear |
+| 10 | level clear (the goal reached; a horn) | 6 or 7 | 36 ticks | 0.050 | the goal met and the board at rest |
+| 11 | game over | 6 or 7 | 48 ticks | 0.050 | out of moves |
+| 12 | the board is stuck: reshuffled (noise) | 6 or 7 | 8 ticks | 0.056 | no move left |
+| 13 | a high score | 6 or 7 | 32 ticks | 0.049 | the initials |
+| 14 | **ice cracks** (noise, with echo) | 6 or 7 | 3 ticks | 0.022 | any ice breaks (once for each clear, not for each cell) |
+| 15 | **the pieces fall** (celesta) | the other one | 8 ticks | 0.023 | three or more cells of ice break at once, as well as 14 |
+| 16 | **the game is won** | 6 or 7 | 115 ticks (1.9 s) | 0.056 | the last level cleared (instead of the game-over jingle) |
+| 17 | **a level opens** | 6 or 7 | 12 ticks | 0.039 | the banner appears |
 
-The ice cracks before the level-clear jingle: the crack comes when the clear is finished (after the flash), the jingle when the gems have landed and the goal is met. Noise effects go on channel 4 (`SFX_VOICE_CH`); `voices.mjs` confirms every effect plays on a channel with its voice.
+The ice cracks before the level-clear jingle: the crack comes when the clear is finished (after the flash), the jingle when the gems have landed and the goal is met. `fx()` plays the effects on channels 7 and 6 in turn, so an effect never cuts into the music and two at once (the crack and the falling pieces) both sound.
 
 ## 12. Video layers
 
@@ -173,7 +178,7 @@ Sprites: 64 gems, the cursor and the HUD picture (66 of the 128, at most 16 on a
 | Code | 27.9 KB (`node tools/check.js ice-breakers`); the levels, the ice, the banner, the hint, the ice art, the win screen and the sound cues added 9.9 KB to the starter's 18 |
 | Tiles | 89 of 1,023 (BG region 53: the background 38, the ice 15; sprite region 36: the gems and cursor 28, the two HUD pictures 8) |
 | Sprites | 66 on the board, 81 on the win screen (128 in OAM, 32 per scanline: at most 10 are used) |
-| Songs / SFX | 3 songs (10 of 64 patterns), 18 SFX; 13 of 32 instruments |
+| Songs / SFX | 3 songs (10 of 64 patterns), 18 SFX; 14 of 32 instruments; Sample RAM 13 KB of 32 (the drums, a celesta, a flute, a harp, strings, a bass and a horn) |
 
 ## 15. Implementation plan
 
@@ -212,6 +217,11 @@ Step 0 is done: the spec, the scaffold (the match-3 starter with placeholder num
 
    **Built:** `node tools/release.js ice-breakers --wait 3500 --keys Enter:300` (Enter starts the game; 3.5 s later the level banner has gone and the board shows level 1 with its bar of frost: the label is that frame, `carts/src/ice-breakers/label.png`). The description in `meta.json` (it said "A game in progress."), the version set to 1.0, the Library entry (`carts/index.json`, `carts/labels/ice-breakers.png`) and a row in the README's list of carts. The spec has no open placeholders left.
    **Results:** the PNG cart `carts/ice-breakers.nova.png` (payload 39,585 of 147,443 bytes, 27%) decodes to exactly the packed cart; `check.js` has no warnings; the Library lists the game with the released games. 183 tests, `verify.js`, the smoke test and the soak pass (see the earlier steps). Nothing is merged: the work is on its branch, and no pull request is open.
+
+9. **The new sound chip** (October 2026; `docs/dev/sound-chip.md`): the console's sound became SNES-style, and the game was converted to it.
+
+   **Built:** `audio.py` on `Audio(chip=2)`: the same notes with sampled instruments (section 11), the title's and the first game song's leads an octave lower (`octave()`: up in octaves 5 and 6 a lead pierces), the title's intro with the strings and a harp figure so the lead does not arrive with a jump, an echo for each song, the effects re-voiced (celesta chimes and pieces, a horn for the jingles, noise for the crack and the bad swap). `fx()` plays effects on channels 7 and 6 in turn (`SFX_VOICE_CH` is gone: every channel plays noise). The tests check channels 6 and 7 instead of 1 and 4, that the crack and the pieces land on different channels, and that every song has an echo.
+   **Results:** `loud.mjs --check`: all three songs within the limits, pierce 0.002 to 0.005 (the pulse leads were 0.020 to 0.025); `clash.py`: nothing; every effect between 0.008 and 0.056 RMS (`sfx.mjs`).
 
 Each step: build it, run `node tools/verify.js ice-breakers` and `node tools/devkit/smoke.mjs ice-breakers`, write its
 **Built** and **Results** notes under its number here, commit and push.

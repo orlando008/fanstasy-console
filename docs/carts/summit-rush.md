@@ -241,10 +241,22 @@ Top 16 px of the overlay:
 
 ## 11. Audio
 
+**The new sound chip** (October 2026): the console's sound became SNES-style (SPEC 5), and the game was converted. The
+music is in `carts/src/summit-rush/audio.py` (made from the `audio.json` by `tools/devkit/music/script.py`: every pattern
+and effect as tracker text). The melodic instruments are sampled: a horn and a flute for the leads, a harp and short
+electric-piano chords for the second voice on channel 1, a strings pad, a sampled bass; the drums stay noise, and each
+song has an echo. The leads already sat in octaves 4 and 5, so they were not moved; they pierce 0.008 to 0.009 at 2 to
+5 kHz (0.018 for the pulse leads). All five songs are within the limits of `loud.mjs --check`: the title song's lead,
+0.81 of the mix as the old chip played it (a fault the check only found once it read the tempo on channel 5, where
+this game keeps it), is 0.68. The effects stay chip sounds; the code plays them on channel -1, which the new chip puts
+on 7 or 6, so they never cut into the music. Three of their instruments were lowered (they reached 0.10 RMS, against
+0.06 for effects): all are now 0.014 to 0.060. `clash.py` lists the same passing notes on channels 2 and 3 as before,
+and some between the lead and the second voice on channel 1, which the old check did not look at.
+
 **Lead levels** (v1.2, after players found the leads loud and wobbly): the lead instruments have no vibrato and their
 volumes were lowered so that the lead alone is at most 0.05 RMS in its loudest section (it was 0.080 to 0.087 (the short last song included)), which is
 about half the mix (it was 0.7 to 0.9), with the mix rising no more than 1.4x where the lead comes in. The second lead instrument was only in the short last song. Done with
-`tools/devkit/music/lower-leads.mjs` (the games have no audio script); `tools/devkit/music/loud.mjs --check` holds the limits.
+a script, `lower-leads.mjs` (the games had no audio script then; it was removed once they had one); `tools/devkit/music/loud.mjs --check` holds the limits.
 
 **Songs** (Music tab). They're built on the music of the *Summit Rush* animated series (`orlando008/summit-rush`, `engine/audio.js`). Its main theme is `hero`, 140 bpm over C–G–Am–F:
 - A 25% pulse lead in a dotted 3-3-4-2-4 rhythm: E5 G5 C6, B5 G5.
@@ -261,7 +273,7 @@ The cart reproduces the series' lead lines, chords, bass, arpeggio and drum patt
 | 3 | The Summit | hero in D minor, battle, ×2 | 180 bpm | the theme recast in D minor over `battle`'s chords (Dm Bb C A), with the galloping bass, alternating with `battle` |
 | 4 | AGI fanfare | once, 3.2 s | speed 3 | the hero motif (E G C, B D) on brass, resolving to a held C with a crash |
 
-- **Arrangement:** pulse 1 lead, pulse 2 arpeggios (the series' triangle slow arp moves to a soft pulse, since the triangle carries the bass), triangle bass, saw pad, noise drums. Music volumes sit about a fifth under the SFX.
+- **Arrangement:** channel 0 the lead, 1 the arpeggios (the series' triangle slow arp moved to a soft voice, since the triangle carried the bass; now a harp or electric piano), 2 the bass, 3 the pad, 4 the noise drums.
 - **Menus** share song 0 without restarting it, so the intro plays once at boot. Each stage starts its own song. Music stops at the finish line. The fanfare plays over the AGI screen in place of the finish jingle.
 
 **SFX:**
@@ -278,7 +290,7 @@ The cart reproduces the series' lead lines, chords, bass, arpeggio and drum patt
 | 10 | Special activate | 18 | Menu select |
 | | | 19 | Wind gust: rising whoosh |
 
-The songs and SFX are data in `audio.json`, so they can be reworked in the Music and SFX tabs.
+The songs and SFX are made by `audio.py`, so they can be reworked there (or in the Music and SFX tabs, then written back with `script.py`).
 
 ## 12. Persistence (save slots)
 

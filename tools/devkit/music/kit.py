@@ -12,8 +12,17 @@ drum pattern into patterns, songs and sound effects (the audio.json that tools/p
     a.effect(2, ['C-5', 'G-5', 'OFF'], 'CHIME')
     a.write(sys.argv[1])
 
-Channels (the voice is fixed by the channel, whatever an instrument's wave says; SPEC 5.1):
-  0 pulse   lead              3 saw       arpeggio, chords
+The new sound chip (SPEC 5): Audio(), or Audio(chip=2). Every channel plays any instrument; sampled ones come from samples.py
+(a.voice('STR', 'strings', 6): a sample and an instrument with its envelope); instruments take echo= (a send, 0-15)
+and curve= ('lin' or 'exp'), songs echo=(delay, feedback, volume, tone) (SPEC 5.6). Channels:
+  0 lead            3 pad (the chord's third), arpeggio
+  1 counter-melody  4 the chord's fifth with upper='pad'; else hats
+  2 bass            5 kick and snare (and hats with upper='pad')
+  6, 7 kept for SFX; the tempo (F0x) goes on row 0 of each pattern on channel 7.
+
+The old chip (Audio(chip=1): a cart in the old format, version 1, such as the chiptune demo). The voice is fixed by the
+channel, whatever an instrument's wave says:
+  0 pulse   lead              3 saw       arpeggio, chords; counter-melody
   1 pulse   kept for SFX      4 noise     hats or, in a game with an engine sound, kept for that
   2 triangle bass             5 sample    kick and snare (and hats, if channel 4 is kept)
 Bars of 16 rows are 4/4 (4 rows a beat), 12 rows are 6/8 or 3/4, 20 rows are 5/4. A song's patterns
@@ -21,12 +30,14 @@ are 64 rows, so it needs a whole number of 64 rows (4 bars of 16; 16 bars of 12 
 Pitch names are 'A4', 'C#5', 'Bb4'; in effects they are 'C-5' style as in the editor. A number
 in a line ('1', '3', '5', '8', with ' for an octave up) is a chord tone of that bar's chord.
 
+Leads in octave 4 (up to 5 at the top of a phrase), not 5 and 6: a bright lead up high pierces (loud.mjs: pierce).
 Level rules learned the hard way (a lead that is loud, wobbly or sharp is what players complain about):
 leads are pulse25 or pulse50 at volume 4 to 6 with no vibrato; drums kick 12 and snare 10 of 15; check
 the result with `loud.mjs --check` (the lead alone at most 0.07 RMS and 0.75 of the mix, no jump of more than 1.5x where
 it enters) and clash.py.
 """
 import base64, json, math, random, sys
+from samples import SAMPLED
 
 NAMES = ['C-', 'C#', 'D-', 'D#', 'E-', 'F-', 'F#', 'G-', 'G#', 'A-', 'A#', 'B-']
 def nn(m): return NAMES[m % 12] + str(m // 12)
@@ -71,9 +82,9 @@ def hat(length=0.05, decay=70, seed=3):
         out.append((w - 0.6 * last) * math.exp(-t * decay))
         last = w
     return taper(out)
-def pcm(vals):
+def pcm(vals, rate=RATE, loop=None):
     peak = max(abs(v) for v in vals)
-    return {'rate': RATE, 'loop': None, 'data': base64.b64encode(bytes((int(round(v / peak * 120)) & 255) for v in vals)).decode()}
+    return {'rate': rate, 'loop': loop, 'data': base64.b64encode(bytes((int(round(v / peak * 120)) & 255) for v in vals)).decode()}
 
 def cell(note, i=None, v=None):
     c = {'n': note if isinstance(note, str) else nn(note)}
@@ -123,19 +134,63 @@ DRUMS = {
          'still': ('K.......................'[:20], '....h.......h.......')},
 }
 
+# --- Tracker text: patterns and effects written out cell by cell (the scripts that script.py makes) ---------------
+# A row is one cell per channel, a cell "NNN II V FFF": a note (C-4, C#4, OFF or ---), an instrument (hex, or ..), a
+# volume (hex digit, or .) and an effect (3 hex digits, or ...), as in the console's tracker.
+def parse_cell(t):
+    n, i, v, fx = t.split()
+    c = {}
+    if n != '---': c['n'] = n
+    if i != '..': c['i'] = int(i, 16)
+    if v != '.': c['v'] = int(v, 16)
+    if fx != '...': c['fx'] = fx
+    return c or None
+def pitch_cell(n):
+    """'C-4' or 'C#4' (tracker style) to a note index."""
+    return int(n[2:]) * 12 + NAMES.index(n[:2])
+def cell_text(c):
+    if not c: return '--- .. . ...'
+    return '%s %s %s %s' % (c.get('n', '---'), '%02X' % c['i'] if 'i' in c else '..', '%X' % c['v'] if 'v' in c else '.', c.get('fx', '...'))
+def parse_rows(text, width):
+    """Rows of tracker text; a row with fewer cells than width (an old chip's 6) gets empty ones at the end."""
+    rows = []
+    for line in text.strip('\n').split('\n'):
+        parts = line.split()
+        assert len(parts) % 4 == 0 and len(parts) <= 4 * width, (line, width)
+        rows.append([parse_cell(' '.join(parts[k * 4:k * 4 + 4])) for k in range(len(parts) // 4)] + [None] * (width - len(parts) // 4))
+    return rows
+
+
 class Audio:
-    """The whole audio.json: instruments (by name), samples, patterns, songs and effects."""
-    def __init__(s):
-        s.instruments, s.I, s.samples, s.patterns, s.songs, s.sfx, s.index = [], {}, [], [], [], [], {}
-    def sample(s, vals):
-        s.samples.append(pcm(vals)); return len(s.samples) - 1
-    def instrument(s, name, wave, a, d, sus, r, vol, vib=(0, 0), pan=None, sample=None):
-        """wave: pulse12/25/50/75, triangle, saw, noise, noise-short or sample. a, d, r are frames, sus a level 0-15."""
+    """The whole audio.json: instruments (by name), samples, patterns, songs and effects. chip=2 for the new sound chip."""
+    def __init__(s, chip=2):
+        s.chip, s.channels = chip, 8 if chip == 2 else 6
+        s.instruments, s.I, s.samples, s.patterns, s.songs, s.sfx, s.index, s.kinds = [], {}, [], [], [], [], {}, {}
+    def sample(s, vals, rate=RATE, loop=None):
+        s.samples.append(pcm(vals, rate, loop)); return len(s.samples) - 1
+    def instrument(s, name, wave, a, d, sus, r, vol, vib=(0, 0), pan=None, sample=None, echo=0, curve='lin'):
+        """wave: pulse12/25/50/75, triangle, saw, noise, noise-short or sample. a, d, r are frames, sus a level 0-15.
+        echo (a send, 0-15) and curve ('exp' for an exponential decay and release) are for the new chip."""
         out = {'wave': wave, 'a': a, 'd': d, 's': sus, 'r': r, 'vol': vol, 'vib': list(vib), 'pan': pan}
         if sample is not None: out['sample'] = sample
+        if echo or curve != 'lin': assert s.chip == 2, 'echo and curve need Audio(chip=2)'
+        if echo: out['echo'] = echo
+        if curve != 'lin': out['curve'] = curve
         s.I[name] = len(s.instruments); s.instruments.append(out)
-    def song(s, key, speed):
-        return Song(s, key, speed)
+    def voice(self, name, kind, vol, pan=None, **changes):
+        """A sampled instrument from samples.py (its sample is made once per kind), with that kind's envelope and echo;
+        changes override any of a, d, s, r, curve, echo, vib."""
+        assert self.chip == 2, 'sampled voices need Audio(chip=2)'
+        gen, preset = SAMPLED[kind]
+        if kind not in self.kinds:
+            smp = gen()
+            self.kinds[kind] = self.sample(smp['vals'], smp['rate'], smp['loop'])
+        p = {**preset, **changes}
+        self.instrument(name, 'sample', p['a'], p['d'], p['s'], p['r'], vol, p.get('vib', (0, 0)), pan, self.kinds[kind], p['echo'], p['curve'])
+    def song(s, key, speed, echo=None):
+        """echo: (delay 0-15 in 16 ms steps, feedback -15-15, volume 0-15, tone 0-15) for the new chip's echo unit."""
+        if echo: assert s.chip == 2, 'echo needs Audio(chip=2)'
+        return Song(s, key, speed, echo)
     def effect(s, speed, notes, inst):
         """An SFX: one note name a row (None to hold, 'OFF' to release), up to 32 rows, `speed` ticks a row."""
         rows = [None] * 32
@@ -146,24 +201,52 @@ class Audio:
     def effect_rows(s, speed, rows):
         """An SFX from ready-made rows (to mix instruments in one effect)."""
         s.sfx.append({'speed': speed, 'rows': rows + [None] * (32 - len(rows))}); return len(s.sfx) - 1
+    def pattern(s, text):
+        """A pattern from tracker text (a row a line, up to 64; missing rows at the end are empty)."""
+        rows = parse_rows(text, s.channels)
+        assert len(rows) <= 64, len(rows)
+        s.patterns.append({'rows': rows + [[None] * s.channels for _ in range(64 - len(rows))]}); return len(s.patterns) - 1
+    def effect_track(s, speed, text):
+        """An SFX from tracker text: one cell a line, up to 32."""
+        rows = [r[0] for r in parse_rows(text, 1)]
+        s.sfx.append({'speed': speed, 'rows': rows + [None] * (32 - len(rows))}); return len(s.sfx) - 1
+    def transpose(s, semis, channels=(0,), patterns=None):
+        """Move the notes on these channels of these patterns (all by default) by semis (-12: an octave down)."""
+        for k, p in enumerate(s.patterns):
+            if patterns is not None and k not in patterns: continue
+            for row in p['rows']:
+                for ch in channels:
+                    c = row[ch]
+                    if c and c.get('n') not in (None, 'OFF'): c['n'] = nn(pitch_cell(c['n']) + semis)
+    def order(s, order, loop=0, echo=None):
+        """A song from an order list of pattern numbers. echo: (delay, feedback, volume, tone) on the new chip."""
+        song = {'order': list(order), 'loop': loop}
+        if echo: song['echo'] = dict(zip(('delay', 'feedback', 'volume', 'tone'), echo))
+        s.songs.append(song); return len(s.songs) - 1
     def write(s, path, songs=None):
-        ram = sum(len(base64.b64decode(x['data'])) for x in s.samples)
-        assert len(s.patterns) <= 64 and len(s.songs) <= 8 and len(s.sfx) <= 64 and len(s.instruments) <= 32 and ram <= 16384 and len(s.samples) <= 16, \
+        ram = sum(len(base64.b64decode(x['data'])) for x in s.samples if x)
+        ram_max, slots = (32768, 32) if s.chip == 2 else (16384, 16)
+        assert len(s.patterns) <= 64 and len(s.songs) <= 8 and len(s.sfx) <= 64 and len(s.instruments) <= 32 and ram <= ram_max and len(s.samples) <= slots, \
             (len(s.patterns), len(s.songs), len(s.sfx), len(s.instruments), ram)
         if songs is not None: assert len(s.songs) == songs, len(s.songs)
-        json.dump({'instruments': s.instruments, 'patterns': s.patterns, 'songs': s.songs, 'sfx': s.sfx, 'samples': s.samples}, open(path, 'w'), indent=1)
+        out = {'instruments': s.instruments, 'patterns': s.patterns, 'songs': s.songs, 'sfx': s.sfx, 'samples': s.samples}
+        if s.chip == 2: out = {'chip': 2, **out}
+        json.dump(out, open(path, 'w'), indent=1)
         print('patterns', len(s.patterns), 'instruments', len(s.instruments), 'sfx', len(s.sfx), 'songs', len(s.songs), 'sample bytes', ram)
 
 class Song:
-    def __init__(s, audio, key, speed):
-        s.audio, s.key, s.speed, s.rows = audio, key, speed, []
+    def __init__(s, audio, key, speed, echo=None):
+        s.audio, s.key, s.speed, s.rows, s.echo, s.held = audio, key, speed, [], echo, {}
     def bar(s, length, chord, lead=None, li='LEAD', grid=2, drums='none', bass=None, bgrid=None, upper=None,
-            counter=None, ci='COUNTER', cgrid=None, cbase=48, lv=None, fill=False):
+            counter=None, ci='COUNTER', cgrid=None, cbase=48, lv=None, fill=False, pi='PAD', ai='ARP', bi='BASS'):
         """One bar. lead/bass/counter: a line of tokens, one per `grid` rows ('-' holds, '.' releases, '1358' chord tones).
         bass: 'long' for one held root. upper: 'pad', 'arp' (every 2 rows) or 'arp1' (every row). fill: the last half
-        bar is a snare roll. Instruments are by name: li, ci; BASS, PAD, ARP, KICK, SNARE, HAT, OHAT are expected to exist."""
-        I = s.audio.I
-        rows = [[None] * 6 for _ in range(length)]
+        bar is a snare roll. Instruments are by name: li, ci, pi (pad), ai (arpeggio), bi (bass); KICK, SNARE, HAT, OHAT
+        are expected to exist.
+        On the new chip the counter-melody has its own channel (1), so it plays alongside upper, and 'pad' is the
+        third and fifth held together on channels 3 and 4."""
+        I, chip2 = s.audio.I, s.audio.chip == 2
+        rows = [[None] * s.audio.channels for _ in range(length)]
         tones = s.key.chord(chord)
         def line(tokens, g, ch, inst, base=None, v=None):
             toks = tokens.split()
@@ -177,15 +260,23 @@ class Song:
                 rows[k * g][ch] = cell(n, I[inst], v)
         if lead: line(lead, grid, 0, li, v=lv)
         if bass:
-            if bass == 'long': rows[0][2] = cell(tones[0] + 24, I['BASS'])
-            else: line(bass, bgrid or grid, 2, 'BASS', 24)
-        if counter: line(counter, cgrid or grid, 3, ci, cbase)
+            if bass == 'long': rows[0][2] = cell(tones[0] + 24, I[bi])
+            else: line(bass, bgrid or grid, 2, bi, 24)
+        if counter: line(counter, cgrid or grid, 1 if chip2 else 3, ci, cbase)
+        if chip2:   # on the new chip the counter, the pad and its fifth have channels of their own: release them when a bar stops using them
+            if s.held.get(1) and not counter and rows[0][1] is None: rows[0][1] = {'n': 'OFF'}
+            if s.held.get(4) and upper != 'pad' and rows[0][4] is None: rows[0][4] = {'n': 'OFF'}
+            if s.held.get(3) and not upper and rows[0][3] is None: rows[0][3] = {'n': 'OFF'}
+            s.held = {1: bool(counter), 3: bool(upper), 4: upper == 'pad'}
+        if counter and not chip2: pass   # on the old chip the counter-melody takes the upper channel
+        elif upper == 'pad' and chip2:
+            rows[0][3] = cell(tones[1] + 48, I[pi]); rows[0][4] = cell(tones[2] + 48, I[pi])
         elif upper == 'pad':
-            rows[0][3] = cell(tones[1] + 48, I['PAD']); rows[length // 2][3] = cell(tones[2] + 48, I['PAD'])
+            rows[0][3] = cell(tones[1] + 48, I[pi]); rows[length // 2][3] = cell(tones[2] + 48, I[pi])
         elif upper in ('arp', 'arp1'):
             seq = [0, 1, 2, 3, 2, 1]
             for k, r in enumerate(range(0, length, 1 if upper == 'arp1' else 2)):
-                rows[r][3] = cell(tones[seq[k % 6]] + 48, I['ARP'])
+                rows[r][3] = cell(tones[seq[k % 6]] + 48, I[ai])
         smp, noi = DRUMS[length][drums]
         for r in range(length):
             if fill and r >= length // 2:
@@ -195,23 +286,28 @@ class Song:
             if c == 'K': rows[r][5] = cell('C-4', I['KICK'])
             elif c == 'S': rows[r][5] = cell('C-4', I['SNARE'])
             elif c == 's': rows[r][5] = cell('C-4', I['SNARE'], 7)
-            h = noi[r]   # hats share the drum channel, so they only fill rows without a kick or snare
-            if rows[r][5] is None and h in 'ho': rows[r][5] = cell('C-4', I['HAT' if h == 'h' else 'OHAT'])
+            h = noi[r]
+            if h not in 'ho': continue
+            if chip2 and upper != 'pad': rows[r][4] = cell('C-4', I['HAT' if h == 'h' else 'OHAT'])   # their own channel
+            elif rows[r][5] is None: rows[r][5] = cell('C-4', I['HAT' if h == 'h' else 'OHAT'])   # rows with no kick or snare
         s.rows += rows
-    def finish(s):
-        """Cut the song into 64-row patterns (the tempo goes on row 0 of each, on channel 1) and add it to the project."""
+    def finish(s, loop=0):
+        """Cut the song into 64-row patterns (the tempo goes on row 0 of each, on channel 1, or 7 on the new chip) and
+        add it to the project. loop: the order position it loops to, or None to play once."""
         a = s.audio
         assert len(s.rows) % 64 == 0, len(s.rows)
         order = []
         for k in range(0, len(s.rows), 64):
             rows = [list(r) for r in s.rows[k:k + 64]]
-            rows[0][1] = {'fx': 'F%02X' % s.speed}
+            rows[0][7 if a.chip == 2 else 1] = {'fx': 'F%02X' % s.speed}
             key = json.dumps(rows)
             if key not in a.index:
                 a.index[key] = len(a.patterns)
                 a.patterns.append({'rows': rows})
             order.append(a.index[key])
-        a.songs.append({'order': order, 'loop': 0})
+        song = {'order': order, 'loop': loop}
+        if s.echo: song['echo'] = dict(zip(('delay', 'feedback', 'volume', 'tone'), s.echo))
+        a.songs.append(song)
         print('song', len(a.songs) - 1, 'patterns', len(order))
 
 def bars(song, length, chords, leads, **kw):
@@ -220,6 +316,12 @@ def bars(song, length, chords, leads, **kw):
         lead = leads[k] if leads else None
         extra = {key: (v[k] if isinstance(v, list) else v) for key, v in kw.items()}
         song.bar(length, ch, lead, **extra)
+
+def octave(lines, n=-1):
+    """Lines with every pitch name ('A4', 'C#5', 'Bb4') moved n octaves (chord tones and '-' '.' stay as they are)."""
+    import re
+    one = lambda l: re.sub(r"\b([A-G][#b]?)(\d)\b", lambda m: m.group(1) + str(int(m.group(2)) + n), l)
+    return [one(l) for l in lines] if isinstance(lines, list) else one(lines)
 
 def echo(leads, shift=2):
     """A line that repeats the lead `shift` steps later (echoing bells)."""

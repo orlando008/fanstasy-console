@@ -65,7 +65,7 @@ const start = (seed) => { const vm = newGame(seed), p = vm.probe(); vm.run(3); r
   p.tour.cash = 19; vm.run(1);
   ok(p.hubOk().join() === 'false,true,false' && p.canTravel(20) && !p.canTravel(19), 'with $19 neither a show nor a trip can be paid for');
   toItem(vm, p, 2); sfxLog(vm); vm.press('A');
-  ok(p.state === 'hub' && p.tour.cash === 19 && p.tour.week === 1 && sfxLog(vm).some(([n, ch]) => n === p.SFX.refuse && ch === 4), 'TRAVEL is refused with a buzz, and nothing changes');
+  ok(p.state === 'hub' && p.tour.cash === 19 && p.tour.week === 1 && sfxLog(vm).some(([n, ch]) => n === p.SFX.refuse && ch >= 6), 'TRAVEL is refused with a buzz, and nothing changes');
   p.tour.cash = 20; vm.run(1); vm.press('A'); vm.press('A');
   ok(p.state === 'travelResult' && p.tour.cash === 0, 'with exactly $20 the trip can be made, and leaves $0');
 }

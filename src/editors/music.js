@@ -1,7 +1,7 @@
-// Music tab: 8 songs as order lists of 64 shared 6-channel patterns, a
+// Music tab: 8 songs as order lists of 64 shared 8-channel patterns (6 for a cart made for the old sound chip), a
 // pattern tracker and the instrument editor (SPEC 5.3 and 11).
 
-import { CHANNELS, CHANNEL_NAMES, ORDER_MAX, PATTERNS, PATTERN_ROWS, SONGS } from '../formats/audio.js';
+import { CHANNELS, ORDER_MAX, channelCount, channelNames, PATTERNS, PATTERN_ROWS, SONGS } from '../formats/audio.js';
 import { TrackerGrid } from '../ui/tracker.js';
 import { button, h } from '../ui/dom.js';
 import { AudioTab } from './audio-base.js';
@@ -28,7 +28,7 @@ export class MusicEditor extends AudioTab {
     this.grid = new TrackerGrid({
       channels: CHANNELS,
       rows: PATTERN_ROWS,
-      headers: CHANNEL_NAMES,
+      headers: channelNames(2),
       getCell: (r, ch) => this.cart.patterns[this.currentPattern][r][ch],
       edit: (r, ch, fn, key) => {
         const p = this.currentPattern;
@@ -78,6 +78,7 @@ export class MusicEditor extends AudioTab {
 
   refresh() {
     if (!this.cart) return;
+    if (this.grid.channels !== channelCount(this.cart.chip)) this.grid.setChannels(channelCount(this.cart.chip), channelNames(this.cart.chip));
     this.instruments.refresh();
     this.songSelect.value = String(this.song);
     this.sel = Math.max(0, Math.min(this.sel, this.order.length - 1));

@@ -96,11 +96,12 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | Command | What it does |
 |---|---|
 | `python3 carts/src/<name>/audio.py carts/src/<name>/audio.json` | Regenerate a game's audio from its script, with the song toolkit in `tools/devkit/music/kit.py` (its header explains `bar()`) |
-| `node tools/devkit/music/loud.mjs carts/<name>.nova [--check]` | Per-section loudness of every song, surges, peak, and **the lead alone**: its RMS, its share of the mix and how much the mix jumps when it enters. `--check` fails on the limits in section 5 (`verify.js` runs it) |
-| `node tools/devkit/music/lower-leads.mjs carts/src/<name>/audio.json [--write]` | For songs with no audio script: remove the leads' vibrato and lower their volumes until each song's lead is at most 0.05 RMS (instruments shared with effects are copied first) |
+| `node tools/devkit/music/loud.mjs carts/<name>.nova [--check]` | Per-section loudness of every song, surges, peak, and **the lead alone**: its RMS, its share of the mix, how much the mix jumps when it enters, and how much it pierces (2 to 5 kHz). `--check` fails on the limits in section 5 (`verify.js` runs it) |
 | `node tools/devkit/music/render.mjs carts/<name>.nova out/` | WAV files of the songs, with level and clipping |
-| `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level and pitch (centroid) of effects, on the channel the game uses |
-| `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and saw on the beat |
+| `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level (both sides together, so a channel's pan does not change it) and pitch (centroid) of effects, on the channel the game uses |
+| `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and chords on the beat (drums left out) |
+| `python3 tools/devkit/music/script.py carts/src/<name>/audio.json carts/src/<name>/audio.py` | An audio script, with every pattern and effect as tracker text, for a game that has only an `audio.json`; it packs to the same cart |
+| `node tools/devkit/music/compat.mjs [carts/<name>.nova...] [--converted]` | Carts in the old format (version 1) played on the frozen old chip (`tests/audio/legacy-synth.js`) and on the console's: they must give the same samples. `--converted` converts them to the new chip first (interpolation off) and checks the same. Run it, and `node tests/audio/chip.mjs`, after any change to `src/audio/` or `src/formats/audio.js` (CI does). See `docs/dev/sound-chip.md` |
 | `node tools/devkit/voices.mjs carts/<name>.nova [frames] [seed]` | Just the wrong-voice check (soak does this too) |
 
 **Release**
@@ -137,8 +138,9 @@ test is not in CI (it needs Playwright and Chromium). On CI the tests' frame-tim
   (1,024 tiles). Palettes: BG palette p is entries 16p+k, sprite palette p is 128+16p+k; the overlay colours
   come from a BG palette (Moto Crosser keeps them at 113 and up).
 - **Save** 256 int32 slots (`dget`/`dset`). Slot 0 holds a format version.
-- **Audio** 6 channels, 32 instruments, 64 patterns of 64 rows, 8 songs, 64 SFX of up to 32 rows, 16 samples in
-  16 KB of Sample RAM, 8-bit PCM at 16 kHz. A PNG cart holds a payload of 147,443 bytes (the check reports it).
+- **Audio** 8 channels (the instrument decides the voice), 32 instruments, 64 patterns of 64 rows, 8 songs, 64 SFX of
+  up to 32 rows, 32 samples in 32 KB of Sample RAM (8-bit PCM), an echo unit (SPEC 5). Games not converted yet are carts
+  for the old chip (format version 1: 6 channels, the channel decides the voice, 16 KB; section 5). A PNG cart holds a payload of 147,443 bytes (the check reports it).
 - **Determinism**: use the console's `rndi` and seed for everything that matters, so a test and a replay see the
   same game (the harness seeds it from `boot(..., { seed })`).
 
@@ -194,27 +196,41 @@ Checks that proved their worth (the test files in `tests/carts/moto-crosser/` ar
 
 ## 5. Audio
 
-You cannot hear the result, so measure it, and follow the rules that keep players happy:
+You cannot hear the result, so measure it, and follow the rules that keep players happy. The console has an SNES-style
+sound chip (SPEC 5): 8 channels that play any instrument, sampled instruments read with a soft interpolation, and an echo
+unit. Games made before it are carts for the old chip (format version 1) until each is converted
+(`docs/dev/sound-chip.md`); the last part of this section is about them.
 
-- **The channel decides the voice** (0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample), whatever an
-  instrument's `wave` says. A noise instrument played on a pulse channel is a pulse. `check.js` flags a song
-  cell on the wrong channel as an error, and lists effects whose voice does not suit the cart's `SFX_CH` (unless
-  the code has a `SFX_VOICE_CH` table or a `sfx-voice-routed` comment); `voices.mjs` plays the cart and flags
-  what it really sends. Put noise effects on channel 4, saw on 3, triangle on 2: copy `sfxv()` and
-  `SFX_VOICE_CH` from Python Pass, or Moto Crosser's `fx()`.
-- **Reserve channels**: channel 1 for SFX (songs only carry the tempo `F0x` on row 0 of each pattern on it),
-  and channel 4 for an engine or other continuous sound. Hats then become short samples on channel 5, on rows
-  with no kick or snare (the kit does this).
+- **Use the sampled instruments.** `Audio(chip=2)` in `audio.py`, then `a.voice('STR', 'strings', 5, 0.2)` for each
+  (`tools/devkit/music/samples.py` lists them: strings, choir, brass, flute, electric piano, bass, pluck, marimba,
+  celesta, orchestra hit, tom, clap, crash, with their sizes). Each comes with an envelope that suits it (`curve: 'exp'`,
+  so notes die away) and an echo send; change any of them in the call. Pulse, triangle, saw and noise are still there
+  for chip-style sounds. Sample RAM is 32 KB: the kit's four drums take 7 KB, strings and choir 3 KB each.
+- **Channels by convention**: songs on 0 to 5 (the kit: lead 0, counter-melody 1, bass 2, pad or arpeggio 3, the pad's
+  fifth or the hats 4, drums 5; the tempo on row 0 of channel 7), effects on 6 and 7. The starter's `fx(n)` takes turns
+  between 6 and 7, so two effects can sound at once and neither cuts into the music. `check.js` warns about an
+  `SFX_CH` under 6, and lists the channels each song uses.
+- **Echo**: give each song its own (`a.song(key, speed, echo=(delay, feedback, volume, tone))`, SPEC 5.6) and send the
+  instruments that should ring into it (`echo=` on the instrument): pads, leads, snare, bells; not the bass or the kick,
+  which turn to mud. About (5, 4, 5, 9) is a room; (12, 8, 9, 7) a hall. A cart can change it in code with `echo()`
+  (a cave), and `echo(0)` turns it off.
 - **No wobbly or loud leads.** Players complained about vibrato, sudden jumps in level and a lead that "blew out my
-  ears". Leads are `pulse25` or `pulse50` at volume 4 to 6 with no vibrato; kick 12, snare 10. `loud.mjs --check`
+  ears". Leads have no vibrato and sit at about 0.04 RMS on their own; kick 12, snare 10. `loud.mjs --check`
   turns the complaint into numbers (for songs of 12 s or more): the lead alone at most 0.07 RMS and at most 0.75 of the
   mix, the mix at most 1.5x louder in the section where the lead enters, no section over 1.6x the song's median, the
   loudest 250 ms at most 2.2x the median, the peak at most 0.45, the median level 0.03 to 0.15. Python Pass's first
   version (lead 0.08 to 0.13, 0.8 to 0.9 of the mix, entering up to 2.4x) was what players called blaring; its fixed
-  songs are 0.04 to 0.05 and 0.5 to 0.7. A pulse50 lead is louder than a pulse25 at the same volume.
-  The first games' leads were as loud as that first version, and were brought down in the same way with
-  `lower-leads.mjs` (no vibrato; volumes lowered until each song's lead is at most 0.05 RMS). Only the `chiptune` demo is
-  over the limits (a loud sound test, so `verify.js` only warns for it).
+  songs are 0.04 to 0.05 and 0.5 to 0.7. On their own at volume 15 the sampled instruments measure about: flute 0.10,
+  brass 0.09, strings 0.07, choir and celesta 0.05, bass 0.04 to 0.07, electric piano 0.02 to 0.06 (it decays); so a
+  brass lead is about volume 7, a flute 5.
+- **No piercing leads.** A lead can be within every level above and still hurt: the Sound Test's first brass (a bright,
+  saw-like horn, playing in octave 5) was "a loud blaring sound, it pierces my ear a bit". The ear is most sensitive at
+  2 to 5 kHz, and a bright instrument high up puts its harmonics there. `loud.mjs` reports the lead's energy in that band
+  as **pierce** and fails a new-chip song over 0.012 (those two songs measured 0.017 and 0.014; the one the user called
+  beautiful 0.009; fixed, 0.005 to 0.007). The fixes: write leads in octave 4 (to the 5 at the top of a phrase), not 5
+  and 6; and pick a darker instrument (the brass is now a soft horn). Every pulse lead of the old chip is 0.014 to 0.027.
+  When a song is close to a limit, render it (`render.mjs`) and send the WAV to the user to listen to. An intro without the pad makes the lead's entrance a jump: start the pad
+  (or a counter-melody) before the lead comes in. `clash.py` checks the lead against the bass and the chords.
 - **The player can turn the volume down** (`-` and `=`, `M` mutes: a console feature, so no cart code), but do not rely on it:
   keep the levels within the limits above.
 - **A held note cannot change pitch** (no API for it). A pitch that follows a value (an engine) is a short loop
@@ -222,9 +238,20 @@ You cannot hear the result, so measure it, and follow the rules that keep player
 - **Effect levels**: a song is about 0.06 to 0.08 RMS; effects 0.01 to 0.06; a looping sound 0.02 to 0.03.
   `sfx.mjs` measures them on the right channel.
 - **Songs are generated** from a script (`audio.py`, using `kit.py`), which keeps the music in reviewable text
-  and makes a change (a quieter lead) a one-line edit. The script must regenerate `audio.json` exactly.
+  and makes a change (a quieter lead) a one-line edit. The script must regenerate `audio.json` exactly. A game with
+  only an `audio.json` gets a script with `python3 tools/devkit/music/script.py carts/src/<name>/audio.json
+  carts/src/<name>/audio.py` (every pattern as tracker text), which packs to the same cart.
 - Cues (`play(song)` that does not restart the song already playing; `fx(n)` for effects) belong in one place in
   the code so a test can check them.
+- The `sound-test` demo plays every sampled instrument on its own and three songs (`carts/src/sound-test/audio.py`).
+
+**Carts for the old chip (format version 1)**: the `chiptune` demo, and any old cart someone opens. They play as they
+always did (SPEC 5.7): six channels whose channel decides the voice (0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5
+sample), so a noise effect sent to a pulse channel sounds like a pulse. `check.js`, `soak.mjs` and `voices.mjs` flag
+that on such a cart, and `tools/devkit/music/compat.mjs` proves they still sound as before. To bring one onto the new
+chip, convert it (`convertToChip2` in `src/formats/audio.js`), give it an audio script with `script.py`, and re-voice
+that (the games were done this way: `docs/dev/sound-chip.md`). The `chiptune` demo is over the loudness limits (a loud
+sound test, so `verify.js` only warns for it).
 
 ## 6. Art
 
@@ -310,20 +337,15 @@ tiles for three settings by designing a tile-aligned vocabulary, after an image-
 
 ## 9. Fixed in the first games
 
-`check.js`, `soak.mjs` and `loud.mjs` found two kinds of mistake in the first games. Both are fixed, so those games
-sound a little different:
+What the checks found in the games, so the same is not done again:
 
-- **Noise (and saw) effects played through the pulse effects channel** (Alien Swarm, Planet Racers, Python
-  Pass, Smashy Smash): the channel decides the voice, so they sounded like pulse tones. Each cart now has a table,
-  `SFX_VOICE_CH`, and plays those effects on channel 4 (noise) or 3 (saw) through `sfxv()`; the rest still use
-  `SFX_CH = 1`. A noise effect briefly mutes the music's channel 4 (the hats) while it plays. Noise is somewhat
-  louder than a pulse at the same volume (RMS 1.3 to 1.5 times), still well under the music.
-- **Smashy Smash, song 2** had an instrument declared as `pulse12` on the saw channel (it always played as a
-  saw, with a fast vibrato). Its wave is now `saw`, so the sound is as it was.
-- **Loud, wobbly leads** (Alien Swarm, Block Wizard, Planet Racers, Smashy Smash, Summit Rush; Python Pass was
-  fixed earlier after two rounds of feedback, which is where the limits came from): leads had vibrato and sat at
-  up to 0.13 RMS, 0.7 to 0.9 of the mix. `lower-leads.mjs` removed the vibrato and lowered the volumes so each
-  song's lead is at most 0.05 RMS (about half the mix); instruments shared with effects were copied first, so the
-  effects did not change.
-- **Moto Crosser's Night Mountain** was the first song the lead check flagged (0.76 of the mix, entering 1.53x): its
-  brass lead went from volume 5 to 4.
+- **Leads that were loud and wobbly** (players: "it blew out my ears"): vibrato, and leads at up to 0.13 RMS and 0.7 to
+  0.9 of the mix. Python Pass was fixed after two rounds of feedback, which is where `loud.mjs`'s limits came from; the
+  other games were then brought under them (October 2026).
+- **Leads that pierced**: on the new chip, the Sound Test's first brass lead, a bright horn in octave 5, was within
+  every level limit and still "blaring". That gave `loud.mjs` its pierce limit; every game's leads moved an octave down.
+- **Effects in the wrong voice** (on the old chip, a noise effect sent to the pulse effects channel sounded like a
+  tone): the reason the old games had a `SFX_VOICE_CH` table. On the new chip every channel plays every voice.
+- **Measuring what is not there**: `loud.mjs` read a song's tempo only from channel 1, so Summit Rush (tempo on channel
+  5) was measured at the wrong speed and its title lead was over the limit unseen; `sfx.mjs` read the left side only,
+  so effects panned right looked quieter than they were. Both now measure what the player hears.
