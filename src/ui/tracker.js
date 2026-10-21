@@ -31,8 +31,9 @@ export class TrackerGrid {
     this.playing = -1;
     this.rowEls = [];
 
-    const head = h('div', { class: 'trk-head' }, h('span', { class: 'trk-num' }, ''),
-      o.headers.map((t) => h('span', { class: 'trk-cell trk-head-cell' }, t)));
+    const head = h('div', { class: 'trk-head' });
+    this.head = head;
+    this.setHeaders(o.headers);
     this.body = h('div', { class: 'trk-body' });
     for (let r = 0; r < this.rows; r++) {
       const el = h('div', { class: 'trk-row' });
@@ -43,6 +44,17 @@ export class TrackerGrid {
     }
     this.el = h('div', { class: 'tracker', tabIndex: 0 }, head, this.body);
     this.body.addEventListener('pointerdown', (e) => this.click(e));
+  }
+
+  setHeaders(headers) {
+    this.head.replaceChildren(h('span', { class: 'trk-num' }, ''), ...headers.map((t) => h('span', { class: 'trk-cell trk-head-cell' }, t)));
+  }
+
+  /** Change the number of channels (a cart for the old sound chip has 6, the new chip 8). Call render() after. */
+  setChannels(channels, headers) {
+    this.channels = channels;
+    this.setHeaders(headers);
+    this.cur.col = Math.min(this.cur.col, channels * COLS - 1);
   }
 
   get ch() {

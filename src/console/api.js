@@ -171,6 +171,11 @@ export function buildApi(m) {
     /** Set the master volume, 0-1. */
     volume: (v) => { m.audio.push(['volume', clamp(Number(v) || 0, 0, 1)]); },
 
+    /** Set the echo unit (SPEC 5.6): delay 0-15 (16 ms steps; 0 is off), feedback -15-15, volume 0-15, tone 0-15. */
+    echo: (delay = 0, feedback = 0, volume = 0, tone = 10) => {
+      m.audio.push(['echo', clamp(int(delay), 0, 15), clamp(int(feedback), -15, 15), clamp(int(volume), 0, 15), clamp(int(tone), 0, 15)]);
+    },
+
     // --- Input -------------------------------------------------------------
 
     /** True while button b on pad p is held. */
