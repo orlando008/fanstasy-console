@@ -456,7 +456,7 @@
     },
     {
       "rows": [
-        [{"n":"F#4","i":6},null,{"n":"D-2","i":9},{"n":"F#4","i":4},{"n":"A-4","i":4},{"n":"C-4","i":0},null,{"fx":"F06"}],
+        [{"n":"F#4","i":6},{"n":"OFF"},{"n":"D-2","i":9},{"n":"F#4","i":4},{"n":"A-4","i":4},{"n":"C-4","i":0},null,{"fx":"F06"}],
         [null,null,null,null,null,null,null,null],
         [null,null,null,null,null,{"n":"C-4","i":2},null,null],
         [null,null,null,null,null,null,null,null],
@@ -590,7 +590,7 @@
     },
     {
       "rows": [
-        [{"n":"B-5","i":7},{"n":"D-5","i":4},{"n":"B-2","i":9},{"n":"B-4","i":10},null,{"n":"C-4","i":0},null,{"fx":"F06"}],
+        [{"n":"B-5","i":7},{"n":"D-5","i":4},{"n":"B-2","i":9},{"n":"B-4","i":10},{"n":"OFF"},{"n":"C-4","i":0},null,{"fx":"F06"}],
         [null,null,null,null,null,null,null,null],
         [null,null,null,{"n":"D-5","i":10},{"n":"C-4","i":2},null,null,null],
         [null,null,null,null,null,null,null,null],

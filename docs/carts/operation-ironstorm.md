@@ -62,16 +62,18 @@ capsules, the shots, the HUD and the title's logo).
 
 ## 5. Audio (6.0)
 
-Made by `audio.py` with the song toolkit; channel 1 is kept for effects, the drums are samples on channel 5 and the
-gunfire is noise on channel 4.
+Made by `audio.py` with the song toolkit, on the console's SNES-style sound chip (SPEC 5; converted in 6.1): sampled
+instruments (a flute lead, a soft horn, strings, a harp, a sampled bass, the kit's drums) and an echo for each song, the
+leads in octave 4. The songs use channels 0 to 5; the code plays every effect on channel -1, so the chip puts it on 7 or
+6, whichever is free, and it never cuts into the music. The gunfire is noise and the laser a chip zap.
 
 | Song | | |
 |---|---|---|
-| 0 | The jungle | E minor, 150 bpm, 32 bars, loops: an intro, the main tune, a second theme over strings, the tune again, a bridge |
-| 1 | The title | E minor, 128 bpm, 16 bars, loops: a horn over strings, then the tune with a march |
-| 2 | The fortress commander | E minor with a flat second, 180 bpm, 16 bars, loops: stabs over a driving bass, then the horn |
-| 3 | Mission complete | an E major fanfare, once |
-| 4 | Mission failed | a slow fall, once |
+| 0 | The jungle | E minor, 150 bpm, 32 bars, loops: an intro, the main tune, a second theme over strings, the tune again, a bridge; a 96 ms echo |
+| 1 | The title | E minor, 128 bpm, 16 bars, loops: a horn over a strings pad, then the tune with a march; 128 ms |
+| 2 | The fortress commander | E minor with a flat second, 180 bpm, 16 bars, loops: stabs over a driving bass, then the horn; 80 ms |
+| 3 | Mission complete | an E major fanfare, once; 112 ms |
+| 4 | Mission failed | a slow fall, once, in a long, dark echo (192 ms) |
 
 Effects keep the author's numbers: 0 rifle, 1 jump, 2 hurt, 3 an enemy down, 4 checkpoint, 5 lost a life, 6 rocket,
 7 laser, 8 spread, 9 rapid, 10 the boss destroyed.
@@ -83,7 +85,7 @@ Effects keep the author's numbers: 0 rifle, 1 jump, 2 hurt, 3 an enemy down, 4 c
 | Code | 26.0 KB of the 64 KB limit |
 | Tiles | 642 of 1,023: 318 for the three layers (of 639 kept for them), 324 for the sprites (of 384) |
 | Palettes | BG 1 to 3 (the layers), BG 6 and 7 entries for the overlay's named colours, sprite 0 to 4 |
-| Audio | 18 instruments, 18 patterns, 5 songs, 11 SFX, 4 drum samples (7,200 bytes) |
+| Audio | 18 instruments, 18 patterns, 5 songs, 11 SFX; 10 samples in 13 KB of the 32 KB Sample RAM (the drums, flute, horn, strings, harp, bass, celesta) |
 | Save slots | none |
 
 ## 7. Results
@@ -96,3 +98,9 @@ Effects keep the author's numbers: 0 rifle, 1 jump, 2 hurt, 3 an enemy down, 4 c
 - Checks: soak (3 seeds of 20,000 frames) clean, frame time median 1.4 ms and 99th percentile 3.1 ms, at most 16
   sprites; `loud.mjs --check` within the limits (each song's lead 0.53 to 0.56 of the mix); `clash.py` finds no lead
   against bass clashes; effects measure 0.01 to 0.06 RMS; the smoke test runs at 60 fps with no errors.
+- 6.1, the new sound chip (October 2026; `docs/dev/sound-chip.md`): `audio.py` on `Audio(chip=2)`, the same notes with
+  sampled instruments, the leads an octave lower but the last song's (a lead in octaves 5 and 6 pierces), an echo for
+  each song, a strings pad under the title's horn; the effects' instruments re-voiced (a celesta checkpoint) and the
+  explosion a step quieter for the echo it now has. The code is unchanged. `loud.mjs --check`: all songs within the
+  limits, the leads 0.62 to 0.73 of the mix (0.79 in the 10-second ending, which is judged on its peak) and piercing
+  0.005 to 0.009 (the pulse leads were 0.018 to 0.022); `clash.py`: nothing; effects 0.014 to 0.056 RMS.

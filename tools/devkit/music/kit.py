@@ -224,7 +224,7 @@ class Audio:
 
 class Song:
     def __init__(s, audio, key, speed, echo=None):
-        s.audio, s.key, s.speed, s.rows, s.echo = audio, key, speed, [], echo
+        s.audio, s.key, s.speed, s.rows, s.echo, s.held = audio, key, speed, [], echo, {}
     def bar(s, length, chord, lead=None, li='LEAD', grid=2, drums='none', bass=None, bgrid=None, upper=None,
             counter=None, ci='COUNTER', cgrid=None, cbase=48, lv=None, fill=False, pi='PAD', ai='ARP', bi='BASS'):
         """One bar. lead/bass/counter: a line of tokens, one per `grid` rows ('-' holds, '.' releases, '1358' chord tones).
@@ -251,6 +251,11 @@ class Song:
             if bass == 'long': rows[0][2] = cell(tones[0] + 24, I[bi])
             else: line(bass, bgrid or grid, 2, bi, 24)
         if counter: line(counter, cgrid or grid, 1 if chip2 else 3, ci, cbase)
+        if chip2:   # on the new chip the counter, the pad and its fifth have channels of their own: release them when a bar stops using them
+            if s.held.get(1) and not counter and rows[0][1] is None: rows[0][1] = {'n': 'OFF'}
+            if s.held.get(4) and upper != 'pad' and rows[0][4] is None: rows[0][4] = {'n': 'OFF'}
+            if s.held.get(3) and not upper and rows[0][3] is None: rows[0][3] = {'n': 'OFF'}
+            s.held = {1: bool(counter), 3: bool(upper), 4: upper == 'pad'}
         if counter and not chip2: pass   # on the old chip the counter-melody takes the upper channel
         elif upper == 'pad' and chip2:
             rows[0][3] = cell(tones[1] + 48, I[pi]); rows[0][4] = cell(tones[2] + 48, I[pi])
