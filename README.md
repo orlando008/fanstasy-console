@@ -64,7 +64,7 @@ Cursor) or a chat, which then makes a game with you from this repository. You ca
 | `parallax` | Three scrolling background layers, sub-palettes, tile priority |
 | `water` | `scanline()` reflection with per-line wobble and palette swaps |
 | `mode7` | Per-line BG2 affine perspective floor and sky gradient |
-| `showcase` | The art kit's SNES tools at work (docs/dev/snes-picture.md): a sculpted boxer in a ring with a receded crowd and HUD lettering, and a parallax valley under a sky gradient (LEFT and RIGHT) |
+| `showcase` | The art kit's SNES tools at work (docs/dev/snes-picture.md): two sculpted boxers in a ring, framed as Super Punch-Out!! (our hero from behind), with a receded crowd and HUD lettering, and a parallax valley under a sky gradient (LEFT and RIGHT) |
 | `effects` | Colour blending, brightness, windows and mosaic: a see-through panel, shadows, light, water, fades, spotlights, an iris wipe, coloured glass and the mosaic, one page each (LEFT and RIGHT) |
 | `chiptune` | A six-channel song and five sound effects on the old sound chip (a version-1 cart, kept as it was), all editable in the Music and SFX tabs |
 | `sound-test` | The new sound chip: three songs through the echo unit, and every sampled instrument to play on its own (UP/DOWN and A; B turns the echo off) |

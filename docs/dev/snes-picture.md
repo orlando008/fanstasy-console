@@ -81,9 +81,10 @@ tones, backgrounds of materials (tiles, fences, paving, foliage) pushed back beh
 
 ## Part D: a demo cart
 
-The `showcase` cart, made only with the part B tools: RINGSIDE (a sculpted boxer in two palettes, breathing, over a
+The `showcase` cart, made only with the part B tools: RINGSIDE (framed as Super Punch-Out!!: our hero sculpted from
+behind in the foreground, his opponent a sculpted boxer in two palettes, breathing, over a
 receded crowd with camera flashes, ropes, posts, a canvas with an emblem, HUD lettering and a subtracted shadow) and
-VALLEY (a sky gradient line by line, clouds, snowy mountains, hills, trees and grass on three parallax layers). 795 of
+VALLEY (a sky gradient line by line, clouds, snowy mountains, hills, trees and grass on three parallax layers). 943 of
 1,023 tiles; 1,235 saved by sharing.
 
 ## How old carts keep working

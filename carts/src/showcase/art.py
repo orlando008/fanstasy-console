@@ -2,7 +2,8 @@
 #   python3 carts/src/showcase/art.py carts/src/showcase
 # Made only with the art kit's SNES tools (tools/devkit/art/kit.py; docs/dev/snes-picture.md, part B), as a worked
 # example of each. Two pages:
-#   RINGSIDE  a boxer sculpted from 3D shapes (Sculpt) in two sprite palettes (a big sprite), a crowd pushed back with
+#   RINGSIDE  our hero seen from behind in the foreground and his opponent, both sculpted from 3D shapes (Sculpt) as big
+#             sprites (the opponent in two sprite palettes), a crowd pushed back with
 #             recede(), ropes (rope()), corner posts, a canvas with an emblem, HUD lettering (big_text, hud_bar) and a
 #             contact shadow (ellipse) for subtractive blending
 #   VALLEY    a sky gradient line by line (Art.gradient), clouds, snowy mountains, hills, a tree line and grass
@@ -12,8 +13,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../
 from kit import *
 
 art = Art()
-art.region('bg', 1, 671)
-art.region('spr', 672, 1023)
+art.region('bg', 1, 639)
+art.region('spr', 640, 1023)
 art.backdrop('101020')
 
 # The overlay's own colours (text on both pages).
@@ -131,6 +132,48 @@ def boxer(bob):
 parts = boxer(0)
 art.big_sprite('boxerTop', {p: im.crop(0, 0, 72, 64) for p, im in parts.items()}, region='spr')
 art.big_sprite('boxerLegs', {p: im.crop(0, 64, 72, 48) for p, im in parts.items()}, region='spr')
+
+# --- Our hero, seen from behind in the foreground, as in Super Punch-Out!!: a broad back, spiky hair, the guard up
+# beyond him. Sprite palette 3 (palettes 4 to 7 would be subtracted with the shadow). ---
+HERO = art.sprite_palette(3, {'skin': ramp('f0b080', 6), 'hair': ramp('e0b040', 4), 'glove': ramp('40b040', 3), 'trunks': ramp('2840a0', 2)})
+
+
+def hero():
+    sk, cx = HERO.skin, 52
+    s = Sculpt(104, 104)
+    s.ellipsoid(cx, 72, 0, 31, 32, 13, sk)                                 # the back, a broad V
+    s.ellipsoid(cx, 96, -1, 22, 14, 10, sk, smooth=10)
+    for side in (-1, 1):                                                   # muscles as low bumps blended into it
+        s.ellipsoid(cx + side * 15, 58, 4, 12, 13, 9, sk, smooth=9)        # shoulder blade
+        s.ellipsoid(cx + side * 23, 80, 2, 9, 17, 11, sk, smooth=9)        # lat
+        s.ellipsoid(cx + side * 7, 82, 1.5, 6, 18, 11, sk, smooth=10)      # the long muscle by the spine
+    s.ellipsoid(cx, 43, -3, 19, 7, 10, sk, smooth=12)                      # traps
+    s.capsule((cx, 37, -2), (cx, 27, -2), 7.5, 7, sk, smooth=5)            # neck
+    s.ellipsoid(cx, 19, 0, 11, 13, 10, sk)                                 # head
+    s.sphere(cx - 11, 21, -2, 3, sk); s.sphere(cx + 11, 21, -2, 3, sk)     # ears
+    for side, (ex, ey, gx, gy) in ((-1, (12, 66, 22, 30)), (1, (94, 70, 85, 46))):
+        s.sphere(cx + side * 29, 48, 2, 10, sk, smooth=7)                  # shoulder
+        s.capsule((cx + side * 31, 50, 1), (ex, ey, -6), 9, 8, sk, smooth=4)   # upper arm
+        s.capsule((ex, ey, -6), (gx, gy + 6, -14), 8, 7, sk, smooth=2)     # forearm, reaching away from us
+        s.ellipsoid(gx, gy, -16, 11, 12, 9, Mat(HERO.glove, gloss=0.6))    # glove, beyond him
+    hair = Img(32, 24)
+    for k in range(6):                                                     # spikes round the crown
+        a = -75 + k * 30
+        base = lambda d: (16 + 9 * math.sin(math.radians(a + d)), 15 - 9 * math.cos(math.radians(a + d)))
+        hair.poly([base(-22), (16 + 16 * math.sin(math.radians(a)), 15 - 16 * math.cos(math.radians(a))), base(22)], 1)
+    hair.disc(15.5, 15, 10.5, 1)
+    s.relief(hair, cx - 16, 1, 6, 5, Mat(HERO.hair), profile='soft')
+    s.ellipsoid(cx, 104, 2, 24, 7, 8, HERO.trunks)                         # the waistband, at the bottom of the screen
+    img = s.render(light=(-1, -1.1, 0.6), contours=6)                      # contours only where parts truly overlap
+    for y in range(46, 100):                                               # the spine: a groove, lit on its left
+        c = img.get(cx, y)
+        if c in sk:
+            img.pset(cx, y, sk[max(1, sk.index(c) - 2)])
+            if img.get(cx - 1, y) in sk: img.pset(cx - 1, y, sk[min(5, sk.index(c) + 1)])
+    return img
+
+
+art.big_sprite('hero', hero(), pal=HERO, region='spr')
 
 # --- His shadow on the canvas: sprite palette 4, subtracted from what is under it (blend op 'sub'). ---
 SHADOW = art.sprite_palette(4, {'shade': '383020'})
