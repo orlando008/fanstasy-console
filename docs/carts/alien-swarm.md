@@ -1,6 +1,6 @@
 # Alien Swarm: Cart Specification
 
-**Version:** 1.2
+**Version:** 1.3 (the new sound chip)
 **Status:** Released: all 7 steps of the plan (15) are built; also as the PNG cart `carts/alien-swarm.nova.png`
 **Cart source:** `carts/src/alien-swarm/` → `carts/alien-swarm.nova`
 
@@ -161,14 +161,21 @@ In the menus START or A goes on and B goes back, as in Smashy Smash.
 
 ## 11. Audio
 
-**Songs** (5): the title, and one for each planet (8), looping. Channel 1 is kept
-for sound effects.
+**Songs** (5): the title, and one for each planet (8), looping, on the console's SNES-style sound chip (SPEC 5;
+converted in v1.3): sampled instruments (horn, marimba and flute leads, a choir for the pad, a harp, electric-piano
+chords, a sampled bass, the kick and snare samples, noise hats) and an echo for each song (the deepest on the Frost
+Moon, 160 ms). The songs use channels 0 to 5; the effects take turns on 7 and 6 (`sfxv()`), so they never cut into the
+music and two can sound at once. The music is in `carts/src/alien-swarm/audio.py` (made from the `audio.json` by
+`tools/devkit/music/script.py`: every pattern and effect as tracker text).
 
-**Effects on a channel with their voice** (v1.1): the channel decides the voice, so an effect with noise in it
-sounds like noise only on a noise channel. The cannon (1), the splat (2), freeze (9), the missile (10) and the boom (11) play on channel 4 (noise) through the `SFX_VOICE_CH` table and `sfxv()` in the code; the laser (8) is a saw and plays on channel 3; every other effect plays on
-channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sounded like pulse tones. A noise effect
-briefly mutes the music's channel 4 while it plays. (`tools/check.js` and `tools/devkit/soak.mjs` check this; see
-`docs/dev/playbook.md`, section 5.)
+**The new sound chip** (v1.3): the leads (channel 0) are an octave lower than they were written, since a lead up in
+octaves 5 and 6 pierces (`loud.mjs` measures it: 0.001 to 0.004 at 2 to 5 kHz now, 0.012 to 0.017 for the pulse leads);
+the soft flute that opens the title is quieter, so it enters at 1.4x; all five songs are within the limits of
+`loud.mjs --check` (the lead 0.46 to 0.62 of the mix) and `clash.py` finds nothing. Effects: celesta chimes, a horn
+fanfare, a tom for a refusal; the shots, the lasers and the blips stay chip sounds and the explosions noise, all 0.007
+to 0.058 RMS (measured on both sides together: the boss's warning, which was 0.071 that way on the old chip, is now
+0.053). (On the old chip, v1.1 sent the noisy effects to its noise channel; the new chip plays every voice on every
+channel.)
 
 **Lead levels** (v1.2, after players found the leads loud and wobbly): the lead instruments have no vibrato and their
 volumes were lowered so that the lead alone is at most 0.05 RMS in its loudest section (it was 0.067 to 0.126), which is
