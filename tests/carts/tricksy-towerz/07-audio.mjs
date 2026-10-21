@@ -24,14 +24,15 @@ const drop = (y, q, shape, x, yy) => { const b = q.mkBody(q.SHAPES[shape], x, yy
   ok(used.length === 4 && usedSfx.length === 13 && cart.songs.slice(4).every((x) => !x.order.length), 'there are four songs and thirteen effects', `${used.length} songs, ${usedSfx.length} effects`);
   ok(used.slice(0, 3).every((x) => x.loop === 0), 'the title, race and tense songs loop');
   ok(used[3].loop === 1 && used[3].order.length === 5 && !used[3].order.slice(1).includes(used[3].order[0]), 'the finish is a fanfare heard once, then a calm tune that goes round (it loops back past the fanfare, so no note is left held under the results)');
-  const speed = (si) => cart.patterns[cart.songs[si].order[0]][0][1].fx & 255;
+  const speed = (si) => cart.patterns[cart.songs[si].order[0]][0][7].fx & 255;   // the tempo: row 0, channel 7
   ok([0, 1, 2, 3].map(speed).join() === '7,6,8,5', 'at 128, 150, 112 and 180 beats a minute (speeds 7, 6, 8 and 5)');
   const secs = (si) => cart.songs[si].order.length * 64 * speed(si) / 60;
   ok(secs(0) > 29 && secs(0) < 31 && secs(1) > 50 && secs(1) < 52 && secs(2) > 16 && secs(2) < 18 && secs(3) > 26 && secs(3) < 27, 'about 30, 51, 17 and 27 seconds long (the finish: a fanfare of 5 s and a loop of 21 s)', [0, 1, 2, 3].map((i) => secs(i).toFixed(1)).join(' '));
-  ok(used.every((s) => s.order.every((o) => cart.patterns[o].every((r, i) => (i === 0 || !r[1]) && !r[4]))), 'channel 1 carries only the tempo and channel 4 nothing, in every song (they are the effects\')');
+  ok(used.every((s) => s.order.every((o) => cart.patterns[o].every((r, i) => (i === 0 || !r[7]) && (!r[7] || r[7].n == null) && !r[6]))), 'channel 7 carries only the tempo and channel 6 nothing, in every song (they are the effects\')');
+  ok(used.every((s) => s.echo && s.echo.delay > 0), 'every song has its own echo');
   const wave = (n) => cart.instruments[cart.sfx[n].rows.find((r) => r && r.i !== null).i].wave;
   const noisy = [...Array(13).keys()].filter((n) => wave(n) === 'noise');
-  ok(noisy.join() === '3,4,12' && Object.keys(p.SFX_VOICE_CH).map(Number).sort((a, b) => a - b).join() === '3,4,12', 'the effects with noise in them (a piece lost, the tower falling, not allowed) are the ones on the noise channel');
+  ok(noisy.join() === '3,4,12' && p.SFX_CH.join() === '7,6', 'the effects with noise in them are a piece lost, the tower falling and not allowed; every effect takes turns on channels 7 and 6');
   const ticks = (n) => cart.sfx[n].speed * (cart.sfx[n].rows.findIndex((r) => r && r.n === -2) + 1);
   ok([...Array(13).keys()].every((n) => ticks(n) <= 40 && ticks(n) >= 4), 'every effect is between 4 and 40 ticks (under 0.7 s)', [...Array(13).keys()].map(ticks).join(' '));
   { // the finish heard by the console's own synth, as long as a slow player takes over the results, the initials and the records
@@ -41,7 +42,7 @@ const drop = (y, q, shape, x, yy) => { const b = q.mkBody(q.SHAPES[shape], x, yy
   }
   const out = tool('tools/devkit/music/loud.mjs', 'carts/tricksy-towerz.nova', '--check');
   ok(/all songs within the limits/.test(out), 'the songs are within the level limits (lead, mix, surges, peaks)', out.split('\n').filter((l) => /lead/.test(l)).map((l) => l.match(/lead ([\d.]+)/)[1]).join(' '));
-  const lv = tool('tools/devkit/music/sfx.mjs', 'carts/tricksy-towerz.nova', '1', '0', '1', '2', '5', '6', '7', '8', '9', '10', '11') + tool('tools/devkit/music/sfx.mjs', 'carts/tricksy-towerz.nova', '4', '3', '4', '12');
+  const lv = tool('tools/devkit/music/sfx.mjs', 'carts/tricksy-towerz.nova', '7', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12');
   const rms = [...lv.matchAll(/rms ([\d.]+)/g)].map((m) => +m[1]);
   ok(rms.length === 13 && rms.every((r) => r >= 0.01 && r <= 0.06), 'and every effect, on the channel it is played on, has a level of 0.01 to 0.06', rms.join(' '));
 }
@@ -71,13 +72,13 @@ const drop = (y, q, shape, x, yy) => { const b = q.mkBody(q.SHAPES[shape], x, yy
 {
   const [vm, p] = race([4, 1, 1, 1], 1); const y = p.yards[0], c = p.yards[1];
   for (let i = 0; i < 90 && !y.cur; i++) vm.step(0); log(vm);
-  vm.press('A'); const t = fxOf(log(vm)); ok(t.some(([n, ch]) => n === p.SFX.turn && ch === 1), 'a piece turned by a person ticks', JSON.stringify(t));
+  vm.press('A'); const t = fxOf(log(vm)); ok(t.some(([n, ch]) => n === p.SFX.turn && ch >= 6), 'a piece turned by a person ticks', JSON.stringify(t));
   y.cur.x = 0; y.cur.y = -2; p.place(y.cur); y.rot = 0; y.cur.a = 0; p.place(y.cur); // a bar on the ground: it cannot turn upright
   const bar = p.mkBody(p.SHAPES[0], 0, -40); bar.kind = 0; y.cur = bar; y.rot = 0; bar.y = -4; p.place(bar); log(vm); vm.press('A');
   ok(fxOf(log(vm)).filter(([n]) => n === p.SFX.turn).length === 0, 'a turn that does not fit makes no sound');
   y.cur = null; y.wait = 0; log(vm); const n0 = y.placed;
   for (let i = 0; i < 400 && y.placed === n0; i++) vm.step(M('DOWN'));
-  ok(fxOf(log(vm)).some(([n, ch]) => n === p.SFX.land && ch === 1), 'a piece landing makes a soft tap');
+  ok(fxOf(log(vm)).some(([n, ch]) => n === p.SFX.land && ch >= 6), 'a piece landing makes a soft tap');
 }
 {
   const [vm, p] = race([4, 1, 1, 1], 1); for (const y of p.yards) { y.ai = true; y.skill = 3; } log(vm);
@@ -89,7 +90,7 @@ const drop = (y, q, shape, x, yy) => { const b = q.mkBody(q.SHAPES[shape], x, yy
   p.yards[1].ai = true; for (let i = 0; i < 90 && !y.cur; i++) vm.step(0);
   y.cur.x = -28; p.place(y.cur); y.cur.y = 50; p.place(y.cur); log(vm);
   y.cur.x = -40; p.place(y.cur); for (let i = 0; i < 8; i++) vm.step(M('DOWN'));
-  ok(fxOf(log(vm)).some(([n, ch]) => n === p.SFX.lost && ch === 4), 'a person losing a piece hears it fall, on the noise channel (4)');
+  ok(fxOf(log(vm)).some(([n, ch]) => n === p.SFX.lost && ch >= 6), 'a person losing a piece hears it fall, on an effects channel');
 }
 
 // 4. The line, the tower falling, the finish.
@@ -100,7 +101,7 @@ const drop = (y, q, shape, x, yy) => { const b = q.mkBody(q.SHAPES[shape], x, yy
   ok(fxOf(first).filter(([n]) => n === p.SFX.cross).length === 1, 'a tower crossing the line is told so, once', JSON.stringify(fxOf(first)));
   ok(songsOf(first).join() === '2' && p.playing === 2, 'and the music turns tense (the over-the-line song starts once the tower has been over it for 20 frames)');
   y.W.bodies.splice(5, 4); const after = []; for (let i = 0; i < 30; i++) { vm.step(0); after.push(...log(vm)); }
-  ok(fxOf(after).some(([n, ch]) => n === p.SFX.crumble && ch === 4), 'a tower that falls from over the line crumbles, on the noise channel');
+  ok(fxOf(after).some(([n, ch]) => n === p.SFX.crumble && ch >= 6), 'a tower that falls from over the line crumbles, on an effects channel');
   ok(songsOf(after).length === 0 && p.playing === 2, 'the tense song holds on for a moment after it');
   const later = []; for (let i = 0; i < 140; i++) { vm.step(0); later.push(...log(vm)); }
   ok(songsOf(later).includes(1) && p.playing === 1, 'then the race song comes back (two seconds after)');
@@ -123,12 +124,12 @@ const drop = (y, q, shape, x, yy) => { const b = q.mkBody(q.SHAPES[shape], x, yy
 
 // 5. The menus.
 {
-  const [vm, p] = title(); vm.press('DOWN'); ok(JSON.stringify(fxOf(log(vm))) === JSON.stringify([[p.SFX.move, 1]]), 'the menu moves with a blip on channel 1');
+  const [vm, p] = title(); vm.press('DOWN'); { const m = fxOf(log(vm)); ok(m.length === 1 && m[0][0] === p.SFX.move && m[0][1] >= 6, 'the menu moves with a blip on an effects channel', JSON.stringify(m)); }
   vm.press('A'); ok(fxOf(log(vm)).some(([n]) => n === p.SFX.select), 'and chooses with a chime'); vm.press('B');
   vm.press('A'); log(vm); // the lobby
-  tap(vm, 1, 'UP'); ok(fxOf(log(vm)).some(([n, ch]) => n === p.SFX.join && ch === 1), 'a pad joining in the lobby has its own two notes');
+  tap(vm, 1, 'UP'); ok(fxOf(log(vm)).some(([n, ch]) => n === p.SFX.join && ch >= 6), 'a pad joining in the lobby has its own two notes');
   p.setup = [4, -1, -1, -1]; log(vm); vm.press('START');
-  ok(JSON.stringify(fxOf(log(vm))) === JSON.stringify([[p.SFX.refuse, 4]]), 'and START without enough racers a buzz on the noise channel');
+  { const r = fxOf(log(vm)); ok(r.length === 1 && r[0][0] === p.SFX.refuse && r[0][1] >= 6, 'and START without enough racers a buzz (noise) on an effects channel', JSON.stringify(r)); }
   p.setup = [4, 1, 1, 1]; vm.press('START'); log(vm); vm.run(30); vm.press('START'); ok(fxOf(log(vm)).some(([n]) => n === p.SFX.pause), 'the pause has its sound');
 }
 // 6. Everything made is used.

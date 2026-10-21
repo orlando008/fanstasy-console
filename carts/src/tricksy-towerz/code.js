@@ -19,15 +19,14 @@ const ART = {
 /** Queue one of ART.sprites at (x, y), above the background; opts as for spr (fx, fy ...). */
 function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.pal, prio: 3, ...opts }); }
 
-// --- Sound (SPEC 11). The channel decides the voice: 0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample. ---
+// --- Sound (SPEC 11). Any channel plays any instrument (SPEC 5). Songs use channels 0 to 5; effects take turns on 6 and 7, ---
+// so they never cut into the music and two can sound at once (two players' pieces landing).
 
 const SFX = { move: 0, select: 1, pause: 2, lost: 3, crumble: 4, land: 5, record: 6, turn: 7, count: 8, go: 9, cross: 10, join: 11, refuse: 12 };
 const SONG = { title: 0, race: 1, tense: 2, win: 3 }; // the title, lobby, help and records; the race; a tower over the line; the finish (a fanfare, then a calm loop under the results)
-const SFX_CH = 1; // effects share channel 1 (pulse); the songs leave it free
-// Effects with noise (or saw or triangle) in them go on a channel with that voice. Fill this from audio.py:
-// node tools/devkit/music/sfx.mjs carts/tricksy-towerz.nova 1 shows what each effect is.
-const SFX_VOICE_CH = { [SFX.lost]: 4, [SFX.crumble]: 4, [SFX.refuse]: 4 };
-function fx(n) { sfx(n, n in SFX_VOICE_CH ? SFX_VOICE_CH[n] : SFX_CH); }
+const SFX_CH = [7, 6];
+let fxNext = 0;
+function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
 
 // A song is only started if it is not already playing.
 let playing = -1;
