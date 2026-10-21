@@ -32,6 +32,7 @@ jobs:
       - run: python3 tools/devkit/art/selftest.py
       # The colour report: its colour maths, and a default-brown panel over the limit
       - run: node tools/devkit/art/colors.mjs --selftest
+      - run: node tools/devkit/art/snes.mjs --selftest
       # The starter: scaffolds a throwaway cart, packs, checks and tests it, and deletes it
       - run: node tools/new-cart.js --selftest
       # Random play for 3,000 frames on every cart: exceptions, wrong-voice effects, soft locks, frame time

@@ -41,6 +41,11 @@ export function boot(path, { seed = 1, save = null, extra = '' } = {}) {
   const hooks = compileCart(cart.code + '\n' + extra, api);
   hooks.init?.();
   const out32 = new Uint32Array(SCREEN_W * SCREEN_H);
+  const blank = new Overlay();
+  const scanHook = () => {
+    const scan = hooks.scanline;
+    return scan ? (y) => { m.inScanline = true; try { scan(y); } finally { m.inScanline = false; } } : null;
+  };
   const audioLog = [];
   const vm = {
     m, ppu, probe: () => probe?.(), audioLog, out32, cart,
@@ -54,8 +59,7 @@ export function boot(path, { seed = 1, save = null, extra = '' } = {}) {
       ppu.clearOam();
       const t0 = performance.now();
       hooks.update?.(); hooks.draw?.();
-      const scan = hooks.scanline;
-      ppu.render(out32, overlay, scan ? (y) => { m.inScanline = true; try { scan(y); } finally { m.inScanline = false; } } : null);
+      ppu.render(out32, overlay, scanHook());
       m.stats.cpu = performance.now() - t0;
       for (const c of m.audio) audioLog.push([m.frame, ...c]);
       m.audio.length = 0;
@@ -64,6 +68,18 @@ export function boot(path, { seed = 1, save = null, extra = '' } = {}) {
     run(n, mask = 0) { for (let i = 0; i < n; i++) this.step(typeof mask === 'function' ? mask(i) : mask); },
     press(b, hold = 1) { this.run(hold, 1 << BTN[b]); this.step(0); },
     png(file, scale = 2) { writeFileSync(file, png(out32, SCREEN_W, SCREEN_H, scale)); },
+    /** The last frame again, with only some of it: { layers: [0, 1, 2] (the BG layers to keep), sprites, overlay }
+     * (default all), the cart's scanline() included. For tools that measure what each layer draws. */
+    picture({ layers = [0, 1, 2], sprites = true, overlay: withOverlay = true } = {}) {
+      const shows = ppu.layers.map((l) => l.show), count = ppu.oamCount, buf = new Uint32Array(SCREEN_W * SCREEN_H);
+      ppu.layers.forEach((l, i) => { l.show = l.show && layers.includes(i); });
+      if (!sprites) ppu.oamCount = 0;
+      try { ppu.render(buf, withOverlay ? overlay : blank, scanHook()); } finally {
+        ppu.layers.forEach((l, i) => { l.show = shows[i]; });
+        ppu.oamCount = count;
+      }
+      return buf;
+    },
   };
   return vm;
 }

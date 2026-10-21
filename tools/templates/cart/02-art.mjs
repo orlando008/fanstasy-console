@@ -30,10 +30,13 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
   const vm = newGame(2), p = vm.probe(); vm.run(3);
   const L = vm.ppu.layers[0], f = p.ART.scenes.field;
   ok(L.show && L.mx === f.mx && L.my === f.my && L.mw === f.w && L.mh === f.h, 'layer 0 shows the field\'s region of Map RAM (init calls bg)', JSON.stringify(L));
-  ok(has(vm, color('spr0', 'hull'), p.px - 10, 194, p.px + 10, 214), 'the player\'s sprite is drawn where the player is', `px ${p.px}`);
+  ok(has(vm, color('bg1', 'grass3'), 0, 160, 256, 164), 'the ground\'s lit edge runs along the bottom of the screen');
+  const sky = [2, 60, 120].map((y) => vm.out32[y * 256 + 4] >>> 0);
+  ok(new Set(sky).size === 3, 'the sky is a gradient: a different colour down the screen (scanline())', sky.map((v) => v.toString(16)).join(' '));
+  ok(has(vm, color('spr0', 'hull2'), p.px - 10, 194, p.px + 10, 214), 'the player\'s sprite is drawn where the player is', `px ${p.px}`);
   const before = vm.ppu.oamCount;
   p.blocks.push({ x: 60, y: 100 }); vm.run(1);
-  ok(vm.ppu.oamCount === before + 1 && has(vm, color('spr0', 'gold'), 50, 90, 70, 125), 'a falling gem is a sprite too', `${before} -> ${vm.ppu.oamCount} sprites`);
+  ok(vm.ppu.oamCount === before + 1 && has(vm, color('spr0', 'gold1'), 50, 90, 70, 125), 'a falling gem is a sprite too', `${before} -> ${vm.ppu.oamCount} sprites`);
   ok(vm.ppu.oamCount <= 128, 'and the sprites stay within the 128 of the console');
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

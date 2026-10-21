@@ -122,6 +122,7 @@ tile grid, and its `outline` grows a 16 px sprite to 18 px), but these parts of 
     changed and by how many pixels, and which did not change at all.
   - **Why:** catches an edit that did nothing, or touched more than intended, without comparing two PNGs by eye.
 - [x] **A colour report** (`tools/devkit/art/colors.mjs`).
+- [x] **A "looks SNES" report** (`tools/devkit/art/snes.mjs`): built with part C of `docs/dev/snes-picture.md`.
   - **What:** play a cart with random buttons, measure its screens in OKLab: muddy panels (checked, limit 0.3), palette
     ramps out of order (checked), and as information mud, contrast, faint edges and the overlay's default colours; a PNG
     with the mud and faint edges marked.
