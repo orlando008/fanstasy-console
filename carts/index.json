@@ -121,6 +121,16 @@
       "png": null
     },
     {
+      "name": "effects",
+      "title": "Effects",
+      "author": "NOVA-16",
+      "description": "Colour blending, brightness, windows and mosaic: a see-through panel, shadows, light, water, fades, spotlights, an iris wipe, coloured glass and the mosaic, one page each (LEFT and RIGHT).",
+      "genre": "Demo",
+      "players": null,
+      "label": "carts/labels/effects.png",
+      "png": null
+    },
+    {
       "name": "hello",
       "title": "Hello NOVA",
       "author": "NOVA-16",

@@ -19,6 +19,7 @@ limits.
 | M7 Audio: worklet synth, instruments, SFX, patterns, songs, SFX and Music tabs | Done |
 | M8 Persistence and PNG carts: `dget`/`dset`, label capture, `.nova.png` export and import | Done |
 | M9 Recording: input recording and replay, WebM and GIF clips | Done |
+| M10 SNES effects: colour blending, brightness, windows and mosaic (`docs/dev/snes-picture.md`) | Done |
 
 The full cart API from SPEC section 8 is callable.
 
@@ -63,6 +64,7 @@ Cursor) or a chat, which then makes a game with you from this repository. You ca
 | `parallax` | Three scrolling background layers, sub-palettes, tile priority |
 | `water` | `scanline()` reflection with per-line wobble and palette swaps |
 | `mode7` | Per-line BG2 affine perspective floor and sky gradient |
+| `effects` | Colour blending, brightness, windows and mosaic: a see-through panel, shadows, light, water, fades, spotlights, an iris wipe, coloured glass and the mosaic, one page each (LEFT and RIGHT) |
 | `chiptune` | A six-channel song and five sound effects on the old sound chip (a version-1 cart, kept as it was), all editable in the Music and SFX tabs |
 | `sound-test` | The new sound chip: three songs through the echo unit, and every sampled instrument to play on its own (UP/DOWN and A; B turns the echo off) |
 | `summit-rush` | The first real game: race one of seven AI models up three stages, with a title screen, a top-10 leaderboard, and music from the Summit Rush series. Also released as the PNG cart `summit-rush.nova.png` (see docs/carts/summit-rush.md) |

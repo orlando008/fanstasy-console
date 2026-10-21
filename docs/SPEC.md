@@ -32,6 +32,7 @@ A finished cart can be exported as a PNG image that holds the whole game. Droppi
 | Background layers | 3 (BG0, BG1, BG2); BG2 supports affine (Mode 7-style) transforms |
 | Sprites (OAM) | 128 per frame; sizes 8 × 8, 16 × 16, 32 × 32; 32 per scanline |
 | Overlay | 256 × 224 8-bit immediate-mode drawing layer |
+| Effects | Colour blending (add or subtract, halved, or a fixed colour), master brightness, two windows, mosaic (4.10–4.12) |
 | Audio | 8 channels; each plays any instrument: pulse, triangle, saw, noise or an 8-bit sample, with Gaussian interpolation and an echo unit |
 | Sample RAM | 32 KB, 8-bit signed PCM, up to 32 samples |
 | Input | Up to 4 pads, 12 buttons each |
@@ -125,9 +126,65 @@ From back to front:
 
 When `draw()` returns, the PPU snapshots all video state, then renders lines 0–223 in order. If the cart defines `scanline(y)`, it is called before line `y` is rendered.
 
-Inside `scanline()`, only these calls are allowed: `bgscroll`, `bg`, `affine`, `color`, `palcopy` and `t`, plus the pure math helpers (`flr`, `ceil`, `abs`, `sgn`, `mid`, `clamp`, `lerp`). Anything else throws an error. A change applies from that line onward and is **discarded at the end of the frame**, so every frame starts from the state `draw()` left behind.
+Inside `scanline()`, only these calls are allowed: `bgscroll`, `bg`, `affine`, `color`, `palcopy`, `blend`, `brightness`, `winpos`, `winmask`, `mosaic` and `t`, plus the pure math helpers (`flr`, `ceil`, `abs`, `sgn`, `mid`, `clamp`, `lerp`). Anything else throws an error. A change applies from that line onward and is **discarded at the end of the frame**, so every frame starts from the state `draw()` left behind.
 
 Typical uses are wavy water (`bgscroll` with a sine offset per line), sky gradients (`color(0, ...)` per line) and Mode 7 floors (`affine` per line).
+
+### 4.10 Effects: colour blending and brightness
+
+**Colour blending** (the SNES's colour math) makes some pixels translucent. `blend({ layers, op, half, color })` sets it
+and `blend(null)` turns it off.
+
+- `layers` names the translucent pixels: `'bg0'`, `'bg1'` and `'bg2'` (every pixel of that layer), `'spr'` (sprites in
+  palettes 4–7 only, so a game can mix solid and see-through sprites), `'back'` (the backdrop), and `'overlay'` (overlay
+  pixels drawn in CGRAM 192–255, the colours of sprite palettes 4–7).
+- A translucent pixel is mixed with the pixel **below** it: the next one down in the compositing order (4.8), or the
+  backdrop. Only one level mixes, so a translucent pixel over a translucent pixel mixes with that pixel's own colour.
+  The backdrop has black below it. A translucent overlay pixel mixes with the finished picture under it.
+- `op: 'add'` (the default) adds the two colours, for light, fire and glows. `op: 'sub'` subtracts the one below from
+  the translucent one, for shadows and darkness. The maths is per RGB555 channel and clamps to 0–31.
+- `half: true` halves the result: with `'add'` it is a 50 % mix, for water, glass, ghosts and see-through panels.
+- `color: [r, g, b]` (0–31) mixes the translucent pixels with this fixed colour instead of the pixel below, for tints,
+  flashes and fades to white.
+
+**Brightness**: `brightness(level)` scales the whole picture, overlay included, from 0 (black) to 15 (full, the
+default), as the SNES's master brightness does. Each channel becomes `floor(c × level / 15)`, for fades to black.
+
+Both hold from frame to frame until changed, like `bg()` and `affine()`, and both can change in `scanline()`, for
+example to put a water surface or a lit window part way down the screen.
+
+With no blending, brightness 15, no window mask and no mosaic, the picture is exactly as without these effects (4.10 to
+4.12): carts made before them look the same.
+
+### 4.11 Windows
+
+Two windows, 0 and 1, each a span of columns: `winpos(n, left, right)` covers `left` to `right` inclusive, and a window
+with `left > right` is empty (the default). Set from `scanline()`, a window changes shape line by line: a circle, a
+diamond, a spotlight, a wipe.
+
+`winmask(target, { w0, w1, op })` hides a target inside an area made of the windows, and `winmask(target, null)` removes
+the mask. `w0` and `w1` are `'in'` (the inside of that window counts) or `'out'` (its outside); a window not named is not
+used. With both, `op` combines them: `'or'` (the default), `'and'`, `'xor'` or `'xnor'`.
+
+| Target | Hidden in the area |
+|---|---|
+| `'bg0'`, `'bg1'`, `'bg2'` | that layer's pixels, so what is behind it shows |
+| `'spr'` | every sprite |
+| `'overlay'` | the overlay |
+| `'blend'` | the blending (4.10): no pixel mixes there, so blending applies only outside the area |
+| `'screen'` | the picture: black there, except for the overlay (mask it too to hide it) |
+
+So a spotlight is `winmask('screen', { w0: 'out' })` with window 0 a circle, two spotlights add `w1: 'out', op: 'and'`,
+and a pane of coloured glass is a fixed-colour blend with `winmask('blend', { w0: 'out' })`. Windows and masks hold
+from frame to frame, like `bg()`.
+
+### 4.12 Mosaic
+
+`mosaic(size, layers)` draws the named background layers (`'bg0'`, `'bg1'`, `'bg2'`; all three by default) in blocks of
+`size` × `size` pixels, 1 to 16; 1 is off. Each block shows the layer's pixel at its top left: the blocks start at the
+screen's top left corner, and each block of lines repeats the layer as it is on the block's first line. Sprites, the
+overlay and the backdrop are not affected, as on the SNES. Growing the size and then shrinking it is the SNES's
+pixelating scene change.
 
 ## 5. Audio (APU)
 
@@ -306,6 +363,16 @@ The console measures how long `update + draw + render` takes each frame. If one 
 | `bgscroll(layer, x, y)` | Set the scroll offset |
 | `affine(opts \| null)` | Enable BG2 affine mode with `{ a, b, c, d, cx, cy }`, or turn it off with `null` |
 
+### Effects
+
+| Function | Description |
+|---|---|
+| `blend(opts \| null)` | Colour blending (4.10): `{ layers: ['bg0', 'bg1', 'bg2', 'spr', 'back', 'overlay'], op: 'add' \| 'sub', half, color: [r, g, b] }`, or `null` to turn it off |
+| `brightness(level)` | Master brightness of the whole picture, 0 (black) to 15 (full) |
+| `winpos(n, left, right)` | Window `n` (0 or 1) covers columns `left` to `right` (4.11); `left > right` is empty |
+| `winmask(target, spec \| null)` | Hide `'bg0'`, `'bg1'`, `'bg2'`, `'spr'`, `'overlay'`, `'blend'` or `'screen'` inside `{ w0: 'in' \| 'out', w1: 'in' \| 'out', op: 'or' \| 'and' \| 'xor' \| 'xnor' }` |
+| `mosaic(size, layers)` | Blocks of `size` (1–16) pixels on the named background layers (4.12) |
+
 ### Sprites
 
 | Function | Description |
@@ -469,6 +536,7 @@ A recording holds what is needed to reproduce a run exactly: `{ "format": "nova1
 - Render one line at a time into a 256-entry line buffer of `{color index, priority tier}`, then resolve it to RGBA.
 - Pre-decode 4 bpp tiles into a `Uint8Array` of one byte per pixel when VRAM changes, so the inner loop never unpacks nibbles.
 - Sort the per-line sprite list once per frame by y-range so each line only checks sprites that overlap it.
+- With an effect on (4.10 to 4.12), the mosaic and the window masks are applied to each layer's line, and each pixel of the line buffer also keeps the pixel under it and which layer drew it, and the line is resolved through RGB555 maths instead of the lookup table. With none on, the plain path runs; `tests/console/effects.mjs` checks that both give the same picture for every cart.
 
 ### 10.3 Security model
 

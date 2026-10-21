@@ -294,6 +294,22 @@ made them were lost with a scratch directory), so those games cannot be regenera
 or redraw just that piece with the kit and paste its `tiles.txt` rows in. The kit is for new games and new pieces. To look at
 such a game's art, use `tiles.mjs`, `scene.mjs --rect x,y,w,h` and `sprites.mjs --tile n --size s --pal p` (no manifest needed).
 
+**Colour blending and brightness** (SPEC 4.10; the `effects` demo has one page for each): `blend()` makes a layer, the
+sprites in palettes 4 to 7, the backdrop or the overlay's colours 192 to 255 translucent, and `brightness()` fades the
+whole picture. Use them for what made SNES games look like SNES games, instead of opaque boxes and black:
+- **see-through panels:** fill the panel with a colour in CGRAM 192-255 and `blend({ layers: ['overlay'], half: true })`;
+  draw its text and frame in colours under 192, which stay solid;
+- **shadows** (`op: 'sub'`) and **light, fire, glows** (`op: 'add'`): put those sprites in palettes 4 to 7;
+- **water, glass, ghosts:** a layer with `half: true`;
+- **fades:** `brightness(0-15)` to black, `color: [31, 31, 31]` to white, a colour for a tint or a flash.
+
+One blend setting holds for a whole line; `scanline()` can change it part way down the screen.
+
+**Windows and mosaic** (SPEC 4.11, 4.12): two windows, each a span of columns set line by line in `scanline()`, hide a
+layer, the sprites, the overlay, the blending or the whole picture inside or outside them: spotlights, iris and
+diamond wipes, a letterbox, light through a pane of glass. `mosaic(size)` is the pixelating scene change. Use them for
+scene changes instead of a cut.
+
 **Look at the art, always.** `sprites.mjs` (every sprite at its real size, in its palette), `scene.mjs` (a map region, with
 `--holes`), `tiles.mjs` (the sheet with numbers) and `shots.mjs` (the game in place) all make PNGs to open with the Read tool.
 Do it after every change; a tile-aligned scene is easy to get slightly wrong. To check exact pixels (is the outline
