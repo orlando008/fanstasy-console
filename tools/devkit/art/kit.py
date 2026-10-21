@@ -39,6 +39,9 @@ of it). Each is a module of its own here, and comes with `from kit import *`:
   lettering.py  big_text(), hud_bar(), frame(), scale2x()
   rig.py        Rig, pose(), filmstrip(), WALK, PUNCH, KICK ...: characters on a skeleton, posed and animated
   detail.py     face(), hair(), crease(), stroke(), bunch(): the hand-drawn layer on top of the volumes
+  draw.py       Canvas, oval(), blob(), brush() ...: figures drawn in designed shapes and flat tones, a pixel at a time
+                where it matters (the way to draw characters; speckle() measures what is left to clean)
+  figure.py     head() (side, front, back; four expressions, seven hair styles), Figure: a drawn body on a rig's skeleton
   preview.py    Sheet: a PNG of pictures, ramps and layer stacks, straight from art.py
   and here      art.big_sprite() (bigSprite() in code.js), art.animation(), art.gradient() (gradientLine() in scanline()), art.variant(),
                 Img.from_rows(mirror='x')
@@ -707,3 +710,5 @@ from scenery import sky, stars, orb, clouds, mountains, hills, treeline, floor, 
 from lettering import big_text, hud_bar, frame, scale2x, smooth_scale  # noqa: E402  HUD lettering, bars and frames
 from detail import face, hair, crease, stroke, bunch  # noqa: E402  the hand-drawn layer: faces, hair, folds
 from rig import Rig, pose, filmstrip, lerp_pose, mirror_sides, STAND, GUARD, WALK, PUNCH, KICK, HIT, JUMP  # noqa: E402  characters from a skeleton
+from draw import Canvas, oval, blob, curve, poly, brush, speckle  # noqa: E402  drawing figures in designed shapes and flat tones
+from figure import head, Figure, tones  # noqa: E402  drawn heads (three views, expressions, hair) and bodies on a rig

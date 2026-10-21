@@ -71,6 +71,9 @@ tones, backgrounds of materials (tiles, fences, paving, foliage) pushed back beh
    a generated `gradientLine()`; `sprites.mjs` shows big sprites.
 7. **Lettering** (`lettering.py`): `big_text()`, `hud_bar()`, `frame()`, `scale2x()`.
 8. **A quick look** (`preview.py`): a PNG from art.py of pictures, ramps and stacks of layers.
+9. **Drawn figures** (`draw.py`, `figure.py`): characters drawn as an artist designs them, in shapes of flat tone,
+   with heads from templates of planes and bodies on the rig's skeleton (the way to draw characters; sculpting stays
+   for round and glossy things).
 
 ## Part C: measuring it
 
@@ -106,4 +109,5 @@ VALLEY (a sky gradient line by line, clouds, snowy mountains, hills, trees and g
 | D | built | The `showcase` cart. |
 | Details | built | `detail.py`: `face()` (side and front, four expressions, sized to the head), `hair()` (six styles in lit clumps; long hair hangs), `crease()`, `bunch()`, `stroke()`; a rig draws them in every frame (`face=`, `hair_style=`, `folds=`). The brawler preset got a bigger head, a shorter, thicker neck and deltoids. The `street` brawler uses all of it. |
 | Rig | built | `rig.py`: a skeleton with presets (brawler, boxer, hero) dressed in sculpted shapes, poses as joint angles, `animate()` with easing and mirrored walk cycles, built-in WALK, PUNCH, KICK, GUARD, HIT, JUMP, a `filmstrip()` with onion skin and bones; `Art.animation()` (frames sharing their pieces; 8 px pieces where a 16 px one would be mostly empty, which also took the showcase from 939 to 881 tiles); `tools/devkit/gif.mjs`. The `street` cart: a brawler that walks, punches and kicks on a night street. |
+| Drawn | built | `draw.py` (Canvas: designed shapes in flat tones, cel shadows, seams, exact ink, a tidy pass; `speckle()`) and `figure.py` (`head()` in three views with four expressions and seven hair styles, from templates of planes; `Figure`, a drawn body on the rig's skeleton: limbs with muscle profiles, a chest, sleeves, a belt, fists, shoes, one shared outline colour). After the user's critique of the sculpted faces ("still blocky and strange"): characters are drawn, not lit. The `street` brawler is a Figure (speckle 0.08 to 0.13 over its 17 frames, mean 0.10, against 0.10 to 0.16, mean 0.13, for the sculpted one; at 64 px the gain is mostly in the shapes, which the number does not see; heads 32 px tall measure 0.04 to 0.06). |
 | C | not started | |

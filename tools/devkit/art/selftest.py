@@ -287,6 +287,34 @@ ok(on_only.get(15, 5) == 0 and on_only.get(5, 5) == dp.skin[1], 'stroke changes 
 rgd = Rig('brawler', height=64, skin=dp.skin, hair=dp.hair, face='angry', hair_style='swept', folds=True, white=dp.white)
 ok(set(dp.hair) & rgd.render(GUARD).colors() and dp.white in rgd.render(GUARD).colors(), 'Rig(face=, hair_style=, folds=): the details in every frame')
 
+# --- Drawn figures (draw.py, figure.py) ---
+cv = Canvas(20, 20)
+cv.fill(oval(10, 10, 6, 6), 3, part='ball')
+cv.shadow('ball', 2, light=(1, -1), depth=2)
+cv.ink([(4, 18), (16, 18)], 1)
+ci = cv.render(outline=5, tidy=2)
+ok(ci.get(10, 10) == 3 and ci.get(6, 14) == 2 and ci.get(14, 6) == 3, 'Canvas: a part filled, its shadow a crescent away from the light (up and right: the shadow lower left)')
+ok(all(ci.get(x, 18) == 1 for x in range(4, 17)) and ci.get(10, 3) == 5 and ci.get(0, 0) == 0, 'ink: an exact 1 px line; the outline around the shapes')
+cv2 = Canvas(20, 20); cv2.fill(oval(10, 10, 7, 7), 3, part='a'); cv2.fill(poly([(10, 10), (11, 10), (11, 11), (10, 11)]), 4, inside='a')
+ok(cv2.render(tidy=0).get(10, 10) == 4 and cv2.render(tidy=2).get(10, 10) == 3, 'tidy folds a cluster of a pixel or two into what surrounds it')
+cv3 = Canvas(12, 12); cv3.fill(poly([(0, 0), (12, 0), (12, 12), (0, 12)]), 3, part='back'); cv3.fill(poly([(6, 0), (12, 0), (12, 12), (6, 12)]), 4, part='front')
+cv3.seam('front', 1, under='back')
+si = cv3.render(tidy=0)
+ok(si.get(6, 5) == 1 and si.get(5, 5) == 3 and si.get(9, 5) == 4, 'seam: the edge of a part where it meets the part under it')
+ok(speckle(Img.make(10, 10, lambda x, y: 1 + (x + y) % 2)) == 1.0 and speckle(Img.make(10, 10, lambda x, y: 1)) == 0.0, 'speckle: 1 for a checker, 0 for a flat fill')
+fp = Art().sprite_palette(0, {'line': '180c14', 'skin': ramp('e0a070', 4, at=2), 'hair': ramp('c89038', 3, at=1), 'shirt': ramp('e0e0ec', 3, at=1),
+                              'pants': ramp('3858b0', 3, at=1), 'white': 'f0ece0'})
+for view in ('side', 'front', 'back'):
+    hc = Canvas(48, 56); head(hc, 24, 26, 32, fp.skin, fp.hair, view=view, line=fp.line, white=fp.white, style='swept')
+    him = hc.render(outline=fp.line)
+    ok(set(fp.hair) & him.colors() and (view == 'back' or fp.white in him.colors()) and speckle(him) < 0.12, 'head %s: hair, eyes, clean (speckle %.2f)' % (view, speckle(him)))
+ok(raises(lambda: head(Canvas(8, 8), 4, 4, 8, fp.skin, view='top'), 'view is'), 'head: an unknown view is an error')
+fg = Figure('brawler', height=64, line=fp.line, skin=fp.skin, hair=fp.hair, shirt=fp.shirt, pants=fp.pants, shoes=fp.hair, face='angry', hair_style='swept')
+frames = [fg.render(p) for p in fg.animate(PUNCH, 4, loop=False)]
+ok(all(f.w == fg.w and fp.line in f.colors() and set(fp.shirt) & f.colors() for f in frames), 'Figure: frames of a punch in the palette, outlined in the shared line colour')
+ok(max(x for y in range(frames[2].h) for x in range(frames[2].w) if frames[2].px[y][x]) > max(x for y in range(frames[0].h) for x in range(frames[0].w) if frames[0].px[y][x]), 'and the hit frame reaches further')
+ok(all(speckle(f) < 0.15 for f in frames), 'and they are clean (speckle %s)' % ' '.join('%.2f' % speckle(f) for f in frames))
+
 # --- Files: written, packed and read back ---
 work = tempfile.mkdtemp(prefix='art-selftest-')
 try:

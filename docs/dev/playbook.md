@@ -317,15 +317,24 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   the shadows and warmer in the light, already in the console's 5-bit colour; a palette takes ramps (`pal.skin`, dark
   to light) and `pal.step(i, 1)` moves along one. Give a material 4 to 6 steps. Push backgrounds back with
   `recede(ramp, 0.5, haze)`, so sprites stand out.
-- **Characters: sculpt them.** `Sculpt(w, h)` builds a figure from spheres, ellipsoids, capsules (limbs) and reliefs (any
-  2D shape inflated), with `smooth=` to blend muscles together, and `render()` lights it from the upper left, shades it
-  along each part's ramp, outlines it in each part's own darkest step (lighter on the lit side) and draws contours
-  where parts overlap. Draw faces and small details by hand on the result. What the showcase's first hero got wrong
-  (the user: "that hero looks really strange"): a body of round parts reads as balloons. Cut the main silhouette as a
-  flat shape (a V for a torso) and give it depth with `relief()`, keep muscles as low bumps blended in, and draw the
-  definition (the spine, the shoulder blades) as lines one step darker; get the proportions from the reference
-  (fighting-game boxers have big heads and short, thick necks); and look at it at 4x before it goes in the game. For flat shapes, `shaded(mask, ramp,
-  kind)`, then `inline()` or `outline_sel()`, `rim()` for a back light, `clean_lines()` and `despeckle()`.
+- **Characters: draw them in designed shapes** (`draw.py`, `figure.py`). Lit 3D volumes with noise look like
+  mannequins (the user, on the sculpted heads: "still blocky and strange"); a pixel artist designs each tone as a
+  shape. `Canvas(w, h)` takes vector shapes (`oval()`, `blob()` through points, `brush()` tapering strokes, `poly()`)
+  in flat tones, as named parts; `shadow(part, tone, light, depth)` gives a part its shadow side as one clean crescent,
+  `light()` a lit band, `seam()` a line where one part overlaps another, `ink()` and `dot()` pixel-exact lines and
+  glints (eyes, mouths); `render()` counts the samples into pixels, outlines and tidies (folds stray pixels away).
+  `head(d, x, y, H, skin, hair, view='side' | 'front' | 'back', expression=, style=)` draws a head from templates of
+  planes (brow ridge, sockets, nose, cheekbone, jaw) at any size, and `Figure('brawler', height, line=, skin=, hair=,
+  shirt=, pants=, shoes=, top='tee' | 'tank' | 'long' | 'bare')` a whole character on a rig's skeleton, posed and
+  animated like a rig. Give it one `line` colour for all its outlines (Streets of Rage does): one sprite palette then
+  holds skin, hair, shirt and pants. `speckle(img)` measures the clutter (the share of pixels in clusters of one or two: about 0.10 for a 64 px figure,
+  0.05 for a head 32 px tall; more means noise). Look at it at 6x
+  with a Sheet and criticise it as an artist would: the faces, the hair, the torso.
+- **Sculpt the round and glossy** (`Sculpt`: gloves, balls, armour, a boss's shell, background props): spheres,
+  ellipsoids, capsules and reliefs blended with `smooth=`, lit, shaded along each part's ramp and outlined. Cut a big
+  silhouette as a flat shape and give it depth with `relief()`; round parts alone read as balloons (the showcase's
+  first hero). For flat shapes, `shaded(mask, ramp, kind)`, then `inline()` or `outline_sel()`, `rim()` for a back
+  light, `clean_lines()` and `despeckle()`.
 - **Big characters are big sprites.** `art.big_sprite(name, picture or {palette: picture})` cuts any size into parts
   and code.js draws it with `bigSprite(ART.big.name, x, y, { fx })`. Animate the part that moves as a big sprite of its
   own (the showcase's boxer breathes with his top half: two whole frames cost about 300 tiles, the split costs none).
@@ -335,18 +344,15 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   with a material (grass, dirt, stone, brick, tiles, planks, leaves, water, fence ...) that repeats seamlessly, and
   `variants()` with `tile_fill()` break up a big area for a few tiles. `floor()` lays a texture in perspective. A sky
   can cost no tiles at all: `art.gradient()` and `gradientLine()` in `scanline()`.
-- **Characters that move: rig them.** `Rig('brawler' | 'boxer' | 'hero', height, skin=, shirt=, pants=, shoes=,
-  hair=, hands=)` is a skeleton dressed in sculpted shapes; a pose is a dict of joint angles (`pose(GUARD, arm_n=80)`),
+- **Characters that move: rig them.** `Figure(...)` (drawn) and `Rig('brawler' | 'boxer' | 'hero', height, ...)`
+  (sculpted) share a skeleton; a pose is a dict of joint angles (`pose(GUARD, arm_n=80)`),
   and `rig.animate(WALK, 8)` makes the frames between key poses (WALK, PUNCH, KICK, IDLE-like pairs; give at least a
-  frame a key). `filmstrip(path, rig, poses, pal)` shows every frame with an onion skin of the one before and the
+  frame a key). `filmstrip(path, figure, poses, pal)` shows every frame with an onion skin of the one before and the
   skeleton (near limbs pink, far limbs blue): check it for a limb that jumps or a foot that slides. `art.animation()`
   makes the frames big sprites that share every piece that does not change (the `street` cart's brawler: 18 frames in about
   410 tiles). Then `gif.mjs` makes a GIF for the person to judge the timing, which a still cannot show.
-- **Then draw the details by hand, with the kit** (`detail.py`): volumes alone look like mannequins. `face(img, x, y,
-  r, skin, view='side' | 'front', expression='neutral' | 'angry' | 'hurt' | 'happy')` (eyes with lids and sockets,
-  brows, a lip, from a head radius of 8; dots below 5), `hair(..., style='short' | 'spiky' | 'swept' | 'mohawk' | 'long'
-  | 'bald')` in lit clumps with highlight streaks, `crease()` and `bunch()` for cloth, `stroke()` for lines of muscle.
-  A rig draws them in every frame from its joints: `Rig(..., face='angry', hair_style='swept', folds=True)`.
+- **Details on sculpted figures** (`detail.py`): `face()`, `hair()`, `crease()`, `bunch()`, `stroke()` draw on a
+  rendered Sculpt or Rig (`Rig(..., face='angry', hair_style='swept', folds=True)`). For a character, prefer `Figure`.
 - **HUD and titles:** `big_text()` (smooth scaled, gradient-filled, outlined, shadowed), `hud_bar()`, `frame()`.
 - **Look while you work:** `Sheet().add(name, img, pal)` (and `add_layers()` for a stack of layers) saves a PNG from
   art.py without packing.

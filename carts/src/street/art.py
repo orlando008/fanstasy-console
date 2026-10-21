@@ -1,9 +1,9 @@
 # Street's art: tiles.txt, palette.txt, map.txt, art.json and the ART block of code.js.
 #   python3 carts/src/street/art.py carts/src/street
-# The test of the art kit's character rig (tools/devkit/art/rig.py; docs/dev/snes-picture.md): a brawler made from a
-# skeleton, with idle, walk, punch and kick animations rendered from poses (big sprites that share every piece that
-# does not change between frames), on a night street after Streets of Rage 2: a city under a sky gradient, a chain-link
-# fence, paving in perspective.
+# The test of the art kit's drawn figures (tools/devkit/art/figure.py on rig.py's skeleton; docs/dev/snes-picture.md):
+# a brawler drawn in designed shapes, with idle, walk, punch and kick animations rendered from poses (big sprites that
+# share every piece that does not change between frames), on a night street after Streets of Rage 2: a city under a
+# sky gradient, a chain-link fence, paving in perspective.
 import os, sys, math
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *
@@ -66,11 +66,12 @@ for y in range(141, 150):
     for x in range(256): ground.px[y][x] = 0
 art.scene('ground', ground, pal=FLOOR, at=(64, 0), region='bg')
 
-# --- The brawler: one sprite palette, built on the rig, posed and animated. ---
-BR = art.sprite_palette(0, {'skin': ramp('e8a878', 4), 'hair': ramp('e0b040', 3), 'shirt': ramp('e0e0ec', 3, at=1),
-                            'pants': ramp('3050a0', 3), 'shoe': ramp('503030', 2)})
-hero = Rig('brawler', height=64, skin=BR.skin, hair=BR.hair, shirt=BR.shirt, pants=BR.pants, shoes=BR.shoe,
-           face='angry', hair_style='swept', folds=True)        # the hand-drawn layer (detail.py), in every frame
+# --- The brawler: one sprite palette, drawn on the rig's skeleton (figure.py), posed and animated. One outline colour
+# for all of him, as Streets of Rage does, leaves 14 for his materials; his shoes are his hair's brown. ---
+BR = art.sprite_palette(0, {'line': '180c14', 'skin': ramp('e0a070', 4, at=2, step=0.09), 'hair': ramp('c89038', 3, at=1, step=0.11),
+                            'shirt': ramp('e0e0ec', 4, at=2, step=0.11), 'pants': ramp('3858b0', 3, at=1, step=0.11)})
+hero = Figure('brawler', height=64, line=BR.line, skin=BR.skin, hair=BR.hair, shirt=BR.shirt, pants=BR.pants, shoes=BR.hair,
+              face='angry', hair_style='swept', top='tee')
 IDLE = [GUARD, pose(GUARD, y=1, arm_n=27, arm_f=42)]
 for name, keys, n, loop in (('idle', IDLE, 2, True), ('walk', WALK, 8, True), ('punch', PUNCH, 4, False), ('kick', KICK, 4, False)):
     art.animation(name, [hero.render(p) for p in hero.animate(keys, n, loop=loop)], pal=BR, region='spr')
