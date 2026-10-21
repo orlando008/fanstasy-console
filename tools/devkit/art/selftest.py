@@ -202,6 +202,31 @@ try: texture('lava', 8, 8, tr); bad_kind = False
 except ValueError as e: bad_kind = 'no kind' in str(e)
 ok(bad_kind, 'an unknown kind is an error that lists the kinds')
 
+# --- Scenery (scenery.py) ---
+sr = (1, 2, 3, 4)
+skyi = sky(Img(16, 40), sr)
+ok([skyi.get(0, y) for y in (0, 39)] == [1, 4] and skyi.get(0, 5) == 1 and len(set(skyi.px[5])) == 1, 'sky: bands from the ramp\'s first step at the top to its last, solid inside a band')
+ok(any(len(set(r)) > 1 for r in skyi.px), 'and dithered where one band meets the next')
+st = stars(Img(64, 64), [2, 3], density=0.02)
+ok(sum(1 for r in st.px for v in r if v) >= 60 and st.colors() <= {2, 3}, 'stars: dots in the given colours')
+o = orb(Img(48, 48), 24, 24, 8, sr, glow=(1, 2))
+ok(o.get(24, 24) == 4 and o.get(24, 35) in (1, 2), 'orb: a sun lightest in the middle, with a glow around it')
+cl = clouds(Img(128, 64), sr, count=3, y0=4, y1=60)
+ok(cl.colors() <= set(sr) and sum(1 for r in cl.px for v in r if v) > 200, 'clouds: lit cumulus in the ramp')
+mt = Img(128, 96)
+ridge = mountains(mt, sr, base=90, height=60, snow=(5, 6))
+ok(len(ridge) == 128 and min(ridge) < 50 and all(mt.get(x, 92) == 0 for x in range(128)) and {5, 6} & mt.colors(), 'mountains: a ridge above the base, snow on the upper faces, nothing below the base')
+ok(abs(ridge[0] - ridge[-1]) <= 6, 'and the range wraps: its two ends meet (a scrolling layer)', '%d %d' % (ridge[0], ridge[-1]))
+hl = Img(64, 32); crest = hills(hl, sr, base=24, amp=10)
+ok(all(hl.get(x, 31) for x in range(64)) and all(hl.get(x, crest[x] - 1) == 0 for x in range(64) if crest[x] > 0), 'hills: filled from the crest down')
+tl = treeline(Img(96, 48), sr, base=36, size=8)
+ok(all(tl.get(x, 40) == sr[0] for x in range(96)), 'treeline: crowns along the line, the ground below filled')
+fl = floor(Img(64, 64), texture('tiles', 16, 16, sr, size=8), horizon=20)
+ok(all(fl.get(x, 10) == 0 for x in range(64)) and all(fl.get(x, 63) for x in range(64)), 'floor: a texture below the horizon only')
+rp_ = rope(Img(64, 16), [(2, 8), (62, 8)], 4, sr)
+ok(rp_.get(30, 8) and not rp_.get(30, 1), 'rope: drawn along its path')
+ok(ellipse(16, 6, 3).get(8, 3) == 3 and ellipse(16, 6, 3).get(0, 0) == 0, 'ellipse: a contact shadow')
+
 # --- Files: written, packed and read back ---
 work = tempfile.mkdtemp(prefix='art-selftest-')
 try:

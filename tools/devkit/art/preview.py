@@ -58,6 +58,24 @@ class Sheet:
         s.cur.append((name, big))
         return s
 
+    def add_layers(s, name, layers, scale=None, backdrop='000000'):
+        """Pictures stacked as the console stacks layers: [(img, pal, x, y), ...] back to front (x, y optional), each
+        in its own palette, transparent pixels showing what is behind."""
+        k = scale or s.scale
+        w = max(l[0].w + (l[2] if len(l) > 2 else 0) for l in layers)
+        h = max(l[0].h + (l[3] if len(l) > 3 else 0) for l in layers)
+        px = [[backdrop] * w for _ in range(h)]
+        for l in layers:
+            img, pal = l[0], l[1]
+            ox, oy = (l[2], l[3]) if len(l) > 3 else (0, 0)
+            cols = _colours(pal)
+            for y, r in enumerate(img.px):
+                for x, v in enumerate(r):
+                    if v and 0 <= y + oy < h and 0 <= x + ox < w: px[y + oy][x + ox] = cols.get(v, 'ff00ff')
+        big = [[c for c in r for _ in range(k)] for r in px for _ in range(k)]
+        s.cur.append((name, big))
+        return s
+
     def row(s):
         if s.cur: s.rows.append(s.cur); s.cur = []
         return s
