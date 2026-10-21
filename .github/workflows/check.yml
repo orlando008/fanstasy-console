@@ -22,6 +22,7 @@ jobs:
       - run: node tests/console/song-end.mjs
       # The PPU's effects (colour blending, brightness), and every cart renders through them as it did without
       - run: node tests/console/effects.mjs
+      - run: node tests/console/rom.mjs
       # Old carts (format version 1) sound exactly as they did on the old chip (docs/dev/sound-chip.md)
       - run: node tools/devkit/music/compat.mjs
       # ...and convert to the new chip faithfully; the new chip's voices, interpolation, echo, envelopes and cart format

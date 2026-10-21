@@ -23,7 +23,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 
 | Path | What |
 |---|---|
-| `carts/src/<name>/` | A cart's source: `code.js`, `meta.json`, `tiles.txt`, `palette.txt`, `map.txt` and `art.json` (made by `art.py`), `audio.json` (made by `audio.py`), `label.png` |
+| `carts/src/<name>/` | A cart's source: `code.js`, `meta.json`, `tiles.txt`, `palette.txt`, `map.txt` and `art.json` (made by `art.py`), `audio.json` (made by `audio.py`), `label.png`, `rom/<name>.bin` (the cart's ROM: 128 KB of data read with `rom(name)`; SPEC 9.1) |
 | `carts/<name>.nova`, `.nova.png`, `labels/`, `index.json` | What `pack.js`, `release.js` and `library.js` build from the source: commit them with it |
 | `tests/carts/<name>/` | `lib.mjs` (boots the cart with its variables exposed), `NN-*.mjs` (check scripts, one per build step), `bot.mjs` (the bot for `sweep.mjs`) |
 | `tests/console/` | Checks of the console itself: the player's volume keys, the pause menu and ways back to the Library, the Library's genre shelves, the touch controls, the site offline and installable, sharing a cart's link and the prompt for making a game with AI (`volume.mjs`, `menu.mjs`, `library.mjs`, `touch.mjs`, `offline.mjs`, `share.mjs`, `make.mjs`: headless Chromium), a song that plays once falling silent at its end (`song-end.mjs`, in CI); not part of a cart build |
@@ -317,15 +317,25 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   the shadows and warmer in the light, already in the console's 5-bit colour; a palette takes ramps (`pal.skin`, dark
   to light) and `pal.step(i, 1)` moves along one. Give a material 4 to 6 steps. Push backgrounds back with
   `recede(ramp, 0.5, haze)`, so sprites stand out.
-- **Characters: sculpt them.** `Sculpt(w, h)` builds a figure from spheres, ellipsoids, capsules (limbs) and reliefs (any
-  2D shape inflated), with `smooth=` to blend muscles together, and `render()` lights it from the upper left, shades it
-  along each part's ramp, outlines it in each part's own darkest step (lighter on the lit side) and draws contours
-  where parts overlap. Draw faces and small details by hand on the result. What the showcase's first hero got wrong
-  (the user: "that hero looks really strange"): a body of round parts reads as balloons. Cut the main silhouette as a
-  flat shape (a V for a torso) and give it depth with `relief()`, keep muscles as low bumps blended in, and draw the
-  definition (the spine, the shoulder blades) as lines one step darker; get the proportions from the reference
-  (fighting-game boxers have big heads and short, thick necks); and look at it at 4x before it goes in the game. For flat shapes, `shaded(mask, ramp,
-  kind)`, then `inline()` or `outline_sel()`, `rim()` for a back light, `clean_lines()` and `despeckle()`.
+- **Characters: draw them in designed shapes** (`draw.py`, `figure.py`). Lit 3D volumes with noise look like
+  mannequins (the user, on the sculpted heads: "still blocky and strange"); a pixel artist designs each tone as a
+  shape. `Canvas(w, h)` takes vector shapes (`oval()`, `blob()` through points, `brush()` tapering strokes, `poly()`)
+  in flat tones, as named parts; `shadow(part, tone, light, depth)` gives a part its shadow side as one clean crescent,
+  `light()` a lit band, `seam()` a line where one part overlaps another, `ink()` and `dot()` pixel-exact lines and
+  glints (eyes, mouths); `render()` counts the samples into pixels, outlines and tidies (folds stray pixels away).
+  `head(d, x, y, H, skin, hair, view='side' | 'three' | 'front' | 'back', expression=, style=)` draws a head from templates of
+  planes (brow ridge, sockets, nose, cheekbone, jaw) at any size, and `Figure('brawler', height, line=, skin=, hair=,
+  shirt=, pants=, shoes=, top='tee' | 'tank' | 'long' | 'bare')` a whole character on a rig's skeleton, posed and
+  animated like a rig. Its default `view='three'` cheats the chest and face towards the camera as Streets of Rage and
+  Street Fighter do (a pure profile hides the chest behind a bulky near shoulder: the user's note on the first one). Give it one `line` colour for all its outlines (Streets of Rage does): one sprite palette then
+  holds skin, hair, shirt and pants. `speckle(img)` measures the clutter (the share of pixels in clusters of one or two: about 0.10 for a 64 px figure,
+  0.05 for a head 32 px tall; more means noise). Look at it at 6x
+  with a Sheet and criticise it as an artist would: the faces, the hair, the torso.
+- **Sculpt the round and glossy** (`Sculpt`: gloves, balls, armour, a boss's shell, background props): spheres,
+  ellipsoids, capsules and reliefs blended with `smooth=`, lit, shaded along each part's ramp and outlined. Cut a big
+  silhouette as a flat shape and give it depth with `relief()`; round parts alone read as balloons (the showcase's
+  first hero). For flat shapes, `shaded(mask, ramp, kind)`, then `inline()` or `outline_sel()`, `rim()` for a back
+  light, `clean_lines()` and `despeckle()`.
 - **Big characters are big sprites.** `art.big_sprite(name, picture or {palette: picture})` cuts any size into parts
   and code.js draws it with `bigSprite(ART.big.name, x, y, { fx })`. Animate the part that moves as a big sprite of its
   own (the showcase's boxer breathes with his top half: two whole frames cost about 300 tiles, the split costs none).
@@ -335,13 +345,22 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   with a material (grass, dirt, stone, brick, tiles, planks, leaves, water, fence ...) that repeats seamlessly, and
   `variants()` with `tile_fill()` break up a big area for a few tiles. `floor()` lays a texture in perspective. A sky
   can cost no tiles at all: `art.gradient()` and `gradientLine()` in `scanline()`.
-- **Characters that move: rig them.** `Rig('brawler' | 'boxer' | 'hero', height, skin=, shirt=, pants=, shoes=,
-  hair=, hands=)` is a skeleton dressed in sculpted shapes; a pose is a dict of joint angles (`pose(GUARD, arm_n=80)`),
+- **Characters that move: rig them.** `Figure(...)` (drawn) and `Rig('brawler' | 'boxer' | 'hero', height, ...)`
+  (sculpted) share a skeleton; a pose is a dict of joint angles (`pose(GUARD, arm_n=80)`),
   and `rig.animate(WALK, 8)` makes the frames between key poses (WALK, PUNCH, KICK, IDLE-like pairs; give at least a
-  frame a key). `filmstrip(path, rig, poses, pal)` shows every frame with an onion skin of the one before and the
+  frame a key). `filmstrip(path, figure, poses, pal)` shows every frame with an onion skin of the one before and the
   skeleton (near limbs pink, far limbs blue): check it for a limb that jumps or a foot that slides. `art.animation()`
-  makes the frames big sprites that share every piece that does not change (the `street` cart's brawler: 18 frames in about
-  410 tiles). Then `gif.mjs` makes a GIF for the person to judge the timing, which a still cannot show.
+  makes the frames big sprites that share every piece that does not change (a 64 px brawler: 18 frames in about 480
+  tiles). Then `gif.mjs` makes a GIF for the person to judge the timing, which a still cannot show.
+- **Big fighters: stream their frames.** Tiles cost grows with a character's area: the same 18 frames at 96 px take
+  1,008 tiles as big sprites, the whole budget. `art.stream(name, {clip: [frames]}, pal=)` loads each frame into a slot
+  of tile rows as it plays, as SNES games did, and `streamSprite(ART.streams.name, frame, x, y, { fx, slot })` draws it
+  (`ART.streams.name.clips.walk` is [first frame, count]). Give it `rom=True` and the frames go in the cart's ROM
+  (`rom/<name>.bin`, 128 KB in all: docs/dev/rom-plan.md), out of the 64 KB of code: the `street` brawler (96 px, 18
+  frames) is 128 tiles and 18.5 KB of ROM, so six or so such fighters fit (without `rom=True` the same frames are
+  20 KB of `code.js`). One slot per copy on screen at once (`slots=`); loading costs no measurable time.
+- **Details on sculpted figures** (`detail.py`): `face()`, `hair()`, `crease()`, `bunch()`, `stroke()` draw on a
+  rendered Sculpt or Rig (`Rig(..., face='angry', hair_style='swept', folds=True)`). For a character, prefer `Figure`.
 - **HUD and titles:** `big_text()` (smooth scaled, gradient-filled, outlined, shadowed), `hud_bar()`, `frame()`.
 - **Look while you work:** `Sheet().add(name, img, pal)` (and `add_layers()` for a stack of layers) saves a PNG from
   art.py without packing.

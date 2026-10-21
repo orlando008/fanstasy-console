@@ -58,8 +58,8 @@ JUMP = {'lean': 6, 'arm_n': 60, 'fore_n': 70, 'arm_f': 30, 'fore_f': 80, 'thigh_
 
 PRESETS = {
     # lengths and radii as fractions of the height; head is the head's radius
-    'brawler': dict(head=0.08, neck=0.04, spine=0.27, pelvis=0.075, shoulder=0.11, upper=0.17, fore=0.15, hand=0.045,
-                    thigh=0.23, shin=0.22, foot=0.12, r_neck=0.05, r_chest=0.13, r_waist=0.095, r_upper=0.055, r_fore=0.046,
+    'brawler': dict(head=0.088, neck=0.028, spine=0.27, pelvis=0.075, shoulder=0.11, upper=0.17, fore=0.15, hand=0.045,
+                    thigh=0.23, shin=0.22, foot=0.12, r_neck=0.06, r_chest=0.135, r_waist=0.095, r_upper=0.058, r_fore=0.048,
                     r_thigh=0.07, r_shin=0.052, r_foot=0.04, depth=0.08),
     'boxer': dict(head=0.095, neck=0.04, spine=0.26, pelvis=0.075, shoulder=0.13, upper=0.17, fore=0.14, hand=0.07,
                   thigh=0.22, shin=0.2, foot=0.11, r_neck=0.065, r_chest=0.145, r_waist=0.1, r_upper=0.065, r_fore=0.055,
@@ -104,12 +104,13 @@ def _dir(angle_from_down):
 
 class Rig:
     def __init__(s, preset='brawler', height=64, skin=None, hair=None, shirt=None, pants=None, shoes=None, hands=None,
-                 margin=6, **overrides):
+                 margin=6, face=None, hair_style=None, folds=False, white=None, **overrides):
         from sculpt import Mat
         if preset not in PRESETS: raise ValueError('rig: presets are %s' % ', '.join(PRESETS))
         if skin is None: raise ValueError('rig: give at least skin= (a ramp such as pal.skin)')
         s.p = dict(PRESETS[preset]); s.p.update(overrides)
         s.height, s.margin, s.preset = height, margin, preset
+        s.face, s.hair_style, s.folds, s.white = face, hair_style, folds, white
         m = lambda v, d=None: (v if isinstance(v, Mat) else Mat(v)) if v is not None else d
         s.skin = m(skin)
         s.hair, s.shirt, s.pants = m(hair), m(shirt, s.skin), m(pants, s.skin)
@@ -183,6 +184,8 @@ class Rig:
             sc.capsule(pt('knee_' + side, z), pt('ankle_' + side, z), s.L('r_thigh') * 0.8, s.L('r_shin'), pants, smooth=2)
             sc.capsule(pt('ankle_' + side, z), pt('toe_' + side, z), s.L('r_foot') * 1.2, s.L('r_foot'), shoes)
             arm_z = z * 1.3
+            sx_, sy_ = J['shoulder_' + side]                    # the deltoid: a round shoulder over the arm's top
+            sc.sphere(sx_, sy_ + s.L('r_upper') * 0.3, arm_z * 0.6, s.L('r_upper') * 1.35, shirt, smooth=2)
             sc.capsule(pt('shoulder_' + side, arm_z * 0.5), pt('elbow_' + side, arm_z), s.L('r_upper'), s.L('r_upper') * 0.85, shirt, smooth=1)
             sc.capsule(pt('elbow_' + side, arm_z), pt('hand_' + side, arm_z), s.L('r_fore'), s.L('r_fore') * 0.85, skin)
             hx, hy = J['hand_' + side]
@@ -211,7 +214,7 @@ class Rig:
         ex, ey = fwd(-hr * 0.15, -hr * 0.05)                        # the ear
         sc.sphere(ex, ey, hr * 0.6, max(1.2, hr * 0.22), s.skin)
         s._eye = fwd(hr * 0.5, hr * 0.15)
-        if s.hair is not None:                               # hair over the top and back of the head
+        if s.hair is not None and s.hair_style is None:      # hair over the top and back of the head (no style: a cap)
             ah = math.radians(p.get('lean', 0) + p.get('neck', 0) + p.get('head', 0))
             ox, oy = -math.sin(ah) * 0, -math.cos(ah) * s.L('head') * 0.25
             sc.ellipsoid(nx - s.L('head') * 0.15 + ox, ny + oy, -1, s.L('head') * 0.95, s.L('head') * 0.8, s.L('head') * 0.9, s.hair)
@@ -224,10 +227,43 @@ class Rig:
         kw.setdefault('contours', 3)
         kw.setdefault('light', (0.8, -1.1, 0.9))                   # from the front (he faces right): the face is lit
         out = sc.render(**kw)
-        ex, ey = int(s._eye[0]), int(s._eye[1])                     # the eye: a dot of the skin's darkest step
-        img = out.get(s.skin.pal, next(iter(out.values()))) if isinstance(out, dict) else out
-        if 0 <= ex < img.w and 0 <= ey < img.h and img.px[ey][ex] in s.skin.ramp: img.px[ey][ex] = s.skin.ramp[0]
+        pic = lambda mat: (out.get(mat.pal, next(iter(out.values()))) if isinstance(out, dict) else out)
+        img = pic(s.skin)
+        p = p or {}
+        J = s.joints(p)
+        head_angle = p.get('lean', 0) + p.get('neck', 0) + p.get('head', 0)
+        hx, hy = J['head']
+        if s.face:                                                 # the hand-drawn layer (detail.py), from the joints
+            from detail import face
+            face(img, hx, hy, s.L('head'), s.skin.ramp, view='side', expression=s.face, angle=head_angle, white=s.white)
+        else:
+            ex, ey = int(s._eye[0]), int(s._eye[1])                 # the eye: a dot of the skin's darkest step
+            if 0 <= ex < img.w and 0 <= ey < img.h and img.px[ey][ex] in s.skin.ramp: img.px[ey][ex] = s.skin.ramp[0]
+        if s.folds: s._folds(pic, J)
+        if s.hair_style and s.hair is not None:
+            from detail import hair
+            hair(pic(s.hair), hx, hy - s.L('head') * 0.05, s.L('head'), s.hair.ramp, style=s.hair_style, view='side', angle=head_angle)
         return out
+
+    def _folds(s, pic, J):
+        """Creases where cloth bends: behind each knee, bunched at the ankles, down the shirt from the armpits."""
+        from detail import crease, bunch
+        for side in ('n', 'f'):
+            mat = s.pants if side == 'n' else s._far(s.pants)
+            img = pic(s.pants)
+            (hx, hy), (kx, ky), (ax, ay) = J['hip'], J['knee_' + side], J['ankle_' + side]
+            # behind the knee: two short folds fanning from the back of the joint
+            bx, by = kx - (ax - hx) * 0.08 - s.L('r_thigh') * 0.5, ky
+            crease(img, mat.ramp, [(bx, by - 2), (kx, ky)], 1)
+            crease(img, mat.ramp, [(bx, by + 2), (kx + 1, ky + 1)], 1)
+            # the thigh: a long fold from the hip
+            crease(img, mat.ramp, [((hx + kx) / 2 - 1, (hy + ky) / 2 - 3), ((hx + kx) / 2 + 1, (hy + ky) / 2 + 3)], 1)
+            bunch(img, mat.ramp, ax - s.L('r_shin'), ax + s.L('r_shin'), ay - 2, rows=2)
+        img = pic(s.shirt)
+        (cx, cy), (hx, hy) = J['chest'], J['hip']
+        r = s.L('r_chest')
+        for k in (0.0, 0.45):                                       # folds from under the arm towards the waist
+            crease(img, s.shirt.ramp, [(cx - r * 0.2 + k * r, cy + r * 0.6), (hx + r * 0.1 + k * r * 0.6, hy - s.L('pelvis'))], 1)
 
     def animate(s, keys, frames, loop=True, mirror=None):
         """In-between poses: `frames` poses through the key poses, eased. A WALK (4 keys) plays its keys, then the same

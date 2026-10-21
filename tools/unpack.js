@@ -4,8 +4,8 @@
 //   node tools/unpack.js <cart.nova> carts/src/<name>
 //
 // Writes code.js, meta.json (title, author, description: add the genre and players), tiles.txt, palette.txt (only
-// the entries that differ from the default palette), map.txt, audio.json and label.png, each only if the cart has
-// one, then packs the folder again and fails if the result is not the same cart. It will not write into a folder that
+// the entries that differ from the default palette), map.txt, audio.json, label.png and rom/<name>.bin, each only if
+// the cart has one, then packs the folder again and fails if the result is not the same cart. It will not write into a folder that
 // already has a code.js.
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -64,6 +64,10 @@ write('map.txt', mrows.map((r) => `${r}\n`).join(''));
 
 write('audio.json', `${JSON.stringify(writeAudio(cart), null, 1)}\n`);
 if (cart.label) writeFileSync(join(dir, 'label.png'), Buffer.from(cart.label, 'base64'));
+if (Object.keys(cart.rom).length) {
+  mkdirSync(join(dir, 'rom'), { recursive: true });
+  for (const [name, b] of Object.entries(cart.rom)) writeFileSync(join(dir, 'rom', `${name}.bin`), b);
+}
 
 // Pack it again: the same cart, or the folder is wrong.
 const tmp = join(tmpdir(), `unpack-${process.pid}.nova`);

@@ -261,6 +261,65 @@ ok(names == ['walk%d' % k for k in range(8)] and ra.anims['walk'] == names and c
 fsp = os.path.join(tempfile.mkdtemp(), 'f.png'); filmstrip(fsp, rg, walk[:3], rp)
 ok(open(fsp, 'rb').read(8) == b'\x89PNG\r\n\x1a\n', 'filmstrip writes a PNG')
 
+# --- The hand-drawn layer (detail.py) ---
+dp = Art().sprite_palette(0, {'skin': ramp('e8a878', 5), 'hair': ramp('6a3a20', 4), 'white': 'f8f8f0'})
+def hd():
+    return Sculpt(32, 34).ellipsoid(16, 18, 0, 10, 11, 10, dp.skin).render(contours=3)
+plain = hd()
+fc = face(hd(), 16, 18, 10, dp.skin, view='front', expression='neutral', white=dp.white)
+ok(fc.colors() <= set(dp.skin) | {dp.white} and sum(1 for r in fc.px for v in r if v == dp.white) >= 8, 'face: two eyes with whites (front, r 10), in the skin and white only')
+ok(fc.get(16, 30) == plain.get(16, 30) and fc.get(0, 0) == 0, 'and it draws only on the face, never outside the head')
+hurt = face(hd(), 16, 18, 10, dp.skin, view='front', expression='hurt', white=dp.white)
+ok(sum(1 for r in hurt.px for v in r if v == dp.white) < 4, 'hurt: the eyes are shut (no whites)')
+side = face(hd(), 16, 18, 10, dp.skin, view='side', expression='angry', white=dp.white)
+ok(any(side.get(x, y) == dp.white for x in range(18, 24) for y in range(15, 22)), 'side: the eye is towards the front of the head')
+for st in ('short', 'spiky', 'swept', 'mohawk', 'long', 'bald'):
+    hh = hair(hd(), 16, 17, 10, dp.hair, style=st, view='side')
+    ok(st == 'bald' or (set(dp.hair) & hh.colors()) and sum(1 for r in hh.px for v in r if v in dp.hair) > 40, 'hair %s: drawn in the hair ramp' % st)
+lh = hair(Img(48, 60), 24, 17, 10, dp.hair, style='long', view='side')
+ok(max(y for y in range(60) for x in range(48) if lh.px[y][x]) > 30, 'long hair hangs below the head')
+ok(raises(lambda: hair(hd(), 16, 17, 10, dp.hair, style='afro'), 'styles are'), 'an unknown hair style is an error that lists them')
+cl = Img(20, 10).rect(0, 0, 20, 10, dp.skin[2])
+crease(cl, dp.skin, [(2, 5), (18, 5)])
+ok(cl.get(10, 5) < dp.skin[2] and cl.get(10, 4) > dp.skin[2] and cl.get(10, 8) == dp.skin[2], 'crease: a dark line with a lit edge on the light\'s side, the rest untouched')
+on_only = Img(20, 10).rect(0, 0, 10, 10, dp.skin[2]); stroke(on_only, dp.skin, [(0, 5), (19, 5)], -1)
+ok(on_only.get(15, 5) == 0 and on_only.get(5, 5) == dp.skin[1], 'stroke changes only pixels of its ramp')
+rgd = Rig('brawler', height=64, skin=dp.skin, hair=dp.hair, face='angry', hair_style='swept', folds=True, white=dp.white)
+ok(set(dp.hair) & rgd.render(GUARD).colors() and dp.white in rgd.render(GUARD).colors(), 'Rig(face=, hair_style=, folds=): the details in every frame')
+
+# --- Drawn figures (draw.py, figure.py) ---
+cv = Canvas(20, 20)
+cv.fill(oval(10, 10, 6, 6), 3, part='ball')
+cv.shadow('ball', 2, light=(1, -1), depth=2)
+cv.ink([(4, 18), (16, 18)], 1)
+ci = cv.render(outline=5, tidy=2)
+ok(ci.get(10, 10) == 3 and ci.get(6, 14) == 2 and ci.get(14, 6) == 3, 'Canvas: a part filled, its shadow a crescent away from the light (up and right: the shadow lower left)')
+ok(all(ci.get(x, 18) == 1 for x in range(4, 17)) and ci.get(10, 3) == 5 and ci.get(0, 0) == 0, 'ink: an exact 1 px line; the outline around the shapes')
+cv2 = Canvas(20, 20); cv2.fill(oval(10, 10, 7, 7), 3, part='a'); cv2.fill(poly([(10, 10), (11, 10), (11, 11), (10, 11)]), 4, inside='a')
+ok(cv2.render(tidy=0).get(10, 10) == 4 and cv2.render(tidy=2).get(10, 10) == 3, 'tidy folds a cluster of a pixel or two into what surrounds it')
+cv3 = Canvas(12, 12); cv3.fill(poly([(0, 0), (12, 0), (12, 12), (0, 12)]), 3, part='back'); cv3.fill(poly([(6, 0), (12, 0), (12, 12), (6, 12)]), 4, part='front')
+cv3.seam('front', 1, under='back')
+si = cv3.render(tidy=0)
+ok(si.get(6, 5) == 1 and si.get(5, 5) == 3 and si.get(9, 5) == 4, 'seam: the edge of a part where it meets the part under it')
+ok(speckle(Img.make(10, 10, lambda x, y: 1 + (x + y) % 2)) == 1.0 and speckle(Img.make(10, 10, lambda x, y: 1)) == 0.0, 'speckle: 1 for a checker, 0 for a flat fill')
+fp = Art().sprite_palette(0, {'line': '180c14', 'skin': ramp('e0a070', 4, at=2), 'hair': ramp('c89038', 3, at=1), 'shirt': ramp('e0e0ec', 3, at=1),
+                              'pants': ramp('3858b0', 3, at=1), 'white': 'f0ece0'})
+for view in ('side', 'three', 'front', 'back'):
+    hc = Canvas(48, 56); head(hc, 24, 26, 32, fp.skin, fp.hair, view=view, line=fp.line, white=fp.white, style='swept')
+    him = hc.render(outline=fp.line)
+    ok(set(fp.hair) & him.colors() and (view == 'back' or fp.white in him.colors()) and speckle(him) < 0.12, 'head %s: hair, eyes, clean (speckle %.2f)' % (view, speckle(him)))
+    if view == 'three': ok(sum(1 for r in him.px for v in r if v == fp.white) >= 6, 'three-quarters: both eyes show')
+ok(raises(lambda: head(Canvas(8, 8), 4, 4, 8, fp.skin, view='top'), 'view is'), 'head: an unknown view is an error')
+fg = Figure('brawler', height=64, line=fp.line, skin=fp.skin, hair=fp.hair, shirt=fp.shirt, pants=fp.pants, shoes=fp.hair, face='angry', hair_style='swept')
+frames = [fg.render(p) for p in fg.animate(PUNCH, 4, loop=False)]
+ok(all(f.w == fg.w and fp.line in f.colors() and set(fp.shirt) & f.colors() for f in frames), 'Figure: frames of a punch in the palette, outlined in the shared line colour')
+ok(max(x for y in range(frames[2].h) for x in range(frames[2].w) if frames[2].px[y][x]) > max(x for y in range(frames[0].h) for x in range(frames[0].w) if frames[0].px[y][x]), 'and the hit frame reaches further')
+ok(all(speckle(f) < 0.15 for f in frames), 'and they are clean (speckle %s)' % ' '.join('%.2f' % speckle(f) for f in frames))
+Jt, Js = fg.joints(STAND), Figure('brawler', height=64, line=fp.line, skin=fp.skin, view='side').joints(STAND)
+ok(Jt['shoulder_n'][0] < Js['shoulder_n'][0] and Jt['shoulder_f'][0] > Js['shoulder_f'][0], "view='three' (the default): the shoulders spread, the chest cheated towards us")
+ok(fg.joints(PUNCH[2])['hand_n'][0] >= Js['shoulder_n'][0] + 0.9 * (fg.L('upper') + fg.L('fore')) - 1, 'and the body twists into a punch, so it keeps its reach')
+ok(raises(lambda: Figure('brawler', skin=fp.skin, view='top'), "view is"), 'an unknown figure view is an error')
+
 # --- Files: written, packed and read back ---
 work = tempfile.mkdtemp(prefix='art-selftest-')
 try:
@@ -373,6 +432,34 @@ console.log(JSON.stringify({ body: at(108, 80), eye: at(111, 61), eyeR: at(160 +
     ok(bv['body'] == rgb555(bart.palettes[('spr', 0)].hexes['body2']) and bv['eye'] == rgb555('ffffff') and bv['eyeR'] == rgb555('ffffff'), 'the console draws the big sprite, and flipped with fx its eye lands mirrored', str(bv))
     ok(bv['gem'] == rgb555(bart.palettes[('spr', 5)].hexes['gem2']), 'with the part in the other palette over it')
     ok(bv['sky0'] != bv['sky99'] and bv['sky0'] == rgb555('102040'), 'and gradientLine() in scanline() paints the backdrop line by line', str((bv['sky0'], bv['sky99'])))
+    # streams: frames loaded into a slot as they play; their frames in code.js, then in the cart's ROM
+    for in_rom in (False, True):
+        sart = Art(); sart.region('spr', 256, 1023)
+        spal = sart.sprite_palette(0, {'a': ramp('c04040', 3), 'b': ramp('4060c0', 3)})
+        fa = Img(40, 40).rect(0, 0, 40, 40, spal.a[1]).rect(4, 4, 8, 8, spal.a[2])
+        fb = Img(40, 40).rect(0, 0, 40, 20, spal.b[1]).rect(20, 20, 20, 20, spal.b[0])
+        sst = sart.stream('box', {'one': [fa], 'two': [fb, fa]}, pal=spal, slots=2, rom=in_rom)
+        ok(sst['clips'] == {'one': [0, 1], 'two': [1, 2]} and sst['rows'] % 4 == 0 and len(sart.used) - 1 == sst['rows'] * 16 * 2, 'stream: clips, and only its slots taken from the tile budget', str((sst['rows'], len(sart.used))))
+        ok(raises(lambda: sart.stream('bad', [fa, Img(8, 8)], pal=spal), 'same size'), 'stream: frames of different sizes are an error')
+        ssrc = os.path.join(work, 'stream%d' % in_rom); os.makedirs(ssrc)
+        open(os.path.join(ssrc, 'code.js'), 'w').write('%s\n%s\nlet t = 0;\nfunction update() { t++; }\nfunction draw() { cls(); const s = ART.streams.box; streamSprite(s, t < 2 ? 0 : 1, 10, 10); streamSprite(s, 2, 100, 10, { slot: 1, fx: true }); }\n' % (ART_BEGIN, ART_END))
+        open(os.path.join(ssrc, 'meta.json'), 'w').write('{"title": "Stream"}')
+        sart.write(ssrc, quiet=True)
+        if in_rom:
+            ok(os.path.exists(os.path.join(ssrc, 'rom', 'box.bin')) and 'pool' not in sst and sst['rom'] == 'box', 'stream(rom=True): the frames go to rom/box.bin, not into code.js')
+        sout = os.path.join(work, 'stream%d.nova' % in_rom); node('tools/pack.js', ssrc, sout)
+        sprobe = os.path.join(work, 'sprobe%d.mjs' % in_rom)
+        open(sprobe, 'w').write("""import { boot } from '%s/tools/devkit/harness.mjs';
+    const vm = boot(process.argv[2]);
+    const at = (x, y) => { const v = vm.out32[y * 256 + x]; return [v & 255, (v >> 8) & 255, (v >> 16) & 255]; };
+    vm.step(0); const a = { fill: at(30, 40), spot: at(16, 16), other: at(105, 30), flipspot: at(132, 16) };
+    vm.run(4); const b = { top: at(15, 15), corner: at(45, 45), low: at(15, 45), back: at(250, 200), other: at(105, 30) };
+    console.log(JSON.stringify({ a, b }));""" % ROOT)
+        sv = json.loads(node(sprobe, sout))
+        hx = lambda r, i: rgb555(sart.palettes[('spr', 0)].hexes['%s%d' % (r, i)])
+        ok(sv['a']['fill'] == hx('a', 1) and sv['a']['spot'] == hx('a', 2), 'streamSprite (frames in %s): the frame is loaded and drawn' % ('ROM' if in_rom else 'code'), str(sv['a']))
+        ok(sv['b']['top'] == hx('b', 1) and sv['b']['corner'] == hx('b', 0) and sv['b']['low'] == sv['b']['back'], 'and the next frame replaces it in the same slot (its empty part shows the backdrop)', str(sv['b']))
+        ok(sv['a']['other'] == hx('a', 1) and sv['b']['other'] == hx('a', 1) and sv['a']['flipspot'] == hx('a', 2), 'a second slot shows its own frame meanwhile, flipped with fx')
     gifp = os.path.join(work, 'bigs.gif')
     node('tools/devkit/gif.mjs', bout, gifp, '--from', '0', '--to', '10', '--crop', '90,40,120,80')
     ok(open(gifp, 'rb').read(6) == b'GIF89a', 'tools/devkit/gif.mjs records the cart as an animated GIF')

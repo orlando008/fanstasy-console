@@ -5,9 +5,11 @@
 import { emptyAudio } from './audio.js';
 
 export const CART_FORMAT = 'nova16-cart';
-export const CART_VERSION = 2; // 2: the new sound chip (docs/dev/sound-chip.md); 1 is still read
+export const CART_VERSION = 3; // 3: a cart with ROM (docs/dev/rom-plan.md); 2: the new sound chip (docs/dev/sound-chip.md); 1 is still read
 
 export const CODE_LIMIT = 65536; // UTF-8 bytes
+export const ROM_LIMIT = 131072; // bytes, all blobs together (SPEC 3)
+export const ROM_NAME = /^[a-z0-9_-]{1,32}$/;
 export const SHEET_W = 128;
 export const SHEET_H = 512;
 export const MAP_W = 256;
@@ -46,6 +48,7 @@ export function createCart() {
     tiles: new Uint8Array(SHEET_W * SHEET_H), // sheet pixels, row-major, 0-15
     map: new Uint16Array(MAP_W * MAP_H),
     ...emptyAudio(), // instruments, patterns, songs, sfx, samples
+    rom: {}, // name -> Uint8Array, read-only data (SPEC 9.1)
   };
 }
 
@@ -70,7 +73,24 @@ export function validateCart(cart) {
   if (!(cart.map instanceof Uint16Array) || cart.map.length !== MAP_W * MAP_H) {
     throw new Error('Cart map must be a Uint16Array(32768)');
   }
+  checkRom(cart.rom || {});
   return cart;
+}
+
+/** Total bytes of a cart's ROM. */
+export function romBytes(rom) {
+  return Object.values(rom || {}).reduce((n, b) => n + b.length, 0);
+}
+
+/** Throw if a ROM (name -> Uint8Array) breaks the rules: names, types, the 128 KB limit. */
+export function checkRom(rom) {
+  for (const [name, b] of Object.entries(rom)) {
+    if (!ROM_NAME.test(name)) throw new Error(`ROM blob name '${name}': use 1 to 32 of a-z 0-9 _ -`);
+    if (!(b instanceof Uint8Array)) throw new Error(`ROM blob '${name}' must be a Uint8Array`);
+  }
+  const n = romBytes(rom);
+  if (n > ROM_LIMIT) throw new Error(`ROM is ${n} bytes; the limit is ${ROM_LIMIT}`);
+  return rom;
 }
 
 /** Storage key for a cart's save data. Carts are identified by title and author. */
