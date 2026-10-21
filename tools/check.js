@@ -82,8 +82,9 @@ async function checkCart(arg) {
   const patUsed = new Set(cart.songs.flatMap((s) => s.order)).size;
   const insUsed = new Set();
   const ram = sampleBytes(cart.samples);
-  console.log(`  audio   ${songsUsed}/${SONGS} songs, ${patUsed}/${PATTERNS} patterns, ${sfxUsed}/${SFX_SLOTS} sfx, sample RAM ${ram}/${SAMPLE_RAM} bytes (${cart.samples.filter((s) => s.data.length).length}/${SAMPLE_SLOTS} samples)`);
-  if (ram > SAMPLE_RAM) err('sample RAM is over the limit');
+  const [ramMax, slots] = cart.chip === 1 ? [16384, 16] : [SAMPLE_RAM, SAMPLE_SLOTS]; // the old chip had half
+  console.log(`  audio   ${cart.chip === 1 ? 'old chip (version 1), ' : ''}${songsUsed}/${SONGS} songs, ${patUsed}/${PATTERNS} patterns, ${sfxUsed}/${SFX_SLOTS} sfx, sample RAM ${ram}/${ramMax} bytes (${cart.samples.filter((s) => s.data.length).length}/${slots} samples)`);
+  if (ram > ramMax) err('sample RAM is over the limit');
   const voice = (i) => waveVoice(cart.instruments[i]?.wave ?? 'pulse50');
   cart.songs.forEach((song, s) => {
     if (!song.order.length) return;
@@ -98,10 +99,12 @@ async function checkCart(arg) {
         err(`song ${s}, channel ${ch} (${V1_VOICES[ch]}): instrument ${c.i} (${cart.instruments[c.i]?.wave}) is a ${voice(c.i)} voice, which this channel of the old chip cannot play`);
       }
     }));
-    const used = [...Array(channelCount(cart.chip)).keys()].filter((ch) => song.order.some((k) => cart.patterns[k].some((row, r) => (r === 0 && ch === 1 ? row[ch]?.n != null : nz(row[ch])))));
-    console.log(`  song ${s}  ${song.order.length} patterns, channels ${used.join(',') || 'none'}${used.includes(1) ? '  (channel 1 has notes: it is usually kept for SFX)' : ''}`);
+    const used = [...Array(channelCount(cart.chip)).keys()].filter((ch) => song.order.some((k) => cart.patterns[k].some((row) => row[ch]?.n != null)));
+    const kept = cart.chip === 1 ? [1] : [6, 7], busy = kept.filter((ch) => used.includes(ch));
+    console.log(`  song ${s}  ${song.order.length} patterns, channels ${used.join(',') || 'none'}${busy.length ? `  (channel ${busy.join(' and ')} has notes: it is usually kept for SFX)` : ''}`);
   });
   const code = cart.code, sfxCh = /\bSFX_CH\s*=\s*(\d)/.exec(code), wrongVoice = [], routed = /sfx-voice-routed|SFX_VOICE_CH/.test(code);
+  if (cart.chip === 2 && sfxCh && Number(sfxCh[1]) < 6) warn(`SFX_CH = ${sfxCh[1]}: on the new chip songs use channels 0 to 5, so an effect there cuts a hole in the music; use 6 or 7 (or -1)`);
   cart.sfx.forEach((e, n) => {
     const used = e.rows.filter((r) => r && r.n != null && r.n >= 0 && r.i != null);
     if (!used.length) return;

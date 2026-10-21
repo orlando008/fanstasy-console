@@ -53,9 +53,13 @@ for (const path of paths) {
     for (let i = 0; i + win <= L.length; i += hop) short.push(rms(L, i, i + win));
     const ss = [...short].sort((a, b) => a - b), smed = ss[ss.length >> 1] || 1e-9;
     const section = Math.max(...parts.map((p) => p.rms)) / med, surge = Math.max(...short) / smed, pk = Math.max(...parts.map((p) => p.pk)), br = Math.max(...parts.map((p) => p.br));
-    // The lead alone: every channel but 0 (and the tempo on 1) removed from a copy of the patterns.
+    // The lead alone: every channel but 0 removed from a copy of the patterns (keeping the tempo: on 1, or on the new
+    // chip wherever it is, as an effect with no note).
     const leadCart = structuredClone(cart);
-    for (const p of leadCart.patterns) for (const row of p) for (let ch = 2; ch < 6; ch++) row[ch] = null;
+    for (const p of leadCart.patterns) for (const row of p) {
+      if (cart.chip === 1) for (let ch = 2; ch < 6; ch++) row[ch] = null;
+      else for (let ch = 1; ch < row.length; ch++) row[ch] = row[ch] && (row[ch].fx >> 8) === 0xF ? { n: null, i: null, v: null, fx: row[ch].fx } : null;
+    }
     const [Ld] = render(leadCart, [['music', s, 0]], sec);
     let leadRms = 0, leadShare = 0, jump = 0, prev = null, entered = false;
     for (let k = 0; k * w < L.length; k++) {
