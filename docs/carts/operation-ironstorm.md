@@ -1,9 +1,9 @@
 # Operation Ironstorm: Cart Specification
 
-**Version:** 5.4b
-**Status:** Released: a guest cart, made outside this repository and added to the Library as it came (`tools/unpack.js`); also as the PNG cart `carts/operation-ironstorm.nova.png`
+**Version:** 6.0 (the author's 5.4b with new art and sound)
+**Status:** Released: a guest cart, made outside this repository and added to the Library (`tools/unpack.js`), then given new art and music here; also as the PNG cart `carts/operation-ironstorm.nova.png`
 **Cart source:** `carts/src/operation-ironstorm/` → `carts/operation-ironstorm.nova`
-**Author:** Independent Game Project
+**Author:** Independent Game Project (the game); the art and audio pass of 6.0 was done in this repository
 
 ---
 
@@ -30,28 +30,69 @@ reach the fortress at the end and its commander.
 
 ## 3. The game
 
-- **Weapons:** rifle, spread (three shots), rapid, laser (2 damage) and rocket (4 damage and a blast), picked up along
-  the way (four pickups, 100 points each) or cycled with the weapon button.
+The rules are the author's, unchanged in 6.0.
+
+- **Weapons:** rifle, spread (three shots), rapid, laser (2 damage) and rocket (4 damage and a blast), picked up from
+  winged capsules along the way (four, 100 points each; S, R, L and M on them) or cycled with the weapon button.
 - **Enemies:** 14 along the way: riflemen (3 hits, 100 points) and heavy troopers (6 hits, 250 points, sometimes a
   3-round burst). They patrol, chase the commando when he is near and fire aimed shots.
-- **The boss:** the fortress commander enters at x 1940 and clears the field: 55 hit points, aimed five-shot spreads,
-  a ring of shots below 45% health and faster fire as he weakens (5000 points). Beating him wins the mission.
+- **The boss:** the fortress commander's gunship enters at x 1940 and clears the field: 55 hit points, aimed five-shot
+  spreads, a ring of shots below 45% health and faster fire as it weakens (5000 points). Beating it wins the mission.
 - **Screens:** title, play with a HUD (hit points, lives, score, weapon), the game's own pause, mission failed and
   mission complete.
-- **Art:** drawn in code with the overlay (sprites as run-length rows), with parallax jungle layers; no tiles or map.
-- **Audio:** one song in 4 orders and 11 sound effects on 5 instruments.
 
-## 4. Asset budget
+## 4. Art (6.0)
+
+Made by `art.py` with the art kit; the overlay draws only what moves with the world (the ground, the ledges, the
+capsules, the shots, the HUD and the title's logo).
+
+- **Three parallax layers**, each wrapping: BG2 the sky (a dithered dusk gradient from indigo to peach, puffy clouds lit
+  from below, the sun and two ridges of far mountains; scrolls at 0.08 of the camera), BG1 the misty jungle (three
+  rows of round crowns lit warm from the upper right, trunks, a cliff with a waterfall whose blues turn round so the
+  water falls, mist below; 0.3) and BG0 the near jungle (the canopy overhead, lianas, two great trunks lit on their
+  right, ferns; 0.6). Their shapes repeat every 64 or 128 pixels so the tiles are shared.
+- **Sprites:** the commando (a body for idle, four running frames, jump and crouch, and over it the arm and rifle for
+  each aim: level, up, down and both diagonals, with a muzzle flash), the rifleman and the heavy trooper (four walking
+  frames each), and the gunship (64 x 64 in four quarters, facing the commando; its thrusters burn on the overlay and
+  its core pulses). A white sprite palette is the hit flash.
+- **The overlay's colours** 1 to 15 (`C` in `code.js`) are recoloured to match, and named colours from 97 and 113 serve
+  the ground (grass, soil with stones and roots, all fixed to the world), the pits (chasms with stakes and warning
+  posts), the planks of the rope bridges and the logo (the console font scaled up, with an outline, a drop shadow, a
+  steel and an ember ramp and a sweeping shine).
+
+## 5. Audio (6.0)
+
+Made by `audio.py` with the song toolkit; channel 1 is kept for effects, the drums are samples on channel 5 and the
+gunfire is noise on channel 4.
+
+| Song | | |
+|---|---|---|
+| 0 | The jungle | E minor, 150 bpm, 32 bars, loops: an intro, the main tune, a second theme over strings, the tune again, a bridge |
+| 1 | The title | E minor, 128 bpm, 16 bars, loops: a horn over strings, then the tune with a march |
+| 2 | The fortress commander | E minor with a flat second, 180 bpm, 16 bars, loops: stabs over a driving bass, then the horn |
+| 3 | Mission complete | an E major fanfare, once |
+| 4 | Mission failed | a slow fall, once |
+
+Effects keep the author's numbers: 0 rifle, 1 jump, 2 hurt, 3 an enemy down, 4 checkpoint, 5 lost a life, 6 rocket,
+7 laser, 8 spread, 9 rapid, 10 the boss destroyed.
+
+## 6. Asset budget
 
 | Asset | Use |
 |---|---|
-| Code | 31.2 KB of the 64 KB limit |
-| Tiles, map, palette | none (the default palette) |
-| Audio | 5 instruments, 3 patterns, 1 song, 11 SFX |
+| Code | 26.0 KB of the 64 KB limit |
+| Tiles | 642 of 1,023: 318 for the three layers (of 639 kept for them), 324 for the sprites (of 384) |
+| Palettes | BG 1 to 3 (the layers), BG 6 and 7 entries for the overlay's named colours, sprite 0 to 4 |
+| Audio | 18 instruments, 18 patterns, 5 songs, 11 SFX, 4 drum samples (7,200 bytes) |
 | Save slots | none |
 
-## 5. Results
+## 7. Results
 
-Added to the Library unchanged from the author's cart: `node tools/unpack.js` turned the `.nova` into this source
-folder and checked that it packs back to the same cart; the label is the author's own. The console's smoke test (12 s
-of random presses) runs it at 60 fps with no errors.
+- 5.4b came in unchanged: `node tools/unpack.js` turned the author's `.nova` into the source folder and checked that it
+  packs back to the same cart.
+- 6.0, the art and sound pass: the game's rules are untouched; its drawing code now uses the layers and sprites (the
+  run-length sprite data is gone, 5 KB less code), the weapon capsules are drawn (they were invisible), and the music
+  follows the game (the title, the jungle, the boss when it appears, the fanfare and the fall).
+- Checks: soak (3 seeds of 20,000 frames) clean, frame time median 1.4 ms and 99th percentile 3.1 ms, at most 16
+  sprites; `loud.mjs --check` within the limits (each song's lead 0.53 to 0.56 of the mix); `clash.py` finds no lead
+  against bass clashes; effects measure 0.01 to 0.06 RMS; the smoke test runs at 60 fps with no errors.
