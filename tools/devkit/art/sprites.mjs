@@ -76,7 +76,8 @@ function ascii() {
       }).join(''));
     }
     const key = roles.filter(([, i]) => seen.has(i)).map(([r, i]) => `'${letter[i]}': ${i}`);
-    if (roles.length) console.log(`${pad}${roles.map(([r, i]) => `${letter[i]} ${r}${seen.has(i) ? '' : ' (unused)'}`).join('  ')}`);
+    const usedRoles = roles.filter(([, i]) => seen.has(i)), spare = roles.length - usedRoles.length;
+    if (roles.length) console.log(`${pad}${usedRoles.map(([r, i]) => `${letter[i]} ${r}`).join('  ')}${spare ? `${usedRoles.length ? '   ' : ''}(${spare} more role${spare > 1 ? 's' : ''} in the palette, not used here)` : ''}`);
     const unnamed = [...seen].filter((v) => !letter[v]).sort((a, b) => a - b);
     if (roles.length && unnamed.length) console.log(`${pad}no role for index ${unnamed.join(', ')} (a colour the palette does not define)`);
     if (key.length) console.log(`${pad}key={${key.join(', ')}}`);

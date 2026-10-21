@@ -1,7 +1,8 @@
 // How the colours of a cart read to a player: play it with random buttons (as soak.mjs does), sample what is on the
 // screen, and measure it in OKLab (a colour space where equal steps look equal: L is lightness 0 to 1, C chroma).
 //
-//   node tools/devkit/art/colors.mjs carts/my-game.nova [--frames 3000] [--seed 1] [--png out.png] [--check]
+//   node tools/devkit/art/colors.mjs carts/my-game.nova [--frames 3000] [--seed 1] [--png out.png] [--check] [--extra "src"]
+//   node tools/devkit/art/colors.mjs --selftest
 //
 // Reports:
 //   muddy panels the share of the overlay's pixels (panels, their text) that are mud, on screens where the overlay covers
@@ -19,12 +20,16 @@
 //   palettes    from carts/src/<name>/art.json: a ramp out of order (a role called dark lighter than mid, mid lighter
 //               than light, shade lighter than base...). Two roles of one colour are not reported: a cart may animate one.
 // --png writes the three screens with the muddiest panels (or the muddiest screens, if none has panels), each beside a
-// copy with its muddy pixels in magenta and faint edges in cyan.
+// copy with its muddy pixels in magenta and faint edges in cyan (only in the PNG: the tool never changes a cart).
+// --extra is source appended to the cart's code, as in shots.mjs (a hook the cart offers, such as skipTitle = true;).
+// --selftest checks the colour maths and the limit on a cart with and without a default-brown panel. CI runs it.
 // --check fails on muddy panels over the limit below or a palette ramp out of order; the rest is information (a game's
 // theme can be grey or brown, gradients make faint edges on purpose, fades make flat screens). The limit is calibrated
 // on Tricksy Towerz before its art polish (the user: muddy brown and grey panels, not beautiful enough): 0.97; after
 // it: 0.12; and on the starter's default panels: 0.98.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { boot } from '../harness.mjs';
 import { makePad } from '../pad.mjs';
 import { canvas, loadArt, png, text, COLORS } from './view.mjs';
@@ -33,7 +38,7 @@ import { defaultPalette } from '../../../src/formats/cart.js';
 const argv = process.argv.slice(2);
 const opt = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const path = argv[0];
-if (!path || path.startsWith('--')) { console.error('usage: node tools/devkit/art/colors.mjs <cart.nova> [--frames n] [--seed n] [--png out.png] [--check]'); process.exit(1); }
+if (!path || (path.startsWith('--') && path !== '--selftest')) { console.error('usage: node tools/devkit/art/colors.mjs <cart.nova> [--frames n] [--seed n] [--png out.png] [--check] [--extra "src"]  |  --selftest'); process.exit(1); }
 const frames = Number(opt('--frames', 3000)), seed = Number(opt('--seed', 1)), out = opt('--png'), check = argv.includes('--check');
 export const LIMITS = { panelsMuddy: 0.3 };
 const W = 256, H = 224, MUD = { lo: 0.2, hi: 0.7, grey: 0.03, warm: 0.07 }, FAINT = 0.04;
@@ -65,9 +70,30 @@ function muddy(p) {
   return c < MUD.grey || (c < MUD.warm && hue >= -30 && hue <= 110);
 }
 
+if (path === '--selftest') selftest();
+function selftest() {
+  let fails = 0;
+  const ok = (cond, what, extra = '') => { console.log(`${cond ? 'PASS' : 'FAIL'} ${what} ${extra}`); if (!cond) fails++; };
+  const rgbOf = (h) => [0, 2, 4].map((k) => parseInt(h.slice(k, k + 2), 16));
+  const white = oklab(255, 255, 255), black = oklab(0, 0, 0);
+  ok(Math.abs(white[0] - 1) < 1e-3 && chroma(white) < 1e-3 && Math.abs(black[0]) < 1e-9, 'OKLab: white is L 1 with no chroma, black is L 0');
+  ok(muddy(oklab(...rgbOf('422131'))) && muddy(oklab(...rgbOf('4a4a4a'))), 'the default brown and grey panels are mud');
+  ok(!muddy(oklab(...rgbOf('393152'))), 'the indigo that replaced the brown in Tricksy Towerz is not', `(C ${chroma(oklab(...rgbOf('393152'))).toFixed(3)})`);
+  ok(!muddy(oklab(...rgbOf('d04648'))) && !muddy(oklab(...rgbOf('140c1c'))) && !muddy(oklab(...rgbOf('deeed6'))), 'a red, a near-black and a near-white are not');
+  const self = fileURLToPath(import.meta.url), cartPath = fileURLToPath(new URL('../../../carts/sprites.nova', import.meta.url));
+  const run = (...a) => { try { return { code: 0, out: execFileSync('node', [self, cartPath, '--frames', '300', '--check', ...a], { encoding: 'utf8' }) }; } catch (e) { return { code: e.status, out: e.stdout }; } };
+  const plain = run();
+  ok(plain.code === 0 && /within the limits/.test(plain.out), 'a cart with no panels is within the limits');
+  // A panel in the default palette's brown (entry 1) with grey text (entry 3), drawn over the cart every frame.
+  const panel = run('--extra', 'const __draw = draw; draw = function () { __draw(); rectfill(32, 32, 192, 120, 1); print("TOP 10", 100, 48, 3); };');
+  ok(panel.code === 1 && /over the limits: muddy panels 0\.9/.test(panel.out), 'a default-brown panel is over the limit', (panel.out.match(/over the limits.*/) || [''])[0]);
+  console.log(`\n${fails ? 'SOME FAILED' : 'ALL PASS'}`);
+  process.exit(fails ? 1 : 0);
+}
+
 // --- Play and sample ---------------------------------------------------------------------------------------------------
 const { cart, name, manifest } = loadArt(path);
-const vm = boot(path, { seed });
+const vm = boot(path, { seed, extra: opt('--extra', '') });
 const pad = makePad(seed), seen = new Set(), shots = [];
 const defaults = defaultPalette();
 const faintPairs = new Map();
@@ -107,7 +133,7 @@ for (let f = 0; f < frames; f++) {
   for (let i = 0; i < ob.length; i++) {
     if (!ob[i]) continue;
     overlayPx++;
-    if (vm.ppu.cgram ? vm.ppu.cgram[ob[i]] === defaults[ob[i]] : cart.palette[ob[i]] === defaults[ob[i]]) {
+    if (vm.ppu.cgram[ob[i]] === defaults[ob[i]]) {
       overlayDefaultPx++; overlayDefaultBy.set(ob[i], (overlayDefaultBy.get(ob[i]) || 0) + 1);
     }
   }
