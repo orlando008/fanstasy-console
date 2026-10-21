@@ -372,7 +372,7 @@ every channel.)
 **Lead levels** (v1.2, after players found the leads loud and wobbly): the lead instruments have no vibrato and their
 volumes were lowered so that the lead alone is at most 0.05 RMS in its loudest section (it was 0.061 to 0.122), which is
 about half the mix (it was 0.7 to 0.9), with the mix rising no more than 1.4x where the lead comes in. One lead instrument was also used by an effect, so it was copied (instrument 24) and the effect did not change. Done with
-`tools/devkit/music/lower-leads.mjs` (the games have no audio script); `tools/devkit/music/loud.mjs --check` holds the limits.
+a script, `lower-leads.mjs` (the games had no audio script then; it was removed once they had one); `tools/devkit/music/loud.mjs --check` holds the limits.
 
 **No engine sound.** The cart API can't change a sound's pitch while it plays,
 so there is no revving engine. The music and the effects carry the speed.

@@ -12,7 +12,7 @@ drum pattern into patterns, songs and sound effects (the audio.json that tools/p
     a.effect(2, ['C-5', 'G-5', 'OFF'], 'CHIME')
     a.write(sys.argv[1])
 
-The new sound chip (SPEC 5): Audio(chip=2). Every channel plays any instrument; sampled ones come from samples.py
+The new sound chip (SPEC 5): Audio(), or Audio(chip=2). Every channel plays any instrument; sampled ones come from samples.py
 (a.voice('STR', 'strings', 6): a sample and an instrument with its envelope); instruments take echo= (a send, 0-15)
 and curve= ('lin' or 'exp'), songs echo=(delay, feedback, volume, tone) (SPEC 5.6). Channels:
   0 lead            3 pad (the chord's third), arpeggio
@@ -20,8 +20,8 @@ and curve= ('lin' or 'exp'), songs echo=(delay, feedback, volume, tone) (SPEC 5.
   2 bass            5 kick and snare (and hats with upper='pad')
   6, 7 kept for SFX; the tempo (F0x) goes on row 0 of each pattern on channel 7.
 
-The old chip (Audio(), chip 1: the games not converted yet). The voice is fixed by the channel, whatever an
-instrument's wave says:
+The old chip (Audio(chip=1): a cart in the old format, version 1, such as the chiptune demo). The voice is fixed by the
+channel, whatever an instrument's wave says:
   0 pulse   lead              3 saw       arpeggio, chords; counter-melody
   1 pulse   kept for SFX      4 noise     hats or, in a game with an engine sound, kept for that
   2 triangle bass             5 sample    kick and snare (and hats, if channel 4 is kept)
@@ -163,7 +163,7 @@ def parse_rows(text, width):
 
 class Audio:
     """The whole audio.json: instruments (by name), samples, patterns, songs and effects. chip=2 for the new sound chip."""
-    def __init__(s, chip=1):
+    def __init__(s, chip=2):
         s.chip, s.channels = chip, 8 if chip == 2 else 6
         s.instruments, s.I, s.samples, s.patterns, s.songs, s.sfx, s.index, s.kinds = [], {}, [], [], [], [], {}, {}
     def sample(s, vals, rate=RATE, loop=None):

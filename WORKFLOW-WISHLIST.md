@@ -68,7 +68,8 @@ that gap.
   - **Why:** an agent can see repetition, structure and long notes, as it sees art through `shots.mjs`.
 - [ ] **Song toolkit fixes** (`tools/devkit/music/kit.py`):
   - [ ] more than one chord in a bar;
-  - [ ] the arpeggio's instrument chosen by the caller (it is fixed to `ARP`);
+  - [x] the arpeggio's instrument chosen by the caller (it is fixed to `ARP`): `bar(ai=...)`, and `pi` and `bi` for the
+        pad and the bass, on the new-sound-chip branch, 2026-10-21;
   - [ ] bass and counter lines that do not inherit the lead's `grid` (a lead in sixteenths breaks the bass unless
         `bgrid` is set too);
   - [ ] volume per note or per bar, not one constant for a line;
@@ -107,7 +108,9 @@ that gap.
   - **Which:** Alien Swarm, Block Wizard, Planet Racers, Python Pass, Smashy Smash and Summit Rush.
   - **What:** a `tests/carts/<name>/lib.mjs`, a flow test and a bot for each.
   - **Why:** a polish pass on these games today has nothing to stop it silently breaking them.
-- [ ] **An `audio.json` to `audio.py` decompiler** (`tools/devkit/music/decompile.py`).
+- [x] **An `audio.json` to `audio.py` decompiler**. Done as `tools/devkit/music/script.py` on the new-sound-chip branch
+  (`docs/dev/sound-chip.md`), 2026-10-21: every pattern and effect as tracker text; Python Pass, Smashy Smash, Alien
+  Swarm, Planet Racers, Block Wizard and Summit Rush now have an `audio.py`.
   - **What:** turn a game's songs into a script of rows, so they can be edited as text and regenerated.
   - **Which:** every game except Moto Crosser, Ice Breakers, Rags to Riches and Tricksy Towerz.
 - [ ] **Art scripts for the older games, where they are worth redrawing.**

@@ -97,7 +97,6 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 |---|---|
 | `python3 carts/src/<name>/audio.py carts/src/<name>/audio.json` | Regenerate a game's audio from its script, with the song toolkit in `tools/devkit/music/kit.py` (its header explains `bar()`) |
 | `node tools/devkit/music/loud.mjs carts/<name>.nova [--check]` | Per-section loudness of every song, surges, peak, and **the lead alone**: its RMS, its share of the mix, how much the mix jumps when it enters, and how much it pierces (2 to 5 kHz). `--check` fails on the limits in section 5 (`verify.js` runs it) |
-| `node tools/devkit/music/lower-leads.mjs carts/src/<name>/audio.json [--write]` | For songs with no audio script: remove the leads' vibrato and lower their volumes until each song's lead is at most 0.05 RMS (instruments shared with effects are copied first) |
 | `node tools/devkit/music/render.mjs carts/<name>.nova out/` | WAV files of the songs, with level and clipping |
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level (both sides together, so a channel's pan does not change it) and pitch (centroid) of effects, on the channel the game uses |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and chords on the beat (drums left out) |
@@ -246,20 +245,13 @@ unit. Games made before it are carts for the old chip (format version 1) until e
   the code so a test can check them.
 - The `sound-test` demo plays every sampled instrument on its own and three songs (`carts/src/sound-test/audio.py`).
 
-**Games not converted yet (the old chip, format version 1).** Their scripts use `Audio()`, and these rules still apply:
-
-- **The channel decides the voice** (0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample), whatever an
-  instrument's `wave` says. A noise instrument played on a pulse channel is a pulse. `check.js` flags a song
-  cell on the wrong channel as an error, and lists effects whose voice does not suit the cart's `SFX_CH` (unless
-  the code has a `SFX_VOICE_CH` table or a `sfx-voice-routed` comment); `voices.mjs` plays the cart and flags
-  what it really sends. Noise effects go on channel 4, saw on 3, triangle on 2 (Python Pass's `sfxv()` and
-  `SFX_VOICE_CH`, Moto Crosser's `fx()`).
-- **Reserve channels**: channel 1 for SFX (songs only carry the tempo `F0x` on row 0 of each pattern on it),
-  and channel 4 for an engine or other continuous sound. Hats then become short samples on channel 5, on rows
-  with no kick or snare (the kit does this).
-- Leads are `pulse25` or `pulse50` at volume 4 to 6; a pulse50 lead is louder than a pulse25 at the same volume. The
-  first games' leads were brought down with `lower-leads.mjs` (no vibrato; volumes lowered until each song's lead is at
-  most 0.05 RMS). Only the `chiptune` demo is over the limits (a loud sound test, so `verify.js` only warns for it).
+**Carts for the old chip (format version 1)**: the `chiptune` demo, and any old cart someone opens. They play as they
+always did (SPEC 5.7): six channels whose channel decides the voice (0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5
+sample), so a noise effect sent to a pulse channel sounds like a pulse. `check.js`, `soak.mjs` and `voices.mjs` flag
+that on such a cart, and `tools/devkit/music/compat.mjs` proves they still sound as before. To bring one onto the new
+chip, convert it (`convertToChip2` in `src/formats/audio.js`), give it an audio script with `script.py`, and re-voice
+that (the games were done this way: `docs/dev/sound-chip.md`). The `chiptune` demo is over the loudness limits (a loud
+sound test, so `verify.js` only warns for it).
 
 ## 6. Art
 
@@ -345,20 +337,15 @@ tiles for three settings by designing a tile-aligned vocabulary, after an image-
 
 ## 9. Fixed in the first games
 
-`check.js`, `soak.mjs` and `loud.mjs` found two kinds of mistake in the first games. Both are fixed, so those games
-sound a little different:
+What the checks found in the games, so the same is not done again:
 
-- **Noise (and saw) effects played through the pulse effects channel** (Alien Swarm, Planet Racers, Python
-  Pass, Smashy Smash): the channel decides the voice, so they sounded like pulse tones. Each cart now has a table,
-  `SFX_VOICE_CH`, and plays those effects on channel 4 (noise) or 3 (saw) through `sfxv()`; the rest still use
-  `SFX_CH = 1`. A noise effect briefly mutes the music's channel 4 (the hats) while it plays. Noise is somewhat
-  louder than a pulse at the same volume (RMS 1.3 to 1.5 times), still well under the music.
-- **Smashy Smash, song 2** had an instrument declared as `pulse12` on the saw channel (it always played as a
-  saw, with a fast vibrato). Its wave is now `saw`, so the sound is as it was.
-- **Loud, wobbly leads** (Alien Swarm, Block Wizard, Planet Racers, Smashy Smash, Summit Rush; Python Pass was
-  fixed earlier after two rounds of feedback, which is where the limits came from): leads had vibrato and sat at
-  up to 0.13 RMS, 0.7 to 0.9 of the mix. `lower-leads.mjs` removed the vibrato and lowered the volumes so each
-  song's lead is at most 0.05 RMS (about half the mix); instruments shared with effects were copied first, so the
-  effects did not change.
-- **Moto Crosser's Night Mountain** was the first song the lead check flagged (0.76 of the mix, entering 1.53x): its
-  brass lead went from volume 5 to 4.
+- **Leads that were loud and wobbly** (players: "it blew out my ears"): vibrato, and leads at up to 0.13 RMS and 0.7 to
+  0.9 of the mix. Python Pass was fixed after two rounds of feedback, which is where `loud.mjs`'s limits came from; the
+  other games were then brought under them (October 2026).
+- **Leads that pierced**: on the new chip, the Sound Test's first brass lead, a bright horn in octave 5, was within
+  every level limit and still "blaring". That gave `loud.mjs` its pierce limit; every game's leads moved an octave down.
+- **Effects in the wrong voice** (on the old chip, a noise effect sent to the pulse effects channel sounded like a
+  tone): the reason the old games had a `SFX_VOICE_CH` table. On the new chip every channel plays every voice.
+- **Measuring what is not there**: `loud.mjs` read a song's tempo only from channel 1, so Summit Rush (tempo on channel
+  5) was measured at the wrong speed and its title lead was over the limit unseen; `sfx.mjs` read the left side only,
+  so effects panned right looked quieter than they were. Both now measure what the player hears.

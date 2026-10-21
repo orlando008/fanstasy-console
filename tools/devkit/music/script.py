@@ -28,7 +28,7 @@ L = [f"# {name}'s audio: carts/src/{name}/audio.json.",
      '# instrument, volume, effect, as in the console\'s tracker), songs are order lists. Song toolkit: tools/devkit/music/kit.py.',
      'import os, sys',
      "sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/music'))",
-     'from kit import *', '', f'a = Audio({"chip=2" if chip == 2 else ""})', '']
+     'from kit import *', '', f'a = Audio(chip={chip})', '']
 L.append('# --- Samples ---')
 for k, smp in enumerate(j.get('samples', [])):
     if not smp:
