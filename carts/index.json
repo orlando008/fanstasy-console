@@ -161,6 +161,16 @@
       "png": null
     },
     {
+      "name": "showcase",
+      "title": "Showcase",
+      "author": "NOVA-16",
+      "description": "The art kit's SNES tools at work: a sculpted boxer in a ring with a receded crowd and HUD lettering, and a parallax valley under a sky gradient (LEFT and RIGHT).",
+      "genre": "Demo",
+      "players": null,
+      "label": "carts/labels/showcase.png",
+      "png": null
+    },
+    {
       "name": "sound-test",
       "title": "Sound Test",
       "author": "NOVA-16",

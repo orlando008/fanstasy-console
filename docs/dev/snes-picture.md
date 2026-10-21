@@ -52,11 +52,25 @@ Sprites, the overlay and the backdrop stay sharp, as on the SNES.
 
 ## Part B: art tools (`tools/devkit/art/kit.py`)
 
-1. **Palette ramps**: a 5- or 6-step ramp from one colour, shadows cooler and highlights warmer, even steps in OKLab.
-2. **Shading helpers**: shading from a light direction, outlines coloured from the sprite's own ramp, anti-aliased
-   corners, dithering and gradient fills, ground tiles that vary so a big area is not flat.
-3. **Bigger sprites**: 48 and 64 px characters made of several sprites, and the code that draws them.
-4. **Scene helpers**: a sky gradient (the `scanline()` code generated), parallax layers.
+Built (the playbook's art section has the recipe; each module's header has the details). The user gave Super
+Punch-Out!!, Streets of Rage 2 and Street Fighter II as the art to aim at: big characters shaded like sculpture in many
+tones, backgrounds of materials (tiles, fences, paving, foliage) pushed back behind them, chunky gradient HUD lettering.
+
+1. **Colour** (`colour.py`): OKLab, `ramp()` (hue-shifted, even, in the console's 5-bit colour, shadows that keep their
+   chroma), `gradient()`, `mix()`, `recede()`; palettes that take ramps and `pal.step()`.
+2. **Sculpting** (`sculpt.py`): figures from spheres, ellipsoids, capsules and reliefs, smooth blends, rendered with a
+   light, a contrast curve, little dither, glossy highlights, cast shadows between parts, selective outlines and
+   contours; parts in several palettes give one picture each.
+3. **Shading and edges** (`shade.py`): `shaded()` for flat shapes, `outline_sel()`, `inline()`, `rim()`,
+   `clean_lines()`, `despeckle()`, `mirrored()`, `recolour()`; `Img.from_rows(mirror=)`, `Art.variant()`.
+4. **Textures** (`texture.py`): fifteen materials that repeat seamlessly, tileable noise, `variants()` that join in
+   any order and `tile_fill()`.
+5. **Scenery** (`scenery.py`): `sky()`, `stars()`, `orb()`, `clouds()`, `mountains()`, `hills()`, `treeline()`,
+   `floor()` (perspective), `rope()`, `ellipse()` (a contact shadow); they wrap for scrolling layers.
+6. **Big sprites and gradients** (`kit.py`): `art.big_sprite()` with a generated `bigSprite()`, `art.gradient()` with
+   a generated `gradientLine()`; `sprites.mjs` shows big sprites.
+7. **Lettering** (`lettering.py`): `big_text()`, `hud_bar()`, `frame()`, `scale2x()`.
+8. **A quick look** (`preview.py`): a PNG from art.py of pictures, ramps and stacks of layers.
 
 ## Part C: measuring it
 
@@ -67,7 +81,10 @@ Sprites, the overlay and the backdrop stay sharp, as on the SNES.
 
 ## Part D: a demo cart
 
-One screen that shows all of it, to judge in the pull request preview.
+The `showcase` cart, made only with the part B tools: RINGSIDE (a sculpted boxer in two palettes, breathing, over a
+receded crowd with camera flashes, ropes, posts, a canvas with an emblem, HUD lettering and a subtracted shadow) and
+VALLEY (a sky gradient line by line, clouds, snowy mountains, hills, trees and grass on three parallax layers). 795 of
+1,023 tiles; 1,235 saved by sharing.
 
 ## How old carts keep working
 
@@ -84,4 +101,6 @@ One screen that shows all of it, to judge in the pull request preview.
 | A1 | built | `blend()` and `brightness()` in `src/console/ppu.js` and `src/console/api.js` (SPEC 4.10, 4.9, 8); `tests/console/effects.mjs` (37 checks: each effect on a built scene, and every cart renders through the effects path as through the plain one) in CI; the fingerprints of every cart matched before and after (36 runs). The effects path costs up to 0.5 ms a frame more. Demo: the `effects` cart (see-through panel, shadows, light, water, fades). The playbook's art section says when to use them. |
 | A2 | built | `winpos()` and `winmask()` (SPEC 4.11); in the tests (each target, inside and outside, the four ways to combine two windows, a window moved in `scanline()`); demo pages SPOTLIGHT, IRIS WIPE, COLOURED GLASS. |
 | A3 | built | `mosaic()` (SPEC 4.12); in the tests (blocks of columns and of lines); demo page MOSAIC. The fingerprints of every old cart matched again. |
-| B, C, D | not started | |
+| B | built | Eight modules (above), each with self-tests in `tools/devkit/art/selftest.py` (the big sprite and the gradient are packed into a cart and checked on the console's screen). Existing carts' art scripts make the same files as before. |
+| D | built | The `showcase` cart. |
+| C | not started | |

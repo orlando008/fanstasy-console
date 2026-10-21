@@ -173,6 +173,10 @@ def mountains(img, ramp, base, height, seed=0, period=None, snow=None, snowline=
                 img.px[y][x] = level(snow, I + 0.1, x, y, 0.25)
             else:
                 img.px[y][x] = level(ramp, I, x, y, 0.25)
+    from shade import despeckle
+    clean = despeckle(img.crop(0, max(0, min(ridge)), img.w, min(img.h, base + 1) - max(0, min(ridge))))
+    for y in range(clean.h):
+        img.px[max(0, min(ridge)) + y] = clean.px[y]
     return ridge
 
 

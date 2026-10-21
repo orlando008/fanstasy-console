@@ -160,6 +160,7 @@ ok(sum(1 for r in il.px for v in r if v) == sum(1 for r in sh.px for v in r if v
 ok(rim(il, spal, light=(1, 0)).get(21, 11) == spal.g[1], 'rim: the edge facing a second light one step lighter')
 el = Img(5, 5).pset(0, 2, 1).pset(1, 2, 1).pset(1, 1, 1).pset(2, 1, 1)
 ok(clean_lines(el, 1).get(1, 2) == 0 or clean_lines(el, 1).get(1, 1) == 0, 'clean_lines: the corner of an L in a 1 px line is removed')
+ok(despeckle(Img.from_rows(['111', '121', '111'])).get(1, 1) == 1 and despeckle(Img.from_rows(['111', '121', '111']), keep=(2,)).get(1, 1) == 2, 'despeckle: a lone pixel takes its neighbours\' colour, unless kept')
 half = Img.from_rows(['12', '3.'])
 ok(mirrored(half).rows() == ['1221', '3..3'] and mirrored(half, odd=True).rows() == ['121', '3.3'] and mirrored(half, axis='y').rows() == ['12', '3.', '3.', '12'], 'mirrored: the whole picture from its left (or top) half, with an odd centre if asked')
 ok(Img.from_rows(['ab'], key={'a': 1, 'b': 2}, mirror='x').rows() == ['1221'], 'from_rows(mirror=\'x\') writes only the left half')

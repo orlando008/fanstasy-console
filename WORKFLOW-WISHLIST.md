@@ -106,12 +106,14 @@ The next four items are ideas from [pxl](https://github.com/augusto-scarvalho/cl
 agents, evaluated in October 2026. The tool itself does not fit (it knows nothing of sub-palettes, sprite sizes or the
 tile grid, and its `outline` grows a 16 px sprite to 18 px), but these parts of it would help `kit.py` and the viewers.
 
-- [ ] **Mirrored sprites from half a grid** (`kit.py`).
+- [x] **Mirrored sprites from half a grid** (`kit.py`). Built with the SNES art tools: `Img.from_rows(rows, key, mirror='x')`
+  and `mirrored()` (`docs/dev/snes-picture.md`).
   - **What:** `Img.from_rows(rows, key, mirror='x')` takes the left half and makes the whole picture (an odd-width
     option for a centre column); `mirror='y'` for top-bottom.
   - **Why:** ships, characters and gems are mostly symmetric; writing both halves doubles the typing and lets them drift
     apart by a pixel.
-- [ ] **Recoloured variants in one line** (`kit.py`).
+- [x] **Recoloured variants in one line** (`kit.py`). Built with the SNES art tools: `art.variant(name, of, swap={...}, pal=)`
+  and `recolour()`.
   - **What:** `art.variant('hero_p2', 'hero', swap={'shirt': 'red'}, pal=p2)`: the same pixels with roles swapped, or the
     same picture in another sprite palette, registered as its own sprite.
   - **Why:** players 2 to 4 and enemy tiers are copies with other colours; today each is a `replace()` chain by hand.

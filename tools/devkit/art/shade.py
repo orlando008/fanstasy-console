@@ -6,6 +6,7 @@ parts; these work on any Img, with the palette's ramps (pal.grass, pal.step):
     img = inline(img, pal)                         # the shape's own edge one step darker (the size does not change)
     img = rim(img, pal, light=(1, -1))             # the edge facing a second light one step lighter
     img = clean_lines(img, pal.edge)               # 'pixel-perfect' lines: no L-shaped corners in a 1 px line
+    img = despeckle(img)                           # lone stray pixels take their neighbours' colour
     full = mirrored(left_half, odd=False)          # a symmetric picture from its left half
     p2 = recolour(img, {pal.shirt0: pal2.shirt0, ...})   # the same pixels in other colours (or roles: see Art.variant)
 
@@ -175,6 +176,19 @@ def clean_lines(img, colours):
                     fill = [out.get(x - ax, y - ay), out.get(x - bx, y - by)]
                     out.px[y][x] = next((f for f in fill if f and f not in cs), 0)
                     break
+    return out
+
+
+def despeckle(img, keep=()):
+    """Lone pixels (all four neighbours one other colour) take that colour: the stray dots that noise and dither
+    leave. Colours in `keep` (eyes, stars, highlights) are left alone. Returns a new Img."""
+    out = img.copy()
+    for y in range(1, img.h - 1):
+        for x in range(1, img.w - 1):
+            c = img.px[y][x]
+            if c in keep: continue
+            n = {img.px[y + dy][x + dx] for dx, dy in _N4}
+            if len(n) == 1 and c not in n and 0 not in n: out.px[y][x] = n.pop()
     return out
 
 
