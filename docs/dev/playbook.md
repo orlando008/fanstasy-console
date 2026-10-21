@@ -350,8 +350,14 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   and `rig.animate(WALK, 8)` makes the frames between key poses (WALK, PUNCH, KICK, IDLE-like pairs; give at least a
   frame a key). `filmstrip(path, figure, poses, pal)` shows every frame with an onion skin of the one before and the
   skeleton (near limbs pink, far limbs blue): check it for a limb that jumps or a foot that slides. `art.animation()`
-  makes the frames big sprites that share every piece that does not change (the `street` cart's brawler: 18 frames in about
-  410 tiles). Then `gif.mjs` makes a GIF for the person to judge the timing, which a still cannot show.
+  makes the frames big sprites that share every piece that does not change (a 64 px brawler: 18 frames in about 480
+  tiles). Then `gif.mjs` makes a GIF for the person to judge the timing, which a still cannot show.
+- **Big fighters: stream their frames.** Tiles cost grows with a character's area: the same 18 frames at 96 px take
+  1,008 tiles as big sprites, the whole budget. `art.stream(name, {clip: [frames]}, pal=)` loads each frame into a slot
+  of tile rows as it plays, as SNES games did, and `streamSprite(ART.streams.name, frame, x, y, { fx, slot })` draws it
+  (`ART.streams.name.clips.walk` is [first frame, count]). The `street` brawler (96 px, 18 frames): 128 tiles and
+  about 20 KB of `code.js` (the frames are packed there, so mind the 64 KB code limit: about two such characters a
+  game). One slot per copy on screen at once (`slots=`); loading costs no measurable time.
 - **Details on sculpted figures** (`detail.py`): `face()`, `hair()`, `crease()`, `bunch()`, `stroke()` draw on a
   rendered Sculpt or Rig (`Rig(..., face='angry', hair_style='swept', folds=True)`). For a character, prefer `Figure`.
 - **HUD and titles:** `big_text()` (smooth scaled, gradient-filled, outlined, shadowed), `hud_bar()`, `frame()`.

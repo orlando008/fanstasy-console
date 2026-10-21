@@ -64,7 +64,7 @@ Cursor) or a chat, which then makes a game with you from this repository. You ca
 | `parallax` | Three scrolling background layers, sub-palettes, tile priority |
 | `water` | `scanline()` reflection with per-line wobble and palette swaps |
 | `mode7` | Per-line BG2 affine perspective floor and sky gradient |
-| `street` | The art kit's drawn figures: a brawler drawn in designed shapes on a skeleton, his idle, walk, punch and kick animated from poses, on a night street after Streets of Rage 2 (LEFT/RIGHT, A, B) |
+| `street` | The art kit's drawn figures: a 96 px brawler drawn in designed shapes on a skeleton, his frames streamed into tile memory as they play, his idle, walk, punch and kick animated from poses, on a night street after Streets of Rage 2 (LEFT/RIGHT, A, B) |
 | `showcase` | The art kit's SNES tools at work (docs/dev/snes-picture.md): two sculpted boxers in a ring, framed as Super Punch-Out!! (our hero from behind), with a receded crowd and HUD lettering, and a parallax valley under a sky gradient (LEFT and RIGHT) |
 | `effects` | Colour blending, brightness, windows and mosaic: a see-through panel, shadows, light, water, fades, spotlights, an iris wipe, coloured glass and the mosaic, one page each (LEFT and RIGHT) |
 | `chiptune` | A six-channel song and five sound effects on the old sound chip (a version-1 cart, kept as it was), all editable in the Music and SFX tabs |

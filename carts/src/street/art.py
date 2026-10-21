@@ -1,9 +1,9 @@
 # Street's art: tiles.txt, palette.txt, map.txt, art.json and the ART block of code.js.
 #   python3 carts/src/street/art.py carts/src/street
 # The test of the art kit's drawn figures (tools/devkit/art/figure.py on rig.py's skeleton; docs/dev/snes-picture.md):
-# a brawler drawn in designed shapes, with idle, walk, punch and kick animations rendered from poses (big sprites that
-# share every piece that does not change between frames), on a night street after Streets of Rage 2: a city under a
-# sky gradient, a chain-link fence, paving in perspective.
+# a 96 px brawler drawn in designed shapes, with idle, walk, punch and kick animations rendered from poses and streamed
+# into tile memory as they play (art.stream()), on a night street after Streets of Rage 2: a city under a sky
+# gradient, a chain-link fence, paving in perspective.
 import os, sys, math
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *
@@ -70,13 +70,16 @@ art.scene('ground', ground, pal=FLOOR, at=(64, 0), region='bg')
 # for all of him, as Streets of Rage does, leaves 14 for his materials; his shoes are his hair's brown. ---
 BR = art.sprite_palette(0, {'line': '180c14', 'skin': ramp('e0a070', 4, at=2, step=0.09), 'hair': ramp('c89038', 3, at=1, step=0.11),
                             'shirt': ramp('e0e0ec', 4, at=2, step=0.11), 'pants': ramp('3858b0', 3, at=1, step=0.11)})
-hero = Figure('brawler', height=64, line=BR.line, skin=BR.skin, hair=BR.hair, shirt=BR.shirt, pants=BR.pants, shoes=BR.hair,
+hero = Figure('brawler', height=96, line=BR.line, skin=BR.skin, hair=BR.hair, shirt=BR.shirt, pants=BR.pants, shoes=BR.hair,
               face='angry', hair_style='swept', top='tee')
 IDLE = [GUARD, pose(GUARD, y=1, arm_n=27, arm_f=42)]
-for name, keys, n, loop in (('idle', IDLE, 2, True), ('walk', WALK, 8, True), ('punch', PUNCH, 4, False), ('kick', KICK, 4, False)):
-    art.animation(name, [hero.render(p) for p in hero.animate(keys, n, loop=loop)], pal=BR, region='spr')
+# His 18 frames are a stream: loaded into a slot of 128 tiles as they play (as big sprites they would take over 1,000
+# tiles); their pixels are packed into code.js.
+art.stream('hero', {name: [hero.render(p) for p in hero.animate(keys, n, loop=loop)]
+                    for name, keys, n, loop in (('idle', IDLE, 2, True), ('walk', WALK, 8, True), ('punch', PUNCH, 4, False), ('kick', KICK, 4, False))},
+           pal=BR, region='spr')
 
 SHADOW = art.sprite_palette(4, {'shade': '302830'})
-art.big_sprite('shadow', ellipse(40, 8, SHADOW.shade), pal=SHADOW, region='spr')
+art.big_sprite('shadow', ellipse(56, 10, SHADOW.shade), pal=SHADOW, region='spr')
 
 art.write(sys.argv[1])

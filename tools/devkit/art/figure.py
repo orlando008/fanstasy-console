@@ -255,9 +255,9 @@ def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp,
         _hair_mass(d, H, Hr, Ph, P, f, lit, style, part, hp, mass, clumps)
     elif style == 'bald':
         d.light(part, S['light'], light=(f * 0.3, -1), inset=H * 0.04, width=H * 0.05)
-    # eyes (a small head turned three-quarters keeps only the near one: the far one would sit on the outline)
+    # eyes (a head under 14 px turned three-quarters keeps only the near one: the far one would sit on the outline)
     for s in (1, -1):
-        if small and not seen(s * 0.40): continue
+        if H < 14 and not seen(s * 0.40): continue
         if expression == 'hurt':
             d.ink(Ps([(s * 0.08, -0.02), (s * 0.17, 0.01), (s * 0.27, -0.01)]), line)
             continue
@@ -268,7 +268,8 @@ def _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp,
             d.ink(Ps([(s * 0.07, lid + 0.015), (s * 0.17, lid - 0.008), (s * 0.28, lid + 0.015)]), line)
             d.dot(*P(s * 0.165 + 0.01, 0.006), line)
         else:
-            d.ink(Ps([(s * 0.17, -0.02), (s * 0.17, 0.03)]), line)       # small: the eye a short dark mark
+            e = 0.12 if s > 0 and not seen(0.45) else 0.17        # small: the eye a short dark mark (a turned head's far one
+            d.ink(Ps([(s * e, -0.02), (s * e, 0.03)]), line)       # a little inward, off the outline)
     for s in (1, -1):
         brow = [(s * 0.05, -0.06), (s * 0.16, -0.09), (s * 0.29, -0.10)] if angry else [(s * 0.06, -0.09), (s * 0.17, -0.11), (s * 0.29, -0.095)]
         if expression == 'hurt': brow = [(s * 0.05, -0.12), (s * 0.16, -0.10), (s * 0.28, -0.07)]
