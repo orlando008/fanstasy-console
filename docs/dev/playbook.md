@@ -325,7 +325,10 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   `light()` a lit band, `seam()` a line where one part overlaps another, `ink()` and `dot()` pixel-exact lines and
   glints (eyes, mouths); `render()` counts the samples into pixels, outlines and tidies (folds stray pixels away).
   `head(d, x, y, H, skin, hair, view='side' | 'three' | 'front' | 'back', expression=, style=)` draws a head from templates of
-  planes (brow ridge, sockets, nose, cheekbone, jaw) at any size, and `Figure('brawler', height, line=, skin=, hair=,
+  planes (brow ridge, sockets, nose, cheekbone, jaw) at any size; `style='shaggy'` is the head traced from the user's
+  reference drawings (`docs/reference/`, `trace.py`), its planes, hair and expressions, from 26 px tall. Reference art
+  from the person beats any template of mine: ask for it (flat tones, real pixel size), trace it, keep it in
+  `docs/reference/` with what it informs, and `Figure('brawler', height, line=, skin=, hair=,
   shirt=, pants=, shoes=, top='tee' | 'tank' | 'long' | 'bare')` a whole character on a rig's skeleton, posed and
   animated like a rig. Its default `view='three'` cheats the chest and face towards the camera as Streets of Rage and
   Street Fighter do (a pure profile hides the chest behind a bulky near shoulder: the user's note on the first one). Give it one `line` colour for all its outlines (Streets of Rage does): one sprite palette then

@@ -310,6 +310,15 @@ for view in ('side', 'three', 'front', 'back'):
     ok(set(fp.hair) & him.colors() and (view == 'back' or fp.white in him.colors()) and speckle(him) < 0.12, 'head %s: hair, eyes, clean (speckle %.2f)' % (view, speckle(him)))
     if view == 'three': ok(sum(1 for r in him.px for v in r if v == fp.white) >= 6, 'three-quarters: both eyes show')
 ok(raises(lambda: head(Canvas(8, 8), 4, 4, 8, fp.skin, view='top'), 'view is'), 'head: an unknown view is an error')
+for view in ('three', 'side'):
+    for expr in ('neutral', 'angry', 'hurt', 'shout'):
+        sc = Canvas(72, 72); head(sc, 30, 40, 48, fp.skin, fp.hair, view=view, expression=expr, style='shaggy', line=fp.line)
+        si = sc.render(outline=fp.line)
+        ok(set(fp.hair) & si.colors() and fp.skin[1] in si.colors() and sum(1 for r in si.px for v in r if v) > 1200, "head(style='shaggy') %s %s: the traced reference, its hair and planes" % (view, expr))
+small = Canvas(40, 40); head(small, 18, 20, 20, fp.skin, fp.hair, view='three', style='shaggy', line=fp.line)
+ok(small.render().colors() & set(fp.skin), 'and below 26 px the simple head stands in')
+from trace import loops
+ok(sorted(len(l) for l in loops({(0, 0), (1, 0), (0, 1), (1, 1), (5, 5)})) == [4, 4] and len(loops({(0, 0), (1, 0), (2, 0), (0, 1), (2, 1), (0, 2), (1, 2), (2, 2)})) == 2, 'trace.loops: outlines of pixel regions, holes as loops of their own')
 fg = Figure('brawler', height=64, line=fp.line, skin=fp.skin, hair=fp.hair, shirt=fp.shirt, pants=fp.pants, shoes=fp.hair, face='angry', hair_style='swept')
 frames = [fg.render(p) for p in fg.animate(PUNCH, 4, loop=False)]
 ok(all(f.w == fg.w and fp.line in f.colors() and set(fp.shirt) & f.colors() for f in frames), 'Figure: frames of a punch in the palette, outlined in the shared line colour')

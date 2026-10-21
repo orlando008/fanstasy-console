@@ -13,7 +13,9 @@ more (pal.skin as a palette gives it): the darkest is the line colour, then deep
 view     'side' (near profile), 'three' (three-quarters: the face cheated towards the camera, both eyes), 'front', 'back'
 facing   1 (right) or -1 (left); for 'front', the side the light comes from
 expression  'neutral', 'angry', 'hurt' (eyes squeezed shut, mouth open), 'shout' (mouth open, teeth)
-style    hair: 'swept', 'short', 'spiky', 'long', 'mohawk', 'flat', 'bald'
+style    hair: 'swept', 'short', 'spiky', 'long', 'mohawk', 'flat', 'bald'; or 'shaggy', the head traced from the
+         artist's reference (docs/reference/): its planes, hair and expressions, in 'three' and 'side', from 26 px tall
+         (smaller, the simple head with short hair)
 white, iris  indices for the whites of the eyes and the iris; without them the eyes are drawn dark (as at small sizes)
 tilt     degrees the head turns forward (a nod; negative throws it back), line= a shared outline colour (see tones())
 The head is the part `part` (default 'head') of the canvas, the hair `part + '_hair'`, so a body can be drawn against
@@ -87,7 +89,7 @@ def head(d, x, y, H, skin, hair=None, view='side', facing=1, expression='neutral
     """Draw a head on canvas d (see the module's header)."""
     if view not in ('side', 'three', 'front', 'back'): raise ValueError("view is 'side', 'three', 'front' or 'back'")
     if expression not in ('neutral', 'angry', 'hurt', 'shout'): raise ValueError("expression is 'neutral', 'angry', 'hurt' or 'shout'")
-    if style not in ('swept', 'short', 'spiky', 'long', 'mohawk', 'flat', 'bald'): raise ValueError('hair style %r' % style)
+    if style not in ('swept', 'short', 'spiky', 'long', 'mohawk', 'flat', 'bald', 'shaggy'): raise ValueError('hair style %r' % style)
     f = 1 if facing >= 0 else -1
     S, Hr = tones(skin, line), tones(hair, line) if hair is not None else None
     lit = light or (f, -1)
@@ -96,6 +98,11 @@ def head(d, x, y, H, skin, hair=None, view='side', facing=1, expression='neutral
     Ps = lambda pts: [P(u, v) for u, v in pts]
     hp = part + '_hair'
     small = H < 20
+    if style == 'shaggy':                    # traced from the artist's reference heads (templates/heads.json)
+        if H >= TRACED_MIN and view in ('three', 'side'):
+            _traced(d, H, S, Hr, P, f, '%s-%s' % (view, expression), part, hp)
+            return d
+        style = 'short'                      # too small for the traced planes: the simple head, its nearest hair
     if view == 'side': _side(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp, small)
     elif view == 'front': _front(d, H, S, Hr, P, Ps, f, lit, expression, style, white, iris, part, hp, small, Ps, lambda u: True)
     elif view == 'back': _back(d, H, S, Hr, P, Ps, f, lit, style, part, hp)
@@ -114,6 +121,29 @@ def head(d, x, y, H, skin, hair=None, view='side', facing=1, expression='neutral
         # the hair stays on the skull (turned, its sideburn would land on the cheek)
         _front(d, H, S, Hr, Pf, Psf, f, lit, expression, style, white, iris, part, hp, small, Pso, seen, Ps)
     return d
+
+
+TRACED_MIN = 26          # head height from which the traced templates are used (smaller, they lose their features)
+_TEMPLATES = None
+
+
+def _traced(d, H, S, Hr, P, f, name, part, hp):
+    """A head from a traced template: each region filled in its tone, the face's lines weighted so the eyes and brows
+    survive at small sizes."""
+    global _TEMPLATES
+    if _TEMPLATES is None:
+        import json, os
+        _TEMPLATES = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates', 'heads.json')))
+    Hr = Hr or S
+    hair_tone = {'line': 'line', 'deep': 'base'}
+    for r in _TEMPLATES[name]['regions']:
+        hair = r['part'] == 'hair'
+        tone = (Hr if hair else S)[hair_tone.get(r['tone'], r['tone']) if hair else r['tone']]
+        loops = [[P(u, v) for u, v in lp] for lp in r['loops']]
+        if f < 0: loops = [lp[::-1] for lp in loops]
+        pri = (2 if hair else 6) if r['tone'] == 'line' else 2 if (r['tone'] == 'deep' and not hair) else 1
+        d.fill(loops, tone, part=hp if hair else part, pri=pri)
+    d.seam(part, seam_tone(S), under=part + '_neck', sides=[(0, 1), (-f, 1)])
 
 
 def _hair_mass(d, H, Hr, Ps, P, f, lit, style, part, hp, mass, clumps):
