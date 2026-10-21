@@ -446,8 +446,11 @@ menu are overlays (`helpOpen`, `paused`) that work over any of them, so the help
 ## 11. Audio
 
 Written in code (`carts/src/rags-to-riches/audio.py`, with the song toolkit `tools/devkit/music/kit.py`) and measured, since nobody can listen
-in the build. Everything is original. Channel 1 is for effects (pulse), channel 4 for noise effects (the three that are noise), channels 0, 2, 3
-and 5 for the music (lead, bass, arpeggio, drums). Leads are quiet pulses with no vibrato.
+in the build. Everything is original. It is on the console's SNES-style sound chip (SPEC 5; converted in step 9): a soft horn lead and a flute,
+a harp, a strings pad, a sampled bass and the kit's drums, with an echo for each song (the defeat in a long, dark one); the comic sounds (the
+van's horn, the sad slide, the menu blip) stay chip sounds. Channels 0 to 5 are the music's (lead, counter, bass, arpeggio or pad, hats, drums);
+the effects take turns on 6 and 7 (`fx()`), so they never cut into the music and the takings and the crowd's cheer both sound. Leads are quiet,
+in octave 4, with no vibrato.
 
 **One motif.** The band's climb: three rising notes, a triad going up. It opens the title (A C E A), the tour (C E G E), the concert (E G B E),
 the new-songs jingle (F A C), the road (D G B) and the victory (C E G C); the defeat opens with the same idea falling (E D C A). A test checks it.
@@ -457,13 +460,13 @@ level of the song; the peak):
 
 | # | Song | Plays on | Key, tempo | Length | Median / peak | Lead RMS (share) |
 |---|---|---|---|---|---|---|
-| 0 | Title | title, intro, initials, records | A minor, 150 bpm, loops | 12.8 s | 0.085 / 0.24 | 0.055 (0.65) |
-| 1 | The tour | start map, hub, venues, setup, songs, travel map | C major, 128 bpm, loops | 14.9 s | 0.082 / 0.24 | 0.054 (0.64) |
-| 2 | The concert | the cutscene and the concert result | E minor, 180 bpm, loops: a punk riff over a driving bass, fills at bars 4 and 8 | 10.7 s | 0.080 / 0.23 | 0.049 (0.61) |
-| 3 | New songs | the song result | F major, 150 bpm, plays once | 6.4 s | 0.079 / 0.23 | 0.050 (0.61) |
-| 4 | The road | the travel result | G major, 150 bpm, plays once (the kick is the motor) | 6.4 s | 0.086 / 0.20 | 0.055 (0.66) |
-| 5 | Victory | the final screen of a won tour | C major, 180 bpm, plays once | 5.3 s | 0.078 / 0.23 | 0.045 (0.58) |
-| 6 | Defeat | the final screen of a lost tour | A minor, 100 bpm, plays once, no drums | 9.6 s | 0.083 / 0.18 | 0.052 (0.64) |
+| 0 | Title | title, intro, initials, records | A minor, 150 bpm, loops; the strings and a harp figure, then the flute | 12.8 s | 0.046 / 0.20 | 0.031 (0.64) |
+| 1 | The tour | start map, hub, venues, setup, songs, travel map | C major, 128 bpm, loops | 14.9 s | 0.053 / 0.21 | 0.036 (0.66) |
+| 2 | The concert | the cutscene and the concert result | E minor, 180 bpm, loops: a punk riff over a driving bass, fills at bars 4 and 8 | 10.7 s | 0.065 / 0.24 | 0.037 (0.58) |
+| 3 | New songs | the song result | F major, 150 bpm, plays once | 6.4 s | 0.055 / 0.19 | 0.035 (0.64) |
+| 4 | The road | the travel result | G major, 150 bpm, plays once (the kick is the motor) | 6.4 s | 0.054 / 0.17 | 0.029 (0.55) |
+| 5 | Victory | the final screen of a won tour | C major, 180 bpm, plays once | 5.3 s | 0.058 / 0.21 | 0.036 (0.61) |
+| 6 | Defeat | the final screen of a lost tour | A minor, 100 bpm, plays once, no drums, a 192 ms echo | 9.6 s | 0.042 / 0.14 | 0.031 (0.75) |
 
 The music follows the screen (`musicFor`, called by `go()`): a song that is already playing is not restarted, so moving between screens that share
 one (the hub, the venues and the setup) does not restart it; the jingles play once and then it is quiet until the next screen. The pause menu and the
@@ -473,22 +476,23 @@ help do not touch the music. (Leaving the result for the hub restarts the tour s
 
 | # | Effect | Played when | Channel | Ticks | RMS |
 |---|---|---|---|---:|---:|
-| 0 | move | any menu move, a value change, a letter | 1 | 4 | 0.014 |
-| 1 | select | A: a choice, a page, a save | 1 | 6 | 0.030 |
-| 2 | back | B (and START closing the help): a falling chime | 1 | 6 | 0.030 |
-| 3 | pause | START opens or closes the pause menu | 1 | 6 | 0.030 |
-| 4 | refuse | an action the cash cannot pay: a buzz | 4 (noise) | 15 | 0.051 |
-| 5 | coin | the result of a concert that made money | 1 | 9 | 0.027 |
-| 6 | loss | the result of a concert that lost money: a slide down | 1 | 20 | 0.039 |
-| 7 | soldout | a full house (instead of the coin) | 1 | 15 | 0.043 |
-| 8 | cheer | a crowd of 75 % or more that is not a full house (with the coin) | 4 (noise) | 56 | 0.054 |
-| 9 | roll | confirming a concert: a drum roll that rises | 4 (noise) | 22 | 0.017 |
-| 10 | horn | the trip begins: the van's two-tone horn | 1 | 18 | 0.036 |
-| 11 | record | a place in the top 10: the fanfare, as the initials come up | 1 | 32 | 0.049 |
+| 0 | move | any menu move, a value change, a letter | 6 or 7 | 4 | 0.022 |
+| 1 | select | A: a choice, a page, a save (a celesta) | 6 or 7 | 6 | 0.032 |
+| 2 | back | B (and START closing the help): a falling chime | 6 or 7 | 6 | 0.032 |
+| 3 | pause | START opens or closes the pause menu | 6 or 7 | 6 | 0.032 |
+| 4 | refuse | an action the cash cannot pay: a buzz (noise) | 6 or 7 | 15 | 0.054 |
+| 5 | coin | the result of a concert that made money (a celesta) | 6 or 7 | 9 | 0.024 |
+| 6 | loss | the result of a concert that lost money: a slide down | 6 or 7 | 20 | 0.053 |
+| 7 | soldout | a full house (instead of the coin; the horn) | 6 or 7 | 15 | 0.041 |
+| 8 | cheer | a crowd of 75 % or more that is not a full house (with the coin; noise in the hall's echo) | the other one | 56 | 0.056 |
+| 9 | roll | confirming a concert: a drum roll that rises (noise) | 6 or 7 | 22 | 0.020 |
+| 10 | horn | the trip begins: the van's two-tone horn | 6 or 7 | 18 | 0.055 |
+| 11 | record | a place in the top 10: the fanfare, as the initials come up | 6 or 7 | 32 | 0.049 |
 
 Limits kept (playbook section 5): the lead alone at most 0.07 RMS and 0.75 of the mix, no jump of more than 1.5x where it enters, every song's median
-between 0.03 and 0.15, peaks under 0.45; effects between 0.01 and 0.06 RMS and under a second; every effect on the channel with its voice (`SFX_VOICE_CH`
-sends the three noise effects to channel 4). Budget: 7 of 8 songs, 10 of 64 patterns, 12 of 64 effects, 4 samples (7,200 of 16,384 bytes of Sample RAM).
+between 0.03 and 0.15, peaks under 0.45, the lead never piercing (0.002 to 0.007 at 2 to 5 kHz, the limit 0.012); effects between 0.01 and 0.06 RMS
+and under a second, every one on channel 6 or 7. Budget: 7 of 8 songs, 10 of 64 patterns, 12 of 64 effects, 10 samples (13,376 of 32,768 bytes of
+Sample RAM).
 
 ## 12. Video layers and art
 
@@ -551,7 +555,7 @@ before the tie-break slot); a save of any other version is cleared when the cart
 | Code | 49 KB of the 64 KB limit (`node tools/check.js rags-to-riches`) |
 | Tiles | 966 of 1,023: 706 background (limit 759 by the region) and 260 sprite (limit 264) |
 | Sprites | 32 pictures; at most 10 on screen and 5 on a line in 18,000 frames of random play (128 in OAM, 32 per line) |
-| Songs / SFX | 7 of 8 songs, 10 of 64 patterns, 12 of 64 effects, 7,200 of 16,384 bytes of samples |
+| Songs / SFX | 7 of 8 songs, 10 of 64 patterns, 12 of 64 effects, 13,376 of 32,768 bytes of samples |
 
 ## 15. Implementation plan
 
@@ -741,6 +745,15 @@ between phases.
      `soak.mjs --all`) pass. The cart is 49,409 of 65,536 bytes of code.
    - **Not done:** nobody has played it by hand, listened to it or looked at it on a real screen; the screens were judged from captured pictures. Skip speed was
      left as built (A or B skips the show after 10 frames and the intro at once).
+
+9. **The new sound chip** (October 2026; `docs/dev/sound-chip.md`): the console's sound became SNES-style, and the game was converted to it.
+   - **Built:** `audio.py` on `Audio(chip=2)`, the same notes with sampled instruments (section 11), every lead an octave lower but the defeat's
+     (up in octaves 5 and 6 a lead pierces), the title's intro with the strings and a harp figure so the lead does not arrive with a jump, an echo
+     for each song; celesta chimes and coins, a horn fanfare, the crowd in the hall's echo; the cheer, the buzz and the slide a step quieter.
+     `fx()` plays effects on 7 and 6 in turn (`SFX_VOICE_CH` is gone: every channel plays noise). The tests check the effects channels 6 and 7
+     instead of 1 and 4, and that the takings and the cheer land on different channels.
+   - **Results:** `loud.mjs --check`: all seven songs within the limits, pierce 0.002 to 0.007 (the pulse leads were 0.015 to 0.024); `clash.py`:
+     nothing; every effect 0.020 to 0.056 RMS.
 
 ## 16. Open questions
 

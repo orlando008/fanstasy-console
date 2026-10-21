@@ -33,10 +33,10 @@ const lead = (s) => cart.songs[s].order.flatMap((k) => cart.patterns[k].map((r) 
   ok(levels.every(([r]) => r >= 0.03 && r <= 0.15) && levels.every(([, p]) => p <= 0.45), 'every song is at a comfortable level: RMS 0.03 to 0.15, peak at most 0.45', levels.map(([r, p]) => `${r.toFixed(3)}/${p.toFixed(2)}`).join(' '));
 }
 {
-  const NOISE = new Set([4, 8, 9]), lens = [], lv = [];
+  const lens = [], lv = [];
   for (let n = 0; n < 12; n++) {
     const e = cart.sfx[n], len = e.rows.reduce((l, r, k) => (r ? k + 1 : l), 0) * e.speed;
-    const [L] = render(cart, [['sfx', n, NOISE.has(n) ? 4 : 1]], Math.max(0.3, len / 60 + 0.2));
+    const [L] = render(cart, [['sfx', n, 7]], Math.max(0.3, len / 60 + 0.2));
     lens.push(len); lv.push(rms(L));
   }
   ok(lens.every((l) => l <= 60), 'every effect is under a second (60 ticks)', lens.join(' '));
@@ -58,7 +58,7 @@ const doConcert = (vm, p, patch) => { vm.press('A'); vm.press('A'); vm.press('A'
   const [vm, p] = start(1, { title: true });
   let ev = events(vm); note(ev);
   ok(songs(ev).join() === '0' && p.state === 'title', 'the title starts its song');
-  vm.press('DOWN'); ev = events(vm); note(ev); ok(sfxs(ev).join('|') === '0,1', 'a menu move is the blip, on channel 1');
+  vm.press('DOWN'); ev = events(vm); note(ev); ok(sfxs(ev).length === 1 && sfxs(ev)[0][0] === 0 && sfxs(ev)[0][1] >= 6, 'a menu move is the blip, on an effects channel', JSON.stringify(sfxs(ev)));
   vm.press('UP'); events(vm); vm.press('A'); ev = events(vm); note(ev);
   ok(sfxs(ev).some(([n]) => n === p.SFX.select) && songs(ev).length === 0, 'A is the select chime, and the intro keeps the title song going');
   vm.press('A'); vm.press('A'); vm.press('A'); ev = events(vm);
@@ -75,16 +75,16 @@ const doConcert = (vm, p, patch) => { vm.press('A'); vm.press('A'); vm.press('A'
 }
 {
   const [vm, p] = start(3); p.tour.cash = 60; vm.run(2); vm.press('A'); events(vm); vm.press('DOWN'); events(vm); vm.press('A');
-  let ev = events(vm); note(ev); ok(sfxs(ev).some(([n, ch]) => n === p.SFX.refuse && ch === 4), 'a refused action (a room the cash cannot pay) buzzes, on the noise channel');
+  let ev = events(vm); note(ev); ok(sfxs(ev).some(([n, ch]) => n === p.SFX.refuse && ch >= 6), 'a refused action (a room the cash cannot pay) buzzes, on an effects channel');
   vm.press('B'); p.tour.cash = 19; vm.run(2); vm.press('DOWN'); vm.press('DOWN'); events(vm); vm.press('A'); ev = events(vm); note(ev);
-  ok(sfxs(ev).some(([n, ch]) => n === p.SFX.refuse && ch === 4), 'so is a trip the cash cannot pay');
+  ok(sfxs(ev).some(([n, ch]) => n === p.SFX.refuse && ch >= 6), 'so is a trip the cash cannot pay');
 }
 
 // concerts: the drum roll, the music, and the sound of the result
 {
   const [vm, p] = start(4); events(vm);
   vm.press('A'); vm.press('A'); events(vm); vm.press('A'); let ev = events(vm); note(ev);
-  ok(songs(ev).join() === '2' && sfxs(ev).some(([n, ch]) => n === p.SFX.roll && ch === 4), 'confirming a concert starts the concert song and a drum roll (noise)');
+  ok(songs(ev).join() === '2' && sfxs(ev).some(([n, ch]) => n === p.SFX.roll && ch >= 6), 'confirming a concert starts the concert song and a drum roll (noise)');
   vm.run(12); vm.press('A'); ev = events(vm); note(ev); ok(p.state === 'result' && songs(ev).length === 0, 'the result keeps the concert song');
   ok(sfxs(ev).length > 0, 'and has its own sound');
 }
@@ -95,8 +95,9 @@ for (const [name, patch, want, noisy] of [
   ['a big crowd that is not a full house', (s) => { s.net = 300; s.att = 40; s.capacity = 50; }, 5, true],
 ]) {
   const [vm, p] = start(5); vm.press('A'); vm.press('A'); vm.press('A'); vm.run(5); patch(p.show); vm.run(8); events(vm); vm.press('A'); const sf = sfxs(events(vm)); note(sf.map((e) => ['sfx', ...e]));
-  const main = sf.filter(([, ch]) => ch === 1).map(([n]) => n), cheer = sf.some(([n, ch]) => n === p.SFX.cheer && ch === 4);
-  ok(main.join() === String(want) && cheer === noisy && !(name === 'a full house' && main.includes(5)), `${name}: ${['', '', '', '', '', 'coins', 'the sad slide', 'the sold-out fanfare'][want]}${noisy ? ' and a cheer from the crowd (noise)' : ' and no cheer'}`, JSON.stringify(sf));
+  const main = sf.filter(([n]) => n !== p.SFX.cheer).map(([n]) => n), cheer = sf.some(([n, ch]) => n === p.SFX.cheer && ch >= 6);
+  const two = sf.length < 2 || new Set(sf.map(([, ch]) => ch)).size === 2; // the takings and the cheer on different channels, so both sound
+  ok(main.join() === String(want) && cheer === noisy && two && !(name === 'a full house' && main.includes(5)), `${name}: ${['', '', '', '', '', 'coins', 'the sad slide', 'the sold-out fanfare'][want]}${noisy ? ' and a cheer from the crowd (noise)' : ' and no cheer'}`, JSON.stringify(sf));
 }
 {
   const [vm, p] = start(6); vm.press('A'); vm.press('A'); vm.press('A'); vm.run(12); vm.press('A'); vm.run(25); events(vm); vm.press('A'); const ev = events(vm);
@@ -110,7 +111,7 @@ for (const [name, patch, want, noisy] of [
   vm.run(700); ev = events(vm); ok(songs(ev).length === 0, 'once, and then it is quiet: a jingle does not loop');
   vm.press('A'); ev = events(vm); ok(p.state === 'hub' && songs(ev).join() === '1', 'the hub brings the tour song back');
   vm.press('DOWN'); vm.press('A'); vm.press('A'); ev = events(vm); note(ev);
-  ok(p.state === 'travelResult' && songs(ev).join() === '4' && sfxs(ev).some(([n, ch]) => n === p.SFX.horn && ch === 1), 'a trip honks the van\'s horn and plays the road jingle');
+  ok(p.state === 'travelResult' && songs(ev).join() === '4' && sfxs(ev).some(([n, ch]) => n === p.SFX.horn && ch >= 6), 'a trip honks the van\'s horn and plays the road jingle');
 }
 for (const [cash, song, name] of [[6000, 5, 'victory'], [900, 6, 'defeat']]) {
   const [vm, p] = start(8); vm.press('DOWN'); for (let i = 0; i < 9; i++) { vm.press('A'); vm.press('A'); vm.run(25); vm.press('A'); }
@@ -133,17 +134,17 @@ for (const [cash, song, name] of [[6000, 5, 'victory'], [900, 6, 'defeat']]) {
   ok(!/music\(/.test(code.replace(/function play\(song\)[\s\S]*?\n\}/, '')) && (code.match(/[^.\w]sfx\(/g) || []).length === 1, 'and the sound goes through two places only, play() and fx()');
 }
 {
-  // all twelve effects are heard in a quick walk over the game with random buttons; on the right channel each time
+  // all twelve effects are heard in a quick walk over the game with random buttons; on an effects channel each time
   let ok2 = true, wrong = '';
   for (let seed = 1; seed <= 6; seed++) {
     const vm = newGame(seed, { title: seed % 2 === 0 }), p = vm.probe(); let r = seed * 7919 + 13; const rnd = () => (r = (r * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff; let mask = 0;
     for (let f = 0; f < 3000; f++) {
       if (f % 3 === 0) { const q = rnd(); mask = q < 0.34 ? M('A') : q < 0.4 ? M('B') : q < 0.5 ? M('DOWN') : q < 0.58 ? M('UP') : q < 0.66 ? M('RIGHT') : q < 0.74 ? M('LEFT') : q < 0.8 ? M('R') : q < 0.82 ? M('START') : 0; }
       vm.step(mask);
-      for (const [n, ch] of sfxs(events(vm))) { seenSfx.add(n); const want = [p.SFX.refuse, p.SFX.cheer, p.SFX.roll].includes(n) ? 4 : 1; if (ch !== want) { ok2 = false; wrong = `${n} on ${ch}`; } }
+      for (const [n, ch] of sfxs(events(vm))) { seenSfx.add(n); if (ch !== 6 && ch !== 7) { ok2 = false; wrong = `${n} on ${ch}`; } }
     }
   }
-  ok(ok2, 'in random play every effect is on the channel with its voice (noise on 4, the rest on 1)', wrong);
+  ok(ok2, 'in random play every effect is on an effects channel (6 or 7), never one the songs use', wrong);
   ok(seenSfx.size === 12, 'and across these tests all twelve effects were heard', [...seenSfx].sort((a, b) => a - b).join(' '));
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);
