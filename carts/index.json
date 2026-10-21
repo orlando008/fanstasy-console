@@ -191,6 +191,16 @@
       "png": null
     },
     {
+      "name": "street",
+      "title": "Street",
+      "author": "NOVA-16",
+      "description": "The art kit's character rig: a brawler built on a skeleton, his idle, walk, punch and kick animated from poses, on a night street (LEFT/RIGHT walk, A punch, B kick).",
+      "genre": "Demo",
+      "players": null,
+      "label": "carts/labels/street.png",
+      "png": null
+    },
+    {
       "name": "water",
       "title": "Water",
       "author": "NOVA-16",
