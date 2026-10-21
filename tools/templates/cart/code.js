@@ -75,8 +75,12 @@ function init() {
     for (let i = 0; i < 256; i++) dset(i, 0);
     dset(VERSION_SLOT, SAVE_VERSION);
   }
-  const f = ART.scenes.field; // the background: the field's tiles in Map RAM, shown on layer 0
-  bg(0, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, show: true });
+  // The background: the ground on layer 0 along the bottom of the screen, the hills behind it on layer 1 (each its
+  // region of Map RAM, placed with a negative scroll and not repeated), the sky a gradient in scanline() below.
+  const f = ART.scenes.field, h = ART.scenes.hills;
+  bg(0, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, x: 0, y: -(224 - f.h * 8), wrap: false, show: true });
+  bg(1, { mx: h.mx, my: h.my, mw: h.w, mh: h.h, x: 0, y: -(224 - f.h * 8 - h.h * 8 + 8), wrap: false, show: true });
+  blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (ART.colors.GLASS) are see-through
   if (skipTitle) startGame(); else toTitle();
 }
 
@@ -225,6 +229,9 @@ function drawPause() {
   ['RESUME', 'RESTART', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
 }
 
-function panel(x, y, w, h) { rectfill(x, y, w, h, SHADOW); rect(x, y, w, h, PANEL); }
+function panel(x, y, w, h) { rectfill(x, y, w, h, ART.colors.GLASS); rect(x, y, w, h, PANEL); }
 function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }
 const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
+
+/** Each line of the screen: the sky's colour for that line (the SNES did its skies this way, with HDMA). */
+function scanline(y) { gradientLine(ART.gradients.sky, y); }

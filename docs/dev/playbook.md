@@ -62,7 +62,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 
 | Command | What it does |
 |---|---|
-| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an art script (a field, a ship and a gem, drawn with the art kit), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--kind puzzle` starts from a whole match-3 game instead (see "Starters by kind"). `--selftest` checks every starter (CI does) |
+| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an art script (a gradient sky, receded hills, a ground, a ship and a gem, in ramps, with see-through panels: the SNES look from the start), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--kind puzzle` starts from a whole match-3 game instead (see "Starters by kind"). `--selftest` checks every starter (CI does) |
 | `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder |
 | `node tools/unpack.js <cart.nova> carts/src/<name>` | The reverse, for a cart made elsewhere (the console's editors, a friend) that is to join the Library: writes its source folder and checks it packs back to the same cart. Then add the `genre` and `players` to its `meta.json`, write its spec and release it (Operation Ironstorm came in this way) |
 | `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the music levels (`loud.mjs --check`), the docs check, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
@@ -88,6 +88,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `node tools/devkit/art/sprites.mjs carts/<name>.nova out.png [--names a,b]` | The cart's sprites (from `art.json`) at their real sizes in their sprite palettes, with names, scaled up, and its big sprites assembled from their parts; or one with `--tile n --size 16 --pal 0` (open the PNG with the Read tool). `--ascii hero` prints a sprite as text instead: a letter for each role, x and y rulers, and a `key={...}` for `Img.from_rows` (`--ascii --tile n --size s` prints hex indices, no manifest needed) |
 | `node tools/devkit/art/scene.mjs carts/<name>.nova out.png --scene field [--holes]` | A Map RAM region as the map places it (palettes, flips); `--rect x,y,w,h` for any region; `--holes` paints empty cells magenta |
 | `node tools/devkit/tiles.mjs carts/<name>.nova out.png --from 640 --count 64 --pal 0 [--sprite] [--skip-empty]` | A contact sheet of tiles with their numbers in a palette. `--ascii <n>` prints one tile as `tiles.txt` rows; `--palette out.png` shows all 256 entries |
+| `node tools/devkit/art/snes.mjs carts/<name>.nova` | **Does it look like a SNES game?** Plays the cart and scores its screens 0 to 100 (shades per colour, colours, sprite size, layers, parallax, a gradient sky, effects), each low measure with what to do about it in the kit; `--all` ranks every cart. Information, not a gate: calibrated so Operation Ironstorm scores 62 and Summit Rush 13 |
 | `node tools/devkit/art/colors.mjs carts/<name>.nova [--png out.png] [--check]` | How the colours read: plays the cart with random buttons and measures its screens in OKLab. Muddy panels (dull brown or grey on overlay panels; limit 0.3), palette ramps out of order (`art.json`), and as information mud, contrast, faint edges and the overlay's default colours; `--png` marks mud magenta and faint edges cyan (in the PNG only); `--extra "src"` as in `shots.mjs` |
 | `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons, `--extra "skipTitle = true;"`) |
 | `node tools/devkit/gif.mjs carts/<name>.nova out.gif --from 60 --to 240` | An animated GIF of the cart (`--hold`, `--crop x,y,w,h`, `--every 2`): to show a person an animation you cannot watch |
@@ -258,7 +259,7 @@ sound test, so `verify.js` only warns for it).
 ## 6. Art
 
 Write the art as code, in `carts/src/<name>/art.py`, with the toolkit (`tools/devkit/art/kit.py`: read its header). The
-starter has a small `art.py` (a field, a ship, a gem) to start from. A cart's art script owns `tiles.txt`, `palette.txt`,
+starter has a small `art.py` (a gradient sky, hills, a ground, a ship, a gem) to start from. A cart's art script owns `tiles.txt`, `palette.txt`,
 `map.txt` and `art.json`, and the `ART` block in `code.js`; `verify.js` fails if they are not what it makes.
 
 ```python

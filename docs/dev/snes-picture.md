@@ -79,10 +79,15 @@ tones, backgrounds of materials (tiles, fences, paving, foliage) pushed back beh
 
 ## Part C: measuring it
 
-5. **A "looks SNES" report** beside the colour report: flat-fill share, shades per hue in each sprite, black outlines,
-   sprites over 16 px, layers in use and parallax. Calibrated on Operation Ironstorm and Tricksy Towerz (the SNES end)
-   against Summit Rush and Python Pass (the NES end).
-6. **Starter defaults**: a new game starts with a gradient sky, see-through panels and generated ramps.
+5. **A "looks SNES" report** (`tools/devkit/art/snes.mjs`) beside the colour report: it plays the cart and scores
+   its screens 0 to 100 on shades per colour family (in sprites and in backgrounds), colours on screen, the tallest
+   sprite object, BG layers drawn, parallax, a backdrop gradient and effects, with what to do about each low one.
+   Calibrated on Operation Ironstorm (62) and Tricksy Towerz (43), the SNES end, against Summit Rush (13) and Python
+   Pass (31), the NES end. Flat-fill share and black outlines were planned as measures too, but on these four they do
+   not separate the ends (the NES-end carts are busy, not flat; black outlines are on both sides, as in Streets of Rage):
+   the report shows them, unscored.
+6. **Starter defaults**: a new game starts with a gradient sky, hills receded towards it behind the ground, see-through
+   panels and colours as ramps. The starter scored 19 before and 56 after.
 
 ## Part D: a demo cart
 
@@ -113,4 +118,4 @@ VALLEY (a sky gradient line by line, clouds, snowy mountains, hills, trees and g
 | Rig | built | `rig.py`: a skeleton with presets (brawler, boxer, hero) dressed in sculpted shapes, poses as joint angles, `animate()` with easing and mirrored walk cycles, built-in WALK, PUNCH, KICK, GUARD, HIT, JUMP, a `filmstrip()` with onion skin and bones; `Art.animation()` (frames sharing their pieces; 8 px pieces where a 16 px one would be mostly empty, which also took the showcase from 939 to 881 tiles); `tools/devkit/gif.mjs`. The `street` cart: a brawler that walks, punches and kicks on a night street. |
 | Drawn | built | `draw.py` (Canvas: designed shapes in flat tones, cel shadows, seams, exact ink, a tidy pass; `speckle()`) and `figure.py` (`head()` in four views (side, three-quarters, front, back) with four expressions and seven hair styles, from templates of planes; `Figure`, a drawn body on the rig's skeleton, by default cheated towards the camera as Streets of Rage and Street Fighter draw it (both shoulders, the chest square to us, the face three-quarters, the body twisting into a punch): limbs with muscle profiles, a chest, sleeves, a belt, fists, shoes, one shared outline colour). After the user's critique of the sculpted faces ("still blocky and strange"): characters are drawn, not lit. The `street` brawler is a Figure (speckle 0.08 to 0.13 over its 17 frames, mean 0.10, against 0.10 to 0.16, mean 0.13, for the sculpted one; at 64 px the gain is mostly in the shapes, which the number does not see; heads 32 px tall measure 0.04 to 0.06). |
 | Stream | built | `art.stream()` and `streamSprite()`: an animation's frames loaded into a slot of tile rows as they play (only the tiles that changed), their pixels packed into code.js (runs copied from the row above, shared 8 x 8 tiles stored once). The `street` brawler is now 96 px (Streets of Rage 2 size): 128 tiles and 18.5 KB of the cart's ROM for 18 frames (`rom=True`; docs/dev/rom-plan.md), where big sprites would take 1,008 tiles. In the self-tests: a stream packed into a cart, two frames in one slot and a second slot, checked on the console's screen. |
-| C | not started | |
+| C | built | `tools/devkit/art/snes.mjs` (`--all` for every cart, `--selftest` in CI: the maths, the score's range, and the calibration order on the four carts), with `vm.picture()` in the harness (a frame again with only some layers, the cart's `scanline()` included). The starter (`tools/templates/cart/`): `art.gradient()` sky, a ground and receded hills on two layers, ramps, GLASS panels with `blend()`; its art test checks the ground and the gradient. Every cart's score, October 2026: showcase 94, street 83, moto-crosser 74, operation-ironstorm 62, planet-racers 62, effects 58, block-wizard 52, water 49, smashy-smash 48, tricksy-towerz 43, ice-breakers 38, alien-swarm 37, rags-to-riches 35, python-pass 31, parallax 28, mode7 25, sprites 19, summit-rush 13; the demos without art 0. |

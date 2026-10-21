@@ -14,53 +14,62 @@ art = Art()
 art.region('bg', 1, 255)       # background tiles
 art.region('spr', 256, 1023)   # sprites (a 16 px sprite takes four tiles)
 
-# BG palette 1 for the field (BG palette 0 is shared with the overlay's text colours, so it is left alone);
-# sprite palette 0 (spr's `pal: 0`) for the player and the gems.
-field = art.palette(1, {'dark': '2c5a1e', 'mid': '346524', 'light': '4a8a2e', 'bloom': 'dad45e'})
-ship = art.sprite_palette(0, {'edge': '140c1c', 'hull': '597dce', 'shine': '6dc2ca', 'white': 'deeed6', 'fire': 'd04648', 'gold': 'dad45e', 'amber': 'd27d2c'})
+# The SNES look from the start (docs/dev/snes-picture.md): colours as ramps (shades of one colour, dark to light), a sky
+# set line by line, hills pushed back behind the ground, and see-through panels (GLASS, an overlay colour from 192 up,
+# which blend() makes translucent; code.js turns it on). BG palette 0 is shared with the overlay's text colours, so it
+# is left alone.
+art.gradient('sky', ['1c2a6a', '3c64b4', '9cd0ec'], y0=0, y1=175)          # the backdrop, a colour for each line
+art.color(200, '141c3c', 'GLASS')                                          # the panels' fill, seen through
+field = art.palette(1, {'grass': ramp('4a8a2e', 4), 'bloom': 'dad45e'})    # field.grass: 4 indices, dark to light
+far = art.palette(2, {'hill': recede(ramp('2c6a3a', 3), 0.5, '9cd0ec')})   # far things are paler, nearer the sky
+ship = art.sprite_palette(0, {'edge': '140c1c', 'hull': ramp('597dce', 4), 'white': 'deeed6', 'fire': ramp('d04648', 2),
+                              'gold': ramp('dad45e', 3)})
 
-# --- The field: a 32 x 28 tile picture of grass, three kinds of tile and flowers now and then ---
-def grass(v):
-    def px(x, y):
-        h = hsh(x * 31 + y * 17 + v * 101) % 19
-        if v == 2 and (x, y) in ((2, 2), (5, 5), (2, 5), (5, 2)): return field.bloom if (x, y) == (2, 2) else field.light
-        return field.light if h == 0 else field.dark if h < 3 else field.mid
-    return Img.make(8, 8, px)
-picture = Img(256, 224)
-for cy in range(28):
-    for cx in range(32):
-        k = hsh(cx * 13 + cy * 7) % 12
-        picture.blit(grass(0 if k < 5 else 1 if k < 10 else 2), cx * 8, cy * 8)
-art.scene('field', picture, pal=field, at=(0, 0), solid=True)
+# --- The ground (layer 0): a strip of grass, 32 x 8 tiles, lit along its top edge, flowers now and then ---
+ground = Img(256, 64)
+grass = texture('grass', 64, 64, field.grass)
+for x in range(0, 256, 64): ground.blit(grass, x, 0)
+for x in range(256):
+    ground.px[0][x] = field.grass[3]; ground.px[1][x] = field.grass[2] if x % 5 else field.grass[3]
+for k in range(12):
+    fx_, fy_ = int(hsh(k * 7 + 1) % 250) + 3, int(hsh(k * 13 + 5) % 50) + 8
+    ground.px[fy_][fx_] = field.bloom
+art.scene('field', ground, pal=field, at=(0, 0), solid=True)
 
-# --- The player: a little ship, 16 x 16, drawn from rows of text (o edge, b hull, l shine, w white, r fire) ---
+# --- The hills (layer 1): rolling green behind the ground, receded towards the sky ---
+back = Img(256, 64)
+hills(back, far.hill, base=64, amp=40, period=128)
+art.scene('hills', back, pal=far, at=(32, 0))
+
+# --- The player: a little ship, 16 x 16, drawn from rows of text (o edge, d b l the hull's ramp dark to light,
+# w white, r fire) ---
 player = Img.from_rows([
     '.......oo.......',
-    '......obbo......',
-    '......oblo......',
-    '.....obblbo.....',
-    '.....obwwbo.....',
-    '....obbwwbbo....',
-    '...obbbbbbbbo...',
-    '..obbbbbbbbbbo..',
-    '.obbbobbbbobbbo.',
-    'obbbo.obbo.obbbo',
-    'obbo..obbo..obbo',
-    'obo...orro...obo',
+    '......olbo......',
+    '......olbo......',
+    '.....olbbdo.....',
+    '.....olwwdo.....',
+    '....olbwwbdo....',
+    '...olbbbbbbdo...',
+    '..olbbbbbbbbdo..',
+    '.olbbobbbbobbdo.',
+    'olbbo.obbo.obbdo',
+    'olbo..obdo..obdo',
+    'obo...orro...odo',
     'oo....orro....oo',
     '.......orro.....',
     '........oo......',
     '................',
-], key={'o': ship.edge, 'b': ship.hull, 'l': ship.shine, 'w': ship.white, 'r': ship.fire})
+], key={'o': ship.edge, 'd': ship.hull[0], 'b': ship.hull[2], 'l': ship.hull[3], 'w': ship.white, 'r': ship.fire[1]})
 art.sprite('player', player, pal=ship, region='spr')
 
-# --- A gem to dodge: a faceted diamond, 16 x 16, outlined ---
+# --- A gem to dodge: a faceted diamond, 16 x 16, outlined, shaded along the gold ramp ---
 def gem(x, y):
     d = abs(x - 7.5) + abs(y - 7.5)
     if d > 7: return 0
     if d > 6: return ship.edge
     if x < 8 and y < 8 and d < 4.5: return ship.white
-    return ship.amber if x + y > 16 else ship.gold   # the lower right in shadow
+    return ship.gold[0] if x + y > 18 else ship.gold[1] if x + y > 12 else ship.gold[2]   # lit from the upper left
 art.sprite('gem', Img.make(16, 16, gem), pal=ship, region='spr')
 
 art.write(sys.argv[1])
