@@ -102,6 +102,28 @@ that gap.
   - jingles that end cleanly;
   - songs at least as long as the screen they play under.
 
+The next four items are ideas from [pxl](https://github.com/augusto-scarvalho/claude-pxl), a pixel-art language for
+agents, evaluated in October 2026. The tool itself does not fit (it knows nothing of sub-palettes, sprite sizes or the
+tile grid, and its `outline` grows a 16 px sprite to 18 px), but these parts of it would help `kit.py` and the viewers.
+
+- [ ] **Mirrored sprites from half a grid** (`kit.py`).
+  - **What:** `Img.from_rows(rows, key, mirror='x')` takes the left half and makes the whole picture (an odd-width
+    option for a centre column); `mirror='y'` for top-bottom.
+  - **Why:** ships, characters and gems are mostly symmetric; writing both halves doubles the typing and lets them drift
+    apart by a pixel.
+- [ ] **Recoloured variants in one line** (`kit.py`).
+  - **What:** `art.variant('hero_p2', 'hero', swap={'shirt': 'red'}, pal=p2)`: the same pixels with roles swapped, or the
+    same picture in another sprite palette, registered as its own sprite.
+  - **Why:** players 2 to 4 and enemy tiers are copies with other colours; today each is a `replace()` chain by hand.
+- [ ] **A sprite diff against the last commit** (`tools/devkit/art/sprites.mjs --vs HEAD`).
+  - **What:** each changed sprite as it was, as it is, and the changed pixels highlighted; a line that says which sprites
+    changed and by how many pixels, and which did not change at all.
+  - **Why:** catches an edit that did nothing, or touched more than intended, without comparing two PNGs by eye.
+- [ ] **One sprite as text with rulers** (`tools/devkit/art/sprites.mjs --ascii <name>`).
+  - **What:** the sprite's pixels as role letters (from `art.json`), with x and y rulers, whatever its size.
+  - **Why:** cheaper than an image for checking exact pixels; `tiles.mjs --ascii` shows one 8 x 8 tile at a time, as
+    indices, without rulers.
+
 ## 5. Make the older games safe to polish
 
 - [ ] **Minimal tests and a bot for each released game without them.**
