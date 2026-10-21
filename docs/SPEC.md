@@ -660,6 +660,7 @@ every file the prompt names exists, and `tests/console/make.mjs` the tools it sa
 ├── tests/carts/<name>/     # A cart's check scripts (NN-*.mjs: 01-flow, 02-art ...), its lib.mjs and its bot.mjs for the sweep tool
 ├── tools/                  # Dev tools; see docs/dev/playbook.md for what each is for
 │   ├── pack.js             # Builds a .nova from carts/src/<name>/
+│   ├── unpack.js           # The reverse: a .nova made elsewhere to a source folder
 │   ├── library.js          # Regenerates carts/index.json and carts/labels/
 │   ├── new-cart.js         # Scaffolds a new cart (code, art.py, audio.py, tests, spec) from templates/cart/ or a kind in templates/kinds/ (--selftest checks them)
 │   ├── verify.js           # Verifies the carts changed since origin/main: audio, pack, checks, soak, tests

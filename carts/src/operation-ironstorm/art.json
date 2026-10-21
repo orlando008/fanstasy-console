@@ -1,0 +1,337 @@
+{
+ "colors": {
+  "bossCore": 184,
+  "em1": 101,
+  "em2": 102,
+  "em3": 103,
+  "em4": 104,
+  "ember": 127,
+  "flash": 106,
+  "grass": 114,
+  "grassDk": 115,
+  "grassHi": 113,
+  "logoSh": 105,
+  "night": 107,
+  "pit": 125,
+  "soil": 117,
+  "soilDeep": 119,
+  "soilDk": 118,
+  "soilHi": 116,
+  "st1": 97,
+  "st2": 98,
+  "st3": 99,
+  "st4": 100,
+  "stake": 126,
+  "stone": 120,
+  "stoneHi": 121,
+  "water1": 40,
+  "water2": 41,
+  "water3": 42,
+  "wood": 122,
+  "woodDk": 124,
+  "woodHi": 123
+ },
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "cd": 13,
+    "cl": 11,
+    "cm": 12,
+    "m1": 14,
+    "m2": 15,
+    "s0": 1,
+    "s1": 2,
+    "s2": 3,
+    "s3": 4,
+    "s4": 5,
+    "s5": 6,
+    "s6": 7,
+    "s7": 8,
+    "sun": 9,
+    "sunmid": 10
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "c1": 1,
+    "c2": 2,
+    "c3": 3,
+    "c4": 4,
+    "foam": 14,
+    "mist": 6,
+    "mist2": 7,
+    "r1": 11,
+    "r2": 12,
+    "rim": 5,
+    "trunk": 13,
+    "w1": 8,
+    "w2": 9,
+    "w3": 10
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "b1": 7,
+    "b2": 8,
+    "b3": 9,
+    "n1": 1,
+    "n2": 2,
+    "n3": 3,
+    "n4": 4,
+    "n5": 5,
+    "v1": 10,
+    "v2": 11,
+    "warm": 6
+   }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "bd": 6,
+    "bdd": 5,
+    "boot": 12,
+    "m": 14,
+    "md": 13,
+    "ml": 15,
+    "ol": 1,
+    "p": 11,
+    "pd": 10,
+    "sk": 3,
+    "skd": 2,
+    "skl": 4,
+    "top": 8,
+    "topd": 7,
+    "topl": 9
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "boot": 11,
+    "h": 8,
+    "hd": 7,
+    "m": 13,
+    "md": 12,
+    "ml": 14,
+    "ol": 1,
+    "sk": 3,
+    "skd": 2,
+    "u": 5,
+    "ud": 4,
+    "ul": 6,
+    "vis": 9,
+    "visl": 10
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "boot": 11,
+    "h": 8,
+    "hd": 7,
+    "hl": 9,
+    "m": 13,
+    "md": 12,
+    "ml": 14,
+    "ol": 1,
+    "sk": 3,
+    "skd": 2,
+    "u": 5,
+    "ud": 4,
+    "ul": 6,
+    "vis": 10
+   }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "core": 8,
+    "corel": 9,
+    "eye": 11,
+    "gl": 12,
+    "gld": 13,
+    "h": 3,
+    "hd": 2,
+    "hh": 5,
+    "hl": 4,
+    "ol": 1,
+    "orng": 7,
+    "red": 10,
+    "rust": 6,
+    "th": 14,
+    "thl": 15
+   }
+  },
+  "spr4": {
+   "base": 192,
+   "colors": {
+    "w1": 1,
+    "w10": 10,
+    "w11": 11,
+    "w12": 12,
+    "w13": 13,
+    "w14": 14,
+    "w15": 15,
+    "w2": 2,
+    "w3": 3,
+    "w4": 4,
+    "w5": 5,
+    "w6": 6,
+    "w7": 7,
+    "w8": 8,
+    "w9": 9
+   }
+  }
+ },
+ "scenes": {
+  "mid": {
+   "h": 28,
+   "mx": 32,
+   "my": 0,
+   "pal": 2,
+   "w": 64
+  },
+  "near": {
+   "h": 28,
+   "mx": 96,
+   "my": 0,
+   "pal": 3,
+   "w": 64
+  },
+  "sky": {
+   "h": 28,
+   "mx": 0,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  }
+ },
+ "sprites": {
+  "b_crouch": {
+   "pal": 0,
+   "size": 32,
+   "tile": 712
+  },
+  "b_idle": {
+   "pal": 0,
+   "size": 32,
+   "tile": 640
+  },
+  "b_jump": {
+   "pal": 0,
+   "size": 32,
+   "tile": 708
+  },
+  "b_run0": {
+   "pal": 0,
+   "size": 32,
+   "tile": 644
+  },
+  "b_run1": {
+   "pal": 0,
+   "size": 32,
+   "tile": 648
+  },
+  "b_run2": {
+   "pal": 0,
+   "size": 32,
+   "tile": 652
+  },
+  "b_run3": {
+   "pal": 0,
+   "size": 32,
+   "tile": 704
+  },
+  "boss_bl": {
+   "pal": 3,
+   "size": 32,
+   "tile": 908
+  },
+  "boss_br": {
+   "pal": 3,
+   "size": 32,
+   "tile": 960
+  },
+  "boss_tl": {
+   "pal": 3,
+   "size": 32,
+   "tile": 900
+  },
+  "boss_tr": {
+   "pal": 3,
+   "size": 32,
+   "tile": 904
+  },
+  "g_did": {
+   "pal": 0,
+   "size": 16,
+   "tile": 768
+  },
+  "g_diu": {
+   "pal": 0,
+   "size": 16,
+   "tile": 748
+  },
+  "g_dn": {
+   "pal": 0,
+   "size": 16,
+   "tile": 750
+  },
+  "g_lvl": {
+   "pal": 0,
+   "size": 16,
+   "tile": 716
+  },
+  "g_up": {
+   "pal": 0,
+   "size": 16,
+   "tile": 718
+  },
+  "hvy0": {
+   "pal": 2,
+   "size": 32,
+   "tile": 776
+  },
+  "hvy1": {
+   "pal": 2,
+   "size": 32,
+   "tile": 832
+  },
+  "hvy2": {
+   "pal": 2,
+   "size": 32,
+   "tile": 840
+  },
+  "hvy3": {
+   "pal": 2,
+   "size": 32,
+   "tile": 896
+  },
+  "rif0": {
+   "pal": 1,
+   "size": 32,
+   "tile": 772
+  },
+  "rif1": {
+   "pal": 1,
+   "size": 32,
+   "tile": 780
+  },
+  "rif2": {
+   "pal": 1,
+   "size": 32,
+   "tile": 836
+  },
+  "rif3": {
+   "pal": 1,
+   "size": 32,
+   "tile": 844
+  }
+ },
+ "tiles": {},
+ "used": 642,
+ "version": 1
+}

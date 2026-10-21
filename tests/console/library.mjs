@@ -28,14 +28,14 @@ try {
   ok(JSON.stringify(s.map((x) => x.title)) === JSON.stringify(want), 'a shelf for each genre, in order, the tech demos last and Make a cart at the end', s.map((x) => x.title).join(', '));
   const shelfOf = (name) => s.find((x) => x.carts.includes(name))?.title;
   const misplaced = manifest.filter((c) => shelfOf(c.name) !== GENRES.find((g) => g.id === c.genre).shelf);
-  ok(manifest.length === 16 && !misplaced.length, 'every cart is on the shelf of its genre', misplaced.map((c) => c.name).join(', '));
+  ok(manifest.length === 17 && !misplaced.length, 'every cart is on the shelf of its genre', misplaced.map((c) => c.name).join(', '));
   ok(manifest.every((c) => c.genre), 'and every cart in the manifest has a genre');
   ok(JSON.stringify(s.at(-1).carts) === '["open","new","ai"]', 'Open file, New cart and Make it with AI are on the last shelf');
 
   // The players badge.
   const badges = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('.lib-card')].map((c) => [c.dataset.cart, c.querySelector('.lib-players')?.textContent || ''])));
   const games = manifest.filter((c) => c.genre !== 'Demo');
-  ok(games.length === 10 && games.every((c) => c.players && badges[c.name] === playersLabel(c.players)), 'every game shows how many can play under its name', games.map((c) => `${c.name}: ${badges[c.name]}`).slice(0, 3).join(', '));
+  ok(games.length === 11 && games.every((c) => c.players && badges[c.name] === playersLabel(c.players)), 'every game shows how many can play under its name', games.map((c) => `${c.name}: ${badges[c.name]}`).slice(0, 3).join(', '));
   ok(badges['tricksy-towerz'] === '1\u20134 PLAYERS' && await page.locator('.lib-card[data-cart="tricksy-towerz"] .lib-players.multi').count() === 1, 'Tricksy Towerz: 1-4 PLAYERS, marked out as a game for several', badges['tricksy-towerz']);
   ok(badges['ice-breakers'] === '1 PLAYER' && await page.locator('.lib-card[data-cart="ice-breakers"] .lib-players.multi').count() === 0, 'a game for one: 1 PLAYER, plain');
   ok(manifest.filter((c) => c.genre === 'Demo').every((c) => !badges[c.name]) && !badges.open && !badges.new, 'the tech demos, Open file and New cart have no badge');
