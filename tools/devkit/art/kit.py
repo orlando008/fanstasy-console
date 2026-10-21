@@ -266,6 +266,8 @@ class Art:
         s.tiles = {}                 # named tiles: name -> number
         s.sprites = {}               # name -> {tile, size, pal}
         s.scenes = {}                # name -> {mx, my, w, h, pal}
+        s.big = {}                   # big sprites: name -> {w, h, parts: [[dx, dy, tile, size, pal, flip], ...]}
+        s.gradients = {}             # per-line colours: name -> {entry, y0, lines: [RGB555, ...]}
         s.exact = {}                 # tile picture -> number (for sharing identical tiles)
         s.palettes = {}              # (kind, sub) -> Roles
         s.cgram = {}                 # CGRAM entry -> rrggbb
@@ -487,6 +489,68 @@ class Art:
             img = recolour(img, m)
         return s.sprite(name, img, pal=src['pal'] if pal is None else pal, region=region)
 
+    def big_sprite(s, name, img, pal=None, region=None, piece='auto'):
+        """A sprite of any size, drawn as several hardware sprites: `img` is a picture (in sprite palette `pal`), or a
+        dict {palette: picture} of the same size (what Sculpt.render() gives for parts in several palettes), the higher
+        palette numbers drawn over the lower. It is cut into 32 px pieces where they are full enough and 16 px ones elsewhere (piece=32 or 16
+        forces one size), empty pieces are skipped, and a piece equal to another one, or to it flipped, reuses its
+        tiles. In code.js: bigSprite(ART.big.name, x, y, { fx, fy, prio, pal }). Returns the entry."""
+        if name in s.big: raise ValueError('big sprite %r already exists' % name)
+        layers = img if isinstance(img, dict) else {pal if not isinstance(pal, Roles) else pal.sub: img}
+        if any(p is None for p in layers): raise ValueError('big sprite %r: give pal= (a sprite palette) for a single picture' % name)
+        sizes = {(im.w, im.h) for im in layers.values()}
+        if len(sizes) != 1: raise ValueError('big sprite %r: the pictures for its palettes must be the same size, got %s' % (name, sorted(sizes)))
+        W, H = sizes.pop()
+        parts, made = [], {}
+        def place(cell, sub, dx, dy, size):
+            key = cell.key()
+            for flip, c in ((0, cell), (1, cell.flip_h()), (2, cell.flip_v()), (3, cell.flip_h().flip_v())):
+                hit = made.get((sub, size, c.key()))
+                if hit is not None:
+                    parts.append([dx, dy, hit, size, sub, flip]); s.shared += 1; return
+            n = s.sprite('%s#%d' % (name, len(made)), cell, pal=sub, region=region)
+            del s.sprites['%s#%d' % (name, len(made))]
+            made[(sub, size, key)] = n
+            parts.append([dx, dy, n, size, sub, 0])
+        for sub, im in sorted(layers.items()):
+            roles = s._roles('spr', sub)
+            s._check_colors(im, roles, 'big sprite %r (palette %d)' % (name, sub))
+            for by in range(0, H, 32):
+                for bx in range(0, W, 32):
+                    block = im.crop(bx, by, 32, 32)
+                    if block.is_empty(): continue
+                    quads = [(qx, qy) for qy in (0, 16) for qx in (0, 16) if not block.crop(qx, qy, 16, 16).is_empty()]
+                    if piece == 32 or (piece == 'auto' and len(quads) == 4):
+                        place(block, sub, bx, by, 32)
+                    else:
+                        for qx, qy in quads: place(block.crop(qx, qy, 16, 16), sub, bx + qx, by + qy, 16)
+        # Among sprites of one priority the first drawn is on top, so the last palette's parts (drawn over the others)
+        # go first.
+        order = {sub: k for k, sub in enumerate(sorted(layers))}
+        parts.sort(key=lambda p: -order[p[4]])
+        s.big[name] = {'w': W, 'h': H, 'parts': parts}
+        return s.big[name]
+
+    def gradient(s, name, stops, y0=0, y1=223, entry=0):
+        """Per-line colours for CGRAM `entry` (0, the backdrop, by default) from line y0 to y1: `stops` is a list of
+        colours spread evenly over those lines (a ramp works) or of (line, colour) pairs, mixed in OKLab. In scanline():
+        gradientLine(ART.gradients.name, y). The SNES drew its skies this way (HDMA)."""
+        from colour import mix
+        pts = [(st[0], st[1]) if isinstance(st, (tuple, list)) and len(st) == 2 and isinstance(st[0], int) else None for st in stops]
+        if any(p is None for p in pts):
+            pts = [(y0 + round(k * (y1 - y0) / max(1, len(stops) - 1)), c) for k, c in enumerate(stops)]
+        lines = []
+        for y in range(y0, y1 + 1):
+            k = 0
+            while k < len(pts) - 2 and y > pts[k + 1][0]: k += 1
+            (ya, ca), (yb, cb) = pts[k], pts[min(k + 1, len(pts) - 1)]
+            t = 0 if yb == ya else min(1.0, max(0.0, (y - ya) / (yb - ya)))
+            h = mix(ca, cb, t)
+            r, g, b = (int(h[i:i + 2], 16) >> 3 for i in (0, 2, 4))
+            lines.append(r | g << 5 | b << 10)
+        s.gradients[name] = {'entry': entry, 'y0': y0, 'lines': lines}
+        return s.gradients[name]
+
     def frames(s, name, imgs, pal=0, region=None):
         """An animation: sprites named name0, name1 ... Returns their first tiles."""
         return [s.sprite('%s%d' % (name, i), im, pal, region) for i, im in enumerate(imgs)]
@@ -504,11 +568,14 @@ class Art:
         return '\n'.join(lines)
 
     def manifest(s):
-        return {'version': 1,
-                'tiles': dict(sorted(s.tiles.items())), 'sprites': dict(sorted(s.sprites.items())), 'scenes': dict(sorted(s.scenes.items())),
-                'colors': dict(sorted(s.colors.items())),
-                'palettes': {'%s%d' % k: {'base': r.base, 'colors': r.names()} for k, r in sorted(s.palettes.items())},
-                'used': len(s.used) - 1}
+        m = {'version': 1,
+             'tiles': dict(sorted(s.tiles.items())), 'sprites': dict(sorted(s.sprites.items())), 'scenes': dict(sorted(s.scenes.items())),
+             'colors': dict(sorted(s.colors.items())),
+             'palettes': {'%s%d' % k: {'base': r.base, 'colors': r.names()} for k, r in sorted(s.palettes.items())},
+             'used': len(s.used) - 1}
+        if s.big: m['big'] = dict(sorted(s.big.items()))
+        if s.gradients: m['gradients'] = sorted(s.gradients)
+        return m
 
     def tiles_txt(s):
         last = max(s.used)
@@ -533,7 +600,15 @@ class Art:
     def constants(s):
         """The JavaScript for code.js: const ART = { tiles, sprites, scenes, colors }."""
         j = lambda v: json.dumps(v, separators=(', ', ': '), sort_keys=True)
-        return 'const ART = {\n  tiles: %s,\n  sprites: %s,\n  scenes: %s,\n  colors: %s,\n};' % (j(dict(sorted(s.tiles.items()))), j(dict(sorted(s.sprites.items()))), j(dict(sorted(s.scenes.items()))), j(dict(sorted(s.colors.items()))))
+        extra = ''
+        if s.big: extra += '\n  big: %s,' % j(dict(sorted(s.big.items())))
+        if s.gradients: extra += '\n  gradients: %s,' % json.dumps(dict(sorted(s.gradients.items())), separators=(',', ':'), sort_keys=True)
+        out = 'const ART = {\n  tiles: %s,\n  sprites: %s,\n  scenes: %s,\n  colors: %s,%s\n};' % (j(dict(sorted(s.tiles.items()))), j(dict(sorted(s.sprites.items()))), j(dict(sorted(s.scenes.items()))), j(dict(sorted(s.colors.items()))), extra)
+        if s.big:
+            out += BIG_JS
+        if s.gradients:
+            out += GRADIENT_JS
+        return out
 
     def write(s, outdir, quiet=False):
         """Write tiles.txt, palette.txt, map.txt (removed if the map is empty) and art.json into `outdir`, and rewrite the ART
@@ -550,6 +625,25 @@ class Art:
         code = os.path.join(outdir, 'code.js')
         if os.path.exists(code): inject(code, s.constants())
         if not quiet: print(s.report())
+
+
+BIG_JS = """
+/** Draw one of ART.big at (x, y), its top left: opts { fx, fy (flip the whole sprite), prio (default 3), pal (every
+ * part in this sprite palette, e.g. a hit flash) }. Each part is one spr() (generated by art.py). */
+function bigSprite(b, x, y, opts = {}) {
+  const fx = !!opts.fx, fy = !!opts.fy, prio = opts.prio ?? 3;
+  for (const [dx, dy, t, size, pal, f] of b.parts) {
+    spr(t, x + (fx ? b.w - dx - size : dx), y + (fy ? b.h - dy - size : dy),
+      { size, pal: opts.pal ?? pal, fx: fx !== !!(f & 1), fy: fy !== !!(f & 2), prio });
+  }
+}"""
+
+GRADIENT_JS = """
+/** In scanline(y): set the CGRAM entry of a gradient from ART.gradients to its colour for line y (generated by art.py). */
+function gradientLine(g, y) {
+  const v = g.lines[y - g.y0];
+  if (v !== undefined) color(g.entry, v & 31, (v >> 5) & 31, v >> 10);
+}"""
 
 
 def inject(code_path, block):
@@ -570,3 +664,4 @@ from shade import inner_distance, shaded, outline_sel, inline, rim, clean_lines,
 from sculpt import Sculpt, Mat       # noqa: E402  sprites sculpted from 3D shapes, rendered as pixel art
 from texture import noise, fbm, level, texture, variants, tile_fill  # noqa: E402  materials that tile seamlessly
 from scenery import sky, stars, orb, clouds, mountains, hills, treeline, floor, rope, ellipse  # noqa: E402  backgrounds
+from lettering import big_text, hud_bar, frame, scale2x, smooth_scale  # noqa: E402  HUD lettering, bars and frames

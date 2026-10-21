@@ -227,6 +227,16 @@ rp_ = rope(Img(64, 16), [(2, 8), (62, 8)], 4, sr)
 ok(rp_.get(30, 8) and not rp_.get(30, 1), 'rope: drawn along its path')
 ok(ellipse(16, 6, 3).get(8, 3) == 3 and ellipse(16, 6, 3).get(0, 0) == 0, 'ellipse: a contact shadow')
 
+# --- Lettering (lettering.py) ---
+lt = big_text('AB', (1, 2, 3, 4), scale=2, outline=5, shadow=6)
+ok(lt.w >= 32 and {1, 2, 3, 4, 5, 6} >= lt.colors() and 5 in lt.colors() and 6 in lt.colors(), 'big_text: the font at twice the size, filled from the ramp, outlined and shadowed')
+diag = scale2x(Img.from_rows(['1..', '11.', '111']))
+ok(diag.get(2, 1) == 1 and diag.get(4, 3) == 1 and diag.get(3, 0) == 0, 'scale2x rounds a diagonal edge (the steps are filled in, as repeating pixels would not)', str(diag.rows()))
+hb = hud_bar(20, 6, (1, 2, 3), fill=0.5, frame=4, empty=5)
+ok(hb.get(0, 0) == 4 and hb.get(15, 3) == 5 and hb.get(4, 3) in (1, 2, 3), 'hud_bar: a frame, the full part shaded, the rest empty')
+fr = frame(20, 12, (1, 2, 3), fill=7)
+ok(fr.get(10, 6) == 7 and fr.get(0, 0) == 1, 'frame: a bevelled border around a filled inside')
+
 # --- Files: written, packed and read back ---
 work = tempfile.mkdtemp(prefix='art-selftest-')
 try:
@@ -311,6 +321,34 @@ console.log(JSON.stringify({ width, height, at: process.argv.slice(3).map((p) =>
     fdir = os.path.join(work, 'full'); os.makedirs(fdir); full.write(fdir, quiet=True)
     node('tools/pack.js', fdir, os.path.join(work, 'full.nova'))
     ok(len(open(os.path.join(fdir, 'tiles.txt')).read().split('\n')) <= 513, 'a tile in the last place of the sheet still packs (512 rows)')
+    # big sprites and gradients: written into the ART block with their helpers, and drawn by the console
+    bart = Art(); bart.region('spr', 256, 1023)
+    bp = bart.sprite_palette(0, {'body': ramp('d04648', 4), 'eye': 'ffffff'})
+    bp2 = bart.sprite_palette(5, {'gem': ramp('3050c0', 3)})
+    left = Img(24, 48).rect(4, 4, 20, 40, bp.body[2]).rect(10, 10, 4, 4, bp.eye)
+    whole = mirrored(left)
+    gemlayer = Img(48, 48).rect(20, 20, 8, 8, bp2.gem[2])
+    entry = bart.big_sprite('boss', {0: whole, 5: gemlayer})
+    ok(entry['w'] == 48 and entry['h'] == 48 and any(p[5] for p in entry['parts']), 'big_sprite: a 48 px picture cut into parts, the mirrored half reusing the other\'s tiles flipped', str(entry['parts'][:3]))
+    ok({p[4] for p in entry['parts']} == {0, 5}, 'and a part for each palette')
+    bart.gradient('sky', ['102040', '80c0ff'], y0=0, y1=99)
+    ok(len(bart.gradients['sky']['lines']) == 100 and bart.gradients['sky']['lines'][0] != bart.gradients['sky']['lines'][-1], 'gradient: a colour for every line')
+    bsrc = os.path.join(work, 'bigs'); os.makedirs(bsrc)
+    open(os.path.join(bsrc, 'code.js'), 'w').write('%s\n%s\nfunction draw() { cls(); bigSprite(ART.big.boss, 100, 50); bigSprite(ART.big.boss, 160, 50, { fx: true }); }\nfunction scanline(y) { gradientLine(ART.gradients.sky, y); }\n' % (ART_BEGIN, ART_END))
+    open(os.path.join(bsrc, 'meta.json'), 'w').write('{"title": "Bigs"}')
+    bart.write(bsrc, quiet=True)
+    bcode = open(os.path.join(bsrc, 'code.js')).read()
+    ok('function bigSprite(' in bcode and 'function gradientLine(' in bcode and 'big: {' in bcode, 'the ART block carries the parts and the bigSprite() and gradientLine() helpers')
+    bout = os.path.join(work, 'bigs.nova'); node('tools/pack.js', bsrc, bout)
+    bprobe = os.path.join(work, 'bprobe.mjs')
+    open(bprobe, 'w').write("""import { boot } from '%s/tools/devkit/harness.mjs';
+const vm = boot(process.argv[2]); vm.step(0);
+const at = (x, y) => { const v = vm.out32[y * 256 + x]; return [v & 255, (v >> 8) & 255, (v >> 16) & 255]; };
+console.log(JSON.stringify({ body: at(108, 80), eye: at(111, 61), eyeR: at(160 + 36, 61), gem: at(124, 74), sky0: at(5, 0), sky99: at(5, 99), cpu: vm.ppu.oamCount }));""" % ROOT)
+    bv = json.loads(node(bprobe, bout))
+    ok(bv['body'] == rgb555(bart.palettes[('spr', 0)].hexes['body2']) and bv['eye'] == rgb555('ffffff') and bv['eyeR'] == rgb555('ffffff'), 'the console draws the big sprite, and flipped with fx its eye lands mirrored', str(bv))
+    ok(bv['gem'] == rgb555(bart.palettes[('spr', 5)].hexes['gem2']), 'with the part in the other palette over it')
+    ok(bv['sky0'] != bv['sky99'] and bv['sky0'] == rgb555('102040'), 'and gradientLine() in scanline() paints the backdrop line by line', str((bv['sky0'], bv['sky99'])))
     # the overlay warning and the report
     rep = art.report()
     ok('tiles: ' in rep and 'region bg' in rep and 'sprites: 1' in rep, 'the report lists the budget by region')

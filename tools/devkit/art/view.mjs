@@ -44,6 +44,7 @@ export function drawTile(c, cart, t, ox, oy, scale, base, { fx = 0, fy = 0, tran
     if (fx) sx = 7 - sx; if (fy) sy = 7 - sy;
     const v = pixel(cart, t, sx, sy), cx = ox + x, cy = oy + y;
     if (cx < 0 || cy < 0 || cx >= c.w || cy >= c.h) continue;
+    if (!v && transparent === 'none') continue;
     c.px[cy * c.w + cx] = v ? rgb(cart, base + v) : transparent === 'backdrop' ? rgb(cart, 0) : COLORS.dark[(Math.floor(x / scale) + Math.floor(y / scale)) & 1];
   }
 }
