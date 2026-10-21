@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { boot } from '../../tools/devkit/harness.mjs';
 import { ROM_LIMIT, createCart } from '../../src/formats/cart.js';
 import { fromBase64, readNova, toBase64, writeNova } from '../../src/formats/nova-json.js';
+import { MAX_PAYLOAD, cartPayload } from '../../src/formats/nova-png.js';
+import { inflateRawSync } from 'node:zlib';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 let fails = 0;
@@ -50,6 +52,11 @@ function draw() { __expose(() => got); }
   ok(/no such blob.*level, tiny/.test(g.err || ''), 'rom() of a missing name names the blobs there are', g.err);
   ok(writeNova(readNova(text)) === text, 'read and written back, the .nova is unchanged');
   ok(readNova(writeNova(readNova(text), { minify: true })).rom.level.length === 5000, 'and the minified form (the .nova.png payload) keeps it');
+
+  // the .nova.png payload: the same bytes the editor exports, read back as the PNG reader does
+  const payload = await cartPayload(readNova(text));
+  const fromPng = readNova(inflateRawSync(Buffer.from(payload)).toString('utf8'));
+  ok(payload.length <= MAX_PAYLOAD && fromPng.rom.level.every((v, i) => v === blob[i]) && fromPng.rom.tiny[0] === 42, 'the .nova.png payload carries the ROM unchanged', `${payload.length} bytes`);
 
   // unpack writes rom/ back
   const un = join(work, 'un');

@@ -43,6 +43,6 @@ files, nothing has to agree on offsets, and `code.js` never holds addresses that
 | Step | State | Notes |
 |---|---|---|
 | R1 | built | SPEC 3, 8 and 9.1; `src/formats/cart.js` (`ROM_LIMIT`, `checkRom()`, `romBytes()`), `nova-json.js` (the `rom` field, version 3 only for a cart with ROM), `rom()` in `src/console/api.js`, the worker and the harness; `tools/pack.js` reads `rom/`, `tools/unpack.js` writes it, `tools/check.js` reports it. `tests/console/rom.mjs` (19 checks) in CI. Every cart packs to the same `.nova`, and the fingerprints of all 22 carts (900 frames of random play, CPU stat pinned) are the same before and after. |
-| R2 | not started | |
+| R2 | built | The Cart tab shows ROM use beside the code counter (red over the limit); the PNG capacity meter already sizes the whole payload, ROM included. Export and import go through `writeNova()` and `readNova()`: `tests/console/rom.mjs` builds the `.nova.png` payload with the editor's own `cartPayload()` and reads the ROM back unchanged. |
 | R3 | not started | |
 | R4 | not started | |
