@@ -4,7 +4,8 @@ A minor second, a tritone or a major seventh (1, 6 and 11 semitones) is flagged.
 
     python3 tools/devkit/music/clash.py carts/src/my-game/audio.json
 
-Prints the number of clashes for each song and the first dozen (bar, row, lead note, other note, channel).
+Prints the number of clashes for each song and the first dozen (bar, row, lead note, other note, channel). A note on an
+instrument with no sustain counts only until its decay is over.
 A flagged note is not always wrong (a passing note on a short stab is fine); a long clash is.
 """
 import json, sys
@@ -16,11 +17,17 @@ for si, s in enumerate(A['songs']):
     others = (1, 2, 3, 4) if A.get('chip') == 2 else (2, 3)
     # Drums (an instrument playing a sample that does not loop) have no pitch to clash with.
     drum = {k for k, ins in enumerate(A['instruments']) if ins and ins.get('wave') == 'sample' and not (A['samples'][ins.get('sample', 0)] or {}).get('loop')}
-    cur = [None] * 8; bad = []
+    speed = next((int(c['fx'][1:], 16) for c in rows[0] if c and c.get('fx', '').startswith('F')), 6)
+    cur = [None] * 8; ends = [None] * 8; bad = []
     for k, r in enumerate(rows):
         for ch in (0,) + others:
             c = r[ch]
-            if c and 'n' in c: cur[ch] = None if c['n'] == 'OFF' or c.get('i') in drum else m(c['n'])
+            if c and 'n' in c:
+                cur[ch] = None if c['n'] == 'OFF' or c.get('i') in drum else m(c['n'])
+                ins = A['instruments'][c.get('i', 0)] or {}
+                # A note with no sustain dies away by itself (a harp, a piano) at the end of its decay.
+                ends[ch] = k + (ins.get('a', 0) + ins.get('d', 4)) / speed if ins.get('s', 10) == 0 else None
+            if ends[ch] is not None and k >= ends[ch]: cur[ch] = None
         if k % 4 == 0 and cur[0] is not None:   # on beats, the lead against the others
             for ch in others:
                 if cur[ch] is None: continue

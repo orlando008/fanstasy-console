@@ -55,13 +55,9 @@ const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1, TIME_SLOT = 2; // b
 const TOP_SLOT = 10, TOP_N = 10, ENTRY = 4; // the top 10 championship scores, best first: score, how far (1-3: the track it ended on; 4: all), initials, a spare
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const PLACE_POINTS = [10000, 7000, 5000, 3000, 2000, 1000], TIME_BONUS = 100, CLEAN_BONUS = 1000, QUALIFY_PLACE = 3; // a point value for each place; a bonus for each second under par; and for a race without a crash
-const SFX_CH = 1;
-// Effects with noise in them go on the noise channel (channel 1 is a pulse), which is also the engine's: they cut it, and it starts again when they end.  (sfx-voice-routed)
-const ENGINE_CH = 4, NOISE_FRAMES = { [SFX.buzz]: 16, [SFX.takeoff]: 8, [SFX.rough]: 12, [SFX.crash]: 15, [SFX.mud]: 9, [SFX.overheat]: 20, [SFX.smash]: 15 };
-let noiseT = 0;
-function fx(n) {
-  if (NOISE_FRAMES[n]) { sfx(n, ENGINE_CH); noiseT = NOISE_FRAMES[n]; engineBucket = -1; } else sfx(n, SFX_CH);
-}
+// The songs use channels 0 to 5; the effects have 7 and the engine 6 (any channel plays any voice: SPEC 5).
+const SFX_CH = 7, ENGINE_CH = 6;
+function fx(n) { sfx(n, SFX_CH); }
 
 // Music: a song is only started if it is not already playing.
 let playing = -1;
@@ -70,7 +66,7 @@ function play(song) {
   playing = song; music(song);
 }
 
-// The engine is a short looping effect on the noise channel, restarted at one of six pitches: idle, three speeds, turbo and revving in the air. It is silent when crashed, pushing or in a menu.
+// The engine is a short looping noise effect on its own channel, restarted at one of six pitches: idle, three speeds, turbo and revving in the air. It is silent when crashed, pushing or in a menu.
 const ENGINE_FRAMES = 28, ENGINE_HOLD = 4;
 let engineBucket = -1, engineT = 0, engineWant = -1, engineWantT = 0;
 function engineFor(r) {
@@ -81,7 +77,6 @@ function engineFor(r) {
 }
 /** Called every frame: the engine follows the player's bike, and changes pitch only once the new pitch has held for a few frames. */
 function engineSound() {
-  if (noiseT > 0) { noiseT--; return; }
   const want = !paused && (state === 'grid' || state === 'race') ? engineFor(riders[0]) : -1;
   if (want !== engineWant) { engineWant = want; engineWantT = 0; } else engineWantT++;
   if (want < 0) { if (engineBucket >= 0) { sfx(-1, ENGINE_CH); engineBucket = -1; } return; }

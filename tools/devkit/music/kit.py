@@ -173,16 +173,16 @@ class Audio:
         if echo: out['echo'] = echo
         if curve != 'lin': out['curve'] = curve
         s.I[name] = len(s.instruments); s.instruments.append(out)
-    def voice(s, name, kind, vol, pan=None, **changes):
+    def voice(self, name, kind, vol, pan=None, **changes):
         """A sampled instrument from samples.py (its sample is made once per kind), with that kind's envelope and echo;
         changes override any of a, d, s, r, curve, echo, vib."""
-        assert s.chip == 2, 'sampled voices need Audio(chip=2)'
+        assert self.chip == 2, 'sampled voices need Audio(chip=2)'
         gen, preset = SAMPLED[kind]
-        if kind not in s.kinds:
+        if kind not in self.kinds:
             smp = gen()
-            s.kinds[kind] = s.sample(smp['vals'], smp['rate'], smp['loop'])
+            self.kinds[kind] = self.sample(smp['vals'], smp['rate'], smp['loop'])
         p = {**preset, **changes}
-        s.instrument(name, 'sample', p['a'], p['d'], p['s'], p['r'], vol, p.get('vib', (0, 0)), pan, s.kinds[kind], p['echo'], p['curve'])
+        self.instrument(name, 'sample', p['a'], p['d'], p['s'], p['r'], vol, p.get('vib', (0, 0)), pan, self.kinds[kind], p['echo'], p['curve'])
     def song(s, key, speed, echo=None):
         """echo: (delay 0-15 in 16 ms steps, feedback -15-15, volume 0-15, tone 0-15) for the new chip's echo unit."""
         if echo: assert s.chip == 2, 'echo needs Audio(chip=2)'
@@ -299,6 +299,12 @@ def bars(song, length, chords, leads, **kw):
         lead = leads[k] if leads else None
         extra = {key: (v[k] if isinstance(v, list) else v) for key, v in kw.items()}
         song.bar(length, ch, lead, **extra)
+
+def octave(lines, n=-1):
+    """Lines with every pitch name ('A4', 'C#5', 'Bb4') moved n octaves (chord tones and '-' '.' stay as they are)."""
+    import re
+    one = lambda l: re.sub(r"\b([A-G][#b]?)(\d)\b", lambda m: m.group(1) + str(int(m.group(2)) + n), l)
+    return [one(l) for l in lines] if isinstance(lines, list) else one(lines)
 
 def echo(leads, shift=2):
     """A line that repeats the lead `shift` steps later (echoing bells)."""
