@@ -30,7 +30,7 @@ export function boot(path, { seed = 1, save = null, extra = '' } = {}) {
   const m = {
     ppu, overlay, prng, frame: 0, pads: new Uint16Array(4), hold: new Uint16Array(64),
     save: new Int32Array(256), saveDirty: false, audio: [], stats: { cpu: 0, fps: 60 },
-    inScanline: false, log: (t) => console.log('[cart]', t),
+    inScanline: false, log: (t) => console.log('[cart]', t), rom: cart.rom || {},
   };
   const api = buildApi(m);
   let probe = null;

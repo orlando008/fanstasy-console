@@ -10,11 +10,12 @@
 //               from x 0 (as in .nova); short or empty lines leave the rest 0
 //   audio.json  instruments, patterns, songs, sfx and samples in .nova layout
 //   label.png   the cart label: a 256x224 PNG, as captured with F7
+//   rom/        the cart's ROM: each <name>.bin is a blob, read in code with rom('<name>') (128 KB in all)
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { readAudio } from '../src/formats/audio.js';
-import { MAP_H, MAP_W, SHEET_H, SHEET_W, createCart, rgb24to555 } from '../src/formats/cart.js';
+import { MAP_H, MAP_W, SHEET_H, SHEET_W, checkRom, createCart, rgb24to555 } from '../src/formats/cart.js';
 import { writeNova } from '../src/formats/nova-json.js';
 
 const [dir, out] = process.argv.slice(2);
@@ -76,6 +77,15 @@ if (existsSync(label)) cart.label = readFileSync(label).toString('base64');
 
 const audio = read('audio.json');
 if (audio) Object.assign(cart, readAudio(JSON.parse(audio)));
+
+const romDir = join(dir, 'rom');
+if (existsSync(romDir)) {
+  for (const f of readdirSync(romDir).sort()) {
+    if (!f.endsWith('.bin')) throw new Error(`rom/${f}: ROM files are <name>.bin`);
+    cart.rom[f.slice(0, -4)] = new Uint8Array(readFileSync(join(romDir, f)));
+  }
+  checkRom(cart.rom);
+}
 
 writeFileSync(out, writeNova(cart));
 console.log(`wrote ${out}`);

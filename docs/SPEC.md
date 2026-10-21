@@ -37,6 +37,7 @@ A finished cart can be exported as a PNG image that holds the whole game. Droppi
 | Sample RAM | 32 KB, 8-bit signed PCM, up to 32 samples |
 | Input | Up to 4 pads, 12 buttons each |
 | Code | 64 KB of JavaScript source (UTF-8 bytes) |
+| ROM | 128 KB of read-only data in named blobs (frames, levels ...), read with `rom()` |
 | Save data | 1 KB per cart (256 × 32-bit signed integers) |
 | System font | Built-in 8 × 8 ASCII (32–126), not stored in VRAM |
 
@@ -338,6 +339,7 @@ The console measures how long `update + draw + render` takes each frame. If one 
 | `srand(seed)` | Reseed the PRNG |
 | `stat(key)` | `'cpu'`, `'sprites'`, `'fps'`, `'frame'` |
 | `log(...args)` | Print to the console's debug panel |
+| `rom(name)` / `rom()` | A ROM blob as a `Uint8Array` (the same object each call; a copy made when the cart starts, so writes never change the cart's ROM), or the blob names. A missing name throws, listing the names. |
 
 ### Color
 
@@ -466,7 +468,8 @@ This is the working and version-control format. It is plain JSON and is laid out
   "patterns": [ { "rows": [ [ { "n": "C-4", "i": 0, "v": 15, "fx": "000" } ] ] } ],
   "songs": [ { "order": [0, 1, 1, 2], "loop": 1, "echo": { "delay": 6, "feedback": 6, "volume": 8, "tone": 10 } } ],
   "sfx": [ { "speed": 4, "rows": [ { "n": "C-5", "i": 1, "v": 12, "fx": "000" } ] } ],
-  "samples": [ { "rate": 16000, "loop": null, "data": "<base64>" } ]
+  "samples": [ { "rate": 16000, "loop": null, "data": "<base64>" } ],
+  "rom": { "hero": "<base64>", "level1": "<base64>" }
 }
 ```
 
@@ -475,6 +478,9 @@ This is the working and version-control format. It is plain JSON and is laid out
 - **Version 2** is the sound chip of section 5 and says so with `"chip": 2`. **Version 1** is a cart made for the old chip (section 5.7): it has no `chip`, instruments have no `echo` or `curve` and songs no `echo`, and pattern rows have 6 cells. It is read with the old chip's rules and written back as version 1, unchanged, until it is converted. An `audio.json` in a cart's source folder (`tools/pack.js`) follows the same rule: without `"chip": 2` it is for the old chip.
 - `echo` and `curve` are left out of an instrument when they are 0 and `lin`; a song's `echo` when it has none.
 - A pattern row is an array of 8 cells, one per channel; an SFX's `rows` is an array of single cells. A cell is `null` when empty, and any of its fields may be omitted. `n` is a note such as `C-4` or `C#4`, or `OFF`.
+- **Version 3** is a version 2 cart with ROM: `rom` maps blob names (1 to 32 of `a-z 0-9 _ -`) to base64 bytes, at
+  most 131,072 bytes in all. A cart without ROM has no `rom` field and is written as version 2, unchanged. In a cart's
+  source folder the blobs are `rom/<name>.bin` (`tools/pack.js`).
 - Loaders reject unknown `format` values and any `version` newer than they support.
 
 ### 9.2 Input recordings: `.replay.json`

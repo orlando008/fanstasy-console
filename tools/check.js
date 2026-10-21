@@ -19,7 +19,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { INSTRUMENTS, V1_VOICES, channelCount, NOTE_COUNT, PATTERNS, SAMPLE_RAM, SAMPLE_SLOTS, SFX_SLOTS, SONGS, sampleBytes, waveVoice } from '../src/formats/audio.js';
-import { CODE_LIMIT, SHEET_W, codeBytes } from '../src/formats/cart.js';
+import { CODE_LIMIT, ROM_LIMIT, SHEET_W, codeBytes, romBytes } from '../src/formats/cart.js';
 import { readNova } from '../src/formats/nova-json.js';
 import { MAX_PAYLOAD, cartPayload } from '../src/formats/nova-png.js';
 import { GENRE_IDS, PLAYERS } from '../src/genres.js';
@@ -63,6 +63,11 @@ async function checkCart(arg) {
   console.log(`  code    ${bytes.toLocaleString('en-US')} of ${CODE_LIMIT.toLocaleString('en-US')} bytes (${((100 * bytes) / CODE_LIMIT).toFixed(1)}%)`);
   if (bytes > CODE_LIMIT) err('code is over the limit');
   else if (bytes > CODE_LIMIT * 0.9) warn(`code is over 90% of the limit (${(CODE_LIMIT - bytes).toLocaleString('en-US')} bytes left)`);
+  const rb = romBytes(cart.rom);
+  if (rb) {
+    console.log(`  rom     ${rb.toLocaleString('en-US')} of ${ROM_LIMIT.toLocaleString('en-US')} bytes (${((100 * rb) / ROM_LIMIT).toFixed(1)}%) in ${Object.keys(cart.rom).length} blob(s)`);
+    if (rb > ROM_LIMIT) err('rom is over the limit');
+  }
   try { new vm.Script(cart.code, { filename: `${name}/code.js` }); } catch (e) { err(`code does not compile: ${e.message}`); }
 
   // Tiles and palette use.

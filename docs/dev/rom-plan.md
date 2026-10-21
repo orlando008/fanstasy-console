@@ -7,7 +7,7 @@ the cost: one 96 px fighter's frames take about 20 KB of `code.js`, a third of t
 for a ROM section, and the record of how far the work has got. Read it before working on the cart format, the packer,
 the ROM API or streaming.
 
-Proposed to the user (October 2026), to confirm before building:
+Decided with the user (October 2026):
 - **128 KB of ROM** (a 1 megabit cartridge, the size of the earliest SNES games), as a new fixed limit in the spec. It
   needs no change to `.nova.png`: the PNG holds 147,443 bytes after compression, the biggest games today use 57 to
   84 KB of it, and packed frames compress to about 60 %.
@@ -42,7 +42,7 @@ files, nothing has to agree on offsets, and `code.js` never holds addresses that
 
 | Step | State | Notes |
 |---|---|---|
-| R1 | not started | |
+| R1 | built | SPEC 3, 8 and 9.1; `src/formats/cart.js` (`ROM_LIMIT`, `checkRom()`, `romBytes()`), `nova-json.js` (the `rom` field, version 3 only for a cart with ROM), `rom()` in `src/console/api.js`, the worker and the harness; `tools/pack.js` reads `rom/`, `tools/unpack.js` writes it, `tools/check.js` reports it. `tests/console/rom.mjs` (19 checks) in CI. Every cart packs to the same `.nova`, and the fingerprints of all 22 carts (900 frames of random play, CPU stat pinned) are the same before and after. |
 | R2 | not started | |
 | R3 | not started | |
 | R4 | not started | |
