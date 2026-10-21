@@ -10,7 +10,7 @@
 // The main site and each pull request's preview (pr/<n>/, on the same origin) have a worker each, with its own copy:
 // the main site's leaves pr/ alone.
 
-const VERSION = 'd1f3baae3909';
+const VERSION = 'e13f37d99aec';
 const FILES = [
   "./",
   "carts/alien-swarm.nova",
@@ -33,6 +33,7 @@ const FILES = [
   "carts/labels/planet-racers.png",
   "carts/labels/python-pass.png",
   "carts/labels/rags-to-riches.png",
+  "carts/labels/showcase.png",
   "carts/labels/smashy-smash.png",
   "carts/labels/sprites.png",
   "carts/labels/summit-rush.png",
@@ -45,6 +46,7 @@ const FILES = [
   "carts/planet-racers.nova",
   "carts/python-pass.nova",
   "carts/rags-to-riches.nova",
+  "carts/showcase.nova",
   "carts/smashy-smash.nova",
   "carts/sound-test.nova",
   "carts/sprites.nova",
