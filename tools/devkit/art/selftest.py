@@ -238,6 +238,29 @@ ok(hb.get(0, 0) == 4 and hb.get(15, 3) == 5 and hb.get(4, 3) in (1, 2, 3), 'hud_
 fr = frame(20, 12, (1, 2, 3), fill=7)
 ok(fr.get(10, 6) == 7 and fr.get(0, 0) == 1, 'frame: a bevelled border around a filled inside')
 
+# --- The rig (rig.py): a skeleton, poses, animation, the filmstrip ---
+ra = Art(); rp = ra.sprite_palette(0, {'skin': ramp('e8a878', 4), 'shirt': ramp('e8e8f0', 3), 'pants': ramp('3050a0', 3), 'shoe': ramp('503030', 2)})
+rg = Rig('brawler', height=64, skin=rp.skin, shirt=rp.shirt, pants=rp.pants, shoes=rp.shoe)
+J0, J1 = rg.joints(STAND), rg.joints(pose(STAND, arm_n=90))
+ok(abs(J0['hand_n'][0] - J0['shoulder_n'][0]) < 1 and J1['hand_n'][0] > J1['shoulder_n'][0] + 15, 'joints: an arm hangs at 0 and points forward at 90 degrees')
+ok(abs(J0['toe_n'][1] - (rg.margin + rg.height)) < 4, 'standing, the feet are on the ground line', str(J0['toe_n']))
+fr = rg.render(GUARD)
+ok(fr.w == rg.w and fr.colors() <= set(rp.skin + rp.shirt + rp.pants + rp.shoe) and len(fr.colors()) >= 6, 'render: a figure in its materials\' ramps')
+walk = rg.animate(WALK, 8)
+ok(len(walk) == 8 and walk[4]['thigh_n'] == WALK[0]['thigh_f'] and walk[0]['thigh_n'] == WALK[0]['thigh_n'], 'animate: a walk loops through its keys and then the same with the sides swapped', str((walk[0]['thigh_n'], walk[4]['thigh_n'])))
+pn = rg.animate(PUNCH, 4, loop=False)
+ok(pn[2]['arm_n'] == PUNCH[2]['arm_n'], 'with one frame a key, each frame is a key (the punch lands)')
+ok(raises(lambda: rg.animate(PUNCH, 3, loop=False), 'skip'), 'fewer frames than keys is an error (a key would be skipped)')
+ok(mirror_sides({'arm_n': 1, 'arm_f': 2, 'lean': 3}) == {'arm_f': 1, 'arm_n': 2, 'lean': 3} and pose(GUARD, arm_n=1)['arm_n'] == 1 and pose(GUARD, arm_n=1)['lean'] == GUARD['lean'], 'mirror_sides swaps near and far; pose() changes a pose')
+before = len(ra.used)
+names = ra.animation('walk', [rg.render(p) for p in walk], pal=rp, region=None)
+cost = len(ra.used) - before
+one = Art(); one.sprite_palette(0, {'skin': ramp('e8a878', 4), 'shirt': ramp('e8e8f0', 3), 'pants': ramp('3050a0', 3), 'shoe': ramp('503030', 2)})
+single = len(one.used); one.big_sprite('f', rg.render(walk[0]), pal=0); single = len(one.used) - single
+ok(names == ['walk%d' % k for k in range(8)] and ra.anims['walk'] == names and cost < single * 8 * 0.9, 'Art.animation: the frames as big sprites, sharing the pieces that do not change', '%d tiles for 8 frames, %d for one' % (cost, single))
+fsp = os.path.join(tempfile.mkdtemp(), 'f.png'); filmstrip(fsp, rg, walk[:3], rp)
+ok(open(fsp, 'rb').read(8) == b'\x89PNG\r\n\x1a\n', 'filmstrip writes a PNG')
+
 # --- Files: written, packed and read back ---
 work = tempfile.mkdtemp(prefix='art-selftest-')
 try:
@@ -350,6 +373,9 @@ console.log(JSON.stringify({ body: at(108, 80), eye: at(111, 61), eyeR: at(160 +
     ok(bv['body'] == rgb555(bart.palettes[('spr', 0)].hexes['body2']) and bv['eye'] == rgb555('ffffff') and bv['eyeR'] == rgb555('ffffff'), 'the console draws the big sprite, and flipped with fx its eye lands mirrored', str(bv))
     ok(bv['gem'] == rgb555(bart.palettes[('spr', 5)].hexes['gem2']), 'with the part in the other palette over it')
     ok(bv['sky0'] != bv['sky99'] and bv['sky0'] == rgb555('102040'), 'and gradientLine() in scanline() paints the backdrop line by line', str((bv['sky0'], bv['sky99'])))
+    gifp = os.path.join(work, 'bigs.gif')
+    node('tools/devkit/gif.mjs', bout, gifp, '--from', '0', '--to', '10', '--crop', '90,40,120,80')
+    ok(open(gifp, 'rb').read(6) == b'GIF89a', 'tools/devkit/gif.mjs records the cart as an animated GIF')
     # the overlay warning and the report
     rep = art.report()
     ok('tiles: ' in rep and 'region bg' in rep and 'sprites: 1' in rep, 'the report lists the budget by region')
