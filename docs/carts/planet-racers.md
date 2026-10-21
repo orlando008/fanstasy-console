@@ -1,6 +1,6 @@
 # Planet Racers: Cart Specification
 
-**Version:** 1.2
+**Version:** 1.3 (the new sound chip)
 **Status:** Complete: all seven steps of the plan (15) are built, and the cart is released as `carts/planet-racers.nova.png`
 **Cart source:** `carts/src/planet-racers/` → `carts/planet-racers.nova`
 
@@ -328,8 +328,11 @@ Songs loop, and the finish stops the music for the fanfare. Music is not tied to
 the gameplay clock, so no sync check is needed.
 
 **Holst.** Each song follows the character of its planet's movement in Gustav
-Holst's *The Planets*, recast as chiptune racing music: the motif and the mood
-stay, the tempo goes up where the original is slow. Earth isn't in the suite, so
+Holst's *The Planets*, recast as racing music: the motif and the mood stay, the tempo
+goes up where the original is slow. Since v1.3 it is played by an orchestra of sampled instruments on the console's
+SNES-style sound chip (SPEC 5): strings, horns, flutes, a marimba, a choir for Neptune's wordless voices, a celesta for
+its arpeggios, a harp, a sampled bass, with an echo for each planet (Venus 160 ms, Saturn 144 ms, Neptune 224 ms, the
+deepest). Earth isn't in the suite, so
 its song is our own. We write our own arrangements from the notes and use no
 recordings.
 
@@ -349,18 +352,22 @@ bar as one stream of rows and cut into patterns: 16 bars of 6/8 or 3/4 (12 rows)
 patterns, 16 bars of 5/4 (20 rows) are 5. Identical patterns are stored once.
 
 **Channel plan:** songs use channels 0 and 2–5 (lead, bass, pad/arpeggio, noise
-percussion, sampled drums), and **channel 1 is kept for sound effects**, as in Block Wizard.
+percussion, sampled drums); the effects take turns on **channels 7 and 6** (`sfxv()`), so they never cut into the
+music and two can sound at once.
 
-**SFX** (15, on channel 1): countdown beep, GO, boost orb, lap, final lap, the
+**SFX** (15): countdown beep, GO, boost orb, lap, final lap, the
 finish fanfare (a winner's, for first place in a race or a time-trial record, and a
 gentler one otherwise), pit, menu move, select, drift skid (repeating), boost running
 out, the floor's edge, a bump between karts, and a bumper hit.
 
-**Effects on a channel with their voice** (v1.1): the channel decides the voice, so an effect with noise in it
-sounds like noise only on a noise channel. The drift skid (9) plays on channel 4 (noise) through the `SFX_VOICE_CH` table and `sfxv()` in the code; every other effect plays on
-channel 1 (a pulse). Until v1.1 all of them went through channel 1, so these sounded like pulse tones. A noise effect
-briefly mutes the music's channel 4 while it plays. (`tools/check.js` and `tools/devkit/soak.mjs` check this; see
-`docs/dev/playbook.md`, section 5.)
+**The new sound chip** (v1.3): the music is in `carts/src/planet-racers/audio.py` (made from the `audio.json` by
+`tools/devkit/music/script.py`: every pattern and effect as tracker text). The leads (channel 0) are an octave lower
+than they were written, since a lead up in octaves 5 and 6 pierces (`loud.mjs` measures it: 0.001 to 0.008 at 2 to 5
+kHz now, 0.013 to 0.018 for the pulse leads); all eight songs are within the limits of `loud.mjs --check` (the lead 0.45
+to 0.66 of the mix). `clash.py` lists the same 41 passing notes and Holst dissonances as before the conversion. Effects:
+celesta lights, orbs and laps, horn fanfares, tom thuds; the blips and the bumper stay chip sounds and the skid noise,
+all 0.007 to 0.046 RMS. (On the old chip, v1.1 sent the skid to its noise channel; the new chip plays every voice on
+every channel.)
 
 **Lead levels** (v1.2, after players found the leads loud and wobbly): the lead instruments have no vibrato and their
 volumes were lowered so that the lead alone is at most 0.05 RMS in its loudest section (it was 0.061 to 0.122), which is
