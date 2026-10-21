@@ -17,7 +17,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CHANNEL_VOICES, waveVoice } from '../../src/formats/audio.js';
+import { V1_VOICES, waveVoice } from '../../src/formats/audio.js';
 import { boot } from './harness.mjs';
 import { makePad } from './pad.mjs';
 
@@ -72,9 +72,9 @@ function soak(path, seed) {
     if (kind !== 'sfx' || n < 0) continue;
     played.add(n);
     const first = vm.cart.sfx[n]?.rows.find((x) => x && x.n != null && x.n >= 0 && x.i != null);
-    if (!first || ch < 0) continue;
+    if (!first || ch < 0 || vm.cart.chip !== 1) continue; // only the old chip's channels have a voice of their own
     const want = waveVoice(vm.cart.instruments[first.i]?.wave ?? 'pulse50');
-    if (CHANNEL_VOICES[ch] !== want) bad.add(`sfx ${n} (${want}) on channel ${ch} (${CHANNEL_VOICES[ch]})`);
+    if (V1_VOICES[ch] !== want) bad.add(`sfx ${n} (${want}) on channel ${ch} (${V1_VOICES[ch]})`);
   }
   for (const b of bad) fails.push(`wrong voice: ${b}`);
   if (worstFreeze.n >= FREEZE) fails.push(`the screen did not change for ${worstFreeze.n} frames (to frame ${worstFreeze.at})${worstFreeze.state !== undefined ? `, in state "${worstFreeze.state}"` : ''}: a soft lock?`);

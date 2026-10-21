@@ -101,7 +101,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | `node tools/devkit/music/render.mjs carts/<name>.nova out/` | WAV files of the songs, with level and clipping |
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level and pitch (centroid) of effects, on the channel the game uses |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and saw on the beat |
-| `node tools/devkit/music/compat.mjs [carts/<name>.nova...]` | Carts in the old format (version 1) played on the frozen old chip (`tests/audio/legacy-synth.js`) and on the console's: they must give the same samples. Run it after any change to `src/audio/` (CI does). See `docs/dev/sound-chip.md` |
+| `node tools/devkit/music/compat.mjs [carts/<name>.nova...] [--converted]` | Carts in the old format (version 1) played on the frozen old chip (`tests/audio/legacy-synth.js`) and on the console's: they must give the same samples. `--converted` converts them to the new chip first (interpolation off) and checks the same. Run it, and `node tests/audio/chip.mjs`, after any change to `src/audio/` or `src/formats/audio.js` (CI does). See `docs/dev/sound-chip.md` |
 | `node tools/devkit/voices.mjs carts/<name>.nova [frames] [seed]` | Just the wrong-voice check (soak does this too) |
 
 **Release**
@@ -138,8 +138,10 @@ test is not in CI (it needs Playwright and Chromium). On CI the tests' frame-tim
   (1,024 tiles). Palettes: BG palette p is entries 16p+k, sprite palette p is 128+16p+k; the overlay colours
   come from a BG palette (Moto Crosser keeps them at 113 and up).
 - **Save** 256 int32 slots (`dget`/`dset`). Slot 0 holds a format version.
-- **Audio** 6 channels, 32 instruments, 64 patterns of 64 rows, 8 songs, 64 SFX of up to 32 rows, 16 samples in
-  16 KB of Sample RAM, 8-bit PCM at 16 kHz. A PNG cart holds a payload of 147,443 bytes (the check reports it).
+- **Audio** 8 channels (the instrument decides the voice), 32 instruments, 64 patterns of 64 rows, 8 songs, 64 SFX of
+  up to 32 rows, 32 samples in 32 KB of Sample RAM, 8-bit PCM at 16 kHz, an echo unit (SPEC 5). The games are still
+  carts for the old chip (format version 1: 6 channels, the channel decides the voice, 16 KB) until each is converted
+  (`docs/dev/sound-chip.md`); the rest of section 5 is about that chip. A PNG cart holds a payload of 147,443 bytes (the check reports it).
 - **Determinism**: use the console's `rndi` and seed for everything that matters, so a test and a replay see the
   same game (the harness seeds it from `boot(..., { seed })`).
 

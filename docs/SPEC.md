@@ -32,8 +32,8 @@ A finished cart can be exported as a PNG image that holds the whole game. Droppi
 | Background layers | 3 (BG0, BG1, BG2); BG2 supports affine (Mode 7-style) transforms |
 | Sprites (OAM) | 128 per frame; sizes 8 × 8, 16 × 16, 32 × 32; 32 per scanline |
 | Overlay | 256 × 224 8-bit immediate-mode drawing layer |
-| Audio | 6 channels: 2 pulse, triangle, saw, noise, PCM sample |
-| Sample RAM | 16 KB, 8-bit signed PCM |
+| Audio | 8 channels; each plays any instrument: pulse, triangle, saw, noise or an 8-bit sample, with Gaussian interpolation and an echo unit |
+| Sample RAM | 32 KB, 8-bit signed PCM, up to 32 samples |
 | Input | Up to 4 pads, 12 buttons each |
 | Code | 64 KB of JavaScript source (UTF-8 bytes) |
 | Save data | 1 KB per cart (256 × 32-bit signed integers) |
@@ -133,30 +133,33 @@ Typical uses are wavy water (`bgscroll` with a sine offset per line), sky gradie
 
 ### 5.1 Channels
 
-| Ch | Voice | Notes |
+There are 8 channels. Each plays whatever its instrument is (the **instrument decides the voice**):
+
+| Voice | Waveforms | Notes |
 |---|---|---|
-| 0 | Pulse | Duty cycle 12.5 / 25 / 50 / 75 % |
-| 1 | Pulse | Duty cycle 12.5 / 25 / 50 / 75 % |
-| 2 | Triangle | |
-| 3 | Saw | |
-| 4 | Noise | Long and short (metallic) modes |
-| 5 | Sample | 8-bit PCM from Sample RAM |
+| Pulse | `pulse12`, `pulse25`, `pulse50`, `pulse75` | Duty cycle 12.5 / 25 / 50 / 75 % |
+| Triangle | `triangle` | |
+| Saw | `saw` | |
+| Noise | `noise`, `noise-short` | Long and short (metallic) modes |
+| Sample | `sample` plus a sample slot | 8-bit PCM from Sample RAM |
 
-Each channel has volume (0–15) and stereo pan (−1 to 1). Pitch covers C0–B7 (96 notes), equal temperament with A4 = 440 Hz.
+Each channel has volume (0–15) and stereo pan (−1 to 1); by default channels 0 and 1 sit at −0.3 and 0.3, 6 and 7 at 0.25 and −0.25, the rest in the middle. Pitch covers C0–B7 (96 notes), equal temperament with A4 = 440 Hz.
 
-The channel decides the voice. An instrument's waveform picks the pulse duty (`pulse12`, `pulse25`, `pulse50`, `pulse75`), the noise mode (`noise`, or `noise-short` for the metallic mode) or the sample (`sample` plus a sample slot); `triangle` and `saw` name their channels. `sfx(n)` with `ch = -1` uses a channel whose voice matches the instrument of the SFX's first note: a free one if possible, otherwise the one whose SFX started first.
+**Interpolation.** Samples are read with 4-point Gaussian interpolation, as the SNES did: the output at a fractional position `p` is `w(-1)·s[i-1] + w(0)·s[i] + w(1)·s[i+1] + w(2)·s[i+2]` with `i = floor(p)` and `w(k)` proportional to `exp(-(k - (p - i))² / (2 · 0.632²))`, normalized to sum to 1 and quantized to 1/256 of a sample. It gives a soft, slightly muffled sound. Pulse, triangle and saw are 32-step tables read the same way. Noise is a 15-bit shift register, clocked 16 times per pitch cycle.
+
+`sfx(n)` with `ch = -1` uses the highest-numbered channel that is silent; if none is, the highest with no SFX playing (its music is muted until the SFX ends), otherwise the one whose SFX started first. By convention songs use channels 0–5 and effects 6 and 7.
 
 ### 5.2 Instruments
 
-There are 32 instrument slots. Each has a waveform (and duty or sample index where relevant), an ADSR envelope in frames, base volume, vibrato depth and speed, and an optional fixed pan.
+There are 32 instrument slots. Each has a waveform (and sample index where relevant), an ADSR envelope in frames, an envelope curve, base volume, vibrato depth and speed, an optional fixed pan and an echo send (0–15, section 5.6).
 
-Attack, decay and release are lengths in frames (0–255) and sustain is a level (0–15). A note-off (`OFF` in a pattern) starts the release.
+Attack, decay and release are lengths in frames (0–255) and sustain is a level (0–15). A note-off (`OFF` in a pattern) starts the release. With the curve `lin` (the default) the decay and release are straight lines. With `exp` they are exponential, the way a sampled note dies away: the decay closes 99% of the gap to the sustain level in `d` frames, and the release falls to 1% of its level in `r` frames, then stops. The attack is always a straight line.
 
 ### 5.3 Patterns, songs and SFX
 
 - **Timing.** 60 ticks per second. Speed is the number of ticks per row (default 6).
-- **Patterns.** 64 patterns, each 64 rows × 6 channels. A cell holds a note, instrument, volume and effect plus parameter.
-- **Songs.** 8 songs, each an order list of up to 128 pattern indices with a loop point. A song whose loop point is `null` plays once: at its end every note still sounding is released (it rings out through its release and stops).
+- **Patterns.** 64 patterns, each 64 rows × 8 channels. A cell holds a note, instrument, volume and effect plus parameter.
+- **Songs.** 8 songs, each an order list of up to 128 pattern indices with a loop point and optional echo settings (section 5.6). A song whose loop point is `null` plays once: at its end every note still sounding is released (it rings out through its release and stops).
 - **SFX.** 64 slots. Each is a single-channel pattern of up to 32 rows with its own speed. A playing SFX temporarily takes over a channel, and music on that channel is muted until the SFX ends.
 
 Pattern effects:
@@ -177,11 +180,28 @@ An effect lasts for the row it is on. Slides and portamento move 1/16 semitone p
 
 ### 5.4 Samples
 
-Sample RAM is 16 KB shared by up to 16 samples. Each sample has its own playback rate (default 16 000 Hz for C4) and optional loop start and end.
+Sample RAM is 32 KB shared by up to 32 samples. Each sample has its own playback rate (default 16 000 Hz for C4) and optional loop start and end.
 
 ### 5.5 Implementation
 
 All synthesis, mixing and sequencing run in an `AudioWorklet`, so timing is sample-accurate. The console sends commands such as "play SFX 3" or "start song 1" and never per-sample data. Audio is not part of the deterministic simulation.
+
+### 5.6 Echo
+
+One stereo echo unit, like the SNES's. Each instrument sends `echo`/15 of its output into it. What goes in comes back after the delay, through a one-pole low-pass filter (the tone), and is fed back in at the feedback level, so it repeats and fades.
+
+| Setting | Range | Meaning |
+|---|---|---|
+| `delay` | 0–15 | Delay in steps of 16 ms (up to 240 ms). 0 turns the echo off and clears it. |
+| `feedback` | −15 to 15 | Fraction fed back, in sixteenths |
+| `volume` | 0–15 | Level of the echo in the mix, in fifteenths |
+| `tone` | 0–15 | Low-pass cutoff `400 · 2^(tone / 2.5)` Hz: 0 is dark (400 Hz), 10 about 6.4 kHz, 15 open. Default 10. |
+
+A song carries its own settings: `music(n)` sets the echo from song `n`, and a song with none turns it off. `echo(...)` sets it from code. Whichever came last wins; `music(-1)` leaves it on, so the tails ring out.
+
+### 5.7 Carts made for the old chip
+
+Until October 2026 the console had a different sound chip: 6 channels whose channel decided the voice (0 and 1 pulse, 2 triangle, 3 saw, 4 noise, 5 sample, whatever the instrument's waveform said), no interpolation, no echo, 16 KB of Sample RAM. Carts saved for it are format version 1 (section 9.1) and keep playing exactly as they did: the console runs them with those rules. Converting one (`convertToChip2` in `src/formats/audio.js`) gives each instrument that a song played on a channel of another voice a copy with that voice, and makes it version 2. See `docs/dev/sound-chip.md`.
 
 ## 6. Input
 
@@ -308,9 +328,10 @@ The console measures how long `update + draw + render` takes each frame. If one 
 
 | Function | Description |
 |---|---|
-| `sfx(n, ch = -1)` | Play an SFX. `ch = -1` picks a free channel. `sfx(-1, ch)` stops one. |
+| `sfx(n, ch = -1)` | Play an SFX on channel 0–7. `ch = -1` picks a free channel (section 5.1). `sfx(-1, ch)` stops one. |
 | `music(song, pos = 0)` | Start a song at order position `pos`. `music(-1)` stops music. |
 | `volume(v)` | Master volume, 0–1 |
+| `echo(delay, feedback, volume, tone = 10)` | Set the echo unit (section 5.6); `echo(0)` turns it off |
 
 ### Input
 
@@ -366,16 +387,17 @@ This is the working and version-control format. It is plain JSON and is laid out
 ```json
 {
   "format": "nova16-cart",
-  "version": 1,
+  "version": 2,
+  "chip": 2,
   "meta": { "title": "", "author": "", "description": "" },
   "label": "<base64 PNG, 256x224, optional>",
   "code": "<JavaScript source>",
   "palette": ["7fff", "0000", "..."],
   "tiles": ["<128 hex digits per row, 512 rows; one digit per pixel>"],
   "map": ["<256 entries x 4 hex digits per row, 128 rows>"],
-  "instruments": [ { "wave": "pulse25", "a": 0, "d": 4, "s": 10, "r": 6, "vol": 15, "vib": [0, 0], "pan": null } ],
+  "instruments": [ { "wave": "sample", "sample": 0, "a": 0, "d": 4, "s": 10, "r": 6, "vol": 15, "vib": [0, 0], "pan": null, "echo": 8, "curve": "exp" } ],
   "patterns": [ { "rows": [ [ { "n": "C-4", "i": 0, "v": 15, "fx": "000" } ] ] } ],
-  "songs": [ { "order": [0, 1, 1, 2], "loop": 1 } ],
+  "songs": [ { "order": [0, 1, 1, 2], "loop": 1, "echo": { "delay": 6, "feedback": 6, "volume": 8, "tone": 10 } } ],
   "sfx": [ { "speed": 4, "rows": [ { "n": "C-5", "i": 1, "v": 12, "fx": "000" } ] } ],
   "samples": [ { "rate": 16000, "loop": null, "data": "<base64>" } ]
 }
@@ -383,7 +405,9 @@ This is the working and version-control format. It is plain JSON and is laid out
 
 - Palette entries are 4-digit hex RGB555 values: `0bbbbbgggggrrrrr`.
 - Empty patterns, SFX and samples may be omitted or left `null`. Loaders must fill in defaults.
-- A pattern row is an array of 6 cells, one per channel; an SFX's `rows` is an array of single cells. A cell is `null` when empty, and any of its fields may be omitted. `n` is a note such as `C-4` or `C#4`, or `OFF`.
+- **Version 2** is the sound chip of section 5 and says so with `"chip": 2`. **Version 1** is a cart made for the old chip (section 5.7): it has no `chip`, instruments have no `echo` or `curve` and songs no `echo`, and pattern rows have 6 cells. It is read with the old chip's rules and written back as version 1, unchanged, until it is converted. An `audio.json` in a cart's source folder (`tools/pack.js`) follows the same rule: without `"chip": 2` it is for the old chip.
+- `echo` and `curve` are left out of an instrument when they are 0 and `lin`; a song's `echo` when it has none.
+- A pattern row is an array of 8 cells, one per channel; an SFX's `rows` is an array of single cells. A cell is `null` when empty, and any of its fields may be omitted. `n` is a note such as `C-4` or `C#4`, or `OFF`.
 - Loaders reject unknown `format` values and any `version` newer than they support.
 
 ### 9.2 Input recordings: `.replay.json`
@@ -461,7 +485,7 @@ The shell has two modes. **Run** shows the game full-screen. **Edit** shows the 
 | Map | Map RAM view with an overlay showing each BG layer's bounds, paint with the current sheet selection, per-entry palette, flip and priority, fill, rectangle copy/paste |
 | Palette | 16 × 16 swatch grid, RGB555 sliders, sub-palette copy and paste |
 | SFX | Single-channel tracker grid, keyboard-as-piano (Z–M lower octave, Q–U upper), live preview |
-| Music | 6-channel tracker, order list editor, instrument editor with a live ADSR graph |
+| Music | 8-channel tracker (6 for a version-1 cart), order list editor, instrument editor with a live ADSR graph |
 | Cart | Title, author and description; label capture (F7 while running grabs the current frame); export and import of `.nova` and `.nova.png` with a capacity meter |
 
 **Saving.** Ctrl+S saves a `.nova` file using the File System Access API where available, with a plain download as the fallback. The working cart also autosaves to `localStorage` every 10 seconds. Save data and the working cart are kept under keys starting `nova16.`; a page served from a path containing `/pr/<n>/` (a pull request's preview, hosted next to the main site on the same origin) uses `nova16.pr<n>.` instead, so a preview never reads or overwrites the main site's saves. The volume level is shared.

@@ -70,8 +70,8 @@ effects 6 and 7, so an effect no longer cuts a hole in the music.
 | Phase | State | Notes |
 |---|---|---|
 | 0 | done | `tests/audio/legacy-synth.js` is the frozen old chip; `tools/devkit/music/compat.mjs` plays every version-1 cart on both (1,753 cases over 17 carts, 8 s) and fails on any difference over 0.00001; in CI. It was checked by changing one gain by 0.05%: it failed. |
-| 1 | in progress | |
-| 2 | | |
+| 1 | done | `src/audio/synth.js`: 8 channels, the voice from the instrument, Gaussian interpolation (samples and 32-step chip-wave tables), the echo unit, `curve: 'exp'`; chip-1 carts get 6 fixed-voice channels and none of the rest. `src/formats/audio.js`: `chip`, 8-cell rows, 32 samples in 32 KB, instrument `echo` and `curve`, song `echo`, `convertToChip2`. Format version 2 (`chip: 2`); version 1 read and written unchanged. `echo()` in the API. Music editor: 6 or 8 columns. SPEC 3, 5 (5.6 echo, 5.7 old carts), 8 and 9.1. `tests/audio/chip.mjs` (31 checks) and `compat.mjs --converted` (455 cases, exact with interpolation off; the interpolation alone moves the songs by about -14 dB) in CI. The five demo carts with no audio were repacked as version 2. The worklet was checked in Chromium. |
+| 2 | in progress | |
 | 3 | | |
 | 4 | | |
 | 5 | | |

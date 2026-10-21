@@ -53,7 +53,7 @@ export function readNova(text) {
     });
   }
 
-  Object.assign(cart, readAudio(j));
+  Object.assign(cart, readAudio(j, j.version >= 2 ? 2 : 1)); // version 1 is a cart made for the old sound chip
   return cart;
 }
 
@@ -64,7 +64,7 @@ export function readNova(text) {
 export function writeNova(cart, { minify = false } = {}) {
   const obj = {
     format: CART_FORMAT,
-    version: CART_VERSION,
+    version: cart.chip === 1 ? 1 : CART_VERSION, // an old-chip cart stays version 1 until it is converted
     meta: { title: cart.meta.title, author: cart.meta.author, description: cart.meta.description },
     label: cart.label || null,
     code: cart.code,

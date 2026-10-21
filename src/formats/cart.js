@@ -5,7 +5,7 @@
 import { emptyAudio } from './audio.js';
 
 export const CART_FORMAT = 'nova16-cart';
-export const CART_VERSION = 1;
+export const CART_VERSION = 2; // 2: the new sound chip (docs/dev/sound-chip.md); 1 is still read
 
 export const CODE_LIMIT = 65536; // UTF-8 bytes
 export const SHEET_W = 128;

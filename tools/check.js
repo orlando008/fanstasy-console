@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
-import { CHANNEL_VOICES, INSTRUMENTS, NOTE_COUNT, PATTERNS, SAMPLE_RAM, SAMPLE_SLOTS, SFX_SLOTS, SONGS, sampleBytes, waveVoice } from '../src/formats/audio.js';
+import { INSTRUMENTS, V1_VOICES, channelCount, NOTE_COUNT, PATTERNS, SAMPLE_RAM, SAMPLE_SLOTS, SFX_SLOTS, SONGS, sampleBytes, waveVoice } from '../src/formats/audio.js';
 import { CODE_LIMIT, SHEET_W, codeBytes } from '../src/formats/cart.js';
 import { readNova } from '../src/formats/nova-json.js';
 import { MAX_PAYLOAD, cartPayload } from '../src/formats/nova-png.js';
@@ -92,12 +92,13 @@ async function checkCart(arg) {
       if (!nz(c)) return;
       if (c.i != null) insUsed.add(c.i);
       if (c.n != null && c.n >= 0 && c.n >= NOTE_COUNT) err(`song ${s}: note ${c.n} out of range`);
-      if (c.i != null && c.n != null && voice(c.i) !== CHANNEL_VOICES[ch] && !seen.has(`${ch}/${c.i}`)) {
+      // On the old chip (a version-1 cart) the channel decided the voice; on the new one the instrument does.
+      if (cart.chip === 1 && c.i != null && c.n != null && voice(c.i) !== V1_VOICES[ch] && !seen.has(`${ch}/${c.i}`)) {
         seen.add(`${ch}/${c.i}`);
-        err(`song ${s}, channel ${ch} (${CHANNEL_VOICES[ch]}): instrument ${c.i} (${cart.instruments[c.i]?.wave}) is a ${voice(c.i)} voice, which this channel cannot play`);
+        err(`song ${s}, channel ${ch} (${V1_VOICES[ch]}): instrument ${c.i} (${cart.instruments[c.i]?.wave}) is a ${voice(c.i)} voice, which this channel of the old chip cannot play`);
       }
     }));
-    const used = [0, 1, 2, 3, 4, 5].filter((ch) => song.order.some((k) => cart.patterns[k].some((row, r) => (r === 0 && ch === 1 ? row[ch]?.n != null : nz(row[ch])))));
+    const used = [...Array(channelCount(cart.chip)).keys()].filter((ch) => song.order.some((k) => cart.patterns[k].some((row, r) => (r === 0 && ch === 1 ? row[ch]?.n != null : nz(row[ch])))));
     console.log(`  song ${s}  ${song.order.length} patterns, channels ${used.join(',') || 'none'}${used.includes(1) ? '  (channel 1 has notes: it is usually kept for SFX)' : ''}`);
   });
   const code = cart.code, sfxCh = /\bSFX_CH\s*=\s*(\d)/.exec(code), wrongVoice = [], routed = /sfx-voice-routed|SFX_VOICE_CH/.test(code);
@@ -107,9 +108,9 @@ async function checkCart(arg) {
     used.forEach((r) => insUsed.add(r.i));
     const voices = new Set(used.map((r) => voice(r.i)));
     if (voices.size > 1) { err(`sfx ${n} mixes instruments of different voices (${[...voices].join(', ')}): an SFX plays on one channel`); return; }
-    if (sfxCh && !routed && CHANNEL_VOICES[Number(sfxCh[1])] !== [...voices][0]) wrongVoice.push(`${n} (${[...voices][0]})`);
+    if (cart.chip === 1 && sfxCh && !routed && V1_VOICES[Number(sfxCh[1])] !== [...voices][0]) wrongVoice.push(`${n} (${[...voices][0]})`);
   });
-  if (wrongVoice.length) warn(`SFX_CH = ${sfxCh[1]} is a ${CHANNEL_VOICES[Number(sfxCh[1])]} channel, so these effects sound like a ${CHANNEL_VOICES[Number(sfxCh[1])]} if the cart plays them on it (the channel decides the voice): ${wrongVoice.join(', ')}`);
+  if (wrongVoice.length) warn(`SFX_CH = ${sfxCh[1]} is a ${V1_VOICES[Number(sfxCh[1])]} channel of the old chip, so these effects sound like a ${V1_VOICES[Number(sfxCh[1])]} if the cart plays them on it (the channel decides the voice): ${wrongVoice.join(', ')}`);
   const lastIns = Math.max(-1, ...insUsed);
   console.log(`  instruments used: ${insUsed.size}, highest index ${lastIns} (limit ${INSTRUMENTS})`);
 
