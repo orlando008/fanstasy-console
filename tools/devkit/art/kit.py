@@ -957,6 +957,6 @@ from texture import noise, fbm, level, texture, variants, tile_fill  # noqa: E40
 from scenery import sky, stars, orb, clouds, mountains, hills, treeline, floor, rope, ellipse  # noqa: E402  backgrounds
 from lettering import big_text, hud_bar, frame, scale2x, smooth_scale  # noqa: E402  HUD lettering, bars and frames
 from detail import face, hair, crease, stroke, bunch  # noqa: E402  the hand-drawn layer: faces, hair, folds
-from rig import Rig, pose, filmstrip, lerp_pose, mirror_sides, STAND, GUARD, WALK, PUNCH, KICK, HIT, JUMP  # noqa: E402  characters from a skeleton
+from rig import Rig, pose, filmstrip, lerp_pose, mirror_sides, STAND, GUARD, WALK, PUNCH, KICK, HIT, JUMP, STANCE, CROSS  # noqa: E402  characters from a skeleton
 from draw import Canvas, oval, blob, curve, poly, brush, speckle  # noqa: E402  drawing figures in designed shapes and flat tones
 from figure import head, Figure, tones  # noqa: E402  drawn heads (three views, expressions, hair) and bodies on a rig

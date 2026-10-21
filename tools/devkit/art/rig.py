@@ -21,11 +21,13 @@ A pose is a dict of angles in degrees (missing ones are 0) and offsets in pixels
   thigh_n, thigh_f  the thighs from straight down, positive swinging forward
   shin_n, shin_f    the knees: the shin relative to the thigh, negative bending back (a knee only bends one way)
   foot_n, foot_f    the feet relative to level, positive toes up
-Built-in poses and cycles: STAND, GUARD, WALK (4 keys), PUNCH (4 keys), KICK (4 keys), HIT, JUMP; combine them:
+Built-in poses and cycles: STAND, GUARD, WALK (4 keys), PUNCH (4 keys), KICK (4 keys), HIT, JUMP, and from the user's
+fighter model sheet STANCE (a low guard) and CROSS (4 keys: a lunging punch); combine them:
 pose(GUARD, arm_n=80) is GUARD with the near arm changed.
 
 Presets (proportions; height is the figure's full height in pixels, head to sole):
   'brawler'  a beat-'em-up hero, about 7 heads tall (Streets of Rage)
+  'fighter'  the user's fighter model sheet: broad shoulders, baggy legs, big boots
   'boxer'    a big head, broad shoulders, gloves (Punch-Out)
   'hero'     a small platform hero, about 3 heads tall (a 32 px sprite)
 Materials: skin, hair, shirt (torso and upper arms; skin for a bare chest), pants (hips and legs), shoes, hands (gloves:
@@ -54,6 +56,14 @@ KICK = [
     dict(GUARD, lean=-4, thigh_n=40, shin_n=-60),
 ]
 HIT = {'lean': -16, 'head': -14, 'arm_n': -30, 'fore_n': 40, 'arm_f': -10, 'fore_f': 30, 'thigh_n': 4, 'thigh_f': -14, 'shin_f': -10, 'x': -2}
+# From the user's fighter model sheet (docs/reference/fighter-model-sheet.png): a guard low and wide, both fists up at
+# the chin; a punch as a lunge, the back leg straight, the front knee over the foot, the arm out at shoulder height.
+STANCE = {'lean': 10, 'neck': 6, 'head': 4, 'y': 6, 'arm_n': 40, 'fore_n': 118, 'arm_f': 55, 'fore_f': 112,
+          'thigh_n': 34, 'shin_n': -30, 'foot_n': 4, 'thigh_f': -26, 'shin_f': -14, 'foot_f': -4}
+CROSS = [STANCE,
+         dict(STANCE, lean=4, arm_n=20, fore_n=130, x=-2),
+         dict(STANCE, lean=18, head=0, y=9, arm_n=90, fore_n=2, arm_f=48, fore_f=118, x=5, thigh_n=52, shin_n=-52, thigh_f=-44, shin_f=0),
+         dict(STANCE, lean=13, arm_n=62, fore_n=60, x=2)]
 JUMP = {'lean': 6, 'arm_n': 60, 'fore_n': 70, 'arm_f': 30, 'fore_f': 80, 'thigh_n': 50, 'shin_n': -80, 'thigh_f': 20, 'shin_f': -90, 'foot_n': -20, 'foot_f': -20}
 
 PRESETS = {
@@ -61,6 +71,9 @@ PRESETS = {
     'brawler': dict(head=0.088, neck=0.028, spine=0.27, pelvis=0.075, shoulder=0.11, upper=0.17, fore=0.15, hand=0.045,
                     thigh=0.23, shin=0.22, foot=0.12, r_neck=0.06, r_chest=0.135, r_waist=0.095, r_upper=0.058, r_fore=0.048,
                     r_thigh=0.07, r_shin=0.052, r_foot=0.04, depth=0.08),
+    'fighter': dict(head=0.09, neck=0.03, spine=0.25, pelvis=0.07, shoulder=0.11, upper=0.16, fore=0.145, hand=0.04,
+                    thigh=0.24, shin=0.22, foot=0.13, r_neck=0.045, r_chest=0.12, r_waist=0.082, r_upper=0.04, r_fore=0.035,
+                    r_thigh=0.06, r_shin=0.046, r_foot=0.045, depth=0.08),
     'boxer': dict(head=0.095, neck=0.04, spine=0.26, pelvis=0.075, shoulder=0.13, upper=0.17, fore=0.14, hand=0.07,
                   thigh=0.22, shin=0.2, foot=0.11, r_neck=0.065, r_chest=0.145, r_waist=0.1, r_upper=0.065, r_fore=0.055,
                   r_thigh=0.075, r_shin=0.055, r_foot=0.04, depth=0.09),

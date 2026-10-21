@@ -346,6 +346,8 @@ _PROFILES = {
     'thigh': [(-0.08, 0.85, 0.8), (0.0, 1.0, 1.0), (0.3, 1.1, 1.02), (0.7, 0.95, 0.88), (1.0, 0.76, 0.8), (1.1, 0.5, 0.55)],
     'shin':  [(-0.08, 0.7, 0.75), (0.0, 0.85, 0.95), (0.3, 0.85, 1.22), (0.65, 0.72, 0.88), (1.0, 0.62, 0.62), (1.06, 0.45, 0.45)],
     'neck':  [(-0.2, 1.1, 1.1), (0.0, 1.0, 1.05), (1.0, 0.9, 0.95), (1.2, 0.8, 0.8)],
+    # baggy trousers: no calf, the cloth widening and bunching at the bottom
+    'cargo': [(-0.08, 0.8, 0.85), (0.0, 0.95, 1.0), (0.4, 0.95, 1.05), (0.75, 1.0, 1.1), (0.92, 1.15, 1.2), (1.0, 1.05, 1.1), (1.05, 0.8, 0.8)],
 }
 # the torso in its own frame: u forward, v up the spine from the hip joint, in units of the figure's height
 _TORSO = [(0.0, -0.02), (0.075, 0.04), (0.09, 0.12), (0.115, 0.19), (0.125, 0.235), (0.10, 0.278), (0.05, 0.30),
@@ -391,7 +393,10 @@ class Figure:
 
     line     one outline colour for the whole figure (then each ramp needs 3 steps or more: deep, base, light ...;
              4 adds a light step); without it each ramp's darkest step outlines it (ramps of 5)
-    top      'tee' (short sleeves), 'tank' (bare arms), 'long' (sleeves to the wrist), 'bare' (no shirt)
+    top      'tee' (short sleeves), 'tank' (bare arms), 'long' (sleeves to the wrist), 'bare' (no shirt), 'jacket' (an open
+             short-sleeved jacket with rolled cuffs over a shirt in the ramp inner=, as in the user's model sheet)
+    legs     'slim' or 'cargo' (baggy, a side pocket, bunched over the shoes); boots=True: tall boots; fingerless=True:
+             gloves (hands=) with the fingers bare
     hands    a ramp for gloves (or None: skin)
     view     'three' (the default): the chest and face cheated towards the camera, as Streets of Rage and Street
              Fighter draw them (both shoulders show, the near arm hangs at the back of the chest instead of over it,
@@ -400,10 +405,12 @@ class Figure:
     """
     def __init__(s, preset='brawler', height=64, skin=None, hair=None, shirt=None, pants=None, shoes=None, hands=None,
                  line=None, face='neutral', hair_style='short', top='tee', white=None, iris=None, margin=6, view='three',
-                 **overrides):
+                 inner=None, legs='slim', boots=False, fingerless=False, **overrides):
         from rig import Rig
         if skin is None: raise ValueError('figure: give at least skin= (a ramp such as pal.skin)')
-        if top not in ('tee', 'tank', 'long', 'bare'): raise ValueError("top is 'tee', 'tank', 'long' or 'bare'")
+        if top not in ('tee', 'tank', 'long', 'bare', 'jacket'): raise ValueError("top is 'tee', 'tank', 'long', 'bare' or 'jacket'")
+        if legs not in ('slim', 'cargo'): raise ValueError("legs is 'slim' or 'cargo'")
+        if top == 'jacket' and inner is None: raise ValueError("a jacket needs inner= (the ramp of the shirt under it)")
         if view not in ('three', 'side'): raise ValueError("a figure's view is 'three' or 'side'")
         s.view = view
         s.rig = Rig(preset, height=height, skin=skin, margin=margin, **overrides)
@@ -417,6 +424,11 @@ class Figure:
         s.hands = T(hands) or s.skin
         s.raw = dict(skin=skin, hair=hair)
         s.face, s.hair_style, s.top, s.white, s.iris = face, hair_style, top, white, iris
+        if inner is not None and len(inner) < 3:                # a shirt of two colours: its shadow and its white
+            inner = list(inner)
+            s.inner = dict(line=line if line is not None else inner[0], deep=inner[0], shade=inner[0], base=inner[-1], light=inner[-1])
+        else: s.inner = T(inner) if inner is not None else None
+        s.legs, s.boots, s.fingerless = legs, boots, fingerless
 
     def joints(s, p):
         """The rig's joints, the shoulders spread for the view: turned towards us ('three'), the near shoulder goes back
@@ -464,10 +476,14 @@ class Figure:
             hip = J['hip']
             spread = (0.55, -0.45) if s.view == 'three' else (0.25, -0.1)
             hip_side = (hip[0] + spread[0 if far else 1] * R('r_thigh'), hip[1])
-            d.fill(blob(_limb(hip_side, J['knee_' + side], R('r_thigh'), _PROFILES['thigh'])), pa['base'], part=leg + '_thigh')
-            d.fill(blob(_limb(J['knee_' + side], J['ankle_' + side], R('r_shin'), _PROFILES['shin'])), pa['base'], part=leg + '_shin')
+            baggy = 1.12 if s.legs == 'cargo' else 1.0
+            if s.boots: s._boot_shaft(d, J, side, so, leg)
+            d.fill(blob(_limb(hip_side, J['knee_' + side], R('r_thigh') * baggy, _PROFILES['thigh'])), pa['base'], part=leg + '_thigh')
+            d.fill(blob(_limb(J['knee_' + side], J['ankle_' + side], R('r_shin') * baggy, _PROFILES['cargo' if s.legs == 'cargo' else 'shin'],
+                              upto=0.9 if s.boots else None)), pa['base'], part=leg + '_shin')
             for seg, r in (('_thigh', R('r_thigh')), ('_shin', R('r_shin'))): s._shade_part(d, leg + seg, pa, r, light)
             s._knee_folds(d, J, side, pa, leg)
+            if s.legs == 'cargo': s._pocket(d, J, side, pa, leg)
             s._shoe(d, J, side, so, leg)
             if not far: d.seam(leg + '_thigh', seam_tone(pa), under='torso')
             # the arm (the far one behind the body, unless its fist is up in front)
@@ -494,7 +510,20 @@ class Figure:
         d.fill(blob([T(u, v) for u, v in (_TORSO3 if three else _TORSO)]), torso_c['base'], part='torso')
         d.shadow('torso', torso_c['shade'], light=light, depth=R('r_chest') * 0.45)
         d.light('torso', torso_c['light'], light=light, inset=R('r_chest') * 0.12, width=R('r_chest') * 0.22)
-        if three and s.top == 'bare':
+        if s.top == 'jacket':
+            # the shirt down the open front, the jacket's lapels either side, a collar round the neck
+            iw = s.inner
+            front = [T(-0.045, 0.30), T(0.05, 0.30), T(0.06, 0.2), T(0.07, 0.035), T(-0.05, 0.035), T(-0.06, 0.2)] if three else \
+                    [T(0.05, 0.29), T(0.095, 0.27), T(0.105, 0.19), T(0.09, 0.04), T(0.06, 0.04), T(0.055, 0.2)]
+            d.fill(poly(front), iw['base'], inside='torso', part='torso_shirt')
+            d.shadow('torso_shirt', iw['shade'], light=(1, -1), depth=H * 0.02)
+            d.fill(brush([T(-0.03, 0.28), T(0.0, 0.25), T(0.035, 0.28)], H * 0.012), iw['shade'], inside='torso_shirt')
+            for a0, a1 in (((-0.06, 0.29), (-0.065, 0.05)), ((0.06, 0.29), (0.075, 0.05))) if three else (((0.05, 0.28), (0.06, 0.05)),):
+                d.fill(brush([T(*a0), T(*a1)], H * 0.016, H * 0.012), sh['light'], inside='torso')
+            d.fill(brush([T(-0.09, 0.30), T(-0.02, 0.325), T(0.06, 0.322), T(0.1, 0.30)], H * 0.022, H * 0.016), sh['base'], part='torso_collar')
+            d.light('torso_collar', sh['light'], light=(1, -1), inset=0.5, width=0.8)
+            d.fill(brush([T(-0.11, 0.2), T(-0.085, 0.12), T(-0.07, 0.05)], H * 0.012, 0.3), sh['shade'], inside='torso')
+        elif three and s.top == 'bare':
             # two pecs and the line under them, the breastbone, abdominals in two rows
             for a0, a1 in (((-0.12, 0.215), (-0.02, 0.19)), ((0.0, 0.19), (0.11, 0.215))):
                 d.fill(brush([T(*a0), T((a0[0] + a1[0]) / 2, 0.18), T(*a1)], H * 0.012, H * 0.006), sk['shade'], inside='torso')
@@ -544,15 +573,23 @@ class Figure:
         if which in ('all', 'upper'):
             d.fill(blob(up), sk['base'], part=arm + '_upper')
             s._shade_part(d, arm + '_upper', sk, R('r_upper'), light)
-            if s.top in ('tee', 'long'):
+            if s.top in ('tee', 'long', 'jacket'):
                 upto = 1.12 if s.top == 'long' else 0.5
-                sleeve = _limb(shoulder, elbow, R('r_upper') * 1.05, _PROFILES['upper'], upto=upto)
+                wide = 1.15 if s.top == 'jacket' else 1.05
+                sleeve = _limb(shoulder, elbow, R('r_upper') * wide, _PROFILES['upper'], upto=upto)
                 d.fill(blob(sleeve), sh['base'], part=arm + '_sleeve')
                 s._shade_part(d, arm + '_sleeve', sh, R('r_upper'), light)
-                if s.top == 'tee': d.seam(arm + '_sleeve', seam_tone(sh), under=arm + '_upper')
+                if s.top == 'jacket':                          # the rolled cuff, in the shirt's colour
+                    at, _ = _frame(shoulder, elbow)
+                    rw = R('r_upper') * wide * 1.02
+                    cuff = [at(0.4, rw * 1.1), at(0.52, rw * 1.05), at(0.52, -rw * 1.0), at(0.4, -rw * 1.05)]
+                    inner = s._far(s.inner) if side == 'f' else s.inner
+                    d.fill(poly(cuff), inner['base'], part=arm + '_cuff')
+                    d.shadow(arm + '_cuff', inner['shade'], light=light, depth=max(0.8, rw * 0.5))
+                if s.top in ('tee', 'jacket'): d.seam(arm + '_sleeve', seam_tone(sh), under=arm + '_upper')
             if side == 'n':
                 d.seam(arm + '_upper', seam_tone(sk), under='torso')
-                if s.top in ('tee', 'long'): d.seam(arm + '_sleeve', seam_tone(sh), under='torso')
+                if s.top in ('tee', 'long', 'jacket'): d.seam(arm + '_sleeve', seam_tone(sh), under='torso')
         if which in ('all', 'fore'):
             fc = sh if s.top == 'long' else sk
             d.fill(blob(fo), fc['base'], part=arm + '_fore')
@@ -565,11 +602,33 @@ class Figure:
             fist = [at2(t, o) for t, o in ((-0.1, r * 0.8), (0.3, r * 1.05), (0.8, r * 1.0), (1.0, 0.0), (0.8, -r * 0.95), (0.3, -r * 1.0), (-0.1, -r * 0.75))]
             d.fill(blob(fist), ha['base'], part=arm + '_hand')
             d.shadow(arm + '_hand', ha['shade'], light=light, depth=max(1.0, r * 0.5))
-            d.ink([at2(0.75, r * 0.6), at2(0.55, -r * 0.2)], seam_tone(ha))
+            if s.fingerless:                                   # the fingers out of the glove
+                d.fill(poly([at2(0.6, r * 1.2), at2(1.1, r * 1.2), at2(1.1, -r * 1.2), at2(0.6, -r * 1.2)]), sk['base'], inside=arm + '_hand')
+                d.ink([at2(0.62, r * 0.9), at2(0.62, -r * 0.8)], seam_tone(ha), inside=arm + '_hand')
+            d.ink([at2(0.85, r * 0.6), at2(0.85, -r * 0.4)], seam_tone(sk if s.fingerless else ha), inside=arm + '_hand')
             d.seam(arm + '_hand', seam_tone(ha), under=arm + '_fore')
             if side == 'n' or which == 'fore':
                 d.seam(arm + '_fore', seam_tone(fc), under='torso')
                 d.seam(arm + '_hand', seam_tone(ha), under='torso')
+
+    def _boot_shaft(s, d, J, side, so, leg):
+        """A tall boot's leg, from below the knee to the ankle (the trousers bunch over its top)."""
+        at, _ = _frame(J['knee_' + side], J['ankle_' + side])
+        r = s.L('r_shin') * 1.05
+        part = leg + '_boot'
+        d.fill(poly([at(0.7, r), at(1.05, r * 1.05), at(1.05, -r * 1.1), at(0.7, -r)]), so['base'], part=part)
+        d.shadow(part, so['shade'], light=(1, -1), depth=max(1.0, r * 0.6))
+        for k in (0.8, 0.9):                                   # the laces
+            d.ink([at(k, r * 0.7), at(k + 0.03, r * 0.1)], so['light'], inside=part)
+
+    def _pocket(s, d, J, side, pa, leg):
+        """A cargo pocket on the side of the thigh, its flap and its seam."""
+        at, _ = _frame(J['hip'], J['knee_' + side])
+        r = s.L('r_thigh')
+        box = [at(0.42, r * 0.55), at(0.42, -r * 0.45), at(0.78, -r * 0.5), at(0.78, r * 0.5)]
+        d.fill(poly(box), pa['shade'], inside=leg + '_thigh')
+        d.fill(poly([at(0.42, r * 0.6), at(0.42, -r * 0.5), at(0.5, -r * 0.5), at(0.5, r * 0.6)]), pa['base'], inside=leg + '_thigh')
+        d.ink([at(0.5, r * 0.55), at(0.5, -r * 0.45)], seam_tone(pa), inside=leg + '_thigh')
 
     def _knee_folds(s, d, J, side, pa, leg):
         at, _ = _frame(J['hip'], J['knee_' + side])
