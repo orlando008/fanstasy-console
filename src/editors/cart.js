@@ -1,7 +1,7 @@
 // Cart tab: metadata, the label, file operations and .nova.png export with a
 // capacity meter (SPEC section 11).
 
-import { CODE_LIMIT, codeBytes } from '../formats/cart.js';
+import { CODE_LIMIT, ROM_LIMIT, codeBytes, romBytes } from '../formats/cart.js';
 import { MAX_PAYLOAD, cartPayload, labelBlob } from '../formats/nova-png.js';
 import { button, h } from '../ui/dom.js';
 
@@ -153,8 +153,10 @@ export class CartPanel {
   refresh() {
     if (!this.cart) return;
     const bytes = codeBytes(this.cart.code);
-    this.sizeEl.textContent = `Code: ${bytes.toLocaleString('en-US')} of ${CODE_LIMIT.toLocaleString('en-US')} bytes`;
-    this.sizeEl.classList.toggle('over', bytes > CODE_LIMIT);
+    const rb = romBytes(this.cart.rom);
+    this.sizeEl.textContent = `Code: ${bytes.toLocaleString('en-US')} of ${CODE_LIMIT.toLocaleString('en-US')} bytes` +
+      (rb ? `; ROM: ${rb.toLocaleString('en-US')} of ${ROM_LIMIT.toLocaleString('en-US')} bytes in ${Object.keys(this.cart.rom).length} blob(s)` : '');
+    this.sizeEl.classList.toggle('over', bytes > CODE_LIMIT || rb > ROM_LIMIT);
     this.renderLabel();
     this.refreshRecording();
     if (this.el.isConnected) this.measure(); // only while the Cart tab is showing
