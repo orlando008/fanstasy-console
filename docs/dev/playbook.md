@@ -96,7 +96,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 | Command | What it does |
 |---|---|
 | `python3 carts/src/<name>/audio.py carts/src/<name>/audio.json` | Regenerate a game's audio from its script, with the song toolkit in `tools/devkit/music/kit.py` (its header explains `bar()`) |
-| `node tools/devkit/music/loud.mjs carts/<name>.nova [--check]` | Per-section loudness of every song, surges, peak, and **the lead alone**: its RMS, its share of the mix and how much the mix jumps when it enters. `--check` fails on the limits in section 5 (`verify.js` runs it) |
+| `node tools/devkit/music/loud.mjs carts/<name>.nova [--check]` | Per-section loudness of every song, surges, peak, and **the lead alone**: its RMS, its share of the mix, how much the mix jumps when it enters, and how much it pierces (2 to 5 kHz). `--check` fails on the limits in section 5 (`verify.js` runs it) |
 | `node tools/devkit/music/lower-leads.mjs carts/src/<name>/audio.json [--write]` | For songs with no audio script: remove the leads' vibrato and lower their volumes until each song's lead is at most 0.05 RMS (instruments shared with effects are copied first) |
 | `node tools/devkit/music/render.mjs carts/<name>.nova out/` | WAV files of the songs, with level and clipping |
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level and pitch (centroid) of effects, on the channel the game uses |
@@ -222,8 +222,15 @@ unit. Games made before it are carts for the old chip (format version 1) until e
   loudest 250 ms at most 2.2x the median, the peak at most 0.45, the median level 0.03 to 0.15. Python Pass's first
   version (lead 0.08 to 0.13, 0.8 to 0.9 of the mix, entering up to 2.4x) was what players called blaring; its fixed
   songs are 0.04 to 0.05 and 0.5 to 0.7. On their own at volume 15 the sampled instruments measure about: flute 0.10,
-  brass and strings 0.07, choir and celesta 0.05, bass 0.04 to 0.07, electric piano 0.02 to 0.06 (it decays); so a
-  brass lead is about volume 8, a flute 5. An intro without the pad makes the lead's entrance a jump: start the pad
+  brass 0.09, strings 0.07, choir and celesta 0.05, bass 0.04 to 0.07, electric piano 0.02 to 0.06 (it decays); so a
+  brass lead is about volume 7, a flute 5.
+- **No piercing leads.** A lead can be within every level above and still hurt: the Sound Test's first brass (a bright,
+  saw-like horn, playing in octave 5) was "a loud blaring sound, it pierces my ear a bit". The ear is most sensitive at
+  2 to 5 kHz, and a bright instrument high up puts its harmonics there. `loud.mjs` reports the lead's energy in that band
+  as **pierce** and fails a new-chip song over 0.012 (those two songs measured 0.017 and 0.014; the one the user called
+  beautiful 0.009; fixed, 0.005 to 0.007). The fixes: write leads in octave 4 (to the 5 at the top of a phrase), not 5
+  and 6; and pick a darker instrument (the brass is now a soft horn). Every pulse lead of the old chip is 0.014 to 0.027.
+  When a song is close to a limit, render it (`render.mjs`) and send the WAV to the user to listen to. An intro without the pad makes the lead's entrance a jump: start the pad
   (or a counter-melody) before the lead comes in. `clash.py` checks the lead against the bass and the chords.
 - **The player can turn the volume down** (`-` and `=`, `M` mutes: a console feature, so no cart code), but do not rely on it:
   keep the levels within the limits above.

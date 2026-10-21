@@ -30,6 +30,7 @@ are 64 rows, so it needs a whole number of 64 rows (4 bars of 16; 16 bars of 12 
 Pitch names are 'A4', 'C#5', 'Bb4'; in effects they are 'C-5' style as in the editor. A number
 in a line ('1', '3', '5', '8', with ' for an octave up) is a chord tone of that bar's chord.
 
+Leads in octave 4 (up to 5 at the top of a phrase), not 5 and 6: a bright lead up high pierces (loud.mjs: pierce).
 Level rules learned the hard way (a lead that is loud, wobbly or sharp is what players complain about):
 leads are pulse25 or pulse50 at volume 4 to 6 with no vibrato; drums kick 12 and snare 10 of 15; check
 the result with `loud.mjs --check` (the lead alone at most 0.07 RMS and 0.75 of the mix, no jump of more than 1.5x where

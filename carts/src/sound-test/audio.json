@@ -98,7 +98,7 @@
    "d": 20,
    "s": 11,
    "r": 10,
-   "vol": 8,
+   "vol": 7,
    "vib": [
     0,
     0
@@ -1179,7 +1179,7 @@
    "rows": [
     [
      {
-      "n": "F#5",
+      "n": "F#4",
       "i": 6
      },
      null,
@@ -1239,7 +1239,7 @@
     ],
     [
      {
-      "n": "A-5",
+      "n": "A-4",
       "i": 6
      },
      null,
@@ -1291,7 +1291,7 @@
     ],
     [
      {
-      "n": "D-6",
+      "n": "D-5",
       "i": 6
      },
      null,
@@ -1340,7 +1340,7 @@
     ],
     [
      {
-      "n": "A-5",
+      "n": "A-4",
       "i": 6
      },
      null,
@@ -1392,7 +1392,7 @@
     ],
     [
      {
-      "n": "E-5",
+      "n": "E-4",
       "i": 6
      },
      null,
@@ -1499,7 +1499,7 @@
     ],
     [
      {
-      "n": "C#5",
+      "n": "C#4",
       "i": 6
      },
      null,
@@ -1548,7 +1548,7 @@
     ],
     [
      {
-      "n": "E-5",
+      "n": "E-4",
       "i": 6
      },
      null,
@@ -1600,7 +1600,7 @@
     ],
     [
      {
-      "n": "D-5",
+      "n": "D-4",
       "i": 6
      },
      null,
@@ -1658,7 +1658,7 @@
     ],
     [
      {
-      "n": "F#5",
+      "n": "F#4",
       "i": 6
      },
      null,
@@ -1710,7 +1710,7 @@
     ],
     [
      {
-      "n": "B-5",
+      "n": "B-4",
       "i": 6
      },
      null,
@@ -1759,7 +1759,7 @@
     ],
     [
      {
-      "n": "A-5",
+      "n": "A-4",
       "i": 6
      },
      null,
@@ -1811,7 +1811,7 @@
     ],
     [
      {
-      "n": "G-5",
+      "n": "G-4",
       "i": 6
      },
      null,
@@ -2019,7 +2019,7 @@
    "rows": [
     [
      {
-      "n": "F#5",
+      "n": "F#4",
       "i": 6
      },
      null,
@@ -2079,7 +2079,7 @@
     ],
     [
      {
-      "n": "A-5",
+      "n": "A-4",
       "i": 6
      },
      null,
@@ -2131,7 +2131,7 @@
     ],
     [
      {
-      "n": "D-6",
+      "n": "D-5",
       "i": 6
      },
      null,
@@ -2180,7 +2180,7 @@
     ],
     [
      {
-      "n": "E-6",
+      "n": "E-5",
       "i": 6
      },
      null,
@@ -2232,7 +2232,7 @@
     ],
     [
      {
-      "n": "C#6",
+      "n": "C#5",
       "i": 6
      },
      null,
@@ -2290,7 +2290,7 @@
     ],
     [
      {
-      "n": "B-5",
+      "n": "B-4",
       "i": 6
      },
      null,
@@ -2342,7 +2342,7 @@
     ],
     [
      {
-      "n": "A-5",
+      "n": "A-4",
       "i": 6
      },
      null,
@@ -2391,7 +2391,7 @@
     ],
     [
      {
-      "n": "E-5",
+      "n": "E-4",
       "i": 6
      },
      null,
@@ -2443,7 +2443,7 @@
     ],
     [
      {
-      "n": "G-5",
+      "n": "G-4",
       "i": 6
      },
      null,
@@ -2501,7 +2501,7 @@
     ],
     [
      {
-      "n": "B-5",
+      "n": "B-4",
       "i": 6
      },
      null,
@@ -2553,7 +2553,7 @@
     ],
     [
      {
-      "n": "D-6",
+      "n": "D-5",
       "i": 6
      },
      null,
@@ -2602,7 +2602,7 @@
     ],
     [
      {
-      "n": "B-5",
+      "n": "B-4",
       "i": 6
      },
      null,
@@ -2654,7 +2654,7 @@
     ],
     [
      {
-      "n": "A-5",
+      "n": "A-4",
       "i": 6
      },
      null,
@@ -7183,7 +7183,7 @@
    "rows": [
     [
      {
-      "n": "D-5",
+      "n": "D-4",
       "i": 6
      },
      {
@@ -7311,7 +7311,7 @@
     ],
     [
      {
-      "n": "F-5",
+      "n": "F-4",
       "i": 6
      },
      {
@@ -7370,7 +7370,7 @@
     ],
     [
      {
-      "n": "A-5",
+      "n": "A-4",
       "i": 6
      },
      {
@@ -7433,7 +7433,7 @@
     ],
     [
      {
-      "n": "A#5",
+      "n": "A#4",
       "i": 6
      },
      {
@@ -7559,7 +7559,7 @@
     ],
     [
      {
-      "n": "A-5",
+      "n": "A-4",
       "i": 6
      },
      {
@@ -7618,7 +7618,7 @@
     ],
     [
      {
-      "n": "F-5",
+      "n": "F-4",
       "i": 6
      },
      {
@@ -7681,7 +7681,7 @@
     ],
     [
      {
-      "n": "G-5",
+      "n": "G-4",
       "i": 6
      },
      {
@@ -7807,7 +7807,7 @@
     ],
     [
      {
-      "n": "E-5",
+      "n": "E-4",
       "i": 6
      },
      {
@@ -7866,7 +7866,7 @@
     ],
     [
      {
-      "n": "C-5",
+      "n": "C-4",
       "i": 6
      },
      {
@@ -7929,7 +7929,7 @@
     ],
     [
      {
-      "n": "D-5",
+      "n": "D-4",
       "i": 6
      },
      {
@@ -9068,7 +9068,7 @@
     192,
     224
    ],
-   "data": "ACI1Q0tPUE9LRT42LCIXDAD06d7UysK7tbGwsbW9y94AJzpGTVBRTkpEPTQrIRYLAPXq39XMw7y2sq+ws7rG2QAuP0tQUlFNSUI7MikfFQsA9evh187Fvrezr66wtcHSADhGUFNTUUxHQDkwKB0UCgD27OPY0MfAubSvra2wusgAR01WVlRRS0Y9Ny0mHBMJAPft5NrTycO6ta+sqqqzuQBbVl5YVVFJRDo1KiQZEgkA9+7n3NbLxry3r6uooqqlAHhfZltWUEZCNjMmIxcSCAD47und2s3KvrqwqqWaoYg="
+   "data": "AC9SZnBycGpiWE1CNSgbDgDy5djLvrOonpaQjpCartEANFhqcnNwaWFXTEA0JxoNAPPm2czAtKmfl5CNjpaozAA4XW50dG9pYFZLPzMnGg0A8+bZzcG1qqCXkYyMkqPIAD1hcHV0b2hfVUo+MiYaDQDz5trOwraroZiRjIuQn8MAQGVydnVvZ15UST4xJhkMAPTn2s/Ct6yimZGLio6bwABEaHR3dW5nXlNIPTElGQwA9Ofbz8O4raKZkouJjJi8AEdrdXh1bmdeUkg9MCUZDAD059vQw7iuopmSi4iLlbk="
   },
   {
    "rate": 8372,

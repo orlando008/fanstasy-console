@@ -12,7 +12,7 @@ root at C4. The chip reads samples through a Gaussian interpolation, which round
   kind      sound                                       bytes   envelope (a d s r, curve, echo)
   strings   an ensemble: three detuned saws, dark       3,072   slow in, held, slow out; echo 6
   choir     'aah': two voices through vowel formants    3,072   slow in, held, slow out; echo 8
-  brass     a horn whose tone opens as it starts          224   quick, held a little lower
+  brass     a soft horn whose tone opens as it starts     224   quick, held a little lower
   flute     breath, then a nearly pure tone               544   soft attack, held
   epiano    an electric piano (FM), its bell fades        1,312   struck, dies away over 1.5 s
   bass      a fingered bass, round after the pluck        672   struck, held low
@@ -77,11 +77,16 @@ def choir():
     harm = [0.35 / k + f(k * C4) for k in range(1, 12)]
     return looped([], ensemble(harm, 24, 128, (0, 1)), 24)
 
+def brass_harm(open_):
+    """A horn played softly: the upper harmonics fall away fast (a saw's would pierce: users heard it as blaring).
+    open_ 0 to 1 is how far the tone has opened."""
+    return [1 / k ** 1.1 * math.exp(-(k - 1) / (2 + 2 * open_)) for k in range(1, 11)]
+
 def brass():
     P, attack = 32, []
     for c in range(6):   # the tone opens over six cycles
-        attack += additive(saw_harm(14, 1.1 + 1.2 * (1 - c / 6)), P)
-    return looped(attack, additive(saw_harm(14, 1.1), P), P)
+        attack += additive(brass_harm(c / 6), P)
+    return looped(attack, additive(brass_harm(1), P), P)
 
 def flute():
     P, rnd, attack = 32, random.Random(5), []

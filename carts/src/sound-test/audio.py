@@ -17,7 +17,7 @@ a.instrument('HAT', 'sample', 0, 0, 15, 0, 4, pan=0.25, sample=2)
 a.instrument('OHAT', 'sample', 0, 0, 15, 0, 4, pan=0.25, sample=3, echo=3)
 
 # The instruments, in the order code.js lists them (each has an audition effect below).
-LIST = [('STRINGS', 'strings', 5, 0.2), ('CHOIR', 'choir', 6, -0.2), ('BRASS', 'brass', 8, -0.15), ('FLUTE', 'flute', 5, 0.1),
+LIST = [('STRINGS', 'strings', 5, 0.2), ('CHOIR', 'choir', 6, -0.2), ('BRASS', 'brass', 7, -0.15), ('FLUTE', 'flute', 5, 0.1),
         ('KEYS', 'epiano', 9, 0.15), ('BASS', 'bass', 12, None), ('HARP', 'pluck', 13, 0.25), ('MARIMBA', 'marimba', 11, -0.25),
         ('BELL', 'celesta', 9, 0.3), ('HIT', 'orchhit', 10, None), ('TOM', 'tom', 11, -0.1), ('CLAP', 'clap', 11, 0.1),
         ('CRASH', 'crash', 7, 0.2)]
@@ -29,8 +29,8 @@ a.instrument('NOISE', 'noise', 0, 14, 0, 6, 8, echo=8)
 S = a.song(Key('D', MAJOR), 6, echo=(5, 4, 5, 9))
 bars(S, 16, ['1', '5', '6', '4'], None, drums='soft', bass='long', upper='pad', pi='STRINGS', counter='1 3 5 8 5 3 1 3', ci='HARP')
 bars(S, 16, ['1', '5', '6', '4', '1', '5', '4', '5'],
-     ['F#5 - A5 - D6 - A5 -', 'E5 - - - C#5 - E5 -', 'D5 - F#5 - B5 - A5 -', 'G5 - - - - - . -',
-      'F#5 - A5 - D6 - E6 -', 'C#6 - B5 - A5 - E5 -', 'G5 - B5 - D6 - B5 -', 'A5 - - - - - . -'],
+     ['F#4 - A4 - D5 - A4 -', 'E4 - - - C#4 - E4 -', 'D4 - F#4 - B4 - A4 -', 'G4 - - - - - . -',
+      'F#4 - A4 - D5 - E5 -', 'C#5 - B4 - A4 - E4 -', 'G4 - B4 - D5 - B4 -', 'A4 - - - - - . -'],
      li='BRASS', drums=['basic'] * 7 + ['basic'], fill=[False] * 7 + [True], bass='1 - - 5 - - 1 -', upper='pad', pi='STRINGS')
 bars(S, 16, ['6', '4', '1', '5'],
      ['B5 - A5 - F#5 - D5 -', 'G5 - A5 - B5 - D6 -', 'A5 - F#5 - D5 - F#5 -', 'E5 - - - - - . -'],
@@ -51,7 +51,7 @@ S = a.song(Key('D', MINOR), 5, echo=(8, 6, 6, 8))
 SIEGE = ['1', '6', '7', '1']
 bars(S, 16, SIEGE, None, drums='heavy', bass='1 1 8 1 5 1 8 1', upper='pad', pi='CHOIR',
      counter='1 . . 1 . . 3 .', ci='HIT')
-bars(S, 16, SIEGE, ['D5 - - - F5 - A5 -', 'Bb5 - - - A5 - F5 -', 'G5 - - - E5 - C5 -', 'D5 - - - - - . -'],
+bars(S, 16, SIEGE, ['D4 - - - F4 - A4 -', 'Bb4 - - - A4 - F4 -', 'G4 - - - E4 - C4 -', 'D4 - - - - - . -'],
      li='BRASS', drums=['heavy'] * 3 + ['heavy'], fill=[False] * 3 + [True], bass='1 1 8 1 5 1 8 1', upper='pad', pi='CHOIR',
      counter='1 . . 1 . . 3 .', ci='HIT')
 S.finish()
