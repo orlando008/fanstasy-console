@@ -12,6 +12,7 @@ import { Input } from './input.js';
 import { Library } from './library.js';
 import { Machine } from './machine.js';
 import { PauseMenu } from './pause-menu.js';
+import { MAKE_PROMPT } from './make-prompt.js';
 import { SharePanel } from './share.js';
 import { TouchControls } from './touch.js';
 import { CLIP_MAX_SECONDS, ClipRecorder } from './record/clip.js';
@@ -407,6 +408,12 @@ const library = new Library(document.getElementById('library'), {
   mode: () => app.mode,
   share: (entry, onClose) => sharePanel.share(entry, onClose),
   sharing: () => sharePanel.busy,
+  makeWithAI: (onClose) => sharePanel.text({
+    head: 'Make your own game with AI',
+    note: 'Paste these instructions into your favorite AI agent (Claude Code, Codex, Cursor) or a chat. It will ask what game you want, then make it with you, a step at a time.',
+    copiedNote: 'Copied. Paste these instructions into your favorite AI agent (Claude Code, Codex, Cursor) or a chat. It will ask what game you want, then make it with you, a step at a time.',
+    text: MAKE_PROMPT, title: 'Make a NOVA-16 game',
+  }, onClose),
 });
 
 const menu = new PauseMenu(screenEl, {
