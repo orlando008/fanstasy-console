@@ -94,12 +94,13 @@ const PAL_MARKED = 1, PAL_PENDING = 2, PAL_ROOM = 4;
 const INK = 50, DIM = 51, GOLD = 52, LINE = 53, GLOW = 54, PULSE = 55, RED = 56, PANEL = 57, CYAN = 58, EDGE = 59, SPELL = 60;
 const ROOM = 64; // BG sub-palette 4: 1-2 stars, 3 rain, 4-6 eyes, 7-8 rune circle
 /**
- * Sound effects, all played on channel 1, which the songs leave free (SPEC
- * 11). Negative entries are per stage: each room has its own five, in the
- * key of its song, at 8 + 5 x stage.
+ * Sound effects, taking turns on channels 7 and 6, which the songs leave free
+ * (SPEC 11), so two can sound at once. Negative entries are per stage: each
+ * room has its own five, in the key of its song, at 8 + 5 x stage.
  */
 const SFX = { move: 0, start: 1, over: 2, clear: 3, pause: 4, drop: 5, tower: 6, menu: 7, gem: 48, single: 49, allClear: 50, rotate: -1, land: -2, square: -3, erase: -4, chain: -5 };
-const SFX_CH = 1;
+const SFX_CH = [7, 6];
+let fxNext = 0;
 
 // --- State --------------------------------------------------------------------
 
@@ -317,7 +318,8 @@ function enterStage() {
 }
 
 function snd(n) {
-  sfx(n < 0 ? 8 + 5 * plan[si] - n - 1 : n, SFX_CH);
+  sfx(n < 0 ? 8 + 5 * plan[si] - n - 1 : n, SFX_CH[fxNext]);
+  fxNext ^= 1;
 }
 
 /** True on the frame b goes down; holding it never repeats. */
