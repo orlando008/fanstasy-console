@@ -79,9 +79,13 @@ class Img:
         return im
 
     @classmethod
-    def from_rows(cls, rows, key=None):
+    def from_rows(cls, rows, key=None, mirror=None, odd=False):
         """A picture from rows of text: '.' or ' ' is 0, a hex digit its index. `key` maps other characters to indices
-        (e.g. key={'#': 3})."""
+        (e.g. key={'#': 3}). mirror='x' takes the rows as the left half and makes the whole, symmetric picture (odd=True
+        shares the last column as the centre); mirror='y' the top half."""
+        if mirror:
+            from shade import mirrored
+            return mirrored(cls.from_rows(rows, key), odd=odd, axis=mirror)
         key = key or {}
         w = max(len(r) for r in rows)
         im = cls(w, len(rows))
@@ -206,13 +210,19 @@ class Img:
     def __repr__(s): return 'Img %dx%d\n%s' % (s.w, s.h, '\n'.join(s.rows()))
 
 
+class RampIdx(tuple):
+    """A ramp's palette indices, dark to light, knowing its palette (`kind`, `pal`): what pal.skin returns."""
+    def __new__(cls, items, kind=None, pal=None):
+        t = super().__new__(cls, items); t.kind, t.pal = kind, pal; return t
+
+
 class Roles:
     """The colours of one sub-palette by role name: `roles.mid` is its index (1 to 15). A ramp given to the palette
     (a list of colours, dark to light, as ramp() makes) is roles name0, name1 ... and `roles.name` is the tuple of their
     indices, dark to light."""
     def __init__(s, kind, sub, base, index, hexes, ramps=None):
         s.kind, s.sub, s.base, s._index, s.hexes = kind, sub, base, dict(index), dict(hexes)
-        s.ramps = dict(ramps or {})
+        s.ramps = {n: RampIdx(v, kind, sub) for n, v in (ramps or {}).items()}
     def __getattr__(s, name):
         if name.startswith('_') or name in ('ramps', 'hexes', 'kind', 'sub', 'base'): raise AttributeError(name)
         if name in s.ramps: return s.ramps[name]
@@ -455,6 +465,28 @@ class Art:
         s.sprites[name] = {'tile': n, 'size': img.w, 'pal': sub}
         return n
 
+    def variant(s, name, of, swap=None, pal=None, region=None):
+        """A recoloured copy of sprite `of` as a sprite of its own: swap={'shirt': 'coat'} replaces roles (or ramps) of
+        the sprite's palette by others of the same palette, and/or pal= puts the same pixels in another sprite palette
+        whose roles have the same indices (often enough: a palette made with the same role names). Returns its first tile."""
+        src = s.sprites.get(of)
+        if src is None: raise KeyError('variant %r: no sprite %r' % (name, of))
+        n, size = src['tile'], src['size']
+        img = Img(size, size)
+        for j in range(size // 8):
+            for i in range(size // 8): img.blit(s._tile_at(n + j * TILES_X + i), i * 8, j * 8)
+        roles = s.palettes.get(('spr', src['pal']))
+        if swap:
+            if roles is None: raise ValueError('variant %r: sprite %r has no palette made with sprite_palette() to swap roles in' % (name, of))
+            m = {}
+            for a, b in swap.items():
+                ra, rb = getattr(roles, a), getattr(roles, b)
+                if isinstance(ra, tuple) != isinstance(rb, tuple) or (isinstance(ra, tuple) and len(ra) != len(rb)): raise ValueError('variant %r: %s and %s must both be colours or ramps of one length' % (name, a, b))
+                m[ra] = rb
+            from shade import recolour
+            img = recolour(img, m)
+        return s.sprite(name, img, pal=src['pal'] if pal is None else pal, region=region)
+
     def frames(s, name, imgs, pal=0, region=None):
         """An animation: sprites named name0, name1 ... Returns their first tiles."""
         return [s.sprite('%s%d' % (name, i), im, pal, region) for i, im in enumerate(imgs)]
@@ -534,3 +566,5 @@ def inject(code_path, block):
 sys.path.insert(0, HERE)
 from colour import *                 # noqa: E402  OKLab, hue-shifted ramps, mix, gradient
 from preview import Sheet, write_png  # noqa: E402  a PNG of pictures and ramps, straight from art.py
+from shade import inner_distance, shaded, outline_sel, inline, rim, clean_lines, mirrored, recolour  # noqa: E402
+from sculpt import Sculpt, Mat       # noqa: E402  sprites sculpted from 3D shapes, rendered as pixel art
