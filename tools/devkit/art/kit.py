@@ -207,15 +207,38 @@ class Img:
 
 
 class Roles:
-    """The colours of one sub-palette by role name: `roles.mid` is its index (1 to 15)."""
-    def __init__(s, kind, sub, base, index, hexes):
+    """The colours of one sub-palette by role name: `roles.mid` is its index (1 to 15). A ramp given to the palette
+    (a list of colours, dark to light, as ramp() makes) is roles name0, name1 ... and `roles.name` is the tuple of their
+    indices, dark to light."""
+    def __init__(s, kind, sub, base, index, hexes, ramps=None):
         s.kind, s.sub, s.base, s._index, s.hexes = kind, sub, base, dict(index), dict(hexes)
+        s.ramps = dict(ramps or {})
     def __getattr__(s, name):
+        if name.startswith('_') or name in ('ramps', 'hexes', 'kind', 'sub', 'base'): raise AttributeError(name)
+        if name in s.ramps: return s.ramps[name]
         try: return s._index[name]
-        except KeyError: raise AttributeError('palette %s %d has no colour %r (it has %s)' % (s.kind, s.sub, name, ', '.join(s._index))) from None
+        except KeyError: raise AttributeError('palette %s %d has no colour %r (it has %s)' % (s.kind, s.sub, name, ', '.join(list(s.ramps) + [n for n in s._index if not s._in_ramp(n)]))) from None
     __getitem__ = __getattr__
+    def _in_ramp(s, role): return any(role in ('%s%d' % (r, k) for k in range(len(v))) for r, v in s.ramps.items())
     def names(s): return dict(s._index)
     def cgram(s, name): return s.base + s._index[name]
+    def hex_of(s, index):
+        """The colour ('rrggbb') of an index of this palette."""
+        for name, i in s._index.items():
+            if i == index: return s.hexes[name]
+        raise KeyError('palette %s %d has no index %d' % (s.kind, s.sub, index))
+    def ramp_of(s, index):
+        """The ramp an index belongs to, as (its indices, its position in them), or None."""
+        for r in s.ramps.values():
+            if index in r: return r, r.index(index)
+        return None
+    def step(s, index, k):
+        """The index k steps lighter (k > 0) or darker along its ramp, stopping at the ends; an index in no ramp is
+        returned as it is (0, transparent, stays 0)."""
+        found = s.ramp_of(index)
+        if not found: return index
+        r, at = found
+        return r[max(0, min(len(r) - 1, at + k))]
 
 
 def _hex(v):
@@ -294,7 +317,17 @@ class Art:
         base = 16 * sub if kind == 'bg' else 128 + 16 * sub
         if kind == 'bg' and not 0 <= sub <= 7 or kind == 'spr' and not 0 <= sub <= 7: raise ValueError('%s palette %d: 0 to 7' % (kind, sub))
         if (kind, sub) in s.palettes: raise ValueError('%s palette %d is already defined' % (kind, sub))
-        at = at or {}
+        at = dict(at or {})
+        # A ramp (a list of colours, dark to light) becomes the roles name0, name1 ...; at={'name': i} pins its first.
+        flat, ramps = {}, {}
+        for name, v in colors.items():
+            if isinstance(v, (list, tuple)) and v and not isinstance(v[0], int):
+                for k, c in enumerate(v): flat['%s%d' % (name, k)] = c
+                if name in at: at.update({'%s%d' % (name, k): at.pop(name) + k for k in range(len(v))})
+                ramps[name] = len(v)
+            else: flat[name] = v
+        if len(flat) > 15: raise ValueError('%s palette %d: %d colours, and a sub-palette holds 15 (0 is transparent)' % (kind, sub, len(flat)))
+        colors = flat
         index, hexes, nxt = {}, {}, 1
         for name, v in colors.items():
             i = at.get(name)
@@ -306,13 +339,14 @@ class Art:
             index[name] = i; hexes[name] = _hex(v)
             s.cgram[base + i] = hexes[name]
         if kind == 'bg' and sub == 0: s.notes.append('BG palette 0 is defined: it shares CGRAM entries 1 to 15 with the overlay\'s default text colours, which change with it')
-        r = Roles(kind, sub, base, index, hexes)
+        r = Roles(kind, sub, base, index, hexes, {n: tuple(index['%s%d' % (n, k)] for k in range(c)) for n, c in ramps.items()})
         s.palettes[(kind, sub)] = r
         return r
 
     def palette(s, sub, colors, at=None):
         """BG sub-palette `sub` (0 to 7), entries 16*sub+1.. from a dict of role -> 'rrggbb' in order (or pinned with
-        at={'role': index}). Entry 0 of every sub-palette is transparent. Returns the roles."""
+        at={'role': index}); a role may be a ramp (a list of colours, dark to light, e.g. ramp('4a8a2e', 5)). Entry 0 of
+        every sub-palette is transparent. Returns the roles."""
         return s._palette('bg', sub, colors, at)
 
     def sprite_palette(s, sub, colors, at=None):
@@ -494,3 +528,9 @@ def inject(code_path, block):
     if b < a: raise ValueError('the END ART line comes before the ART line')
     new = text[:a] + '\n' + block + '\n' + text[b:]
     if new != text: open(code_path, 'w', encoding='utf8', newline='\n').write(new)
+
+
+# --- The SNES-look tools (docs/dev/snes-picture.md, part B): each is a module of its own, and comes with the kit -------
+sys.path.insert(0, HERE)
+from colour import *                 # noqa: E402  OKLab, hue-shifted ramps, mix, gradient
+from preview import Sheet, write_png  # noqa: E402  a PNG of pictures and ramps, straight from art.py

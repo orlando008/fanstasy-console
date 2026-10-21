@@ -122,6 +122,27 @@ small = Art(); small.region('tiny', 1, 3)
 small.sprite('a', Img(8, 8, 1), region='tiny'); small.sprite('b', Img(8, 8, 1), region='tiny'); small.sprite('c', Img(8, 8, 1), region='tiny')
 ok(raises(lambda: small.sprite('d', Img(8, 8, 1), region='tiny'), 'region tiny') and raises(lambda: small.sprite('e', Img(8, 8, 1), region='nope'), 'no region'), 'a full or unknown region is an error naming it')
 
+# --- Colour: OKLab, ramps, palettes of ramps (colour.py) ---
+ok(all(abs(a - b) < 1e-6 for a, b in zip(oklab('ffffff'), (1, 0, 0))) and from_oklab(*oklab('597dce')) == '597dce', 'OKLab: white is L 1, and a colour goes there and back')
+ok(console('4a8a2e') == '4a8c29' and console('ffffff') == 'ffffff' and console('000000') == '000000', 'console() is the colour cut to 5 bits a channel, as the console shows it')
+r = ramp('4a8a2e', 5)
+Ls = [lch(c)[0] for c in r]
+ok(len(r) == 5 and all(b - a > 0.05 for a, b in zip(Ls, Ls[1:])) and all(console(c) == c for c in r), 'a ramp: 5 steps, dark to light, each clearly lighter, all in console colour', ramp_report(r))
+ok(r[r.base] == console('4a8a2e'), 'and the base colour is in it, where ramp().base says')
+ok(lch(r[0])[2] > lch(r[r.base])[2] + 3 and lch(r[-1])[2] < lch(r[r.base])[2] - 3, 'its hue turns cool (towards violet) in the shadows and warm in the light', ' '.join('%.0f' % lch(c)[2] for c in r))
+gold = ramp('f0d000', 5)
+ok(all(lch(c)[2] < 110 for c in gold) and lch(gold[0])[0] < 0.4, 'a yellow ramp darkens through orange and reaches deep shadows (a light base sits at the top)', ' '.join('%.0f' % lch(c)[2] for c in gold))
+skin = ramp('d2aa99', 5)
+ok(lch(skin[1])[1] >= lch(skin[skin.base])[1] * 0.9, 'shadows keep their chroma (a grey shadow reads as mud)', '%.3f %.3f' % (lch(skin[1])[1], lch(skin[skin.base])[1]))
+ok(all(a != b for a, b in zip(ramp('808080', 8, step=0.01), ramp('808080', 8, step=0.01)[1:])), 'steps never come out equal on the console, even when asked to be tiny')
+ok(len(set(gradient('000000', 'ffffff', 5))) == 5 and gradient('000000', 'ffffff', 5)[0] == '000000', 'gradient: n colours from a to b')
+far = recede(r, 0.6, haze='a0c8f0')
+ok(isinstance(far, Ramp) and max(lch(c)[0] for c in far) - min(lch(c)[0] for c in far) < Ls[-1] - Ls[0] and sum(lch(c)[1] for c in far) < sum(lch(c)[1] for c in r), 'recede: less contrast and less chroma, still a ramp')
+rp = Art().palette(1, {'grass': r, 'sky': '7ec0ee', 'dirt': ramp('854c30', 3)})
+ok(rp.grass == (1, 2, 3, 4, 5) and rp.sky == 6 and rp.dirt == (7, 8, 9) and rp.grass0 == 1 and rp.hex_of(3) == r[2], 'a palette takes ramps: roles grass0.. and pal.grass, their indices dark to light')
+ok(rp.step(rp.grass[2], -1) == 2 and rp.step(rp.grass[4], 1) == 5 and rp.step(rp.sky, 1) == rp.sky and rp.step(0, 1) == 0, 'pal.step: along its ramp, stopping at the ends; others unchanged')
+ok(raises(lambda: Art().palette(1, {'a': ramp('ff0000', 8), 'b': ramp('00ff00', 8)}), 'holds 15'), 'more than 15 colours in a sub-palette is an error')
+
 # --- Files: written, packed and read back ---
 work = tempfile.mkdtemp(prefix='art-selftest-')
 try:
