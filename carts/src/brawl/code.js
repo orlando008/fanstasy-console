@@ -284,6 +284,7 @@ function updateThug(t) {
     if (t.token && ++t.tokenT > 300) { t.token = false; t.cool = 60; }
     const gap = t.token ? 36 : 85;
     tx = p.x + side * gap; ty = p.y;
+    if (tx < cam + 16 || tx > cam + 240) tx = p.x - side * gap;   // never wait off the screen: use the hero's other side
   }
   const mx = tx - t.x, my = ty - t.y;
   const walking = Math.abs(mx) > 2 || Math.abs(my) > 2;

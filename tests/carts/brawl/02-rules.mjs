@@ -114,9 +114,9 @@ const until = (vm, cond, max = 300, mask = 0) => { for (let i = 0; i < max; i++)
   vm.run(300, M('LEFT')); ok(p.player.x >= p.cam + 10, 'the hero cannot leave the screen');
   vm.run(300, M('RIGHT')); ok(p.player.x <= p.cam + 246 && p.cam === 0, 'while the wave lives the camera holds');
   p.enemies = []; vm.run(2); ok(!p.locked && p.goT <= 2, 'with the wave dead it unlocks (GO)');
-  vm.run(400, M('RIGHT'));
+  for (let i = 0; i < 800 && p.wave < 2; i++) vm.step(M('RIGHT'));
   ok(p.locked && p.cam === 300 && p.enemies.length === 3 && p.wave === 2, 'the camera scrolls on and locks at 300 for wave 2', `cam ${p.cam}, ${p.enemies.length} thugs`);
-  const sides = new Set(p.enemies.map((e) => e.face)); ok(sides.size === 2, 'whose thugs come from both sides');
+  const sides = new Set(p.enemies.map((e) => (e.x < p.cam + 128 ? 'L' : 'R'))); ok(sides.size === 2, 'whose thugs come from both sides');
 }
 {
   const vm = newGame(6), p = vm.probe(); vm.run(3);
