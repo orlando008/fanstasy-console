@@ -165,7 +165,7 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 ## 15. Implementation plan
 
 1. **The slice:** the street (sky, three scrolling layers), the hero as placeholder shapes walking in the lane, the camera,
-   the debug box view. *(this step)*
+   the debug box view.
 2. **Core mechanics:** the frame table, the combo, jump and jump kick, hit stop, knockdowns, with a punching bag.
 3. **The thug:** his states and tokens, the waves and the camera locks, deaths and the stage clear.
 4. **Flow:** the HUD, lives and respawn, the score, the stage clear and game over into the records.
@@ -176,6 +176,18 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
+
+### Built and results (steps 1 to 5)
+
+**Built:** all of steps 1 to 5 in one go, with placeholder shapes: the street (190 tiles), the frame table and boxes, the
+combo, jump and jump kick, hit stop, knockdowns, the thug with attack tokens, four camera-locked waves, the HUD, lives and
+respawn, the stage clear and game over into the top 10. Code 24.7 KB. A thug's attack may hit the hero while the hero's
+own is in its start-up (the hero's attack is cut off); the press of A during hit stop is remembered so the combo chains.
+
+**Results:** `tests/carts/brawl/` (flow, rules, art) all pass. The bot (`sweep.mjs brawl`, skills 0, 0.5 and 1) clears the
+stage on every seed with 2 to 3 lives left, so the game is **easy**: thugs need to be more dangerous (tune thug damage,
+cooldown or health) once it can be played by hand. The sweep found one real bug: a thug waiting off the screen when the
+hero stood at its edge, which stalled the wave for ever. Thugs now pick a spot on the screen (the hero's other side).
 
 ## 16. Open questions
 

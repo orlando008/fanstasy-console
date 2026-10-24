@@ -484,7 +484,7 @@ function drawHud() {
   txt('P1', 8, 6, CYAN); bar(26, 6, 70, player.hp, HERO_HP, player.hp > 20 ? GREEN : RED);
   txt(`x${lives}`, 102, 6, lives > 1 ? WHITE : RED);
   txt(`${score}`.padStart(7, '0'), 8, 18, WHITE);
-  if (lastHit && lastHitT > 0 && lastHit.kind === 'thug') { txt('THUG', 168, 6, GOLD); bar(196, 6, 52, Math.max(0, lastHit.hp), THUG_HP, 6); }
+  if (lastHit && lastHitT > 0 && lastHit.kind === 'thug') { txt('THUG', 160, 6, GOLD); bar(196, 6, 52, Math.max(0, lastHit.hp), THUG_HP, 6); }
   if (!locked && wave < LEVEL.length + 1 && wave > 0 && goT % 40 < 26 && state === 'play') txt('GO >', 214, 96, GOLD);
 }
 
