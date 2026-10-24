@@ -1,0 +1,76 @@
+{
+ "colors": {
+  "GLASS": 200,
+  "GOLD": 114,
+  "INK": 115,
+  "WHITE": 113
+ },
+ "gradients": [
+  "sky"
+ ],
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "block0": 1,
+    "block1": 2,
+    "block2": 3,
+    "neon0": 6,
+    "neon1": 7,
+    "roof": 8,
+    "win0": 4,
+    "win1": 5
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "post0": 4,
+    "post1": 5,
+    "post2": 6,
+    "wire0": 1,
+    "wire1": 2,
+    "wire2": 3
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "kerb0": 5,
+    "kerb1": 6,
+    "kerb2": 7,
+    "slab0": 1,
+    "slab1": 2,
+    "slab2": 3,
+    "slab3": 4
+   }
+  }
+ },
+ "scenes": {
+  "city": {
+   "h": 28,
+   "mx": 0,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  },
+  "fence": {
+   "h": 28,
+   "mx": 32,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "ground": {
+   "h": 28,
+   "mx": 64,
+   "my": 0,
+   "pal": 3,
+   "w": 32
+  }
+ },
+ "sprites": {},
+ "tiles": {},
+ "used": 190,
+ "version": 1
+}

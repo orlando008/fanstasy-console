@@ -1,0 +1,42 @@
+// The test helpers for Brawl: boot the cart with its variables exposed.
+import { fileURLToPath } from 'node:url';
+import { BTN, boot } from '../../../tools/devkit/harness.mjs';
+export { BTN };
+export const CART = fileURLToPath(new URL('../../../carts/brawl.nova', import.meta.url));
+
+// Whatever a test needs to read or set is exposed here (the cart's code runs in one scope, so getters see its variables).
+// Add to this list as the game grows.
+const PROBE = `__expose(() => ({
+  get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
+  get score() { return score; }, set score(v) { score = v; }, get lives() { return lives; }, set lives(v) { lives = v; }, get won() { return won; },
+  get player() { return player; }, get enemies() { return enemies; }, set enemies(v) { enemies = v; },
+  get cam() { return cam; }, set cam(v) { cam = v; }, get wave() { return wave; }, set wave(v) { wave = v; },
+  get locked() { return locked; }, set locked(v) { locked = v; }, get hitstop() { return hitstop; }, get goT() { return goT; },
+  get showBoxes() { return showBoxes; }, get rank() { return rank; }, get initials() { return initials; },
+  get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; }, get ART() { return ART; }, mget: (x, y) => mget(x, y),
+  ANIM, MOVE, LEVEL, COMBO, HERO_HP, THUG_HP, LANE_TOP, LANE_BOT, LANE_TOL, LEVEL_W, GRAV, STAND, LYING,
+  mkFighter, setAnim, knockDown, worldBox, frameOf, tokens, startGame, landHit, checkHits,
+  SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
+}));`;
+
+/** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */
+export const newGame = (seed = 1, { title = false, save = null } = {}) =>
+  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + PROBE });
+export const M = (...names) => names.reduce((m, n) => m | (1 << BTN[n]), 0);
+/** The sfx commands since the last call: [[n, channel], ...]. */
+export const sfxLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'sfx').map((a) => [a[2], a[3]]); vm.audioLog.length = 0; return r; };
+export const musicLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'music').map((a) => a[2]); vm.audioLog.length = 0; return r; };
+
+/** A quiet arena: no waves, no thugs, the hero in the middle of the street, free to be tested. Returns the probe. */
+export function arena(vm) {
+  const p = vm.probe();
+  vm.run(2);
+  p.enemies = []; p.locked = false; p.wave = p.LEVEL.length; p.cam = 300; p.player.x = 400; p.player.y = 180;
+  return p;
+}
+/** A thug placed in the arena that stands still (ai 'dummy': he does nothing). */
+export function dummy(p, dx, dy = 0, face = -1) {
+  const t = p.mkFighter('thug', p.player.x + dx, p.player.y + dy, p.THUG_HP);
+  t.ai = 'dummy'; t.face = face; p.enemies.push(t);
+  return t;
+}
