@@ -1,4 +1,4 @@
-// Brawl: a Streets of Rage style beat 'em up (docs/carts/brawl.md). One street, a hero with a three-hit combo and a jump
+// Streets of Woe: a Streets of Rage style beat 'em up (docs/carts/brawl.md). One street, a hero with a three-hit combo and a jump
 // kick, and one kind of enemy in four waves. Built game first: every fighter is drawn by one small art layer,
 // drawFighter(), as plain shapes taken from the same frame table (ANIM) the rules use; real art replaces that function.
 // The frame of the game (title, pause, game over, top 10, records, sound cues) is the starter's.
@@ -177,7 +177,7 @@ function landHit(a, t, mv) {
   const dir = a.x <= t.x ? 1 : -1;
   t.face = -dir; t.token = false; t.queue = false;
   if (a === player) { score += 10; lastHit = t; lastHitT = 180; }
-  if (t.hp <= 0 || mv.down) knockDown(t, dir);
+  if (t.hp <= 0 || mv.down || t.h > 0) knockDown(t, dir);        // a hit in the air always knocks down (he must fall)
   else { setAnim(t, 'hurt'); t.vx = dir * 6 / 16; }
   fx(SFX.hit);
 }
@@ -489,7 +489,7 @@ function drawHud() {
 }
 
 function drawTitle() {
-  ctxt('BRAWL', 50, GOLD);
+  ctxt('STREETS OF WOE', 50, GOLD);
   ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
 }
 

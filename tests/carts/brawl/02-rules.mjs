@@ -68,6 +68,16 @@ const until = (vm, cond, max = 300, mask = 0) => { for (let i = 0; i < max; i++)
   ok(p.player.x - x > 12, 'he can walk through the air');
 }
 
+// A hit in the air knocks down: he cannot hang there.
+{
+  const vm = newGame(1), p = arena(vm);
+  vm.press('B'); vm.run(8);
+  const t = p.mkFighter('thug', p.player.x + 30, p.player.y, 20); t.face = -1; t.ai = 'dummy'; p.enemies.push(t);
+  p.setAnim(t, 'tpunch'); t.fi = 1; vm.run(2);
+  ok(p.player.anim === 'down' || p.player.anim === 'hurt', 'a thug can hit the hero in mid-jump');
+  vm.run(120); ok(p.player.h === 0 && p.player.vz === 0, 'and he comes down again');
+}
+
 // 4. The thug.
 {
   const vm = newGame(2), p = arena(vm); p.player.x = 400;

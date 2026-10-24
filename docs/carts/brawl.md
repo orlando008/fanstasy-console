@@ -1,4 +1,4 @@
-# Brawl: Cart Specification
+# Streets of Woe: Cart Specification
 
 **Version:** 0.1 (draft)
 **Status:** In progress: building the game with placeholder shapes first (section 12); real fighter art plugs in later
@@ -76,6 +76,7 @@ attack hits. Real art must have its feet at the pivot and fit these boxes (or th
 - B jumps: `vz` = 5.2, gravity 0.3 a frame, so 35 frames in the air and a peak height of about 45. The jump keeps the
   player's walking speed in the air. A in the air is the jump kick. Landing costs 6 frames.
 - **Hit stop:** when an attack connects, both fighters freeze for 5 frames (the game, not the music).
+- A fighter hit **in the air** is always knocked down (so he falls and cannot hang in the air).
 - A hit target is **knocked back** 6 px over the stun; a **knockdown** throws him 2.4 px a frame away from the attacker
   with `vz` 3.4 and gravity 0.3, he lies 40 frames, then gets up (20 frames, invulnerable).
 - A hit lands if the attacker's hit box overlaps the target's hurt box (both in screen pixels, heights included) and their
