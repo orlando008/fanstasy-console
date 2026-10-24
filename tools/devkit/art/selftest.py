@@ -317,7 +317,12 @@ for view in ('three', 'side'):
         ok(set(fp.hair) & si.colors() and fp.skin[1] in si.colors() and sum(1 for r in si.px for v in r if v) > 1200, "head(style='shaggy') %s %s: the traced reference, its hair and planes" % (view, expr))
 small = Canvas(40, 40); head(small, 18, 20, 20, fp.skin, fp.hair, view='three', style='shaggy', line=fp.line)
 ok(small.render().colors() & set(fp.skin), 'and below 26 px the simple head stands in')
-from trace import loops
+from trace import loops, strip_halo, BODY_COLOURS
+halo = ['.....', '.wkkw', '.wkkw', '.wwww', '.....']
+ok(strip_halo(halo) == ['.....', '..kk.', '..kk.', '.....', '.....'] or strip_halo(halo)[1:3] == ['..kk.', '..kk.'], 'strip_halo: the pale fringe outside a figure goes, its dark body stays', str(strip_halo(halo)))
+inner = ['.kkkkk.', '.kwwwk.', '.kwwwk.', '.kkkkk.']
+ok(strip_halo(inner) == inner, "strip_halo: white inside the figure's outline is kept (a shirt)")
+ok(strip_halo(['kkkk.....', 'kkkk..k..', 'kkkk.....'], speck=3)[1] == 'kkkk.....', 'strip_halo: a stray pixel floating outside the figure is removed')
 # --- Strict grids, patches and the frame review (kit.py, review.py) ---
 ok(Img.from_rows(['.1', '2.'], strict=True, size=(2, 2)).px == [[0, 1], [2, 0]], 'from_rows(strict=True): a clean grid reads as before')
 ok(raises(lambda: Img.from_rows(['..', '.'], strict=True), 'row 1 is 1 wide'), 'strict: a ragged row is an error that names the row')

@@ -17,6 +17,13 @@ grids (`Img.from_rows(strict=True)`), exact-pixel patches with an explicit erase
 playbook. Not taken: the PNG-and-JSON sprite sheet export (a NOVA-16 cart packs tiles, palettes and ROM), and the
 standalone Python and Pillow project.
 
+`fighter/` holds the guard and the punch of the model sheet, read off its own pixel grid (a cell of 4.4 to 4.7 sheet pixels:
+the grids score 0.88 and 0.90 for clean cells) with `trace.recover_grid()`, snapped to the sheet's 11 colours
+(`trace.BODY_COLOURS`), tidied of one- and two-pixel noise and stripped of the pale halo round the figure
+(`trace.strip_halo()`): `python3 tools/devkit/art/templates/poses.py`. They are the user's drawing, not my shapes: much
+closer to the sheet than a figure built from the kit. The faces came out dark (the eye sockets and brows merge) and
+need a hand clean.
+
 `heads/` holds the pixel grids recovered from the head drawings: the drawings are upscaled pictures, so
 `trace.recover_grid()` finds the size of an art pixel and reads each cell as the nearest of the reference's colours
 (`trace.HEAD_COLOURS`: '.' empty, 'o' line, 'd' and 'h' dark browns, 'S' darker shadow, 's' shadow, 'b' base, 'l'

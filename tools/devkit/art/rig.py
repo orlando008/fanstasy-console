@@ -58,8 +58,8 @@ KICK = [
 HIT = {'lean': -16, 'head': -14, 'arm_n': -30, 'fore_n': 40, 'arm_f': -10, 'fore_f': 30, 'thigh_n': 4, 'thigh_f': -14, 'shin_f': -10, 'x': -2}
 # From the user's fighter model sheet (docs/reference/fighter-model-sheet.png): a guard low and wide, both fists up at
 # the chin; a punch as a lunge, the back leg straight, the front knee over the foot, the arm out at shoulder height.
-STANCE = {'lean': 10, 'neck': 6, 'head': 4, 'y': 6, 'arm_n': 40, 'fore_n': 118, 'arm_f': 55, 'fore_f': 112,
-          'thigh_n': 34, 'shin_n': -30, 'foot_n': 4, 'thigh_f': -26, 'shin_f': -14, 'foot_f': -4}
+STANCE = {'lean': 6, 'neck': 4, 'head': 2, 'y': 9, 'arm_n': 52, 'fore_n': 122, 'arm_f': 62, 'fore_f': 114,
+          'thigh_n': 40, 'shin_n': -42, 'foot_n': 4, 'thigh_f': -32, 'shin_f': -10, 'foot_f': -4}
 CROSS = [STANCE,
          dict(STANCE, lean=4, arm_n=20, fore_n=130, x=-2),
          dict(STANCE, lean=18, head=0, y=9, arm_n=90, fore_n=2, arm_f=48, fore_f=118, x=5, thigh_n=52, shin_n=-52, thigh_f=-44, shin_f=0),
@@ -71,9 +71,9 @@ PRESETS = {
     'brawler': dict(head=0.088, neck=0.028, spine=0.27, pelvis=0.075, shoulder=0.11, upper=0.17, fore=0.15, hand=0.045,
                     thigh=0.23, shin=0.22, foot=0.12, r_neck=0.06, r_chest=0.135, r_waist=0.095, r_upper=0.058, r_fore=0.048,
                     r_thigh=0.07, r_shin=0.052, r_foot=0.04, depth=0.08),
-    'fighter': dict(head=0.09, neck=0.03, spine=0.25, pelvis=0.07, shoulder=0.11, upper=0.16, fore=0.145, hand=0.04,
-                    thigh=0.24, shin=0.22, foot=0.13, r_neck=0.045, r_chest=0.12, r_waist=0.082, r_upper=0.04, r_fore=0.035,
-                    r_thigh=0.06, r_shin=0.046, r_foot=0.045, depth=0.08),
+    'fighter': dict(head=0.1, neck=0.03, spine=0.25, pelvis=0.07, shoulder=0.11, upper=0.16, fore=0.15, hand=0.042,
+                    thigh=0.24, shin=0.22, foot=0.14, r_neck=0.05, r_chest=0.145, r_waist=0.1, r_upper=0.036, r_fore=0.03,
+                    r_thigh=0.07, r_shin=0.052, r_foot=0.05, depth=0.08),
     'boxer': dict(head=0.095, neck=0.04, spine=0.26, pelvis=0.075, shoulder=0.13, upper=0.17, fore=0.14, hand=0.07,
                   thigh=0.22, shin=0.2, foot=0.11, r_neck=0.065, r_chest=0.145, r_waist=0.1, r_upper=0.065, r_fore=0.055,
                   r_thigh=0.075, r_shin=0.055, r_foot=0.04, depth=0.09),

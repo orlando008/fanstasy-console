@@ -52,6 +52,37 @@ def recover_grid(path, box, sizes, colours=HEAD_COLOURS):
     return rows, best
 
 
+# The colours of the fighter model sheet (docs/reference/fighter-model-sheet.png): '.' the background, 'o' the line, 'd' to
+# 'n' the cloth and hair browns dark to light, 'S' 's' 'b' the skin (shadow, mid, base), 'w' the shirt's white.
+BODY_COLOURS = {'.': 'fefefb', 'o': '120c0b', 'd': '261b17', 'k': '33251f', 'c': '46352e', 'm': '564438', 'n': '6f5648',
+                'S': 'b27f64', 's': 'be9983', 'b': 'f6cdab', 'w': 'f1e4d8'}
+
+
+def strip_halo(rows, light='wb', passes=2, speck=3):
+    """The pale fringe an upscaled drawing leaves round its figure: pixels of the `light` colours that touch the background
+    (or another halo pixel that does) are erased, `passes` deep; then clusters of up to `speck` pixels left floating
+    outside the figure. The shirt's white is inside the figure's dark outline, so it is not reached."""
+    g = [list(r) for r in rows]; H, W = len(g), max(len(r) for r in g)
+    g = [r + ['.'] * (W - len(r)) for r in g]
+    out = lambda x, y: not (0 <= x < W and 0 <= y < H) or g[y][x] == '.'
+    for _ in range(passes):
+        kill = [(x, y) for y in range(H) for x in range(W) if g[y][x] in light and any(out(x + dx, y + dy) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))]
+        for x, y in kill: g[y][x] = '.'
+    seen = set()
+    for y in range(H):
+        for x in range(W):
+            if g[y][x] == '.' or (x, y) in seen: continue
+            comp, st = [], [(x, y)]; seen.add((x, y))
+            while st:
+                p = st.pop(); comp.append(p)
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, 1), (1, -1), (-1, -1)):
+                    q = (p[0] + dx, p[1] + dy)
+                    if 0 <= q[0] < W and 0 <= q[1] < H and q not in seen and g[q[1]][q[0]] != '.': seen.add(q); st.append(q)
+            if len(comp) <= speck:
+                for cx, cy in comp: g[cy][cx] = '.'
+    return [''.join(r) for r in g]
+
+
 def clean(rows, keep='odh.', size=2):
     """Clusters of up to `size` pixels in a colour not in `keep` (light specks the upscaling left in the hair) take the
     colour most of their neighbours outside the cluster have."""
