@@ -26,7 +26,7 @@ function walk(dir, ok, out = []) {
 }
 const files = [
   join(ROOT, 'README.md'), join(ROOT, 'CLAUDE.md'), join(ROOT, 'src', 'make-prompt.js'),
-  ...walk(join(ROOT, 'docs'), (f) => f.endsWith('.md')),
+  ...walk(join(ROOT, 'docs'), (f) => f.endsWith('.md')).filter((f) => !f.includes(`${join('docs', 'reference')}`) || f.endsWith('README.md')), // docs/reference/ holds other people's documents (their paths are not ours)
   ...walk(join(ROOT, 'tools'), (f) => /\.(js|mjs|py|md)$/.test(f)),
   ...walk(join(ROOT, 'tests'), (f) => /\.mjs$/.test(f)),
 ].filter((f) => existsSync(f));

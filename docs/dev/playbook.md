@@ -363,6 +363,20 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   (`rom/<name>.bin`, 128 KB in all: docs/dev/rom-plan.md), out of the 64 KB of code: the `street` brawler (96 px, 18
   frames) is 128 tiles and 18.5 KB of ROM, so six or so such fighters fit (without `rom=True` the same frames are
   20 KB of `code.js`). One slot per copy on screen at once (`slots=`); loading costs no measurable time.
+- **Review a character the way a person would, then check what a person can't.** `review(frames, name=, loop=,
+  height=, colours=)` (`review.py`) turns the by-eye checks into findings: a frame touching the picture's edge, noise
+  (clusters of one or two pixels), too many colours, a figure the wrong height, a stalled animation, feet that hop
+  between frames (`FEET`; a walk's feet swing sideways and are not flagged, an idle's are with `smooth=True`). It
+  catches what makes a sprite look wrong without anyone seeing it, and it never says a sprite looks good: only
+  looking does (a `Sheet` at 6x, then the Read tool; if you cannot look at the picture, say so and do not claim a
+  visual review). The revision loop, from the user's sprite engine spec (`docs/reference/`): write down specific
+  defects ("the near fist merges into the chest", not "looks off"), change only the source that causes them, keep
+  the palette, proportions and every area that already works, render again and compare before and after, at most
+  five rounds per pose, keeping the best version. Score a pose 1 to 5 on each of: silhouette (understood at 1x?),
+  anatomy (head, limbs, hands and feet plausible?), consistency (same proportions, costume and face as the others?),
+  shading (do flat clusters describe volume?), pixel discipline (clusters, not noise?) and, for an animation,
+  motion (readable, steady, well timed?), and note why. For exact fixes after a render: `Img.patch(rows)` ('.' leaves
+  a pixel, '~' erases); for a grid someone handed over: `Img.from_rows(rows, strict=True, size=(w, h))`.
 - **Details on sculpted figures** (`detail.py`): `face()`, `hair()`, `crease()`, `bunch()`, `stroke()` draw on a
   rendered Sculpt or Rig (`Rig(..., face='angry', hair_style='swept', folds=True)`). For a character, prefer `Figure`.
 - **HUD and titles:** `big_text()` (smooth scaled, gradient-filled, outlined, shadowed), `hud_bar()`, `frame()`.

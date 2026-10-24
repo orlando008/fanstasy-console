@@ -41,6 +41,7 @@ of it). Each is a module of its own here, and comes with `from kit import *`:
   detail.py     face(), hair(), crease(), stroke(), bunch(): the hand-drawn layer on top of the volumes
   draw.py       Canvas, oval(), blob(), brush() ...: figures drawn in designed shapes and flat tones, a pixel at a time
                 where it matters (the way to draw characters; speckle() measures what is left to clean)
+  review.py     review(frames), findings_text(): edges, noise, colours, feet that hop between frames, stalled animations
   figure.py     head() (side, three-quarters, front, back; four expressions, seven hair styles, and 'shaggy' traced from
                 reference art), Figure: a drawn body on a rig's skeleton
   trace.py      turn an artist's reference drawing into templates: recover_grid(), clean(), align(), trace_head()
@@ -100,10 +101,23 @@ class Img:
         return im
 
     @classmethod
-    def from_rows(cls, rows, key=None, mirror=None, odd=False):
+    def from_rows(cls, rows, key=None, mirror=None, odd=False, strict=False, size=None):
         """A picture from rows of text: '.' or ' ' is 0, a hex digit its index. `key` maps other characters to indices
         (e.g. key={'#': 3}). mirror='x' takes the rows as the left half and makes the whole, symmetric picture (odd=True
-        shares the last column as the centre); mirror='y' the top half."""
+        shares the last column as the centre); mirror='y' the top half. strict=True is for grids an artist or a tool
+        hands over (docs/reference/): every row the same width, only '.' for transparent, only the characters of `key`
+        or hex digits otherwise, and an error that names the row and column; size=(w, h) also checks the dimensions.
+        Nothing is padded, cropped or guessed."""
+        if strict:
+            if not rows: raise ValueError('grid: no rows')
+            w0 = len(rows[0])
+            for y, r in enumerate(rows):
+                if len(r) != w0: raise ValueError('grid: row %d is %d wide, row 0 is %d' % (y, len(r), w0))
+                for x, ch in enumerate(r):
+                    if ch != '.' and ch not in (key or {}) and ch not in '0123456789abcdefABCDEF':
+                        raise ValueError('grid: row %d, column %d: %r is not in the key (and not a hex digit)' % (y, x, ch))
+            if size is not None and (w0, len(rows)) != tuple(size):
+                raise ValueError('grid: %d x %d, expected %d x %d' % (w0, len(rows), size[0], size[1]))
         if mirror:
             from shade import mirrored
             return mirrored(cls.from_rows(rows, key), odd=odd, axis=mirror)
@@ -116,6 +130,23 @@ class Img:
                 im.px[y][x] = key[ch] if ch in key else int(ch, 16)
         im._check()
         return im
+
+    def patch(s, rows, x=0, y=0, key=None, erase='~'):
+        """Exact-pixel corrections over a picture (after rendering a figure, fix the pixels the shapes got wrong): rows of
+        text with their top left at (x, y). '.' leaves a pixel as it is (it does not erase), a hex digit or a character of
+        `key` sets it, `erase` (default '~') makes it transparent. A grid that sticks out of the picture is an error.
+        Returns the picture, so it chains."""
+        key = key or {}
+        if y < 0 or x < 0 or y + len(rows) > s.h or any(x + len(r) > s.w for r in rows):
+            raise ValueError('patch: %d x %d at (%d, %d) does not fit in %d x %d' % (max(map(len, rows)), len(rows), x, y, s.w, s.h))
+        for j, r in enumerate(rows):
+            for i, ch in enumerate(r):
+                if ch == '.': continue
+                if ch == erase: s.px[y + j][x + i] = 0
+                elif ch in key: s.px[y + j][x + i] = key[ch]
+                elif ch in '0123456789abcdefABCDEF': s.px[y + j][x + i] = int(ch, 16)
+                else: raise ValueError('patch: row %d, column %d: %r is not in the key' % (j, i, ch))
+        return s
 
     def _check(s):
         for row in s.px:
@@ -960,3 +991,4 @@ from detail import face, hair, crease, stroke, bunch  # noqa: E402  the hand-dra
 from rig import Rig, pose, filmstrip, lerp_pose, mirror_sides, STAND, GUARD, WALK, PUNCH, KICK, HIT, JUMP, STANCE, CROSS  # noqa: E402  characters from a skeleton
 from draw import Canvas, oval, blob, curve, poly, brush, speckle  # noqa: E402  drawing figures in designed shapes and flat tones
 from figure import head, Figure, tones  # noqa: E402  drawn heads (three views, expressions, hair) and bodies on a rig
+from review import review, findings_text  # noqa: E402  the checks a person makes by eye, as findings an agent can read

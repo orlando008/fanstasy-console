@@ -10,6 +10,13 @@ clumps, a character's proportions) shapes every head and figure the kit draws, a
 | `heads-expressions.png` | The same head angry, hurt and shouting, in both views | `templates/heads.json`: the expressions |
 | `fighter-model-sheet.png` | A 96 px fighter: the model, front, three-quarter, side and back views, a guard and a punch, the palette and proportions | the figure's proportions, outfit and fighting poses (in progress) |
 
+`ai-sprite-engine-spec.md` is a specification the user supplied for a text-authored sprite engine (ASCII grids, layered
+parts, polygons; a review loop and a rubric). The art kit has taken its useful ideas rather than building it: strict
+grids (`Img.from_rows(strict=True)`), exact-pixel patches with an explicit erase (`Img.patch()`), a frame review
+(`review.py`: edges, noise, colours, feet that hop, stalled animations), and the revision loop and rubric in the
+playbook. Not taken: the PNG-and-JSON sprite sheet export (a NOVA-16 cart packs tiles, palettes and ROM), and the
+standalone Python and Pillow project.
+
 `heads/` holds the pixel grids recovered from the head drawings: the drawings are upscaled pictures, so
 `trace.recover_grid()` finds the size of an art pixel and reads each cell as the nearest of the reference's colours
 (`trace.HEAD_COLOURS`: '.' empty, 'o' line, 'd' and 'h' dark browns, 'S' darker shadow, 's' shadow, 'b' base, 'l'

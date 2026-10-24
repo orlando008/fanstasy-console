@@ -318,6 +318,25 @@ for view in ('three', 'side'):
 small = Canvas(40, 40); head(small, 18, 20, 20, fp.skin, fp.hair, view='three', style='shaggy', line=fp.line)
 ok(small.render().colors() & set(fp.skin), 'and below 26 px the simple head stands in')
 from trace import loops
+# --- Strict grids, patches and the frame review (kit.py, review.py) ---
+ok(Img.from_rows(['.1', '2.'], strict=True, size=(2, 2)).px == [[0, 1], [2, 0]], 'from_rows(strict=True): a clean grid reads as before')
+ok(raises(lambda: Img.from_rows(['..', '.'], strict=True), 'row 1 is 1 wide'), 'strict: a ragged row is an error that names the row')
+ok(raises(lambda: Img.from_rows(['.x'], strict=True), 'row 0, column 1'), 'strict: an unknown character names its row and column')
+ok(raises(lambda: Img.from_rows(['.. '], strict=True), 'column 2'), 'strict: a space is not transparent (only a dot is)')
+ok(raises(lambda: Img.from_rows(['..'], strict=True, size=(3, 1)), 'expected 3 x 1'), 'strict: the size is checked, never padded or cropped')
+pi = Img.from_rows(['11', '11']).patch(['.2', '~.'], key={'k': 5})
+ok(pi.px == [[1, 2], [0, 1]], "patch: '.' leaves a pixel, a digit sets it, '~' erases")
+ok(Img(3, 1).patch(['k'], x=2, key={'k': 7}).px == [[0, 0, 7]] and raises(lambda: Img(2, 2).patch(['11'], x=1), 'does not fit'), 'patch: a key character sets, and a grid that sticks out is an error')
+fa = Img(20, 20).rect(5, 4, 8, 14, 3)
+rv = review([fa, fa.copy(), Img(20, 20)], name='t', height=30)
+codes = {f['code'] for f in rv['findings']}
+ok(not rv['ok'] and {'EMPTY', 'IDENTICAL', 'HEIGHT'} <= codes, 'review: an empty frame is an error; a stalled one and a wrong height are warnings', str(sorted(codes)))
+hop = Img.make(20, 20, lambda x, y: 3 if 5 <= x < 13 and 2 <= y < 12 else 0); lowr = Img.make(20, 20, lambda x, y: 3 if 5 <= x < 13 and 6 <= y < 16 else 0)
+ok('FEET' in {f['code'] for f in review([hop, lowr])['findings']}, 'review: the soles jumping between frames is FEET')
+wf = Figure('brawler', height=64, line=fp.line, skin=fp.skin, hair=fp.hair, shirt=fp.shirt, pants=fp.pants, shoes=fp.hair)
+wk = review([wf.render(p) for p in wf.animate(WALK, 8)], name='walk', loop=True)
+ok(wk['ok'] and not [x for x in wk['findings'] if x['code'] in ('FEET', 'EMPTY', 'IDENTICAL')], "review: a Figure's walk cycle is clean (its feet swing sideways without a warning)", findings_text(wk))
+ok('EDGE' in {f['code'] for f in review([Img(10, 10).rect(0, 0, 4, 4, 2)])['findings']} and 'SPECKLE' in {f['code'] for f in review([Img.make(20, 20, lambda x, y: 1 + (x + y) % 2)])['findings']}, 'review: touching the edge, and noise')
 ok(sorted(len(l) for l in loops({(0, 0), (1, 0), (0, 1), (1, 1), (5, 5)})) == [4, 4] and len(loops({(0, 0), (1, 0), (2, 0), (0, 1), (2, 1), (0, 2), (1, 2), (2, 2)})) == 2, 'trace.loops: outlines of pixel regions, holes as loops of their own')
 fg = Figure('brawler', height=64, line=fp.line, skin=fp.skin, hair=fp.hair, shirt=fp.shirt, pants=fp.pants, shoes=fp.hair, face='angry', hair_style='swept')
 frames = [fg.render(p) for p in fg.animate(PUNCH, 4, loop=False)]
