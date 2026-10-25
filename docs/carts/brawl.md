@@ -262,7 +262,20 @@ He wears a brown vest and a yellow bandana and his knife shows as a white blade.
 | Grabbed | **no**, front or back (too big) |
 | Knocked out | **250 points** |
 
-Where they come: each wave of a stage says how many of its thugs are Slashers (`k` in `STAGES`), Chuckers (`c`), Lashers (`l`) and Brutes (`b`), in that
+**The Fire-breather** is area denial: a stream of flame that burns whoever stands in it.
+
+| | |
+|---|---|
+| Looks | an orange vest and a red scarf; he puffs his cheeks, then a flame of red, orange and gold circles comes out |
+| Health | 1.4 times a thug's |
+| Walks | 0.9 of a thug's |
+| Waits at | 95 px from the hero; with his turn, 75 px |
+| Breath | when in the hero's lane (within 6) **55 to 100 px away**: **24 frames** puffing, a **30-frame flame** `[14,-78,104,-44]`, 22 frames of recovery |
+| Damage | the flame **burns**: 3 damage every 10 frames to each hero in it, with no knockdown and no stun (the hero keeps control, and can walk out), a flash on each tick; it burns a thug too |
+| Dodging it | walk away during the puffing, or step out of his lane; the dash strike gets inside his wind-up |
+| Knocked out | 180 points |
+
+Where they come: each wave of a stage says how many of its thugs are Slashers (`k` in `STAGES`), Chuckers (`c`), Lashers (`l`), Brutes (`b`) and Fire-breathers (`f`), in that
 order, the rest plain (section 6). With two heroes the extra thug is a plain one.
 
 ## 6. Levels or content
@@ -277,7 +290,7 @@ flashing GO arrow shows and it scrolls on. The hero cannot leave the screen side
 | Sky | dusk purple to a warm glow | dark teal | dawn: slate blue to pale orange to gold |
 | Thugs | thugs: red shirts, 20 health | dockhands: olive shirts and caps, 26 health | enforcers: dark suits and sunglasses, 32 health |
 | Waves (thugs) | 2, 3, 3, 4, then the boss's 2 | 3, 3, 4, 5, then the boss's 2 | 4, 4, 5, 6, then the boss's 2 |
-| Slashers, Chuckers, Lashers, Brutes among them (k / c / l / b) | 0/0/0/0, 0/0/0/0, 0/1/0/0, 1/0/0/0, then none | 0/0/0/0, 1/0/0/0, 1/1/0/1, 2/0/1/1, then none | 1/1/0/0, 1/1/1/0, 2/1/1/1, 2/1/1/2, then 1 Slasher with the boss |
+| Slashers, Chuckers, Lashers, Brutes among them (k / c / l / b / f) | 0/0/0/0/0, 0/0/0/0/0, 0/1/0/0/0, 1/0/0/0/0, then none | 0/0/0/0/0, 1/0/0/0/1, 1/1/0/1/0, 2/0/1/1/0, then none | 1/1/0/0/1, 1/1/1/0/1, 2/1/1/1/0, 2/1/1/2/0, then 1 Slasher and 1 Fire-breather with the boss |
 | Props | 8: apples, a pipe, chickens, money, a knife, a 1UP | 8: two knives, a pipe, chickens, money, apples | 8: two pipes, a knife, two chickens, money, an apple, a 1UP |
 | Song | song 1 (E minor, a funk groove) | song 3 (D minor, a bounce) | song 5 (C minor, a rising dawn theme) |
 | Boss | **BULL**, a heavy (120 health): punch, charge, song 2 | **RAZOR**, quick (90): three stabs, a leap, song 4 | **KINGPIN** (160): a harder punch and charge, a ground slam to jump, a rage; song 6 |
@@ -509,6 +522,12 @@ pack): the next feature has to come with room made first (strip the indentation 
 
 **Results:** `sweep.mjs brawl --seeds 3`: no stuck runs; the bots are where they were (skilled ones reach stage 2 or 3, none won in 3 seeds): the Brute adds a tough, slow target, and the bot sidesteps his smash.
 
+### Built and results: the Fire-breather
+
+**Built:** `ROLE.fire`, `ANIM.fbreath`, `MOVE.fbreath` (`burn`: a tick of damage, a flash, no stun; a knockdown only on the last health), the re-hit every
+10 frames in `updateThug`, the drawing (cheeks, then flame circles), the waves' `f`. Test: `17-fire.mjs`. The bot steps out of the breath's lane like the other
+wind-ups. **Results:** `sweep.mjs brawl --seeds 3`: no stuck runs; the bots are where they were (stage 1 to 3, none won).
+
 ### Built and results: making room
 
 The packed cart had reached **63.5 KB of 64 KB**. Made room, with no change to what the game does (all 16 test files pass, and three
@@ -646,7 +665,7 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 - [ ] **Blitz** (src): double-tap a direction then A for a dash attack (a lunging move)
 - [ ] **Back attack** (mem): a button (Y) that hits both ways; a defensive move to get out of a surround
 - [ ] **Wake-up and knock-down rules** (mem): the hero is invulnerable while he gets up; a thrown or knocked-down thug hurts others he hits
-- [x] **Enemy variety in behaviour**: built: a thug for each stage, the Slasher (a fast knife man who drops his knife), the Chucker (throws bottles from a distance), the Lasher (a whip user) and the Brute (a heavy that a punch cannot stun) (src: weapon users only when they spawn with them). Still to do: a fire-breather (mem), a jetpack flyer (mem); and a thug who keeps his weapon and uses it for the hero to take (SoR2's enemies drop theirs when hit)
+- [x] **Enemy variety in behaviour**: built: a thug for each stage, the Slasher (a fast knife man who drops his knife), the Chucker (throws bottles from a distance), the Lasher (a whip user) and the Brute (a heavy that a punch cannot stun) and the Fire-breather (a stream of flame) (src: weapon users only when they spawn with them). Still to do: a jetpack flyer (mem); and a thug who keeps his weapon and uses it for the hero to take (SoR2's enemies drop theirs when hit)
 - [x] **Pick-up and use of weapons** (src): built: a pipe and a knife (A takes it, A swings it, getting hit drops it). Throwing it (Y) is built too. Still to do: more weapons (a bottle that breaks, a bat, a sword), thugs that spawn with a weapon (src), a bot that throws
 - [x] **Items**: built, each in its own colour: an apple (+10), a roast chicken (+30) from a bin, a money bag (1,000 points), a 1UP (src). Still to do: items that drop from thugs, items that vanish after a while (mem)
 - [x] **Destructible scenery** (src): crates, barrels and bins built (two punches, a burst of bits, the item hops out). Still to do: traffic cones and telephone boxes (mem), breakable windows; the real art needs a "whole" and a "broken" frame

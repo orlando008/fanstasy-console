@@ -21,12 +21,12 @@ const mk = (p, x, type, { ai = 'fight', hp = 20, v = 0 } = {}) => { const t = p.
 {
   const vm = newGame(1), p = vm.probe(); vm.run(2); p.loadStage(2); p.enemies = []; p.wave = 1; p.cam = 300; p.locked = false; vm.run(4);
   const by = (ty) => p.enemies.filter((e) => e.type === ty).length;
-  ok(p.enemies.length === 4 && by('knife') === 1 && by('chucker') === 1 && by('lasher') === 1 && by('') === 1, 'a rooftop wave of 4 with k, c, l = 1, 1, 1 is a Slasher, a Chucker, a Lasher and a thug');
+  ok(p.enemies.length === 4 && by('knife') === 1 && by('chucker') === 1 && by('lasher') === 1 && by('fire') === 1, 'a rooftop wave of 4 with k, c, l, f = 1, 1, 1, 1 is a Slasher, a Chucker, a Lasher and a Fire-breather');
   ok(p.enemies.find((e) => e.type === 'chucker').maxhp === 22 && p.enemies.find((e) => e.type === 'lasher').maxhp === 26, 'with 22 and 26 health (0.7 and 0.8 of the rooftop\'s 32)');
 }
 {
   const vm = newGame(1, { players: 2 }), p = vm.probe(); vm.run(2); p.loadStage(2); p.enemies = []; p.wave = 1; p.cam = 300; p.locked = false; p.players[0].x = 340; p.players[1].x = 360; vm.run(4);
-  ok(p.enemies.length === 5 && p.enemies.filter((e) => e.type === '').length === 2, 'with two heroes the extra one is a plain thug');
+  ok(p.enemies.length === 5 && p.enemies.filter((e) => e.type === '').length === 1, 'with two heroes the extra one is a plain thug');
 }
 
 // 2. The Chucker.
