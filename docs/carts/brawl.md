@@ -420,7 +420,12 @@ notes under its number, commit and push.
 Slasher (`t.type === 'knife'`: `sstab`, the lunge and the hop back in `updateThug`, `knifeHp`, the knife dropped on a knock-out, 150
 points), the `k` of a wave, and the caps, the glasses, the vest and the bandana in `drawFighter`. Tests: `11-enemies.mjs`.
 
-**Results:** see the sweep in the next section's note (the bot back-steps from the Slasher's crouch like a human would).
+**Results:** `sweep.mjs brawl --seeds 4`: no stuck runs, but no bot won (0 of 16); the skilled bots mostly die to BULL in stage 1 (every run
+reached him; one reached stage 2). A check with the diagnostic script on the same seeds **before** the Slasher gave the same picture (3 of
+4 one-hero runs died to BULL in stage 1), and the damage the Slasher does to the bots is small (5 to 45 a run, against BULL's punch at 112
+to 320), so **the Slasher is not what makes the game hard for a bot**; BULL is, and the sweeps' win rates move a lot with the seeds
+(a 6-seed sweep earlier gave 33 to 50% on stage 1). The bot does not use the uppercut, the grab, weapons or items, so BULL is the
+first thing to judge by hand: if he is too hard, give him less health or a longer wait after his punch.
 
 ### Built and results: the third stage
 
