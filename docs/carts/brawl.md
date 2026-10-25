@@ -168,19 +168,19 @@ He cannot be hit while he gets up.
 
 ## 6. Levels or content
 
-**Three stages, each ending in a boss** (the second is built; the third is planned). Each is 1,024 px long with five waves. The
+**Three stages, each ending in a boss**, all built. Each is 1,024 px long with five waves. The
 camera follows the hero to the right and never back; it stops at each wave's **lock** and holds until the wave is dead, then a
 flashing GO arrow shows and it scrolls on. The hero cannot leave the screen sideways.
 
-| | 1. The Street (built) | 2. The Docks (built) | 3. The Rooftop (planned) |
+| | 1. The Street | 2. The Docks | 3. The Rooftop |
 |---|---|---|---|
-| Look | a night city, a chain-link fence, paving | a night harbour with cranes, stacked containers, wooden planks | a skyscraper roof at dawn: skyline, a helipad, vents and an aerial |
-| Sky | dusk purple to a warm glow | dark teal | pale orange to blue |
-| Thugs | red shirts, 20 health | grey shirts, 26 health | (a new colour), 32 health |
-| Waves (thugs) | 2, 3, 3, 4, then the boss's 2 | 3, 3, 4, 5, then the boss's 2 | 4, 4, 5, 6, then 2 |
-| Props | 8: apples, a pipe, chickens, money, a knife, a 1UP | 8: two knives, a pipe, chickens, money, apples | more weapons, a helicopter-crate with the 1UP |
-| Song | song 1 (E minor, a funk groove) | song 3 (D minor, a bounce) | song 5 |
-| Boss | **BULL**, a heavy (120 health): punch, charge, song 2 | **RAZOR**, quick (90): three stabs, a leap, song 4 | the last boss: all of the other bosses' moves, song 6 |
+| Look | a night city, a chain-link fence, paving | a night harbour with cranes, stacked containers, wooden planks | a skyscraper roof at dawn: a skyline with aerials, a water tank, an air-conditioning unit, a stairwell hut, a railing, a concrete deck with a helipad |
+| Sky | dusk purple to a warm glow | dark teal | dawn: slate blue to pale orange to gold |
+| Thugs | red shirts, 20 health | olive-grey shirts, 26 health | dark grey (black suits), 32 health |
+| Waves (thugs) | 2, 3, 3, 4, then the boss's 2 | 3, 3, 4, 5, then the boss's 2 | 4, 4, 5, 6, then the boss's 2 |
+| Props | 8: apples, a pipe, chickens, money, a knife, a 1UP | 8: two knives, a pipe, chickens, money, apples | 8: two pipes, a knife, two chickens, money, an apple, a 1UP |
+| Song | song 1 (E minor, a funk groove) | song 3 (D minor, a bounce) | song 5 (C minor, a rising dawn theme) |
+| Boss | **BULL**, a heavy (120 health): punch, charge, song 2 | **RAZOR**, quick (90): three stabs, a leap, song 4 | **KINGPIN** (160): a harder punch and charge, a ground slam to jump, a rage; song 6 |
 
 The camera locks at 0, 300, 560 and 768 (the same for every stage); the fifth wave starts the moment the fourth is dead, on the
 same screen: a flashing **WARNING**, the boss song, and the boss walks in from the right with his two thugs (3 with two heroes).
@@ -191,8 +191,9 @@ Waves bring one more thug when there are two heroes (section 8).
 - When the boss and his thugs are dead, the **stage-clear screen** shows: the bonus for each hero (10 for each point of health left
   and 500 for each life), his score, and the next stage's name. The music stops. A or START (after 1.5 seconds) goes on.
 - The next stage starts with a banner (**STAGE 2: THE DOCKS**, 2.5 seconds), the stage's song, and every hero at the left edge
-  with **full health**, his lives and his score kept, safe for 1.5 seconds. A hero who was **out** (no lives) **comes back with 1
-  life**. Weapons are kept; items on the floor are not.
+  with **full health**, his score kept, and **one more life** (up to 3), safe for 1.5 seconds. A hero who was **out** (no lives)
+  **comes back with 1 life**. Weapons are kept; items on the floor are not. (The extra life is there because the bot, arriving in
+  stage 2 with the lives it had left, almost never won it.)
 - Clearing the last stage is the end of the game: **ALL STAGES CLEAR**, then the top 10 as before. Losing the last life, in any
   stage, is the game over. A restart from the pause menu goes back to stage 1.
 - The stage data is the table `STAGES` in `code.js` (scenes, sky, song, width, thug health and colour, waves, props, boss), so a
@@ -206,9 +207,10 @@ Each stage has three scenes on the three layers (BG2 far, BG1 middle, BG0 the fl
 |---|---|---|---|
 | 1 | city (168), fence (11), ground (12) | BG 1, 2, 3 | 0 to 95 |
 | 2 | harbour (60), dock (24), planks (22) | BG 4, 5, 6 | 96 to 191 |
-| 3 | to come: about 110 tiles | BG 7 (and runtime swaps: the overlay's colours 113 to 115 sit in palette 7, so they move first) | 192 to 255, then row 32 |
+| 3 | skyline (about 50), roofs (about 30), deck (about 36) | BG 7 alone, for all three scenes (15 colours: the overlay's three unused colours that sat there were dropped) | 192 to 255 and row 32 |
 
-Together about 300 tiles of the 639 set aside for backgrounds (the rest, up to 1,023, is for the fighters' frames).
+Together 412 tiles of the 639 set aside for backgrounds (the rest, up to 1,023, is for the fighters' frames). A fourth stage would
+need a runtime palette swap (rewriting the colours of palettes 1 to 3 with `color()`), since all eight palettes are in use.
 
 ## 7. Opponents or hazards
 
@@ -265,6 +267,29 @@ two thirds or one third of his health (60 and 30). Not grabbable. He comes with 
 - **Reward:** 1,500 points to the hero who lands the last hit, and a **chicken** drops where he falls.
 - The boss-2 song (song 4) starts with him and stops at the end of the game.
 
+### KINGPIN, the last boss
+
+A big man in a navy suit, dark glasses and a gold chain, bigger than BULL (a hurt box of 48 x 124). **160 health** (**224** with two
+heroes). He has BULL's armour (no hit stun; a knockdown only at two thirds and one third of his health, 107 and 53), no grab, and
+his moves are BULL's made harder, plus a slam. **His blows hit a seventh harder** (the damage is rounded: a punch does 9, the charge
+12, the slam 9). He comes with 2 thugs (3 with two heroes).
+
+| Move | Frames | Hit | Damage | Effect |
+|---|---|---|---|---|
+| punch | 18 wind-up (BULL's 22), 5 active, 22 recovery | `[18,-106,78,-72]` | 9 | hit stun 16 |
+| charge | 20 crouch (26), up to 64 frames at 4.2 px, 24 pant; a wall stuns him for **50** frames | `[0,-108,52,-10]` | 12 | knockdown |
+| ground slam | 26 wind-up (both fists up), 8 active, 30 recovery | `[-96,-22,96,0]`: a low wave along the floor, both sides | 9 | knockdown |
+
+- **In reach** (in his lane, 26 to 58 px away) he chooses a **punch or a slam** by chance; **from far off** (110 px or more, in his lane)
+  he charges.
+- **The slam is the new test: jump it.** The wave is 22 px high and runs along his lane only (12 px either side): a hero in the air
+  (a jump rises above 22 px after about 5 frames and stays above it for about 25) is not hit, and neither is one in another lane.
+- **Rage:** under **a third of his health** he goes red (flashing), waits **0.6 times as long** between moves (rounded) and walks
+  0.9 px a frame (not 0.7): the last third of the fight is quicker and the openings shorter.
+- **Reward:** 3,000 points to the hero who lands the last hit, and a **money bag** drops (1,000 more if he picks it up before
+  the end). Then the game is won.
+- Song 6 (E minor, 180 bpm, heavy) starts with him.
+
 ## 8. Modes
 
 One or two players, together (co-op). The title's menu is 1 PLAYER, 2 PLAYERS, RECORDS. In a one-player game the second
@@ -296,9 +321,10 @@ left and 500 for every life left.
 
 ## 11. Audio
 
-Songs (five of the eight, on the new sound chip): 0 the title (A minor, 150 bpm, a pad and a soft horn); 1 the street (E minor, 128 bpm: a
+Songs (seven of the eight, on the new sound chip): 0 the title (A minor, 150 bpm, a pad and a soft horn); 1 the street (E minor, 128 bpm: a
 funk bass line and drums, a horn hook, a flute answer, sixteen bars that loop); 2 BULL's (below); 3 the docks (D minor, 128 bpm, a
-bouncing beat, a flute tune and a horn answer, 22 s, looping past its groove intro); 4 RAZOR's (A minor, 150 bpm, a clanking beat, 12.8 s). Songs use channels 0 to 5; effects
+bouncing beat, a flute tune and a horn answer, 22 s, looping past its groove intro); 4 RAZOR's (A minor, 150 bpm, a clanking beat, 12.8 s); 5 the rooftop (C minor, 140 bpm, a rising dawn theme, 19 s, looping past
+its groove intro); 6 KINGPIN's (E minor, 180 bpm, a hard, fast loop, 10.7 s). Songs use channels 0 to 5; effects
 take turns on 6 and 7. Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x
 where it enters (`node tools/devkit/music/loud.mjs carts/brawl.nova --check`; playbook section 5); the street measures
 lead 0.034 (0.60 of the mix), entrance 1.16x, pierce 0.005.
@@ -314,7 +340,8 @@ lead 0.034 (0.60 of the mix), entrance 1.16x, pierce 0.005.
 | heal (12) | a rising four-note arpeggio | an apple or a chicken |
 | smash (13) | a long low crunch | a crate breaks, or a weapon does |
 | song 2 | E minor, 150 bpm, heavy drums and a pounding bass, 12.8 s loop | BULL arrives, until the stage clear |
-| song 4 | A minor, 150 bpm, a clanking beat, 12.8 s loop | RAZOR arrives, until the end of the game |
+| song 4 | A minor, 150 bpm, a clanking beat, 12.8 s loop | RAZOR arrives, until the stage clear |
+| song 6 | E minor, 180 bpm, heavy, 10.7 s loop | KINGPIN arrives, until the end of the game |
 | point (5) | a blip | a thug is knocked out |
 | move, select, pause, over, record | the starter's | the menus, game over, a record |
 
@@ -339,10 +366,10 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 
 | Asset | Budget |
 |---|---|
-| Code | under 56 KB of the 64 KB limit once stripped (`node tools/check.js brawl`): the source is 63 KB with its comments, and `"strip": true` in `meta.json` packs the cart without them (`tools/devkit/strip.mjs`). Watch it: a third stage adds about 8 KB |
-| Tiles | the six background scenes of two stages: about 300, under 639 (stage 3: about 110 more) |
+| Code | under 58 KB of the 64 KB limit once stripped (`node tools/check.js brawl`): the source is about 66 KB with its comments, and `"strip": true` in `meta.json` packs the cart without them (`tools/devkit/strip.mjs`). The packed cart is 53 KB (82%): the drawing code (the shapes) is the biggest part and goes when the real art arrives |
+| Tiles | the nine background scenes of three stages: 412 of the 639 set aside |
 | Sprites | none yet (the final art needs about 128 tiles and 25 KB of ROM a fighter, streamed) |
-| Songs / SFX | five songs and fourteen effects; 14 KB of the 32 KB of sample RAM |
+| Songs / SFX | seven songs (of 8) and fourteen effects; 14 KB of the 32 KB of sample RAM |
 
 ## 15. Implementation plan
 
@@ -358,6 +385,15 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
+
+### Built and results: the third stage
+
+**Built:** the rooftop (art in palette 7 alone, a dawn sky, three scenes of 116 tiles), its thugs (32 health, dark grey), songs 5 and 6,
+and **KINGPIN** (`KING_ANIM`, his slam and rage in `updateBull`, `kingRage`, the damage multiplier in `landHit`, his look in
+`drawBoss`); a life at the start of each stage (up to 3). Tests: `10-king.mjs`, and `08-stages.mjs` follows the three stages.
+A comment that swallowed a closing brace in the stage-2 step was found by the tests at once.
+
+**Results:** see the sweep below.
 
 ### Built and results: the second stage
 
@@ -437,7 +473,7 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 - [ ] **Characters** (src): four fighters in the original sequel (Axel, Blaze, Max, Skate) differ in speed, power, reach and special moves (e.g. a charging tackle, a fireball, a diagonal leaping kick, a spin). We could start with two (a balanced one and a heavy one)
 - [x] **Two-player co-op** (src: the original has it): a second pad joins any time; friendly fire on (mem); the camera follows both. Built (section 8). Still to do: a revive for the partner who is out (no team moves: decided against)
 - [x] **Bosses** (src): BULL built (section 7): a long health bar, a heavy punch, a charge that ends against a wall, armour with knockdowns at a third of his health, two thugs alongside, his own song and a WARNING. Still to do: more bosses, a ground pound or a throw, a phase change at low health
-- [x] **Stage structure**: built for two stages (the street, the docks): each its own scenery, music, thugs, props and boss, with a stage-clear screen between (section 6). Still to do: the third stage (the rooftop), and different thugs for each (SoR2 has eight stages (mem))
+- [x] **Stage structure**: built for three stages (the street, the docks, the rooftop): each its own scenery, music, thugs, props and boss, with a stage-clear screen between (section 6). The third stage (the rooftop) is built too. Still to do: different thugs for each stage (SoR2 has eight stages (mem))
 - [ ] **Stage hazards** (mem, not confirmed): pits, conveyor belts, an elevator that carries the fight to a new screen
 - [ ] **Level-select and options** (mem): difficulty (easy to hardest), number of lives and continues, sound test: the console's save slots can keep them
 - [ ] **Continues**: when the last life goes, a count-down screen to continue with the score reset (mem)
