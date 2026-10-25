@@ -154,7 +154,7 @@ const until = (vm, cond, max = 300, mask = 0) => { for (let i = 0; i < max; i++)
 {
   const vm = newGame(6), p = vm.probe(); vm.run(3);
   p.enemies = []; p.locked = true; p.wave = p.LEVEL.length; p.cam = 768; p.player.x = 800; p.score = 50; p.lives = 2; vm.run(3);
-  ok(p.state === 'over' && p.won, 'the last wave dead, the stage is clear');
+  ok(p.state === 'clear', 'the last wave dead, the stage is clear (the stage-clear screen, with the next stage to come)');
   ok(p.score === 50 + 60 * 10 + 2 * 500, 'with 10 for each point of health and 500 for each life', `${p.score}`);
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

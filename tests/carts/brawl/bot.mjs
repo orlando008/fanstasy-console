@@ -11,7 +11,7 @@
 // it also backs off a thug that is winding up a punch, and walks to the next wave when the street is clear.
 import { M, newGame as boot } from './lib.mjs';
 
-export const defaults = { frames: 30000, seeds: 6, set: { skill: [0, 1], players: [1, 2] } };
+export const defaults = { frames: 60000, seeds: 6, set: { skill: [0, 1], players: [1, 2] } };
 
 export const newGame = (seed, opts = {}) => boot(seed, { players: opts.players ?? 1 }); // skipTitle: straight into play
 
@@ -27,6 +27,7 @@ export const pad = (vm, p, frame, opts) => { frames = frame + 1; return padFor(p
 
 /** The buttons for one hero. */
 function padFor(p, me, frame, skill) {
+  if (p.state === 'clear') return frame % 20 === 0 ? M('A') : 0;      // the stage-clear screen: on to the next stage
   if (me.out || me.anim === 'down' || me.anim === 'hurt') return 0;
   if (me.anim === 'grab') return frame % 8 === 0 ? M('A') : 0;      // hit the held thug (the third hit throws him)
   if (me.anim === 'gpunch') return 0;
@@ -35,8 +36,10 @@ function padFor(p, me, frame, skill) {
   const t = (live.length ? live : p.enemies).reduce((a, b) => (Math.abs(a.x - me.x) + 2 * Math.abs(a.y - me.y) <= Math.abs(b.x - me.x) + 2 * Math.abs(b.y - me.y) ? a : b));
   const dx = t.x - me.x, dy = t.y - me.y;
   const boss = p.enemies.find((e) => e.kind === 'boss' && !e.dying && e.anim !== 'down');
-  if (skill >= 0.5 && boss && boss.anim === 'bcharge' && boss.fi <= 1 && Math.abs(boss.y - me.y) < 24) return me.y > boss.y ? M('DOWN') : M('UP');   // he is charging: step out of his lane
-  if (skill >= 0.5 && boss && boss.anim === 'bpunch' && boss.fi === 0 && Math.abs(boss.x - me.x) < 90 && Math.abs(boss.y - me.y) < 14) return (me.y >= boss.y ? me.y < 200 : me.y <= 158) ? M('DOWN') : M('UP');   // his wind-up: step out of his lane (the punch only reaches 12 px)
+  const dodge = boss && ((boss.anim === 'bcharge' && boss.fi <= 1) || boss.anim === 'rleap' || boss.anim === 'rdive') && Math.abs(boss.y - me.y) < 24;
+  if (skill >= 0.5 && dodge) return me.y > boss.y ? (me.y < 200 ? M('DOWN') : M('UP')) : (me.y > 160 ? M('UP') : M('DOWN'));   // he is charging or leaping: out of his lane
+  const wind = boss && (boss.anim === 'bpunch' || boss.anim === 'rslash1') && boss.fi === 0 && Math.abs(boss.x - me.x) < 90 && Math.abs(boss.y - me.y) < 14;
+  if (skill >= 0.5 && wind) return (me.y >= boss.y ? me.y < 200 : me.y <= 158) ? M('DOWN') : M('UP');   // his wind-up: step out of his lane (his reach is 12 px)
   const close = live.filter((e) => Math.abs(e.x - me.x) < 56 && Math.abs(e.y - me.y) < 14).length;
   if (skill >= 0.5 && close >= 2 && me.hp > 12 && frame % 20 === 0 && (me.anim === 'idle' || me.anim === 'walk')) return M('X');   // surrounded: the special
   if (skill >= 0.5 && t.kind === 'thug' && Math.abs(dy) <= 4 && Math.abs(dx) <= 34 && t.anim !== 'tpunch' && (me.face > 0) === (dx > 0)) return dx > 0 ? M('RIGHT') : M('LEFT');   // walk into him: a grab
@@ -51,8 +54,8 @@ function padFor(p, me, frame, skill) {
   return m;
 }
 
-export const finished = (p) => p.state !== 'play';
+export const finished = (p) => p.state !== 'play' && p.state !== 'clear';
 
 export function result(p) {
-  return { won: p.won ? 1 : 0, score: p.players.reduce((s, h) => s + h.score, 0), lives: p.players.reduce((s, h) => s + h.lives, 0), hp: p.players.reduce((s, h) => s + h.hp, 0), problems: p.state === 'play' ? ['still playing'] : [] };
+  return { won: p.won ? 1 : 0, score: p.players.reduce((s, h) => s + h.score, 0), lives: p.players.reduce((s, h) => s + h.lives, 0), hp: p.players.reduce((s, h) => s + h.hp, 0), stage: p.stage + 1, problems: p.state === 'play' || p.state === 'clear' ? ['still playing'] : [] };
 }

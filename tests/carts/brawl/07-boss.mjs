@@ -117,7 +117,7 @@ const live = (p, x, hp = p.BOSS_HP) => { const b = p.mkFighter('boss', x, p.play
   const vm = newGame(1), p = arena(vm), me = p.player; p.wave = p.LEVEL.length; p.locked = true; p.cam = 768; me.x = 800; me.y = 180;
   const b = bag(p, 36, 3); b.ai = 'dummy'; me.score = 0;
   vm.press('A'); vm.run(240);
-  ok(p.state === 'over' && p.won, 'when he falls, the stage is clear');
+  ok(p.state === 'clear', 'when he falls, the stage is clear');
   ok(me.score >= 1000 + p.HERO_HP * 10 + 3 * 500, 'with his 1,000 and the bonuses', `${me.score}`);
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

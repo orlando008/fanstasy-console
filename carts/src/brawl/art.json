@@ -6,6 +6,7 @@
   "WHITE": 113
  },
  "gradients": [
+  "night",
   "sky"
  ],
  "palettes": {
@@ -44,6 +45,55 @@
     "slab2": 3,
     "slab3": 4
    }
+  },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "glint": 10,
+    "light0": 4,
+    "light1": 5,
+    "red": 11,
+    "sil0": 1,
+    "sil1": 2,
+    "sil2": 3,
+    "water0": 6,
+    "water1": 7,
+    "water2": 8,
+    "water3": 9
+   }
+  },
+  "bg5": {
+   "base": 80,
+   "colors": {
+    "ink": 13,
+    "mustard0": 7,
+    "mustard1": 8,
+    "mustard2": 9,
+    "rust0": 1,
+    "rust1": 2,
+    "rust2": 3,
+    "steel0": 10,
+    "steel1": 11,
+    "steel2": 12,
+    "teal0": 4,
+    "teal1": 5,
+    "teal2": 6
+   }
+  },
+  "bg6": {
+   "base": 96,
+   "colors": {
+    "edge0": 5,
+    "edge1": 6,
+    "edge2": 7,
+    "rope": 8,
+    "water0": 9,
+    "water1": 10,
+    "wood0": 1,
+    "wood1": 2,
+    "wood2": 3,
+    "wood3": 4
+   }
   }
  },
  "scenes": {
@@ -52,6 +102,13 @@
    "mx": 0,
    "my": 0,
    "pal": 1,
+   "w": 32
+  },
+  "dock": {
+   "h": 28,
+   "mx": 128,
+   "my": 0,
+   "pal": 5,
    "w": 32
   },
   "fence": {
@@ -67,10 +124,24 @@
    "my": 0,
    "pal": 3,
    "w": 32
+  },
+  "harbour": {
+   "h": 28,
+   "mx": 96,
+   "my": 0,
+   "pal": 4,
+   "w": 32
+  },
+  "planks": {
+   "h": 28,
+   "mx": 160,
+   "my": 0,
+   "pal": 6,
+   "w": 32
   }
  },
  "sprites": {},
  "tiles": {},
- "used": 190,
+ "used": 296,
  "version": 1
 }

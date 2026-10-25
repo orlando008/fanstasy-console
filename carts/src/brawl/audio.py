@@ -54,6 +54,21 @@ bars(S, 16, CHB, None, drums='heavy', bass='1 1 - 1 1 - 5 -', upper='pad', count
 bars(S, 16, CHB, ['E4 - E4 - G4 - B4 -', 'E4 - G4 - B4 - D5 -', 'C4 - E4 - G4 - C5 -', 'D4 - F#4 - A4 - F#4 .'], li='SOFTHORN', drums='heavy', bass='1 1 - 1 1 - 5 -', upper='arp1')
 S.finish()
 
+# --- 3 The docks: D minor, 128 bpm, a rolling bounce with a flute tune over a walking bass (it loops past the groove intro) ---
+S = a.song(Key('D', MINOR), 7, echo=(6, 4, 5, 9))
+CD = ['1', '6', '7', '1']
+bars(S, 16, CD, None, drums='bouncy', bass='1 - 5 - 1 - 5 5', upper='pad', counter='1 - 3 - 5 - 3 -', ci='ARP')   # the groove first, so the lead does not arrive with a jump
+bars(S, 16, CD, ['D4 - F4 - A4 - F4 -', 'Bb3 - D4 - F4 - D4 -', 'C4 - E4 - G4 - E4 -', 'D4 - A4 - F4 - D4 .'], li='LEAD', drums='bouncy', bass='1 - 5 - 1 - 5 5', upper='arp1')
+bars(S, 16, ['4', '1', '5', '1'], ['G4 - Bb4 - D5 - Bb4 -', 'A4 - F4 - D4 - F4 -', 'A4 - C5 - E4 - A4 -', 'D4 - F4 - A4 - D5 .'], li='SOFTHORN', drums='bouncy', bass='1 - 5 - 1 - 5 5', upper='arp1')
+S.finish(loop=1)
+
+# --- 4 The second boss: A minor, 150 bpm, a nervous driving loop with a clanking beat ---
+S = a.song(Key('A', MINOR), 6, echo=(4, 3, 4, 8))
+CR = ['1', '1', '6', '5']
+bars(S, 16, CR, None, drums='clank', bass='1 1 - 1 1 - 1 5', upper='pad', counter='1 - 1 - 3 - 5 -', ci='ARP')
+bars(S, 16, CR, ['A4 - A4 - C5 - E5 -', 'A4 - C5 - E5 - C5 -', 'F4 - A4 - C5 - A4 -', 'E4 - G4 - B4 - G4 .'], li='SOFTHORN', drums='clank', bass='1 1 - 1 1 - 1 5', upper='arp1')
+S.finish(loop=1)
+
 # --- Effects: the order is the SFX table in code.js ---
 a.effect(1, ['E-6', 'OFF'], 'BLIP')                                # 0 menu move
 a.effect(2, ['C-6', 'G-6', 'OFF'], 'CHIME')                        # 1 select
@@ -72,4 +87,4 @@ a.effect(2, ['E-6', 'A-6', 'OFF'], 'CHIME')                        # 11 a weapon
 a.effect(2, ['C-5', 'E-5', 'G-5', 'C-6', 'OFF'], 'CHIME')          # 12 food (a rising arpeggio)
 a.effect(4, ['C-3', 'A-2', 'F-2', 'D-2', 'OFF'], 'CRUNCH')         # 13 a crate breaks (a long low crunch)
 
-a.write(sys.argv[1], songs=3)
+a.write(sys.argv[1], songs=5)

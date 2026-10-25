@@ -118,7 +118,7 @@ const press2 = (vm, pad, name) => { const m = M(name); if (pad) two(vm, 0, m); e
   const vm = newGame(6, { players: 2 }), p = vm.probe(); vm.run(3);
   p.enemies = []; p.locked = true; p.wave = p.LEVEL.length; p.cam = 768; p.players[0].x = 800; p.players[1].x = 820;
   p.players[0].score = 50; p.players[1].score = 20; p.players[1].lives = 1; vm.run(3);
-  ok(p.state === 'over' && p.won, 'the stage is clear for both');
+  ok(p.state === 'clear', 'the stage is clear for both');
   ok(p.players[0].score === 50 + 600 + 1500 && p.players[1].score === 20 + 600 + 500, 'each gets his own bonus: health and lives', `${p.players.map((h) => h.score)}`);
 }
 
