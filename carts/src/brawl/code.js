@@ -92,6 +92,7 @@ const ANIM = {
   punch1: [[4, STAND, null], [3, STAND, [14, -72, 50, -58]], [7, STAND, null]],
   punch2: [[4, STAND, null], [3, STAND, [14, -72, 50, -58]], [7, STAND, null]],
   hook: [[6, STAND, null], [4, STAND, [14, -78, 58, -56]], [12, STAND, null]],
+  uppercut: [[7, STAND, null], [4, STAND, [10, -104, 44, -38]], [14, STAND, null]],   // UP + the third A: a tall, narrow hit that lifts him
   jump: [[999, STAND, null]],
   jkick: [[4, STAND, null], [999, STAND, [10, -44, 50, -20]]],
   land: [[6, STAND, null]],
@@ -110,7 +111,7 @@ const ANIM = {
 };
 // What an attack does: damage, hit stun (frames, with a knock back of 6 px over them) or a knockdown.
 const MOVE = {
-  punch1: { dmg: 4, stun: 16 }, punch2: { dmg: 4, stun: 16 }, hook: { dmg: 6, down: 1 }, jkick: { dmg: 6, down: 1 },
+  punch1: { dmg: 4, stun: 16 }, punch2: { dmg: 4, stun: 16 }, hook: { dmg: 6, down: 1 }, uppercut: { dmg: 8, down: 1, lift: 5.0 }, jkick: { dmg: 6, down: 1 },
   tpunch: { dmg: 5, stun: 16 }, special: { dmg: 5, down: 1 },
   wpipe: { dmg: 8, down: 1 }, wknife: { dmg: 5, stun: 14 },
 };
@@ -173,15 +174,15 @@ function addHero(pad, x, y) {
 const heroes = () => players.filter((h) => !h.out);                   // the ones still in the game
 
 function mkFighter(kind, x, y, hp) {
-  return { kind, x, y, h: 0, vx: 0, vz: 0, face: 1, anim: 'idle', fi: 0, ft: 0, hp, hits: [], conn: false, connT: 99, queue: false,
+  return { kind, x, y, h: 0, vx: 0, vz: 0, face: 1, anim: 'idle', fi: 0, ft: 0, hp, hits: [], conn: false, connT: 99, queue: false, queueUp: false,
     pad: 0, lives: 0, score: 0, out: false, weapon: null, grab: null, gt: 0, gcount: 0, held: null, thrown: null, hitBy: [], inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
 }
 
 // --- Animations and boxes ---
 
 // The sound each animation starts with (a swing of the fist or the foot, a jump).
-const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, jump: SFX.jump, special: SFX.swing, wpipe: SFX.swing, wknife: SFX.swing };
-function setAnim(f, name) { if (CUE[name] !== undefined) fx(CUE[name]); f.anim = name; f.fi = 0; f.ft = 0; f.hits = []; f.conn = false; f.connT = 99; f.queue = false; }
+const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, jump: SFX.jump, special: SFX.swing, wpipe: SFX.swing, wknife: SFX.swing, uppercut: SFX.swing };
+function setAnim(f, name) { if (CUE[name] !== undefined) fx(CUE[name]); f.anim = name; f.fi = 0; f.ft = 0; f.hits = []; f.conn = false; f.connT = 99; f.queue = false; f.queueUp = false; }
 const frameOf = (f) => { const a = ANIM[f.anim]; return a[Math.min(f.fi, a.length - 1)]; };
 /** Advance a frame; true when the animation has run its course. */
 function stepAnim(f) {
@@ -219,13 +220,13 @@ function landHit(a, t, mv) {
   if (t.grab) release(t);                                            // a hero who is hit lets go
   if (t.weapon) dropWeapon(t);                                       // and drops his weapon
   if (a.kind === 'hero' && !friendly) { a.score += 10; lastHit = t; lastHitT = 180; }
-  if (!friendly && (t.hp <= 0 || mv.down || t.h > 0)) knockDown(t, dir, a);   // a hit in the air always knocks down (he must fall)
+  if (!friendly && (t.hp <= 0 || mv.down || t.h > 0)) knockDown(t, dir, a, mv.lift);   // a hit in the air always knocks down (he must fall)
   else { setAnim(t, 'hurt'); t.vx = dir * 6 / 16; }
   fx(mv.down ? SFX.slam : SFX.hit);
 }
 
-function knockDown(f, dir, by) {
-  setAnim(f, 'down'); f.vz = 3.4; f.vx = dir * 2.4; f.h = Math.max(f.h, 0.1); f.lie = 0;
+function knockDown(f, dir, by, lift) {
+  setAnim(f, 'down'); f.vz = lift || 3.4; f.vx = dir * (lift ? 0.6 : 2.4);   // a lift pops him up and lands him close f.h = Math.max(f.h, 0.1); f.lie = 0;
   if (f.hp <= 0 && !f.dying) { f.dying = f.kind === 'thug'; if (f.kind === 'thug') { if (by && by.kind === 'hero') by.score += 100; fx(SFX.point); } }
 }
 
@@ -282,10 +283,10 @@ function updateHero(p) {
     if (fall(p)) setAnim(p, 'land');
     return;
   }
-  if (a === 'punch1' || a === 'punch2' || a === 'hook') {
-    if (pr(A) && COMBO[a]) p.queue = true;
+  if (a === 'punch1' || a === 'punch2' || a === 'hook' || a === 'uppercut') {
+    if (pr(A) && COMBO[a]) { p.queue = true; p.queueUp = bt(UP); }     // UP held at the press of the third A: the uppercut, not the hook
     const ended = stepAnim(p);
-    if (COMBO[a] && p.queue && p.conn && p.connT <= 12 && (p.fi >= 2 || ended)) setAnim(p, COMBO[a]);
+    if (COMBO[a] && p.queue && p.conn && p.connT <= 12 && (p.fi >= 2 || ended)) setAnim(p, a === 'punch2' && p.queueUp ? 'uppercut' : COMBO[a]);
     else if (ended) setAnim(p, 'idle');
     return;
   }
@@ -535,7 +536,7 @@ function updatePlay() {
   if (lastHitT > 0) lastHitT--;
   if (hitstop > 0) {                                                 // both fighters freeze on a hit
     hitstop--;
-    for (const h of players) if (pressedBy(h.pad, A) && COMBO[h.anim]) h.queue = true;   // (a press during the freeze still counts)
+    for (const h of players) if (pressedBy(h.pad, A) && COMBO[h.anim]) { h.queue = true; h.queueUp = held(h.pad, UP); }   // (a press during the freeze still counts)
     return;
   }
   for (const h of heroes()) updateHero(h);
@@ -674,8 +675,10 @@ function drawFighter(f) {
     rectfill(sx + d * 12 - 4, by - 68, 8, 8, skin);
   } else if (mv) {                                                          // an attack: the fist cocked, then out at the hit box
     let fx0 = d * 16, fy0 = -62;
-    if (fr[2]) { const b = fr[2]; fx0 = d * ((b[0] + b[2]) / 2); fy0 = (b[1] + b[3]) / 2; }
-    else if (f.fi === 0) { fx0 = -d * 12; fy0 = -64; }
+    const up = f.anim === 'uppercut';                                // the uppercut: the fist low, then up through the hit box
+    if (fr[2]) { const b = fr[2]; fx0 = d * ((b[0] + b[2]) / 2); fy0 = up ? b[1] + 12 : (b[1] + b[3]) / 2; }
+    else if (f.fi === 0) { fx0 = up ? d * 8 : -d * 12; fy0 = up ? -34 : -64; }
+    else if (up) { fx0 = d * 14; fy0 = -50; }
     const fx1 = sx + fx0, fy1 = by + fy0;
     line(sx + d * 8, by - 66, fx1, fy1, skin); line(sx + d * 8, by - 65, fx1, fy1 + 1, skin);
     rectfill(fx1 - 6, fy1 - 6, 12, 12, fr[2] ? fist : coat);

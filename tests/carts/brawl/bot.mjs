@@ -43,7 +43,7 @@ function padFor(p, me, frame, skill) {
   if (Math.abs(dx) > 34) m |= dx > 0 ? M('RIGHT') : M('LEFT');
   else if (Math.abs(dx) < 20) m |= dx > 0 ? M('LEFT') : M('RIGHT');
   else if (Math.abs(dy) <= 8 && (me.face > 0) === (dx > 0)) { // in reach: punch (a press, not a hold), more often with skill
-    if (frame % 6 === 0 && ((frame * 7 + me.x) % 100) / 100 < 0.35 + 0.65 * skill) m |= M('A');
+    if (frame % 6 === 0 && ((frame * 7 + me.x) % 100) / 100 < 0.35 + 0.65 * skill) { m |= M('A'); if (skill >= 0.5 && close <= 1) m |= M('UP'); }   // alone with one thug: the uppercut finisher
   } else if ((me.face > 0) !== (dx > 0)) m |= dx > 0 ? M('RIGHT') : M('LEFT'); // turn to face him
   return m;
 }

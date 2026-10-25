@@ -27,7 +27,7 @@ lives and the game ends; clear the fourth wave and the stage is clear. Either wa
 | Button | Use |
 |---|---|
 | D-pad | (the second player's pad has the same buttons) Walk in eight directions (left and right turn to face that way; up and down move into the screen) |
-| A | Attack: a three-hit combo on the ground (punch, punch, hook); a jump kick in the air (planned: UP + the third A is an uppercut, section 17) |
+| A | Attack: a three-hit combo on the ground (punch, punch, hook); a jump kick in the air. **UP held with the third A: an uppercut** instead of the hook |
 | B | Jump |
 | A on a weapon | Take it; with one in hand A swings it |
 | X | The special: a spin that hits both sides (costs 3 health) |
@@ -64,7 +64,8 @@ attack hits. Real art must have its feet at the pivot and fit these boxes (or th
 | idle, walk | one frame, looping: stand box `[-14,-92,14,0]` | | | |
 | punch 1 | 4 startup, 3 active (hit `[14,-72,50,-58]`), 7 recovery | 14 | 4 | hit stun 16 |
 | punch 2 | 4, 3 (same box), 7 | 14 | 4 | hit stun 16 |
-| hook | 6, 4 (hit `[14,-78,58,-56]`), 12 | 22 | 6 | knockdown |
+| hook | 6, 4 (hit `[14,-78,58,-56]`), 12 | 22 | 6 | knockdown: thrown away, 2.4 px a frame |
+| uppercut | 7, 4 (hit `[10,-104,44,-38]`), 14 | 25 | 8 | knockdown: popped up (`vz` 5.0, `vx` 0.6), about 33 frames in the air, lands about 20 px further out |
 | jump kick | the whole jump after A, active from 4 frames after the start (hit `[10,-44,50,-20]`) | | 6 | knockdown |
 | hurt | 16 frames, stand box | 16 | | |
 | down | in the air, then 40 lying (box `[-40,-18,40,0]`) | | | not hittable |
@@ -78,6 +79,10 @@ attack hits. Real art must have its feet at the pivot and fit these boxes (or th
 
 ### Combo and moves
 
+- **The third hit is the player's choice:** if **UP is held** at the press of the A that queues the third hit (during punch 2,
+  or the 12 frames after it connects, or during the hit stop) he throws the **uppercut**; otherwise the **hook**. UP held
+  only on the earlier punches, or only after the press, changes nothing; if A is pressed twice the later press decides.
+  Each pad's UP counts for its own hero. The hook sends the thug flying away; the uppercut lifts him straight up for 8.
 - Press A on the ground: punch 1. Press A again after punch 1 **connects** (during its active or recovery frames, up to 12
   frames after the hit) and punch 2 follows, then the hook. A hit that does not connect cannot chain. Pressing A after
   the hook starts a new combo once the hook has ended.
@@ -304,28 +309,9 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 ### P1: the fighting (what makes it feel like the game)
 
 - [x] Walk in a lane, three-hit combo, jump, jump kick, hit stop, knockdowns, enemy health bar shown (src: SoR2 added bars for all enemies)
-- [ ] **The third punch: a hook, or an uppercut with UP** (from the user's memory of the game and idea): the third hit has two
-  versions, chosen by whether the player holds **UP** on the D-pad when pressing the final A. A alone throws the hook
-  (6 damage, a knockdown that throws the thug away: as built). **UP + A** throws a new **uppercut** that does more and lifts him.
-  - *The choice:* it is read at the press of the A that queues the third hit (during the second punch, or the 12 frames after it
-    connects), so the player decides during the combo: `queueUp = held(UP)` at that press. Holding UP only on the first and
-    second punches changes nothing (UP does not move him during an attack), and a player who never touches UP gets the hook,
-    exactly as now. If A is pressed twice (once with UP, once without) the later press wins.
-  - *Frames:* 7 start-up (a little longer than the hook's 6: it is the bigger finisher), 4 active, 14 recovery; the fist rises, so
-    the hit box is tall and narrow in front of the hero: `[10,-104,44,-38]` (the hook's is a flat `[14,-78,58,-56]`).
-  - *Effect:* 8 damage (the hook's 6), a knockdown that **pops the thug straight up** (`vz` 5.0, against 3.4 for other
-    knockdowns, with `vx` only 1.2 so he lands near the hero, not across the screen); he is in the air about 33 frames.
-    The hook stays the one that sends him flying away (a way to clear someone off the hero or into others).
-  - *Fits what exists:* the chain rules do not change (the second punch must connect, then A within 12 frames); an attack hits
-    each fighter once. The uppercut reaches less far forward (44, not 58), so spacing in a combo matters a little more.
-    Friendly fire, hit stop, score (10 a hit) and the weapon rules are unchanged (a weapon in hand still replaces the combo).
-  - *Needs:* an `uppercut` entry in the frame table and `MOVE` (`dmg: 8, down: 1, lift: 5.0`), a `lift` option in `knockDown`,
-    the chain in `updateHero` choosing `uppercut` or `hook` from `queueUp`, a placeholder drawing (the fist rising), a sound
-    (the hook's slam, or a higher one), the controls table and the frame table in the spec, tests (A alone gives the hook; UP + A
-    gives the uppercut; 8 damage; the thug rises over 40 px and lands within 30 px of the hero; the choice is made at the press,
-    not the end), and a sweep to see the bot still clears the stage (the bot could use the uppercut on one thug and the hook
-    when he is in a crowd). Small: about an hour.
-  - *Open question:* does the jump kick keep its flat knockdown? (assumed yes)
+- [x] **The third punch: a hook, or an uppercut with UP** (the user's memory of the game and idea): built. Section 5 has the rules
+  and the frame table, `tests/carts/brawl/06-uppercut.mjs` the checks, and the bot throws the uppercut when it is alone with
+  one thug. Still to do (art): the hero's hop on the swing, and an uppercut sound of its own (it uses the swing)
 - [x] **Grab and throw** (src): built (the grab, three grab hits, a throw forward or behind, a thrown thug that hurts others). Still to do: a back grab when the thug's back is to you (mem), a vault throw
 - [x] **Special attack that costs health** (src): the plain press (X) is built: a spin that hits both sides, costs 3 health, invulnerable while it is active. Still to do: the direction plus X, a stronger single-target move (a dash that ends in an uppercut). Costs nothing when it misses everything (mem)? Not done: it costs every time. The pad has X, Y, L and R free: the special is on X, the back attack goes on Y
 - [ ] **Blitz** (src): double-tap a direction then A for a dash attack (a lunging move)
