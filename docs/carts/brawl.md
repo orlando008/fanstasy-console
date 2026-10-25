@@ -304,6 +304,21 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 ### P1: the fighting (what makes it feel like the game)
 
 - [x] Walk in a lane, three-hit combo, jump, jump kick, hit stop, knockdowns, enemy health bar shown (src: SoR2 added bars for all enemies)
+- [ ] **The third punch as an uppercut** (from the user's memory of the game): today the third hit is a sideways hook (6 damage,
+  a knockdown that throws the thug away). Plan: replace it with an **uppercut** that does more and lifts the thug.
+  - *Frames:* 7 start-up (a little longer than the hook's 6: it is the finisher), 4 active, 14 recovery; the fist rises, so
+    the hit box is tall and narrow in front of the hero: `[10,-104,44,-38]` (the hook's is a flat `[14,-78,58,-56]`).
+  - *Effect:* 8 damage (the hook's 6), a knockdown that **pops the thug straight up** (`vz` 5.0, against the 3.4 of other
+    knockdowns, with `vx` only 1.2 so he lands near the hero, not across the screen); he is in the air about 33 frames.
+    The hero hops a pixel or two on the swing (a drawing detail).
+  - *Fits what exists:* the chain rules do not change (the second punch must connect, then A within 12 frames); an attack hits
+    each fighter once. The uppercut reaches less far forward (44, not 58), so spacing in a combo matters a little more.
+  - *Needs:* an `uppercut` entry in the frame table and `MOVE` (`dmg: 8, down: 1, lift: 5.0`), a `lift` option in `knockDown`,
+    `COMBO.punch2 = 'uppercut'`, a placeholder drawing (the fist rising), a sound (the hook's slam is fine, or a higher one),
+    tests (the third hit is an uppercut; 8 damage; the thug rises over 40 px and lands within 30 px of the hero) and a
+    sweep to see the bot still clears the stage. Small: about an hour.
+  - *Open questions:* should the jump kick keep its flat knockdown? (assumed yes) And does the uppercut replace the hook
+    outright, or should the hook stay as a different finisher (say, after a dash)? (assumed: replace)
 - [x] **Grab and throw** (src): built (the grab, three grab hits, a throw forward or behind, a thrown thug that hurts others). Still to do: a back grab when the thug's back is to you (mem), a vault throw
 - [x] **Special attack that costs health** (src): the plain press (X) is built: a spin that hits both sides, costs 3 health, invulnerable while it is active. Still to do: the direction plus X, a stronger single-target move (a dash that ends in an uppercut). Costs nothing when it misses everything (mem)? Not done: it costs every time. The pad has X, Y, L and R free: the special is on X, the back attack goes on Y
 - [ ] **Blitz** (src): double-tap a direction then A for a dash attack (a lunging move)
