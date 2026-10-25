@@ -29,6 +29,7 @@ lives and the game ends; clear the fourth wave and the stage is clear. Either wa
 | D-pad | (the second player's pad has the same buttons) Walk in eight directions (left and right turn to face that way; up and down move into the screen) |
 | A | Attack: a three-hit combo on the ground (punch, punch, hook); a jump kick in the air |
 | B | Jump |
+| A on a weapon | Take it; with one in hand A swings it |
 | X | The special: a spin that hits both sides (costs 3 health) |
 | D-pad into a thug | Grab him; then A hits him, and the opposite direction and A throws him |
 | SELECT | Show or hide the hit boxes (the debug view) |
@@ -69,6 +70,8 @@ attack hits. Real art must have its feet at the pivot and fit these boxes (or th
 | down | in the air, then 40 lying (box `[-40,-18,40,0]`) | | | not hittable |
 | get up | 20 frames | 20 | | invulnerable |
 | thug punch | 18 wind-up, 4 active (hit `[14,-74,52,-60]`), 22 recovery | 44 | 5 | hit stun 16 |
+| pipe swing | 8 start-up, 4 active (hit `[16,-86,84,-46]`), 14 recovery | 26 | 8 | knockdown |
+| knife stab | 3, 3 (hit `[14,-74,66,-54]`), 7 | 13 | 5 | hit stun 14 |
 | special | 5 start-up, 6 active (hit `[-54,-86,54,-24]`, both sides), 14 recovery | 25 | 5 | knockdown; invulnerable for the first 11 frames |
 | grab | held until the thug is thrown, hit away or 120 frames pass; a grab hit takes 8 frames | | 3 a hit | the third hit throws |
 | throw | 14 frames | 14 | 7 | knockdown; the thug flies 3.6 px a frame |
@@ -109,6 +112,41 @@ attack hits. Real art must have its feet at the pivot and fit these boxes (or th
 X is a spin, usable on the ground when he has **more than 3 health**: it costs **3** health (it never kills him). It hits
 both sides (5 damage, a knockdown) and he **cannot be hurt** from the first frame to the end of the active frames. On his
 partner it is friendly fire. It is the way out of being surrounded. (The stronger move with a direction is still to do.)
+
+### Items, weapons and breakable scenery
+
+Every item has its own **colour and shape**, so it can be told at a glance:
+
+| Item | Looks like | Taken | Does |
+|---|---|---|---|
+| Apple | a red apple with a green leaf | walk over it | heals 10 (the green "+10" floats up) |
+| Chicken | an orange roast drumstick with a white bone | walk over it | heals 30 ("+30") |
+| Money bag | a gold sack tied with brown, a `$` on it | walk over it | 1,000 points ("$1000") |
+| 1UP | a cyan block with 1UP on it | walk over it | one more life, up to 9 (a fanfare) |
+| Pipe | a long steel-grey bar | A | a weapon, 8 swings: 8 damage, knocks down, 84 px reach, slow (8 start-up) |
+| Knife | a white blade with a brown handle | A | a weapon, 12 stabs: 5 damage, a hit stun, 66 px reach, quick (3 start-up) |
+
+- **Food, money and a 1UP** are taken by walking over them (within 16 px across and 8 in depth, on the ground, on his feet);
+  either hero can take them, the one who gets there first. They are taken even at full health.
+- **Weapons** are taken with A while standing over one (within 18 px, 8 in depth); taking one while holding another swaps
+  them (the old one drops with the uses it had left). A swings the weapon instead of punching; the jump kick, the special and
+  the grab are unchanged and keep it. His name and uses left float over his head (PIPE 7). The last use breaks it (BROKE).
+  **A hero who is hit drops his weapon** on the ground beside him, where he can take it again.
+- **Crates (brown), barrels (blue) and bins (green)** stand in the street (the table below). Any attack that reaches one in
+  the same lane hits it, whatever the height: a punch is 4, so **two punches break one** (8 health); the special, a hook, a
+  weapon and a thug thrown into one do the same. Thugs' punches do not. It flashes white, then bursts into 8 bits and
+  the item inside hops out. They do not block anyone.
+
+| Where (x, lane) | What | Holds |
+|---|---|---|
+| 170, 178 | crate | apple |
+| 226, 196 | barrel | pipe |
+| 420, 170 | bin | chicken |
+| 470, 200 | crate | money bag |
+| 640, 182 | barrel | knife |
+| 690, 166 | crate | apple |
+| 860, 192 | bin | chicken |
+| 930, 176 | crate | 1UP |
 
 ### Hero
 
@@ -184,6 +222,9 @@ lead 0.034 (0.60 of the mix), entrance 1.16x, pierce 0.005.
 | slam (8) | a heavy falling tom | a hook or a jump kick lands |
 | thud (9) | a falling tom | a knocked-down body hits the ground |
 | jump (10) | four rising pulses | the hero jumps |
+| pickup (11) | two bright notes | a weapon or money is taken |
+| heal (12) | a rising four-note arpeggio | an apple or a chicken |
+| smash (13) | a long low crunch | a crate breaks, or a weapon does |
 | point (5) | a blip | a thug is knocked out |
 | move, select, pause, over, record | the starter's | the menus, game over, a record |
 
@@ -269,9 +310,9 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 - [ ] **Back attack** (mem): a button (Y) that hits both ways; a defensive move to get out of a surround
 - [ ] **Wake-up and knock-down rules** (mem): the hero is invulnerable while he gets up; a thrown or knocked-down thug hurts others he hits
 - [ ] **Enemy variety in behaviour**: not only more thugs, but different jobs (src: weapon users only when they spawn with them): a fast one, a heavy one that cannot be stunned by a punch, a knife man, one that shoots or breathes fire (mem)
-- [ ] **Pick-up and use of weapons** (src): stand over it and press A to pick it up, A to swing (reach and damage differ), jump + A to throw it; getting hit makes you drop it (src); enemies keep a weapon they spawned with (src)
-- [ ] **Items**: food to heal: an apple (small) and a roast chicken (large, found in a bin) (src); a money bag for 1,000 points (src, from the first game); an extra life (src, first game)
-- [ ] **Destructible scenery** (src): barrels, crates, traffic cones, bins, telephone boxes (mem) break when hit and drop a weapon, food or points; a stage places them in advance. The art needs a "whole" and a "broken" frame and a hit point or two
+- [x] **Pick-up and use of weapons** (src): built: a pipe and a knife (A takes it, A swings it, getting hit drops it). Still to do: throwing it (Y?), more weapons (a bottle that breaks, a bat, a sword), thugs that spawn with a weapon (src)
+- [x] **Items**: built, each in its own colour: an apple (+10), a roast chicken (+30) from a bin, a money bag (1,000 points), a 1UP (src). Still to do: items that drop from thugs, items that vanish after a while (mem)
+- [x] **Destructible scenery** (src): crates, barrels and bins built (two punches, a burst of bits, the item hops out). Still to do: traffic cones and telephone boxes (mem), breakable windows; the real art needs a "whole" and a "broken" frame
 
 ### P2: depth
 

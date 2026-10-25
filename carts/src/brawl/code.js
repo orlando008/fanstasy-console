@@ -5,7 +5,7 @@
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
-const SHADOW = 1, PANEL = 3, RED = 6, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14, WHITE = 15;
+const SHADOW = 1, NAVY = 2, PANEL = 3, BROWN = 4, DKGREEN = 5, RED = 6, BLUE = 8, ORANGE = 9, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14, WHITE = 15;
 
 // --- Art: made by art.py (tiles.txt, palette.txt, map.txt). The block below is rewritten each time it runs. ---
 
@@ -29,7 +29,7 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
 // so they never cut into the music and two can sound at once.
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6, swing: 7, slam: 8, thud: 9, jump: 10 };
+const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6, swing: 7, slam: 8, thud: 9, jump: 10, pickup: 11, heal: 12, smash: 13 };
 const SONG = { title: 0, play: 1 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
@@ -103,17 +103,32 @@ const ANIM = {
   gpunch: [[8, STAND, null]],
   throw: [[14, STAND, null]],
   held: [[999, STAND, null]],                                        // the thug in the hold
+  pick: [[8, STAND, null]],                                          // picking a weapon up
+  wpipe: [[8, STAND, null], [4, STAND, [16, -86, 84, -46]], [14, STAND, null]],   // a swing of the pipe: slow, long reach
+  wknife: [[3, STAND, null], [3, STAND, [14, -74, 66, -54]], [7, STAND, null]],   // a stab: quick
   special: [[5, STAND, null], [6, STAND, [-54, -86, 54, -24]], [14, STAND, null]],   // a spin: hits both sides, invulnerable until it ends its active frames
 };
 // What an attack does: damage, hit stun (frames, with a knock back of 6 px over them) or a knockdown.
 const MOVE = {
   punch1: { dmg: 4, stun: 16 }, punch2: { dmg: 4, stun: 16 }, hook: { dmg: 6, down: 1 }, jkick: { dmg: 6, down: 1 },
   tpunch: { dmg: 5, stun: 16 }, special: { dmg: 5, down: 1 },
+  wpipe: { dmg: 8, down: 1 }, wknife: { dmg: 5, stun: 14 },
 };
 const COMBO = { punch1: 'punch2', punch2: 'hook' };
 // Grab and throw: walk into a thug to grab him (up to GRAB_X away, GRAB_Y in depth); A hits him (3 each) and the third throws him
 // forward, or the opposite direction and A throws him behind. A thrown thug hurts whoever he lands on. The special costs health.
 const GRAB_X = 24, GRAB_Y = 6, GRAB_MAX = 120, GRAB_HITS = 3, GRAB_DMG = 3, THROW_DMG = 7, THROWN_DMG = 5, SPECIAL_COST = 3;
+
+// Things to pick up, each in its own colour: food heals (apple 10, chicken 30), money is 1,000 points, a 1UP is a life, and the
+// weapons (pipe, knife) are taken with A and used with A. Crates, barrels and bins break in two punches and drop their item.
+const ITEM = { apple: { heal: 10 }, chicken: { heal: 30 }, money: { pts: 1000 }, oneup: { life: 1 }, pipe: { weapon: 'wpipe', uses: 8, name: 'PIPE' }, knife: { weapon: 'wknife', uses: 12, name: 'KNIFE' } };
+const PROP_BOX = { crate: [-14, -30, 14, 0], barrel: [-12, -34, 12, 0], bin: [-12, -36, 12, 0] }, PROP_HP = 8;
+const PROPS = [                                                      // where they stand in the street, and what is inside
+  { x: 170, y: 178, kind: 'crate', item: 'apple' }, { x: 226, y: 196, kind: 'barrel', item: 'pipe' },
+  { x: 420, y: 170, kind: 'bin', item: 'chicken' }, { x: 470, y: 200, kind: 'crate', item: 'money' },
+  { x: 640, y: 182, kind: 'barrel', item: 'knife' }, { x: 690, y: 166, kind: 'crate', item: 'apple' },
+  { x: 860, y: 192, kind: 'bin', item: 'chicken' }, { x: 930, y: 176, kind: 'crate', item: 'oneup' },
+];
 
 // --- State ---
 
@@ -121,6 +136,7 @@ let skipTitle = false; // tests set this to land straight in the game (startPlay
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let won = false, startPlayers = 1, pend = [], entryPad = 0;
+let props = [], items = [], popups = [], bits = [];
 let players = [], enemies = [], cam = 0, wave = 0, locked = false, hitstop = 0, showBoxes = false, goT = 0, lastHit = null, lastHitT = 0;
 
 function init() {
@@ -143,6 +159,7 @@ function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; s
 function startGame(n = startPlayers) {
   won = false; paused = false; timer = 0; state = 'play'; players = [];
   cam = 0; wave = 0; locked = false; hitstop = 0; goT = 0; enemies = []; lastHit = null; lastHitT = 0;
+  props = PROPS.map((q) => ({ ...q, prop: true, h: 0, hp: PROP_HP, flash: 0, box: PROP_BOX[q.kind] })); items = []; popups = []; bits = [];
   addHero(0, 90, n > 1 ? 172 : 180);
   if (n > 1) addHero(1, 56, 192);
   play(SONG.play);
@@ -157,13 +174,13 @@ const heroes = () => players.filter((h) => !h.out);                   // the one
 
 function mkFighter(kind, x, y, hp) {
   return { kind, x, y, h: 0, vx: 0, vz: 0, face: 1, anim: 'idle', fi: 0, ft: 0, hp, hits: [], conn: false, connT: 99, queue: false,
-    pad: 0, lives: 0, score: 0, out: false, grab: null, gt: 0, gcount: 0, held: null, thrown: null, hitBy: [], inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
+    pad: 0, lives: 0, score: 0, out: false, weapon: null, grab: null, gt: 0, gcount: 0, held: null, thrown: null, hitBy: [], inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
 }
 
 // --- Animations and boxes ---
 
 // The sound each animation starts with (a swing of the fist or the foot, a jump).
-const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, jump: SFX.jump, special: SFX.swing };
+const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, jump: SFX.jump, special: SFX.swing, wpipe: SFX.swing, wknife: SFX.swing };
 function setAnim(f, name) { if (CUE[name] !== undefined) fx(CUE[name]); f.anim = name; f.fi = 0; f.ft = 0; f.hits = []; f.conn = false; f.connT = 99; f.queue = false; }
 const frameOf = (f) => { const a = ANIM[f.anim]; return a[Math.min(f.fi, a.length - 1)]; };
 /** Advance a frame; true when the animation has run its course. */
@@ -200,6 +217,7 @@ function landHit(a, t, mv) {
   const dir = a.x <= t.x ? 1 : -1;
   t.face = -dir; t.token = false; t.queue = false;
   if (t.grab) release(t);                                            // a hero who is hit lets go
+  if (t.weapon) dropWeapon(t);                                       // and drops his weapon
   if (a.kind === 'hero' && !friendly) { a.score += 10; lastHit = t; lastHitT = 180; }
   if (!friendly && (t.hp <= 0 || mv.down || t.h > 0)) knockDown(t, dir, a);   // a hit in the air always knocks down (he must fall)
   else { setAnim(t, 'hurt'); t.vx = dir * 6 / 16; }
@@ -271,11 +289,20 @@ function updateHero(p) {
     else if (ended) setAnim(p, 'idle');
     return;
   }
+  if (a === 'wpipe' || a === 'wknife' || a === 'pick') {
+    if (stepAnim(p)) { setAnim(p, 'idle'); if (p.weapon && p.weapon.uses <= 0) { p.weapon = null; fx(SFX.smash); popup(p, 'BROKE', WHITE); } }
+    return;
+  }
   if (a === 'land' || a === 'throw' || a === 'special') { if (stepAnim(p)) setAnim(p, 'idle'); return; }
   if (a === 'grab' || a === 'gpunch') { updateGrab(p, pr, dx); return; }
   if (pr(X) && p.hp > SPECIAL_COST) { p.hp -= SPECIAL_COST; setAnim(p, 'special'); return; }   // the special costs health
   if (pr(B)) { setAnim(p, 'jump'); p.vz = 5.2; p.h = 0.1; return; }
-  if (pr(A)) { setAnim(p, 'punch1'); return; }
+  if (pr(A)) {
+    const it = weaponAt(p);
+    if (it) { pickUp(p, it); return; }                               // a weapon on the ground: A takes it (swapping the one in hand)
+    if (p.weapon) { p.weapon.uses--; setAnim(p, ITEM[p.weapon.kind].weapon); return; }
+    setAnim(p, 'punch1'); return;
+  }
   if (dx) p.face = dx;
   const gt = dx && grabTarget(p, dx);                                // walking into a thug grabs him
   if (gt) { p.grab = gt; p.gt = 0; p.gcount = 0; setAnim(p, 'grab'); gt.held = p; gt.token = false; setAnim(gt, 'held'); return; }
@@ -283,6 +310,58 @@ function updateHero(p) {
   const moving = dx || dy;
   if (moving && a !== 'walk') setAnim(p, 'walk'); else if (!moving && a !== 'idle') setAnim(p, 'idle');
   else stepAnim(p);
+}
+
+// --- Items and props ---
+
+function popup(f, text, c) { popups.push({ text, x: f.x, y: f.y - f.h - 100, t: 0, c }); }
+function spawnItem(kind, x, y, uses) { items.push({ kind, x, y, h: 0.1, vz: 2.6, uses: uses ?? ITEM[kind].uses }); }
+function dropWeapon(h) { spawnItem(h.weapon.kind, h.x - h.face * 12, h.y, h.weapon.uses); h.weapon = null; }
+function weaponAt(p) {
+  return items.find((i) => ITEM[i.kind].weapon && i.h <= 4 && Math.abs(i.x - p.x) <= 18 && Math.abs(i.y - p.y) <= 8);
+}
+function pickUp(p, it) {
+  items = items.filter((i) => i !== it);
+  if (p.weapon) spawnItem(p.weapon.kind, p.x - p.face * 12, p.y, p.weapon.uses);
+  p.weapon = { kind: it.kind, uses: it.uses };
+  setAnim(p, 'pick'); popup(p, ITEM[it.kind].name, WHITE); fx(SFX.pickup);
+}
+/** Food, money and a 1UP are taken by walking over them. */
+function updateItems() {
+  for (const i of items) if (i.h > 0 || i.vz !== 0) { i.h += i.vz; i.vz -= GRAV; if (i.h <= 0) { i.h = 0; i.vz = 0; } }
+  for (const h of heroes()) {
+    if (h.anim === 'down' || h.h > 0) continue;
+    for (const i of items) {
+      const d = ITEM[i.kind];
+      if (d.weapon || i.h > 4 || Math.abs(i.x - h.x) > 16 || Math.abs(i.y - h.y) > 8) continue;
+      items = items.filter((o) => o !== i);
+      if (d.heal) { h.hp = Math.min(HERO_HP, h.hp + d.heal); popup(h, `+${d.heal}`, GREEN); fx(SFX.heal); }
+      else if (d.pts) { h.score += d.pts; popup(h, `$${d.pts}`, GOLD); fx(SFX.pickup); }
+      else { h.lives = Math.min(9, h.lives + d.life); popup(h, '1UP', CYAN); fx(SFX.record); }
+    }
+  }
+  for (const q of props) if (q.flash > 0) q.flash--;
+  for (const b of bits) { b.x += b.vx; b.y += b.vy; b.vy += 0.3; b.t++; }
+  bits = bits.filter((b) => b.t < 26);
+  for (const o of popups) o.t++;
+  popups = popups.filter((o) => o.t < 50);
+}
+/** An attack's hit box against the crates, barrels and bins: two punches break one. */
+function checkProps(a) {
+  const fr = frameOf(a), mv = MOVE[a.anim];
+  if (!fr[2] || !mv) return;
+  const hb = worldBox(a, fr[2]);
+  for (const q of props) {
+    if (a.hits.includes(q) || Math.abs(a.y - q.y) > LANE_TOL) continue;
+    if (hb[0] < q.x + q.box[2] && q.x + q.box[0] < hb[2]) { a.hits.push(q); hitProp(q, mv.dmg); }   // across only: a punch at head height still hits a crate in his lane
+  }
+}
+function hitProp(q, dmg) {
+  q.hp -= dmg; q.flash = 6; hitstop = Math.max(hitstop, 3); fx(SFX.hit);
+  if (q.hp > 0) return;
+  props = props.filter((o) => o !== q);
+  for (let k = 0; k < 8; k++) bits.push({ x: q.x, y: q.y - 14, vx: (k - 3.5) * 0.8, vy: -2 - (k % 3), t: 0, c: q.kind === 'crate' ? BROWN : q.kind === 'barrel' ? BLUE : GREEN });
+  spawnItem(q.item, q.x, q.y); fx(SFX.smash);
 }
 
 /** A thug the hero can grab by walking into him: on his feet, not attacking, close in front. */
@@ -320,11 +399,12 @@ function thrownHits() {
   for (const f of enemies) {
     if (!f.thrown || f.anim !== 'down' || f.h <= 0) continue;
     const body = worldBox(f, LYING), dir = f.vx >= 0 ? 1 : -1;
+    for (const q of props) if (Math.abs(q.y - f.y) <= LANE_TOL && body[0] < q.x + q.box[2] && q.x + q.box[0] < body[2]) hitProp(q, PROP_HP);   // a thug thrown into a crate smashes it
     for (const o of [...enemies, ...heroes()]) {
       if (o === f || o === f.thrown || f.hitBy.includes(o) || !canBeHit(o) || Math.abs(o.y - f.y) > LANE_TOL || o.anim === 'held') continue;
       if (!overlaps(body, worldBox(o, frameOf(o)[1]))) continue;
       f.hitBy.push(o); hitstop = HITSTOP; fx(SFX.slam);
-      if (o.kind === 'hero') { o.hp = Math.max(1, o.hp - 2); if (o.grab) release(o); setAnim(o, 'hurt'); o.vx = dir * 6 / 16; }
+      if (o.kind === 'hero') { o.hp = Math.max(1, o.hp - 2); if (o.grab) release(o); if (o.weapon) dropWeapon(o); setAnim(o, 'hurt'); o.vx = dir * 6 / 16; }
       else { o.hp -= THROWN_DMG; f.thrown.score += 10; knockDown(o, dir, f.thrown); }
     }
   }
@@ -461,6 +541,8 @@ function updatePlay() {
   for (const h of heroes()) updateHero(h);
   if (state !== 'play') return;                                      // (the last hero may have just gone out)
   for (const e of enemies) updateThug(e);
+  for (const h of heroes()) checkProps(h);
+  updateItems();
   for (const h of heroes()) { checkHits(h, enemies); checkHits(h, heroes().filter((o) => o !== h)); }
   for (const e of enemies) checkHits(e, heroes());
   thrownHits();
@@ -544,10 +626,13 @@ function draw() {
 }
 
 function drawPlay() {
-  const all = [...heroes(), ...enemies].sort((a, b) => a.y - b.y);        // nearer the bottom of the screen is in front
+  const all = [...heroes(), ...enemies, ...props].sort((a, b) => a.y - b.y);   // nearer the bottom of the screen is in front
   for (const f of all) drawShadow(f);
-  for (const f of all) drawFighter(f);
+  for (const i of items) drawItem(i);
+  for (const f of all) { if (f.prop) drawProp(f); else drawFighter(f); }
+  for (const b of bits) rectfill(flr(b.x - cam), flr(b.y), 4, 4, b.c);
   if (showBoxes) for (const f of all) drawBoxes(f);
+  for (const o of popups) txt(o.text, flr(o.x - cam) - o.text.length * 4, flr(o.y - o.t * 0.4), o.t > 36 && o.t % 4 < 2 ? DIM : o.c);
   drawHud();
 }
 
@@ -585,6 +670,8 @@ function drawFighter(f) {
     else rectfill(sx + d * 14 + lean - 4, by - 70, 8, 8, skin);
   } else if (f.anim === 'grab' || f.anim === 'gpunch') {             // both hands on the thug
     rectfill(sx + d * (f.anim === 'gpunch' ? 30 : 22) - 5, by - 62, 10, 10, f.anim === 'gpunch' ? GOLD : skin);
+  } else if (f.anim === 'wpipe' || f.anim === 'wknife' || f.anim === 'pick') {   // the weapon is the attack: a hand on it
+    rectfill(sx + d * 12 - 4, by - 68, 8, 8, skin);
   } else if (mv) {                                                          // an attack: the fist cocked, then out at the hit box
     let fx0 = d * 16, fy0 = -62;
     if (fr[2]) { const b = fr[2]; fx0 = d * ((b[0] + b[2]) / 2); fy0 = (b[1] + b[3]) / 2; }
@@ -595,9 +682,51 @@ function drawFighter(f) {
   } else {                                                           // guard: the fists up
     rectfill(sx + d * 14 + lean - 4, by - 70, 8, 8, skin);
   }
+  if (f.weapon) {
+    drawWeapon(f, sx, by, fr);
+    const tag = `${ITEM[f.weapon.kind].name} ${f.weapon.uses}`;
+    txt(tag, Math.max(2, Math.min(254 - tag.length * 8, sx - tag.length * 4)), by - 108, f.weapon.kind === 'knife' ? WHITE : DIM);
+  }
+}
+
+/** Each thing to pick up has its own colour and shape: red apple, orange chicken, gold money bag, cyan 1UP, steel pipe, white knife. */
+function drawItem(i) {
+  const sx = flr(i.x - cam), sy = flr(i.y - i.h);
+  if (i.h === 0) { rectfill(sx - 9, sy - 2, 18, 4, SHADOW); }
+  switch (i.kind) {
+    case 'apple': circfill(sx, sy - 7, 6, RED); rectfill(sx - 1, sy - 16, 2, 5, BROWN); rectfill(sx + 1, sy - 15, 5, 3, GREEN); break;
+    case 'chicken': circfill(sx - 3, sy - 9, 9, ORANGE); circfill(sx - 6, sy - 12, 3, GOLD); rectfill(sx + 5, sy - 12, 9, 4, WHITE); circfill(sx + 14, sy - 14, 3, WHITE); circfill(sx + 14, sy - 10, 3, WHITE); break;
+    case 'money': circfill(sx, sy - 8, 8, GOLD); rectfill(sx - 3, sy - 19, 6, 6, GOLD); rectfill(sx - 5, sy - 15, 10, 2, BROWN); txt('$', sx - 4, sy - 13, NAVY); break;
+    case 'oneup': rectfill(sx - 14, sy - 17, 28, 15, CYAN); rect(sx - 14, sy - 17, 28, 15, WHITE); print('1UP', sx - 12, sy - 14, NAVY); break;
+    case 'pipe': rectfill(sx - 18, sy - 6, 36, 6, DIM); rectfill(sx - 18, sy - 6, 36, 2, WHITE); rectfill(sx - 20, sy - 7, 3, 8, DIM); rectfill(sx + 17, sy - 7, 3, 8, DIM); break;
+    case 'knife': rectfill(sx - 4, sy - 5, 20, 4, WHITE); rectfill(sx + 14, sy - 4, 4, 2, WHITE); rectfill(sx - 16, sy - 6, 12, 6, BROWN); rectfill(sx - 5, sy - 7, 2, 8, DIM); break;
+  }
+}
+
+function drawProp(q) {
+  const sx = flr(q.x - cam) + (q.flash > 0 ? (q.flash % 2 ? 2 : -2) : 0), by = flr(q.y), b = q.box, w = b[2] - b[0], h = -b[1];
+  const hit = q.flash > 3;
+  if (q.kind === 'crate') {
+    rectfill(sx - 14, by - 30, w, h, hit ? WHITE : BROWN); rect(sx - 14, by - 30, w, h, ORANGE); line(sx - 14, by - 30, sx + 13, by - 1, ORANGE); line(sx + 13, by - 30, sx - 14, by - 1, ORANGE);
+  } else if (q.kind === 'barrel') {
+    rectfill(sx - 12, by - 34, w, h, hit ? WHITE : BLUE); rectfill(sx - 12, by - 27, w, 3, NAVY); rectfill(sx - 12, by - 9, w, 3, NAVY); rect(sx - 12, by - 34, w, h, NAVY);
+  } else {
+    rectfill(sx - 12, by - 30, w, 30, hit ? WHITE : DKGREEN); rectfill(sx - 14, by - 36, w + 4, 7, GREEN); rect(sx - 12, by - 30, w, 30, NAVY);
+  }
+}
+
+/** The weapon in a hero's hand: held up, drawn back for the swing, out along the hit box when it is active. */
+function drawWeapon(f, sx, by, fr) {
+  const d = f.face, knife = f.weapon.kind === 'knife', len = knife ? 24 : 40, hx = sx + d * 12, hy = by - 64;
+  let tx = hx + d * 6, ty = hy - len;                                // held up
+  const swing = f.anim === 'wpipe' || f.anim === 'wknife';
+  if (swing && fr[2]) { tx = sx + d * (knife ? 62 : 80); ty = by - 66; } else if (swing) { tx = hx - d * 8; ty = hy - len; }
+  for (let k = -1; k <= (knife ? 0 : 1); k++) line(hx, hy + k, tx, ty + k, knife ? WHITE : DIM);
+  if (knife) rectfill(hx - 3, hy - 3, 7, 7, BROWN);
 }
 
 function drawBoxes(f) {
+  if (f.prop) { rect(flr(f.x + f.box[0] - cam), flr(f.y + f.box[1]), f.box[2] - f.box[0], f.box[3] - f.box[1], GREEN); return; }
   const hb = worldBox(f, frameOf(f)[1]);
   rect(flr(hb[0] - cam), flr(hb[1]), hb[2] - hb[0], hb[3] - hb[1], GREEN);
   const ht = frameOf(f)[2];

@@ -61,5 +61,8 @@ a.effect(1, ['G-5', 'C-5', 'OFF'], 'WHOOSH')                       # 7 a swing (
 a.effect(2, ['G-3', 'C-3', 'C-2', 'G-1', 'OFF'], 'TOM')                   # 8 a hook or a jump kick lands (a heavy thump)
 a.effect(3, ['G-2', 'D-2', 'A-1', 'OFF'], 'TOM')                   # 9 a body hits the ground
 a.effect(1, ['C-4', 'E-4', 'G-4', 'C-5', 'OFF'], 'BLIP')           # 10 a jump
+a.effect(2, ['E-6', 'A-6', 'OFF'], 'CHIME')                        # 11 a weapon or money is picked up
+a.effect(2, ['C-5', 'E-5', 'G-5', 'C-6', 'OFF'], 'CHIME')          # 12 food (a rising arpeggio)
+a.effect(4, ['C-3', 'A-2', 'F-2', 'D-2', 'OFF'], 'CRUNCH')         # 13 a crate breaks (a long low crunch)
 
 a.write(sys.argv[1], songs=2)

@@ -9,7 +9,9 @@ export const CART = fileURLToPath(new URL('../../../carts/brawl.nova', import.me
 const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
   get score() { return players[0].score; }, set score(v) { players[0].score = v; }, get lives() { return players[0].lives; }, set lives(v) { players[0].lives = v; }, get won() { return won; },
-  get player() { return players[0]; }, get players() { return players; }, heroes, addHero, maxTokens, target, get enemies() { return enemies; }, set enemies(v) { enemies = v; },
+  get player() { return players[0]; }, get players() { return players; }, heroes, addHero, maxTokens, target,
+  get props() { return props; }, set props(v) { props = v; }, get items() { return items; }, set items(v) { items = v; }, get popups() { return popups; }, get bits() { return bits; },
+  spawnItem, hitProp, dropWeapon, ITEM, PROPS, PROP_HP, PROP_BOX, get enemies() { return enemies; }, set enemies(v) { enemies = v; },
   get cam() { return cam; }, set cam(v) { cam = v; }, get wave() { return wave; }, set wave(v) { wave = v; },
   get locked() { return locked; }, set locked(v) { locked = v; }, get hitstop() { return hitstop; }, get goT() { return goT; },
   get showBoxes() { return showBoxes; }, get rank() { return rank; }, get initials() { return initials; },
@@ -31,7 +33,7 @@ export const musicLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === '
 export function arena(vm) {
   const p = vm.probe();
   vm.run(2);
-  p.enemies = []; p.locked = false; p.wave = p.LEVEL.length; p.cam = 300; p.player.x = 400; p.player.y = 180;
+  p.enemies = []; p.props = []; p.items = []; p.locked = false; p.wave = p.LEVEL.length; p.cam = 300; p.player.x = 400; p.player.y = 180;
   return p;
 }
 /** A thug placed in the arena that stands still (ai 'dummy': he does nothing). */
