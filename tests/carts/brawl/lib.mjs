@@ -8,8 +8,8 @@ export const CART = fileURLToPath(new URL('../../../carts/brawl.nova', import.me
 // Add to this list as the game grows.
 const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
-  get score() { return score; }, set score(v) { score = v; }, get lives() { return lives; }, set lives(v) { lives = v; }, get won() { return won; },
-  get player() { return player; }, get enemies() { return enemies; }, set enemies(v) { enemies = v; },
+  get score() { return players[0].score; }, set score(v) { players[0].score = v; }, get lives() { return players[0].lives; }, set lives(v) { players[0].lives = v; }, get won() { return won; },
+  get player() { return players[0]; }, get players() { return players; }, heroes, addHero, maxTokens, target, get enemies() { return enemies; }, set enemies(v) { enemies = v; },
   get cam() { return cam; }, set cam(v) { cam = v; }, get wave() { return wave; }, set wave(v) { wave = v; },
   get locked() { return locked; }, set locked(v) { locked = v; }, get hitstop() { return hitstop; }, get goT() { return goT; },
   get showBoxes() { return showBoxes; }, get rank() { return rank; }, get initials() { return initials; },
@@ -20,8 +20,8 @@ const PROBE = `__expose(() => ({
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */
-export const newGame = (seed = 1, { title = false, save = null } = {}) =>
-  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + PROBE });
+export const newGame = (seed = 1, { title = false, save = null, players = 1 } = {}) =>
+  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + `startPlayers = ${players};` + PROBE });
 export const M = (...names) => names.reduce((m, n) => m | (1 << BTN[n]), 0);
 /** The sfx commands since the last call: [[n, channel], ...]. */
 export const sfxLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'sfx').map((a) => [a[2], a[3]]); vm.audioLog.length = 0; return r; };

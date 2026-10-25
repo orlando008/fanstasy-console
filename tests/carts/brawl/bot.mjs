@@ -1,7 +1,9 @@
 // The bot for tools/devkit/sweep.mjs: a player that plays Brawl by itself, so balance and stuck states can be
 // checked over many seeds without a person.
 //
-//   node tools/devkit/sweep.mjs brawl --seeds 8 --set skill=0,0.5,1
+//   node tools/devkit/sweep.mjs brawl --seeds 8 --set skill=0,0.5,1 --set players=1,2
+//
+// With players=2 the bot plays both heroes: the sweep steps pad 1 only, so setup() wraps vm.step to feed pad 2 as well.
 //
 // The contract is in the header of tools/devkit/sweep.mjs: pad() gives the buttons each frame, finished() says the
 // run is over, result() gives the numbers to summarise (and `problems` for anything that must not happen).
@@ -9,15 +11,23 @@
 // it also backs off a thug that is winding up a punch, and walks to the next wave when the street is clear.
 import { M, newGame as boot } from './lib.mjs';
 
-export const defaults = { frames: 30000, seeds: 6, set: { skill: [0, 0.5, 1] } };
+export const defaults = { frames: 30000, seeds: 6, set: { skill: [0, 1], players: [1, 2] } };
 
-export const newGame = (seed) => boot(seed); // skipTitle: straight into play
+export const newGame = (seed, opts = {}) => boot(seed, { players: opts.players ?? 1 }); // skipTitle: straight into play
 
-export const setup = () => {};
+let frames = 0;
+export function setup(vm, p, opts) {
+  frames = 0;
+  if ((opts.players ?? 1) < 2) return;
+  const step = vm.step.bind(vm);
+  vm.step = (mask, others) => step(mask, others || [p.players[1] ? padFor(p, p.players[1], frames, opts.skill ?? 1) : 0]);
+}
 
-export function pad(vm, p, frame, opts) {
-  const skill = opts.skill ?? 1, me = p.player;
-  if (me.anim === 'down' || me.anim === 'hurt') return 0;
+export const pad = (vm, p, frame, opts) => { frames = frame + 1; return padFor(p, p.players[0], frame, opts.skill ?? 1); };
+
+/** The buttons for one hero. */
+function padFor(p, me, frame, skill) {
+  if (me.out || me.anim === 'down' || me.anim === 'hurt') return 0;
   if (!p.enemies.length) return M('RIGHT');                          // GO
   const live = p.enemies.filter((e) => !e.dying && e.anim !== 'down');
   const t = (live.length ? live : p.enemies).reduce((a, b) => (Math.abs(a.x - me.x) + 2 * Math.abs(a.y - me.y) <= Math.abs(b.x - me.x) + 2 * Math.abs(b.y - me.y) ? a : b));
@@ -36,5 +46,5 @@ export function pad(vm, p, frame, opts) {
 export const finished = (p) => p.state !== 'play';
 
 export function result(p) {
-  return { won: p.won ? 1 : 0, score: p.score, lives: p.lives, hp: p.player.hp, problems: p.state === 'play' ? ['still playing'] : [] };
+  return { won: p.won ? 1 : 0, score: p.players.reduce((s, h) => s + h.score, 0), lives: p.players.reduce((s, h) => s + h.lives, 0), hp: p.players.reduce((s, h) => s + h.hp, 0), problems: p.state === 'play' ? ['still playing'] : [] };
 }

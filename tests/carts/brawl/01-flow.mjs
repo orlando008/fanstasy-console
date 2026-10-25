@@ -9,7 +9,8 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3);
   ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
   vm.press('DOWN'); ok(p.titleSel === 1, 'DOWN moves down the menu'); vm.press('UP'); ok(p.titleSel === 0, 'and UP back');
-  vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
+  vm.press('UP'); ok(p.titleSel === 2, 'UP from the top wraps to the bottom');
+  vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
   sfxLog(vm); vm.press('A');
   ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');

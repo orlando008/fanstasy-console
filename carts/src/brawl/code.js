@@ -68,10 +68,12 @@ const lastInitials = () => (dget(INITIALS_SLOT) ? unpackInitials(dget(INITIALS_S
 
 // --- Input: edge-triggered presses (btnp repeats; menus want one press) ---
 
-let inputMask = 0, prevMask = 0;
+let inputMask = [0, 0], prevMask = [0, 0];                           // one mask for each of the two pads
 const BUTTONS = [UP, DOWN, LEFT, RIGHT, A, B, X, Y, L, R, START, SELECT];
-function readPad() { let m = 0; for (const b of BUTTONS) if (btn(b)) m |= 1 << b; return m; }
-const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) === 0;
+function readPad(pad) { let m = 0; for (const b of BUTTONS) if (btn(b, pad)) m |= 1 << b; return m; }
+const held = (pad, b) => (inputMask[pad] & (1 << b)) !== 0;
+const pressedBy = (pad, b) => held(pad, b) && (prevMask[pad] & (1 << b)) === 0;
+const pressed = (b) => pressedBy(0, b) || pressedBy(1, b);          // for the menus: either pad
 
 // --- The street: lanes, the camera, and the frame table (docs/carts/brawl.md, section 5) ---
 
@@ -107,11 +109,11 @@ const COMBO = { punch1: 'punch2', punch2: 'hook' };
 
 // --- State ---
 
-let skipTitle = false; // tests set this to land straight in the game
+let skipTitle = false; // tests set this to land straight in the game (startPlayers: 1 or 2)
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
-let score = 0, lives = 3, won = false;
-let player = null, enemies = [], cam = 0, wave = 0, locked = false, hitstop = 0, showBoxes = false, goT = 0, lastHit = null, lastHitT = 0;
+let won = false, startPlayers = 1, pend = [], entryPad = 0;
+let players = [], enemies = [], cam = 0, wave = 0, locked = false, hitstop = 0, showBoxes = false, goT = 0, lastHit = null, lastHitT = 0;
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
@@ -130,16 +132,24 @@ function init() {
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; scroll(0); play(SONG.title); }
 
-function startGame() {
-  score = 0; lives = 3; won = false; paused = false; timer = 0; state = 'play';
+function startGame(n = startPlayers) {
+  won = false; paused = false; timer = 0; state = 'play'; players = [];
   cam = 0; wave = 0; locked = false; hitstop = 0; goT = 0; enemies = []; lastHit = null; lastHitT = 0;
-  player = mkFighter('hero', 90, 180, HERO_HP);
+  addHero(0, 90, n > 1 ? 172 : 180);
+  if (n > 1) addHero(1, 56, 192);
   play(SONG.play);
 }
+/** A hero on a pad (0 or 1) with his own lives and score. */
+function addHero(pad, x, y) {
+  const h = mkFighter('hero', x, y, HERO_HP);
+  h.pad = pad; h.lives = 3; h.score = 0; players.push(h);
+  return h;
+}
+const heroes = () => players.filter((h) => !h.out);                   // the ones still in the game
 
 function mkFighter(kind, x, y, hp) {
   return { kind, x, y, h: 0, vx: 0, vz: 0, face: 1, anim: 'idle', fi: 0, ft: 0, hp, hits: [], conn: false, connT: 99, queue: false,
-    inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
+    pad: 0, lives: 0, score: 0, out: false, inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
 }
 
 // --- Animations and boxes ---
@@ -174,19 +184,22 @@ function checkHits(a, targets) {
   }
 }
 
+/** Heroes can hit each other (friendly fire): 1 damage and a hit stun, never a knockdown, never below 1 health, no score. */
 function landHit(a, t, mv) {
-  a.hits.push(t); a.conn = true; a.connT = 0; hitstop = HITSTOP; t.hp -= mv.dmg;
+  const friendly = a.kind === 'hero' && t.kind === 'hero';
+  a.hits.push(t); a.conn = true; a.connT = 0; hitstop = HITSTOP; t.hp -= friendly ? 1 : mv.dmg;
+  if (friendly) t.hp = Math.max(1, t.hp);
   const dir = a.x <= t.x ? 1 : -1;
   t.face = -dir; t.token = false; t.queue = false;
-  if (a === player) { score += 10; lastHit = t; lastHitT = 180; }
-  if (t.hp <= 0 || mv.down || t.h > 0) knockDown(t, dir);        // a hit in the air always knocks down (he must fall)
+  if (a.kind === 'hero' && !friendly) { a.score += 10; lastHit = t; lastHitT = 180; }
+  if (!friendly && (t.hp <= 0 || mv.down || t.h > 0)) knockDown(t, dir, a);   // a hit in the air always knocks down (he must fall)
   else { setAnim(t, 'hurt'); t.vx = dir * 6 / 16; }
   fx(mv.down ? SFX.slam : SFX.hit);
 }
 
-function knockDown(f, dir) {
+function knockDown(f, dir, by) {
   setAnim(f, 'down'); f.vz = 3.4; f.vx = dir * 2.4; f.h = Math.max(f.h, 0.1); f.lie = 0;
-  if (f.hp <= 0 && !f.dying) { f.dying = f.kind === 'thug'; if (f.kind === 'thug') { score += 100; fx(SFX.point); } }
+  if (f.hp <= 0 && !f.dying) { f.dying = f.kind === 'thug'; if (f.kind === 'thug') { if (by && by.kind === 'hero') by.score += 100; fx(SFX.point); } }
 }
 
 /** Gravity: true on the frame a fighter lands. */
@@ -201,7 +214,7 @@ function clampX(f) { f.x = Math.max(10, Math.min(LEVEL_W - 10, f.x)); }
 /** The part of an animation shared by everyone: a hit stun, a fall and the getting up. True if it took the frame. */
 function updateShared(f) {
   if (f.anim === 'hurt') {
-    f.x += f.vx; clampX(f);
+    f.x += f.vx; clampX(f); fall(f);                                 // (hurt in the air: he comes down)
     if (stepAnim(f)) { f.vx = 0; setAnim(f, 'idle'); }
     return true;
   }
@@ -217,35 +230,41 @@ function updateShared(f) {
 function downEnded(f) {
   if (f.kind === 'thug') { if (f.dying) f.gone = 1; else { setAnim(f, 'getup'); f.cool = 30; } return; }
   if (f.hp > 0) { setAnim(f, 'getup'); f.inv = 60; return; }
-  if (--lives <= 0) { lives = 0; gameOver(false); return; }
-  Object.assign(f, mkFighter('hero', cam + 128, 180, HERO_HP)); f.anim = 'getup'; f.inv = 120;
+  if (--f.lives <= 0) {                                              // out of lives: out of the game (the other goes on)
+    f.lives = 0; f.out = true;
+    if (!heroes().length) gameOver(false);
+    return;
+  }
+  const keep = { pad: f.pad, lives: f.lives, score: f.score };
+  Object.assign(f, mkFighter('hero', cam + 128 + (players.length > 1 ? (f.pad ? 30 : -30) : 0), 180, HERO_HP), keep); f.anim = 'getup'; f.inv = 120;
 }
 
 // --- The hero ---
 
 function updateHero(p) {
+  const bt = (b) => held(p.pad, b), pr = (b) => pressedBy(p.pad, b);
   if (p.inv > 0) p.inv--;
   p.connT++;
   if (updateShared(p)) return;
-  const dx = (btn(RIGHT) ? 1 : 0) - (btn(LEFT) ? 1 : 0), dy = (btn(DOWN) ? 1 : 0) - (btn(UP) ? 1 : 0);
+  const dx = (bt(RIGHT) ? 1 : 0) - (bt(LEFT) ? 1 : 0), dy = (bt(DOWN) ? 1 : 0) - (bt(UP) ? 1 : 0);
   const a = p.anim;
   if (a === 'jump' || a === 'jkick') {                               // in the air: keep the walking speed
     p.x += dx * 1.4; p.y = Math.max(LANE_TOP, Math.min(LANE_BOT, p.y + dy * 0.9)); clampX(p);
-    if (a === 'jump' && pressed(A)) setAnim(p, 'jkick');
+    if (a === 'jump' && pr(A)) setAnim(p, 'jkick');
     else if (a === 'jkick') stepAnim(p);
     if (fall(p)) setAnim(p, 'land');
     return;
   }
   if (a === 'punch1' || a === 'punch2' || a === 'hook') {
-    if (pressed(A) && COMBO[a]) p.queue = true;
+    if (pr(A) && COMBO[a]) p.queue = true;
     const ended = stepAnim(p);
     if (COMBO[a] && p.queue && p.conn && p.connT <= 12 && (p.fi >= 2 || ended)) setAnim(p, COMBO[a]);
     else if (ended) setAnim(p, 'idle');
     return;
   }
   if (a === 'land') { if (stepAnim(p)) setAnim(p, 'idle'); return; }
-  if (pressed(B)) { setAnim(p, 'jump'); p.vz = 5.2; p.h = 0.1; return; }
-  if (pressed(A)) { setAnim(p, 'punch1'); return; }
+  if (pr(B)) { setAnim(p, 'jump'); p.vz = 5.2; p.h = 0.1; return; }
+  if (pr(A)) { setAnim(p, 'punch1'); return; }
   if (dx) p.face = dx;
   p.x += dx * 1.4; p.y = Math.max(LANE_TOP, Math.min(LANE_BOT, p.y + dy * 0.9)); clampX(p);
   const moving = dx || dy;
@@ -256,7 +275,8 @@ function updateHero(p) {
 // --- The thug ---
 
 function spawnWave(w) {
-  for (let i = 0; i < w.n; i++) {
+  const n = w.n + (heroes().length > 1 ? 1 : 0);                      // one more thug for two heroes
+  for (let i = 0; i < n; i++) {
     const side = (i + wave) % 2 === 0 ? -1 : 1;                      // from the left edge, or from the right
     const t = mkFighter('thug', side < 0 ? cam - 24 - i * 10 : cam + 280 + i * 10, rndi(LANE_TOP + 4, LANE_BOT - 4), THUG_HP);
     t.face = -side; t.anim = 'walk'; t.cool = rndi(40, 90);
@@ -265,11 +285,19 @@ function spawnWave(w) {
 }
 
 const tokens = () => enemies.filter((e) => e.token).length;
+const maxTokens = () => (heroes().length > 1 ? 3 : 2);              // thugs that may attack at once
+/** The hero a thug goes for: the nearest one who is still on his feet (any, if all are down). */
+function target(t) {
+  const hs = heroes(), up = hs.filter((h) => h.anim !== 'down');
+  const list = up.length ? up : hs;
+  return list.reduce((a, b) => (Math.abs(a.x - t.x) + 2 * Math.abs(a.y - t.y) <= Math.abs(b.x - t.x) + 2 * Math.abs(b.y - t.y) ? a : b));
+}
 
 function updateThug(t) {
   if (t.inv > 0) t.inv--;
   if (updateShared(t) || t.ai === 'dummy') return;                   // (a dummy is a punching bag for the tests)
-  const p = player;
+  if (!heroes().length) return;
+  const p = target(t);
   if (t.anim === 'tpunch') {
     if (stepAnim(t)) { setAnim(t, 'walk'); t.token = false; t.cool = rndi(60, 120); }
     return;
@@ -282,7 +310,7 @@ function updateThug(t) {
     if (tx === t.x && ty === t.y) t.ai = 'fight';
   } else {
     const side = t.x >= p.x ? 1 : -1;
-    if (!t.token && t.cool <= 0 && tokens() < 2 && p.hp > 0 && p.anim !== 'down') { t.token = true; t.tokenT = 0; }
+    if (!t.token && t.cool <= 0 && tokens() < maxTokens() && p.hp > 0 && p.anim !== 'down') { t.token = true; t.tokenT = 0; }
     if (t.token && ++t.tokenT > 300) { t.token = false; t.cool = 60; }
     const gap = t.token ? 36 : 85;
     tx = p.x + side * gap; ty = p.y;
@@ -305,24 +333,26 @@ function updateCamera() {
   const next = LEVEL[wave];
   if (!locked) {
     const limit = next ? next.x : LEVEL_W - 256;
-    cam = Math.min(Math.max(cam, player.x - 112), limit, LEVEL_W - 256);
+    const lead = Math.max(...heroes().map((h) => h.x));              // the screen follows the one who is furthest on
+    cam = Math.min(Math.max(cam, lead - 112), limit, LEVEL_W - 256);
     if (next && cam >= next.x) { locked = true; spawnWave(next); wave++; }
   } else if (enemies.length === 0) {
     locked = false;
     if (wave >= LEVEL.length) { clearStage(); return; }
     goT = 0;
   }
-  player.x = Math.max(cam + 10, Math.min(cam + 246, player.x));
+  for (const h of heroes()) h.x = Math.max(cam + 10, Math.min(cam + 246, h.x));   // nobody leaves the screen
 }
 
 function clearStage() {
-  score += player.hp * 10 + lives * 500; won = true; gameOver(true);
+  for (const h of players) h.score += h.hp * 10 + h.lives * 500;
+  won = true; gameOver(true);
 }
 
 // --- Update ---
 
 function update() {
-  inputMask = readPad(); clock++;
+  inputMask = [readPad(0), readPad(1)]; clock++;
   if (!paused) timer++; // a state's clock: it stands still while paused
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
@@ -334,25 +364,31 @@ function update() {
 }
 
 function updateTitle() {
-  if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
+  if (pressed(UP)) { titleSel = (titleSel + 2) % 3; fx(SFX.move); }
+  if (pressed(DOWN)) { titleSel = (titleSel + 1) % 3; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) startGame(); else { state = 'records'; hl = -1; timer = 0; }
+    if (titleSel < 2) startGame(titleSel + 1); else { state = 'records'; hl = -1; timer = 0; }
   }
 }
 
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (players.length < 2 && pressedBy(1, A)) {                       // the second player joins any time
+    const h = addHero(1, Math.max(cam + 30, players[0].x - 40), 190); h.inv = 120; setAnim(h, 'getup'); fx(SFX.select);
+  }
   if (pressed(SELECT)) showBoxes = !showBoxes;
   if (lastHitT > 0) lastHitT--;
   if (hitstop > 0) {                                                 // both fighters freeze on a hit
-    hitstop--; if (pressed(A) && COMBO[player.anim]) player.queue = true; // (a press during the freeze still counts)
+    hitstop--;
+    for (const h of players) if (pressedBy(h.pad, A) && COMBO[h.anim]) h.queue = true;   // (a press during the freeze still counts)
     return;
   }
-  updateHero(player);
+  for (const h of heroes()) updateHero(h);
+  if (state !== 'play') return;                                      // (the last hero may have just gone out)
   for (const e of enemies) updateThug(e);
-  checkHits(player, enemies);
-  for (const e of enemies) checkHits(e, [player]);
+  for (const h of heroes()) { checkHits(h, enemies); checkHits(h, heroes().filter((o) => o !== h)); }
+  for (const e of enemies) checkHits(e, heroes());
   enemies = enemies.filter((e) => !e.gone);
   if (state !== 'play') return;
   updateCamera();
@@ -361,7 +397,13 @@ function updatePlay() {
 
 function gameOver(clear) {
   state = 'over'; won = clear; timer = 0; play(-1); fx(clear ? SFX.record : SFX.over);
-  rank = insertTop({ score, initials: lastInitials() });
+  pend = players.map((h) => ({ pad: h.pad, score: h.score })).sort((a, b) => b.score - a.score);   // each score for the top 10, best first
+  nextEntry();
+}
+/** The next score that makes the top 10 (rank, and whose it is), or rank -1 when there is none left. */
+function nextEntry() {
+  rank = -1;
+  while (pend.length && rank < 0) { const e = pend.shift(); rank = insertTop({ score: e.score, initials: lastInitials() }); if (rank >= 0) entryPad = e.pad; }
 }
 
 function updateOver() {
@@ -384,7 +426,9 @@ function updateInitials() {
   const v = packInitials(ini.chars.join(''));
   dset(INITIALS_SLOT, v); dset(TOP_SLOT + rank * ENTRY + 1, v);
   fx(SFX.select);
-  state = 'records'; hl = rank; timer = 0;
+  const saved = rank; nextEntry();
+  if (rank >= 0) { initials = { chars: lastInitials().split(''), pos: 0 }; timer = 0; return; }   // the other player's score is next
+  state = 'records'; hl = saved; timer = 0;
 }
 
 function updateRecords() {
@@ -416,14 +460,15 @@ function draw() {
   else if (state === 'records') drawRecords();
   if (state === 'over') {
     panel(48, 80, 160, 64);
-    ctxt(won ? 'STAGE CLEAR' : 'GAME OVER', 92, won ? GOLD : RED); ctxt(`SCORE ${score}`, 108, WHITE);
+    ctxt(won ? 'STAGE CLEAR' : 'GAME OVER', 92, won ? GOLD : RED);
+    if (players.length > 1) ctxt(`P1 ${players[0].score}  P2 ${players[1].score}`, 108, WHITE); else ctxt(`SCORE ${players[0].score}`, 108, WHITE);
     if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM);
   }
   if (paused) drawPause();
 }
 
 function drawPlay() {
-  const all = [player, ...enemies].sort((a, b) => a.y - b.y);        // nearer the bottom of the screen is in front
+  const all = [...heroes(), ...enemies].sort((a, b) => a.y - b.y);        // nearer the bottom of the screen is in front
   for (const f of all) drawShadow(f);
   for (const f of all) drawFighter(f);
   if (showBoxes) for (const f of all) drawBoxes(f);
@@ -442,7 +487,7 @@ function drawShadow(f) {
 function drawFighter(f) {
   if (f.inv > 0 && flr(clock / 3) % 2 === 0) return;                 // flashes while invulnerable
   if (f.dying && f.anim === 'down' && f.h === 0 && f.lie < 20 && flr(clock / 2) % 2 === 0) return;
-  const hero = f.kind === 'hero', coat = hero ? 8 : 6, pants = hero ? 2 : 1, skin = 12, fist = f.hits.length ? GOLD : 9;
+  const hero = f.kind === 'hero', coat = hero ? (f.pad ? 11 : 8) : 6, pants = hero ? 2 : 1, skin = 12, fist = f.hits.length ? GOLD : 9;
   const sx = flr(f.x - cam), by = flr(f.y - f.h), d = f.face;
   if (f.anim === 'down') {                                           // lying on the ground, or flying through the air
     const air = f.h > 0 || f.vz !== 0;
@@ -483,16 +528,20 @@ function bar(x, y, w, v, max, c) {
 }
 
 function drawHud() {
-  txt('P1', 8, 6, CYAN); bar(26, 6, 70, player.hp, HERO_HP, player.hp > 20 ? GREEN : RED);
-  txt(`x${lives}`, 102, 6, lives > 1 ? WHITE : RED);
-  txt(`${score}`.padStart(7, '0'), 8, 18, WHITE);
-  if (lastHit && lastHitT > 0 && lastHit.kind === 'thug') { txt('THUG', 160, 6, GOLD); bar(196, 6, 52, Math.max(0, lastHit.hp), THUG_HP, 6); }
+  for (const h of players) {                                         // each hero: a bar, his lives and his score
+    const x = h.pad ? 136 : 8;
+    txt(h.pad ? 'P2' : 'P1', x, 6, h.pad ? GREEN : CYAN); bar(x + 18, 6, 70, h.out ? 0 : h.hp, HERO_HP, h.hp > 20 ? GREEN : RED);
+    txt(`x${h.lives}`, x + 94, 6, h.lives > 1 ? WHITE : RED);
+    txt(`${h.score}`.padStart(7, '0'), x, 18, h.out ? DIM : WHITE);
+  }
+  if (players.length < 2 && state === 'play' && clock % 60 < 40) txt('P2 PRESS A', 160, 6, DIM);   // the second player can join
+  if (lastHit && lastHitT > 0 && lastHit.kind === 'thug') bar(players.length > 1 ? 72 : 80, 18, 52, Math.max(0, lastHit.hp), THUG_HP, 6);
   if (!locked && wave < LEVEL.length + 1 && wave > 0 && goT % 40 < 26 && state === 'play') txt('GO >', 214, 96, GOLD);
 }
 
 function drawTitle() {
   ctxt('STREETS OF WOE', 50, GOLD);
-  ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
+  ['1 PLAYER', '2 PLAYERS', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 84, 100 + i * 14, i === titleSel ? WHITE : DIM));
 }
 
 function drawRecords() {
@@ -512,7 +561,7 @@ function drawInitials() {
   const ini = initials;
   panel(24, 40, 208, 144);
   ctxt(rank === 0 ? 'NEW HIGH SCORE!' : `TOP 10: #${rank + 1}`, 52, GOLD);
-  ctxt(String(score), 68, WHITE);
+  ctxt(`P${entryPad + 1}  ${players[entryPad] ? players[entryPad].score : 0}`, 68, WHITE);
   ctxt('ENTER YOUR INITIALS', 90, DIM);
   for (let i = 0; i < 3; i++) {
     const on = i === ini.pos, x = 84 + i * 32;

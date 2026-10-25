@@ -26,7 +26,7 @@ lives and the game ends; clear the fourth wave and the stage is clear. Either wa
 
 | Button | Use |
 |---|---|
-| D-pad | Walk in eight directions (left and right turn to face that way; up and down move into the screen) |
+| D-pad | (the second player's pad has the same buttons) Walk in eight directions (left and right turn to face that way; up and down move into the screen) |
 | A | Attack: a three-hit combo on the ground (punch, punch, hook); a jump kick in the air |
 | B | Jump |
 | SELECT | Show or hide the hit and hurt boxes (the debug view) |
@@ -92,7 +92,7 @@ full health and **120 frames of invulnerability** (he flashes). With no lives le
 ### Thug (the one enemy)
 
 Health 20, speed 0.8 across and 0.6 into the screen. He walks in from just off the screen, walks toward the hero, lines
-up in his lane (within 6) 30 to 44 px away and punches. At most **two thugs attack at once** (an attack token); the rest
+up in his lane (within 6) 30 to 44 px away and punches. At most **two thugs attack at once** (an attack token; three with two heroes); the rest
 circle 70 to 100 px away. After a punch he waits 60 to 120 frames (chosen by the game's random numbers) before the next.
 He cannot be hit while he gets up.
 
@@ -116,7 +116,19 @@ The thug (section 5). A health pickup and more enemy kinds are for later version
 
 ## 8. Modes
 
-One game, one player.
+One or two players, together (co-op). The title's menu is 1 PLAYER, 2 PLAYERS, RECORDS. In a one-player game the second
+player joins at any time by pressing **A on pad 2**: he walks in from the left with 3 lives, invulnerable for a moment.
+
+- Each hero has his **own health, lives and score**; the second pad drives the second hero (a green shirt; the first has a
+  blue one). Either pad's START pauses.
+- **The camera** follows the hero who is furthest on; the other cannot leave the screen (he is held at its edge).
+- **Thugs** go for the nearer hero who is still on his feet. With two heroes in the game a wave has **one more thug** (3, 4,
+  4 and 5), and **three** may attack at once (two with one hero).
+- **Friendly fire:** a hero's attack on his partner does 1 damage and a hit stun, never a knockdown or a kill (he stays at
+  1 health at least), and scores nothing.
+- A hero with no lives left is **out** and the other plays on; the game is over when both are out. At the stage clear each
+  hero gets his own bonus (10 for each point of health and 500 for each life left).
+- **The top 10:** each score goes in on its own, the best first, and asks for the initials of each (P1 or P2 is shown).
 
 ## 9. Scoring
 
@@ -189,6 +201,15 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
 
+### Built and results: two-player co-op
+
+**Built:** a `players` array (each hero has `pad`, `lives`, `score`, `out`); `btn(b, pad)` for the second pad; joining by A
+on pad 2; the camera follows the leader and holds both on the screen; `target()` picks the nearer standing hero;
+`maxTokens()` and one more thug a wave for two heroes; friendly fire (`landHit`); the HUD with both heroes (P2 PRESS A flashes
+until he joins); the title menu with 2 PLAYERS; the stage-clear bonus and the top 10 for each score
+(`pend`, `nextEntry()`); the second hero's shirt colour. A hit in the air no longer leaves a hero hanging (the hurt state
+now falls). Tests: `tests/carts/brawl/03-coop.mjs` (37 checks). The bot plays both heroes (`--set players=1,2`).
+
 ### Built and results (steps 1 to 5)
 
 **Built:** all of steps 1 to 5 in one go, with placeholder shapes: the street (190 tiles), the frame table and boxes, the
@@ -228,7 +249,7 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 ### P2: depth
 
 - [ ] **Characters** (src): four fighters in the original sequel (Axel, Blaze, Max, Skate) differ in speed, power, reach and special moves (e.g. a charging tackle, a fireball, a diagonal leaping kick, a spin). We could start with two (a balanced one and a heavy one)
-- [ ] **Two-player co-op** (src: the original has it): a second pad joins any time; friendly fire on (mem); the camera follows both; the console has four pads, so up to two is easy
+- [x] **Two-player co-op** (src: the original has it): a second pad joins any time; friendly fire on (mem); the camera follows both. Built (section 8). Still to do: team moves (a double-team throw (mem)), a revive for the partner who is out
 - [ ] **Bosses** (src): a stage ends in a boss with a long health bar and his own moves (e.g. a charge, a ground pound), sometimes with thugs alongside; the bar shows
 - [ ] **Stage structure**: more than one stage (SoR2 has eight (mem)), each a different place (street, bar, ship, ...), with its own set of enemies, its own scenery and music; a stage-clear tally (score, health bonus) between them
 - [ ] **Stage hazards** (mem, not confirmed): pits, conveyor belts, an elevator that carries the fight to a new screen
