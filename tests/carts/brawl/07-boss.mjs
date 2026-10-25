@@ -24,7 +24,7 @@ const live = (p, x, hp = p.BOSS_HP) => { const b = p.mkFighter('boss', x, p.play
   const vm = newGame(1, { players: 2 }), p = vm.probe(); vm.run(2); p.enemies = []; p.props = []; p.items = []; p.locked = false; p.wave = p.LEVEL.length - 1; p.cam = 768;
   p.players[0].x = 800; p.players[1].x = 820; vm.run(3);
   const b = p.enemies.find((e) => e.kind === 'boss');
-  ok(b.hp === Math.floor(p.BOSS_HP * 1.6) && p.enemies.length === 4, 'with two heroes he has 1.6 times the health, and 3 thugs with him', `${b.hp} ${p.enemies.length}`);
+  ok(b.hp === Math.floor(p.BOSS_HP * 1.4) && p.enemies.length === 4, 'with two heroes he has 1.4 times the health, and 3 thugs with him', `${b.hp} ${p.enemies.length}`);
 }
 
 // 2. His size and armour.

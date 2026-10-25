@@ -189,7 +189,7 @@ The thug (section 5) and the boss, **BULL** (below).
 ### BULL, the boss
 
 A big orange bruiser with a red headband and a gold belt, drawn bigger than a thug (a hurt box of 44 x 116 against 28 x 92;
-lying 104 wide). He has **120 health** (**192** with two heroes: 1.6 times) and a long red bar at the bottom of the screen
+lying 104 wide). He has **120 health** (**168** with two heroes: 1.4 times) and a long red bar at the bottom of the screen
 with his name. He comes with 2 thugs (3 with two heroes). No grabs, no attack tokens: he is on his own.
 
 | Move | Frames | Hit | Damage | Effect |

@@ -117,7 +117,7 @@ const MOVE = {
 };
 const COMBO = { punch1: 'punch2', punch2: 'hook' };
 // The boss (BULL): bigger boxes, two attacks, and armour (section 7): his punches stun nobody, and a hit only knocks him
-// down when it takes him under a third of his health. BOSS_HP is for one hero; two heroes make it 1.6 times that.
+// down when it takes him under a third of his health. BOSS_HP is for one hero; two heroes make it 1.4 times that.
 const BIG = [-22, -116, 22, 0], BIG_LYING = [-52, -26, 52, 0], BOSS_HP = 120, BOSS_POINTS = 1000, CHARGE_SPEED = 4.2;
 const BOSS_ANIM = {
   idle: [[30, BIG, null]], walk: [[30, BIG, null]],
@@ -439,7 +439,7 @@ function spawnWave(w) {
     enemies.push(t);
   }
   if (w.boss) {                                                      // BULL walks in from the right, with a warning and his own song
-    const hp = flr(BOSS_HP * (1 + 0.6 * (heroes().length - 1)));
+    const hp = flr(BOSS_HP * (1 + 0.4 * (heroes().length - 1)));
     const b = mkFighter('boss', cam + 300, 182, hp);
     b.face = -1; b.anim = 'walk'; b.cool = 70; b.ai = 'enter'; b.maxhp = hp;
     enemies.push(b); warnT = 150; play(SONG.boss);

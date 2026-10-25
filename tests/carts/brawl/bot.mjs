@@ -36,7 +36,7 @@ function padFor(p, me, frame, skill) {
   const dx = t.x - me.x, dy = t.y - me.y;
   const boss = p.enemies.find((e) => e.kind === 'boss' && !e.dying && e.anim !== 'down');
   if (skill >= 0.5 && boss && boss.anim === 'bcharge' && boss.fi <= 1 && Math.abs(boss.y - me.y) < 24) return me.y > boss.y ? M('DOWN') : M('UP');   // he is charging: step out of his lane
-  if (skill >= 0.5 && boss && boss.anim === 'bpunch' && boss.fi === 0 && Math.abs(boss.x - me.x) < 90 && Math.abs(boss.y - me.y) < 14) return boss.x > me.x ? M('LEFT') : M('RIGHT');   // his wind-up: back off
+  if (skill >= 0.5 && boss && boss.anim === 'bpunch' && boss.fi === 0 && Math.abs(boss.x - me.x) < 90 && Math.abs(boss.y - me.y) < 14) return (me.y >= boss.y ? me.y < 200 : me.y <= 158) ? M('DOWN') : M('UP');   // his wind-up: step out of his lane (the punch only reaches 12 px)
   const close = live.filter((e) => Math.abs(e.x - me.x) < 56 && Math.abs(e.y - me.y) < 14).length;
   if (skill >= 0.5 && close >= 2 && me.hp > 12 && frame % 20 === 0 && (me.anim === 'idle' || me.anim === 'walk')) return M('X');   // surrounded: the special
   if (skill >= 0.5 && t.kind === 'thug' && Math.abs(dy) <= 4 && Math.abs(dx) <= 34 && t.anim !== 'tpunch' && (me.face > 0) === (dx > 0)) return dx > 0 ? M('RIGHT') : M('LEFT');   // walk into him: a grab
