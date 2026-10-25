@@ -434,7 +434,11 @@ notes under its number, commit and push.
 with X), the run and the one-target rule (`checkHits`), the invulnerable frames, its drawing (the fist and the speed lines), and the bot's use
 of it on a boss. Tests: `12-dash.mjs`.
 
-**Results:** see the sweep notes below.
+**Results:** `sweep.mjs brawl --seeds 4`, no stuck runs. With the skilled bot dashing at bosses, **the skilled pair now reaches stage 3 on average
+(2.5) and beat the whole game once in 4 runs** (before the dash: stage 1 in all four). The skilled one-hero bot still dies to BULL in stage 1 every
+time (4 of 4, at about 2,450 points), and the unskilled bots are unchanged (they do not dash). So the dash is a real tool against a
+boss, and **BULL is still the wall for a single hero**: judge him by hand, and if he is too hard, give him less health or a longer
+wait after his punch before changing anything else.
 
 ### Built and results: the enemies
 
