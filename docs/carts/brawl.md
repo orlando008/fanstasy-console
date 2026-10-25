@@ -159,12 +159,39 @@ Health 60, 3 lives, speed 1.4 across and 0.9 into the screen. Hit while attackin
 stunned. Knocked down or at 0 health he falls, loses a life, and rises 70 frames later in the middle of the screen with
 full health and **120 frames of invulnerability** (he flashes). With no lives left the game ends.
 
-### Thug (the one enemy)
+### The enemies: a thug for each stage, and the Slasher
 
-Health 20, speed 0.8 across and 0.6 into the screen. He walks in from just off the screen, walks toward the hero, lines
-up in his lane (within 6) 30 to 44 px away and punches. At most **two thugs attack at once** (an attack token; three with two heroes); the rest
-circle 70 to 100 px away. After a punch he waits 60 to 120 frames (chosen by the game's random numbers) before the next.
-He cannot be hit while he gets up.
+**Thugs** walk in from just off the screen, walk toward the hero, line up in his lane (within 6) 26 to 44 px away and punch.
+At most **two enemies attack at once** (an attack token; three with two heroes); the rest wait 70 to 100 px away, spread
+across the lane (the thug who waits never stands on another). After an attack he waits before the next (the game's random
+numbers choose). He cannot be hit while he gets up. **Each stage has its own kind of thug**, quicker and meaner than the last:
+
+| | Stage 1: thug | Stage 2: dockhand | Stage 3: enforcer |
+|---|---|---|---|
+| Look | red shirt, bare head | olive shirt, navy cap | dark suit, sunglasses |
+| Health | 20 | 26 | 32 |
+| Wind-up of the punch | 18 frames | 15 | 12 |
+| Damage (hit stun 16) | 5 | 5 | 6 |
+| Wait after a punch | 60 to 120 | 50 to 100 | 40 to 85 |
+| Walks | 0.8 px across, 0.6 into the screen | 0.9, 0.68 | 1.0, 0.75 |
+
+**The Slasher** is the second kind of enemy: a thug with a knife, so **quick, fragile and dangerous from a distance**.
+He wears a brown vest and a yellow bandana and his knife shows as a white blade.
+
+| | |
+|---|---|
+| Health | **0.6 of a thug's** in his stage: 12, 16 and 19 |
+| Walks | 1.5 times a thug's: 1.2 px across, 0.9 into the screen (1.35 and 1.0 on the docks, 1.5 and 1.1 on the rooftop) |
+| Waits for his turn | 110 px away (a thug 85); with his turn, 70 px away (a thug 36) |
+| Stab | when in the hero's lane (within 6) **40 to 100 px away**: **12 frames** of crouch, then a **lunge** of 7 frames at 3.5 px (24.5 px in all) with the knife out `[10,-76,62,-52]`, then 16 recovery |
+| Damage | 5 and a hit stun of 14 |
+| After the stab | he **hops back** 2.5 px a frame for 14 frames, gives up his turn, and waits 50 to 90 frames |
+| Dodging it | a hero who steps out of his lane (more than 12 px) during the crouch is missed |
+| Knocked out | **150 points** (a thug 100), and he **drops his knife** with 6 uses left, for a hero to pick up |
+| Grabbed or thrown | like a thug |
+
+Where they come: each wave of a stage says how many of its thugs are Slashers (`k` in `STAGES`), section 6. With two heroes the extra
+thug is a plain one.
 
 ## 6. Levels or content
 
@@ -176,8 +203,9 @@ flashing GO arrow shows and it scrolls on. The hero cannot leave the screen side
 |---|---|---|---|
 | Look | a night city, a chain-link fence, paving | a night harbour with cranes, stacked containers, wooden planks | a skyscraper roof at dawn: a skyline with aerials, a water tank, an air-conditioning unit, a stairwell hut, a railing, a concrete deck with a helipad |
 | Sky | dusk purple to a warm glow | dark teal | dawn: slate blue to pale orange to gold |
-| Thugs | red shirts, 20 health | olive-grey shirts, 26 health | dark grey (black suits), 32 health |
+| Thugs | thugs: red shirts, 20 health | dockhands: olive shirts and caps, 26 health | enforcers: dark suits and sunglasses, 32 health |
 | Waves (thugs) | 2, 3, 3, 4, then the boss's 2 | 3, 3, 4, 5, then the boss's 2 | 4, 4, 5, 6, then the boss's 2 |
+| Slashers among them | none, then 1 in the fourth wave | 0, 1, 2, 2, then none | 1, 2, 3, 3, then 1 with the boss |
 | Props | 8: apples, a pipe, chickens, money, a knife, a 1UP | 8: two knives, a pipe, chickens, money, apples | 8: two pipes, a knife, two chickens, money, an apple, a 1UP |
 | Song | song 1 (E minor, a funk groove) | song 3 (D minor, a bounce) | song 5 (C minor, a rising dawn theme) |
 | Boss | **BULL**, a heavy (120 health): punch, charge, song 2 | **RAZOR**, quick (90): three stabs, a leap, song 4 | **KINGPIN** (160): a harder punch and charge, a ground slam to jump, a rage; song 6 |
@@ -386,6 +414,14 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
 
+### Built and results: the enemies
+
+**Built:** `THUG_WAIT`, `THUG_SPEED` and `attackAnim` (the stage's thug through `t.v`), the three punch animations (`tpunch`, `tpunch2`, `tpunch3`), the
+Slasher (`t.type === 'knife'`: `sstab`, the lunge and the hop back in `updateThug`, `knifeHp`, the knife dropped on a knock-out, 150
+points), the `k` of a wave, and the caps, the glasses, the vest and the bandana in `drawFighter`. Tests: `11-enemies.mjs`.
+
+**Results:** see the sweep in the next section's note (the bot back-steps from the Slasher's crouch like a human would).
+
 ### Built and results: the third stage
 
 **Built:** the rooftop (art in palette 7 alone, a dawn sky, three scenes of 116 tiles), its thugs (32 health, dark grey), songs 5 and 6,
@@ -467,7 +503,7 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 - [ ] **Blitz** (src): double-tap a direction then A for a dash attack (a lunging move)
 - [ ] **Back attack** (mem): a button (Y) that hits both ways; a defensive move to get out of a surround
 - [ ] **Wake-up and knock-down rules** (mem): the hero is invulnerable while he gets up; a thrown or knocked-down thug hurts others he hits
-- [ ] **Enemy variety in behaviour**: not only more thugs, but different jobs (src: weapon users only when they spawn with them): a fast one, a heavy one that cannot be stunned by a punch, a knife man, one that shoots or breathes fire (mem)
+- [x] **Enemy variety in behaviour**: built: a thug for each stage, and the Slasher, a fast knife man who drops his knife (src: weapon users only when they spawn with them). Still to do: a heavy one that cannot be stunned by a punch, one that shoots or breathes fire (mem), a whip user; and a thug who keeps his weapon and uses it for the hero to take (SoR2's enemies drop theirs when hit)
 - [x] **Pick-up and use of weapons** (src): built: a pipe and a knife (A takes it, A swings it, getting hit drops it). Still to do: throwing it (Y?), more weapons (a bottle that breaks, a bat, a sword), thugs that spawn with a weapon (src)
 - [x] **Items**: built, each in its own colour: an apple (+10), a roast chicken (+30) from a bin, a money bag (1,000 points), a 1UP (src). Still to do: items that drop from thugs, items that vanish after a while (mem)
 - [x] **Destructible scenery** (src): crates, barrels and bins built (two punches, a burst of bits, the item hops out). Still to do: traffic cones and telephone boxes (mem), breakable windows; the real art needs a "whole" and a "broken" frame
