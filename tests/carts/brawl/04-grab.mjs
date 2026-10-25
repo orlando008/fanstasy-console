@@ -58,7 +58,7 @@ const until = (vm, cond, max = 300, mask = 0) => { for (let i = 0; i < max; i++)
 }
 {
   const vm = newGame(1, { players: 2 }), p = vm.probe(); vm.run(2); p.enemies = []; p.locked = false; p.wave = 4; p.cam = 300;
-  const [a, b] = p.players; a.x = 400; a.y = 180; b.x = 480; b.y = 180; const t = p.mkFighter('thug', 421, 180, 100); t.ai = 'dummy'; p.enemies.push(t);
+  const [a, b] = p.players; a.x = 400; a.y = 180; b.x = 480; b.y = 180; const t = p.mkFighter('thug', 421, 180, 100); t.ai = 'dummy'; t.face = -1; p.enemies.push(t);
   vm.step(M('RIGHT'), [0]); vm.step(M('RIGHT'), [0]); for (let i = 0; i < 3; i++) { vm.step(M('A'), [0]); vm.step(0, [0]); vm.run(14); }
   until(vm, () => b.hp < p.HERO_HP, 60);
   ok(b.hp === p.HERO_HP - 2 && b.anim === 'hurt' && !t.hitBy.includes(a), 'a thrown thug hurts the partner (2) but not the hero who threw him');

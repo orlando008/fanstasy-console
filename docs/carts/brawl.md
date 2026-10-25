@@ -30,6 +30,7 @@ lives and the game ends; clear the fourth wave and the stage is clear. Either wa
 | A | Attack: a three-hit combo on the ground (punch, punch, hook); a jump kick in the air. **UP held with the third A: an uppercut** instead of the hook |
 | B | Jump |
 | A on a weapon | Take it; with one in hand A swings it |
+| Y | Throw the weapon in his hand (it flies along his lane) |
 | X | The special: a spin that hits both sides (costs 3 health). **LEFT or RIGHT + X: the dash strike** (costs 4), a lunge at one target |
 | D-pad into a thug | Grab him; then A hits him, and the opposite direction and A throws him |
 | SELECT | Show or hide the hit boxes (the debug view) |
@@ -109,8 +110,24 @@ attack hits. Real art must have its feet at the pivot and fit these boxes (or th
   at once. A throw does **7** damage (10 points) and knocks him down, flying 3.6 px a frame with the slam sound.
 - **A thrown thug is a weapon:** while he is in the air he knocks down every thug he touches in his lane (**5** damage, once
   each, 10 points to the thrower), and hurts a hero for 2 and a stun (never the one who threw him).
+- **From behind:** a thug whose **back is to the hero** (he looks the same way the hero does) is grabbed **from behind**. He is
+  held looking away, and **A is a suplex**: one move, whichever direction is held: **12 damage** (10 points) and a knockdown that **lifts him
+  over the hero's head** (a lift of 4.6, about 35 px; 2.2 px a frame backwards) to land **behind** him. A thug thrown over his head hurts those
+  who stand behind (as every thrown thug does). A thug in the game turns to the hero he is after, so his back is turned mostly when he is
+  after the other hero: **flanking a thug together in two-player**. Bosses cannot be grabbed, front or back.
 - **The hold ends** when the hero is hit (he lets go, hit-stunned), when the thug is knocked away by someone else, or after
   **120 frames**, when the thug wriggles free and waits 60 frames before he acts.
+
+### Throwing a weapon
+
+**Y** throws the weapon in his hand (6 frames of throw, 12 of recovery; it leaves his hand on the 7th frame, a swing sound). A hero who is hit before then
+drops it instead. It flies **along his lane** at chest height (46 to 60 px up): a **pipe at 4 px a frame, a knife at 5.2**, spinning, with a shadow.
+
+- It hits **the first enemy in its lane** (12 px) it touches: **7 damage** (10 points, and the kill's if it kills): a pipe knocks him down, a knife
+  stuns him (14); a **crate** is broken (8); a **boss** takes 7 and his armour holds. It passes **through the other hero** untouched.
+- It ends on a hit, at **230 px**, or at the **edge of the screen**, and drops to the floor where it was, **one use fewer** (a knife with 1 use
+  left is spent by its throw and does not drop): a hero takes it again with A, as any weapon on the floor.
+- The bot does not throw yet.
 
 ### The specials
 
@@ -455,6 +472,16 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
 
+### Built and results: the back grab and thrown weapons
+
+**Built:** `p.back` (a grab where the target's `face` is the way the hero looks), `throwThug(p, t, dir, dmg, anim)` shared by the throws and the suplex
+(`SUPLEX_DMG`, a lift of 4.6), the animations `suplex` and `wthrow`, Y in `updateHero`, `throwWeapon` and `weaponFlight` (the thrown weapon is a
+`shots` entry with an `own` hero: it uses `landHit` and `hitProp`, so the score, the hit stop and the armour are the usual ones), and the drawing
+(the fists over the head, the spinning pipe and knife). Tests: `14-throws.mjs`. Two things the tests found: a weapon thrown toward the edge of the screen was
+deleted by the clean-up of off-screen shots before it could drop (it now drops at the edge), and the older tests that built a thug by hand had him facing away.
+
+**Results:** see the sweep in the next note.
+
 ### Built and results: the Chucker and the Lasher
 
 **Built:** the first projectile system (`shots`, `fireShot`, `updateShots`, `drawShot`: the bottle, the lane and height tests, the hit and the
@@ -569,13 +596,13 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 - [x] **The third punch: a hook, or an uppercut with UP** (the user's memory of the game and idea): built. Section 5 has the rules
   and the frame table, `tests/carts/brawl/06-uppercut.mjs` the checks, and the bot throws the uppercut when it is alone with
   one thug. Still to do (art): the hero's hop on the swing, and an uppercut sound of its own (it uses the swing)
-- [x] **Grab and throw** (src): built (the grab, three grab hits, a throw forward or behind, a thrown thug that hurts others). Still to do: a back grab when the thug's back is to you (mem), a vault throw
+- [x] **Grab and throw** (src): built (the grab, three grab hits, a throw forward or behind, a thrown thug that hurts others). The back grab is built too (a suplex when his back is to you). Still to do: a vault throw, a throw that sends him into the others on purpose (aiming)
 - [x] **Special attack that costs health** (src): both built: X is the spin (3 health, both sides), LEFT or RIGHT + X the dash strike (4 health, one target, 9 and a pop-up). Costs nothing when it misses everything (mem)? Not done: they cost every time. The pad has X, Y, L and R free: the specials are on X, the back attack goes on Y
 - [ ] **Blitz** (src): double-tap a direction then A for a dash attack (a lunging move)
 - [ ] **Back attack** (mem): a button (Y) that hits both ways; a defensive move to get out of a surround
 - [ ] **Wake-up and knock-down rules** (mem): the hero is invulnerable while he gets up; a thrown or knocked-down thug hurts others he hits
 - [x] **Enemy variety in behaviour**: built: a thug for each stage, the Slasher (a fast knife man who drops his knife), the Chucker (throws bottles from a distance) and the Lasher (a whip user) (src: weapon users only when they spawn with them). Still to do: a heavy one that cannot be stunned by a punch, one that breathes fire (mem), a jetpack flyer (mem); and a thug who keeps his weapon and uses it for the hero to take (SoR2's enemies drop theirs when hit)
-- [x] **Pick-up and use of weapons** (src): built: a pipe and a knife (A takes it, A swings it, getting hit drops it). Still to do: throwing it (Y?), more weapons (a bottle that breaks, a bat, a sword), thugs that spawn with a weapon (src)
+- [x] **Pick-up and use of weapons** (src): built: a pipe and a knife (A takes it, A swings it, getting hit drops it). Throwing it (Y) is built too. Still to do: more weapons (a bottle that breaks, a bat, a sword), thugs that spawn with a weapon (src), a bot that throws
 - [x] **Items**: built, each in its own colour: an apple (+10), a roast chicken (+30) from a bin, a money bag (1,000 points), a 1UP (src). Still to do: items that drop from thugs, items that vanish after a while (mem)
 - [x] **Destructible scenery** (src): crates, barrels and bins built (two punches, a burst of bits, the item hops out). Still to do: traffic cones and telephone boxes (mem), breakable windows; the real art needs a "whole" and a "broken" frame
 
