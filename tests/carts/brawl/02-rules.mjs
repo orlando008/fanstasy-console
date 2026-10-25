@@ -117,6 +117,18 @@ const until = (vm, cond, max = 300, mask = 0) => { for (let i = 0; i < max; i++)
   ok(p.player.anim === 'hurt' || p.player.hp === 25, 'a thug\'s punch cuts a hero\'s attack off');
 }
 
+// The sound cues.
+{
+  const vm = newGame(1), p = arena(vm), t = dummy(p, 30); t.hp = 100; sfxLog(vm);
+  vm.press('A'); const first = sfxLog(vm);
+  ok(first.some(([s]) => s === p.SFX.swing), 'a punch starts with a swing');
+  vm.run(10); ok(sfxLog(vm).some(([s]) => s === p.SFX.hit), 'and lands with the hit sound');
+  vm.run(40); sfxLog(vm); vm.press('B'); ok(sfxLog(vm).some(([s]) => s === p.SFX.jump), 'a jump has its sound');
+  vm.run(60); sfxLog(vm); p.player.x = 400; t.x = 430; t.anim = 'idle'; p.knockDown(t, 1); vm.run(60);
+  const log = sfxLog(vm); ok(log.some(([s]) => s === p.SFX.thud), 'a body that lands makes a thud');
+  ok(log.every(([, ch]) => ch >= 6), 'all of them on the effects channels');
+}
+
 // 6. The waves and the end.
 {
   const vm = newGame(5), p = vm.probe(); vm.run(3);

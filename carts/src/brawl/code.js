@@ -29,7 +29,7 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
 // so they never cut into the music and two can sound at once.
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
+const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6, swing: 7, slam: 8, thud: 9, jump: 10 };
 const SONG = { title: 0, play: 1 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
@@ -144,7 +144,9 @@ function mkFighter(kind, x, y, hp) {
 
 // --- Animations and boxes ---
 
-function setAnim(f, name) { f.anim = name; f.fi = 0; f.ft = 0; f.hits = []; f.conn = false; f.connT = 99; f.queue = false; }
+// The sound each animation starts with (a swing of the fist or the foot, a jump).
+const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, jump: SFX.jump };
+function setAnim(f, name) { if (CUE[name] !== undefined) fx(CUE[name]); f.anim = name; f.fi = 0; f.ft = 0; f.hits = []; f.conn = false; f.connT = 99; f.queue = false; }
 const frameOf = (f) => { const a = ANIM[f.anim]; return a[Math.min(f.fi, a.length - 1)]; };
 /** Advance a frame; true when the animation has run its course. */
 function stepAnim(f) {
@@ -179,7 +181,7 @@ function landHit(a, t, mv) {
   if (a === player) { score += 10; lastHit = t; lastHitT = 180; }
   if (t.hp <= 0 || mv.down || t.h > 0) knockDown(t, dir);        // a hit in the air always knocks down (he must fall)
   else { setAnim(t, 'hurt'); t.vx = dir * 6 / 16; }
-  fx(SFX.hit);
+  fx(mv.down ? SFX.slam : SFX.hit);
 }
 
 function knockDown(f, dir) {
@@ -204,7 +206,7 @@ function updateShared(f) {
     return true;
   }
   if (f.anim === 'down') {
-    if (f.h > 0 || f.vz !== 0) { f.x += f.vx; clampX(f); if (fall(f)) { f.vx = 0; f.lie = 40; } }
+    if (f.h > 0 || f.vz !== 0) { f.x += f.vx; clampX(f); if (fall(f)) { f.vx = 0; f.lie = 40; fx(SFX.thud); } }
     else if (--f.lie <= 0) downEnded(f);
     return true;
   }

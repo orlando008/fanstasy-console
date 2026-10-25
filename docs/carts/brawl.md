@@ -132,10 +132,21 @@ left and 500 for every life left.
 
 ## 11. Audio
 
-Songs: 0 the title, 1 the game, on the new sound chip. Songs use channels 0 to 5; effects take turns on 6 and 7. Effects
-(from the starter until the audio pass): hit (a punch connects), point (a thug knocked out), over (game over), select,
-move, pause, record. Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x
-where it enters (`node tools/devkit/music/loud.mjs carts/brawl.nova --check`; playbook section 5).
+Songs: 0 the title (A minor, 150 bpm, a pad and a soft horn), 1 the street (E minor, 128 bpm: a funk bass line and
+drums, a horn hook, a flute answer, sixteen bars that loop), on the new sound chip. Songs use channels 0 to 5; effects
+take turns on 6 and 7. Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x
+where it enters (`node tools/devkit/music/loud.mjs carts/brawl.nova --check`; playbook section 5); the street measures
+lead 0.034 (0.60 of the mix), entrance 1.16x, pierce 0.005.
+
+| Effect | Sound | When |
+|---|---|---|
+| swing (7) | a short noise whoosh | an attack starts (punch, hook, jump kick, the thug's punch) |
+| hit (3) | a noise crunch | a punch lands |
+| slam (8) | a heavy falling tom | a hook or a jump kick lands |
+| thud (9) | a falling tom | a knocked-down body hits the ground |
+| jump (10) | four rising pulses | the hero jumps |
+| point (5) | a blip | a thug is knocked out |
+| move, select, pause, over, record | the starter's | the menus, game over, a record |
 
 ## 12. Video layers and the art layer
 
@@ -161,7 +172,7 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 | Code | under 30 KB of the 64 KB limit (`node tools/check.js brawl`) |
 | Tiles | the three background scenes and the title: under 500 of 1,024 |
 | Sprites | none yet (the final art needs about 128 tiles and 25 KB of ROM a fighter, streamed) |
-| Songs / SFX | the starter's two songs and seven effects until the audio pass |
+| Songs / SFX | two songs and eleven effects; 14 KB of the 32 KB of sample RAM |
 
 ## 15. Implementation plan
 
@@ -172,7 +183,7 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 4. **Flow:** the HUD, lives and respawn, the score, the stage clear and game over into the records.
 5. **Tests and the bot:** the rules' tests, a bot that plays, and a sweep to balance health and damage.
 6. **Art pass:** real fighter frames (from the user's guard and punch drawings and more poses) behind `drawFighter`.
-7. **Audio pass:** a street theme, a punch, a hook, a knockdown.
+7. **Audio pass:** a street theme, a swing, a hook, a knockdown thud, a jump. *(done)*
 8. **Polish:** the label, the PNG cart, the Library and a README row.
 
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**

@@ -22,6 +22,8 @@ a.voice('ARP', 'pluck', 13, 0.25)
 a.instrument('KICK', 'sample', 0, 0, 15, 0, 12, sample=0, echo=2)
 a.instrument('SNARE', 'sample', 0, 0, 15, 0, 10, sample=1, echo=5)
 a.voice('SOFTHORN', 'brass', 6, -0.15, a=6)
+a.voice('TOM', 'tom', 13)
+a.instrument('WHOOSH', 'noise', 2, 6, 0, 4, 9)
 a.instrument('BLIP', 'pulse12', 0, 3, 0, 0, 8)                 # effects from here on
 a.instrument('CHIME', 'pulse50', 0, 6, 5, 6, 9)
 a.instrument('THUD', 'pulse50', 0, 4, 0, 0, 11)
@@ -35,11 +37,14 @@ bars(S, 16, CH, None, drums='soft', bass='long', upper='pad', counter='1 3 5 8 5
 bars(S, 16, CH, ['A3 - C4 - E4 - A4 -', 'A4 - G4 - F4 - C4 -', 'E4 - G4 - C5 - G4 -', 'D4 - G4 - B4 - G4 -'], li='SOFTHORN', drums='drive', bass='1 - - - 5 - - -', upper='arp1')
 S.finish()
 
-# --- 1 The game: C major, 128 bpm ---
-S = a.song(Key('C', MAJOR), 7, echo=(5, 4, 5, 9))
-CH = ['1', '5', '6', '4']
-bars(S, 16, CH, ['C4 - E4 - G4 - E4 -', 'D4 - G4 - B4 - G4 -', 'E4 - A4 - C5 - A4 -', 'C4 - F4 - A4 - F4 -'], li='LEAD', drums='basic', bass='1 - 5 - 1 - 5 -', upper='arp')
-bars(S, 16, CH, ['G4 - E4 - C4 - E4 -', 'B4 - G4 - D4 - G4 -', 'A4 - C5 - E5 - C5 -', 'A4 - F4 - C4 - F4 .'], li='SOFTHORN', drums='basic', bass='1 - 5 - 1 - 5 -', upper='arp1')
+# --- 1 The street: E minor, 128 bpm, a driving funk groove (a hook in the horn, a flute answer) ---
+S = a.song(Key('E', MINOR), 7, echo=(4, 3, 4, 9))
+CH = ['1', '1', '6', '7']
+bars(S, 16, CH, None, drums='funk', bass='1 - 1 1 - 5 - 1', upper='pad', counter='1 - 3 - 5 - 3 -', ci='ARP')   # the groove first, so the lead does not arrive with a jump
+bars(S, 16, CH, ['E4 - - G4 - B4 - G4', 'E4 - G4 - B4 - D5 B4', 'C4 - E4 - G4 - E4 -', 'D4 - F#4 - A4 - F#4 -'], li='SOFTHORN', drums='funk', bass='1 - 1 1 - 5 - 1', upper='arp1')
+CH2 = ['4', '6', '7', '1']
+bars(S, 16, CH2, ['A4 - C5 - B4 - A4 -', 'G4 - G4 - E5 - G4 -', 'F#4 - A4 - D5 - A4 -', 'E4 - G4 - B4 - G4 .'], li='LEAD', drums='heavy', bass='1 - 1 - 5 - 1 5', upper='arp')
+bars(S, 16, ['1', '5', '6', '7'], ['B4 - G4 - E4 - G4 -', 'D5 - B4 - F#4 - B4 -', 'C5 - A4 - E4 - A4 -', 'D5 - F#4 - A4 - D5 .'], li='SOFTHORN', drums='funk', bass='1 - 1 1 - 5 - 1', upper='arp1', fill=[False, False, False, True])
 S.finish()
 
 # --- Effects: the order is the SFX table in code.js ---
@@ -50,5 +55,11 @@ a.effect(3, ['C-4', 'G-3', 'D-3', 'A-2', 'OFF'], 'CRUNCH')         # 3 a hit (no
 a.effect(6, ['G-4', 'E-4', 'C-4', None, 'D-4', None, 'C-4', 'OFF'], 'FANFARE')   # 4 game over
 a.effect(1, ['C-6', 'G-6', 'OFF'], 'BLIP')                         # 5 a point
 a.effect(4, ['C-5', 'E-5', 'G-5', 'C-6', None, 'G-5', 'C-6', 'OFF'], 'FANFARE')  # 6 a record
+
+# the fighting (added after the starter's seven)
+a.effect(1, ['G-5', 'C-5', 'OFF'], 'WHOOSH')                       # 7 a swing (a punch or a kick in the air)
+a.effect(2, ['G-3', 'C-3', 'C-2', 'G-1', 'OFF'], 'TOM')                   # 8 a hook or a jump kick lands (a heavy thump)
+a.effect(3, ['G-2', 'D-2', 'A-1', 'OFF'], 'TOM')                   # 9 a body hits the ground
+a.effect(1, ['C-4', 'E-4', 'G-4', 'C-5', 'OFF'], 'BLIP')           # 10 a jump
 
 a.write(sys.argv[1], songs=2)
