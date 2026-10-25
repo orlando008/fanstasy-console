@@ -42,7 +42,7 @@ const mk = (p, x, { v = 0, knife = false, ai = 'fight', hp = 20 } = {}) => { con
 }
 {
   const vm = newGame(1, { players: 2 }), p = vm.probe(); vm.run(2); p.loadStage(1); p.enemies = []; p.wave = 3; p.cam = 768; p.locked = false; p.players[0].x = 800; p.players[1].x = 820; vm.run(4);
-  ok(p.enemies.length === 6 && p.enemies.filter((e) => e.type === 'knife').length === 2 && p.enemies.filter((e) => e.type === '').length === 3, 'with two heroes the extra thug is a plain one', `${p.enemies.length}`);
+  ok(p.enemies.length === 6 && p.enemies.filter((e) => e.type === 'knife').length === 2 && p.enemies.filter((e) => e.type === '').length === 2, 'with two heroes the extra thug is a plain one', `${p.enemies.length}`);
 }
 
 // 3. The Slasher.

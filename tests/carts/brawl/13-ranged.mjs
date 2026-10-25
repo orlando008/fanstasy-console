@@ -15,7 +15,7 @@ const mk = (p, x, type, { ai = 'fight', hp = 20, v = 0 } = {}) => { const t = p.
   const comp = (s) => s.waves.map((w) => `${w.k || 0}/${w.c || 0}/${w.l || 0}`).join(' ');
   ok(comp(p.STAGES[0]) === '0/0/0 0/0/0 0/1/0 1/0/0 0/0/0', 'the street brings a Chucker in its third wave', comp(p.STAGES[0]));
   ok(comp(p.STAGES[1]) === '0/0/0 1/0/0 1/1/0 2/0/1 0/0/0', 'the docks add a Lasher in the fourth', comp(p.STAGES[1]));
-  ok(comp(p.STAGES[2]) === '1/1/0 1/1/1 2/1/1 2/2/1 1/0/0', 'and the rooftop has all of them', comp(p.STAGES[2]));
+  ok(comp(p.STAGES[2]) === '1/1/0 1/1/1 2/1/1 2/1/1 1/0/0', 'and the rooftop has all of them', comp(p.STAGES[2]));
   ok(p.STAGES.every((s) => s.waves.every((w) => (w.k || 0) + (w.c || 0) + (w.l || 0) <= w.n)), 'no wave has more special enemies than enemies');
 }
 {

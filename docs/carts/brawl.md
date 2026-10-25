@@ -248,7 +248,21 @@ He wears a brown vest and a yellow bandana and his knife shows as a white blade.
 | Dodging it | step out of her lane (more than 12 px) during the wind-up; or **close in** with the dash strike (it reaches 100 px) and she is at the mercy of the hero's fists |
 | Knocked out | 150 points |
 
-Where they come: each wave of a stage says how many of its thugs are Slashers (`k` in `STAGES`), Chuckers (`c`) and Lashers (`l`), in that
+**The Brute** is the heavy: big, slow, tough, and not to be stunned.
+
+| | |
+|---|---|
+| Looks | a wide body in a maroon vest with a gold belt, thick legs, a big bald head (a hurt box of 40 x 100, against a thug's 28 x 92) |
+| Health | **2.2 times a thug's**: 44, 57 and 70 |
+| Walks | 0.7 of a thug's: 0.56 px across on the street |
+| Waits at | 95 px from the hero; with his turn, 52 px |
+| Smash | when in the hero's lane (within 6) **30 to 62 px away**: **28 frames** with both fists held high (the longest warning of any thug), a 5-frame club `[10,-98,68,-50]`, 26 frames of recovery; he then waits 100 to 160 frames |
+| Damage | **9 and a knockdown** |
+| **Armour** | a blow that **only stuns** (a punch, a knife stab, the second punch) does its damage and makes him **flash white**, and nothing else: no stun, no knock-back. A blow that **knocks down** (the hook, the uppercut, a jump kick, the dash strike, the spin, a pipe, a thrown pipe, a thrown thug) puts him down as it does any thug, and the blow that takes his last health knocks him out |
+| Grabbed | **no**, front or back (too big) |
+| Knocked out | **250 points** |
+
+Where they come: each wave of a stage says how many of its thugs are Slashers (`k` in `STAGES`), Chuckers (`c`), Lashers (`l`) and Brutes (`b`), in that
 order, the rest plain (section 6). With two heroes the extra thug is a plain one.
 
 ## 6. Levels or content
@@ -263,7 +277,7 @@ flashing GO arrow shows and it scrolls on. The hero cannot leave the screen side
 | Sky | dusk purple to a warm glow | dark teal | dawn: slate blue to pale orange to gold |
 | Thugs | thugs: red shirts, 20 health | dockhands: olive shirts and caps, 26 health | enforcers: dark suits and sunglasses, 32 health |
 | Waves (thugs) | 2, 3, 3, 4, then the boss's 2 | 3, 3, 4, 5, then the boss's 2 | 4, 4, 5, 6, then the boss's 2 |
-| Slashers, Chuckers, Lashers among them (k / c / l) | 0/0/0, 0/0/0, 0/1/0, 1/0/0, then none | 0/0/0, 1/0/0, 1/1/0, 2/0/1, then none | 1/1/0, 1/1/1, 2/1/1, 2/2/1, then 1 Slasher with the boss |
+| Slashers, Chuckers, Lashers, Brutes among them (k / c / l / b) | 0/0/0/0, 0/0/0/0, 0/1/0/0, 1/0/0/0, then none | 0/0/0/0, 1/0/0/0, 1/1/0/1, 2/0/1/1, then none | 1/1/0/0, 1/1/1/0, 2/1/1/1, 2/1/1/2, then 1 Slasher with the boss |
 | Props | 8: apples, a pipe, chickens, money, a knife, a 1UP | 8: two knives, a pipe, chickens, money, apples | 8: two pipes, a knife, two chickens, money, an apple, a 1UP |
 | Song | song 1 (E minor, a funk groove) | song 3 (D minor, a bounce) | song 5 (C minor, a rising dawn theme) |
 | Boss | **BULL**, a heavy (120 health): punch, charge, song 2 | **RAZOR**, quick (90): three stabs, a leap, song 4 | **KINGPIN** (160): a harder punch and charge, a ground slam to jump, a rage; song 6 |
@@ -472,6 +486,15 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
 
+### Built and results: the Brute
+
+**Built:** `ROLE.brute`, `BRUTE_ANIM` and `hsmash`, the armour in `landHit` (a blow with no `down` only makes him flash), ungrabbable, a wider
+body in `drawFighter`, the waves' `b`. Tests: `15-brute.mjs` (and the wave numbers in `11-enemies.mjs` and `13-ranged.mjs`). The bot steps out of the
+smash's lane. The packed cart is now **63.5 KB of the 64 KB limit (96.9%)**: **2 KB are left**, and the limit is hard (a cart over 65,536 bytes does not
+pack): the next feature has to come with room made first (strip the indentation in the packed cart, merge the drawing code, or the real art).
+
+**Results:** see the sweep in the next note.
+
 ### Built and results: the back grab and thrown weapons
 
 **Built:** `p.back` (a grab where the target's `face` is the way the hero looks), `throwThug(p, t, dir, dmg, anim)` shared by the throws and the suplex
@@ -601,7 +624,7 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 - [ ] **Blitz** (src): double-tap a direction then A for a dash attack (a lunging move)
 - [ ] **Back attack** (mem): a button (Y) that hits both ways; a defensive move to get out of a surround
 - [ ] **Wake-up and knock-down rules** (mem): the hero is invulnerable while he gets up; a thrown or knocked-down thug hurts others he hits
-- [x] **Enemy variety in behaviour**: built: a thug for each stage, the Slasher (a fast knife man who drops his knife), the Chucker (throws bottles from a distance) and the Lasher (a whip user) (src: weapon users only when they spawn with them). Still to do: a heavy one that cannot be stunned by a punch, one that breathes fire (mem), a jetpack flyer (mem); and a thug who keeps his weapon and uses it for the hero to take (SoR2's enemies drop theirs when hit)
+- [x] **Enemy variety in behaviour**: built: a thug for each stage, the Slasher (a fast knife man who drops his knife), the Chucker (throws bottles from a distance), the Lasher (a whip user) and the Brute (a heavy that a punch cannot stun) (src: weapon users only when they spawn with them). Still to do: a fire-breather (mem), a jetpack flyer (mem); and a thug who keeps his weapon and uses it for the hero to take (SoR2's enemies drop theirs when hit)
 - [x] **Pick-up and use of weapons** (src): built: a pipe and a knife (A takes it, A swings it, getting hit drops it). Throwing it (Y) is built too. Still to do: more weapons (a bottle that breaks, a bat, a sword), thugs that spawn with a weapon (src), a bot that throws
 - [x] **Items**: built, each in its own colour: an apple (+10), a roast chicken (+30) from a bin, a money bag (1,000 points), a 1UP (src). Still to do: items that drop from thugs, items that vanish after a while (mem)
 - [x] **Destructible scenery** (src): crates, barrels and bins built (two punches, a burst of bits, the item hops out). Still to do: traffic cones and telephone boxes (mem), breakable windows; the real art needs a "whole" and a "broken" frame
