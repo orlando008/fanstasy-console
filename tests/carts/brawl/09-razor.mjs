@@ -95,6 +95,6 @@ const razor = (p, x, { ai = 'fight', hp = 90 } = {}) => { const b = p.mkFighter(
   const r = razor(p, 836, { ai: 'dummy', hp: 3 }); sfxLog(vm); vm.press('A'); vm.run(20);
   ok(r.dying && me.score === 10 + 1500, 'the last hit knocks him out: 1,500 points', `${me.score}`);
   until(vm, () => !p.enemies.includes(r), 200); ok(p.items.some((i) => i.kind === 'chicken'), 'and he drops a chicken');
-  vm.run(5); ok(p.state === 'over' && p.won, 'and with the last stage done, that is the end of the game');
+  vm.run(5); ok(p.state === 'clear', 'and the stage is clear: on to the rooftop');
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

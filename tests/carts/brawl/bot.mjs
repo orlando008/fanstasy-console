@@ -38,6 +38,7 @@ function padFor(p, me, frame, skill) {
   const boss = p.enemies.find((e) => e.kind === 'boss' && !e.dying && e.anim !== 'down');
   const dodge = boss && ((boss.anim === 'bcharge' && boss.fi <= 1) || boss.anim === 'rleap' || boss.anim === 'rdive') && Math.abs(boss.y - me.y) < 24;
   if (skill >= 0.5 && dodge) return me.y > boss.y ? (me.y < 200 ? M('DOWN') : M('UP')) : (me.y > 160 ? M('UP') : M('DOWN'));   // he is charging or leaping: out of his lane
+  if (skill >= 0.5 && boss && boss.anim === 'kslam' && boss.fi === 0 && boss.ft >= 14 && Math.abs(boss.x - me.x) < 110 && Math.abs(boss.y - me.y) < 16 && me.h === 0) return M('B');   // the slam's wave runs along the floor: jump it
   const wind = boss && (boss.anim === 'bpunch' || boss.anim === 'rslash1') && boss.fi === 0 && Math.abs(boss.x - me.x) < 90 && Math.abs(boss.y - me.y) < 14;
   if (skill >= 0.5 && wind) return (me.y >= boss.y ? me.y < 200 : me.y <= 158) ? M('DOWN') : M('UP');   // his wind-up: step out of his lane (his reach is 12 px)
   const close = live.filter((e) => Math.abs(e.x - me.x) < 56 && Math.abs(e.y - me.y) < 14).length;

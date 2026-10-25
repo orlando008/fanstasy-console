@@ -2,7 +2,8 @@
 #   python3 carts/src/brawl/art.py carts/src/brawl
 # Stage 1, the street (docs/carts/brawl.md, section 12): a gradient sky set line by line, a far city on BG2, a chain-link fence on
 # BG1 and flat paving on BG0 (palettes 1 to 3); stage 2, the docks: a night harbour with cranes, stacked containers and wooden
-# planks (palettes 4 to 6, Map RAM columns 96 to 191); stage 3's palettes will be 7 and runtime swaps (section 6), each a full 256 x 224 picture that repeats sideways as the camera scrolls. The fighters are
+# planks (palettes 4 to 6, Map RAM columns 96 to 191); stage 3, the rooftop, has the one palette left (7, entries 113 to 127, freed by dropping three unused overlay colours) for all
+# three of its scenes (Map RAM columns 192 to 255 and row 32), each a full 256 x 224 picture that repeats sideways as the camera scrolls. The fighters are
 # placeholder shapes drawn by the game for now (no sprites): real frames plug in later behind drawFighter().
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
@@ -12,7 +13,6 @@ art = Art()
 art.region('bg', 1, 639)       # background tiles (three stages)
 art.region('spr', 640, 1023)   # sprites (the fighters' frames, later)
 art.backdrop('100818')
-art.color(113, 'f8f8f0', 'WHITE'); art.color(114, 'ffd040', 'GOLD'); art.color(115, '181020', 'INK')
 art.color(200, '181028', 'GLASS')                                          # the panels' fill, seen through (blend() in code.js)
 
 # --- The sky: dusk purple to a warm glow at the horizon, a colour for every line down to the pavement. ---
@@ -130,5 +130,61 @@ for row, y0 in enumerate(range(140, 224, 8)):
             plank.px[y][x] = c
         if jx in (3, 44) and y0 + 3 < 224: plank.pset(x, y0 + 3, PLANK.edge[1])        # the nails
 art.scene('planks', plank, pal=PLANK, at=(160, 0), region='bg')
+
+# =====================================================================================================================
+# Stage 3, the rooftop: dawn over a skyline, rooftop structures, a concrete deck with a helipad. One palette (7) for the three scenes.
+# =====================================================================================================================
+art.gradient('dawn', ['283050', '6a5880', 'e08860', 'f8d090'], y0=0, y1=136)
+ROOF = art.palette(7, {'far': ['3a3a68', '2a2a50'], 'lit': 'f0c070', 'red': 'e04040',
+                       'struct': ['505068', '6a6a80', '8a8aa0'], 'deck': ['504c44', '706c62', '8a8478', 'a09a8c'], 'yellow': 'f0d040', 'white': 'f0f0e8'})
+
+# --- BG2: a skyline of towers in the dawn haze with a few lit windows and red aerial lights (repeats every 256 px). ---
+sky3 = Img(256, 224)
+x = 0; k = 0
+while x < 248:
+    w = 16 + int(hsh(k * 7 + 2) % 3) * 8; top = 40 + int(hsh(k * 13 + 3) % 4) * 14
+    for yy in range(top, 136):
+        for xx in range(x, min(255, x + w)): sky3.px[yy][xx] = ROOF.far[0] if (xx - x) % 8 else ROOF.far[1]
+    for wy in range(top + 6, 130, 10):
+        for wx in range(x + 4, min(255, x + w) - 4, 8):
+            if hsh(wx * 3 + wy * 5 + k) % 4 == 0: sky3.pset(wx, wy, ROOF.lit); sky3.pset(wx + 1, wy, ROOF.lit)
+    if k % 3 == 0: sky3.line(x + w // 2, top - 12, x + w // 2, top, ROOF.far[1]); sky3.pset(x + w // 2, top - 13, ROOF.red)   # an aerial and its light
+    x += w + 8; k += 1
+art.scene('skyline', sky3, pal=ROOF, at=(192, 0), region='bg')
+
+# --- BG1: rooftop things standing behind the deck: vents, a water tank on legs, a stairwell hut, a railing; down to y 136. ---
+roofs = Img(256, 224)
+def block(x0, y0, w, h, c):                                  # a box with a lit top, a shaded foot and a seam
+    for yy in range(y0, y0 + h):
+        for xx in range(x0, x0 + w):
+            roofs.px[yy][xx] = ROOF.struct[2] if yy == y0 else ROOF.struct[0] if yy >= y0 + h - 2 or xx == x0 + w - 1 else ROOF.struct[c]
+block(8, 104, 40, 32, 1); block(16, 112, 8, 8, 0); block(32, 112, 8, 8, 0)                    # an air-conditioning unit with two grilles
+for lx in (72, 100, 124): roofs.rect(lx, 112, 4, 24, ROOF.struct[0])                          # a water tank on legs
+for yy in range(88, 112):
+    for xx in range(68, 130): roofs.px[yy][xx] = ROOF.struct[1] if (xx + yy // 3) % 9 else ROOF.struct[0]
+roofs.rect(68, 88, 62, 2, ROOF.struct[2]); roofs.rect(66, 86, 66, 3, ROOF.struct[0])
+block(152, 80, 40, 56, 1); block(168, 104, 14, 32, 0)                                          # a stairwell hut and its door
+for xx in range(200, 256, 8): roofs.rect(xx, 112, 2, 24, ROOF.struct[1])                      # a railing
+roofs.rect(200, 112, 56, 2, ROOF.struct[2]); roofs.rect(200, 124, 56, 2, ROOF.struct[1])
+art.scene('roofs', roofs, pal=ROOF, at=(224, 0), region='bg')
+
+# --- BG0: the deck, slabs of concrete with a low wall along the back, and a helipad's circle and H in the middle of each 256 px. ---
+deck = Img(256, 224)
+for y in range(136, 140):
+    for x in range(256): deck.px[y][x] = ROOF.deck[3] if y == 136 else ROOF.deck[2] if y == 137 else ROOF.deck[0]          # the parapet
+for y in range(140, 224):
+    for x in range(256):
+        c = ROOF.deck[1 + ((x // 32 + y // 16) % 2)]
+        if x % 32 == 0 or y % 16 == 0: c = ROOF.deck[0]                                                                       # the seams
+        deck.px[y][x] = c
+for yy in range(150, 222):                                                                                                   # the helipad: a ring ...
+    for xx in range(88, 168):
+        dx, dy = xx - 128, (yy - 186) * 1.1
+        r = (dx * dx + dy * dy) ** 0.5
+        if 34 <= r <= 37: deck.px[yy][xx] = ROOF.yellow
+for yy in range(172, 201):                                                                                                   # ... and an H
+    for xx in range(118, 139):
+        if xx in (118, 119, 137, 138) or (185 <= yy <= 187): deck.px[yy][xx] = ROOF.white
+art.scene('deck', deck, pal=ROOF, at=(0, 32), region='bg')
 
 art.write(sys.argv[1])

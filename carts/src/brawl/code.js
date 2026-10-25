@@ -13,9 +13,9 @@ const SHADOW = 1, NAVY = 2, PANEL = 3, BROWN = 4, DKGREEN = 5, RED = 6, BLUE = 8
 const ART = {
   tiles: {},
   sprites: {},
-  scenes: {"city": {"h": 28, "mx": 0, "my": 0, "pal": 1, "w": 32}, "dock": {"h": 28, "mx": 128, "my": 0, "pal": 5, "w": 32}, "fence": {"h": 28, "mx": 32, "my": 0, "pal": 2, "w": 32}, "ground": {"h": 28, "mx": 64, "my": 0, "pal": 3, "w": 32}, "harbour": {"h": 28, "mx": 96, "my": 0, "pal": 4, "w": 32}, "planks": {"h": 28, "mx": 160, "my": 0, "pal": 6, "w": 32}},
-  colors: {"GLASS": 200, "GOLD": 114, "INK": 115, "WHITE": 113},
-  gradients: {"night":{"entry":0,"lines":[3136,3136,3136,3136,3136,4160,4160,4160,4160,4160,4160,4160,4160,4160,4160,5216,5216,5216,5216,5216,5216,5216,5216,5216,5217,5217,6241,6241,6241,6241,6273,6273,6273,6273,6273,7297,7297,7297,7297,7297,7297,7297,7297,7297,7297,8353,8353,8353,8353,8353,8353,8353,8353,8353,9409,9409,9410,9410,9410,9410,9410,9410,9410,9410,10466,10466,10466,10466,10466,10466,10466,10466,10466,11522,11522,11522,11522,11522,11522,11523,11523,11523,12579,12579,12579,12579,12579,12579,12579,12579,12579,13635,13635,13635,13636,13636,13636,13668,13668,14692,14693,14693,14693,14725,14725,14725,15750,15750,15782,15782,15782,15783,15783,15783,16839,16839,16839,16840,16840,16840,16872,17896,17896,17897,17897,17929,17929,17929,17929,18954,18954,18986,18986,18986,18986,18987,20043],"y0":0},"sky":{"entry":0,"lines":[4129,4129,4129,4129,4129,4129,4130,4130,4130,5154,5154,5154,5154,5154,5154,5154,5154,5154,5154,6178,6179,6179,6211,6211,6211,6211,6211,6211,7235,7235,7235,7235,7236,7236,7236,7236,8260,8260,8260,8260,8260,8260,8260,8260,8292,9317,9317,9317,9317,9317,9317,9317,9317,9318,9318,9318,9318,9318,9318,9350,10374,10375,10375,10375,10375,10375,10375,10375,10375,10376,10376,10376,10376,10376,10376,11432,11433,11433,11433,11433,11433,11433,11433,11433,11434,11434,11434,11434,11434,11434,11434,12491,12491,12491,12491,12491,12492,12492,12492,12492,12524,12524,12525,12525,12525,12525,12525,12526,12526,12558,12558,12558,12559,12559,12559,12559,12559,12560,12592,12592,12592,12592,12593,12593,12593,12593,12593,12626,12626,12626,12626,13651,13651,13651,13651,13651,13684],"y0":0}},
+  scenes: {"city": {"h": 28, "mx": 0, "my": 0, "pal": 1, "w": 32}, "deck": {"h": 28, "mx": 0, "my": 32, "pal": 7, "w": 32}, "dock": {"h": 28, "mx": 128, "my": 0, "pal": 5, "w": 32}, "fence": {"h": 28, "mx": 32, "my": 0, "pal": 2, "w": 32}, "ground": {"h": 28, "mx": 64, "my": 0, "pal": 3, "w": 32}, "harbour": {"h": 28, "mx": 96, "my": 0, "pal": 4, "w": 32}, "planks": {"h": 28, "mx": 160, "my": 0, "pal": 6, "w": 32}, "roofs": {"h": 28, "mx": 224, "my": 0, "pal": 7, "w": 32}, "skyline": {"h": 28, "mx": 192, "my": 0, "pal": 7, "w": 32}},
+  colors: {"GLASS": 200},
+  gradients: {"dawn":{"entry":0,"lines":[10437,10437,10437,10437,10437,10437,10438,10438,11462,11494,11494,11495,11495,11495,11495,12519,12519,12520,12552,12552,12552,12552,12553,13577,13577,13577,13577,13609,13610,13610,14634,14634,14634,14635,14635,14635,14667,14667,15691,15692,15692,15692,15692,15692,15693,16749,16749,15725,15726,15726,15726,15727,15759,15759,15760,15760,15760,15761,15761,15793,15793,15794,15794,15794,15795,14771,14771,14804,14804,14804,14805,14805,14805,14806,14838,14838,13815,13815,13815,13816,13816,13816,13817,13849,13849,12826,12826,12826,12827,12827,12827,12860,12860,12860,12860,12860,12892,12892,12892,13916,13916,13948,13948,13948,13949,13949,15005,15005,15005,15005,15005,15037,15037,15037,16061,16061,16093,16093,16093,16094,16094,17150,17150,17150,17150,17150,17182,17182,17182,18206,18206,18238,18238,18238,18238,18239,19295],"y0":0},"night":{"entry":0,"lines":[3136,3136,3136,3136,3136,4160,4160,4160,4160,4160,4160,4160,4160,4160,4160,5216,5216,5216,5216,5216,5216,5216,5216,5216,5217,5217,6241,6241,6241,6241,6273,6273,6273,6273,6273,7297,7297,7297,7297,7297,7297,7297,7297,7297,7297,8353,8353,8353,8353,8353,8353,8353,8353,8353,9409,9409,9410,9410,9410,9410,9410,9410,9410,9410,10466,10466,10466,10466,10466,10466,10466,10466,10466,11522,11522,11522,11522,11522,11522,11523,11523,11523,12579,12579,12579,12579,12579,12579,12579,12579,12579,13635,13635,13635,13636,13636,13636,13668,13668,14692,14693,14693,14693,14725,14725,14725,15750,15750,15782,15782,15782,15783,15783,15783,16839,16839,16839,16840,16840,16840,16872,17896,17896,17897,17897,17929,17929,17929,17929,18954,18954,18986,18986,18986,18986,18987,20043],"y0":0},"sky":{"entry":0,"lines":[4129,4129,4129,4129,4129,4129,4130,4130,4130,5154,5154,5154,5154,5154,5154,5154,5154,5154,5154,6178,6179,6179,6211,6211,6211,6211,6211,6211,7235,7235,7235,7235,7236,7236,7236,7236,8260,8260,8260,8260,8260,8260,8260,8260,8292,9317,9317,9317,9317,9317,9317,9317,9317,9318,9318,9318,9318,9318,9318,9350,10374,10375,10375,10375,10375,10375,10375,10375,10375,10376,10376,10376,10376,10376,10376,11432,11433,11433,11433,11433,11433,11433,11433,11433,11434,11434,11434,11434,11434,11434,11434,12491,12491,12491,12491,12491,12492,12492,12492,12492,12524,12524,12525,12525,12525,12525,12525,12526,12526,12558,12558,12558,12559,12559,12559,12559,12559,12560,12592,12592,12592,12592,12593,12593,12593,12593,12593,12626,12626,12626,12626,13651,13651,13651,13651,13651,13684],"y0":0}},
 };
 /** In scanline(y): set the CGRAM entry of a gradient from ART.gradients to its colour for line y (generated by art.py). */
 function gradientLine(g, y) {
@@ -30,7 +30,7 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // so they never cut into the music and two can sound at once.
 
 const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6, swing: 7, slam: 8, thud: 9, jump: 10, pickup: 11, heal: 12, smash: 13 };
-const SONG = { title: 0, play: 1, boss: 2, docks: 3, boss2: 4 };
+const SONG = { title: 0, play: 1, boss: 2, docks: 3, boss2: 4, roof: 5, boss3: 6 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -114,7 +114,7 @@ const ANIM = {
 const MOVE = {
   punch1: { dmg: 4, stun: 16 }, punch2: { dmg: 4, stun: 16 }, hook: { dmg: 6, down: 1 }, uppercut: { dmg: 8, down: 1, lift: 5.0 }, jkick: { dmg: 6, down: 1 },
   tpunch: { dmg: 5, stun: 16 }, special: { dmg: 5, down: 1 }, bpunch: { dmg: 8, stun: 16 }, bcharge: { dmg: 10, down: 1 },
-  rslash1: { dmg: 4, stun: 14 }, rslash2: { dmg: 4, stun: 14 }, rslash3: { dmg: 6, down: 1 }, rdive: { dmg: 7, down: 1 },
+  rslash1: { dmg: 4, stun: 14 }, rslash2: { dmg: 4, stun: 14 }, rslash3: { dmg: 6, down: 1 }, rdive: { dmg: 7, down: 1 }, kslam: { dmg: 8, down: 1 },
   wpipe: { dmg: 8, down: 1 }, wknife: { dmg: 5, stun: 14 },
 };
 const COMBO = { punch1: 'punch2', punch2: 'hook' };
@@ -125,6 +125,18 @@ const BIG = [-22, -116, 22, 0], BIG_LYING = [-52, -26, 52, 0], BOSS_HP = 120, BO
 const BOSS = {
   bull: { name: 'BULL', hp: BOSS_HP, song: SONG.boss, points: BOSS_POINTS, drop: 'oneup' },
   razor: { name: 'RAZOR', hp: 90, song: SONG.boss2, points: 1500, drop: 'chicken' },
+  king: { name: 'KINGPIN', hp: 160, song: SONG.boss3, points: 3000, drop: 'money', mult: 1.15 },
+};
+// KINGPIN, the last boss, has BULL's punch and charge (harder, quicker), and a ground slam: a low wave along the floor on both sides that
+// only a jump clears. Below a third of his health he rages: shorter waits, faster walking. His animations keep BULL's names.
+const KB = [-24, -124, 24, 0];
+const KING_ANIM = {
+  idle: [[30, KB, null]], walk: [[30, KB, null]],
+  bpunch: [[18, KB, null], [5, KB, [18, -106, 78, -72]], [22, KB, null]],
+  bcharge: [[20, KB, null], [64, KB, [0, -108, 52, -10]], [24, KB, null]],
+  kslam: [[26, KB, null], [8, KB, [-96, -22, 96, 0]], [30, KB, null]],
+  bstun: [[50, KB, null]],
+  down: [[999, [-56, -28, 56, 0], null]], getup: [[22, KB, null]], hurt: [[10, KB, null]],
 };
 const RB = [-17, -100, 17, 0], R_LYING = [-46, -22, 46, 0];
 const RAZOR_ANIM = {
@@ -172,6 +184,14 @@ const STAGES = [
       { x: 620, y: 190, kind: 'crate', item: 'money' }, { x: 700, y: 170, kind: 'barrel', item: 'knife' },
       { x: 850, y: 186, kind: 'bin', item: 'chicken' }, { x: 920, y: 174, kind: 'crate', item: 'apple' },
     ] },
+  { name: 'THE ROOFTOP', scenes: ['skyline', 'roofs', 'deck'], sky: 'dawn', song: SONG.roof, width: 1024, thugHp: 32, thugCoat: 3, boss: 'king',
+    waves: [{ x: 0, n: 4 }, { x: 300, n: 4 }, { x: 560, n: 5 }, { x: 768, n: 6 }, { x: 768, n: 2, boss: true }],
+    props: [
+      { x: 140, y: 176, kind: 'crate', item: 'pipe' }, { x: 230, y: 196, kind: 'barrel', item: 'apple' },
+      { x: 400, y: 168, kind: 'bin', item: 'chicken' }, { x: 480, y: 188, kind: 'crate', item: 'knife' },
+      { x: 610, y: 200, kind: 'barrel', item: 'money' }, { x: 690, y: 172, kind: 'crate', item: 'pipe' },
+      { x: 840, y: 190, kind: 'bin', item: 'chicken' }, { x: 900, y: 170, kind: 'barrel', item: 'oneup' },
+    ] },
 ];
 let stage = 0, ST = null, bannerT = 0, bonusShown = [];
 
@@ -215,7 +235,7 @@ function loadStage(i) {
   cam = 0; wave = 0; locked = false; hitstop = 0; goT = 0; enemies = []; lastHit = null; lastHitT = 0; warnT = 0; bannerT = 150;
   props = PROPS.map((q) => ({ ...q, prop: true, h: 0, hp: PROP_HP, flash: 0, box: PROP_BOX[q.kind] })); items = []; popups = []; bits = [];
   for (const h of players) {
-    if (h.out) { h.out = false; h.lives = 1; }
+    if (h.out) { h.out = false; h.lives = 1; } else if (stage) h.lives = Math.min(3, h.lives + 1);   // a life at the start of each stage, up to 3
     h.hp = HERO_HP; h.x = h.pad ? 56 : 90; h.y = players.length > 1 ? (h.pad ? 192 : 172) : 180; h.h = 0; h.vx = 0; h.vz = 0; h.dying = false;
     release(h); setAnim(h, 'idle'); h.inv = stage ? 90 : 0;
   }
@@ -237,10 +257,10 @@ function mkFighter(kind, x, y, hp) {
 // --- Animations and boxes ---
 
 // The sound each animation starts with (a swing of the fist or the foot, a jump).
-const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, bpunch: SFX.swing, bcharge: SFX.slam, rslash1: SFX.swing, rslash2: SFX.swing, rslash3: SFX.swing, rleap: SFX.jump, jump: SFX.jump, special: SFX.swing, wpipe: SFX.swing, wknife: SFX.swing, uppercut: SFX.swing };
+const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, bpunch: SFX.swing, bcharge: SFX.slam, rslash1: SFX.swing, rslash2: SFX.swing, rslash3: SFX.swing, kslam: SFX.swing, rleap: SFX.jump, jump: SFX.jump, special: SFX.swing, wpipe: SFX.swing, wknife: SFX.swing, uppercut: SFX.swing };
 function setAnim(f, name) { if (CUE[name] !== undefined) fx(CUE[name]); f.anim = name; f.fi = 0; f.ft = 0; f.hits = []; f.conn = false; f.connT = 99; f.queue = false; f.queueUp = false; }
 const BOSS_ANIM = BULL_ANIM;
-const animOf = (f) => (f.kind === 'boss' ? (f.type === 'razor' ? RAZOR_ANIM : BULL_ANIM) : ANIM)[f.anim];
+const animOf = (f) => (f.kind === 'boss' ? { bull: BULL_ANIM, razor: RAZOR_ANIM, king: KING_ANIM }[f.type] : ANIM)[f.anim];
 const frameOf = (f) => { const a = animOf(f); return a[Math.min(f.fi, a.length - 1)]; };
 /** Advance a frame; true when the animation has run its course. */
 function stepAnim(f) {
@@ -271,7 +291,8 @@ function checkHits(a, targets) {
 /** Heroes can hit each other (friendly fire): 1 damage and a hit stun, never a knockdown, never below 1 health, no score. */
 function landHit(a, t, mv) {
   const friendly = a.kind === 'hero' && t.kind === 'hero';
-  a.hits.push(t); a.conn = true; a.connT = 0; hitstop = HITSTOP; t.hp -= friendly ? 1 : mv.dmg;
+  const dmg = Math.round(mv.dmg * (a.kind === 'boss' ? BOSS[a.type].mult || 1 : 1));   // the last boss hits harder
+  a.hits.push(t); a.conn = true; a.connT = 0; hitstop = HITSTOP; t.hp -= friendly ? 1 : dmg;
   if (friendly) t.hp = Math.max(1, t.hp);
   const dir = a.x <= t.x ? 1 : -1;
   t.face = -dir; t.token = false; t.queue = false;
@@ -561,20 +582,26 @@ function bossHurt(b, dir, by) {
   if (b.hp <= 0 || tier < b.tier) { b.tier = tier; b.token = false; knockDown(b, dir, by); }
 }
 const clampBoss = (b) => { b.y = Math.max(LANE_TOP, Math.min(LANE_BOT, b.y)); };
+const kingRage = (b) => b.type === 'king' && b.hp <= b.maxhp / 3;
+const bossWait = (b, lo, hi) => Math.round(rndi(lo, hi) * (kingRage(b) ? 0.6 : 1));   // a raging boss waits less
 function updateBull(b) {
   if (b.inv > 0) b.inv--;
   if (b.flash > 0) b.flash--;
   if (updateShared(b) || b.ai === 'dummy') return;                   // (a dummy is a punching bag for the tests)
   if (!heroes().length) return;
   const a = b.anim;
-  if (a === 'bpunch') { if (stepAnim(b)) { setAnim(b, 'walk'); b.cool = rndi(40, 80); } return; }
+  if (a === 'bpunch') { if (stepAnim(b)) { setAnim(b, 'walk'); b.cool = bossWait(b, 40, 80); } return; }
   if (a === 'bstun') { if (stepAnim(b)) { setAnim(b, 'walk'); b.cool = 40; } return; }
+  if (a === 'kslam') {                                               // the wave goes out along the floor on the first active frame
+    if (stepAnim(b)) { setAnim(b, 'walk'); b.cool = bossWait(b, 50, 90); } else if (b.fi === 1 && b.ft === 0) fx(SFX.slam);
+    return;
+  }
   if (a === 'bcharge') {
     if (b.fi === 1) {                                                // running: until the time is up, or a wall
       b.x += b.face * CHARGE_SPEED;
       if (b.x <= cam + 26 || b.x >= cam + 230) { b.x = Math.max(cam + 26, Math.min(cam + 230, b.x)); setAnim(b, 'bstun'); fx(SFX.thud); return; }
     }
-    if (stepAnim(b)) { setAnim(b, 'walk'); b.cool = rndi(70, 110); }
+    if (stepAnim(b)) { setAnim(b, 'walk'); b.cool = bossWait(b, 70, 110); }
     return;
   }
   const p = target(b), dx = p.x - b.x, dy = p.y - b.y, adx = Math.abs(dx), ady = Math.abs(dy);
@@ -585,11 +612,12 @@ function updateBull(b) {
   }
   if (b.cool > 0) b.cool--;
   b.face = dx >= 0 ? 1 : -1;
-  if (b.cool <= 0 && ady <= 8 && adx >= 26 && adx <= 58) { setAnim(b, 'bpunch'); return; }
+  if (b.cool <= 0 && ady <= 8 && adx >= 26 && adx <= 58) { setAnim(b, b.type === 'king' && rndi(0, 1) ? 'kslam' : 'bpunch'); return; }
   if (b.cool <= 0 && ady <= 10 && adx >= 110) { setAnim(b, 'bcharge'); return; }
+  const sp = kingRage(b) ? 0.9 : 0.7;
   const tx = p.x - b.face * 44, ty = p.y;                            // walk to arm's length, in the hero's lane
   const mx = tx - b.x, my = ty - b.y, walking = Math.abs(mx) > 2 || Math.abs(my) > 2;
-  if (walking) { b.x += Math.sign(mx) * Math.min(0.7, Math.abs(mx)); b.y += Math.sign(my) * Math.min(0.5, Math.abs(my)); clampBoss(b); }
+  if (walking) { b.x += Math.sign(mx) * Math.min(sp, Math.abs(mx)); b.y += Math.sign(my) * Math.min(sp * 0.7, Math.abs(my)); clampBoss(b); }
   b.x = Math.max(cam - 40, Math.min(cam + 300, b.x));
   if (walking && a !== 'walk') setAnim(b, 'walk'); else if (!walking && a !== 'idle') setAnim(b, 'idle');
 }
@@ -906,7 +934,8 @@ function drawBoss(f) {
   if (f.dying && f.anim === 'down' && f.h === 0 && f.lie < 20 && flr(clock / 2) % 2 === 0) return;
   const sx = flr(f.x - cam), by = flr(f.y - f.h), d = f.face, skin = 12, pants = BROWN;
   const warn = f.anim === 'bcharge' && f.fi === 0 && flr(clock / 4) % 2 === 0;
-  const coat = f.flash > 3 || warn ? WHITE : ORANGE;
+  const king = f.type === 'king', rage = kingRage(f) && flr(clock / 6) % 2 === 0;
+  const coat = f.flash > 3 || warn ? WHITE : rage ? RED : king ? NAVY : ORANGE;
   if (f.anim === 'down') {
     const air = f.h > 0 || f.vz !== 0;
     if (air) { rectfill(sx - 44, by - 52, 88, 28, coat); circfill(sx - d * 52, by - 40, 13, skin); }
@@ -919,7 +948,8 @@ function drawBoss(f) {
   rectfill(sx - 26 + lean, by - 108 + drop, 52, 60, coat);                                        // the torso
   rectfill(sx - 26 + lean, by - 52 + drop, 52, 6, GOLD);                                          // the belt
   circfill(sx + d * 4 + lean, by - 118 + drop, 13, skin);                                         // the head
-  rectfill(sx - 12 + d * 4 + lean, by - 128 + drop, 26, 5, RED);                                  // the headband
+  if (king) { rectfill(sx - 12 + d * 4 + lean, by - 124 + drop, 26, 4, SHADOW); rectfill(sx - 14 + lean, by - 104 + drop, 28, 3, GOLD); }   // a sharp suit: dark glasses and a gold chain
+  else rectfill(sx - 12 + d * 4 + lean, by - 128 + drop, 26, 5, RED);                                  // the headband
   rectfill(sx + d * 9 + lean - 1, by - 120 + drop, 4, 4, SHADOW);                                 // an eye
   const fr = frameOf(f);
   if (f.anim === 'bpunch') {                                                                      // the punch: cocked back for a long time, then out
@@ -927,6 +957,9 @@ function drawBoss(f) {
     if (fr[2]) { const b = fr[2]; fx0 = d * ((b[0] + b[2]) / 2); fy0 = (b[1] + b[3]) / 2; }
     line(sx + d * 14, by - 92, sx + fx0, by + fy0, skin); line(sx + d * 14, by - 91, sx + fx0, by + fy0 + 1, skin);
     rectfill(sx + fx0 - 9, by + fy0 - 9, 18, 18, fr[2] ? GOLD : coat);
+  } else if (f.anim === 'kslam') {                                                                // both fists up for the slam, then the wave along the floor
+    rectfill(sx - 30, by - 142 + drop, 12, 12, skin); rectfill(sx + 18, by - 142 + drop, 12, 12, skin);
+    if (fr[2]) { rectfill(sx - 96, by - 8, 192, 8, flr(clock / 2) % 2 ? WHITE : GOLD); rectfill(sx - 96, by - 14, 192, 3, WHITE); }
   } else rectfill(sx + d * 26 + lean - 5, by - 96 + drop, 12, 12, skin);                          // guard
   if (rush) { line(sx - d * 34, by - 80, sx - d * 62, by - 80, WHITE); line(sx - d * 30, by - 62, sx - d * 58, by - 62, WHITE); }
   if (f.anim === 'bstun') for (let k = 0; k < 3; k++) { const a = clock / 8 + k * 2.1; circfill(sx + flr(Math.cos(a) * 16), by - 140 + flr(Math.sin(a) * 4), 3, GOLD); }
@@ -984,7 +1017,7 @@ function drawHud() {
   }
   if (players.length < 2 && state === 'play' && clock % 60 < 40) txt('P2 PRESS A', 160, 6, DIM);   // the second player can join
   const boss = enemies.find((e) => e.kind === 'boss');
-  if (boss) { txt(BOSS[boss.type].name, 8, 209, GOLD); bar(52, 210, 196, Math.max(0, boss.hp), boss.maxhp, RED); }
+  if (boss) { const nm = BOSS[boss.type].name, nx = 12 + nm.length * 8; txt(nm, 8, 209, GOLD); bar(nx, 210, 248 - nx, Math.max(0, boss.hp), boss.maxhp, RED); }
   if (warnT > 0 && warnT % 24 < 16) ctxt('WARNING', 40, RED);
   if (bannerT > 0 && state === 'play') { ctxt(`STAGE ${stage + 1}`, 60, GOLD); ctxt(ST.name, 74, WHITE); }
   if (lastHit && lastHitT > 0 && lastHit.kind === 'thug') bar(players.length > 1 ? 72 : 80, 18, 52, Math.max(0, lastHit.hp), lastHit.maxhp, 6);

@@ -8,10 +8,11 @@ const count = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); let 
 // 1. What the stages are.
 {
   const vm = newGame(1), p = vm.probe(); vm.run(2);
-  ok(p.STAGES.length >= 2, 'the game has two stages (a third is planned)', `${p.STAGES.length}`);
+  ok(p.STAGES.length === 3, 'the game has three stages', `${p.STAGES.length}`);
   ok(p.STAGES.every((s) => s.waves[s.waves.length - 1].boss && s.props.length >= 6 && s.scenes.length === 3), 'each ends in a boss wave, and has props and three scenes');
   ok(new Set(p.STAGES.map((s) => s.song)).size === p.STAGES.length && p.STAGES.every((s) => p.STAGES.every((o) => o === s || o.scenes[0] !== s.scenes[0])), 'each has its own song and its own pictures');
-  ok(p.STAGES[1].thugHp > p.STAGES[0].thugHp && p.STAGES[1].waves[0].n > p.STAGES[0].waves[0].n, 'and the second is harder: tougher thugs and bigger waves');
+  ok(p.STAGES[1].thugHp > p.STAGES[0].thugHp && p.STAGES[1].waves[0].n > p.STAGES[0].waves[0].n && p.STAGES[2].thugHp > p.STAGES[1].thugHp && p.STAGES[2].waves[0].n > p.STAGES[1].waves[0].n, 'and each is harder than the last: tougher thugs and bigger waves');
+  ok(new Set(p.STAGES.map((s) => s.boss)).size === 3, 'with a boss of its own');
   ok(p.stage === 0 && p.ST === p.STAGES[0] && p.playing === p.STAGES[0].song && p.bannerT > 0, 'the game starts in stage 1, with its song and its name on the screen');
   ok(p.props.length === p.STAGES[0].props.length, 'and its props');
 }
@@ -42,7 +43,7 @@ const count = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); let 
   const s = p.score; vm.run(30); vm.press('START'); ok(p.state === 'clear', 'START is ignored for the first 90 frames, so a press from the fight does not skip it');
   vm.run(70); vm.press('A');
   ok(p.state === 'play' && p.stage === 1 && p.ST === p.STAGES[1], 'then A goes on to stage 2');
-  ok(p.score === s && p.player.lives === 2, 'keeping his score and his lives');
+  ok(p.score === s && p.player.lives === 3, 'keeping his score, and a life more (2 became 3)');
   ok(p.player.hp === p.HERO_HP && p.player.x < 130 && p.player.inv > 0, 'with full health, at the left of the stage, safe for a moment');
   ok(p.cam === 0 && p.wave <= 1 && p.items.length === 0 && p.props.length === p.STAGES[1].props.length, 'the camera and the floor start clean, with the new stage\'s props');
   ok(p.playing === p.STAGES[1].song && p.bannerT > 0, 'the stage 2 song plays, and its name shows');
@@ -50,9 +51,18 @@ const count = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); let 
   ok(p.enemies.every((e) => e.maxhp === p.STAGES[1].thugHp), 'tougher ones', `${p.enemies[0].maxhp}`);
 }
 
+// 3b. A life at the start of each stage, up to 3.
+{
+  const vm = newGame(1), p = vm.probe(); vm.run(3); const me = p.player;
+  me.lives = 1; p.loadStage(1); ok(me.lives === 2, 'a hero with 1 life gets another at the start of a stage');
+  p.loadStage(2); ok(me.lives === 3, 'and again');
+  p.loadStage(1); ok(me.lives === 3, 'but never more than 3');
+  ok(p.ST === p.STAGES[1] && p.stage === 1, 'stage 3 follows stage 2: stage 3 is the last');
+}
+
 // 4. The end.
 {
-  const vm = newGame(1), p = vm.probe(); vm.run(3); p.loadStage(1); vm.run(2);
+  const vm = newGame(1), p = vm.probe(); vm.run(3); p.loadStage(2); vm.run(2);
   p.enemies = []; p.locked = true; p.wave = p.LEVEL.length; p.cam = 768; p.player.x = 800; p.score = 10; vm.run(3);
   ok(p.state === 'over' && p.won, 'clearing the last stage ends the game, a win');
   ok(p.rank >= 0, 'and the score goes to the top 10');

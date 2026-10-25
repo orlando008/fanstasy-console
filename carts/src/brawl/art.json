@@ -1,11 +1,9 @@
 {
  "colors": {
-  "GLASS": 200,
-  "GOLD": 114,
-  "INK": 115,
-  "WHITE": 113
+  "GLASS": 200
  },
  "gradients": [
+  "dawn",
   "night",
   "sky"
  ],
@@ -94,6 +92,24 @@
     "wood2": 3,
     "wood3": 4
    }
+  },
+  "bg7": {
+   "base": 112,
+   "colors": {
+    "deck0": 8,
+    "deck1": 9,
+    "deck2": 10,
+    "deck3": 11,
+    "far0": 1,
+    "far1": 2,
+    "lit": 3,
+    "red": 4,
+    "struct0": 5,
+    "struct1": 6,
+    "struct2": 7,
+    "white": 13,
+    "yellow": 12
+   }
   }
  },
  "scenes": {
@@ -102,6 +118,13 @@
    "mx": 0,
    "my": 0,
    "pal": 1,
+   "w": 32
+  },
+  "deck": {
+   "h": 28,
+   "mx": 0,
+   "my": 32,
+   "pal": 7,
    "w": 32
   },
   "dock": {
@@ -138,10 +161,24 @@
    "my": 0,
    "pal": 6,
    "w": 32
+  },
+  "roofs": {
+   "h": 28,
+   "mx": 224,
+   "my": 0,
+   "pal": 7,
+   "w": 32
+  },
+  "skyline": {
+   "h": 28,
+   "mx": 192,
+   "my": 0,
+   "pal": 7,
+   "w": 32
   }
  },
  "sprites": {},
  "tiles": {},
- "used": 296,
+ "used": 412,
  "version": 1
 }
