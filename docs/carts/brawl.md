@@ -30,7 +30,7 @@ lives and the game ends; clear the fourth wave and the stage is clear. Either wa
 | A | Attack: a three-hit combo on the ground (punch, punch, hook); a jump kick in the air. **UP held with the third A: an uppercut** instead of the hook |
 | B | Jump |
 | A on a weapon | Take it; with one in hand A swings it |
-| Y | Throw the weapon in his hand (it flies along his lane) |
+| Y | Throw the weapon in his hand (it flies along his lane); with empty hands **beside a tombstone, hold it to revive his partner** |
 | X | The special: a spin that hits both sides (costs 3 health). **LEFT or RIGHT + X: the dash strike** (costs 4), a lunge at one target |
 | D-pad into a thug | Grab him; then A hits him, and the opposite direction and A throws him |
 | SELECT | Show or hide the hit boxes (the debug view) |
@@ -402,8 +402,14 @@ player joins at any time by pressing **A on pad 2**: he walks in from the left w
   4 and 5), and **three** may attack at once (two with one hero).
 - **Friendly fire:** a hero's attack on his partner does 1 damage and a hit stun, never a knockdown or a kill (he stays at
   1 health at least), and scores nothing.
-- A hero with no lives left is **out** and the other plays on; the game is over when both are out. At the stage clear each
-  hero gets his own bonus (10 for each point of health and 500 for each life left).
+- A hero with no lives left is **out** and the other plays on; the game is over when both are out. His **tombstone** (a grey stone with
+  a cross and his number: P1 in cyan, P2 in green) stays on the screen at its edge, drifting with the camera (the screen never scrolls back).
+  **The other hero can revive him:** standing within 28 px across and 12 in depth, **with empty hands**, he **holds Y**: a bar fills over
+  **60 frames** above the stone. The fallen hero then gets up with **1 life and 30 health**, safe for 1.5 seconds, his score kept, and the
+  reviver **pays 20 health** (he needs more than 20, so it never kills him). Letting go, stepping away, or **a hit** stops it, and
+  holding again starts the bar from nothing; while he kneels he is open to everything. With a weapon in his hand Y throws it as usual, so
+  he must put it down first. It can be done as often as he can pay. A hero who is still out when the stage ends comes back at the next
+  one with 1 life, as before. (The bot revives a partner when the street is clear and it has more than 35 health.)
 - **The top 10:** each score goes in on its own, the best first, and asks for the initials of each (P1 or P2 is shown).
 
 ## 9. Scoring
@@ -485,6 +491,14 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
+
+### Built and results: reviving a partner
+
+**Built:** the tombstone (an out hero keeps his place in `players`, with `out`, and follows the screen's edge in `updateCamera`), `tombNear`, the
+`revive` animation (held Y, 60 frames, in `updateHero`), `reviveHero`, `drawTomb` (the stone, the prompt, the filling bar), the bot's revive. Tests:
+`16-revive.mjs`. The code is **61.4 KB** packed (93.7%; 4.1 KB free).
+
+**Results:** see the sweep in the next note.
 
 ### Built and results: the Brute
 
@@ -640,7 +654,7 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 ### P2: depth
 
 - [ ] **Characters** (src): four fighters in the original sequel (Axel, Blaze, Max, Skate) differ in speed, power, reach and special moves (e.g. a charging tackle, a fireball, a diagonal leaping kick, a spin). We could start with two (a balanced one and a heavy one)
-- [x] **Two-player co-op** (src: the original has it): a second pad joins any time; friendly fire on (mem); the camera follows both. Built (section 8). Still to do: a revive for the partner who is out (no team moves: decided against)
+- [x] **Two-player co-op** (src: the original has it): a second pad joins any time; friendly fire on (mem); the camera follows both. Built (section 8). Reviving a partner who is out is built too (hold Y by his tombstone). No team moves (decided against)
 - [x] **Bosses** (src): BULL built (section 7): a long health bar, a heavy punch, a charge that ends against a wall, armour with knockdowns at a third of his health, two thugs alongside, his own song and a WARNING. Still to do: more bosses, a ground pound or a throw, a phase change at low health
 - [x] **Stage structure**: built for three stages (the street, the docks, the rooftop): each its own scenery, music, thugs, props and boss, with a stage-clear screen between (section 6). The third stage (the rooftop) is built too. Still to do: different thugs for each stage (SoR2 has eight stages (mem))
 - [ ] **Stage hazards** (mem, not confirmed): pits, conveyor belts, an elevator that carries the fight to a new screen

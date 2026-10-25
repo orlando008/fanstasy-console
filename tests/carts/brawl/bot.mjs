@@ -33,6 +33,12 @@ function padFor(p, me, frame, skill) {
   if (me.anim === 'gpunch') return 0;
   const shot = p.shots.find((s) => Math.sign(s.vx) === Math.sign(me.x - s.x) && Math.abs(s.x - me.x) < 60 && Math.abs(s.x - me.x) > 20 && Math.abs(s.y - me.y) < 14);
   if (skill >= 0.5 && shot && me.h === 0 && (me.anim === 'idle' || me.anim === 'walk')) return M('B');   // a bottle is coming along the floor: jump it
+  const tomb = p.players.find((h) => h.out && h !== me);
+  if (skill >= 0.5 && tomb && !p.enemies.length && me.hp > 35 && (me.anim === 'idle' || me.anim === 'walk' || me.anim === 'revive')) {   // the street is clear and his partner is out: revive him
+    const tx = tomb.x - me.x, ty = tomb.y - me.y;
+    if (Math.abs(tx) <= 20 && Math.abs(ty) <= 8) return M('Y');
+    return (tx > 0 ? M('RIGHT') : tx < 0 ? M('LEFT') : 0) | (ty > 3 ? M('DOWN') : ty < -3 ? M('UP') : 0);
+  }
   if (!p.enemies.length) return M('RIGHT');                          // GO
   const live = p.enemies.filter((e) => !e.dying && e.anim !== 'down');
   const t = (live.length ? live : p.enemies).reduce((a, b) => (Math.abs(a.x - me.x) + 2 * Math.abs(a.y - me.y) <= Math.abs(b.x - me.x) + 2 * Math.abs(b.y - me.y) ? a : b));

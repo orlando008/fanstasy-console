@@ -113,6 +113,7 @@ const ANIM = {
   held: [[999, STAND, null]],                                        // the thug in the hold
   pick: [[8, STAND, null]],
   wthrow: [[6, STAND, null], [12, STAND, null]],                      // Y: the weapon leaves his hand when the second part starts
+  revive: [[999, STAND, null]],                                       // kneeling by a tombstone, holding Y
   suplex: [[18, STAND, null]],                                        // the throw of a back grab                                          // picking a weapon up
   wpipe: [[8, STAND, null], [4, STAND, [16, -86, 84, -46]], [14, STAND, null]],   // a swing of the pipe: slow, long reach
   wknife: [[3, STAND, null], [3, STAND, [14, -74, 66, -54]], [7, STAND, null]],   // a stab: quick
@@ -168,7 +169,7 @@ const BULL_ANIM = {
 };
 // Grab and throw: walk into a thug to grab him (up to GRAB_X away, GRAB_Y in depth); A hits him (3 each) and the third throws him
 // forward, or the opposite direction and A throws him behind. A thrown thug hurts whoever he lands on. The special costs health.
-const SUPLEX_DMG = 12;
+const SUPLEX_DMG = 12, REVIVE_COST = 20, REVIVE_TIME = 60;   // reviving a partner who is out: hold Y beside his tombstone for a second, for 20 health
 const GRAB_X = 24, GRAB_Y = 6, GRAB_MAX = 120, GRAB_HITS = 3, GRAB_DMG = 3, THROW_DMG = 7, THROWN_DMG = 5, SPECIAL_COST = 3, DASH_COST = 4, DASH_SPEED = 4.5;
 
 // Things to pick up, each in its own colour: food heals (apple 10, chicken 30), money is 1,000 points, a 1UP is a life, and the
@@ -261,7 +262,7 @@ const heroes = () => players.filter((h) => !h.out);                   // the one
 
 function mkFighter(kind, x, y, hp) {
   return { kind, x, y, h: 0, vx: 0, vz: 0, face: 1, anim: 'idle', fi: 0, ft: 0, hp, hits: [], conn: false, connT: 99, queue: false, queueUp: false,
-    pad: 0, lives: 0, score: 0, out: false, flash: 0, tier: 3, maxhp: hp, type: kind === 'boss' ? 'bull' : '', v: 0, retreat: 0, vy: 0, back: false, weapon: null, grab: null, gt: 0, gcount: 0, held: null, thrown: null, hitBy: [], inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
+    pad: 0, lives: 0, score: 0, out: false, flash: 0, tier: 3, maxhp: hp, type: kind === 'boss' ? 'bull' : '', v: 0, retreat: 0, vy: 0, back: false, revT: 0, weapon: null, grab: null, gt: 0, gcount: 0, held: null, thrown: null, hitBy: [], inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
 }
 
 // --- Animations and boxes ---
@@ -371,6 +372,12 @@ function downEnded(f) {
 
 // --- The hero ---
 
+/** The tombstone of an out hero within a partner's reach (28 px across, 12 in depth). */
+const tombNear = (p) => players.find((o) => o.out && o !== p && abs(o.x - p.x) <= 28 && abs(o.y - p.y) <= 12);
+function reviveHero(g, p) {                                          // he gets up with 1 life and 30 health, safe for 1.5 s; the partner pays 20 health
+  g.out = false; g.lives = 1; g.hp = 30; g.h = 0; g.vx = 0; g.vz = 0; g.dying = false; g.weapon = null; g.inv = 90;
+  setAnim(g, 'getup'); p.hp -= REVIVE_COST; popup(g, 'REVIVED', GREEN); fx(SFX.record);
+}
 function updateHero(p) {
   const bt = (b) => held(p.pad, b), pr = (b) => pressedBy(p.pad, b);
   if (p.inv > 0) p.inv--;
@@ -401,6 +408,11 @@ function updateHero(p) {
     if (stepAnim(p)) setAnim(p, 'idle');
     return;
   }
+  if (a === 'revive') {                                              // holding Y beside a tombstone: a bar fills; letting go, moving off or a hit stops it
+    const g = tombNear(p);
+    if (!g || !bt(Y) || p.hp <= REVIVE_COST) setAnim(p, 'idle'); else if (++p.revT >= REVIVE_TIME) { reviveHero(g, p); setAnim(p, 'idle'); }
+    return;
+  }
   if (a === 'wthrow') {                                              // the weapon leaves his hand as the second part begins
     if (stepAnim(p)) setAnim(p, 'idle'); else if (p.fi === 1 && p.ft === 0 && p.weapon) throwWeapon(p);
     return;
@@ -412,6 +424,7 @@ function updateHero(p) {
     if (p.hp > SPECIAL_COST) { p.hp -= SPECIAL_COST; setAnim(p, 'special'); return; }               // X alone, or UP or DOWN + X: the spin
   }
   if (pr(Y) && p.weapon) { setAnim(p, 'wthrow'); return; }             // Y throws the weapon he holds
+  if (bt(Y) && !p.weapon && p.hp > REVIVE_COST && tombNear(p)) { p.revT = 0; setAnim(p, 'revive'); return; }   // with empty hands, beside a tombstone, Y revives
   if (pr(B)) { setAnim(p, 'jump'); p.vz = 5.2; p.h = 0.1; return; }
   if (pr(A)) {
     const it = weaponAt(p);
@@ -781,6 +794,7 @@ function updateCamera() {
     goT = 0;
   }
   for (const h of heroes()) h.x = clamp(h.x, cam + 10, cam + 246);   // nobody leaves the screen
+  for (const h of players) if (h.out) h.x = clamp(h.x, cam + 20, cam + 236);   // and a tombstone stays on it, at its edge
 }
 
 function clearStage() {
@@ -926,11 +940,11 @@ function draw() {
 }
 
 function drawPlay() {
-  const all = [...heroes(), ...enemies, ...props].sort((a, b) => a.y - b.y);   // nearer the bottom of the screen is in front
+  const all = [...heroes(), ...enemies, ...props, ...players.filter((o) => o.out)].sort((a, b) => a.y - b.y);   // nearer the bottom of the screen is in front
   for (const f of all) drawShadow(f);
   for (const i of items) drawItem(i);
   for (const s of shots) drawShot(s);
-  for (const f of all) { if (f.prop) drawProp(f); else if (f.kind === 'boss') (f.type === 'razor' ? drawRazor(f) : drawBoss(f)); else drawFighter(f); }
+  for (const f of all) { if (f.out) drawTomb(f); else if (f.prop) drawProp(f); else if (f.kind === 'boss') (f.type === 'razor' ? drawRazor(f) : drawBoss(f)); else drawFighter(f); }
   for (const b of bits) rf(flr(b.x - cam), flr(b.y), 4, 4, b.c);
   if (showBoxes) for (const f of all) drawBoxes(f);
   for (const o of popups) txt(o.text, flr(o.x - cam) - o.text.length * 4, flr(o.y - o.t * 0.4), o.t > 36 && o.t % 4 < 2 ? DIM : o.c);
@@ -1053,6 +1067,15 @@ function drawShot(s) {
   rf(sx - 5, flr(s.y) - 1, 10, 3, SHADOW);
   if (spin) { rf(sx - 6, y - 3, 12, 6, GREEN); rf(sx + 5, y - 1, 4, 2, GREEN); rf(sx - 4, y - 2, 4, 1, WHITE); }
   else { rf(sx - 3, y - 6, 6, 12, GREEN); rf(sx - 1, y - 10, 2, 5, GREEN); rf(sx - 2, y - 4, 1, 5, WHITE); }
+}
+
+function drawTomb(g) {                                              // a grey stone with a cross and his number; a prompt, or the bar filling while a partner revives him
+  const sx = flr(g.x - cam), y = flr(g.y), c = g.pad ? GREEN : CYAN;
+  rf(sx - 10, y - 24, 20, 24, DIM); rf(sx - 8, y - 22, 16, 20, PANEL); rf(sx - 1, y - 20, 3, 14, WHITE); rf(sx - 5, y - 16, 11, 3, WHITE);
+  txt(`P${g.pad + 1}`, sx - 8, y - 36, c);
+  const r = heroes().find((h) => h.anim === 'revive' && tombNear(h) === g);
+  if (r) bar(sx - 16, y - 48, 32, r.revT, REVIVE_TIME, GOLD);
+  else if (clock % 60 < 40 && heroes().some((h) => !h.weapon && h.hp > REVIVE_COST && tombNear(h) === g)) txt('HOLD Y', sx - 24, y - 48, WHITE);
 }
 
 function drawProp(q) {
