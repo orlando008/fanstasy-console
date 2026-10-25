@@ -462,7 +462,11 @@ shatter), `ROLE` (a table of the kinds: reach, gap, speed, health, points, shirt
 the frame table, the Chucker's kiting and the Lasher's reach in `updateThug`, the waves' `c` and `l`, the drawing (the beanie, the held bottle,
 the hair, the whip). Tests: `13-ranged.mjs` (and the Slasher's wave numbers in `11-enemies.mjs`). The bot jumps a bottle and steps out of the whip's lane.
 
-**Results:** see the sweep in the next note.
+**Results:** `sweep.mjs brawl --seeds 4` with the new enemies in the waves: no stuck runs (16 of 16 finished). The skilled pair of bots reached stage
+2 on average and **won the whole game once in 4**; the skilled one-hero bot reached stage 3 once and died at BULL otherwise; the unskilled
+bots all died in stage 1. The numbers are about where they were before (the bot is the weak part), so the new enemies **add variety without
+a jump in difficulty for a bot that jumps bottles and steps out of lanes**; whether they feel fair to a person is for hand play. If the Lasher's
+reach feels cheap, shorten the whip (116 to 100 px) or lengthen her wind-up (16 to 20 frames). The code is now 59.9 KB of 64 KB packed (91.5%).
 
 ### Built and results: the dash strike
 
