@@ -177,12 +177,38 @@ One street, 1,024 px long, four waves. The camera follows the hero to the right 
 | 2 | 300 | 3 | alternating sides, starting on the right |
 | 3 | 560 | 3 | alternating sides, starting on the left |
 | 4 | 768 | 4 | two from each side |
+| 5 | 768 (the same screen) | 2 and **BULL**, the boss | the thugs from the sides, BULL from the right |
 
-The hero cannot leave the screen sideways. When the fourth wave is dead the stage is clear.
+The hero cannot leave the screen sideways. When the fifth wave (the boss and his two thugs) is dead the stage is clear. The fifth
+starts the moment the fourth is dead, on the same screen: a flashing **WARNING**, the boss song, and BULL walks in from the right.
 
 ## 7. Opponents or hazards
 
-The thug (section 5). A health pickup and more enemy kinds are for later versions.
+The thug (section 5) and the boss, **BULL** (below).
+
+### BULL, the boss
+
+A big orange bruiser with a red headband and a gold belt, drawn bigger than a thug (a hurt box of 44 x 116 against 28 x 92;
+lying 104 wide). He has **120 health** (**192** with two heroes: 1.6 times) and a long red bar at the bottom of the screen
+with his name. He comes with 2 thugs (3 with two heroes). No grabs, no attack tokens: he is on his own.
+
+| Move | Frames | Hit | Damage | Effect |
+|---|---|---|---|---|
+| walk | 0.7 px across, 0.5 into the screen, to arm's length (44 px) in the hero's lane | | | |
+| punch | 22 wind-up, 5 active, 26 recovery | `[18,-98,72,-66]` | 8 | hit stun 16 |
+| charge | 26 crouch (he flashes white), then up to **64 frames** at **4.2 px** a frame across the screen, then 30 to pant | `[0,-100,46,-10]` | 10 | knockdown |
+
+- **He punches** when the hero is in his lane (8 px) 26 to 58 px away and his wait is over, then waits 40 to 80 frames.
+- **He charges** when the hero is in his lane (10 px) 110 px or more away and his wait is over, then waits 70 to 110 frames.
+  The crouch is the warning. The charge runs until a **wall**: the edge of the screen (26 px in) stuns him for **60 frames**
+  (stars over his head), the opening to hit him. The hero who stays in his lane is knocked down; one who steps out of the lane
+  is not, and every charge ends at a wall.
+- **Armour:** his punches' hit stun does not work on him (he only flashes white for 6 frames) and a hook, uppercut, jump kick
+  or the special does not knock him down. **A hit that takes him under two thirds or one third of his health knocks him down**
+  (once for each); the last hit knocks him out. He gets up in 24 frames and is safe for 30.
+- **Not grabbable.** A thrown thug does 5 to him, a weapon swing and the special do their damage, and nothing else changes.
+- **Reward:** 1,000 points to the hero who lands the last hit, and a **1UP** drops where he falls. Then the stage is clear.
+- The boss song (song 2) starts with him and stops with the stage clear. A health pickup and more enemy kinds are for later versions.
 
 ## 8. Modes
 
@@ -214,7 +240,7 @@ left and 500 for every life left.
 
 ## 11. Audio
 
-Songs: 0 the title (A minor, 150 bpm, a pad and a soft horn), 1 the street (E minor, 128 bpm: a funk bass line and
+Songs: 0 the title (A minor, 150 bpm, a pad and a soft horn), 2 the boss (below), 1 the street (E minor, 128 bpm: a funk bass line and
 drums, a horn hook, a flute answer, sixteen bars that loop), on the new sound chip. Songs use channels 0 to 5; effects
 take turns on 6 and 7. Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x
 where it enters (`node tools/devkit/music/loud.mjs carts/brawl.nova --check`; playbook section 5); the street measures
@@ -230,6 +256,7 @@ lead 0.034 (0.60 of the mix), entrance 1.16x, pierce 0.005.
 | pickup (11) | two bright notes | a weapon or money is taken |
 | heal (12) | a rising four-note arpeggio | an apple or a chicken |
 | smash (13) | a long low crunch | a crate breaks, or a weapon does |
+| song 2 | E minor, 150 bpm, heavy drums and a pounding bass, 12.8 s loop | BULL arrives until the stage clear |
 | point (5) | a blip | a thug is knocked out |
 | move, select, pause, over, record | the starter's | the menus, game over, a record |
 
@@ -257,7 +284,7 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 | Code | under 30 KB of the 64 KB limit (`node tools/check.js brawl`) |
 | Tiles | the three background scenes and the title: under 500 of 1,024 |
 | Sprites | none yet (the final art needs about 128 tiles and 25 KB of ROM a fighter, streamed) |
-| Songs / SFX | two songs and eleven effects; 14 KB of the 32 KB of sample RAM |
+| Songs / SFX | three songs and fourteen effects; 14 KB of the 32 KB of sample RAM |
 
 ## 15. Implementation plan
 
@@ -326,7 +353,7 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 
 - [ ] **Characters** (src): four fighters in the original sequel (Axel, Blaze, Max, Skate) differ in speed, power, reach and special moves (e.g. a charging tackle, a fireball, a diagonal leaping kick, a spin). We could start with two (a balanced one and a heavy one)
 - [x] **Two-player co-op** (src: the original has it): a second pad joins any time; friendly fire on (mem); the camera follows both. Built (section 8). Still to do: a revive for the partner who is out (no team moves: decided against)
-- [ ] **Bosses** (src): a stage ends in a boss with a long health bar and his own moves (e.g. a charge, a ground pound), sometimes with thugs alongside; the bar shows
+- [x] **Bosses** (src): BULL built (section 7): a long health bar, a heavy punch, a charge that ends against a wall, armour with knockdowns at a third of his health, two thugs alongside, his own song and a WARNING. Still to do: more bosses, a ground pound or a throw, a phase change at low health
 - [ ] **Stage structure**: more than one stage (SoR2 has eight (mem)), each a different place (street, bar, ship, ...), with its own set of enemies, its own scenery and music; a stage-clear tally (score, health bonus) between them
 - [ ] **Stage hazards** (mem, not confirmed): pits, conveyor belts, an elevator that carries the fight to a new screen
 - [ ] **Level-select and options** (mem): difficulty (easy to hardest), number of lives and continues, sound test: the console's save slots can keep them

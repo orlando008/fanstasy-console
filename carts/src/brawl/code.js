@@ -30,7 +30,7 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // so they never cut into the music and two can sound at once.
 
 const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6, swing: 7, slam: 8, thud: 9, jump: 10, pickup: 11, heal: 12, smash: 13 };
-const SONG = { title: 0, play: 1 };
+const SONG = { title: 0, play: 1, boss: 2 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -81,7 +81,7 @@ const LANE_TOP = 150, LANE_BOT = 208, LANE_TOL = 12;        // a fighter's feet 
 const LEVEL_W = 1024, GRAV = 0.3, HITSTOP = 5;
 const HERO_HP = 60, THUG_HP = 20;
 // The waves: the camera stops at x, n thugs come in from the sides, and it holds until they are all down.
-const LEVEL = [{ x: 0, n: 2 }, { x: 300, n: 3 }, { x: 560, n: 3 }, { x: 768, n: 4 }];
+const LEVEL = [{ x: 0, n: 2 }, { x: 300, n: 3 }, { x: 560, n: 3 }, { x: 768, n: 4 }, { x: 768, n: 2, boss: true }];
 
 // Every animation is a list of frames [duration, hurt box, hit box or null]. Boxes are [x0, y0, x1, y1] from the feet,
 // facing right, up is negative. Real art must have its feet at the same pivot and fit these (or the boxes are tuned).
@@ -112,10 +112,20 @@ const ANIM = {
 // What an attack does: damage, hit stun (frames, with a knock back of 6 px over them) or a knockdown.
 const MOVE = {
   punch1: { dmg: 4, stun: 16 }, punch2: { dmg: 4, stun: 16 }, hook: { dmg: 6, down: 1 }, uppercut: { dmg: 8, down: 1, lift: 5.0 }, jkick: { dmg: 6, down: 1 },
-  tpunch: { dmg: 5, stun: 16 }, special: { dmg: 5, down: 1 },
+  tpunch: { dmg: 5, stun: 16 }, special: { dmg: 5, down: 1 }, bpunch: { dmg: 8, stun: 16 }, bcharge: { dmg: 10, down: 1 },
   wpipe: { dmg: 8, down: 1 }, wknife: { dmg: 5, stun: 14 },
 };
 const COMBO = { punch1: 'punch2', punch2: 'hook' };
+// The boss (BULL): bigger boxes, two attacks, and armour (section 7): his punches stun nobody, and a hit only knocks him
+// down when it takes him under a third of his health. BOSS_HP is for one hero; two heroes make it 1.6 times that.
+const BIG = [-22, -116, 22, 0], BIG_LYING = [-52, -26, 52, 0], BOSS_HP = 120, BOSS_POINTS = 1000, CHARGE_SPEED = 4.2;
+const BOSS_ANIM = {
+  idle: [[30, BIG, null]], walk: [[30, BIG, null]],
+  bpunch: [[22, BIG, null], [5, BIG, [18, -98, 72, -66]], [26, BIG, null]],            // a heavy punch: a long wind-up to read
+  bcharge: [[26, BIG, null], [64, BIG, [0, -100, 46, -10]], [30, BIG, null]],          // crouch, then run across the screen: a wall stuns him (the pant is for a charge that is cut short)
+  bstun: [[60, BIG, null]],
+  down: [[999, BIG_LYING, null]], getup: [[24, BIG, null]], hurt: [[10, BIG, null]],
+};
 // Grab and throw: walk into a thug to grab him (up to GRAB_X away, GRAB_Y in depth); A hits him (3 each) and the third throws him
 // forward, or the opposite direction and A throws him behind. A thrown thug hurts whoever he lands on. The special costs health.
 const GRAB_X = 24, GRAB_Y = 6, GRAB_MAX = 120, GRAB_HITS = 3, GRAB_DMG = 3, THROW_DMG = 7, THROWN_DMG = 5, SPECIAL_COST = 3;
@@ -137,7 +147,7 @@ let skipTitle = false; // tests set this to land straight in the game (startPlay
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let won = false, startPlayers = 1, pend = [], entryPad = 0;
-let props = [], items = [], popups = [], bits = [];
+let props = [], items = [], popups = [], bits = [], warnT = 0;
 let players = [], enemies = [], cam = 0, wave = 0, locked = false, hitstop = 0, showBoxes = false, goT = 0, lastHit = null, lastHitT = 0;
 
 function init() {
@@ -160,7 +170,7 @@ function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; s
 function startGame(n = startPlayers) {
   won = false; paused = false; timer = 0; state = 'play'; players = [];
   cam = 0; wave = 0; locked = false; hitstop = 0; goT = 0; enemies = []; lastHit = null; lastHitT = 0;
-  props = PROPS.map((q) => ({ ...q, prop: true, h: 0, hp: PROP_HP, flash: 0, box: PROP_BOX[q.kind] })); items = []; popups = []; bits = [];
+  warnT = 0; props = PROPS.map((q) => ({ ...q, prop: true, h: 0, hp: PROP_HP, flash: 0, box: PROP_BOX[q.kind] })); items = []; popups = []; bits = [];
   addHero(0, 90, n > 1 ? 172 : 180);
   if (n > 1) addHero(1, 56, 192);
   play(SONG.play);
@@ -175,18 +185,19 @@ const heroes = () => players.filter((h) => !h.out);                   // the one
 
 function mkFighter(kind, x, y, hp) {
   return { kind, x, y, h: 0, vx: 0, vz: 0, face: 1, anim: 'idle', fi: 0, ft: 0, hp, hits: [], conn: false, connT: 99, queue: false, queueUp: false,
-    pad: 0, lives: 0, score: 0, out: false, weapon: null, grab: null, gt: 0, gcount: 0, held: null, thrown: null, hitBy: [], inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
+    pad: 0, lives: 0, score: 0, out: false, flash: 0, tier: 3, maxhp: hp, weapon: null, grab: null, gt: 0, gcount: 0, held: null, thrown: null, hitBy: [], inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
 }
 
 // --- Animations and boxes ---
 
 // The sound each animation starts with (a swing of the fist or the foot, a jump).
-const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, jump: SFX.jump, special: SFX.swing, wpipe: SFX.swing, wknife: SFX.swing, uppercut: SFX.swing };
+const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, bpunch: SFX.swing, bcharge: SFX.slam, jump: SFX.jump, special: SFX.swing, wpipe: SFX.swing, wknife: SFX.swing, uppercut: SFX.swing };
 function setAnim(f, name) { if (CUE[name] !== undefined) fx(CUE[name]); f.anim = name; f.fi = 0; f.ft = 0; f.hits = []; f.conn = false; f.connT = 99; f.queue = false; f.queueUp = false; }
-const frameOf = (f) => { const a = ANIM[f.anim]; return a[Math.min(f.fi, a.length - 1)]; };
+const animOf = (f) => (f.kind === 'boss' ? BOSS_ANIM : ANIM)[f.anim];
+const frameOf = (f) => { const a = animOf(f); return a[Math.min(f.fi, a.length - 1)]; };
 /** Advance a frame; true when the animation has run its course. */
 function stepAnim(f) {
-  const a = ANIM[f.anim];
+  const a = animOf(f);
   if (f.fi < a.length && ++f.ft >= a[f.fi][0]) { f.ft = 0; f.fi++; }
   return f.fi >= a.length;
 }
@@ -220,14 +231,19 @@ function landHit(a, t, mv) {
   if (t.grab) release(t);                                            // a hero who is hit lets go
   if (t.weapon) dropWeapon(t);                                       // and drops his weapon
   if (a.kind === 'hero' && !friendly) { a.score += 10; lastHit = t; lastHitT = 180; }
+  if (t.kind === 'boss') { bossHurt(t, dir, a); fx(SFX.hit); return; }   // armour: no hit stun
   if (!friendly && (t.hp <= 0 || mv.down || t.h > 0)) knockDown(t, dir, a, mv.lift);   // a hit in the air always knocks down (he must fall)
   else { setAnim(t, 'hurt'); t.vx = dir * 6 / 16; }
   fx(mv.down ? SFX.slam : SFX.hit);
 }
 
 function knockDown(f, dir, by, lift) {
-  setAnim(f, 'down'); f.vz = lift || 3.4; f.vx = dir * (lift ? 0.6 : 2.4);   // a lift pops him up and lands him close f.h = Math.max(f.h, 0.1); f.lie = 0;
-  if (f.hp <= 0 && !f.dying) { f.dying = f.kind === 'thug'; if (f.kind === 'thug') { if (by && by.kind === 'hero') by.score += 100; fx(SFX.point); } }
+  setAnim(f, 'down'); f.vz = lift || 3.4; f.vx = dir * (lift ? 0.6 : 2.4);   // a lift pops him up and lands him close
+  f.h = Math.max(f.h, 0.1); f.lie = 0;
+  if (f.hp <= 0 && !f.dying) {
+    f.dying = f.kind !== 'hero';
+    if (f.dying) { if (by && by.kind === 'hero') by.score += f.kind === 'boss' ? BOSS_POINTS : 100; fx(SFX.point); if (f.kind === 'boss') spawnItem('oneup', f.x, f.y); }
+  }
 }
 
 /** Gravity: true on the frame a fighter lands. */
@@ -256,7 +272,7 @@ function updateShared(f) {
 }
 
 function downEnded(f) {
-  if (f.kind === 'thug') { if (f.dying) f.gone = 1; else { setAnim(f, 'getup'); f.cool = 30; } return; }
+  if (f.kind !== 'hero') { if (f.dying) f.gone = 1; else { setAnim(f, 'getup'); f.cool = 30; f.inv = f.kind === 'boss' ? 30 : 0; } return; }
   if (f.hp > 0) { setAnim(f, 'getup'); f.inv = 60; return; }
   if (--f.lives <= 0) {                                              // out of lives: out of the game (the other goes on)
     f.lives = 0; f.out = true;
@@ -367,7 +383,7 @@ function hitProp(q, dmg) {
 
 /** A thug the hero can grab by walking into him: on his feet, not attacking, close in front. */
 function grabTarget(p, dir) {
-  return enemies.find((e) => !e.dying && !e.held && e.h === 0 && (e.anim === 'idle' || e.anim === 'walk') && e.inv <= 0 &&
+  return enemies.find((e) => e.kind === 'thug' && !e.dying && !e.held && e.h === 0 && (e.anim === 'idle' || e.anim === 'walk') && e.inv <= 0 &&
     Math.sign(e.x - p.x) === dir && Math.abs(e.x - p.x) <= GRAB_X && Math.abs(e.y - p.y) <= GRAB_Y);
 }
 function release(p) {
@@ -406,6 +422,7 @@ function thrownHits() {
       if (!overlaps(body, worldBox(o, frameOf(o)[1]))) continue;
       f.hitBy.push(o); hitstop = HITSTOP; fx(SFX.slam);
       if (o.kind === 'hero') { o.hp = Math.max(1, o.hp - 2); if (o.grab) release(o); if (o.weapon) dropWeapon(o); setAnim(o, 'hurt'); o.vx = dir * 6 / 16; }
+      else if (o.kind === 'boss') { o.hp -= THROWN_DMG; f.thrown.score += 10; bossHurt(o, dir, f.thrown); }
       else { o.hp -= THROWN_DMG; f.thrown.score += 10; knockDown(o, dir, f.thrown); }
     }
   }
@@ -420,6 +437,12 @@ function spawnWave(w) {
     const t = mkFighter('thug', side < 0 ? cam - 24 - i * 10 : cam + 280 + i * 10, rndi(LANE_TOP + 4, LANE_BOT - 4), THUG_HP);
     t.face = -side; t.anim = 'walk'; t.cool = rndi(40, 90);
     enemies.push(t);
+  }
+  if (w.boss) {                                                      // BULL walks in from the right, with a warning and his own song
+    const hp = flr(BOSS_HP * (1 + 0.6 * (heroes().length - 1)));
+    const b = mkFighter('boss', cam + 300, 182, hp);
+    b.face = -1; b.anim = 'walk'; b.cool = 70; b.ai = 'enter'; b.maxhp = hp;
+    enemies.push(b); warnT = 150; play(SONG.boss);
   }
 }
 
@@ -482,6 +505,48 @@ function separate(list) {
   }
 }
 
+// --- The boss ---
+
+/** A hit on the boss: he only flinches (a white flash), and goes down when a hit takes him under a third or two thirds of his health. */
+function bossHurt(b, dir, by) {
+  b.flash = 6;
+  const tier = Math.max(0, Math.ceil(b.hp / (b.maxhp / 3)));
+  if (b.hp <= 0 || tier < b.tier) { b.tier = tier; b.token = false; knockDown(b, dir, by); }
+}
+const clampBoss = (b) => { b.y = Math.max(LANE_TOP, Math.min(LANE_BOT, b.y)); };
+function updateBoss(b) {
+  if (b.inv > 0) b.inv--;
+  if (b.flash > 0) b.flash--;
+  if (updateShared(b) || b.ai === 'dummy') return;                   // (a dummy is a punching bag for the tests)
+  if (!heroes().length) return;
+  const a = b.anim;
+  if (a === 'bpunch') { if (stepAnim(b)) { setAnim(b, 'walk'); b.cool = rndi(40, 80); } return; }
+  if (a === 'bstun') { if (stepAnim(b)) { setAnim(b, 'walk'); b.cool = 40; } return; }
+  if (a === 'bcharge') {
+    if (b.fi === 1) {                                                // running: until the time is up, or a wall
+      b.x += b.face * CHARGE_SPEED;
+      if (b.x <= cam + 26 || b.x >= cam + 230) { b.x = Math.max(cam + 26, Math.min(cam + 230, b.x)); setAnim(b, 'bstun'); fx(SFX.thud); return; }
+    }
+    if (stepAnim(b)) { setAnim(b, 'walk'); b.cool = rndi(70, 110); }
+    return;
+  }
+  const p = target(b), dx = p.x - b.x, dy = p.y - b.y, adx = Math.abs(dx), ady = Math.abs(dy);
+  if (b.ai === 'enter') {                                            // walks in from the right
+    b.x -= 1.2; b.face = -1; if (b.x <= cam + 200) b.ai = 'fight';
+    if (a !== 'walk') setAnim(b, 'walk');
+    return;
+  }
+  if (b.cool > 0) b.cool--;
+  b.face = dx >= 0 ? 1 : -1;
+  if (b.cool <= 0 && ady <= 8 && adx >= 26 && adx <= 58) { setAnim(b, 'bpunch'); return; }
+  if (b.cool <= 0 && ady <= 10 && adx >= 110) { setAnim(b, 'bcharge'); return; }
+  const tx = p.x - b.face * 44, ty = p.y;                            // walk to arm's length, in the hero's lane
+  const mx = tx - b.x, my = ty - b.y, walking = Math.abs(mx) > 2 || Math.abs(my) > 2;
+  if (walking) { b.x += Math.sign(mx) * Math.min(0.7, Math.abs(mx)); b.y += Math.sign(my) * Math.min(0.5, Math.abs(my)); clampBoss(b); }
+  b.x = Math.max(cam - 40, Math.min(cam + 300, b.x));
+  if (walking && a !== 'walk') setAnim(b, 'walk'); else if (!walking && a !== 'idle') setAnim(b, 'idle');
+}
+
 // --- The level: the camera, the waves, the end ---
 
 function updateCamera() {
@@ -534,6 +599,7 @@ function updatePlay() {
   }
   if (pressed(SELECT)) showBoxes = !showBoxes;
   if (lastHitT > 0) lastHitT--;
+  if (warnT > 0) warnT--;
   if (hitstop > 0) {                                                 // both fighters freeze on a hit
     hitstop--;
     for (const h of players) if (pressedBy(h.pad, A) && COMBO[h.anim]) { h.queue = true; h.queueUp = held(h.pad, UP); }   // (a press during the freeze still counts)
@@ -541,7 +607,7 @@ function updatePlay() {
   }
   for (const h of heroes()) updateHero(h);
   if (state !== 'play') return;                                      // (the last hero may have just gone out)
-  for (const e of enemies) updateThug(e);
+  for (const e of enemies) { if (e.kind === 'boss') updateBoss(e); else updateThug(e); }
   for (const h of heroes()) checkProps(h);
   updateItems();
   for (const h of heroes()) { checkHits(h, enemies); checkHits(h, heroes().filter((o) => o !== h)); }
@@ -630,7 +696,7 @@ function drawPlay() {
   const all = [...heroes(), ...enemies, ...props].sort((a, b) => a.y - b.y);   // nearer the bottom of the screen is in front
   for (const f of all) drawShadow(f);
   for (const i of items) drawItem(i);
-  for (const f of all) { if (f.prop) drawProp(f); else drawFighter(f); }
+  for (const f of all) { if (f.prop) drawProp(f); else if (f.kind === 'boss') drawBoss(f); else drawFighter(f); }
   for (const b of bits) rectfill(flr(b.x - cam), flr(b.y), 4, 4, b.c);
   if (showBoxes) for (const f of all) drawBoxes(f);
   for (const o of popups) txt(o.text, flr(o.x - cam) - o.text.length * 4, flr(o.y - o.t * 0.4), o.t > 36 && o.t % 4 < 2 ? DIM : o.c);
@@ -728,6 +794,38 @@ function drawWeapon(f, sx, by, fr) {
   if (knife) rectfill(hx - 3, hy - 3, 7, 7, BROWN);
 }
 
+/** The boss as shapes: bigger than a thug, orange, a red headband and a gold belt; he crouches before a charge and sees stars when stunned. */
+function drawBoss(f) {
+  if (f.inv > 0 && flr(clock / 3) % 2 === 0) return;
+  if (f.dying && f.anim === 'down' && f.h === 0 && f.lie < 20 && flr(clock / 2) % 2 === 0) return;
+  const sx = flr(f.x - cam), by = flr(f.y - f.h), d = f.face, skin = 12, pants = BROWN;
+  const warn = f.anim === 'bcharge' && f.fi === 0 && flr(clock / 4) % 2 === 0;
+  const coat = f.flash > 3 || warn ? WHITE : ORANGE;
+  if (f.anim === 'down') {
+    const air = f.h > 0 || f.vz !== 0;
+    if (air) { rectfill(sx - 44, by - 52, 88, 28, coat); circfill(sx - d * 52, by - 40, 13, skin); }
+    else { rectfill(sx - 52, by - 22, 80, 22, coat); rectfill(sx - d * 20 - 12, by - 20, 40, 18, pants); circfill(sx + d * -56, by - 12, 12, skin); }
+    return;
+  }
+  const crouch = f.anim === 'bcharge' && f.fi === 0, rush = f.anim === 'bcharge' && f.fi === 1;
+  const lean = rush ? d * 16 : crouch ? d * 8 : 0, drop = crouch ? 18 : 0, walk = f.anim === 'walk' ? flr(clock / 6) % 2 : 0;
+  rectfill(sx - 18 + lean / 2, by - 50 + drop, 14, 50 - drop - walk * 4, pants); rectfill(sx + 4 + lean / 2, by - 50 + drop, 14, 46 - drop + walk * 4, pants);
+  rectfill(sx - 26 + lean, by - 108 + drop, 52, 60, coat);                                        // the torso
+  rectfill(sx - 26 + lean, by - 52 + drop, 52, 6, GOLD);                                          // the belt
+  circfill(sx + d * 4 + lean, by - 118 + drop, 13, skin);                                         // the head
+  rectfill(sx - 12 + d * 4 + lean, by - 128 + drop, 26, 5, RED);                                  // the headband
+  rectfill(sx + d * 9 + lean - 1, by - 120 + drop, 4, 4, SHADOW);                                 // an eye
+  const fr = frameOf(f);
+  if (f.anim === 'bpunch') {                                                                      // the punch: cocked back for a long time, then out
+    let fx0 = -d * 20, fy0 = -86;
+    if (fr[2]) { const b = fr[2]; fx0 = d * ((b[0] + b[2]) / 2); fy0 = (b[1] + b[3]) / 2; }
+    line(sx + d * 14, by - 92, sx + fx0, by + fy0, skin); line(sx + d * 14, by - 91, sx + fx0, by + fy0 + 1, skin);
+    rectfill(sx + fx0 - 9, by + fy0 - 9, 18, 18, fr[2] ? GOLD : coat);
+  } else rectfill(sx + d * 26 + lean - 5, by - 96 + drop, 12, 12, skin);                          // guard
+  if (rush) { line(sx - d * 34, by - 80, sx - d * 62, by - 80, WHITE); line(sx - d * 30, by - 62, sx - d * 58, by - 62, WHITE); }
+  if (f.anim === 'bstun') for (let k = 0; k < 3; k++) { const a = clock / 8 + k * 2.1; circfill(sx + flr(Math.cos(a) * 16), by - 140 + flr(Math.sin(a) * 4), 3, GOLD); }
+}
+
 function drawBoxes(f) {
   if (f.prop) { rect(flr(f.x + f.box[0] - cam), flr(f.y + f.box[1]), f.box[2] - f.box[0], f.box[3] - f.box[1], GREEN); return; }
   const hb = worldBox(f, frameOf(f)[1]);
@@ -748,6 +846,9 @@ function drawHud() {
     txt(`${h.score}`.padStart(7, '0'), x, 18, h.out ? DIM : WHITE);
   }
   if (players.length < 2 && state === 'play' && clock % 60 < 40) txt('P2 PRESS A', 160, 6, DIM);   // the second player can join
+  const boss = enemies.find((e) => e.kind === 'boss');
+  if (boss) { txt('BULL', 8, 209, GOLD); bar(48, 210, 200, Math.max(0, boss.hp), boss.maxhp, RED); }
+  if (warnT > 0 && warnT % 24 < 16) ctxt('WARNING', 40, RED);
   if (lastHit && lastHitT > 0 && lastHit.kind === 'thug') bar(players.length > 1 ? 72 : 80, 18, 52, Math.max(0, lastHit.hp), THUG_HP, 6);
   if (!locked && wave < LEVEL.length + 1 && wave > 0 && goT % 40 < 26 && state === 'play') txt('GO >', 214, 96, GOLD);
 }

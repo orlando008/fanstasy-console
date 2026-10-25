@@ -47,6 +47,13 @@ bars(S, 16, CH2, ['A4 - C5 - B4 - A4 -', 'G4 - G4 - E5 - G4 -', 'F#4 - A4 - D5 -
 bars(S, 16, ['1', '5', '6', '7'], ['B4 - G4 - E4 - G4 -', 'D5 - B4 - F#4 - B4 -', 'C5 - A4 - E4 - A4 -', 'D5 - F#4 - A4 - D5 .'], li='SOFTHORN', drums='funk', bass='1 - 1 1 - 5 - 1', upper='arp1', fill=[False, False, False, True])
 S.finish()
 
+# --- 2 The boss: E minor, 150 bpm, heavy drums and a pounding bass (a short, tense loop) ---
+S = a.song(Key('E', MINOR), 6, echo=(4, 3, 4, 8))
+CHB = ['1', '1', '6', '7']
+bars(S, 16, CHB, None, drums='heavy', bass='1 1 - 1 1 - 5 -', upper='pad', counter='1 - 1 - 5 - 1 -', ci='ARP')   # the pounding first, so the lead does not arrive with a jump
+bars(S, 16, CHB, ['E4 - E4 - G4 - B4 -', 'E4 - G4 - B4 - D5 -', 'C4 - E4 - G4 - C5 -', 'D4 - F#4 - A4 - F#4 .'], li='SOFTHORN', drums='heavy', bass='1 1 - 1 1 - 5 -', upper='arp1')
+S.finish()
+
 # --- Effects: the order is the SFX table in code.js ---
 a.effect(1, ['E-6', 'OFF'], 'BLIP')                                # 0 menu move
 a.effect(2, ['C-6', 'G-6', 'OFF'], 'CHIME')                        # 1 select
@@ -65,4 +72,4 @@ a.effect(2, ['E-6', 'A-6', 'OFF'], 'CHIME')                        # 11 a weapon
 a.effect(2, ['C-5', 'E-5', 'G-5', 'C-6', 'OFF'], 'CHIME')          # 12 food (a rising arpeggio)
 a.effect(4, ['C-3', 'A-2', 'F-2', 'D-2', 'OFF'], 'CRUNCH')         # 13 a crate breaks (a long low crunch)
 
-a.write(sys.argv[1], songs=2)
+a.write(sys.argv[1], songs=3)
