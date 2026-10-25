@@ -30,7 +30,7 @@ lives and the game ends; clear the fourth wave and the stage is clear. Either wa
 | A | Attack: a three-hit combo on the ground (punch, punch, hook); a jump kick in the air. **UP held with the third A: an uppercut** instead of the hook |
 | B | Jump |
 | A on a weapon | Take it; with one in hand A swings it |
-| X | The special: a spin that hits both sides (costs 3 health) |
+| X | The special: a spin that hits both sides (costs 3 health). **LEFT or RIGHT + X: the dash strike** (costs 4), a lunge at one target |
 | D-pad into a thug | Grab him; then A hits him, and the opposite direction and A throws him |
 | SELECT | Show or hide the hit boxes (the debug view) |
 | START | Pause (RESUME, RESTART, QUIT TO TITLE) |
@@ -112,11 +112,25 @@ attack hits. Real art must have its feet at the pivot and fit these boxes (or th
 - **The hold ends** when the hero is hit (he lets go, hit-stunned), when the thug is knocked away by someone else, or after
   **120 frames**, when the thug wriggles free and waits 60 frames before he acts.
 
-### The special
+### The specials
 
-X is a spin, usable on the ground when he has **more than 3 health**: it costs **3** health (it never kills him). It hits
-both sides (5 damage, a knockdown) and he **cannot be hurt** from the first frame to the end of the active frames. On his
-partner it is friendly fire. It is the way out of being surrounded. (The stronger move with a direction is still to do.)
+Two moves on X, both on the ground, both costing health (they never kill him), both safe from the first frame to the end of the
+active frames, and both friendly fire on a partner (1 damage and a stun).
+
+| | The spin: X alone, or with UP or DOWN | The dash strike: LEFT or RIGHT + X |
+|---|---|---|
+| For | getting out of a crowd | one target, from a distance |
+| Cost | 3 health (needs more than 3) | 4 health (needs more than 4; with exactly 4 he gets the spin) |
+| Frames | 5 start-up, 6 active, 14 recovery | 5 start-up, 10 active, 14 recovery |
+| Hit box | `[-54,-86,54,-24]`: both sides, 54 px | `[10,-96,54,-34]`, in front, **running 4.5 px a frame** while it is active: about 100 px of reach in all |
+| Hits | everyone in the box, once each | **the first thing it touches, and no more** (it stops there) |
+| Damage | 5 and a knockdown | **9** and a knockdown that **pops him up** (a lift of 4.2: about 29 px, landing close) |
+
+- The dash goes **the way he holds** (LEFT + X dashes left, whichever way he faced), and stops the moment it hits: a thug, a hero,
+  a boss (who takes 9 but is not knocked down: his armour) or a crate (one dash breaks it). In the air, neither move can be done.
+- He **cannot be hurt** during the dash's start-up and run (its first 15 frames of 29), so it can also be used to go through
+  a thug's punch; afterwards he is open for the 14 frames of recovery.
+- The bot uses the dash on a boss in its lane 56 to 100 px away (a skilled bot, every 25 frames at most).
 
 ### Items, weapons and breakable scenery
 
@@ -414,6 +428,14 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
 
+### Built and results: the dash strike
+
+**Built:** `ANIM.dash`, `MOVE.dash` (9, a knockdown, a lift of 4.2), `DASH_COST` and `DASH_SPEED`, the choice in `updateHero` (a held direction
+with X), the run and the one-target rule (`checkHits`), the invulnerable frames, its drawing (the fist and the speed lines), and the bot's use
+of it on a boss. Tests: `12-dash.mjs`.
+
+**Results:** see the sweep notes below.
+
 ### Built and results: the enemies
 
 **Built:** `THUG_WAIT`, `THUG_SPEED` and `attackAnim` (the stage's thug through `t.v`), the three punch animations (`tpunch`, `tpunch2`, `tpunch3`), the
@@ -504,7 +526,7 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
   and the frame table, `tests/carts/brawl/06-uppercut.mjs` the checks, and the bot throws the uppercut when it is alone with
   one thug. Still to do (art): the hero's hop on the swing, and an uppercut sound of its own (it uses the swing)
 - [x] **Grab and throw** (src): built (the grab, three grab hits, a throw forward or behind, a thrown thug that hurts others). Still to do: a back grab when the thug's back is to you (mem), a vault throw
-- [x] **Special attack that costs health** (src): the plain press (X) is built: a spin that hits both sides, costs 3 health, invulnerable while it is active. Still to do: the direction plus X, a stronger single-target move (a dash that ends in an uppercut). Costs nothing when it misses everything (mem)? Not done: it costs every time. The pad has X, Y, L and R free: the special is on X, the back attack goes on Y
+- [x] **Special attack that costs health** (src): both built: X is the spin (3 health, both sides), LEFT or RIGHT + X the dash strike (4 health, one target, 9 and a pop-up). Costs nothing when it misses everything (mem)? Not done: they cost every time. The pad has X, Y, L and R free: the specials are on X, the back attack goes on Y
 - [ ] **Blitz** (src): double-tap a direction then A for a dash attack (a lunging move)
 - [ ] **Back attack** (mem): a button (Y) that hits both ways; a defensive move to get out of a surround
 - [ ] **Wake-up and knock-down rules** (mem): the hero is invulnerable while he gets up; a thrown or knocked-down thug hurts others he hits

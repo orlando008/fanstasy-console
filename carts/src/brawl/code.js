@@ -111,14 +111,15 @@ const ANIM = {
   pick: [[8, STAND, null]],                                          // picking a weapon up
   wpipe: [[8, STAND, null], [4, STAND, [16, -86, 84, -46]], [14, STAND, null]],   // a swing of the pipe: slow, long reach
   wknife: [[3, STAND, null], [3, STAND, [14, -74, 66, -54]], [7, STAND, null]],   // a stab: quick
-  special: [[5, STAND, null], [6, STAND, [-54, -86, 54, -24]], [14, STAND, null]],   // a spin: hits both sides, invulnerable until it ends its active frames
+  special: [[5, STAND, null], [6, STAND, [-54, -86, 54, -24]], [14, STAND, null]],
+  dash: [[5, STAND, null], [10, STAND, [10, -96, 54, -34]], [14, STAND, null]],   // LEFT or RIGHT + X: a lunge along the floor that stops at the first thing it hits   // a spin: hits both sides, invulnerable until it ends its active frames
 };
 // What an attack does: damage, hit stun (frames, with a knock back of 6 px over them) or a knockdown.
 const MOVE = {
   punch1: { dmg: 4, stun: 16 }, punch2: { dmg: 4, stun: 16 }, hook: { dmg: 6, down: 1 }, uppercut: { dmg: 8, down: 1, lift: 5.0 }, jkick: { dmg: 6, down: 1 },
   tpunch: { dmg: 5, stun: 16 }, tpunch2: { dmg: 5, stun: 16 }, tpunch3: { dmg: 6, stun: 16 }, sstab: { dmg: 5, stun: 14 }, special: { dmg: 5, down: 1 }, bpunch: { dmg: 8, stun: 16 }, bcharge: { dmg: 10, down: 1 },
   rslash1: { dmg: 4, stun: 14 }, rslash2: { dmg: 4, stun: 14 }, rslash3: { dmg: 6, down: 1 }, rdive: { dmg: 7, down: 1 }, kslam: { dmg: 8, down: 1 },
-  wpipe: { dmg: 8, down: 1 }, wknife: { dmg: 5, stun: 14 },
+  wpipe: { dmg: 8, down: 1 }, wknife: { dmg: 5, stun: 14 }, dash: { dmg: 9, down: 1, lift: 4.2 },
 };
 const COMBO = { punch1: 'punch2', punch2: 'hook' };
 // The boss (BULL): bigger boxes, two attacks, and armour (section 7): his punches stun nobody, and a hit only knocks him
@@ -162,7 +163,7 @@ const BULL_ANIM = {
 };
 // Grab and throw: walk into a thug to grab him (up to GRAB_X away, GRAB_Y in depth); A hits him (3 each) and the third throws him
 // forward, or the opposite direction and A throws him behind. A thrown thug hurts whoever he lands on. The special costs health.
-const GRAB_X = 24, GRAB_Y = 6, GRAB_MAX = 120, GRAB_HITS = 3, GRAB_DMG = 3, THROW_DMG = 7, THROWN_DMG = 5, SPECIAL_COST = 3;
+const GRAB_X = 24, GRAB_Y = 6, GRAB_MAX = 120, GRAB_HITS = 3, GRAB_DMG = 3, THROW_DMG = 7, THROWN_DMG = 5, SPECIAL_COST = 3, DASH_COST = 4, DASH_SPEED = 4.5;
 
 // Things to pick up, each in its own colour: food heals (apple 10, chicken 30), money is 1,000 points, a 1UP is a life, and the
 // weapons (pipe, knife) are taken with A and used with A. Crates, barrels and bins break in two punches and drop their item.
@@ -260,7 +261,7 @@ function mkFighter(kind, x, y, hp) {
 // --- Animations and boxes ---
 
 // The sound each animation starts with (a swing of the fist or the foot, a jump).
-const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, tpunch2: SFX.swing, tpunch3: SFX.swing, sstab: SFX.swing, bpunch: SFX.swing, bcharge: SFX.slam, rslash1: SFX.swing, rslash2: SFX.swing, rslash3: SFX.swing, kslam: SFX.swing, rleap: SFX.jump, jump: SFX.jump, special: SFX.swing, wpipe: SFX.swing, wknife: SFX.swing, uppercut: SFX.swing };
+const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, tpunch2: SFX.swing, tpunch3: SFX.swing, sstab: SFX.swing, bpunch: SFX.swing, bcharge: SFX.slam, rslash1: SFX.swing, rslash2: SFX.swing, rslash3: SFX.swing, kslam: SFX.swing, rleap: SFX.jump, jump: SFX.jump, special: SFX.swing, dash: SFX.swing, wpipe: SFX.swing, wknife: SFX.swing, uppercut: SFX.swing };
 function setAnim(f, name) { if (CUE[name] !== undefined) fx(CUE[name]); f.anim = name; f.fi = 0; f.ft = 0; f.hits = []; f.conn = false; f.connT = 99; f.queue = false; f.queueUp = false; }
 const BOSS_ANIM = BULL_ANIM;
 const animOf = (f) => (f.kind === 'boss' ? { bull: BULL_ANIM, razor: RAZOR_ANIM, king: KING_ANIM }[f.type] : ANIM)[f.anim];
@@ -277,7 +278,7 @@ function worldBox(f, b) {
   return f.face > 0 ? [f.x + b[0], y + b[1], f.x + b[2], y + b[3]] : [f.x - b[2], y + b[1], f.x - b[0], y + b[3]];
 }
 const overlaps = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
-const canBeHit = (f) => f.anim !== 'down' && f.anim !== 'getup' && f.inv <= 0 && !f.dying && !(f.anim === 'special' && f.fi < 2);
+const canBeHit = (f) => f.anim !== 'down' && f.anim !== 'getup' && f.inv <= 0 && !f.dying && !((f.anim === 'special' || f.anim === 'dash') && f.fi < 2);
 
 // --- Hits ---
 
@@ -286,6 +287,7 @@ function checkHits(a, targets) {
   if (!fr[2] || !mv) return;
   const hb = worldBox(a, fr[2]);
   for (const t of targets) {
+    if (a.anim === 'dash' && a.hits.length) break;                    // the dash stops at the first thing it hits
     if (a.hits.includes(t) || !canBeHit(t) || Math.abs(a.y - t.y) > LANE_TOL) continue;
     if (overlaps(hb, worldBox(t, frameOf(t)[1]))) landHit(a, t, mv);
   }
@@ -381,9 +383,17 @@ function updateHero(p) {
     if (stepAnim(p)) { setAnim(p, 'idle'); if (p.weapon && p.weapon.uses <= 0) { p.weapon = null; fx(SFX.smash); popup(p, 'BROKE', WHITE); } }
     return;
   }
+  if (a === 'dash') {                                                // runs through the active frames, until it hits something
+    if (p.fi === 1 && !p.hits.length) { p.x += p.face * DASH_SPEED; clampX(p); }
+    if (stepAnim(p)) setAnim(p, 'idle');
+    return;
+  }
   if (a === 'land' || a === 'throw' || a === 'special') { if (stepAnim(p)) setAnim(p, 'idle'); return; }
   if (a === 'grab' || a === 'gpunch') { updateGrab(p, pr, dx); return; }
-  if (pr(X) && p.hp > SPECIAL_COST) { p.hp -= SPECIAL_COST; setAnim(p, 'special'); return; }   // the special costs health
+  if (pr(X)) {                                                       // the specials cost health
+    if (dx && p.hp > DASH_COST) { p.hp -= DASH_COST; p.face = dx; setAnim(p, 'dash'); return; }   // LEFT or RIGHT + X: the dash, the way he holds
+    if (p.hp > SPECIAL_COST) { p.hp -= SPECIAL_COST; setAnim(p, 'special'); return; }               // X alone, or UP or DOWN + X: the spin
+  }
   if (pr(B)) { setAnim(p, 'jump'); p.vz = 5.2; p.h = 0.1; return; }
   if (pr(A)) {
     const it = weaponAt(p);
@@ -891,6 +901,10 @@ function drawFighter(f) {
     else rectfill(sx + d * 14 + lean - 4, by - 70, 8, 8, skin);
   } else if (f.anim === 'grab' || f.anim === 'gpunch') {             // both hands on the thug
     rectfill(sx + d * (f.anim === 'gpunch' ? 30 : 22) - 5, by - 62, 10, 10, f.anim === 'gpunch' ? GOLD : skin);
+  } else if (f.anim === 'dash') {                                    // the fist out, the body leaning into it, speed lines behind
+    const b = fr[2] || [10, -66, 24, -60];
+    rectfill(sx + d * ((b[0] + b[2]) / 2) - 7, by + (b[1] + b[3]) / 2 - 7, 14, 14, fr[2] ? GOLD : skin);
+    if (fr[2] && !f.hits.length) { line(sx - d * 18, by - 70, sx - d * 46, by - 70, WHITE); line(sx - d * 14, by - 50, sx - d * 40, by - 50, WHITE); }
   } else if (f.anim === 'sstab') {                                   // the Slasher's knife: held back while he crouches, then out along the hit box
     let tx = -d * 12, ty = -62;
     if (fr[2]) { const b = fr[2]; tx = d * b[2]; ty = (b[1] + b[3]) / 2; }
