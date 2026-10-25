@@ -29,7 +29,9 @@ lives and the game ends; clear the fourth wave and the stage is clear. Either wa
 | D-pad | (the second player's pad has the same buttons) Walk in eight directions (left and right turn to face that way; up and down move into the screen) |
 | A | Attack: a three-hit combo on the ground (punch, punch, hook); a jump kick in the air |
 | B | Jump |
-| SELECT | Show or hide the hit and hurt boxes (the debug view) |
+| X | The special: a spin that hits both sides (costs 3 health) |
+| D-pad into a thug | Grab him; then A hits him, and the opposite direction and A throws him |
+| SELECT | Show or hide the hit boxes (the debug view) |
 | START | Pause (RESUME, RESTART, QUIT TO TITLE) |
 
 ## 4. Screen layout
@@ -67,6 +69,9 @@ attack hits. Real art must have its feet at the pivot and fit these boxes (or th
 | down | in the air, then 40 lying (box `[-40,-18,40,0]`) | | | not hittable |
 | get up | 20 frames | 20 | | invulnerable |
 | thug punch | 18 wind-up, 4 active (hit `[14,-74,52,-60]`), 22 recovery | 44 | 5 | hit stun 16 |
+| special | 5 start-up, 6 active (hit `[-54,-86,54,-24]`, both sides), 14 recovery | 25 | 5 | knockdown; invulnerable for the first 11 frames |
+| grab | held until the thug is thrown, hit away or 120 frames pass; a grab hit takes 8 frames | | 3 a hit | the third hit throws |
+| throw | 14 frames | 14 | 7 | knockdown; the thug flies 3.6 px a frame |
 
 ### Combo and moves
 
@@ -85,6 +90,25 @@ attack hits. Real art must have its feet at the pivot and fit these boxes (or th
 - **Fighters do not stand on each other:** grounded thugs push apart from each other (a gap of 28 px across or 14 px in
   depth), and so do the two heroes; a hero and a thug may close up. Thugs waiting their turn spread across three lanes
   around the hero.
+
+### Grab and throw
+
+- **Grab:** walking into a thug grabs him: he must be on his feet (idle or walking, not punching, not invulnerable, not in
+  the air), in front of the hero, within **24 px** across and **6** in depth. The thug is held in front of the hero (26 px) and
+  cannot move or punch; his health bar shows. Walking into one who is punching, or one beside or behind the hero, grabs nothing.
+- **In the hold:** A hits the held thug for **3** (10 points, the hit stop and the hit sound). The **third** hit throws him
+  forward, as does a hit that takes his last health. Holding the **opposite direction** and A throws him behind the hero
+  at once. A throw does **7** damage (10 points) and knocks him down, flying 3.6 px a frame with the slam sound.
+- **A thrown thug is a weapon:** while he is in the air he knocks down every thug he touches in his lane (**5** damage, once
+  each, 10 points to the thrower), and hurts a hero for 2 and a stun (never the one who threw him).
+- **The hold ends** when the hero is hit (he lets go, hit-stunned), when the thug is knocked away by someone else, or after
+  **120 frames**, when the thug wriggles free and waits 60 frames before he acts.
+
+### The special
+
+X is a spin, usable on the ground when he has **more than 3 health**: it costs **3** health (it never kills him). It hits
+both sides (5 damage, a knockdown) and he **cannot be hurt** from the first frame to the end of the active frames. On his
+partner it is friendly fire. It is the way out of being surrounded. (The stronger move with a direction is still to do.)
 
 ### Hero
 
@@ -239,8 +263,8 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 ### P1: the fighting (what makes it feel like the game)
 
 - [x] Walk in a lane, three-hit combo, jump, jump kick, hit stop, knockdowns, enemy health bar shown (src: SoR2 added bars for all enemies)
-- [ ] **Grab and throw** (src): walk into a thug without being hit to grab him from the front, then A for a two-hit combo or the opposite direction plus A to throw him behind; a thrown thug hurts those he hits. Back grab when his back is to you (mem)
-- [ ] **Special attack that costs health** (src): a plain press clears the thugs ganging up on you (a spin or flip, hits both sides); a direction plus the button is a stronger single-target move. Each use takes a little health, and not when you miss everything (mem). The pad has X, Y, L and R free: the special goes on X, the back attack on Y
+- [x] **Grab and throw** (src): built (the grab, three grab hits, a throw forward or behind, a thrown thug that hurts others). Still to do: a back grab when the thug's back is to you (mem), a vault throw
+- [x] **Special attack that costs health** (src): the plain press (X) is built: a spin that hits both sides, costs 3 health, invulnerable while it is active. Still to do: the direction plus X, a stronger single-target move (a dash that ends in an uppercut). Costs nothing when it misses everything (mem)? Not done: it costs every time. The pad has X, Y, L and R free: the special is on X, the back attack goes on Y
 - [ ] **Blitz** (src): double-tap a direction then A for a dash attack (a lunging move)
 - [ ] **Back attack** (mem): a button (Y) that hits both ways; a defensive move to get out of a surround
 - [ ] **Wake-up and knock-down rules** (mem): the hero is invulnerable while he gets up; a thrown or knocked-down thug hurts others he hits
@@ -252,7 +276,7 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 ### P2: depth
 
 - [ ] **Characters** (src): four fighters in the original sequel (Axel, Blaze, Max, Skate) differ in speed, power, reach and special moves (e.g. a charging tackle, a fireball, a diagonal leaping kick, a spin). We could start with two (a balanced one and a heavy one)
-- [x] **Two-player co-op** (src: the original has it): a second pad joins any time; friendly fire on (mem); the camera follows both. Built (section 8). Still to do: team moves (a double-team throw (mem)), a revive for the partner who is out
+- [x] **Two-player co-op** (src: the original has it): a second pad joins any time; friendly fire on (mem); the camera follows both. Built (section 8). Still to do: a revive for the partner who is out (no team moves: decided against)
 - [ ] **Bosses** (src): a stage ends in a boss with a long health bar and his own moves (e.g. a charge, a ground pound), sometimes with thugs alongside; the bar shows
 - [ ] **Stage structure**: more than one stage (SoR2 has eight (mem)), each a different place (street, bar, ship, ...), with its own set of enemies, its own scenery and music; a stage-clear tally (score, health bonus) between them
 - [ ] **Stage hazards** (mem, not confirmed): pits, conveyor belts, an elevator that carries the fight to a new screen

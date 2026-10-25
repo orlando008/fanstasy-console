@@ -28,10 +28,15 @@ export const pad = (vm, p, frame, opts) => { frames = frame + 1; return padFor(p
 /** The buttons for one hero. */
 function padFor(p, me, frame, skill) {
   if (me.out || me.anim === 'down' || me.anim === 'hurt') return 0;
+  if (me.anim === 'grab') return frame % 8 === 0 ? M('A') : 0;      // hit the held thug (the third hit throws him)
+  if (me.anim === 'gpunch') return 0;
   if (!p.enemies.length) return M('RIGHT');                          // GO
   const live = p.enemies.filter((e) => !e.dying && e.anim !== 'down');
   const t = (live.length ? live : p.enemies).reduce((a, b) => (Math.abs(a.x - me.x) + 2 * Math.abs(a.y - me.y) <= Math.abs(b.x - me.x) + 2 * Math.abs(b.y - me.y) ? a : b));
   const dx = t.x - me.x, dy = t.y - me.y;
+  const close = live.filter((e) => Math.abs(e.x - me.x) < 56 && Math.abs(e.y - me.y) < 14).length;
+  if (skill >= 0.5 && close >= 2 && me.hp > 12 && frame % 20 === 0 && (me.anim === 'idle' || me.anim === 'walk')) return M('X');   // surrounded: the special
+  if (skill >= 0.5 && Math.abs(dy) <= 4 && Math.abs(dx) <= 34 && t.anim !== 'tpunch' && (me.face > 0) === (dx > 0)) return dx > 0 ? M('RIGHT') : M('LEFT');   // walk into him: a grab
   if (skill > 0.4 && t.anim === 'tpunch' && t.fi === 0 && Math.abs(dx) < 70 && Math.abs(dy) < 14) return dx > 0 ? M('LEFT') : M('RIGHT'); // back off
   let m = 0;
   if (Math.abs(dy) > 4) m |= dy > 0 ? M('DOWN') : M('UP');

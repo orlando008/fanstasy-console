@@ -99,13 +99,21 @@ const ANIM = {
   down: [[999, LYING, null]],
   getup: [[20, STAND, null]],
   tpunch: [[18, STAND, null], [4, STAND, [14, -74, 52, -60]], [22, STAND, null]],
+  grab: [[999, STAND, null]],                                        // holding a thug (a grab hit, a throw)
+  gpunch: [[8, STAND, null]],
+  throw: [[14, STAND, null]],
+  held: [[999, STAND, null]],                                        // the thug in the hold
+  special: [[5, STAND, null], [6, STAND, [-54, -86, 54, -24]], [14, STAND, null]],   // a spin: hits both sides, invulnerable until it ends its active frames
 };
 // What an attack does: damage, hit stun (frames, with a knock back of 6 px over them) or a knockdown.
 const MOVE = {
   punch1: { dmg: 4, stun: 16 }, punch2: { dmg: 4, stun: 16 }, hook: { dmg: 6, down: 1 }, jkick: { dmg: 6, down: 1 },
-  tpunch: { dmg: 5, stun: 16 },
+  tpunch: { dmg: 5, stun: 16 }, special: { dmg: 5, down: 1 },
 };
 const COMBO = { punch1: 'punch2', punch2: 'hook' };
+// Grab and throw: walk into a thug to grab him (up to GRAB_X away, GRAB_Y in depth); A hits him (3 each) and the third throws him
+// forward, or the opposite direction and A throws him behind. A thrown thug hurts whoever he lands on. The special costs health.
+const GRAB_X = 24, GRAB_Y = 6, GRAB_MAX = 120, GRAB_HITS = 3, GRAB_DMG = 3, THROW_DMG = 7, THROWN_DMG = 5, SPECIAL_COST = 3;
 
 // --- State ---
 
@@ -149,13 +157,13 @@ const heroes = () => players.filter((h) => !h.out);                   // the one
 
 function mkFighter(kind, x, y, hp) {
   return { kind, x, y, h: 0, vx: 0, vz: 0, face: 1, anim: 'idle', fi: 0, ft: 0, hp, hits: [], conn: false, connT: 99, queue: false,
-    pad: 0, lives: 0, score: 0, out: false, inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
+    pad: 0, lives: 0, score: 0, out: false, grab: null, gt: 0, gcount: 0, held: null, thrown: null, hitBy: [], inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
 }
 
 // --- Animations and boxes ---
 
 // The sound each animation starts with (a swing of the fist or the foot, a jump).
-const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, jump: SFX.jump };
+const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, jump: SFX.jump, special: SFX.swing };
 function setAnim(f, name) { if (CUE[name] !== undefined) fx(CUE[name]); f.anim = name; f.fi = 0; f.ft = 0; f.hits = []; f.conn = false; f.connT = 99; f.queue = false; }
 const frameOf = (f) => { const a = ANIM[f.anim]; return a[Math.min(f.fi, a.length - 1)]; };
 /** Advance a frame; true when the animation has run its course. */
@@ -170,7 +178,7 @@ function worldBox(f, b) {
   return f.face > 0 ? [f.x + b[0], y + b[1], f.x + b[2], y + b[3]] : [f.x - b[2], y + b[1], f.x - b[0], y + b[3]];
 }
 const overlaps = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
-const canBeHit = (f) => f.anim !== 'down' && f.anim !== 'getup' && f.inv <= 0 && !f.dying;
+const canBeHit = (f) => f.anim !== 'down' && f.anim !== 'getup' && f.inv <= 0 && !f.dying && !(f.anim === 'special' && f.fi < 2);
 
 // --- Hits ---
 
@@ -191,6 +199,7 @@ function landHit(a, t, mv) {
   if (friendly) t.hp = Math.max(1, t.hp);
   const dir = a.x <= t.x ? 1 : -1;
   t.face = -dir; t.token = false; t.queue = false;
+  if (t.grab) release(t);                                            // a hero who is hit lets go
   if (a.kind === 'hero' && !friendly) { a.score += 10; lastHit = t; lastHitT = 180; }
   if (!friendly && (t.hp <= 0 || mv.down || t.h > 0)) knockDown(t, dir, a);   // a hit in the air always knocks down (he must fall)
   else { setAnim(t, 'hurt'); t.vx = dir * 6 / 16; }
@@ -219,7 +228,7 @@ function updateShared(f) {
     return true;
   }
   if (f.anim === 'down') {
-    if (f.h > 0 || f.vz !== 0) { f.x += f.vx; clampX(f); if (fall(f)) { f.vx = 0; f.lie = 40; fx(SFX.thud); } }
+    if (f.h > 0 || f.vz !== 0) { f.x += f.vx; clampX(f); if (fall(f)) { f.vx = 0; f.lie = 40; f.thrown = null; fx(SFX.thud); } }
     else if (--f.lie <= 0) downEnded(f);
     return true;
   }
@@ -262,14 +271,63 @@ function updateHero(p) {
     else if (ended) setAnim(p, 'idle');
     return;
   }
-  if (a === 'land') { if (stepAnim(p)) setAnim(p, 'idle'); return; }
+  if (a === 'land' || a === 'throw' || a === 'special') { if (stepAnim(p)) setAnim(p, 'idle'); return; }
+  if (a === 'grab' || a === 'gpunch') { updateGrab(p, pr, dx); return; }
+  if (pr(X) && p.hp > SPECIAL_COST) { p.hp -= SPECIAL_COST; setAnim(p, 'special'); return; }   // the special costs health
   if (pr(B)) { setAnim(p, 'jump'); p.vz = 5.2; p.h = 0.1; return; }
   if (pr(A)) { setAnim(p, 'punch1'); return; }
   if (dx) p.face = dx;
+  const gt = dx && grabTarget(p, dx);                                // walking into a thug grabs him
+  if (gt) { p.grab = gt; p.gt = 0; p.gcount = 0; setAnim(p, 'grab'); gt.held = p; gt.token = false; setAnim(gt, 'held'); return; }
   p.x += dx * 1.4; p.y = Math.max(LANE_TOP, Math.min(LANE_BOT, p.y + dy * 0.9)); clampX(p);
   const moving = dx || dy;
   if (moving && a !== 'walk') setAnim(p, 'walk'); else if (!moving && a !== 'idle') setAnim(p, 'idle');
   else stepAnim(p);
+}
+
+/** A thug the hero can grab by walking into him: on his feet, not attacking, close in front. */
+function grabTarget(p, dir) {
+  return enemies.find((e) => !e.dying && !e.held && e.h === 0 && (e.anim === 'idle' || e.anim === 'walk') && e.inv <= 0 &&
+    Math.sign(e.x - p.x) === dir && Math.abs(e.x - p.x) <= GRAB_X && Math.abs(e.y - p.y) <= GRAB_Y);
+}
+function release(p) {
+  const t = p.grab;
+  if (t && t.anim === 'held') { setAnim(t, 'idle'); t.cool = 60; }
+  if (t) t.held = null;
+  p.grab = null; p.gcount = 0;
+}
+function updateGrab(p, pr, dx) {
+  const t = p.grab;
+  if (!t || t.anim !== 'held' || ++p.gt > GRAB_MAX) { release(p); setAnim(p, 'idle'); return; }   // he was hit away, or wriggles free
+  t.x = p.x + p.face * 26; t.y = p.y; t.face = -p.face;
+  if (p.anim === 'gpunch') { if (stepAnim(p)) setAnim(p, 'grab'); return; }
+  if (!pr(A)) return;
+  if (dx && dx !== p.face) { throwThug(p, t, -p.face); return; }     // the opposite direction and A: over the shoulder
+  t.hp -= GRAB_DMG; p.score += 10; hitstop = HITSTOP; fx(SFX.hit); lastHit = t; lastHitT = 180;
+  p.gcount++;
+  if (t.hp <= 0 || p.gcount >= GRAB_HITS) throwThug(p, t, p.face);  // the third hit throws him
+  else setAnim(p, 'gpunch');
+}
+/** The thug flies off in the direction dir, hurting whoever he lands on. */
+function throwThug(p, t, dir) {
+  p.grab = null; p.gcount = 0; t.held = null;
+  t.hp -= THROW_DMG; p.score += 10; hitstop = HITSTOP; fx(SFX.slam); lastHit = t; lastHitT = 180;
+  knockDown(t, dir, p); t.vx = dir * 3.6; t.thrown = p; t.hitBy = [];
+  setAnim(p, 'throw');
+}
+/** A thrown thug in the air knocks down the thugs he hits, and hurts a hero (2 damage, a stun). */
+function thrownHits() {
+  for (const f of enemies) {
+    if (!f.thrown || f.anim !== 'down' || f.h <= 0) continue;
+    const body = worldBox(f, LYING), dir = f.vx >= 0 ? 1 : -1;
+    for (const o of [...enemies, ...heroes()]) {
+      if (o === f || o === f.thrown || f.hitBy.includes(o) || !canBeHit(o) || Math.abs(o.y - f.y) > LANE_TOL || o.anim === 'held') continue;
+      if (!overlaps(body, worldBox(o, frameOf(o)[1]))) continue;
+      f.hitBy.push(o); hitstop = HITSTOP; fx(SFX.slam);
+      if (o.kind === 'hero') { o.hp = Math.max(1, o.hp - 2); if (o.grab) release(o); setAnim(o, 'hurt'); o.vx = dir * 6 / 16; }
+      else { o.hp -= THROWN_DMG; f.thrown.score += 10; knockDown(o, dir, f.thrown); }
+    }
+  }
 }
 
 // --- The thug ---
@@ -295,6 +353,7 @@ function target(t) {
 
 function updateThug(t) {
   if (t.inv > 0) t.inv--;
+  if (t.anim === 'held') return;                                     // the hero moves him
   if (updateShared(t) || t.ai === 'dummy') return;                   // (a dummy is a punching bag for the tests)
   if (!heroes().length) return;
   const p = target(t);
@@ -330,7 +389,7 @@ function updateThug(t) {
 /** Fighters of one side do not stand on each other: grounded thugs push apart, and so do the two heroes (a hero and a thug may close up). */
 const SEP_X = 28, SEP_Y = 14;
 function separate(list) {
-  const on = list.filter((f) => f.h === 0 && f.anim !== 'down' && f.anim !== 'getup' && f.ai !== 'dummy');
+  const on = list.filter((f) => f.h === 0 && f.anim !== 'down' && f.anim !== 'getup' && f.anim !== 'held' && f.ai !== 'dummy');
   for (let i = 0; i < on.length; i++) {
     for (let j = i + 1; j < on.length; j++) {
       const a = on[i], b = on[j], dx = b.x - a.x, dy = b.y - a.y;
@@ -404,6 +463,7 @@ function updatePlay() {
   for (const e of enemies) updateThug(e);
   for (const h of heroes()) { checkHits(h, enemies); checkHits(h, heroes().filter((o) => o !== h)); }
   for (const e of enemies) checkHits(e, heroes());
+  thrownHits();
   separate(enemies); separate(heroes());
   enemies = enemies.filter((e) => !e.gone);
   if (state !== 'play') return;
@@ -511,7 +571,7 @@ function drawFighter(f) {
     else { rectfill(sx - 40, by - 14, 56, 14, coat); rectfill(sx + 14 * -d - 2, by - 12, 24, 10, pants); circfill(sx + d * 40 * -1, by - 8, 8, skin); }
     return;
   }
-  const hurt = f.anim === 'hurt' && f.ft < 4;
+  const hurt = (f.anim === 'hurt' && f.ft < 4) || (f.anim === 'held' && flr(clock / 6) % 2 === 0);
   const walk = f.anim === 'walk' ? flr(clock / 6) % 2 : 0, lean = f.anim === 'hurt' ? -d * 4 : 0;
   const air = f.h > 0;
   if (air) { rectfill(sx - 10 + lean, by - 40, 8, 40, pants); rectfill(sx + 2 + lean, by - 34, 8, 30, pants); }
@@ -520,7 +580,12 @@ function drawFighter(f) {
   circfill(sx + d * 2 + lean, by - 82, 9, skin);                                                // the head
   rectfill(sx + d * 6 + lean - 1, by - 84, 3, 3, SHADOW);                                       // an eye, on the side he faces
   const fr = frameOf(f), mv = MOVE[f.anim];
-  if (mv) {                                                          // an attack: the fist cocked, then out at the hit box
+  if (f.anim === 'special') {                                        // a spin: a fist out on each side while it is active
+    if (fr[2]) { rectfill(sx - 58, by - 68, 14, 14, fist); rectfill(sx + 44, by - 68, 14, 14, fist); }
+    else rectfill(sx + d * 14 + lean - 4, by - 70, 8, 8, skin);
+  } else if (f.anim === 'grab' || f.anim === 'gpunch') {             // both hands on the thug
+    rectfill(sx + d * (f.anim === 'gpunch' ? 30 : 22) - 5, by - 62, 10, 10, f.anim === 'gpunch' ? GOLD : skin);
+  } else if (mv) {                                                          // an attack: the fist cocked, then out at the hit box
     let fx0 = d * 16, fy0 = -62;
     if (fr[2]) { const b = fr[2]; fx0 = d * ((b[0] + b[2]) / 2); fy0 = (b[1] + b[3]) / 2; }
     else if (f.fi === 0) { fx0 = -d * 12; fy0 = -64; }
@@ -540,7 +605,7 @@ function drawBoxes(f) {
 }
 
 function bar(x, y, w, v, max, c) {
-  rectfill(x, y, w, 6, SHADOW); rectfill(x + 1, y + 1, Math.max(0, flr((w - 2) * v / max)), 4, c); rect(x, y, w, 6, DIM);
+  rectfill(x, y, w, 6, SHADOW); rectfill(x + 1, y + 1, Math.max(0, Math.min(w - 2, flr((w - 2) * v / max))), 4, c); rect(x, y, w, 6, DIM);
 }
 
 function drawHud() {
