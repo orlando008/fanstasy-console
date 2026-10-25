@@ -5,6 +5,7 @@
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
+const rf = rectfill;   // (a short name: the drawing code calls it more than a hundred times)
 const SHADOW = 1, NAVY = 2, PANEL = 3, BROWN = 4, DKGREEN = 5, RED = 6, BLUE = 8, ORANGE = 9, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14, WHITE = 15;
 
 // --- Art: made by art.py (tiles.txt, palette.txt, map.txt). The block below is rewritten each time it runs. ---
@@ -299,7 +300,7 @@ function checkHits(a, targets) {
   const hb = worldBox(a, fr[2]);
   for (const t of targets) {
     if (a.anim === 'dash' && a.hits.length) break;                    // the dash stops at the first thing it hits
-    if (a.hits.includes(t) || !canBeHit(t) || Math.abs(a.y - t.y) > LANE_TOL) continue;
+    if (a.hits.includes(t) || !canBeHit(t) || abs(a.y - t.y) > LANE_TOL) continue;
     if (overlaps(hb, worldBox(t, frameOf(t)[1]))) landHit(a, t, mv);
   }
 }
@@ -338,7 +339,7 @@ function fall(f) {
   if (f.h <= 0) { f.h = 0; f.vz = 0; return true; }
   return false;
 }
-function clampX(f) { f.x = Math.max(10, Math.min(LEVEL_W - 10, f.x)); }
+function clampX(f) { f.x = clamp(f.x, 10, LEVEL_W - 10); }
 
 /** The part of an animation shared by everyone: a hit stun, a fall and the getting up. True if it took the frame. */
 function updateShared(f) {
@@ -378,7 +379,7 @@ function updateHero(p) {
   const dx = (bt(RIGHT) ? 1 : 0) - (bt(LEFT) ? 1 : 0), dy = (bt(DOWN) ? 1 : 0) - (bt(UP) ? 1 : 0);
   const a = p.anim;
   if (a === 'jump' || a === 'jkick') {                               // in the air: keep the walking speed
-    p.x += dx * 1.4; p.y = Math.max(LANE_TOP, Math.min(LANE_BOT, p.y + dy * 0.9)); clampX(p);
+    p.x += dx * 1.4; p.y = clamp(p.y + dy * 0.9, LANE_TOP, LANE_BOT); clampX(p);
     if (a === 'jump' && pr(A)) setAnim(p, 'jkick');
     else if (a === 'jkick') stepAnim(p);
     if (fall(p)) setAnim(p, 'land');
@@ -420,8 +421,8 @@ function updateHero(p) {
   }
   if (dx) p.face = dx;
   const gt = dx && grabTarget(p, dx);                                // walking into a thug grabs him
-  if (gt) { p.grab = gt; p.gt = 0; p.gcount = 0; p.back = Math.sign(gt.x - p.x) === gt.face; setAnim(p, 'grab'); gt.held = p; gt.token = false; setAnim(gt, 'held'); return; }   // (from behind, if his back is to him)
-  p.x += dx * 1.4; p.y = Math.max(LANE_TOP, Math.min(LANE_BOT, p.y + dy * 0.9)); clampX(p);
+  if (gt) { p.grab = gt; p.gt = 0; p.gcount = 0; p.back = sgn(gt.x - p.x) === gt.face; setAnim(p, 'grab'); gt.held = p; gt.token = false; setAnim(gt, 'held'); return; }   // (from behind, if his back is to him)
+  p.x += dx * 1.4; p.y = clamp(p.y + dy * 0.9, LANE_TOP, LANE_BOT); clampX(p);
   const moving = dx || dy;
   if (moving && a !== 'walk') setAnim(p, 'walk'); else if (!moving && a !== 'idle') setAnim(p, 'idle');
   else stepAnim(p);
@@ -433,7 +434,7 @@ function popup(f, text, c) { popups.push({ text, x: f.x, y: f.y - f.h - 100, t: 
 function spawnItem(kind, x, y, uses) { items.push({ kind, x, y, h: 0.1, vz: 2.6, uses: uses ?? ITEM[kind].uses }); }
 function dropWeapon(h) { spawnItem(h.weapon.kind, h.x - h.face * 12, h.y, h.weapon.uses); h.weapon = null; }
 function weaponAt(p) {
-  return items.find((i) => ITEM[i.kind].weapon && i.h <= 4 && Math.abs(i.x - p.x) <= 18 && Math.abs(i.y - p.y) <= 8);
+  return items.find((i) => ITEM[i.kind].weapon && i.h <= 4 && abs(i.x - p.x) <= 18 && abs(i.y - p.y) <= 8);
 }
 function pickUp(p, it) {
   items = items.filter((i) => i !== it);
@@ -448,7 +449,7 @@ function updateItems() {
     if (h.anim === 'down' || h.h > 0) continue;
     for (const i of items) {
       const d = ITEM[i.kind];
-      if (d.weapon || i.h > 4 || Math.abs(i.x - h.x) > 16 || Math.abs(i.y - h.y) > 8) continue;
+      if (d.weapon || i.h > 4 || abs(i.x - h.x) > 16 || abs(i.y - h.y) > 8) continue;
       items = items.filter((o) => o !== i);
       if (d.heal) { h.hp = Math.min(HERO_HP, h.hp + d.heal); popup(h, `+${d.heal}`, GREEN); fx(SFX.heal); }
       else if (d.pts) { h.score += d.pts; popup(h, `$${d.pts}`, GOLD); fx(SFX.pickup); }
@@ -467,7 +468,7 @@ function checkProps(a) {
   if (!fr[2] || !mv) return;
   const hb = worldBox(a, fr[2]);
   for (const q of props) {
-    if (a.hits.includes(q) || Math.abs(a.y - q.y) > LANE_TOL) continue;
+    if (a.hits.includes(q) || abs(a.y - q.y) > LANE_TOL) continue;
     if (hb[0] < q.x + q.box[2] && q.x + q.box[0] < hb[2]) { a.hits.push(q); hitProp(q, mv.dmg); }   // across only: a punch at head height still hits a crate in his lane
   }
 }
@@ -490,11 +491,11 @@ function throwWeapon(p) {
 /** A thrown weapon: it hits the first enemy in its lane (7: a pipe knocks him down, a knife stuns) or a crate, then drops where it was, if it has any use left. */
 function weaponFlight(s) {
   const box = [s.x - 8, s.y - 60, s.x + 8, s.y - 46];
-  s.d += Math.abs(s.vx);
-  const e = enemies.find((o) => canBeHit(o) && o.anim !== 'held' && Math.abs(o.y - s.y) <= LANE_TOL && overlaps(box, worldBox(o, frameOf(o)[1])));
-  const q = !e && props.find((o) => Math.abs(o.y - s.y) <= LANE_TOL && box[0] < o.x + o.box[2] && o.x + o.box[0] < box[2]);
+  s.d += abs(s.vx);
+  const e = enemies.find((o) => canBeHit(o) && o.anim !== 'held' && abs(o.y - s.y) <= LANE_TOL && overlaps(box, worldBox(o, frameOf(o)[1])));
+  const q = !e && props.find((o) => abs(o.y - s.y) <= LANE_TOL && box[0] < o.x + o.box[2] && o.x + o.box[0] < box[2]);
   if (e) landHit(s.own, e, s.kind === 'knife' ? { dmg: 7, stun: 14 } : { dmg: 7, down: 1 }); else if (q) hitProp(q, 8);
-  if (e || q || s.d > 230 || s.x > cam + 250 || s.x < cam + 6) { s.dead = 1; if (s.uses > 0) spawnItem(s.kind, Math.max(cam + 12, Math.min(cam + 244, s.x)), s.y, s.uses); }   // (the edge of the screen ends the flight too)
+  if (e || q || s.d > 230 || s.x > cam + 250 || s.x < cam + 6) { s.dead = 1; if (s.uses > 0) spawnItem(s.kind, clamp(s.x, cam + 12, cam + 244), s.y, s.uses); }   // (the edge of the screen ends the flight too)
 }
 function updateShots() {
   for (const s of shots) { s.x += s.vx; s.t++; }
@@ -502,14 +503,14 @@ function updateShots() {
     if (s.own) { weaponFlight(s); continue; }
     const box = [s.x - 5, s.y - SHOT_H[1], s.x + 5, s.y - SHOT_H[0]];
     for (const h of heroes()) {
-      if (Math.abs(h.y - s.y) > LANE_TOL) continue;
+      if (abs(h.y - s.y) > LANE_TOL) continue;
       const fr = frameOf(h);
       const hb = fr[2] && worldBox(h, fr[2]);
       if (hb && box[0] < hb[2] && hb[0] < box[2]) { s.dead = 1; shatter(s); break; }        // any attack in its lane knocks it out of the air (whatever the height, as for a crate)
       if (canBeHit(h) && overlaps(box, worldBox(h, fr[1]))) {                               // otherwise it hits: 4 and a stun
         s.dead = 1; shatter(s); h.hp -= 4; hitstop = HITSTOP; fx(SFX.hit);
         if (h.grab) release(h); if (h.weapon) dropWeapon(h);
-        const dir = Math.sign(s.vx); h.face = -dir;
+        const dir = sgn(s.vx); h.face = -dir;
         if (h.h > 0) knockDown(h, dir, null); else { setAnim(h, 'hurt'); h.vx = dir * 6 / 16; }
         break;
       }
@@ -522,7 +523,7 @@ function shatter(s) { for (let k = 0; k < 6; k++) bits.push({ x: s.x, y: s.y - 2
 /** A thug the hero can grab by walking into him: on his feet, not attacking, close in front. */
 function grabTarget(p, dir) {
   return enemies.find((e) => e.kind === 'thug' && e.type !== 'brute' && !e.dying && !e.held && e.h === 0 && (e.anim === 'idle' || e.anim === 'walk') && e.inv <= 0 &&
-    Math.sign(e.x - p.x) === dir && Math.abs(e.x - p.x) <= GRAB_X && Math.abs(e.y - p.y) <= GRAB_Y);
+    sgn(e.x - p.x) === dir && abs(e.x - p.x) <= GRAB_X && abs(e.y - p.y) <= GRAB_Y);
 }
 function release(p) {
   const t = p.grab;
@@ -556,9 +557,9 @@ function thrownHits() {
   for (const f of enemies) {
     if (!f.thrown || f.anim !== 'down' || f.h <= 0) continue;
     const body = worldBox(f, LYING), dir = f.vx >= 0 ? 1 : -1;
-    for (const q of props) if (Math.abs(q.y - f.y) <= LANE_TOL && body[0] < q.x + q.box[2] && q.x + q.box[0] < body[2]) hitProp(q, PROP_HP);   // a thug thrown into a crate smashes it
+    for (const q of props) if (abs(q.y - f.y) <= LANE_TOL && body[0] < q.x + q.box[2] && q.x + q.box[0] < body[2]) hitProp(q, PROP_HP);   // a thug thrown into a crate smashes it
     for (const o of [...enemies, ...heroes()]) {
-      if (o === f || o === f.thrown || f.hitBy.includes(o) || !canBeHit(o) || Math.abs(o.y - f.y) > LANE_TOL || o.anim === 'held') continue;
+      if (o === f || o === f.thrown || f.hitBy.includes(o) || !canBeHit(o) || abs(o.y - f.y) > LANE_TOL || o.anim === 'held') continue;
       if (!overlaps(body, worldBox(o, frameOf(o)[1]))) continue;
       f.hitBy.push(o); hitstop = HITSTOP; fx(SFX.slam);
       if (o.kind === 'hero') { o.hp = Math.max(1, o.hp - 2); if (o.grab) release(o); if (o.weapon) dropWeapon(o); setAnim(o, 'hurt'); o.vx = dir * 6 / 16; }
@@ -609,7 +610,7 @@ const maxTokens = () => (heroes().length > 1 ? 3 : 2);              // thugs tha
 function target(t) {
   const hs = heroes(), up = hs.filter((h) => h.anim !== 'down');
   const list = up.length ? up : hs;
-  return list.reduce((a, b) => (Math.abs(a.x - t.x) + 2 * Math.abs(a.y - t.y) <= Math.abs(b.x - t.x) + 2 * Math.abs(b.y - t.y) ? a : b));
+  return list.reduce((a, b) => (abs(a.x - t.x) + 2 * abs(a.y - t.y) <= abs(b.x - t.x) + 2 * abs(b.y - t.y) ? a : b));
 }
 
 function updateThug(t) {
@@ -621,13 +622,13 @@ function updateThug(t) {
   const p = target(t);
   const knife = t.type === 'knife', role = ROLE[t.type];
   if (t.anim === attackAnim(t)) {
-    if (knife && t.fi === 1) { t.x += t.face * 3.5; t.x = Math.max(cam + 12, Math.min(cam + 244, t.x)); }   // the lunge
+    if (knife && t.fi === 1) { t.x += t.face * 3.5; t.x = clamp(t.x, cam + 12, cam + 244); }   // the lunge
     const ended = stepAnim(t);
     if (t.anim === 'cthrow' && t.fi === 1 && t.ft === 0) fireShot(t);                                       // the bottle leaves his hand
     if (ended) { setAnim(t, 'walk'); t.token = false; t.cool = thugWait(t); if (knife) t.retreat = 14; }
     return;
   }
-  if (t.retreat > 0) { t.retreat--; t.x = Math.max(cam + 16, Math.min(cam + 240, t.x - t.face * 2.5)); if (t.anim !== 'walk') setAnim(t, 'walk'); return; }   // the Slasher hops back
+  if (t.retreat > 0) { t.retreat--; t.x = clamp(t.x - t.face * 2.5, cam + 16, cam + 240); if (t.anim !== 'walk') setAnim(t, 'walk'); return; }   // the Slasher hops back
   if (t.cool > 0) t.cool--;
   let tx, ty;
   if (t.ai === 'enter') {                                            // walk in from off the screen
@@ -640,19 +641,19 @@ function updateThug(t) {
     if (t.token && ++t.tokenT > 300) { t.token = false; t.cool = 60; }
     const gap = role.gap[t.token ? 1 : 0];
     tx = p.x + side * gap; ty = p.y;
-    if (!t.token) ty = Math.max(LANE_TOP, Math.min(LANE_BOT, p.y + (enemies.indexOf(t) % 3 - 1) * 16));   // those waiting spread across the lane
+    if (!t.token) ty = clamp(p.y + (enemies.indexOf(t) % 3 - 1) * 16, LANE_TOP, LANE_BOT);   // those waiting spread across the lane
     if (tx < cam + 16 || tx > cam + 240) tx = p.x - side * gap;   // never wait off the screen: use the hero's other side
-    tx = Math.max(cam + 20, Math.min(cam + 236, tx));              // (and if both sides are off it, at its edge)
+    tx = clamp(tx, cam + 20, cam + 236);              // (and if both sides are off it, at its edge)
   }
   const mx = tx - t.x, my = ty - t.y;
-  const walking = Math.abs(mx) > 2 || Math.abs(my) > 2;
+  const walking = abs(mx) > 2 || abs(my) > 2;
   const sp = THUG_SPEED[t.v] * role.speed;
-  if (walking) { t.x += Math.sign(mx) * Math.min(sp, Math.abs(mx)); t.y += Math.sign(my) * Math.min(sp * 0.75, Math.abs(my)); }
-  t.y = Math.max(LANE_TOP, Math.min(LANE_BOT, t.y)); t.x = Math.max(cam - 60, Math.min(cam + 316, t.x));
+  if (walking) { t.x += sgn(mx) * Math.min(sp, abs(mx)); t.y += sgn(my) * Math.min(sp * 0.75, abs(my)); }
+  t.y = clamp(t.y, LANE_TOP, LANE_BOT); t.x = clamp(t.x, cam - 60, cam + 316);
   if (t.ai === 'fight') t.face = p.x >= t.x ? 1 : -1;
-  else t.face = Math.sign(mx) || t.face;
+  else t.face = sgn(mx) || t.face;
   const reach = role.reach;
-  if (t.ai === 'fight' && t.token && Math.abs(p.y - t.y) <= 6 && Math.abs(p.x - t.x) >= reach[0] && Math.abs(p.x - t.x) <= reach[1]) { setAnim(t, attackAnim(t)); return; }
+  if (t.ai === 'fight' && t.token && abs(p.y - t.y) <= 6 && abs(p.x - t.x) >= reach[0] && abs(p.x - t.x) <= reach[1]) { setAnim(t, attackAnim(t)); return; }
   if (walking && t.anim !== 'walk') setAnim(t, 'walk'); else if (!walking && t.anim !== 'idle') setAnim(t, 'idle');
 }
 
@@ -663,9 +664,9 @@ function separate(list) {
   for (let i = 0; i < on.length; i++) {
     for (let j = i + 1; j < on.length; j++) {
       const a = on[i], b = on[j], dx = b.x - a.x, dy = b.y - a.y;
-      if (Math.abs(dx) >= SEP_X || Math.abs(dy) >= SEP_Y) continue;
-      const sy = dy !== 0 ? Math.sign(dy) : (i % 2 ? 1 : -1), sx = dx !== 0 ? Math.sign(dx) : (j % 2 ? 1 : -1);
-      a.y = Math.max(LANE_TOP, Math.min(LANE_BOT, a.y - sy * 0.6)); b.y = Math.max(LANE_TOP, Math.min(LANE_BOT, b.y + sy * 0.6));
+      if (abs(dx) >= SEP_X || abs(dy) >= SEP_Y) continue;
+      const sy = dy !== 0 ? sgn(dy) : (i % 2 ? 1 : -1), sx = dx !== 0 ? sgn(dx) : (j % 2 ? 1 : -1);
+      a.y = clamp(a.y - sy * 0.6, LANE_TOP, LANE_BOT); b.y = clamp(b.y + sy * 0.6, LANE_TOP, LANE_BOT);
       a.x -= sx * 0.5; b.x += sx * 0.5;
     }
   }
@@ -679,7 +680,7 @@ function bossHurt(b, dir, by) {
   const tier = Math.max(0, Math.ceil(b.hp / (b.maxhp / 3)));
   if (b.hp <= 0 || tier < b.tier) { b.tier = tier; b.token = false; knockDown(b, dir, by); }
 }
-const clampBoss = (b) => { b.y = Math.max(LANE_TOP, Math.min(LANE_BOT, b.y)); };
+const clampBoss = (b) => { b.y = clamp(b.y, LANE_TOP, LANE_BOT); };
 const kingRage = (b) => b.type === 'king' && b.hp <= b.maxhp / 3;
 const bossWait = (b, lo, hi) => Math.round(rndi(lo, hi) * (kingRage(b) ? 0.6 : 1));   // a raging boss waits less
 function updateBull(b) {
@@ -697,12 +698,12 @@ function updateBull(b) {
   if (a === 'bcharge') {
     if (b.fi === 1) {                                                // running: until the time is up, or a wall
       b.x += b.face * CHARGE_SPEED;
-      if (b.x <= cam + 26 || b.x >= cam + 230) { b.x = Math.max(cam + 26, Math.min(cam + 230, b.x)); setAnim(b, 'bstun'); fx(SFX.thud); return; }
+      if (b.x <= cam + 26 || b.x >= cam + 230) { b.x = clamp(b.x, cam + 26, cam + 230); setAnim(b, 'bstun'); fx(SFX.thud); return; }
     }
     if (stepAnim(b)) { setAnim(b, 'walk'); b.cool = bossWait(b, 70, 110); }
     return;
   }
-  const p = target(b), dx = p.x - b.x, dy = p.y - b.y, adx = Math.abs(dx), ady = Math.abs(dy);
+  const p = target(b), dx = p.x - b.x, dy = p.y - b.y, adx = abs(dx), ady = abs(dy);
   if (b.ai === 'enter') {                                            // walks in from the right
     b.x -= 1.2; b.face = -1; if (b.x <= cam + 200) b.ai = 'fight';
     if (a !== 'walk') setAnim(b, 'walk');
@@ -714,9 +715,9 @@ function updateBull(b) {
   if (b.cool <= 0 && ady <= 10 && adx >= 110) { setAnim(b, 'bcharge'); return; }
   const sp = kingRage(b) ? 0.9 : 0.7;
   const tx = p.x - b.face * 44, ty = p.y;                            // walk to arm's length, in the hero's lane
-  const mx = tx - b.x, my = ty - b.y, walking = Math.abs(mx) > 2 || Math.abs(my) > 2;
-  if (walking) { b.x += Math.sign(mx) * Math.min(sp, Math.abs(mx)); b.y += Math.sign(my) * Math.min(sp * 0.7, Math.abs(my)); clampBoss(b); }
-  b.x = Math.max(cam - 40, Math.min(cam + 300, b.x));
+  const mx = tx - b.x, my = ty - b.y, walking = abs(mx) > 2 || abs(my) > 2;
+  if (walking) { b.x += sgn(mx) * Math.min(sp, abs(mx)); b.y += sgn(my) * Math.min(sp * 0.7, abs(my)); clampBoss(b); }
+  b.x = clamp(b.x, cam - 40, cam + 300);
   if (walking && a !== 'walk') setAnim(b, 'walk'); else if (!walking && a !== 'idle') setAnim(b, 'idle');
 }
 
@@ -744,24 +745,24 @@ function updateRazor(b) {
     return;
   }
   if (a === 'rleap' || a === 'rdive') {
-    b.x += b.vx; b.y += b.vy; b.x = Math.max(cam + 16, Math.min(cam + 240, b.x));
+    b.x += b.vx; b.y += b.vy; b.x = clamp(b.x, cam + 16, cam + 240);
     const landed = fall(b);
     if (a === 'rleap' && b.vz < 0) setAnim(b, 'rdive');              // coming down: the kick is out
     if (landed) { setAnim(b, 'rland'); b.vx = 0; b.vy = 0; fx(SFX.thud); }
     return;
   }
   if (a === 'rland') { if (stepAnim(b)) { setAnim(b, 'walk'); b.cool = rndi(50, 90); } return; }
-  const p = target(b), dx = p.x - b.x, dy = p.y - b.y, adx = Math.abs(dx), ady = Math.abs(dy);
+  const p = target(b), dx = p.x - b.x, dy = p.y - b.y, adx = abs(dx), ady = abs(dy);
   if (b.ai === 'enter') { b.x -= 1.8; b.face = -1; if (b.x <= cam + 190) b.ai = 'fight'; if (a !== 'walk') setAnim(b, 'walk'); return; }
   if (b.cool > 0) b.cool--;
-  if (b.retreat > 0) { b.retreat--; b.x = Math.max(cam + 20, Math.min(cam + 236, b.x - b.face * 2.5)); if (a !== 'walk') setAnim(b, 'walk'); return; }   // the hop back
+  if (b.retreat > 0) { b.retreat--; b.x = clamp(b.x - b.face * 2.5, cam + 20, cam + 236); if (a !== 'walk') setAnim(b, 'walk'); return; }   // the hop back
   b.face = dx >= 0 ? 1 : -1;
   if (b.cool <= 0 && ady <= 8 && adx >= 30 && adx <= 60) { setAnim(b, 'rslash1'); return; }
   if (b.cool <= 0 && adx >= 100) { setAnim(b, 'rcrouch'); return; }
   const tx = p.x - b.face * 46, ty = p.y;
-  const mx = tx - b.x, my = ty - b.y, walking = Math.abs(mx) > 2 || Math.abs(my) > 2;
-  if (walking) { b.x += Math.sign(mx) * Math.min(1.5, Math.abs(mx)); b.y += Math.sign(my) * Math.min(1.0, Math.abs(my)); clampBoss(b); }
-  b.x = Math.max(cam - 40, Math.min(cam + 300, b.x));
+  const mx = tx - b.x, my = ty - b.y, walking = abs(mx) > 2 || abs(my) > 2;
+  if (walking) { b.x += sgn(mx) * Math.min(1.5, abs(mx)); b.y += sgn(my) * Math.min(1.0, abs(my)); clampBoss(b); }
+  b.x = clamp(b.x, cam - 40, cam + 300);
   if (walking && a !== 'walk') setAnim(b, 'walk'); else if (!walking && a !== 'idle') setAnim(b, 'idle');
 }
 
@@ -779,7 +780,7 @@ function updateCamera() {
     if (wave >= LEVEL.length) { clearStage(); return; }
     goT = 0;
   }
-  for (const h of heroes()) h.x = Math.max(cam + 10, Math.min(cam + 246, h.x));   // nobody leaves the screen
+  for (const h of heroes()) h.x = clamp(h.x, cam + 10, cam + 246);   // nobody leaves the screen
 }
 
 function clearStage() {
@@ -930,7 +931,7 @@ function drawPlay() {
   for (const i of items) drawItem(i);
   for (const s of shots) drawShot(s);
   for (const f of all) { if (f.prop) drawProp(f); else if (f.kind === 'boss') (f.type === 'razor' ? drawRazor(f) : drawBoss(f)); else drawFighter(f); }
-  for (const b of bits) rectfill(flr(b.x - cam), flr(b.y), 4, 4, b.c);
+  for (const b of bits) rf(flr(b.x - cam), flr(b.y), 4, 4, b.c);
   if (showBoxes) for (const f of all) drawBoxes(f);
   for (const o of popups) txt(o.text, flr(o.x - cam) - o.text.length * 4, flr(o.y - o.t * 0.4), o.t > 36 && o.t % 4 < 2 ? DIM : o.c);
   drawHud();
@@ -938,7 +939,7 @@ function drawPlay() {
 
 function drawShadow(f) {
   const sx = flr(f.x - cam), w = Math.max(8, 16 - flr(f.h / 4));
-  rectfill(sx - w, f.y - 2, w * 2, 4, SHADOW); rectfill(sx - w + 2, f.y - 3, w * 2 - 4, 6, SHADOW);
+  rf(sx - w, f.y - 2, w * 2, 4, SHADOW); rf(sx - w + 2, f.y - 3, w * 2 - 4, 6, SHADOW);
 }
 
 /**
@@ -952,61 +953,61 @@ function drawFighter(f) {
   const sx = flr(f.x - cam), by = flr(f.y - f.h), d = f.face;
   if (f.anim === 'down') {                                           // lying on the ground, or flying through the air
     const air = f.h > 0 || f.vz !== 0;
-    if (air) { rectfill(sx - 30, by - 36, 60, 18, coat); circfill(sx - d * 34, by - 28, 9, skin); }
-    else { rectfill(sx - 40, by - 14, 56, 14, coat); rectfill(sx + 14 * -d - 2, by - 12, 24, 10, pants); circfill(sx + d * 40 * -1, by - 8, 8, skin); }
+    if (air) { rf(sx - 30, by - 36, 60, 18, coat); circfill(sx - d * 34, by - 28, 9, skin); }
+    else { rf(sx - 40, by - 14, 56, 14, coat); rf(sx + 14 * -d - 2, by - 12, 24, 10, pants); circfill(sx + d * 40 * -1, by - 8, 8, skin); }
     return;
   }
   const hurt = (f.anim === 'hurt' && f.ft < 4) || f.flash > 3 || (f.anim === 'held' && flr(clock / 6) % 2 === 0);
   const walk = f.anim === 'walk' ? flr(clock / 6) % 2 : 0, lean = f.anim === 'hurt' ? -d * 4 : 0;
   const air = f.h > 0;
-  if (air) { rectfill(sx - 10 + lean, by - 40, 8, 40, pants); rectfill(sx + 2 + lean, by - 34, 8, 30, pants); }
-  else { rectfill(sx - 10 + lean, by - 40, 8, 40 - walk * 4, pants); rectfill(sx + 2 + lean, by - 40, 8, 36 + walk * 4, pants); }
-  rectfill(sx - 14 + lean, by - 74, 28, 36, hurt ? WHITE : coat);                              // the torso
+  if (air) { rf(sx - 10 + lean, by - 40, 8, 40, pants); rf(sx + 2 + lean, by - 34, 8, 30, pants); }
+  else { rf(sx - 10 + lean, by - 40, 8, 40 - walk * 4, pants); rf(sx + 2 + lean, by - 40, 8, 36 + walk * 4, pants); }
+  rf(sx - 14 + lean, by - 74, 28, 36, hurt ? WHITE : coat);                              // the torso
   circfill(sx + d * 2 + lean, by - 82, 9, skin);                                                // the head
   if (f.type === 'brute') {                                                                      // a Brute: wide shoulders, thick legs, a big bald head, a gold belt
-    rectfill(sx - 22 + lean, by - 78, 44, 40, hurt ? WHITE : coat); rectfill(sx - 22 + lean, by - 44, 44, 5, GOLD);
-    rectfill(sx - 14 + lean, by - 40, 12, 40 - walk * 4, pants); rectfill(sx + 3 + lean, by - 40, 12, 36 + walk * 4, pants);
+    rf(sx - 22 + lean, by - 78, 44, 40, hurt ? WHITE : coat); rf(sx - 22 + lean, by - 44, 44, 5, GOLD);
+    rf(sx - 14 + lean, by - 40, 12, 40 - walk * 4, pants); rf(sx + 3 + lean, by - 40, 12, 36 + walk * 4, pants);
     circfill(sx + d * 2 + lean, by - 87, 11, skin);
   }
-  rectfill(sx + d * 6 + lean - 1, by - 84, 3, 3, SHADOW);                                       // an eye, on the side he faces
+  rf(sx + d * 6 + lean - 1, by - 84, 3, 3, SHADOW);                                       // an eye, on the side he faces
   if (!hero) {                                                                                   // his stage's mark: a cap (docks), dark glasses (rooftop); a Slasher's yellow bandana
-    if (f.type === 'knife') rectfill(sx - 8 + d * 2 + lean, by - 89, 18, 4, GOLD);
-    else if (f.type === 'chucker') rectfill(sx - 8 + d * 2 + lean, by - 93, 17, 7, ORANGE);                  // a beanie
-    else if (f.type === 'lasher') { rectfill(sx - d * 12 + lean - 3, by - 90, 6, 18, SHADOW); rectfill(sx - 7 + d * 2 + lean, by - 93, 15, 5, SHADOW); }   // long dark hair
-    else if (f.v === 1) { rectfill(sx - 9 + d * 2 + lean, by - 92, 18, 5, NAVY); rectfill(sx + d * 8 + lean - 2, by - 88, 8, 2, NAVY); }
-    else if (f.v === 2) rectfill(sx - 7 + d * 2 + lean, by - 85, 15, 4, SHADOW);
+    if (f.type === 'knife') rf(sx - 8 + d * 2 + lean, by - 89, 18, 4, GOLD);
+    else if (f.type === 'chucker') rf(sx - 8 + d * 2 + lean, by - 93, 17, 7, ORANGE);                  // a beanie
+    else if (f.type === 'lasher') { rf(sx - d * 12 + lean - 3, by - 90, 6, 18, SHADOW); rf(sx - 7 + d * 2 + lean, by - 93, 15, 5, SHADOW); }   // long dark hair
+    else if (f.v === 1) { rf(sx - 9 + d * 2 + lean, by - 92, 18, 5, NAVY); rf(sx + d * 8 + lean - 2, by - 88, 8, 2, NAVY); }
+    else if (f.v === 2) rf(sx - 7 + d * 2 + lean, by - 85, 15, 4, SHADOW);
   }
   const fr = frameOf(f), mv = MOVE[f.anim];
   if (f.anim === 'special') {                                        // a spin: a fist out on each side while it is active
-    if (fr[2]) { rectfill(sx - 58, by - 68, 14, 14, fist); rectfill(sx + 44, by - 68, 14, 14, fist); }
-    else rectfill(sx + d * 14 + lean - 4, by - 70, 8, 8, skin);
+    if (fr[2]) { rf(sx - 58, by - 68, 14, 14, fist); rf(sx + 44, by - 68, 14, 14, fist); }
+    else rf(sx + d * 14 + lean - 4, by - 70, 8, 8, skin);
   } else if (f.anim === 'grab' || f.anim === 'gpunch') {             // both hands on the thug
-    rectfill(sx + d * (f.anim === 'gpunch' ? 30 : 22) - 5, by - 62, 10, 10, f.anim === 'gpunch' ? GOLD : skin);
+    rf(sx + d * (f.anim === 'gpunch' ? 30 : 22) - 5, by - 62, 10, 10, f.anim === 'gpunch' ? GOLD : skin);
   } else if (f.anim === 'dash') {                                    // the fist out, the body leaning into it, speed lines behind
     const b = fr[2] || [10, -66, 24, -60];
-    rectfill(sx + d * ((b[0] + b[2]) / 2) - 7, by + (b[1] + b[3]) / 2 - 7, 14, 14, fr[2] ? GOLD : skin);
+    rf(sx + d * ((b[0] + b[2]) / 2) - 7, by + (b[1] + b[3]) / 2 - 7, 14, 14, fr[2] ? GOLD : skin);
     if (fr[2] && !f.hits.length) { line(sx - d * 18, by - 70, sx - d * 46, by - 70, WHITE); line(sx - d * 14, by - 50, sx - d * 40, by - 50, WHITE); }
   } else if (f.anim === 'hsmash') {                                   // the Brute's club smash: both fists high for a long time, then down along the hit box
     const b = fr[2];
-    if (b) { rectfill(sx + d * 52 - 9, by - 72, 18, 18, GOLD); line(sx + d * 14, by - 78, sx + d * 52, by - 64, skin); line(sx + d * 14, by - 77, sx + d * 52, by - 63, skin); }
-    else { rectfill(sx - 4 + d * 6, by - 112, 18, 14, skin); rectfill(sx - 18 + d * 6, by - 112, 14, 14, skin); }
+    if (b) { rf(sx + d * 52 - 9, by - 72, 18, 18, GOLD); line(sx + d * 14, by - 78, sx + d * 52, by - 64, skin); line(sx + d * 14, by - 77, sx + d * 52, by - 63, skin); }
+    else { rf(sx - 4 + d * 6, by - 112, 18, 14, skin); rf(sx - 18 + d * 6, by - 112, 14, 14, skin); }
   } else if (f.anim === 'cthrow') {                                  // the Chucker: the bottle held high, then the arm thrown forward
     const wind = f.fi === 0;
-    rectfill(sx + d * (wind ? 8 : 22) - 4, by - (wind ? 96 : 70), 8, 8, skin);
-    if (wind) { rectfill(sx + d * 8 - 3, by - 110, 6, 12, GREEN); rectfill(sx + d * 8 - 1, by - 114, 2, 5, GREEN); }
+    rf(sx + d * (wind ? 8 : 22) - 4, by - (wind ? 96 : 70), 8, 8, skin);
+    if (wind) { rf(sx + d * 8 - 3, by - 110, 6, 12, GREEN); rf(sx + d * 8 - 1, by - 114, 2, 5, GREEN); }
   } else if (f.anim === 'wlash') {                                   // the Lasher: the whip drawn back, then a crack along the hit box with a spark at its tip
     const crack = f.fi === 1;
-    rectfill(sx + d * 10 - 4, by - 68, 8, 8, skin);
-    if (crack) { line(sx + d * 12, by - 66, sx + d * 60, by - 72, BROWN); line(sx + d * 60, by - 72, sx + d * 116, by - 64, BROWN); line(sx + d * 12, by - 65, sx + d * 60, by - 71, BROWN); rectfill(sx + d * 116 - 3, by - 68, 6, 6, WHITE); }
+    rf(sx + d * 10 - 4, by - 68, 8, 8, skin);
+    if (crack) { line(sx + d * 12, by - 66, sx + d * 60, by - 72, BROWN); line(sx + d * 60, by - 72, sx + d * 116, by - 64, BROWN); line(sx + d * 12, by - 65, sx + d * 60, by - 71, BROWN); rf(sx + d * 116 - 3, by - 68, 6, 6, WHITE); }
     else { line(sx + d * 12, by - 66, sx - d * 24, by - 84, BROWN); line(sx - d * 24, by - 84, sx - d * 40, by - 66, BROWN); }
   } else if (f.anim === 'sstab') {                                   // the Slasher's knife: held back while he crouches, then out along the hit box
     let tx = -d * 12, ty = -62;
     if (fr[2]) { const b = fr[2]; tx = d * b[2]; ty = (b[1] + b[3]) / 2; }
-    line(sx + d * 8, by - 62, sx + tx, by + ty, WHITE); line(sx + d * 8, by - 63, sx + tx, by + ty - 1, WHITE); rectfill(sx + d * 8 - 4, by - 66, 8, 8, skin);
+    line(sx + d * 8, by - 62, sx + tx, by + ty, WHITE); line(sx + d * 8, by - 63, sx + tx, by + ty - 1, WHITE); rf(sx + d * 8 - 4, by - 66, 8, 8, skin);
   } else if (f.anim === 'suplex') {                                  // both fists up, over his head
-    rectfill(sx - 14, by - 124, 12, 12, skin); rectfill(sx + 2, by - 124, 12, 12, skin);
+    rf(sx - 14, by - 124, 12, 12, skin); rf(sx + 2, by - 124, 12, 12, skin);
   } else if (f.anim === 'wpipe' || f.anim === 'wknife' || f.anim === 'wthrow' || f.anim === 'pick') {   // the weapon is the attack: a hand on it
-    rectfill(sx + d * 12 - 4, by - 68, 8, 8, skin);
+    rf(sx + d * 12 - 4, by - 68, 8, 8, skin);
   } else if (mv) {                                                          // an attack: the fist cocked, then out at the hit box
     let fx0 = d * 16, fy0 = -62;
     const up = f.anim === 'uppercut';                                // the uppercut: the fist low, then up through the hit box
@@ -1015,54 +1016,54 @@ function drawFighter(f) {
     else if (up) { fx0 = d * 14; fy0 = -50; }
     const fx1 = sx + fx0, fy1 = by + fy0;
     line(sx + d * 8, by - 66, fx1, fy1, skin); line(sx + d * 8, by - 65, fx1, fy1 + 1, skin);
-    rectfill(fx1 - 6, fy1 - 6, 12, 12, fr[2] ? fist : coat);
+    rf(fx1 - 6, fy1 - 6, 12, 12, fr[2] ? fist : coat);
   } else {                                                           // guard: the fists up
-    rectfill(sx + d * 14 + lean - 4, by - 70, 8, 8, skin);
+    rf(sx + d * 14 + lean - 4, by - 70, 8, 8, skin);
   }
   if (f.weapon) {
     drawWeapon(f, sx, by, fr);
     const tag = `${ITEM[f.weapon.kind].name} ${f.weapon.uses}`;
-    txt(tag, Math.max(2, Math.min(254 - tag.length * 8, sx - tag.length * 4)), by - 108, f.weapon.kind === 'knife' ? WHITE : DIM);
+    txt(tag, clamp(sx - tag.length * 4, 2, 254 - tag.length * 8), by - 108, f.weapon.kind === 'knife' ? WHITE : DIM);
   }
 }
 
 /** Each thing to pick up has its own colour and shape: red apple, orange chicken, gold money bag, cyan 1UP, steel pipe, white knife. */
 function drawItem(i) {
   const sx = flr(i.x - cam), sy = flr(i.y - i.h);
-  if (i.h === 0) { rectfill(sx - 9, sy - 2, 18, 4, SHADOW); }
+  if (i.h === 0) { rf(sx - 9, sy - 2, 18, 4, SHADOW); }
   switch (i.kind) {
-    case 'apple': circfill(sx, sy - 7, 6, RED); rectfill(sx - 1, sy - 16, 2, 5, BROWN); rectfill(sx + 1, sy - 15, 5, 3, GREEN); break;
-    case 'chicken': circfill(sx - 3, sy - 9, 9, ORANGE); circfill(sx - 6, sy - 12, 3, GOLD); rectfill(sx + 5, sy - 12, 9, 4, WHITE); circfill(sx + 14, sy - 14, 3, WHITE); circfill(sx + 14, sy - 10, 3, WHITE); break;
-    case 'money': circfill(sx, sy - 8, 8, GOLD); rectfill(sx - 3, sy - 19, 6, 6, GOLD); rectfill(sx - 5, sy - 15, 10, 2, BROWN); txt('$', sx - 4, sy - 13, NAVY); break;
-    case 'oneup': rectfill(sx - 14, sy - 17, 28, 15, CYAN); rect(sx - 14, sy - 17, 28, 15, WHITE); print('1UP', sx - 12, sy - 14, NAVY); break;
-    case 'pipe': rectfill(sx - 18, sy - 6, 36, 6, DIM); rectfill(sx - 18, sy - 6, 36, 2, WHITE); rectfill(sx - 20, sy - 7, 3, 8, DIM); rectfill(sx + 17, sy - 7, 3, 8, DIM); break;
-    case 'knife': rectfill(sx - 4, sy - 5, 20, 4, WHITE); rectfill(sx + 14, sy - 4, 4, 2, WHITE); rectfill(sx - 16, sy - 6, 12, 6, BROWN); rectfill(sx - 5, sy - 7, 2, 8, DIM); break;
+    case 'apple': circfill(sx, sy - 7, 6, RED); rf(sx - 1, sy - 16, 2, 5, BROWN); rf(sx + 1, sy - 15, 5, 3, GREEN); break;
+    case 'chicken': circfill(sx - 3, sy - 9, 9, ORANGE); circfill(sx - 6, sy - 12, 3, GOLD); rf(sx + 5, sy - 12, 9, 4, WHITE); circfill(sx + 14, sy - 14, 3, WHITE); circfill(sx + 14, sy - 10, 3, WHITE); break;
+    case 'money': circfill(sx, sy - 8, 8, GOLD); rf(sx - 3, sy - 19, 6, 6, GOLD); rf(sx - 5, sy - 15, 10, 2, BROWN); txt('$', sx - 4, sy - 13, NAVY); break;
+    case 'oneup': rf(sx - 14, sy - 17, 28, 15, CYAN); rect(sx - 14, sy - 17, 28, 15, WHITE); print('1UP', sx - 12, sy - 14, NAVY); break;
+    case 'pipe': rf(sx - 18, sy - 6, 36, 6, DIM); rf(sx - 18, sy - 6, 36, 2, WHITE); rf(sx - 20, sy - 7, 3, 8, DIM); rf(sx + 17, sy - 7, 3, 8, DIM); break;
+    case 'knife': rf(sx - 4, sy - 5, 20, 4, WHITE); rf(sx + 14, sy - 4, 4, 2, WHITE); rf(sx - 16, sy - 6, 12, 6, BROWN); rf(sx - 5, sy - 7, 2, 8, DIM); break;
   }
 }
 
 function drawShot(s) {
   if (s.own) {                                                       // a weapon spinning through the air at chest height
     const sx = flr(s.x - cam), y = flr(s.y) - 53, a = flr(s.t / 2) % 2;
-    rectfill(sx - 5, flr(s.y) - 1, 10, 3, SHADOW);
-    if (s.kind === 'knife') { if (a) { rectfill(sx - 8, y - 1, 16, 3, WHITE); rectfill(sx - 12, y - 2, 5, 5, BROWN); } else { rectfill(sx - 1, y - 8, 3, 16, WHITE); rectfill(sx - 2, y + 7, 5, 5, BROWN); } }
-    else if (a) { rectfill(sx - 14, y - 2, 28, 5, DIM); rectfill(sx - 14, y - 2, 28, 2, WHITE); } else { rectfill(sx - 2, y - 14, 5, 28, DIM); rectfill(sx - 2, y - 14, 2, 28, WHITE); }
+    rf(sx - 5, flr(s.y) - 1, 10, 3, SHADOW);
+    if (s.kind === 'knife') { if (a) { rf(sx - 8, y - 1, 16, 3, WHITE); rf(sx - 12, y - 2, 5, 5, BROWN); } else { rf(sx - 1, y - 8, 3, 16, WHITE); rf(sx - 2, y + 7, 5, 5, BROWN); } }
+    else if (a) { rf(sx - 14, y - 2, 28, 5, DIM); rf(sx - 14, y - 2, 28, 2, WHITE); } else { rf(sx - 2, y - 14, 5, 28, DIM); rf(sx - 2, y - 14, 2, 28, WHITE); }
     return;
   }
   const sx = flr(s.x - cam), y = flr(s.y) - 20, spin = flr(s.t / 3) % 2;
-  rectfill(sx - 5, flr(s.y) - 1, 10, 3, SHADOW);
-  if (spin) { rectfill(sx - 6, y - 3, 12, 6, GREEN); rectfill(sx + 5, y - 1, 4, 2, GREEN); rectfill(sx - 4, y - 2, 4, 1, WHITE); }
-  else { rectfill(sx - 3, y - 6, 6, 12, GREEN); rectfill(sx - 1, y - 10, 2, 5, GREEN); rectfill(sx - 2, y - 4, 1, 5, WHITE); }
+  rf(sx - 5, flr(s.y) - 1, 10, 3, SHADOW);
+  if (spin) { rf(sx - 6, y - 3, 12, 6, GREEN); rf(sx + 5, y - 1, 4, 2, GREEN); rf(sx - 4, y - 2, 4, 1, WHITE); }
+  else { rf(sx - 3, y - 6, 6, 12, GREEN); rf(sx - 1, y - 10, 2, 5, GREEN); rf(sx - 2, y - 4, 1, 5, WHITE); }
 }
 
 function drawProp(q) {
   const sx = flr(q.x - cam) + (q.flash > 0 ? (q.flash % 2 ? 2 : -2) : 0), by = flr(q.y), b = q.box, w = b[2] - b[0], h = -b[1];
   const hit = q.flash > 3;
   if (q.kind === 'crate') {
-    rectfill(sx - 14, by - 30, w, h, hit ? WHITE : BROWN); rect(sx - 14, by - 30, w, h, ORANGE); line(sx - 14, by - 30, sx + 13, by - 1, ORANGE); line(sx + 13, by - 30, sx - 14, by - 1, ORANGE);
+    rf(sx - 14, by - 30, w, h, hit ? WHITE : BROWN); rect(sx - 14, by - 30, w, h, ORANGE); line(sx - 14, by - 30, sx + 13, by - 1, ORANGE); line(sx + 13, by - 30, sx - 14, by - 1, ORANGE);
   } else if (q.kind === 'barrel') {
-    rectfill(sx - 12, by - 34, w, h, hit ? WHITE : BLUE); rectfill(sx - 12, by - 27, w, 3, NAVY); rectfill(sx - 12, by - 9, w, 3, NAVY); rect(sx - 12, by - 34, w, h, NAVY);
+    rf(sx - 12, by - 34, w, h, hit ? WHITE : BLUE); rf(sx - 12, by - 27, w, 3, NAVY); rf(sx - 12, by - 9, w, 3, NAVY); rect(sx - 12, by - 34, w, h, NAVY);
   } else {
-    rectfill(sx - 12, by - 30, w, 30, hit ? WHITE : DKGREEN); rectfill(sx - 14, by - 36, w + 4, 7, GREEN); rect(sx - 12, by - 30, w, 30, NAVY);
+    rf(sx - 12, by - 30, w, 30, hit ? WHITE : DKGREEN); rf(sx - 14, by - 36, w + 4, 7, GREEN); rect(sx - 12, by - 30, w, 30, NAVY);
   }
 }
 
@@ -1073,7 +1074,7 @@ function drawWeapon(f, sx, by, fr) {
   const swing = f.anim === 'wpipe' || f.anim === 'wknife';
   if (swing && fr[2]) { tx = sx + d * (knife ? 62 : 80); ty = by - 66; } else if (swing) { tx = hx - d * 8; ty = hy - len; }
   for (let k = -1; k <= (knife ? 0 : 1); k++) line(hx, hy + k, tx, ty + k, knife ? WHITE : DIM);
-  if (knife) rectfill(hx - 3, hy - 3, 7, 7, BROWN);
+  if (knife) rf(hx - 3, hy - 3, 7, 7, BROWN);
 }
 
 /** The boss as shapes: bigger than a thug, orange, a red headband and a gold belt; he crouches before a charge and sees stars when stunned. */
@@ -1086,29 +1087,29 @@ function drawBoss(f) {
   const coat = f.flash > 3 || warn ? WHITE : rage ? RED : king ? NAVY : ORANGE;
   if (f.anim === 'down') {
     const air = f.h > 0 || f.vz !== 0;
-    if (air) { rectfill(sx - 44, by - 52, 88, 28, coat); circfill(sx - d * 52, by - 40, 13, skin); }
-    else { rectfill(sx - 52, by - 22, 80, 22, coat); rectfill(sx - d * 20 - 12, by - 20, 40, 18, pants); circfill(sx + d * -56, by - 12, 12, skin); }
+    if (air) { rf(sx - 44, by - 52, 88, 28, coat); circfill(sx - d * 52, by - 40, 13, skin); }
+    else { rf(sx - 52, by - 22, 80, 22, coat); rf(sx - d * 20 - 12, by - 20, 40, 18, pants); circfill(sx + d * -56, by - 12, 12, skin); }
     return;
   }
   const crouch = f.anim === 'bcharge' && f.fi === 0, rush = f.anim === 'bcharge' && f.fi === 1;
   const lean = rush ? d * 16 : crouch ? d * 8 : 0, drop = crouch ? 18 : 0, walk = f.anim === 'walk' ? flr(clock / 6) % 2 : 0;
-  rectfill(sx - 18 + lean / 2, by - 50 + drop, 14, 50 - drop - walk * 4, pants); rectfill(sx + 4 + lean / 2, by - 50 + drop, 14, 46 - drop + walk * 4, pants);
-  rectfill(sx - 26 + lean, by - 108 + drop, 52, 60, coat);                                        // the torso
-  rectfill(sx - 26 + lean, by - 52 + drop, 52, 6, GOLD);                                          // the belt
+  rf(sx - 18 + lean / 2, by - 50 + drop, 14, 50 - drop - walk * 4, pants); rf(sx + 4 + lean / 2, by - 50 + drop, 14, 46 - drop + walk * 4, pants);
+  rf(sx - 26 + lean, by - 108 + drop, 52, 60, coat);                                        // the torso
+  rf(sx - 26 + lean, by - 52 + drop, 52, 6, GOLD);                                          // the belt
   circfill(sx + d * 4 + lean, by - 118 + drop, 13, skin);                                         // the head
-  if (king) { rectfill(sx - 12 + d * 4 + lean, by - 124 + drop, 26, 4, SHADOW); rectfill(sx - 14 + lean, by - 104 + drop, 28, 3, GOLD); }   // a sharp suit: dark glasses and a gold chain
-  else rectfill(sx - 12 + d * 4 + lean, by - 128 + drop, 26, 5, RED);                                  // the headband
-  rectfill(sx + d * 9 + lean - 1, by - 120 + drop, 4, 4, SHADOW);                                 // an eye
+  if (king) { rf(sx - 12 + d * 4 + lean, by - 124 + drop, 26, 4, SHADOW); rf(sx - 14 + lean, by - 104 + drop, 28, 3, GOLD); }   // a sharp suit: dark glasses and a gold chain
+  else rf(sx - 12 + d * 4 + lean, by - 128 + drop, 26, 5, RED);                                  // the headband
+  rf(sx + d * 9 + lean - 1, by - 120 + drop, 4, 4, SHADOW);                                 // an eye
   const fr = frameOf(f);
   if (f.anim === 'bpunch') {                                                                      // the punch: cocked back for a long time, then out
     let fx0 = -d * 20, fy0 = -86;
     if (fr[2]) { const b = fr[2]; fx0 = d * ((b[0] + b[2]) / 2); fy0 = (b[1] + b[3]) / 2; }
     line(sx + d * 14, by - 92, sx + fx0, by + fy0, skin); line(sx + d * 14, by - 91, sx + fx0, by + fy0 + 1, skin);
-    rectfill(sx + fx0 - 9, by + fy0 - 9, 18, 18, fr[2] ? GOLD : coat);
+    rf(sx + fx0 - 9, by + fy0 - 9, 18, 18, fr[2] ? GOLD : coat);
   } else if (f.anim === 'kslam') {                                                                // both fists up for the slam, then the wave along the floor
-    rectfill(sx - 30, by - 142 + drop, 12, 12, skin); rectfill(sx + 18, by - 142 + drop, 12, 12, skin);
-    if (fr[2]) { rectfill(sx - 96, by - 8, 192, 8, flr(clock / 2) % 2 ? WHITE : GOLD); rectfill(sx - 96, by - 14, 192, 3, WHITE); }
-  } else rectfill(sx + d * 26 + lean - 5, by - 96 + drop, 12, 12, skin);                          // guard
+    rf(sx - 30, by - 142 + drop, 12, 12, skin); rf(sx + 18, by - 142 + drop, 12, 12, skin);
+    if (fr[2]) { rf(sx - 96, by - 8, 192, 8, flr(clock / 2) % 2 ? WHITE : GOLD); rf(sx - 96, by - 14, 192, 3, WHITE); }
+  } else rf(sx + d * 26 + lean - 5, by - 96 + drop, 12, 12, skin);                          // guard
   if (rush) { line(sx - d * 34, by - 80, sx - d * 62, by - 80, WHITE); line(sx - d * 30, by - 62, sx - d * 58, by - 62, WHITE); }
   if (f.anim === 'bstun') for (let k = 0; k < 3; k++) { const a = clock / 8 + k * 2.1; circfill(sx + flr(Math.cos(a) * 16), by - 140 + flr(Math.sin(a) * 4), 3, GOLD); }
 }
@@ -1122,26 +1123,26 @@ function drawRazor(f) {
   const coat = f.flash > 3 || warn ? WHITE : DKGREEN;
   if (f.anim === 'down') {
     const air = f.h > 0 || f.vz !== 0;
-    if (air) { rectfill(sx - 38, by - 46, 76, 24, coat); circfill(sx - d * 44, by - 36, 10, skin); }
-    else { rectfill(sx - 46, by - 18, 70, 18, coat); rectfill(sx - d * 16 - 10, by - 16, 34, 14, pants); circfill(sx - d * 48, by - 10, 9, skin); }
+    if (air) { rf(sx - 38, by - 46, 76, 24, coat); circfill(sx - d * 44, by - 36, 10, skin); }
+    else { rf(sx - 46, by - 18, 70, 18, coat); rf(sx - d * 16 - 10, by - 16, 34, 14, pants); circfill(sx - d * 48, by - 10, 9, skin); }
     return;
   }
   const crouch = f.anim === 'rcrouch', air = f.anim === 'rleap' || f.anim === 'rdive', drop = crouch ? 16 : 0, walk = f.anim === 'walk' ? flr(clock / 4) % 2 : 0;
-  if (air) { rectfill(sx - 12, by - 40, 10, 22, pants); rectfill(sx + 2, by - 36, 10, 18, pants); }                // legs tucked
-  else { rectfill(sx - 13, by - 44 + drop, 11, 44 - drop - walk * 4, pants); rectfill(sx + 2, by - 44 + drop, 11, 40 - drop + walk * 4, pants); }
-  rectfill(sx - 17, by - 92 + drop, 34, 50, coat);                                                                 // the jacket
-  rectfill(sx - 3, by - 92 + drop, 6, 50, WHITE);                                                                  // its stripe
+  if (air) { rf(sx - 12, by - 40, 10, 22, pants); rf(sx + 2, by - 36, 10, 18, pants); }                // legs tucked
+  else { rf(sx - 13, by - 44 + drop, 11, 44 - drop - walk * 4, pants); rf(sx + 2, by - 44 + drop, 11, 40 - drop + walk * 4, pants); }
+  rf(sx - 17, by - 92 + drop, 34, 50, coat);                                                                 // the jacket
+  rf(sx - 3, by - 92 + drop, 6, 50, WHITE);                                                                  // its stripe
   circfill(sx + d * 3, by - 102 + drop, 10, skin);                                                                 // the head
-  for (let k = -2; k <= 2; k++) rectfill(sx + d * 3 + k * 4 - 1, by - 120 + drop + Math.abs(k) * 2, 3, 9 - Math.abs(k), GOLD);   // spiky hair
-  rectfill(sx + d * 7 - 1, by - 104 + drop, 3, 3, SHADOW);                                                         // an eye
+  for (let k = -2; k <= 2; k++) rf(sx + d * 3 + k * 4 - 1, by - 120 + drop + abs(k) * 2, 3, 9 - abs(k), GOLD);   // spiky hair
+  rf(sx + d * 7 - 1, by - 104 + drop, 3, 3, SHADOW);                                                         // an eye
   const fr = frameOf(f);
   if (f.anim === 'rslash1' || f.anim === 'rslash2' || f.anim === 'rslash3') {
     let tx = -d * 10, ty = -84;                                                                                    // the knife drawn back, then out along the hit box
     if (fr[2]) { const b = fr[2]; tx = d * b[2]; ty = (b[1] + b[3]) / 2; }
-    line(sx + d * 12, by - 78, sx + tx, by + ty, WHITE); line(sx + d * 12, by - 77, sx + tx, by + ty + 1, WHITE); rectfill(sx + d * 12 - 3, by - 82, 7, 7, skin);
+    line(sx + d * 12, by - 78, sx + tx, by + ty, WHITE); line(sx + d * 12, by - 77, sx + tx, by + ty + 1, WHITE); rf(sx + d * 12 - 3, by - 82, 7, 7, skin);
   } else if (f.anim === 'rdive') {
-    line(sx + d * 6, by - 30, sx + d * 46, by - 8, skin); line(sx + d * 6, by - 31, sx + d * 46, by - 9, skin); rectfill(sx + d * 46 - 5, by - 14, 10, 10, GOLD);   // the foot out
-  } else rectfill(sx + d * 18 - 4, by - 84 + drop, 9, 9, skin);                                                    // guard
+    line(sx + d * 6, by - 30, sx + d * 46, by - 8, skin); line(sx + d * 6, by - 31, sx + d * 46, by - 9, skin); rf(sx + d * 46 - 5, by - 14, 10, 10, GOLD);   // the foot out
+  } else rf(sx + d * 18 - 4, by - 84 + drop, 9, 9, skin);                                                    // guard
 }
 
 function drawBoxes(f) {
@@ -1153,7 +1154,7 @@ function drawBoxes(f) {
 }
 
 function bar(x, y, w, v, max, c) {
-  rectfill(x, y, w, 6, SHADOW); rectfill(x + 1, y + 1, Math.max(0, Math.min(w - 2, flr((w - 2) * v / max))), 4, c); rect(x, y, w, 6, DIM);
+  rf(x, y, w, 6, SHADOW); rf(x + 1, y + 1, clamp(flr((w - 2) * v / max), 0, w - 2), 4, c); rect(x, y, w, 6, DIM);
 }
 
 function drawHud() {
@@ -1182,7 +1183,7 @@ function drawRecords() {
   ctxt('TOP 10', 24, GOLD);
   topTen().forEach((e, i) => {
     const y = 48 + i * 14, on = i === hl;
-    if (on && timer % 40 < 30) rectfill(28, y - 2, 200, 12, PANEL);
+    if (on && timer % 40 < 30) rf(28, y - 2, 200, 12, PANEL);
     txt(String(i + 1).padStart(2), 40, y, i === 0 ? GOLD : DIM);
     txt(e.score ? e.initials : '---', 72, y, on ? GOLD : WHITE);
     txt(e.score ? String(e.score).padStart(8) : '', 128, y, i === 0 ? GOLD : WHITE);
@@ -1210,7 +1211,7 @@ function drawPause() {
   ['RESUME', 'RESTART', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
 }
 
-function panel(x, y, w, h) { rectfill(x, y, w, h, ART.colors.GLASS); rect(x, y, w, h, PANEL); }
+function panel(x, y, w, h) { rf(x, y, w, h, ART.colors.GLASS); rect(x, y, w, h, PANEL); }
 function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }
 const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
 

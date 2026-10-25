@@ -25,6 +25,11 @@ same('a line that is only a comment leaves no blank line', "let x = 1;\n  // gon
 }
 ok(stripComments("x = 1;") === 'x = 1;\n', 'a final newline is kept');
 {
+  const s = stripComments("function f() {\n    if (a) {\n\t\treturn 1;\n    }\n}\n");
+  ok(s === 'function f() {\nif (a) {\nreturn 1;\n}\n}\n', 'indentation goes, spaces and tabs', JSON.stringify(s));
+  same('and the code means the same', "function f(a) {\n    if (a) {\n\t\treturn 1;\n    }\n    return 2;\n}\nr = [f(1), f(0)];");
+}
+{
   const s = stripComments("a = `x\n\n  y`;\n");
   ok(s === 'a = `x\n\n  y`;\n', 'newlines inside a template are not touched', JSON.stringify(s));
 }

@@ -466,7 +466,7 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 
 | Asset | Budget |
 |---|---|
-| Code | under 58 KB of the 64 KB limit once stripped (`node tools/check.js brawl`): the source is about 66 KB with its comments, and `"strip": true` in `meta.json` packs the cart without them (`tools/devkit/strip.mjs`). The packed cart is 53 KB (82%): the drawing code (the shapes) is the biggest part and goes when the real art arrives |
+| Code | the source is about 80 KB with its comments and its indentation; `"strip": true` in `meta.json` packs the cart without them (`tools/devkit/strip.mjs`): **60.0 KB of the 64 KB limit (91.6%), 5.5 KB free** (`node tools/check.js brawl`). The limit is hard (a cart over 65,536 bytes does not pack). The drawing code (the shapes) is the biggest part and goes when the real art arrives |
 | Tiles | the nine background scenes of three stages: 412 of the 639 set aside |
 | Sprites | none yet (the final art needs about 128 tiles and 25 KB of ROM a fighter, streamed) |
 | Songs / SFX | seven songs (of 8) and fourteen effects; 14 KB of the 32 KB of sample RAM |
@@ -493,7 +493,15 @@ body in `drawFighter`, the waves' `b`. Tests: `15-brute.mjs` (and the wave numbe
 smash's lane. The packed cart is now **63.5 KB of the 64 KB limit (96.9%)**: **2 KB are left**, and the limit is hard (a cart over 65,536 bytes does not
 pack): the next feature has to come with room made first (strip the indentation in the packed cart, merge the drawing code, or the real art).
 
-**Results:** see the sweep in the next note.
+**Results:** `sweep.mjs brawl --seeds 3`: no stuck runs; the bots are where they were (skilled ones reach stage 2 or 3, none won in 3 seeds): the Brute adds a tough, slow target, and the bot sidesteps his smash.
+
+### Built and results: making room
+
+The packed cart had reached **63.5 KB of 64 KB**. Made room, with no change to what the game does (all 16 test files pass, and three
+screenshots rendered before and after are byte-identical): the packed code now **loses its indentation** too (`tools/devkit/strip.mjs`, with
+tests, 2.3 KB); the 21 `Math.max(lo, Math.min(hi, v))` clamps became the console's `clamp(v, lo, hi)`, and `Math.abs` and `Math.sign` became `abs` and
+`sgn` (0.5 KB); `rectfill` has the short name `rf` (0.7 KB). **63.5 KB became 60.0 KB: 5.5 KB free.** Still to find, if more is needed: merge the
+three boss drawing functions' shared parts (the lying-down body, the head), pack the stage props as short strings, and the real art.
 
 ### Built and results: the back grab and thrown weapons
 

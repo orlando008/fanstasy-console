@@ -1,11 +1,11 @@
-// Strip the comments and blank lines from a cart's JavaScript, so a game's source can be written with its reasons in the
+// Strip the comments, blank lines and indentation from a cart's JavaScript, so a game's source can be written with its reasons in the
 // comments while the cart that ships stays inside the console's 64 KB code limit (SPEC 8). pack.js does this for a cart whose
 // meta.json says "strip": true.
 //
 //   node tools/devkit/strip.mjs carts/src/brawl/code.js      # prints the stripped code and the bytes saved
 //
 // Strings, template literals (and the code inside their ${...}) and regular expressions are copied as they are. Line breaks stay
-// (a line that was only a comment goes), indentation stays, so error line numbers still point near the source.
+// (a line that was only a comment goes). A cart's error line numbers count the lines of the stripped code.
 import { readFileSync } from 'node:fs';
 
 const REGEX_AFTER = new Set(['', '(', ',', '=', ':', '[', '!', '&', '|', '?', '{', '}', ';', '+', '-', '*', '%', '<', '>', '~', '^']);
@@ -39,6 +39,7 @@ export function stripComments(src) {
         }
       }
       if (inTemplate) { if (c === '{') depth++; else if (c === '}') { if (depth === 0) return i; depth--; } }
+      if ((c === ' ' || c === '\t') && (out === '' || out.endsWith('\n'))) { i++; continue; }   // no indentation
       if (c === '\n') {                                               // no trailing spaces, no blank lines
         out = out.replace(/[ \t]+$/, '');
         if (out === '' || out.endsWith('\n')) { i++; continue; }

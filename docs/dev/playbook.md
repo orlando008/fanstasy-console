@@ -133,9 +133,9 @@ test is not in CI (it needs Playwright and Chromium). On CI the tests' frame-tim
 
 ## 3. Limits and rules of the console
 
-- **Code** 64 KB (65,536 UTF-8 bytes). A cart whose `meta.json` says `"strip": true` is packed **without its comments and blank lines**
+- **Code** 64 KB (65,536 UTF-8 bytes). A cart whose `meta.json` says `"strip": true` is packed **without its comments, blank lines and indentation**
   (`tools/devkit/strip.mjs`): write the reasons in the source as you like, and the shipped cart does not pay for them (Streets of Woe's
-  source is 63 KB, its cart 50 KB). It is the first thing to try when a game nears the limit. Moto Crosser is at 93%. Tables of level data are the big spender: keep
+  source is 80 KB, its cart 60 KB). It is the first thing to try when a game nears the limit; after it, the console's own `clamp`, `abs` and `sgn` are shorter than the `Math` forms, and a short name for a call you make a hundred times (`const rf = rectfill`) is worth its bytes. Moto Crosser is at 93%. Tables of level data are the big spender: keep
   them compact (`[kind, lane, x]` arrays), generate repetitive tiles in code rather than data, and measure with
   `node tools/check.js <name>` as you go, not at the end.
 - **Screen** 256 x 224; BG0 front, BG1 middle, BG2 back; sprites 8, 16 or 32 px, **128 in OAM, 32 per scanline**
