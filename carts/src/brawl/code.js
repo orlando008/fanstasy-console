@@ -100,7 +100,10 @@ const ANIM = {
   hurt: [[16, STAND, null]],
   down: [[999, LYING, null]],
   getup: [[20, STAND, null]],
-  tpunch: [[18, STAND, null], [4, STAND, [14, -74, 52, -60]], [22, STAND, null]],
+  tpunch: [[18, STAND, null], [4, STAND, [14, -74, 52, -60]], [22, STAND, null]],     // the street's thug; the docks' (tpunch2) and the rooftop's (tpunch3) are quicker
+  tpunch2: [[15, STAND, null], [4, STAND, [14, -74, 52, -60]], [22, STAND, null]],
+  tpunch3: [[12, STAND, null], [4, STAND, [14, -74, 52, -60]], [20, STAND, null]],
+  sstab: [[12, STAND, null], [7, STAND, [10, -76, 62, -52]], [16, STAND, null]],     // the Slasher: a crouch, then a lunge with the knife
   grab: [[999, STAND, null]],                                        // holding a thug (a grab hit, a throw)
   gpunch: [[8, STAND, null]],
   throw: [[14, STAND, null]],
@@ -113,7 +116,7 @@ const ANIM = {
 // What an attack does: damage, hit stun (frames, with a knock back of 6 px over them) or a knockdown.
 const MOVE = {
   punch1: { dmg: 4, stun: 16 }, punch2: { dmg: 4, stun: 16 }, hook: { dmg: 6, down: 1 }, uppercut: { dmg: 8, down: 1, lift: 5.0 }, jkick: { dmg: 6, down: 1 },
-  tpunch: { dmg: 5, stun: 16 }, special: { dmg: 5, down: 1 }, bpunch: { dmg: 8, stun: 16 }, bcharge: { dmg: 10, down: 1 },
+  tpunch: { dmg: 5, stun: 16 }, tpunch2: { dmg: 5, stun: 16 }, tpunch3: { dmg: 6, stun: 16 }, sstab: { dmg: 5, stun: 14 }, special: { dmg: 5, down: 1 }, bpunch: { dmg: 8, stun: 16 }, bcharge: { dmg: 10, down: 1 },
   rslash1: { dmg: 4, stun: 14 }, rslash2: { dmg: 4, stun: 14 }, rslash3: { dmg: 6, down: 1 }, rdive: { dmg: 7, down: 1 }, kslam: { dmg: 8, down: 1 },
   wpipe: { dmg: 8, down: 1 }, wknife: { dmg: 5, stun: 14 },
 };
@@ -166,10 +169,10 @@ const GRAB_X = 24, GRAB_Y = 6, GRAB_MAX = 120, GRAB_HITS = 3, GRAB_DMG = 3, THRO
 const ITEM = { apple: { heal: 10 }, chicken: { heal: 30 }, money: { pts: 1000 }, oneup: { life: 1 }, pipe: { weapon: 'wpipe', uses: 8, name: 'PIPE' }, knife: { weapon: 'wknife', uses: 12, name: 'KNIFE' } };
 const PROP_BOX = { crate: [-14, -30, 14, 0], barrel: [-12, -34, 12, 0], bin: [-12, -36, 12, 0] }, PROP_HP = 8;
 // The stages: scenes (far, middle, floor: BG2, BG1, BG0), the sky gradient, the song, the thugs' health and shirt colour, the waves
-// (the camera locks at x and n thugs come in; boss: BULL or RAZOR comes with them) and the props with what is inside. Section 6 of the spec.
+// (the camera locks at x and n thugs come in, k of them Slashers; boss: the stage's boss comes with them) and the props with what is inside. Section 6 of the spec.
 const STAGES = [
   { name: 'THE STREET', scenes: ['city', 'fence', 'ground'], sky: 'sky', song: SONG.play, width: 1024, thugHp: 20, thugCoat: 6, boss: 'bull',
-    waves: [{ x: 0, n: 2 }, { x: 300, n: 3 }, { x: 560, n: 3 }, { x: 768, n: 4 }, { x: 768, n: 2, boss: true }],
+    waves: [{ x: 0, n: 2 }, { x: 300, n: 3 }, { x: 560, n: 3 }, { x: 768, n: 4, k: 1 }, { x: 768, n: 2, boss: true }],
     props: [                                                      // where they stand in the street, and what is inside
   { x: 170, y: 178, kind: 'crate', item: 'apple' }, { x: 226, y: 196, kind: 'barrel', item: 'pipe' },
   { x: 420, y: 170, kind: 'bin', item: 'chicken' }, { x: 470, y: 200, kind: 'crate', item: 'money' },
@@ -177,7 +180,7 @@ const STAGES = [
   { x: 860, y: 192, kind: 'bin', item: 'chicken' }, { x: 930, y: 176, kind: 'crate', item: 'oneup' },
 ] },
   { name: 'THE DOCKS', scenes: ['harbour', 'dock', 'planks'], sky: 'night', song: SONG.docks, width: 1024, thugHp: 26, thugCoat: 7, boss: 'razor',
-    waves: [{ x: 0, n: 3 }, { x: 300, n: 3 }, { x: 560, n: 4 }, { x: 768, n: 5 }, { x: 768, n: 2, boss: true }],
+    waves: [{ x: 0, n: 3 }, { x: 300, n: 3, k: 1 }, { x: 560, n: 4, k: 2 }, { x: 768, n: 5, k: 2 }, { x: 768, n: 2, boss: true }],
     props: [
       { x: 150, y: 184, kind: 'barrel', item: 'knife' }, { x: 215, y: 168, kind: 'crate', item: 'apple' },
       { x: 410, y: 196, kind: 'bin', item: 'chicken' }, { x: 455, y: 172, kind: 'barrel', item: 'pipe' },
@@ -185,7 +188,7 @@ const STAGES = [
       { x: 850, y: 186, kind: 'bin', item: 'chicken' }, { x: 920, y: 174, kind: 'crate', item: 'apple' },
     ] },
   { name: 'THE ROOFTOP', scenes: ['skyline', 'roofs', 'deck'], sky: 'dawn', song: SONG.roof, width: 1024, thugHp: 32, thugCoat: 3, boss: 'king',
-    waves: [{ x: 0, n: 4 }, { x: 300, n: 4 }, { x: 560, n: 5 }, { x: 768, n: 6 }, { x: 768, n: 2, boss: true }],
+    waves: [{ x: 0, n: 4, k: 1 }, { x: 300, n: 4, k: 2 }, { x: 560, n: 5, k: 3 }, { x: 768, n: 6, k: 3 }, { x: 768, n: 2, k: 1, boss: true }],
     props: [
       { x: 140, y: 176, kind: 'crate', item: 'pipe' }, { x: 230, y: 196, kind: 'barrel', item: 'apple' },
       { x: 400, y: 168, kind: 'bin', item: 'chicken' }, { x: 480, y: 188, kind: 'crate', item: 'knife' },
@@ -251,13 +254,13 @@ const heroes = () => players.filter((h) => !h.out);                   // the one
 
 function mkFighter(kind, x, y, hp) {
   return { kind, x, y, h: 0, vx: 0, vz: 0, face: 1, anim: 'idle', fi: 0, ft: 0, hp, hits: [], conn: false, connT: 99, queue: false, queueUp: false,
-    pad: 0, lives: 0, score: 0, out: false, flash: 0, tier: 3, maxhp: hp, type: kind === 'boss' ? 'bull' : '', retreat: 0, vy: 0, weapon: null, grab: null, gt: 0, gcount: 0, held: null, thrown: null, hitBy: [], inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
+    pad: 0, lives: 0, score: 0, out: false, flash: 0, tier: 3, maxhp: hp, type: kind === 'boss' ? 'bull' : '', v: 0, retreat: 0, vy: 0, weapon: null, grab: null, gt: 0, gcount: 0, held: null, thrown: null, hitBy: [], inv: 0, lie: 0, dying: false, ai: 'enter', cool: 40, token: false, tokenT: 0, seed: 0 };
 }
 
 // --- Animations and boxes ---
 
 // The sound each animation starts with (a swing of the fist or the foot, a jump).
-const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, bpunch: SFX.swing, bcharge: SFX.slam, rslash1: SFX.swing, rslash2: SFX.swing, rslash3: SFX.swing, kslam: SFX.swing, rleap: SFX.jump, jump: SFX.jump, special: SFX.swing, wpipe: SFX.swing, wknife: SFX.swing, uppercut: SFX.swing };
+const CUE = { punch1: SFX.swing, punch2: SFX.swing, hook: SFX.swing, jkick: SFX.swing, tpunch: SFX.swing, tpunch2: SFX.swing, tpunch3: SFX.swing, sstab: SFX.swing, bpunch: SFX.swing, bcharge: SFX.slam, rslash1: SFX.swing, rslash2: SFX.swing, rslash3: SFX.swing, kslam: SFX.swing, rleap: SFX.jump, jump: SFX.jump, special: SFX.swing, wpipe: SFX.swing, wknife: SFX.swing, uppercut: SFX.swing };
 function setAnim(f, name) { if (CUE[name] !== undefined) fx(CUE[name]); f.anim = name; f.fi = 0; f.ft = 0; f.hits = []; f.conn = false; f.connT = 99; f.queue = false; f.queueUp = false; }
 const BOSS_ANIM = BULL_ANIM;
 const animOf = (f) => (f.kind === 'boss' ? { bull: BULL_ANIM, razor: RAZOR_ANIM, king: KING_ANIM }[f.type] : ANIM)[f.anim];
@@ -310,7 +313,7 @@ function knockDown(f, dir, by, lift) {
   f.h = Math.max(f.h, 0.1); f.lie = 0;
   if (f.hp <= 0 && !f.dying) {
     f.dying = f.kind !== 'hero';
-    if (f.dying) { if (by && by.kind === 'hero') by.score += f.kind === 'boss' ? BOSS[f.type].points : 100; fx(SFX.point); if (f.kind === 'boss') spawnItem(BOSS[f.type].drop, f.x, f.y); }
+    if (f.dying) { if (by && by.kind === 'hero') by.score += f.kind === 'boss' ? BOSS[f.type].points : f.type === 'knife' ? 150 : 100; fx(SFX.point); if (f.kind === 'boss') spawnItem(BOSS[f.type].drop, f.x, f.y); else if (f.type === 'knife') spawnItem('knife', f.x, f.y, 6); }
   }
 }
 
@@ -502,7 +505,9 @@ function spawnWave(w) {
   const n = w.n + (heroes().length > 1 ? 1 : 0);                      // one more thug for two heroes
   for (let i = 0; i < n; i++) {
     const side = (i + wave) % 2 === 0 ? -1 : 1;                      // from the left edge, or from the right
-    const t = mkFighter('thug', side < 0 ? cam - 24 - i * 10 : cam + 280 + i * 10, rndi(LANE_TOP + 4, LANE_BOT - 4), ST.thugHp);
+    const knife = i < (w.k || 0);                                    // the first k are Slashers (the extra thug for two heroes is a plain one)
+    const t = mkFighter('thug', side < 0 ? cam - 24 - i * 10 : cam + 280 + i * 10, rndi(LANE_TOP + 4, LANE_BOT - 4), knife ? knifeHp() : ST.thugHp);
+    t.v = stage; t.type = knife ? 'knife' : '';
     t.face = -side; t.anim = 'walk'; t.cool = rndi(40, 90);
     enemies.push(t);
   }
@@ -515,6 +520,11 @@ function spawnWave(w) {
 }
 
 const tokens = () => enemies.filter((e) => e.token).length;
+// The thugs, by stage (t.v = the stage): a quicker wind-up, a shorter wait, a faster walk; the Slasher is fast, fragile and lunges from range.
+const knifeHp = () => Math.round(ST.thugHp * 0.6);
+const attackAnim = (t) => (t.type === 'knife' ? 'sstab' : ['tpunch', 'tpunch2', 'tpunch3'][t.v]);
+const THUG_WAIT = [[60, 120], [50, 100], [40, 85]], THUG_SPEED = [0.8, 0.9, 1.0];
+const thugWait = (t) => (t.type === 'knife' ? rndi(50, 90) : rndi(THUG_WAIT[t.v][0], THUG_WAIT[t.v][1]));
 const maxTokens = () => (heroes().length > 1 ? 3 : 2);              // thugs that may attack at once
 /** The hero a thug goes for: the nearest one who is still on his feet (any, if all are down). */
 function target(t) {
@@ -529,10 +539,13 @@ function updateThug(t) {
   if (updateShared(t) || t.ai === 'dummy') return;                   // (a dummy is a punching bag for the tests)
   if (!heroes().length) return;
   const p = target(t);
-  if (t.anim === 'tpunch') {
-    if (stepAnim(t)) { setAnim(t, 'walk'); t.token = false; t.cool = rndi(60, 120); }
+  const knife = t.type === 'knife';
+  if (t.anim === attackAnim(t)) {
+    if (knife && t.fi === 1) { t.x += t.face * 3.5; t.x = Math.max(cam + 12, Math.min(cam + 244, t.x)); }   // the lunge
+    if (stepAnim(t)) { setAnim(t, 'walk'); t.token = false; t.cool = thugWait(t); if (knife) t.retreat = 14; }
     return;
   }
+  if (t.retreat > 0) { t.retreat--; t.x = Math.max(cam + 16, Math.min(cam + 240, t.x - t.face * 2.5)); if (t.anim !== 'walk') setAnim(t, 'walk'); return; }   // the Slasher hops back
   if (t.cool > 0) t.cool--;
   let tx, ty;
   if (t.ai === 'enter') {                                            // walk in from off the screen
@@ -543,18 +556,20 @@ function updateThug(t) {
     const side = t.x >= p.x ? 1 : -1;
     if (!t.token && t.cool <= 0 && tokens() < maxTokens() && p.hp > 0 && p.anim !== 'down') { t.token = true; t.tokenT = 0; }
     if (t.token && ++t.tokenT > 300) { t.token = false; t.cool = 60; }
-    const gap = t.token ? 36 : 85;
+    const gap = t.token ? (knife ? 70 : 36) : (knife ? 110 : 85);
     tx = p.x + side * gap; ty = p.y;
     if (!t.token) ty = Math.max(LANE_TOP, Math.min(LANE_BOT, p.y + (enemies.indexOf(t) % 3 - 1) * 16));   // those waiting spread across the lane
     if (tx < cam + 16 || tx > cam + 240) tx = p.x - side * gap;   // never wait off the screen: use the hero's other side
   }
   const mx = tx - t.x, my = ty - t.y;
   const walking = Math.abs(mx) > 2 || Math.abs(my) > 2;
-  if (walking) { t.x += Math.sign(mx) * Math.min(0.8, Math.abs(mx)); t.y += Math.sign(my) * Math.min(0.6, Math.abs(my)); }
+  const sp = THUG_SPEED[t.v] * (knife ? 1.5 : 1);
+  if (walking) { t.x += Math.sign(mx) * Math.min(sp, Math.abs(mx)); t.y += Math.sign(my) * Math.min(sp * 0.75, Math.abs(my)); }
   t.y = Math.max(LANE_TOP, Math.min(LANE_BOT, t.y)); t.x = Math.max(cam - 60, Math.min(cam + 316, t.x));
   if (t.ai === 'fight') t.face = p.x >= t.x ? 1 : -1;
   else t.face = Math.sign(mx) || t.face;
-  if (t.ai === 'fight' && t.token && Math.abs(p.y - t.y) <= 6 && Math.abs(p.x - t.x) >= 26 && Math.abs(p.x - t.x) <= 44) { setAnim(t, 'tpunch'); return; }
+  const reach = knife ? [40, 100] : [26, 44];
+  if (t.ai === 'fight' && t.token && Math.abs(p.y - t.y) <= 6 && Math.abs(p.x - t.x) >= reach[0] && Math.abs(p.x - t.x) <= reach[1]) { setAnim(t, attackAnim(t)); return; }
   if (walking && t.anim !== 'walk') setAnim(t, 'walk'); else if (!walking && t.anim !== 'idle') setAnim(t, 'idle');
 }
 
@@ -849,7 +864,7 @@ function drawShadow(f) {
 function drawFighter(f) {
   if (f.inv > 0 && flr(clock / 3) % 2 === 0) return;                 // flashes while invulnerable
   if (f.dying && f.anim === 'down' && f.h === 0 && f.lie < 20 && flr(clock / 2) % 2 === 0) return;
-  const hero = f.kind === 'hero', coat = hero ? (f.pad ? 11 : 8) : ST.thugCoat, pants = hero ? 2 : 1, skin = 12, fist = f.hits.length ? GOLD : 9;
+  const hero = f.kind === 'hero', coat = hero ? (f.pad ? 11 : 8) : f.type === 'knife' ? BROWN : ST.thugCoat, pants = hero ? 2 : 1, skin = 12, fist = f.hits.length ? GOLD : 9;
   const sx = flr(f.x - cam), by = flr(f.y - f.h), d = f.face;
   if (f.anim === 'down') {                                           // lying on the ground, or flying through the air
     const air = f.h > 0 || f.vz !== 0;
@@ -865,12 +880,21 @@ function drawFighter(f) {
   rectfill(sx - 14 + lean, by - 74, 28, 36, hurt ? WHITE : coat);                              // the torso
   circfill(sx + d * 2 + lean, by - 82, 9, skin);                                                // the head
   rectfill(sx + d * 6 + lean - 1, by - 84, 3, 3, SHADOW);                                       // an eye, on the side he faces
+  if (!hero) {                                                                                   // his stage's mark: a cap (docks), dark glasses (rooftop); a Slasher's yellow bandana
+    if (f.type === 'knife') rectfill(sx - 8 + d * 2 + lean, by - 89, 18, 4, GOLD);
+    else if (f.v === 1) { rectfill(sx - 9 + d * 2 + lean, by - 92, 18, 5, NAVY); rectfill(sx + d * 8 + lean - 2, by - 88, 8, 2, NAVY); }
+    else if (f.v === 2) rectfill(sx - 7 + d * 2 + lean, by - 85, 15, 4, SHADOW);
+  }
   const fr = frameOf(f), mv = MOVE[f.anim];
   if (f.anim === 'special') {                                        // a spin: a fist out on each side while it is active
     if (fr[2]) { rectfill(sx - 58, by - 68, 14, 14, fist); rectfill(sx + 44, by - 68, 14, 14, fist); }
     else rectfill(sx + d * 14 + lean - 4, by - 70, 8, 8, skin);
   } else if (f.anim === 'grab' || f.anim === 'gpunch') {             // both hands on the thug
     rectfill(sx + d * (f.anim === 'gpunch' ? 30 : 22) - 5, by - 62, 10, 10, f.anim === 'gpunch' ? GOLD : skin);
+  } else if (f.anim === 'sstab') {                                   // the Slasher's knife: held back while he crouches, then out along the hit box
+    let tx = -d * 12, ty = -62;
+    if (fr[2]) { const b = fr[2]; tx = d * b[2]; ty = (b[1] + b[3]) / 2; }
+    line(sx + d * 8, by - 62, sx + tx, by + ty, WHITE); line(sx + d * 8, by - 63, sx + tx, by + ty - 1, WHITE); rectfill(sx + d * 8 - 4, by - 66, 8, 8, skin);
   } else if (f.anim === 'wpipe' || f.anim === 'wknife' || f.anim === 'pick') {   // the weapon is the attack: a hand on it
     rectfill(sx + d * 12 - 4, by - 68, 8, 8, skin);
   } else if (mv) {                                                          // an attack: the fist cocked, then out at the hit box
