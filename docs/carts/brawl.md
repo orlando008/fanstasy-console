@@ -205,3 +205,56 @@ hero stood at its edge, which stalled the wave for ever. Thugs now pick a spot o
 
 - Item pickups (health, score) and a second enemy kind: later.
 - Whether the real hero turns to face the screen when idle (the cheated three-quarter view): the art decides.
+
+## 17. Feature checklist (from Streets of Rage 2)
+
+What Streets of Rage 2 had, and what our game needs. **(src)** = confirmed in a web source (Giant Bomb, StrategyWiki,
+TrueAchievements, MobyGames); **(mem)** = from memory of the game, not verified. `[x]` is built, `[ ]` to do. Order of
+work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and polish.
+
+### P1: the fighting (what makes it feel like the game)
+
+- [x] Walk in a lane, three-hit combo, jump, jump kick, hit stop, knockdowns, enemy health bar shown (src: SoR2 added bars for all enemies)
+- [ ] **Grab and throw** (src): walk into a thug without being hit to grab him from the front, then A for a two-hit combo or the opposite direction plus A to throw him behind; a thrown thug hurts those he hits. Back grab when his back is to you (mem)
+- [ ] **Special attack that costs health** (src): a plain press clears the thugs ganging up on you (a spin or flip, hits both sides); a direction plus the button is a stronger single-target move. Each use takes a little health, and not when you miss everything (mem). The pad has X, Y, L and R free: the special goes on X, the back attack on Y
+- [ ] **Blitz** (src): double-tap a direction then A for a dash attack (a lunging move)
+- [ ] **Back attack** (mem): a button (Y) that hits both ways; a defensive move to get out of a surround
+- [ ] **Wake-up and knock-down rules** (mem): the hero is invulnerable while he gets up; a thrown or knocked-down thug hurts others he hits
+- [ ] **Enemy variety in behaviour**: not only more thugs, but different jobs (src: weapon users only when they spawn with them): a fast one, a heavy one that cannot be stunned by a punch, a knife man, one that shoots or breathes fire (mem)
+- [ ] **Pick-up and use of weapons** (src): stand over it and press A to pick it up, A to swing (reach and damage differ), jump + A to throw it; getting hit makes you drop it (src); enemies keep a weapon they spawned with (src)
+- [ ] **Items**: food to heal: an apple (small) and a roast chicken (large, found in a bin) (src); a money bag for 1,000 points (src, from the first game); an extra life (src, first game)
+- [ ] **Destructible scenery** (src): barrels, crates, traffic cones, bins, telephone boxes (mem) break when hit and drop a weapon, food or points; a stage places them in advance. The art needs a "whole" and a "broken" frame and a hit point or two
+
+### P2: depth
+
+- [ ] **Characters** (src): four fighters in the original sequel (Axel, Blaze, Max, Skate) differ in speed, power, reach and special moves (e.g. a charging tackle, a fireball, a diagonal leaping kick, a spin). We could start with two (a balanced one and a heavy one)
+- [ ] **Two-player co-op** (src: the original has it): a second pad joins any time; friendly fire on (mem); the camera follows both; the console has four pads, so up to two is easy
+- [ ] **Bosses** (src): a stage ends in a boss with a long health bar and his own moves (e.g. a charge, a ground pound), sometimes with thugs alongside; the bar shows
+- [ ] **Stage structure**: more than one stage (SoR2 has eight (mem)), each a different place (street, bar, ship, ...), with its own set of enemies, its own scenery and music; a stage-clear tally (score, health bonus) between them
+- [ ] **Stage hazards** (mem, not confirmed): pits, conveyor belts, an elevator that carries the fight to a new screen
+- [ ] **Level-select and options** (mem): difficulty (easy to hardest), number of lives and continues, sound test: the console's save slots can keep them
+- [ ] **Continues**: when the last life goes, a count-down screen to continue with the score reset (mem)
+- [ ] **Score extras**: a points-for-life threshold (an extra life at a score), combo score (mem)
+
+### P3: content and polish
+
+- [ ] Real fighter art, with all frames of section 5's frame table plus pick-up, grab, throw, special, blitz, weapon swings and a hurt-in-the-air pose (the art pass)
+- [ ] An intro or cut-scene screen, stage names ("Round 1") and a "GO" arrow (the arrow is built)
+- [ ] Per-stage music and a boss theme; sounds for each weapon, a grab, a throw, a special, breaking a crate, a pick-up
+- [ ] Scenery that scrolls with depth (more layers, moving lights), scripted moments (a car that drives past, a shop window that breaks)
+- [ ] Death and lose screens that match the game; a high-score table per character
+
+### What we already have that matches SoR2
+
+Walking in a lane with eight directions; a three-hit punch combo that ends in a knockdown; a jump kick; thugs that wait their turn to attack (SoR2 does the same: they circle and one or two attack at a time (mem)); camera locks with a GO arrow; a score and a top 10 table; lives with a respawn and invulnerability; a debug view of the boxes.
+
+### Suggested order
+
+1. Grab and throw, then the special attack (the two things that most change how fighting feels).
+2. Items and destructible scenery with weapons (the "picking up" the game is known for), as one step, since the crates give both.
+3. A second enemy kind, then a boss, then a second stage.
+4. Two-player co-op.
+5. The art pass for all of it.
+
+Sources: [Giant Bomb](https://www.giantbomb.com/games/3030-18122/), [TrueAchievements hints](https://www.trueachievements.com/game/Streets-of-Rage-2/walkthrough/2), [StrategyWiki (the original)](https://strategywiki.org/wiki/Streets_of_Rage/Moves_and_Controls), [MobyGames](https://www.mobygames.com/game/6633).
+
