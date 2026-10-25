@@ -393,7 +393,11 @@ and **KINGPIN** (`KING_ANIM`, his slam and rage in `updateBull`, `kingRage`, the
 `drawBoss`); a life at the start of each stage (up to 3). Tests: `10-king.mjs`, and `08-stages.mjs` follows the three stages.
 A comment that swallowed a closing brace in the stage-2 step was found by the tests at once.
 
-**Results:** see the sweep below.
+**Results:** `sweep.mjs brawl --seeds 4`, all three stages: no stuck runs. **A skilled pair of bots beat the whole game 1 time in 4** (and reached
+stage 3 in 2 of the 4 runs); a one-hero bot reaches stage 1 or 2 and dies there (0 of 8 won); the unskilled pair reached stage 3 once.
+The bots do not use the uppercut, the grab, weapons or items, so this is a low bar for the game's difficulty and a fair test that
+nothing can stall; **hand play decides the balance**. If it is too hard: more lives at each stage start, less health for the bosses (RAZOR
+90, KINGPIN 160), smaller waves. If it is too easy: the opposite.
 
 ### Built and results: the second stage
 
