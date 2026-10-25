@@ -81,6 +81,13 @@ const press2 = (vm, pad, name) => { const m = M(name); if (pad) two(vm, 0, m); e
   b.x = 430; b.inv = 0; b.anim = 'idle'; p.setAnim(a, 'hook'); a.hits = []; vm.run(30); ok(b.anim !== 'down' || b.h === 0, 'nor does it leave him stuck anywhere');
 }
 
+// Heroes do not stand on each other either.
+{
+  const vm = newGame(1, { players: 2 }), p = vm.probe(); vm.run(2); p.enemies = []; p.locked = false; p.wave = 4; p.cam = 300;
+  const [a, b] = p.players; a.x = 400; a.y = 180; b.x = 401; b.y = 180; run2(vm, 60, 0, 0);
+  ok(Math.max(Math.abs(a.x - b.x) / 28, Math.abs(a.y - b.y) / 14) >= 0.99, 'two heroes on one spot are pushed apart', `${a.x.toFixed(1)},${a.y.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)}`);
+}
+
 // 7. Scores and lives are separate.
 {
   const vm = newGame(2, { players: 2 }), p = vm.probe(); vm.run(2); p.enemies = []; p.locked = false; p.wave = 4; p.cam = 300;

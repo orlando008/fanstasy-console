@@ -82,6 +82,9 @@ attack hits. Real art must have its feet at the pivot and fit these boxes (or th
 - A hit lands if the attacker's hit box overlaps the target's hurt box (both in screen pixels, heights included) and their
   lane positions differ by at most **12**.
 - An attack hits each fighter once.
+- **Fighters do not stand on each other:** grounded thugs push apart from each other (a gap of 28 px across or 14 px in
+  depth), and so do the two heroes; a hero and a thug may close up. Thugs waiting their turn spread across three lanes
+  around the hero.
 
 ### Hero
 

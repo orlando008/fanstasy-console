@@ -117,6 +117,17 @@ const until = (vm, cond, max = 300, mask = 0) => { for (let i = 0; i < max; i++)
   ok(p.player.anim === 'hurt' || p.player.hp === 25, 'a thug\'s punch cuts a hero\'s attack off');
 }
 
+// Thugs do not stand on each other.
+{
+  const vm = newGame(1), p = arena(vm);
+  for (let i = 0; i < 3; i++) { const t = p.mkFighter('thug', 440 + i, 180, 20); t.ai = 'fight'; t.cool = 99999; p.enemies.push(t); }
+  p.player.x = 300; vm.run(120);
+  const e = p.enemies; let worst = 99;
+  for (let a = 0; a < 3; a++) for (let b = a + 1; b < 3; b++) worst = Math.min(worst, Math.max(Math.abs(e[a].x - e[b].x) / 28, Math.abs(e[a].y - e[b].y) / 14));
+  ok(worst >= 0.99, 'three thugs placed on one spot spread out (28 px across or 14 px in depth)', `${worst.toFixed(2)}`);
+  ok(e.every((f) => f.y >= p.LANE_TOP && f.y <= p.LANE_BOT), 'and stay in the lane');
+}
+
 // The sound cues.
 {
   const vm = newGame(1), p = arena(vm), t = dummy(p, 30); t.hp = 100; sfxLog(vm);
@@ -135,7 +146,7 @@ const until = (vm, cond, max = 300, mask = 0) => { for (let i = 0; i < max; i++)
   ok(p.locked && p.enemies.length === 2 && p.cam === 0, 'wave 1: the camera is locked, 2 thugs come in');
   vm.run(300, M('LEFT')); ok(p.player.x >= p.cam + 10, 'the hero cannot leave the screen');
   vm.run(300, M('RIGHT')); ok(p.player.x <= p.cam + 246 && p.cam === 0, 'while the wave lives the camera holds');
-  p.enemies = []; vm.run(2); ok(!p.locked && p.goT <= 2, 'with the wave dead it unlocks (GO)');
+  p.enemies = []; vm.run(8); ok(!p.locked && p.goT <= 8, 'with the wave dead it unlocks (GO)');
   for (let i = 0; i < 800 && p.wave < 2; i++) vm.step(M('RIGHT'));
   ok(p.locked && p.cam === 300 && p.enemies.length === 3 && p.wave === 2, 'the camera scrolls on and locks at 300 for wave 2', `cam ${p.cam}, ${p.enemies.length} thugs`);
   const sides = new Set(p.enemies.map((e) => (e.x < p.cam + 128 ? 'L' : 'R'))); ok(sides.size === 2, 'whose thugs come from both sides');

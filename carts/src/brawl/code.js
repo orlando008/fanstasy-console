@@ -314,17 +314,32 @@ function updateThug(t) {
     if (t.token && ++t.tokenT > 300) { t.token = false; t.cool = 60; }
     const gap = t.token ? 36 : 85;
     tx = p.x + side * gap; ty = p.y;
+    if (!t.token) ty = Math.max(LANE_TOP, Math.min(LANE_BOT, p.y + (enemies.indexOf(t) % 3 - 1) * 16));   // those waiting spread across the lane
     if (tx < cam + 16 || tx > cam + 240) tx = p.x - side * gap;   // never wait off the screen: use the hero's other side
   }
   const mx = tx - t.x, my = ty - t.y;
   const walking = Math.abs(mx) > 2 || Math.abs(my) > 2;
   if (walking) { t.x += Math.sign(mx) * Math.min(0.8, Math.abs(mx)); t.y += Math.sign(my) * Math.min(0.6, Math.abs(my)); }
   t.y = Math.max(LANE_TOP, Math.min(LANE_BOT, t.y)); t.x = Math.max(cam - 60, Math.min(cam + 316, t.x));
-  for (const o of enemies) if (o !== t && Math.abs(o.x - t.x) < 18 && Math.abs(o.y - t.y) < 8) t.x += t.x >= o.x ? 0.5 : -0.5;
   if (t.ai === 'fight') t.face = p.x >= t.x ? 1 : -1;
   else t.face = Math.sign(mx) || t.face;
   if (t.ai === 'fight' && t.token && Math.abs(p.y - t.y) <= 6 && Math.abs(p.x - t.x) >= 26 && Math.abs(p.x - t.x) <= 44) { setAnim(t, 'tpunch'); return; }
   if (walking && t.anim !== 'walk') setAnim(t, 'walk'); else if (!walking && t.anim !== 'idle') setAnim(t, 'idle');
+}
+
+/** Fighters of one side do not stand on each other: grounded thugs push apart, and so do the two heroes (a hero and a thug may close up). */
+const SEP_X = 28, SEP_Y = 14;
+function separate(list) {
+  const on = list.filter((f) => f.h === 0 && f.anim !== 'down' && f.anim !== 'getup' && f.ai !== 'dummy');
+  for (let i = 0; i < on.length; i++) {
+    for (let j = i + 1; j < on.length; j++) {
+      const a = on[i], b = on[j], dx = b.x - a.x, dy = b.y - a.y;
+      if (Math.abs(dx) >= SEP_X || Math.abs(dy) >= SEP_Y) continue;
+      const sy = dy !== 0 ? Math.sign(dy) : (i % 2 ? 1 : -1), sx = dx !== 0 ? Math.sign(dx) : (j % 2 ? 1 : -1);
+      a.y = Math.max(LANE_TOP, Math.min(LANE_BOT, a.y - sy * 0.6)); b.y = Math.max(LANE_TOP, Math.min(LANE_BOT, b.y + sy * 0.6));
+      a.x -= sx * 0.5; b.x += sx * 0.5;
+    }
+  }
 }
 
 // --- The level: the camera, the waves, the end ---
@@ -389,6 +404,7 @@ function updatePlay() {
   for (const e of enemies) updateThug(e);
   for (const h of heroes()) { checkHits(h, enemies); checkHits(h, heroes().filter((o) => o !== h)); }
   for (const e of enemies) checkHits(e, heroes());
+  separate(enemies); separate(heroes());
   enemies = enemies.filter((e) => !e.gone);
   if (state !== 'play') return;
   updateCamera();
