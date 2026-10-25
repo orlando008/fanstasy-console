@@ -12,7 +12,7 @@ const PROBE = `__expose(() => ({
   get player() { return players[0]; }, get players() { return players; }, heroes, addHero, maxTokens, target,
   get props() { return props; }, set props(v) { props = v; }, get items() { return items; }, set items(v) { items = v; }, get popups() { return popups; }, get bits() { return bits; },
   spawnItem, hitProp, dropWeapon, ITEM, PROP_HP, PROP_BOX,
-  get warnT() { return warnT; }, BOSS_HP, BOSS_POINTS, CHARGE_SPEED, BOSS_ANIM, bossHurt, spawnWave, BOSS, RAZOR_ANIM, KING_ANIM, kingRage, get enemies() { return enemies; }, set enemies(v) { enemies = v; },
+  get warnT() { return warnT; }, BOSS_HP, BOSS_POINTS, CHARGE_SPEED, BOSS_ANIM, bossHurt, spawnWave, BOSS, RAZOR_ANIM, KING_ANIM, kingRage, ROLE, fireShot, SHOT_H, get shots() { return shots; }, set shots(v) { shots = v; }, get enemies() { return enemies; }, set enemies(v) { enemies = v; },
   get cam() { return cam; }, set cam(v) { cam = v; }, get wave() { return wave; }, set wave(v) { wave = v; },
   get locked() { return locked; }, set locked(v) { locked = v; }, get hitstop() { return hitstop; }, get goT() { return goT; },
   get showBoxes() { return showBoxes; }, get rank() { return rank; }, get initials() { return initials; },

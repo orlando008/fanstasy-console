@@ -204,8 +204,35 @@ He wears a brown vest and a yellow bandana and his knife shows as a white blade.
 | Knocked out | **150 points** (a thug 100), and he **drops his knife** with 6 uses left, for a hero to pick up |
 | Grabbed or thrown | like a thug |
 
-Where they come: each wave of a stage says how many of its thugs are Slashers (`k` in `STAGES`), section 6. With two heroes the extra
-thug is a plain one.
+**The Chucker** is the first ranged enemy: he keeps his distance and throws bottles.
+
+| | |
+|---|---|
+| Looks | a dark green shirt, an orange beanie, a green bottle held up |
+| Health | **0.7 of a thug's**: 14, 18 and 22 |
+| Walks | as a thug of his stage (0.8, 0.9, 1.0 px across) |
+| Waits at | 170 px from the hero; with his turn, 150 px (the screen's edge, when the hero is in the middle), and **backs away** from a hero who closes in (he is slower than the hero: he is caught) |
+| Throw | when in the hero's lane (within 6) **90 to 210 px away**: **20 frames** with the arm back (the bottle held high), then 3 frames, then the bottle leaves his hand (a swing sound), and 16 frames of recovery; he then waits 70 to 120 frames |
+| The bottle | flies **along the floor** at **3.2 px a frame**, **14 to 26 px above it**, 10 px wide, spinning; at most 200 frames, and gone when it leaves the screen |
+| Hits | the hero in its lane (12 px) whose body reaches below 26 px (he is not in a jump): **4 damage** and a hit stun; it shatters in a shower of glass. In the air a hero is knocked down |
+| Dodging it | **step out of the lane** (more than 12 px), **jump it** (above 26 px), or **hit it**: any attack of the hero's in its lane breaks it, whatever the height (a punch at head height included, like a crate). It passes through other enemies |
+| Knocked out | 130 points |
+
+**The Lasher** is the whip user: a quick mid-range fighter who out-reaches everything the hero holds.
+
+| | |
+|---|---|
+| Looks | a cyan top, long dark hair, a brown whip |
+| Health | **0.8 of a thug's**: 16, 21 and 26 |
+| Walks | 1.1 times a thug's |
+| Waits at | 100 px from the hero; with his turn, 92 px |
+| Lash | when in the hero's lane (within 6) **60 to 112 px away**: **16 frames** with the whip drawn back (a loop behind her), a **crack** of 4 frames `[10,-72,116,-56]` (the whip is 116 px long: the pipe's reach is 84, the dash's 100), 18 frames of recovery; she then waits 70 to 120 frames |
+| Damage | 5 and a hit stun of 16 |
+| Dodging it | step out of her lane (more than 12 px) during the wind-up; or **close in** with the dash strike (it reaches 100 px) and she is at the mercy of the hero's fists |
+| Knocked out | 150 points |
+
+Where they come: each wave of a stage says how many of its thugs are Slashers (`k` in `STAGES`), Chuckers (`c`) and Lashers (`l`), in that
+order, the rest plain (section 6). With two heroes the extra thug is a plain one.
 
 ## 6. Levels or content
 
@@ -219,7 +246,7 @@ flashing GO arrow shows and it scrolls on. The hero cannot leave the screen side
 | Sky | dusk purple to a warm glow | dark teal | dawn: slate blue to pale orange to gold |
 | Thugs | thugs: red shirts, 20 health | dockhands: olive shirts and caps, 26 health | enforcers: dark suits and sunglasses, 32 health |
 | Waves (thugs) | 2, 3, 3, 4, then the boss's 2 | 3, 3, 4, 5, then the boss's 2 | 4, 4, 5, 6, then the boss's 2 |
-| Slashers among them | none, then 1 in the fourth wave | 0, 1, 2, 2, then none | 1, 2, 3, 3, then 1 with the boss |
+| Slashers, Chuckers, Lashers among them (k / c / l) | 0/0/0, 0/0/0, 0/1/0, 1/0/0, then none | 0/0/0, 1/0/0, 1/1/0, 2/0/1, then none | 1/1/0, 1/1/1, 2/1/1, 2/2/1, then 1 Slasher with the boss |
 | Props | 8: apples, a pipe, chickens, money, a knife, a 1UP | 8: two knives, a pipe, chickens, money, apples | 8: two pipes, a knife, two chickens, money, an apple, a 1UP |
 | Song | song 1 (E minor, a funk groove) | song 3 (D minor, a bounce) | song 5 (C minor, a rising dawn theme) |
 | Boss | **BULL**, a heavy (120 health): punch, charge, song 2 | **RAZOR**, quick (90): three stabs, a leap, song 4 | **KINGPIN** (160): a harder punch and charge, a ground slam to jump, a rage; song 6 |
@@ -428,6 +455,15 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
 
+### Built and results: the Chucker and the Lasher
+
+**Built:** the first projectile system (`shots`, `fireShot`, `updateShots`, `drawShot`: the bottle, the lane and height tests, the hit and the
+shatter), `ROLE` (a table of the kinds: reach, gap, speed, health, points, shirt, attack) that the Slasher now shares, `cthrow` and `wlash` in
+the frame table, the Chucker's kiting and the Lasher's reach in `updateThug`, the waves' `c` and `l`, the drawing (the beanie, the held bottle,
+the hair, the whip). Tests: `13-ranged.mjs` (and the Slasher's wave numbers in `11-enemies.mjs`). The bot jumps a bottle and steps out of the whip's lane.
+
+**Results:** see the sweep in the next note.
+
 ### Built and results: the dash strike
 
 **Built:** `ANIM.dash`, `MOVE.dash` (9, a knockdown, a lift of 4.2), `DASH_COST` and `DASH_SPEED`, the choice in `updateHero` (a held direction
@@ -534,7 +570,7 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 - [ ] **Blitz** (src): double-tap a direction then A for a dash attack (a lunging move)
 - [ ] **Back attack** (mem): a button (Y) that hits both ways; a defensive move to get out of a surround
 - [ ] **Wake-up and knock-down rules** (mem): the hero is invulnerable while he gets up; a thrown or knocked-down thug hurts others he hits
-- [x] **Enemy variety in behaviour**: built: a thug for each stage, and the Slasher, a fast knife man who drops his knife (src: weapon users only when they spawn with them). Still to do: a heavy one that cannot be stunned by a punch, one that shoots or breathes fire (mem), a whip user; and a thug who keeps his weapon and uses it for the hero to take (SoR2's enemies drop theirs when hit)
+- [x] **Enemy variety in behaviour**: built: a thug for each stage, the Slasher (a fast knife man who drops his knife), the Chucker (throws bottles from a distance) and the Lasher (a whip user) (src: weapon users only when they spawn with them). Still to do: a heavy one that cannot be stunned by a punch, one that breathes fire (mem), a jetpack flyer (mem); and a thug who keeps his weapon and uses it for the hero to take (SoR2's enemies drop theirs when hit)
 - [x] **Pick-up and use of weapons** (src): built: a pipe and a knife (A takes it, A swings it, getting hit drops it). Still to do: throwing it (Y?), more weapons (a bottle that breaks, a bat, a sword), thugs that spawn with a weapon (src)
 - [x] **Items**: built, each in its own colour: an apple (+10), a roast chicken (+30) from a bin, a money bag (1,000 points), a 1UP (src). Still to do: items that drop from thugs, items that vanish after a while (mem)
 - [x] **Destructible scenery** (src): crates, barrels and bins built (two punches, a burst of bits, the item hops out). Still to do: traffic cones and telephone boxes (mem), breakable windows; the real art needs a "whole" and a "broken" frame

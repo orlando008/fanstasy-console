@@ -31,6 +31,8 @@ function padFor(p, me, frame, skill) {
   if (me.out || me.anim === 'down' || me.anim === 'hurt') return 0;
   if (me.anim === 'grab') return frame % 8 === 0 ? M('A') : 0;      // hit the held thug (the third hit throws him)
   if (me.anim === 'gpunch') return 0;
+  const shot = p.shots.find((s) => Math.sign(s.vx) === Math.sign(me.x - s.x) && Math.abs(s.x - me.x) < 60 && Math.abs(s.x - me.x) > 20 && Math.abs(s.y - me.y) < 14);
+  if (skill >= 0.5 && shot && me.h === 0 && (me.anim === 'idle' || me.anim === 'walk')) return M('B');   // a bottle is coming along the floor: jump it
   if (!p.enemies.length) return M('RIGHT');                          // GO
   const live = p.enemies.filter((e) => !e.dying && e.anim !== 'down');
   const t = (live.length ? live : p.enemies).reduce((a, b) => (Math.abs(a.x - me.x) + 2 * Math.abs(a.y - me.y) <= Math.abs(b.x - me.x) + 2 * Math.abs(b.y - me.y) ? a : b));
@@ -43,9 +45,9 @@ function padFor(p, me, frame, skill) {
   if (skill >= 0.5 && wind) return (me.y >= boss.y ? me.y < 200 : me.y <= 158) ? M('DOWN') : M('UP');   // his wind-up: step out of his lane (his reach is 12 px)
   const close = live.filter((e) => Math.abs(e.x - me.x) < 56 && Math.abs(e.y - me.y) < 14).length;
   if (skill >= 0.5 && close >= 2 && me.hp > 12 && frame % 20 === 0 && (me.anim === 'idle' || me.anim === 'walk')) return M('X');   // surrounded: the special
-  if (skill >= 0.5 && t.kind === 'thug' && Math.abs(dy) <= 4 && Math.abs(dx) <= 34 && !/^(tpunch|sstab)/.test(t.anim) && (me.face > 0) === (dx > 0)) return dx > 0 ? M('RIGHT') : M('LEFT');   // walk into him: a grab
+  if (skill >= 0.5 && t.kind === 'thug' && Math.abs(dy) <= 4 && Math.abs(dx) <= 34 && t.type !== 'chucker' && !/^(tpunch|sstab|wlash)/.test(t.anim) && (me.face > 0) === (dx > 0)) return dx > 0 ? M('RIGHT') : M('LEFT');   // walk into him: a grab
   if (skill > 0.4 && /^tpunch/.test(t.anim) && t.fi === 0 && Math.abs(dx) < 70 && Math.abs(dy) < 14) return dx > 0 ? M('LEFT') : M('RIGHT'); // back off
-  if (skill >= 0.5 && t.anim === 'sstab' && t.fi === 0 && Math.abs(dx) < 110 && Math.abs(dy) < 14) return (me.y >= t.y ? me.y < 200 : me.y <= 158) ? M('DOWN') : M('UP');   // the Slasher is crouching: out of his lane
+  if (skill >= 0.5 && (t.anim === 'sstab' || t.anim === 'wlash') && t.fi === 0 && Math.abs(dx) < 140 && Math.abs(dy) < 14) return (me.y >= t.y ? me.y < 200 : me.y <= 158) ? M('DOWN') : M('UP');   // the Slasher is crouching: out of his lane
   if (skill >= 0.5 && t.kind === 'boss' && Math.abs(dy) <= 5 && Math.abs(dx) >= 56 && Math.abs(dx) <= 100 && me.hp > 12 && frame % 25 === 0 && (me.anim === 'idle' || me.anim === 'walk')) return (dx > 0 ? M('RIGHT') : M('LEFT')) | M('X');   // a boss in a line, a little way off: the dash
   let m = 0;
   if (Math.abs(dy) > 4) m |= dy > 0 ? M('DOWN') : M('UP');

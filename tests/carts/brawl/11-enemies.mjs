@@ -33,16 +33,16 @@ const mk = (p, x, { v = 0, knife = false, ai = 'fight', hp = 20 } = {}) => { con
   const counts = (s) => s.waves.map((w) => w.k || 0);
   const vm = newGame(1), p = vm.probe(); vm.run(2);
   ok(counts(p.STAGES[0]).join() === '0,0,0,1,0', 'the street has one, in the last wave before the boss');
-  ok(counts(p.STAGES[1]).join() === '0,1,2,2,0', 'the docks have more, from the second wave');
-  ok(counts(p.STAGES[2]).join() === '1,2,3,3,1', 'the rooftop a lot, and one with the boss');
-  p.loadStage(1); p.enemies = []; p.wave = 2; p.cam = 560; p.locked = false; vm.run(4);
+  ok(counts(p.STAGES[1]).join() === '0,1,1,2,0', 'the docks have more, from the second wave');
+  ok(counts(p.STAGES[2]).join() === '1,1,2,2,1', 'the rooftop a lot, and one with the boss');
+  p.loadStage(1); p.enemies = []; p.wave = 3; p.cam = 768; p.locked = false; vm.run(4);
   const ks = p.enemies.filter((e) => e.type === 'knife');
-  ok(p.locked && p.enemies.length === 4 && ks.length === 2, 'a wave with k = 2 brings 2 Slashers among its 4', `${ks.length} of ${p.enemies.length}`);
+  ok(p.locked && p.enemies.length === 5 && ks.length === 2, 'a wave with k = 2 brings 2 Slashers among its 5 (and a Lasher)', `${ks.length} of ${p.enemies.length}`);
   ok(ks.every((e) => e.maxhp === 16 && e.v === 1), 'with 0.6 of a thug\'s health (16 of the docks\' 26)', `${ks[0].maxhp}`);
 }
 {
-  const vm = newGame(1, { players: 2 }), p = vm.probe(); vm.run(2); p.loadStage(1); p.enemies = []; p.wave = 2; p.cam = 560; p.locked = false; p.players[0].x = 600; p.players[1].x = 620; vm.run(4);
-  ok(p.enemies.length === 5 && p.enemies.filter((e) => e.type === 'knife').length === 2, 'with two heroes the extra thug is a plain one', `${p.enemies.length}`);
+  const vm = newGame(1, { players: 2 }), p = vm.probe(); vm.run(2); p.loadStage(1); p.enemies = []; p.wave = 3; p.cam = 768; p.locked = false; p.players[0].x = 800; p.players[1].x = 820; vm.run(4);
+  ok(p.enemies.length === 6 && p.enemies.filter((e) => e.type === 'knife').length === 2 && p.enemies.filter((e) => e.type === '').length === 3, 'with two heroes the extra thug is a plain one', `${p.enemies.length}`);
 }
 
 // 3. The Slasher.
