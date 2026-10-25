@@ -359,6 +359,19 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
 
+### Built and results: the second stage
+
+**Built:** the stage system (`STAGES`, `loadStage`, the stage-clear screen, the banner, the hero's return when he was out), stage 2
+(the docks: the art in `art.py`, 106 tiles, palettes 4 to 6; the song; thugs of 26 health in grey; bigger waves), RAZOR (his
+animation table, `updateRazor`, `drawRazor`), song 4 for him, and the **comment stripper** (the code had grown to 63 KB of the 64 KB
+limit; the packed cart is now 50 KB: `"strip": true` in `meta.json`, `tools/devkit/strip.mjs`, `tests/console/strip.mjs`, in CI). Tests:
+`08-stages.mjs`, `09-razor.mjs` (and the older ones follow the stage clear going to the stage-clear screen).
+
+**Results:** `sweep.mjs brawl --seeds 3`: no stuck runs. A one-hero bot reaches stage 2 in about half its runs and **has not yet won it**
+(0 of 6); two skilled bots win both stages 2 times in 3. So **stage 2 is hard for a bot that arrives with few lives**: lives are not
+refilled between stages. That is the first thing to tune after hand play: options are +1 life at each stage start (up to 3),
+easier waves, or RAZOR with less health.
+
 ### Built and results: the boss
 
 **Built:** BULL (section 7): `BOSS_ANIM` (bigger boxes), `updateBoss` (enter, punch, charge, wall stun), `bossHurt` (armour and the
