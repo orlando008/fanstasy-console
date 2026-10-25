@@ -301,6 +301,18 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
 
+### Built and results: the boss
+
+**Built:** BULL (section 7): `BOSS_ANIM` (bigger boxes), `updateBoss` (enter, punch, charge, wall stun), `bossHurt` (armour and the
+two knockdown tiers), the boss wave in `LEVEL`, the WARNING banner, the bottom health bar, song 2, `drawBoss`. A comment that
+swallowed two statements in `knockDown` (from the uppercut step) was found and fixed. Tests: `07-boss.mjs`.
+
+**Results:** the bot (`sweep.mjs brawl --seeds 6`) wins **33% (one hero, no skill), 50% (one hero, skill 1), 17% and 33% with two
+heroes**; no stuck runs. It loses by trading blows with a punch he winds up for 22 frames: the skilled bot sidesteps (the
+punch reaches 12 px across lanes) and wins more often. A human with the uppercut, the grab and the special should do better, so
+the numbers stay for now (120 health, 168 with two heroes); to tune after hand play: his wait between punches (40 to 80
+frames), his health, and the escort.
+
 ### Built and results: two-player co-op
 
 **Built:** a `players` array (each hero has `pad`, `lives`, `score`, `out`); `btn(b, pad)` for the second pad; joining by A
