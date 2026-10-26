@@ -363,17 +363,114 @@ const hasCareer = () => dget(S.seed) !== 0;
 function newCareer(seed, t) {
   SEED = seed; ME = t; YEAR = 0; ENT.clear(); resetLeague();
   for (let i = 2; i < 10; i++) dset(i, 0);
-  dset(S.seed, seed); dset(S.team, t); dset(S.year, 0); saveEntries();
+  for (let i = 40; i < 75; i++) dset(i, 0);
+  dset(S.seed, seed); dset(S.team, t); dset(S.year, 0); saveEntries(); TALLY = [0, 0, 0, 0, 0, 0]; resetSeason(); saveSeason();
 }
-function loadCareer() { SEED = dget(S.seed); ME = dget(S.team); YEAR = dget(S.year); loadEntries(); }
-function setYear(y) { YEAR = clamp(y, 0, MAX_YEAR); dset(S.year, YEAR); }
+function loadCareer() { SEED = dget(S.seed); ME = dget(S.team); YEAR = dget(S.year); loadEntries(); loadSeason(); }
+function setYear(y) { YEAR = clamp(y, 0, MAX_YEAR); dset(S.year, YEAR); resetSeason(); saveSeason(); }
+
+// --- The season (section 5): 58 games a team, then the playoffs; results are kept in the save (slots 40 to 74) ---
+// The schedule is a closed form (two round robins of 29 days, shuffled); every game is playGame with a seed from (seed, year, day, home).
+
+const DAYS = 58, S_REC = 40, S_PO = 57, S_PR = 62, S_CHAMP = 63, S_TALLY = 65, S_BITS = 72, HOMEG = [1, 1, 0, 0, 1, 0, 1];
+let DAY = 0, PHASE = 0, WINS = [], LOSS = [], PT = [], PW = [], PRD = 0, CHAMP = -1, MYW = [], TALLY = [0, 0, 0, 0, 0, 0], lastRes = '';   // PHASE: 0 the season, 1 the playoffs, 2 the offseason
+const confOf = (t) => (t < 15 ? 0 : 1);
+function shuffle(n, seed) { const a = Array.from({ length: n }, (_, i) => i), r = stream(seed); for (let i = n - 1; i > 0; i--) { const j = r(i + 1), x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
+let SCH = null, SCHKEY = -1;
+/** The 15 games of a regular-season day: [home, away]. */
+function pairs(day) {
+  const key = SEED * 100 + YEAR;
+  if (SCHKEY !== key) { SCHKEY = key; SCH = { P: shuffle(NT, hash(SEED, YEAR, 5)), O: shuffle(DAYS, hash(SEED, YEAR, 6)) }; }
+  const n = SCH.O[day], r = n % 29, leg = n >= 29 ? 1 : 0, P = SCH.P, out = [[P[29], P[r]]];
+  for (let k = 1; k < 15; k++) out.push([P[(r + k) % 29], P[(r - k + 29) % 29]]);
+  return out.map((g, i) => (((hash(SEED, YEAR, r, i) & 1) ^ leg) ? [g[1], g[0]] : g));
+}
+const standCmp = (a, b) => WINS[b] - WINS[a] || (hash(SEED, YEAR, a, 5) % 1000) - (hash(SEED, YEAR, b, 5) % 1000) || a - b;
+const standing = (c) => Array.from({ length: NT }, (_, t) => t).filter((t) => c < 0 || confOf(t) === c).sort(standCmp);
+const better = (a, b) => (standCmp(a, b) < 0 ? a : b);
+
+function resetSeason() {
+  WINS = new Array(NT).fill(0); LOSS = new Array(NT).fill(0); DAY = 0; PHASE = 0; PT = []; PW = []; PRD = 0; CHAMP = -1; MYW = new Array(DAYS).fill(0); lastRes = '';
+}
+function saveSeason() {
+  dset(S.day, DAY); dset(S.phase, PHASE); dset(S_PR, PRD); dset(S_CHAMP, CHAMP + 1);
+  for (let i = 0; i < 15; i++) dset(S_REC + i, WINS[2 * i] | (LOSS[2 * i] << 6) | (WINS[2 * i + 1] << 12) | (LOSS[2 * i + 1] << 18));
+  for (let i = 0; i < 3; i++) { let v = 0; for (let k = 0; k < 6; k++) v |= (PT[i * 6 + k] || 0) << (k * 5); dset(S_PO + i, v); }
+  for (let i = 0; i < 2; i++) { let v = 0; for (let k = 0; k < 4; k++) { const w = PW[i * 4 + k] || [0, 0]; v |= (w[0] | (w[1] << 3)) << (k * 6); } dset(S_PO + 3 + i, v); }
+  TALLY.forEach((v, i) => dset(S_TALLY + i, v));
+  for (let i = 0; i < 2; i++) { let v = 0; for (let k = 0; k < 29; k++) if (MYW[i * 29 + k] === 1) v |= 1 << k; dset(S_BITS + i, v); }
+}
+function loadSeason() {
+  resetSeason(); DAY = dget(S.day); PHASE = dget(S.phase); PRD = dget(S_PR); CHAMP = dget(S_CHAMP) - 1;
+  for (let i = 0; i < 15; i++) { const v = dget(S_REC + i); WINS[2 * i] = v & 63; LOSS[2 * i] = (v >> 6) & 63; WINS[2 * i + 1] = (v >> 12) & 63; LOSS[2 * i + 1] = (v >> 18) & 63; }
+  const n = PHASE === 1 ? 16 >> PRD : 0;
+  for (let i = 0; i < n; i++) PT.push((dget(S_PO + ((i / 6) | 0)) >> ((i % 6) * 5)) & 31);
+  for (let i = 0; i < n / 2; i++) { const v = (dget(S_PO + 3 + (i >> 2)) >> ((i & 3) * 6)) & 63; PW.push([v & 7, v >> 3]); }
+  TALLY = TALLY.map((_, i) => dget(S_TALLY + i));
+  for (let d = 0; d < Math.min(DAY, DAYS); d++) MYW[d] = (dget(S_BITS + (d >= 29 ? 1 : 0)) >> (d % 29)) & 1 ? 1 : 2;
+}
+
+const seriesOf = (t) => { const k = PT.indexOf(t); return k < 0 ? -1 : k >> 1; };
+const seriesOpen = (i) => PW[i][0] < 4 && PW[i][1] < 4;
+/** The GM's game today: [home, away] or null (no game, or out of the playoffs). */
+function myGame() {
+  if (PHASE === 0) return pairs(DAY).find((g) => g.includes(ME)) || null;
+  const i = PHASE === 1 ? seriesOf(ME) : -1;
+  if (i < 0 || !seriesOpen(i)) return null;
+  const a = PT[2 * i], b = PT[2 * i + 1], hi = better(a, b);
+  const h = HOMEG[PW[i][0] + PW[i][1]] ? hi : hi === a ? b : a;
+  return h === a ? [a, b] : [b, a];
+}
+function seedPlayoffs() {
+  PT = []; PW = new Array(8).fill(0).map(() => [0, 0]); PRD = 0;
+  for (let c = 0; c < 2; c++) { const top = standing(c).slice(0, 8); for (const k of [0, 7, 3, 4, 2, 5, 1, 6]) PT.push(top[k]); }
+}
+/** A day is played a game at a time (a sim spends one game on a frame): beginDay lists the games, playOne plays the next, endDay closes the day and returns the GM's game (the full box score) or null. */
+let todo = [], mineG = null;
+function beginDay() {
+  mineG = null; todo = [];
+  if (PHASE === 0) for (const [h, a] of pairs(DAY)) todo.push([h, a, -1]);
+  else for (let i = 0; i < PT.length / 2; i++) if (seriesOpen(i)) {
+    const a = PT[2 * i], b = PT[2 * i + 1], hi = better(a, b), h = HOMEG[PW[i][0] + PW[i][1]] ? hi : hi === a ? b : a;
+    todo.push([h, h === a ? b : a, i]);
+  }
+}
+function playOne() {
+  const [h, a, i] = todo.shift(), g = playGame(YEAR, h, a, hash(SEED, YEAR * 1000 + DAY, h, a + 64 * PHASE) | 1), hw = g.score[0] > g.score[1];
+  if (i < 0) { WINS[hw ? h : a]++; LOSS[hw ? a : h]++; } else PW[i][(hw ? h : a) === PT[2 * i] ? 0 : 1]++;
+  if (h === ME || a === ME) {
+    mineG = g;
+    const home = h === ME, my = g.score[home ? 0 : 1], op = g.score[home ? 1 : 0];
+    if (i < 0) MYW[DAY] = my > op ? 1 : 2;
+    lastRes = `${my > op ? 'W' : 'L'} ${my}-${op} ${home ? 'vs' : '@'} ${team(home ? a : h).nick}`;
+  }
+}
+function endDay() {
+  if (PHASE === 0) { if (++DAY >= DAYS) { PHASE = 1; seedPlayoffs(); } }
+  else { DAY++; if (PW.every((w) => w[0] === 4 || w[1] === 4)) endRound(); }
+  return mineG;
+}
+function advanceDay() { beginDay(); while (todo.length) playOne(); return endDay(); }
+function endRound() {
+  const win = PW.map((w, i) => PT[2 * i + (w[0] === 4 ? 0 : 1)]), mi = seriesOf(ME);
+  if (mi >= 0) {
+    if (PRD === 2) TALLY[2]++;
+    if (PRD === 3) TALLY[1]++;
+    if (win[mi] === ME) { TALLY[3]++; if (PRD === 3) TALLY[0]++; }
+  }
+  PRD++;
+  if (PRD === 4) { CHAMP = win[0]; PHASE = 2; PT = []; PW = []; TALLY[4] += WINS[ME]; TALLY[5] += LOSS[ME]; }
+  else { PT = win; PW = win.filter((_, i) => i % 2 === 0).map(() => [0, 0]); }
+}
+/** The legacy score of the career so far (section 9; the parts that exist so far). */
+const legacy = () => TALLY[0] * 100 + TALLY[1] * 30 + TALLY[2] * 10 + TALLY[3] * 3 + Math.max(0, (TALLY[4] - TALLY[5]) >> 1);
 
 // --- State ---
 
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null, score = 0;
-let pickOpp = false, G = null, gi = 0, gSpeed = 0, gWait = 0, boxTeam = 0, boxView = 0, hubSel = 0, newSel = 0, newSeed = 1, rows = [], sel = 0, view = 0, viewTeam = 0, backTo = 'hub', newRows = null;
+let G = null, gi = 0, gSpeed = 0, gWait = 0, boxTeam = 0, boxView = 0, hubSel = 0, newSel = 0, newSeed = 1, rows = [], sel = 0, view = 0, viewTeam = 0, backTo = 'hub', newRows = null, sim = null, stView = 0;
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
@@ -397,7 +494,7 @@ function openTeam(t, from) {
   viewTeam = t; backTo = from; state = 'team'; sel = 0; view = 0;
   rows = roster(t, YEAR).map((p) => ({ p, o: ovr(p, YEAR), r: ratings(p, YEAR), c: contractAt(p, YEAR) })).sort((a, b) => b.o - a.o);
 }
-function openLeague() { state = 'league'; pickOpp = false; rows = teamRows(); sel = Math.max(0, rows.findIndex((r) => r.t === ME)); }
+function openLeague() { state = 'league'; rows = teamRows(); sel = Math.max(0, rows.findIndex((r) => r.t === ME)); }
 function openNew() { state = 'new'; timer = 0; newSeed = rndi(1, 99999); SEED = newSeed; ME = 0; YEAR = 0; ENT.clear(); resetLeague(); newRows = teamRows(); newSel = 0; }
 
 // --- Update ---
@@ -411,6 +508,9 @@ function update() {
   else if (state === 'hub') updateHub();
   else if (state === 'league') updateLeague();
   else if (state === 'team') updateTeam();
+  else if (state === 'sim') updateSim();
+  else if (state === 'standings') updateStandings();
+  else if (state === 'sched') updateSched();
   else if (state === 'live') updateLive();
   else if (state === 'box') updateBox();
   else if (state === 'over') updateOver();
@@ -446,34 +546,63 @@ function updateNew() {
   if (pressed(B)) toTitle();
   if (pressed(A)) { fx(SFX.select); startCareer(newSeed, newRows[newSel].t); }
 }
-const HUB = ['ROSTER', 'LEAGUE', 'PLAY A GAME', 'NEXT YEAR', 'RETIRE', 'QUIT TO TITLE'];
+/** The hub's menu: what the date allows. */
+function hubItems() {
+  const base = ['ROSTER', 'STANDINGS', 'SCHEDULE', 'LEAGUE', 'RETIRE', 'QUIT TO TITLE'];
+  if (PHASE === 2) return ['NEXT YEAR', ...base];
+  return [...(myGame() ? ['PLAY NEXT GAME'] : []), 'SIM DAY', 'SIM WEEK', PHASE ? 'SIM TO END' : 'SIM TO PLAYOFFS', ...base];
+}
+const HUB = hubItems;
 function updateHub() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  hubSel = menuMove(HUB.length, hubSel);
+  const items = hubItems();
+  hubSel = Math.min(hubSel, items.length - 1);
+  hubSel = menuMove(items.length, hubSel);
   if (!pressed(A)) return;
   fx(SFX.select);
-  if (hubSel === 0) openTeam(ME, 'hub');
-  else if (hubSel === 1) openLeague();
-  else if (hubSel === 2) { openLeague(); pickOpp = true; }
-  else if (hubSel === 3) setYear(YEAR + 1);
-  else if (hubSel === 4) gameOver(YEAR * 100 + strength(ME, YEAR));
+  const it = items[hubSel];
+  if (it === 'ROSTER') openTeam(ME, 'hub');
+  else if (it === 'LEAGUE') openLeague();
+  else if (it === 'STANDINGS') { state = 'standings'; stView = PHASE ? 2 : confOf(ME); sel = 0; }
+  else if (it === 'SCHEDULE') { state = 'sched'; sel = Math.min(DAY, DAYS - 1); }
+  else if (it === 'PLAY NEXT GAME') startNext();
+  else if (it === 'SIM DAY') startSim(1);
+  else if (it === 'SIM WEEK') startSim(7);
+  else if (it === 'SIM TO PLAYOFFS' || it === 'SIM TO END') startSim(999);
+  else if (it === 'NEXT YEAR') { if (YEAR >= MAX_YEAR) gameOver(legacy()); else { setYear(YEAR + 1); hubSel = 0; } }
+  else if (it === 'RETIRE') gameOver(legacy());
   else toTitle();
+}
+/** The days of a sim run a game a frame, so the screen stays alive; B stops at the end of the day. watch: the GM's game is then shown live. */
+function startSim(n, watch = false) { sim = { left: n, phase: PHASE, watch }; beginDay(); state = 'sim'; }
+function updateSim() {
+  if (pressed(B)) sim.stop = true;
+  if (todo.length) { playOne(); return; }
+  const g = endDay(); sim.left--; saveSeason();
+  if (sim.watch && g) { G = g; gi = 0; gSpeed = 0; gWait = 0; state = 'live'; boxTeam = G.home === ME ? 0 : 1; boxView = 0; sim = null; play(SONG.title); return; }
+  if (sim.stop || sim.left <= 0 || PHASE !== sim.phase) { state = 'hub'; sim = null; } else beginDay();
+}
+const startNext = () => startSim(1, true);
+function updateStandings() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (pressed(LEFT) || pressed(L)) { stView = (stView + 2) % 3; fx(SFX.move); }
+  if (pressed(RIGHT) || pressed(R)) { stView = (stView + 1) % 3; fx(SFX.move); }
+  if (pressed(B)) state = 'hub';
+}
+function updateSched() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  listMove(DAYS);
+  if (pressed(B)) state = 'hub';
 }
 function updateLeague() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   listMove(rows.length);
   if (pressed(B)) { state = 'hub'; return; }
   if (pressed(A)) {
-    if (pickOpp) { if (rows[sel].t !== ME) { fx(SFX.select); startGame(rows[sel].t); } return; }
-    fx(SFX.select); openTeam(rows[sel].t, 'league');
+      fx(SFX.select); openTeam(rows[sel].t, 'league');
   }
 }
 
-let gameCount = 0;
-/** The game night against a team: worked out at once, then shown event by event. */
-function startGame(opp) {
-  G = playGame(YEAR, ME, opp, ++gameCount); gi = 0; gSpeed = 0; gWait = 0; state = 'live'; boxTeam = 0; boxView = 0; play(SONG.title);
-}
 const SPEEDS = [14, 6, 2];
 function updateLive() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
@@ -550,6 +679,9 @@ function draw() {
   else if (state === 'hub') drawHub();
   else if (state === 'league') drawLeague();
   else if (state === 'team') drawTeam();
+  else if (state === 'sim') drawSim();
+  else if (state === 'standings') drawStandings();
+  else if (state === 'sched') drawSched();
   else if (state === 'live') drawLive();
   else if (state === 'box') drawBox();
   else if (state === 'initials') drawInitials();
@@ -587,15 +719,52 @@ function drawNew() {
   drawList(newRows.map((r) => [`${tname(r.t).slice(0, 21).padEnd(21)} ${pad(r.ovr, 2)} ${pad(Math.round(r.pay / 4), 3)}`, r.t < 15 ? CYAN : GREEN]), newSel, 36, 16);
   footer('A:PICK  X:NEW SEED  B:BACK');
 }
+const wl = (t) => `${WINS[t]}-${LOSS[t]}`;
+const phaseName = () => (PHASE === 0 ? `DAY ${DAY + 1}/${DAYS}` : PHASE === 1 ? ['ROUND 1', 'SEMIS', 'CONF FINALS', 'FINALS'][PRD] : 'OFFSEASON');
+function nextLine() {
+  const g = myGame();
+  if (PHASE === 2) return `CHAMPION ${tname(CHAMP)}`.slice(0, 29);
+  if (!g) return PHASE === 1 ? 'OUT OF THE PLAYOFFS' : 'NO GAME TODAY';
+  const home = g[0] === ME, o = home ? g[1] : g[0];
+  return `NEXT ${home ? 'vs' : '@'} ${tname(o)}`.slice(0, 29);
+}
 function drawHub() {
   header(tname(ME), `${BASE_YEAR + YEAR}`);
   panel(8, 28, 240, 62);
-  txt(`OVERALL ${strength(ME, YEAR)}   RANK ${teamRows().findIndex((r) => r.t === ME) + 1} OF ${NT}`, 16, 36, WHITE);
-  txt(`PAYROLL $${money(payroll(ME, YEAR))}M`, 16, 50, payroll(ME, YEAR) > CAP ? RED : WHITE);
-  txt(`CAP     $${money(CAP)}M`, 16, 64, DIM);
-  txt(`PLAYERS ${roster(ME, YEAR).length}`, 144, 50, WHITE);
-  HUB.forEach((s, i) => txt(`${i === hubSel ? '> ' : '  '}${s}`, 84, 106 + i * 14, i === hubSel ? WHITE : DIM));
+  txt(`${wl(ME)}  ${phaseName()}`, 16, 34, WHITE);
+  txt(`OVERALL ${strength(ME, YEAR)}  #${standing(confOf(ME)).indexOf(ME) + 1} IN ${confOf(ME) ? 'WEST' : 'EAST'}`, 16, 46, WHITE);
+  txt(nextLine(), 16, 58, GOLD);
+  txt(lastRes ? `LAST ${lastRes}`.slice(0, 29) : `PAYROLL $${money(payroll(ME, YEAR))}M`, 16, 70, lastRes ? DIM : payroll(ME, YEAR) > CAP ? RED : DIM);
+  hubItems().forEach((m, i) => txt(`${i === hubSel ? '> ' : '  '}${m}`, 84, 96 + i * 11, i === hubSel ? WHITE : DIM));
   footer('A:SELECT');
+}
+function drawSim() {
+  header('SIMULATING', phaseName());
+  panel(48, 80, 160, 52);
+  ctxt(`${wl(ME)}`, 90, WHITE); ctxt(lastRes.slice(0, 24), 104, GOLD); ctxt('B: STOP', 118, DIM);
+}
+function drawStandings() {
+  header(['EAST', 'WEST', 'PLAYOFFS'][stView], phaseName());
+  if (stView < 2) {
+    txt('   TEAM            W-L    GB', 8, 24, DIM);
+    const list = standing(stView);
+    list.forEach((t, i) => txt(`${pad(i + 1, 2)} ${team(t).nick.slice(0, 14).padEnd(14)} ${wl(t).padStart(5)} ${(i ? ((WINS[list[0]] - WINS[t] + LOSS[t] - LOSS[list[0]]) / 2).toFixed(1) : '-').padStart(5)}`, 8, 36 + i * 10 + (i > 7 ? 4 : 0), t === ME ? GOLD : i < 8 ? WHITE : DIM));
+  } else if (PHASE === 0) ctxt('THE PLAYOFFS START AFTER DAY 58', 100, DIM);
+  else if (PHASE === 2) ctxt(`CHAMPION ${tname(CHAMP)}`.slice(0, 30), 100, GOLD);
+  else {
+    txt(['FIRST ROUND', 'SEMIFINALS', 'CONFERENCE FINALS', 'FINALS'][PRD], 8, 24, DIM);
+    PW.forEach((w, i) => { const a = PT[2 * i], b = PT[2 * i + 1]; txt(`${team(a).nick.slice(0, 11).padEnd(11)} ${w[0]}-${w[1]} ${team(b).nick.slice(0, 11)}`, 8, 40 + i * 12, a === ME || b === ME ? GOLD : WHITE); });
+  }
+  footer('<>:EAST WEST PLAYOFFS  B:BACK');
+}
+function drawSched() {
+  header('SCHEDULE', wl(ME));
+  const rowsS = Array.from({ length: DAYS }, (_, d) => {
+    const g = pairs(d).find((x) => x.includes(ME)), home = g[0] === ME, o = home ? g[1] : g[0];
+    return [`${pad(d + 1, 2)} ${home ? 'vs' : '@ '} ${tname(o).slice(0, 20).padEnd(20)} ${d < DAY ? (MYW[d] === 1 ? 'W' : 'L') : ''}`, d < DAY ? DIM : d === DAY ? GOLD : WHITE];
+  });
+  drawList(rowsS, sel, 24, 18);
+  footer('B:BACK');
 }
 function drawLeague() {
   header(`LEAGUE ${BASE_YEAR + YEAR}`, 'OVR PAY');

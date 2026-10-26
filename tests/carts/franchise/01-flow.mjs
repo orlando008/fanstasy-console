@@ -1,5 +1,6 @@
 // The Franchise: Basketball Edition: the frame (title, menus, pause, the career's end, initials, records, saves) and its sound cues.
 import { newGame, M, sfxLog, musicLog } from './lib.mjs';
+import { go } from './01-flow-helpers.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 
@@ -25,15 +26,16 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 {
   const vm = newGame(2), p = vm.probe(); vm.run(3);
   ok(p.state === 'hub' && p.YEAR === 0, 'skipTitle lands in the hub, in year 0');
-  vm.press('A'); ok(p.state === 'team' && p.rows.length === 15, 'ROSTER shows the 15 players');
+  go(vm, p, 'ROSTER'); vm.press('A'); ok(p.state === 'team' && p.rows.length === 15, 'ROSTER shows the 15 players');
   ok(p.rows.every((r, i, a) => !i || a[i - 1].o >= r.o), 'best first');
   vm.press('RIGHT'); ok(p.view === 1, 'RIGHT shows the ratings'); vm.press('LEFT'); ok(p.view === 0, 'and back');
   for (let i = 0; i < 4; i++) vm.press('DOWN'); ok(p.sel === 4, 'DOWN moves the selection down the roster');
   vm.press('B'); ok(p.state === 'hub', 'B goes back to the hub');
-  vm.press('DOWN'); vm.press('A'); ok(p.state === 'league' && p.rows.length === 30, 'LEAGUE lists the 30 teams');
+  go(vm, p, 'LEAGUE'); vm.press('A'); ok(p.state === 'league' && p.rows.length === 30, 'LEAGUE lists the 30 teams');
   ok(p.rows[p.sel].t === p.ME, 'with the GM\'s team selected');
   vm.press('A'); ok(p.state === 'team' && p.rows.length > 0, 'A opens a team'); vm.press('B'); ok(p.state === 'league', 'and B comes back to the league');
-  vm.press('B'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A');
+  vm.press('B'); while (p.PHASE < 2) p.advanceDay();
+  vm.run(2); go(vm, p, 'NEXT YEAR'); vm.press('A');
   ok(p.YEAR === 1 && p.dget(p.S.year) === 1, 'NEXT YEAR moves on a year, and saves it');
 }
 
@@ -50,8 +52,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 // 4. The career's end, the top 10 and initials.
 {
   const vm = newGame(3), p = vm.probe(); vm.run(3); p.setYear(7); musicLog(vm);
-  while (p.hubSel !== p.HUB.indexOf('RETIRE')) vm.press('DOWN');
-  vm.press('A');
+  p.TALLY[0] = 7; go(vm, p, 'RETIRE'); vm.press('A');
   ok(p.state === 'over' && p.rank === 0 && p.score >= 700, 'RETIRE ends the career with a legacy score that makes the top 10', `${p.score} rank ${p.rank}`);
   ok(musicLog(vm).includes(-1), 'the music stops');
   vm.run(70); vm.press('A'); ok(p.state === 'initials', 'A asks for initials');

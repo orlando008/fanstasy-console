@@ -9,11 +9,13 @@ export const CART = fileURLToPath(new URL('../../../carts/franchise.nova', impor
 const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
   get score() { return score; }, get rank() { return rank; }, get initials() { return initials; }, get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
-  get hubSel() { return hubSel; }, HUB, get G() { return G; }, get gi() { return gi; }, get gSpeed() { return gSpeed; }, get boxTeam() { return boxTeam; }, get pickOpp() { return pickOpp; }, startGame, SPEEDS, QLEN, get sel() { return sel; }, get rows() { return rows; }, get view() { return view; }, get newRows() { return newRows; }, get newSeed() { return newSeed; },
+  get hubSel() { return hubSel; }, HUB, hubItems, get G() { return G; }, get gi() { return gi; }, get gSpeed() { return gSpeed; }, get boxTeam() { return boxTeam; }, SPEEDS, QLEN, get sel() { return sel; }, get rows() { return rows; }, get view() { return view; }, get newRows() { return newRows; }, get newSeed() { return newSeed; },
   get SEED() { return SEED; }, set SEED(v) { SEED = v; resetLeague(); }, get ME() { return ME; }, set ME(v) { ME = v; resetLeague(); }, get YEAR() { return YEAR; }, set YEAR(v) { YEAR = v; },
   get ART() { return ART; }, dget: (i) => dget(i), dset: (i, v) => dset(i, v), SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
   NT, SL, POS, RN, CAP, TAX, FLOOR, BASE_YEAR, MAX_YEAR, MANUAL, ENT, hash, stream, names, team, talentAt, overall, salaryFor, resetLeague,
   LGB, gen, mkPerson, slotAt, personById, prospect, ratings, baseR, ovr, age, contractAt, roster, payroll, strength, career, pid,
+  get DAY() { return DAY; }, get PHASE() { return PHASE; }, get WINS() { return WINS; }, get LOSS() { return LOSS; }, get PT() { return PT; }, get PW() { return PW; }, get PRD() { return PRD; }, get CHAMP() { return CHAMP; }, get TALLY() { return TALLY; }, get MYW() { return MYW; }, get lastRes() { return lastRes; }, get sim() { return sim; }, get stView() { return stView; },
+  DAYS, pairs, advanceDay, standing, legacy, saveSeason, loadSeason, resetSeason, myGame, startNext, startSim, confOf, seriesOf, advanceDay,
   playGame, setEntry, dropEntry, saveEntries, loadEntries, hasCareer, newCareer, loadCareer, setYear, teamRows, startCareer, S, ENT_COUNT, ENT_BASE, ENT_MAX,
 }));`;;
 

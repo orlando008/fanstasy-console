@@ -199,7 +199,14 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 | 1 | Last initials entered |
 | 2-9 | Career: seed, team and difficulty, year and day, phase, owner patience, cash |
 | 10-39 | Top 10 legacy scores, best first, 3 slots each: score, initials, 1 spare |
-| 40-74 | The season: the standings (30 teams of wins and losses, two to a number), the finances of the last seasons, awards and the legacy tally |
+| 40-54 | The standings: wins and losses of two teams to a number (6 bits each) |
+| 55-56 | (the day and the phase are slots 5 and 6) |
+| 57-59 | The playoff teams of the round: 5 bits each, 6 to a number |
+| 60-61 | The series' wins in the round: 3 bits for each side, 4 series to a number |
+| 62-63 | The playoff round; the champion of the year (+1) |
+| 65-70 | The career tally: titles, finals, conference finals, series won, wins, losses |
+| 72-73 | The GM's results of the season, a bit a day (1 is a win) |
+| 64, 71, 74 | Spare (finances and awards come with their steps) |
 | 75 | The number of entries |
 | 76-255 | The entries, two numbers each: **90** |
 
@@ -207,10 +214,10 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 
 | Asset | Budget |
 |---|---|
-| Code | 32.3 KB of the 64 KB limit after step 2 (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
+| Code | 41.6 KB of the 64 KB limit after step 3 (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
 | Tiles | none yet (the backdrop is one colour); the panels, the court, the portraits' frames and the emblems come with the art pass (of 1,024) |
 | Sprites | none yet (128 in OAM, 32 per line): later the game night's ten dots and the ball, a portrait or two a screen |
-| ROM | 15.0 KB of 128 KB after step 2: `league.bin` (7.0 KB: 30 teams, 450 people) and `names.bin` (8.0 KB: 369 first names, 739 last names, the cities and nicknames) |
+| ROM | 15.0 KB of 128 KB after step 3: `league.bin` (7.0 KB: 30 teams, 450 people) and `names.bin` (8.0 KB: 369 first names, 739 last names, the cities and nicknames) |
 | Songs / SFX | the starter's two songs and seven effects until the audio pass |
 
 ## 15. Implementation plan
@@ -261,6 +268,19 @@ the screens), run for five league seeds.
 
 **Results:** about 104 points a team, 47 % from the field, 36 % from three, 76 % at the line, about 95 possessions, home wins 53 %, overtime in 2 % of games, 1.7 % of players foul out, a strength point is worth about 1.0 of margin. The winning
 percentage spread is about 0.13 (the spec asked for 0.15; the test accepts 0.10 to 0.18) and the best team reaches 0.78 to 0.81. A game costs about 1.8 ms. Code is 32.3 KB, ROM unchanged.
+
+### Built and results: step 3, the season
+
+**Built:** in `code.js`, the **season** as closed forms and a small saved state. `pairs(day)` is the schedule: two round robins of 29 days (a circle method over a shuffled team order, and the days in a shuffled order, from a hash of the seed and the year), so every
+team plays every other twice, once at home, 58 games, 15 games a day. `advanceDay()` plays a day: every game is `playGame` with a seed from (seed, year, day, home), the results go into the standings, and the GM's game comes back whole for the live view.
+After day 58 the **playoffs** begin: the top 8 of each conference (wins, then a hashed tie-break), 1 against 8, 4 against 5, 3 against 6, 2 against 7, **best of seven** with the home court 2-2-1-1-1 to the better record, four rounds, the finals between the conferences;
+`endRound` counts the GM's titles, finals, conference finals and series. The **hub** is now by the date: PLAY NEXT GAME (the live view and the box score of step 2, for the day's game), SIM DAY, SIM WEEK, SIM TO PLAYOFFS (SIM TO END in the playoffs), ROSTER, STANDINGS (East, West, the
+playoff round), SCHEDULE (the 58 games, W or L), LEAGUE, RETIRE, QUIT; after the final it offers NEXT YEAR. A sim runs a game a frame on its own screen (B stops it at the end of the day), so the frame time stays low. The **legacy score** now comes from the tally
+(100 a title, 30 a finals, 10 a conference finals, 3 a series, 1 for every two wins above .500); the rest of section 9 comes with the steps that have the facts (profit, awards). The exhibition game of step 2 is gone: every game is a day's game.
+Tests: `04-season.mjs` (the schedule, 6 seasons and their playoffs, the save at every day, repeatability, the sim controls and the screens); the bot sims 25 seasons.
+
+**Results:** the schedule is exact (every pair twice, 29 home games each). Over six seasons: a winning percentage spread of 0.13, the best team at 0.78 on average (0.83 at most), a correlation of 0.88 between strength and wins, and different champions. A
+season of 870 games takes about 1.6 s of CPU, which is why a sim spends a frame on each game.
 
 ## 16. Open questions
 

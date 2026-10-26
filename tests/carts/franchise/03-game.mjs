@@ -110,11 +110,9 @@ let games = [], allRows = [];
 // 7. Playing it: the hub's PLAY A GAME, the live view, the box score.
 {
   const vm2 = newGame(3), q = vm2.probe(); vm2.run(3);
-  while (q.hubSel !== q.HUB.indexOf('PLAY A GAME')) vm2.press('DOWN');
-  vm2.press('A'); ok(q.state === 'league' && q.pickOpp, 'PLAY A GAME asks for an opponent: the league list');
-  vm2.press('A'); ok(q.state === 'league', 'your own team is not an opponent');
-  vm2.press('DOWN'); vm2.press('A'); vm2.run(2);
-  ok(q.state === 'live' && q.G.home === q.ME && q.G.away !== q.ME && q.gi >= 0, 'a team is picked: the game begins, you at home');
+  ok(q.hubItems()[0] === 'PLAY NEXT GAME', 'the hub offers the next game');
+  vm2.press('A'); vm2.run(25);
+  ok(q.state === 'live' && (q.G.home === q.ME || q.G.away === q.ME) && q.gi >= 0 && q.DAY === 1, 'A starts the game night of the day, and the day is over');
   sfxLog(vm2); vm2.run(200);
   ok(q.gi > 5 && q.gi < q.G.log.length, 'events appear as the game goes', `${q.gi} of ${q.G.log.length}`);
   ok(sfxLog(vm2).some(([n]) => n === q.SFX.point), 'a basket has a sound');
@@ -122,11 +120,10 @@ let games = [], allRows = [];
   vm2.press('A'); ok(q.gSpeed === 1, 'A makes it faster'); vm2.press('A'); vm2.press('A'); ok(q.gSpeed === 0, 'and round again');
   vm2.press('B'); ok(q.gi >= q.G.log.length, 'B skips to the end');
   vm2.press('A'); ok(q.state === 'box', 'A shows the box score');
-  vm2.press('RIGHT'); ok(q.boxTeam === 1, 'LEFT and RIGHT show the other team');
+  const b0 = q.boxTeam; vm2.press('RIGHT'); ok(q.boxTeam !== b0, 'LEFT and RIGHT show the other team');
   vm2.press('B'); ok(q.state === 'hub', 'B goes back to the hub');
   const times = [];
-  vm2.press('A'); vm2.press('DOWN'); vm2.press('A');
-  vm2.run(3);
+  vm2.press('A'); vm2.run(25);
   for (let i = 0; i < 400; i++) { vm2.step(0); times.push(vm2.m.stats.cpu); }
   times.sort((a, b) => a - b);
   ok(times[Math.floor(times.length * 0.99)] < 8 * (process.env.CI ? 3 : 1), 'the live view draws in a few milliseconds a frame', `${times[Math.floor(times.length * 0.99)].toFixed(2)} ms`);
