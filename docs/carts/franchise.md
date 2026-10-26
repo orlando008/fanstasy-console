@@ -102,16 +102,22 @@ better starting five is worth about 8 wins in 58.
 
 ### Money and the cap
 
-A **soft salary cap** of $120M (a team over it can still re-sign its own players and sign minimum contracts), a **tax line** at $150M (every $1 over is taxed $1.5), a
-**minimum payroll** of $90M. Rookie scale contracts by the draft slot (4 years). A **veteran minimum** of $1.5M. Contracts run 1 to 5 years; raises are 5 % a year.
+A **soft salary cap** of $120M (a team over it can still re-sign its own players), a **tax line** at $150M (every $1 over is taxed $1.5, paid at the end of the regular season), a **minimum payroll** of $90M (a team under it pays the
+shortfall). **The payroll rule**: the contracts that came with the league are scaled (30 to 300 %) so every team's payroll sits between the minimum and $5M under the tax line; the GM's own signings are not scaled. A **veteran minimum** of $1.5M. Contracts run 1 to 5 years.
+Rookie scale contracts by the draft slot come with step 6.
 
-**Revenue** a home game: tickets (arena of 18,000 times the **price** you set times the **demand**, a function of the team's win rate, star power and **hype**), plus
-concessions, plus a fixed TV share of $60M a season and playoff gates. **Costs**: the payroll, the tax, **scouting** ($0 to 5M), **facilities** ($0 to 5M: they raise the
-training bonus and the demand), a fixed upkeep. The **profit** goes in the owner's mood.
+**Revenue** for the GM's team (the others have none): a home game brings the **gate** (the arena's seats, about 15,000 to 20,500, times the **fill** times the ticket price) plus $18 a head of concessions; the fill is the **demand** (45, plus 0.35 times the
+market, plus 80 times the win rate above .500, plus 2 for each player of 78 or more, plus 2 for each level of facilities, plus a tenth of the owner's patience above 50) less 0.8 a dollar above $70, from 40 to 100 %, and 1.3 times that in the playoffs, when the
+tickets cost 1.5 times as much. The **TV share** is $100M a season. **Costs**: the payroll, $12M upkeep, **scouting** ($0 to 5M, for the draft in step 6) and **facilities** ($0 to 5M: they raise the demand and the chance of a training gain). The ticket price
+is 30 + 10 a level, 0 to 10 (the best price is about $50 to $60 for a middling team, higher for a star team). Money moves a day at a time (the TV share and the costs) and with each home game (the gate); the tax and the shortfall at the end of the season.
 
-**Owner patience** (0 to 100, starts at 60): +1 to +2 a win above .500, +10 a playoff round won, +25 a title, -10 a losing season, -15 a season with a loss of more than $20M,
--25 a missed playoffs after a rebuild promised and failed; at 0 you are **fired**. A **goal** is set each preseason (win n games, reach round n), and
-missing it costs patience.
+**Re-signing.** A player whose run of contracts ends (his last year, which is when the league lets him go) can be re-signed in the offseason (RE-SIGN in the hub): he asks his market price, 92 to 108 % by his mood (a little more after a season out of the
+playoffs), 3 % a year more for each year over one for a player of 29 and over, 2 % a year less for the young, from 1 to 5 years, and the deal is his from the next year (a man who is already on a deal of his own has it rewritten from this year, so there is no gap); he stays and the slot's next person waits for the end of it. Other contracts renew by themselves, as before.
+**Release**: in the lineup editor (RELEASE, A twice) a player goes at once and half of what is left of his deal is paid now; the slot is filled at once by a new man at a market price (until step 6 gives the GM the free agents).
+
+**Owner patience** (0 to 100, starts at 60) is settled at the end of the playoffs: one for each two wins above 29 (and as many below), -10 for a losing season, +4 for each playoff series won and +15 for the title, -5 if a goal of the playoffs was missed,
++5 for a profit of more than $10M and -15 for a loss of more than $20M, +6 for meeting the **goal** of the season (wins, set in the preseason from the team's strength against the league's: 15 to 46 wins; the playoffs too from 30), -6 for missing it; and the patience then drifts an eighth of the way to 50.
+At 0 you are **fired** when you press NEXT YEAR. The **legacy score** adds 1 for each $10M of profit over the career to the tally of section 9.
 
 ### The draft
 
@@ -200,14 +206,15 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 | 1 | Last initials entered |
 | 2-9 | Career: seed, team and difficulty, year and day, phase, owner patience, cash |
 | 10-39 | Top 10 legacy scores, best first, 3 slots each: score, initials, 1 spare |
+| 7-9 | Owner patience; cash; the ticket price (4 bits), scouting (3) and facilities (3) |
+| 55-56 | The season's goal: wins; the playoffs (0 or 1) |
+| 64, 71, 74 | Last season's profit; the cash at the start of this season; the playoff result of the year (0 missed, 1 in, +1 a series won) |
 | 40-54 | The standings: wins and losses of two teams to a number (6 bits each) |
-| 55-56 | (the day and the phase are slots 5 and 6) |
 | 57-59 | The playoff teams of the round: 5 bits each, 6 to a number |
 | 60-61 | The series' wins in the round: 3 bits for each side, 4 series to a number |
 | 62-63 | The playoff round; the champion of the year (+1) |
 | 65-70 | The career tally: titles, finals, conference finals, series won, wins, losses |
 | 72-73 | The GM's results of the season, a bit a day (1 is a win) |
-| 64, 71, 74 | Spare (finances and awards come with their steps) |
 | 75 | The number of entries |
 | 76-255 | The entries, two numbers each: **90** |
 
@@ -215,7 +222,7 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 
 | Asset | Budget |
 |---|---|
-| Code | 48.3 KB of the 64 KB limit after step 4 (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
+| Code | 56.6 KB of the 64 KB limit after step 5 (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
 | Tiles | none yet (the backdrop is one colour); the panels, the court, the portraits' frames and the emblems come with the art pass (of 1,024) |
 | Sprites | none yet (128 in OAM, 32 per line): later the game night's ten dots and the ball, a portrait or two a screen |
 | ROM | 15.0 KB of 128 KB after step 3: `league.bin` (7.0 KB: 30 teams, 450 people) and `names.bin` (8.0 KB: 369 first names, 739 last names, the cities and nicknames) |
@@ -294,6 +301,16 @@ the screens and the report); the bot tinkers with a lineup every offseason.
 **Results:** 7.5 injuries a team a season, 7 games long on average (the longest 40), 0.5 of a team out at a time. A player set to 48 minutes plays about 42 and the DNP not at all. Training: the gain a year is 1.0 for the 21 and under, 0.7 to 24, 0.3 to 27, 0.2 to 30, 0.04 after.
 The code is 48.3 KB of 64: the money, the draft and the trades still have to fit in 16 KB, so the next steps write compactly and share the list and table code (a tracker for the budget is in the open questions).
 
+### Built and results: step 5, money
+
+**Built:** in `code.js`: the payroll rule (`kOf`, `contractAt` over `rawC`), the money (`gate`, `fill`, `demand`, `costs`, the day's accrual and the tax in `endDay`, a home game's gate in `playOne`), the owner (`verdict`, `setGoals`, the settling in `endRound`, the firing at NEXT YEAR),
+the re-signing (`expiring`, `ask`, and in `extend` a re-signed man keeps his slot while the next person waits), the release (a third field of the lineup editor), the legacy score with profit, and the screens FINANCES (the payroll against the cap and the tax line, the three budget lines to change,
+the fill and the gate, this season and last, the owner's bar and the goal), RE-SIGN, VERDICT, and a hub with the cash and the owner on its panel (the hub's menu is 10 pixels a line to fit eleven items). The training chance rises 2 points for each level of facilities. Tests: `06-money.mjs` (profits across teams, the price curve, the exact cost of
+scouting, the payroll rule, a re-signing and the roster that stays 15, the tax, the owner, the firing, the save, the screens); the bot re-signs everyone and sims 25 seasons (or until it is fired).
+
+**Results:** the payroll rule puts every team between $89.5M and $146M. A season's profit with the usual budget runs from -$26M to +$14M across eight teams (the mean about $0), a bad payroll plus the tax can lose $130M. A team of the worst strength is fired in about 12 seasons if the GM does nothing; a strong team's patience stays at 85 to 100.
+Nobody's deal ends before the third season (the league's first contracts are 3 to 5 years), so RE-SIGN starts in the third offseason. **The code is 56.6 KB of 64: 8.9 KB left for the draft, free agency and trades, which is not much; see the open questions.**
+
 ## 16. Open questions
 
 - The **length of a season** (58 games here: every team twice) against a real 82; a shorter season is faster to play, a longer one more real.
@@ -301,4 +318,4 @@ The code is 48.3 KB of 64: the money, the draft and the trades still have to fit
 - **Real names**: fictional teams and generated players are the plan; no real franchise, league or player name goes in.
 - **More than one base league**: one table of 7 KB plus the seed's jitter is the plan; two or three base leagues (different eras of talent) would cost only 7 KB each if the jitter proves too samey.
 - **Game night speed**: a live game takes about 40 seconds at the fastest pace of the play-by-play (skippable); is that right?
-- **The code budget**: 48 KB of 64 KB after step 4. If steps 5 to 7 do not fit, the first things to trim are the offseason report's rows, the card's chart and the SHORT phrase table; a second table in ROM (text) does not count against the code.
+- **The code budget**: 56.6 KB of 64 KB after step 5; steps 6 and 7 must share 8.9 KB, or the code needs a size pass first (a build step that renames the long names, as a minifier does, would give back 10 to 15 %; the project has no dependencies, so it would be a small tool of its own). Before that: 48 KB after step 4. If steps 5 to 7 do not fit, the first things to trim are the offseason report's rows, the card's chart and the SHORT phrase table; a second table in ROM (text) does not count against the code.

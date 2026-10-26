@@ -140,8 +140,8 @@ function ageRatings(R, peak, age, noise) {
 
 const pid = (t, s, k) => (t * 16 + s) * 32 + k;
 const PEOPLE = new Map(), SLOTS = new Map();
-const INJC = new Map();
-function resetLeague() { PEOPLE.clear(); SLOTS.clear(); INJC.clear(); }
+const INJC = new Map(), KM = new Map();
+function resetLeague() { PEOPLE.clear(); SLOTS.clear(); INJC.clear(); KM.clear(); }
 
 /** Person k of slot (t, s), starting in the year start. Person 0 is the base league's row, jittered by the seed. */
 function mkPerson(t, s, k, start) {
@@ -184,8 +184,8 @@ function extend(t, s) {
   if (!arr) SLOTS.set(key, arr = []);
   const last = arr[arr.length - 1], k = arr.length, start = last ? last.to : 0, p = mkPerson(t, s, k, start), en = ENT.get(p.id);
   PEOPLE.set(p.id, p);
-  const taken = en && en.yrs && en.since < p.leave && en.since >= start;
-  const e = { p, from: start, until: taken ? en.since : p.leave, to: taken ? (t === ME && MANUAL ? p.leave : en.since) : p.leave };
+  const taken = en && en.yrs && en.since < p.leave && en.since >= start, ext = en && en.yrs && en.team === t && en.since >= p.leave && en.since >= start;   // taken: he left the slot early; ext: re-signed, he stays and the next person waits
+  const e = { p, from: start, until: taken ? en.since : p.leave, to: taken ? (t === ME && MANUAL ? p.leave : en.since) : ext ? en.since + en.yrs : p.leave };
   if (t === ME && MANUAL && k) e.empty = true;
   arr.push(e);
   return e;
@@ -206,11 +206,28 @@ function personById(id) {
   return SLOTS.get(t * 16 + s)[k].p;
 }
 /** What a person is paid in a year and the seasons left of the contract (this one counted), or null: he has no contract. */
-function contractAt(p, y) {
+function rawC(p, y) {
   const en = ENT.get(p.id);
   if (en && en.yrs && en.since <= y) return y < en.since + en.yrs ? [en.sal, en.since + en.yrs - y] : null;
   for (const s of p.segs) if (s[0] <= y && y <= s[1]) return [s[2], s[1] - y + 1];
   return null;
+}
+/** The payroll rule: the contracts that came with the league are scaled (in percent) so a team's payroll sits between the minimum and just under the tax line; the GM's own signings are not. */
+function kOf(t, y) {
+  const key = t * 32 + y;
+  let k = KM.get(key);
+  if (k === undefined && t < NT) {
+    let R = 0, E = 0;
+    for (const p of roster(t, y)) { const c = rawC(p, y), en = ENT.get(p.id); if (c) { if (en && en.yrs && en.since <= y) E += c[0]; else R += c[0]; } }
+    k = R ? clamp(Math.round((clamp(R + E, FLOOR, TAX - 20) - E) * 100 / R), 30, 300) : 100;
+    KM.set(key, k);
+  }
+  return k || 100;
+}
+/** What a person is paid in a year and the seasons left of the contract (this one counted), or null: he has no contract. */
+function contractAt(p, y) {
+  const c = rawC(p, y), en = ENT.get(p.id);
+  return c && !(en && en.yrs && en.since <= y) ? [Math.max(6, Math.round(c[0] * kOf(p.id >> 9, y) / 100)), c[1]] : c;
 }
 /** A team's people in a year: its slots and the entries on it; an AI team above 15 lets its weakest go. */
 function roster(t, y) {
@@ -372,7 +389,7 @@ function playGame(y, ht, at, seed, day = -1) {
 
 // --- The entries and the save (section 13): 90 of two numbers each, from slot 76 ---
 
-const S = { seed: 2, team: 3, year: 4, day: 5, phase: 6 }, ENT_COUNT = 75, ENT_BASE = 76, ENT_MAX = 90;
+const S = { seed: 2, team: 3, year: 4, day: 5, phase: 6, pat: 7, cash: 8, set: 9, goalW: 55, goalP: 56, lastP: 64, sCash: 71, res: 74 }, START_CASH = 200, ENT_COUNT = 75, ENT_BASE = 76, ENT_MAX = 90;
 function setEntry(e) { ENT.set(e.id, e); resetLeague(); saveEntries(); }
 function dropEntry(id) { ENT.delete(id); resetLeague(); saveEntries(); }
 function saveEntries() {
@@ -398,7 +415,8 @@ function newCareer(seed, t) {
   SEED = seed; ME = t; YEAR = 0; ENT.clear(); resetLeague();
   for (let i = 2; i < 10; i++) dset(i, 0);
   for (let i = 40; i < 75; i++) dset(i, 0);
-  dset(S.seed, seed); dset(S.team, t); dset(S.year, 0); saveEntries(); TALLY = [0, 0, 0, 0, 0, 0]; resetSeason(); saveSeason();
+  PAT = 60; CASH = SCASH = START_CASH; SETS = [3, 1, 1]; LASTP = 0; why = '';
+  dset(S.seed, seed); dset(S.team, t); dset(S.year, 0); saveEntries(); TALLY = [0, 0, 0, 0, 0, 0]; resetSeason(); setGoals(); saveSeason();
 }
 function loadCareer() { SEED = dget(S.seed); ME = dget(S.team); YEAR = dget(S.year); loadEntries(); loadSeason(); }
 /** The GM's entry for a person (a touch only: no contract, so he stays where he is), made if there is none. */
@@ -408,7 +426,7 @@ function edit(p, f) {
   const e = touch(p); f(e);
   if (!e.yrs && !e.mins && !e.focus && e.bonus.every((b) => !b)) dropEntry(e.id); else setEntry(e);
 }
-function setYear(y) { YEAR = clamp(y, 0, MAX_YEAR); dset(S.year, YEAR); resetSeason(); saveSeason(); }
+function setYear(y) { YEAR = clamp(y, 0, MAX_YEAR); dset(S.year, YEAR); resetSeason(); SCASH = CASH; setGoals(); saveSeason(); }
 
 // --- The season (section 5): 58 games a team, then the playoffs; results are kept in the save (slots 40 to 74) ---
 // The schedule is a closed form (two round robins of 29 days, shuffled); every game is playGame with a seed from (seed, year, day, home).
@@ -431,7 +449,7 @@ const standing = (c) => Array.from({ length: NT }, (_, t) => t).filter((t) => c 
 const better = (a, b) => (standCmp(a, b) < 0 ? a : b);
 
 function resetSeason() {
-  WINS = new Array(NT).fill(0); LOSS = new Array(NT).fill(0); DAY = 0; PHASE = 0; PT = []; PW = []; PRD = 0; CHAMP = -1; MYW = new Array(DAYS).fill(0); lastRes = '';
+  WINS = new Array(NT).fill(0); LOSS = new Array(NT).fill(0); DAY = 0; PHASE = 0; PT = []; PW = []; PRD = 0; CHAMP = -1; MYW = new Array(DAYS).fill(0); lastRes = ''; RES = 0;
 }
 function saveSeason() {
   dset(S.day, DAY); dset(S.phase, PHASE); dset(S_PR, PRD); dset(S_CHAMP, CHAMP + 1);
@@ -440,6 +458,7 @@ function saveSeason() {
   for (let i = 0; i < 2; i++) { let v = 0; for (let k = 0; k < 4; k++) { const w = PW[i * 4 + k] || [0, 0]; v |= (w[0] | (w[1] << 3)) << (k * 6); } dset(S_PO + 3 + i, v); }
   TALLY.forEach((v, i) => dset(S_TALLY + i, v));
   for (let i = 0; i < 2; i++) { let v = 0; for (let k = 0; k < 29; k++) if (MYW[i * 29 + k] === 1) v |= 1 << k; dset(S_BITS + i, v); }
+  dset(S.pat, PAT); dset(S.cash, CASH); dset(S.set, SETS[0] | (SETS[1] << 4) | (SETS[2] << 7)); dset(S.goalW, GOALW); dset(S.goalP, GOALP); dset(S.lastP, LASTP); dset(S.sCash, SCASH); dset(S.res, RES);
 }
 function loadSeason() {
   resetSeason(); DAY = dget(S.day); PHASE = dget(S.phase); PRD = dget(S_PR); CHAMP = dget(S_CHAMP) - 1;
@@ -448,6 +467,7 @@ function loadSeason() {
   for (let i = 0; i < n; i++) PT.push((dget(S_PO + ((i / 6) | 0)) >> ((i % 6) * 5)) & 31);
   for (let i = 0; i < n / 2; i++) { const v = (dget(S_PO + 3 + (i >> 2)) >> ((i & 3) * 6)) & 63; PW.push([v & 7, v >> 3]); }
   TALLY = TALLY.map((_, i) => dget(S_TALLY + i));
+  PAT = dget(S.pat); CASH = dget(S.cash); SETS = [dget(S.set) & 15, (dget(S.set) >> 4) & 7, (dget(S.set) >> 7) & 7]; GOALW = dget(S.goalW); GOALP = dget(S.goalP); LASTP = dget(S.lastP); SCASH = dget(S.sCash); RES = dget(S.res);
   for (let d = 0; d < Math.min(DAY, DAYS); d++) MYW[d] = (dget(S_BITS + (d >= 29 ? 1 : 0)) >> (d % 29)) & 1 ? 1 : 2;
 }
 
@@ -479,6 +499,7 @@ function beginDay() {
 function playOne() {
   const [h, a, i] = todo.shift(), g = playGame(YEAR, h, a, hash(SEED, YEAR * 1000 + DAY, h, a + 64 * PHASE) | 1, DAY), hw = g.score[0] > g.score[1];
   if (i < 0) { WINS[hw ? h : a]++; LOSS[hw ? a : h]++; } else PW[i][(hw ? h : a) === PT[2 * i] ? 0 : 1]++;
+  if (h === ME) CASH += gate(PHASE === 1);
   if (h === ME || a === ME) {
     mineG = g;
     const home = h === ME, my = g.score[home ? 0 : 1], op = g.score[home ? 1 : 0];
@@ -487,7 +508,15 @@ function playOne() {
   }
 }
 function endDay() {
-  if (PHASE === 0) { if (++DAY >= DAYS) { PHASE = 1; seedPlayoffs(); } }
+  if (PHASE === 0) {
+    const share = (v) => Math.floor(v * (DAY + 1) / DAYS) - Math.floor(v * DAY / DAYS);
+    CASH += share(400) - share(costs());                                      // the TV share ($100M) and the costs, by the day
+    if (++DAY >= DAYS) {
+      const pay = payroll(ME, YEAR);
+      CASH -= (pay > TAX ? Math.round((pay - TAX) * 1.5) : 0) + (pay < FLOOR ? FLOOR - pay : 0);     // the tax, or the shortfall to the minimum payroll
+      PHASE = 1; seedPlayoffs(); RES = PT.includes(ME) ? 1 : 0;
+    }
+  }
   else { DAY++; if (PW.every((w) => w[0] === 4 || w[1] === 4)) endRound(); }
   return mineG;
 }
@@ -497,21 +526,43 @@ function endRound() {
   if (mi >= 0) {
     if (PRD === 2) TALLY[2]++;
     if (PRD === 3) TALLY[1]++;
-    if (win[mi] === ME) { TALLY[3]++; if (PRD === 3) TALLY[0]++; }
+    if (win[mi] === ME) { TALLY[3]++; RES++; if (PRD === 3) TALLY[0]++; }
   }
   PRD++;
-  if (PRD === 4) { CHAMP = win[0]; PHASE = 2; PT = []; PW = []; TALLY[4] += WINS[ME]; TALLY[5] += LOSS[ME]; }
+  if (PRD === 4) { CHAMP = win[0]; PHASE = 2; PT = []; PW = []; TALLY[4] += WINS[ME]; TALLY[5] += LOSS[ME]; LASTP = CASH - SCASH; PAT = clamp(PAT + verdict().reduce((a, v) => a + v[1], 0) - Math.trunc((PAT - 50) / 8), 0, 100); }
   else { PT = win; PW = win.filter((_, i) => i % 2 === 0).map(() => [0, 0]); }
 }
 /** The legacy score of the career so far (section 9; the parts that exist so far). */
-const legacy = () => TALLY[0] * 100 + TALLY[1] * 30 + TALLY[2] * 10 + TALLY[3] * 3 + Math.max(0, (TALLY[4] - TALLY[5]) >> 1);
+const legacy = () => TALLY[0] * 100 + TALLY[1] * 30 + TALLY[2] * 10 + TALLY[3] * 3 + Math.max(0, (TALLY[4] - TALLY[5]) >> 1) + Math.max(0, Math.floor((CASH - START_CASH) / 40));
+
+// --- Money (section 5): the gate, the costs, the owner ---
+// Units are $0.25M. Money moves a day at a time: the TV share and the costs by the day, the gate with each home game; the tax at the end of the season.
+
+let PAT = 60, CASH = START_CASH, SCASH = START_CASH, SETS = [3, 1, 1], GOALW = 29, GOALP = 0, LASTP = 0, RES = 0, why = '';   // the owner's patience, cash, the season's start cash, ticket price / scouting / facilities, goals, last profit, the playoff result (0 missed, 1 in, +1 a series won)
+const priceOf = () => 30 + SETS[0] * 10;
+const costs = () => payroll(ME, YEAR) + 48 + (SETS[1] + SETS[2]) * 4;                // the payroll, the upkeep ($12M), scouting and facilities
+function demand() {
+  const g = WINS[ME] + LOSS[ME], stars = roster(ME, YEAR).filter((p) => ovr(p, YEAR) >= 78).length;
+  return 45 + team(ME).market * 0.35 + ((g ? WINS[ME] / g : 0.5) - 0.5) * 80 + stars * 2 + SETS[2] * 2 + (PAT - 50) / 10;
+}
+const fill = (po) => clamp((demand() - (priceOf() - 70) * 0.8) / 100 * (po ? 1.3 : 1), 0.4, 1);
+const gate = (po) => Math.round(team(ME).seats * fill(po) * ((po ? 1.5 : 1) * priceOf() + 18) * 4 / 1e6);   // a home game: tickets and $18 a head of concessions
+function setGoals() {
+  const all = Array.from({ length: NT }, (_, t) => strength(t, YEAR));
+  GOALW = clamp(Math.round(29 + (strength(ME, YEAR) - all.reduce((a, b) => a + b) / NT) * 1.6) - 1, 15, 46); GOALP = GOALW >= 30 ? 1 : 0;
+}
+/** The owner's verdict on a season: what moved his patience. */
+function verdict() {
+  const w = WINS[ME], pr = (RES > 1 ? (RES - 1) * 4 + (RES === 5 ? 15 : 0) : 0), prof = CASH - SCASH;
+  return [[`${w} WINS`, (w - 29) >> 1], ['LOSING YEAR', w < 29 ? -10 : 0], ['PLAYOFFS', pr], ['MISSED PLAYOFFS', GOALP && !RES ? -5 : 0], ['PROFIT', prof < -80 ? -15 : prof > 40 ? 5 : 0], [w >= GOALW ? 'GOAL MET' : 'GOAL MISSED', w >= GOALW ? 6 : -6]].filter((x) => x[1]);
+}
 
 // --- State ---
 
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null, score = 0;
-let G = null, gi = 0, gSpeed = 0, gWait = 0, boxTeam = 0, boxView = 0, hubSel = 0, newSel = 0, newSeed = 1, rows = [], sel = 0, view = 0, viewTeam = 0, backTo = 'hub', newRows = null, sim = null, stView = 0, ed = -1, cardP = null;
+let G = null, gi = 0, gSpeed = 0, gWait = 0, boxTeam = 0, boxView = 0, hubSel = 0, newSel = 0, newSeed = 1, rows = [], sel = 0, view = 0, viewTeam = 0, backTo = 'hub', newRows = null, sim = null, stView = 0, ed = -1, cardP = null, finSel = 0, rs = [], arm = false;
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
@@ -554,6 +605,9 @@ function update() {
   else if (state === 'standings') updateStandings();
   else if (state === 'sched') updateSched();
   else if (state === 'card') updateCard();
+  else if (state === 'fin') updateFin();
+  else if (state === 'resign') updateResign();
+  else if (state === 'verdict') updateVerdict();
   else if (state === 'report') updateReport();
   else if (state === 'live') updateLive();
   else if (state === 'box') updateBox();
@@ -592,8 +646,8 @@ function updateNew() {
 }
 /** The hub's menu: what the date allows. */
 function hubItems() {
-  const base = ['ROSTER', 'STANDINGS', 'SCHEDULE', 'LEAGUE', 'RETIRE', 'QUIT TO TITLE'];
-  if (PHASE === 2) return ['NEXT YEAR', ...base];
+  const base = ['ROSTER', 'STANDINGS', 'SCHEDULE', 'FINANCES', 'LEAGUE', 'RETIRE', 'QUIT TO TITLE'];
+  if (PHASE === 2) return ['NEXT YEAR', ...(expiring().length ? ['RE-SIGN'] : []), 'VERDICT', ...base];
   return [...(myGame() ? ['PLAY NEXT GAME'] : []), 'SIM DAY', 'SIM WEEK', PHASE ? 'SIM TO END' : 'SIM TO PLAYOFFS', ...base];
 }
 const HUB = hubItems;
@@ -613,8 +667,11 @@ function updateHub() {
   else if (it === 'SIM DAY') startSim(1);
   else if (it === 'SIM WEEK') startSim(7);
   else if (it === 'SIM TO PLAYOFFS' || it === 'SIM TO END') startSim(999);
-  else if (it === 'NEXT YEAR') { if (YEAR >= MAX_YEAR) gameOver(legacy()); else { nextYear(); hubSel = 0; } }
-  else if (it === 'RETIRE') gameOver(legacy());
+  else if (it === 'FINANCES') { state = 'fin'; finSel = 0; }
+  else if (it === 'RE-SIGN') { state = 'resign'; sel = 0; rs = expiring().map((p) => ({ p, n: 3, done: false })); }
+  else if (it === 'VERDICT') state = 'verdict';
+  else if (it === 'NEXT YEAR') { if (PAT <= 0 || YEAR >= MAX_YEAR) { why = PAT <= 0 ? 'FIRED' : 'CAREER OVER'; gameOver(legacy()); } else { nextYear(); hubSel = 0; } }
+  else if (it === 'RETIRE') { why = 'RETIRED'; gameOver(legacy()); }
   else toTitle();
 }
 /** The days of a sim run a game a frame, so the screen stays alive; B stops at the end of the day. watch: the GM's game is then shown live. */
@@ -635,7 +692,7 @@ function trainAll() {
   for (const p of roster(ME, YEAR)) {
     const e = ENT.get(p.id);
     if (!e || !e.focus) continue;
-    const i = e.focus - 1, a = age(p, YEAR + 1), chance = a <= 21 ? 85 : a <= 24 ? 65 : a <= 27 ? 45 : a <= 30 ? 25 : 10, h = hash(SEED, p.id, YEAR, 41) % 100;
+    const i = e.focus - 1, a = age(p, YEAR + 1), chance = (a <= 21 ? 85 : a <= 24 ? 65 : a <= 27 ? 45 : a <= 30 ? 25 : 10) + SETS[2] * 2, h = hash(SEED, p.id, YEAR, 41) % 100;
     if (h < chance && e.bonus[i] < 7) { const n = Math.min(7 - e.bonus[i], a <= 22 && h < chance / 4 ? 2 : 1); e.bonus[i] += n; gains.push([p.id, i, n]); }
   }
   return gains;
@@ -652,7 +709,7 @@ function nextYear() {
     else rows.push([`${pname(p, 10).padEnd(10)} ${pad(age(p, YEAR), 2)} ${pad(ovr(p, YEAR), 2)} NEW`, CYAN]);
   }
   for (const [id, w] of was) if (!now.some((p) => p.id === id)) rows.push([`${pname(w[1], 10).padEnd(10)} ${pad(age(w[1], YEAR - 1), 2)} ${pad(w[0], 2)} LEFT`, RED]);
-  for (const id of [...ENT.keys()]) if (!ENT.get(id).yrs && !now.some((p) => p.id === id)) ENT.delete(id);
+  for (const id of [...ENT.keys()]) if (ENT.get(id).team !== 30 && (ENT.get(id).team === ME || ENT.get(id).team === 31 || !ENT.get(id).yrs) && !now.some((p) => p.id === id)) ENT.delete(id);
   saveEntries(); resetLeague();
   state = 'report'; sel = 0;
 }
@@ -704,9 +761,15 @@ function updateTeam() {
   const mine = viewTeam === ME, nv = mine ? 3 : 2;
   if (ed >= 0) {                                                 // the editor: UP and DOWN pick the field, LEFT and RIGHT change it
     const p = rows[sel].p, e = ENT.get(p.id) || { mins: 0, focus: 0 };
-    if (pressed(A) || pressed(B)) { ed = -1; fx(SFX.select); return; }
-    if (pressed(UP) || pressed(DOWN)) { ed ^= 1; fx(SFX.move); }
-    const d = btnp(RIGHT) ? 1 : btnp(LEFT) ? -1 : 0;
+    if (ed === 2 && pressed(A)) {                                // release: the second press does it, and half of what is left of the deal is paid now
+      if (!arm) { arm = true; fx(SFX.select); return; }
+      const c = contractAt(p, YEAR); arm = false; ed = -1; fx(SFX.over);
+      if (c) { CASH -= Math.round(c[0] * c[1] / 2); edit(p, (x) => { x.team = 31; x.sal = c[0]; x.yrs = 1; x.since = YEAR; }); saveSeason(); buildTeam(); sel = Math.min(sel, rows.length - 1); }
+      return;
+    }
+    if (pressed(A) || pressed(B)) { ed = -1; arm = false; fx(SFX.select); return; }
+    if (pressed(UP) || pressed(DOWN)) { ed = (ed + (pressed(UP) ? 2 : 1)) % 3; arm = false; fx(SFX.move); }
+    const d = ed < 2 ? (btnp(RIGHT) ? 1 : btnp(LEFT) ? -1 : 0) : 0;
     if (d) { const n = ed ? 7 : 26, v = ((ed ? e.focus : e.mins) + d + n) % n; fx(SFX.move); edit(p, (x) => { if (ed) x.focus = v; else x.mins = v; }); buildTeam(); }
     return;
   }
@@ -716,6 +779,41 @@ function updateTeam() {
   if (pressed(Y)) { fx(SFX.select); cardP = rows[sel].p; state = 'card'; }
   if (pressed(A) && mine) { fx(SFX.select); ed = 0; }
   if (pressed(B)) { if (backTo === 'league') { const t = viewTeam; openLeague(); sel = Math.max(0, rows.findIndex((r) => r.t === t)); } else state = 'hub'; }
+}
+/** The people whose deals run out this year and who could be kept: those the league would let go. */
+function expiring() {
+  const end = (p) => { const e = ENT.get(p.id); return e && e.yrs ? e.since + e.yrs : p.leave; };
+  return roster(ME, YEAR).filter((p) => end(p) === YEAR + 1 && age(p, YEAR + 1) <= 36).sort((a, b) => ovr(b, YEAR) - ovr(a, YEAR));
+}
+/** A deal of n more years from next year. One who is already on a deal of his own has it rewritten from this year, so there is no gap in his years. */
+function signDeal(p, n) {
+  const e = ENT.get(p.id), cur = e && e.yrs && e.since <= YEAR;
+  edit(p, (x) => { x.team = ME; x.sal = ask(p, n); x.since = cur ? YEAR : YEAR + 1; x.yrs = n + (cur ? 1 : 0); });
+}
+/** What a player asks for n more years, in units: his market price, a little either way by his mood, more for the old on long deals. */
+function ask(p, n) {
+  const a = age(p, YEAR + 1), m = 92 + (hash(SEED, p.id, YEAR, 51) % 17) + (RES ? 0 : 4);
+  return clamp(Math.floor(salaryFor(ovr(p, YEAR + 1)) * m * (100 + (a >= 29 ? (n - 1) * 3 : -(n - 1) * 2)) / 10000), 6, 200);
+}
+function updateFin() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  finSel = menuMove(3, finSel);
+  const d = btnp(RIGHT) ? 1 : btnp(LEFT) ? -1 : 0;
+  if (d) { SETS[finSel] = clamp(SETS[finSel] + d, 0, finSel ? 5 : 10); fx(SFX.move); saveSeason(); }
+  if (pressed(B)) state = 'hub';
+}
+function updateResign() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  listMove(rs.length);
+  const r = rs[sel];
+  if (r && btnp(RIGHT)) r.n = Math.min(5, r.n + 1);
+  if (r && btnp(LEFT)) r.n = Math.max(1, r.n - 1);
+  if (r && pressed(A) && !r.done) { fx(SFX.point); r.done = true; signDeal(r.p, r.n); }
+  if (pressed(B)) state = 'hub';
+}
+function updateVerdict() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (pressed(A) || pressed(B)) state = 'hub';
 }
 function updateCard() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
@@ -777,12 +875,15 @@ function draw() {
   else if (state === 'standings') drawStandings();
   else if (state === 'sched') drawSched();
   else if (state === 'card') drawCard();
+  else if (state === 'fin') drawFin();
+  else if (state === 'resign') drawResign();
+  else if (state === 'verdict') drawVerdict();
   else if (state === 'report') drawReport();
   else if (state === 'live') drawLive();
   else if (state === 'box') drawBox();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  else if (state === 'over') { drawHub(); panel(48, 80, 160, 64); ctxt(YEAR >= MAX_YEAR ? 'CAREER OVER' : 'RETIRED', 92, GOLD); ctxt(`LEGACY ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
+  else if (state === 'over') { drawHub(); panel(48, 80, 160, 64); ctxt(why || 'RETIRED', 92, GOLD); ctxt(`LEGACY ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
   if (paused) drawPause();
 }
 
@@ -827,14 +928,46 @@ function nextLine() {
 function drawHub() {
   header(tname(ME), `${BASE_YEAR + YEAR}`);
   panel(8, 28, 240, 62);
-  txt(`${wl(ME)}  ${phaseName()}`, 16, 34, WHITE);
-  txt(`OVERALL ${strength(ME, YEAR)}  #${standing(confOf(ME)).indexOf(ME) + 1} IN ${confOf(ME) ? 'WEST' : 'EAST'}`, 16, 46, WHITE);
-  txt(nextLine(), 16, 58, GOLD);
+  txt(`${wl(ME)}  ${phaseName()}`, 16, 32, WHITE);
+  txt(`OVERALL ${strength(ME, YEAR)}  #${standing(confOf(ME)).indexOf(ME) + 1} IN ${confOf(ME) ? 'WEST' : 'EAST'}`, 16, 43, WHITE);
+  txt(nextLine(), 16, 54, GOLD);
   const out = PHASE < 2 ? roster(ME, YEAR).filter((p) => hurt(p, YEAR, DAY)).length : 0;
-  if (out) txt(`HURT ${out}`, 200, 46, RED);
-  txt(lastRes ? `LAST ${lastRes}`.slice(0, 29) : `PAYROLL $${money(payroll(ME, YEAR))}M`, 16, 70, lastRes ? DIM : payroll(ME, YEAR) > CAP ? RED : DIM);
-  hubItems().forEach((m, i) => txt(`${i === hubSel ? '> ' : '  '}${m}`, 84, 96 + i * 11, i === hubSel ? WHITE : DIM));
+  if (out) txt(`HURT ${out}`, 200, 43, RED);
+  txt(lastRes ? `LAST ${lastRes}`.slice(0, 29) : `GOAL ${GOALW} WINS`, 16, 65, DIM);
+  txt(`CASH $${money(CASH)}M`, 16, 76, CASH < 0 ? RED : DIM); txt(`OWNER ${PAT}`, 160, 76, PAT < 25 ? RED : DIM);
+  hubItems().forEach((m, i) => txt(`${i === hubSel ? '> ' : '  '}${m}`, 84, 94 + i * 10, i === hubSel ? WHITE : DIM));
   footer('A:SELECT');
+}
+const sm = (u) => `${u < 0 ? '-' : '+'}$${money(Math.abs(u))}M`;
+function drawFin() {
+  header('FINANCES', `CASH $${money(CASH)}M`);
+  const pay = payroll(ME, YEAR), c = pay > TAX ? RED : pay > CAP ? ORANGE : GREEN;
+  txt(`PAYROLL $${money(pay)}M`, 8, 26, c); txt(`CAP $${money(CAP)}M  TAX LINE $${money(TAX)}M`, 8, 38, DIM);
+  rectfill(8, 50, 240, 6, PANEL); rectfill(8, 50, Math.min(240, pay * 0.3), 6, c); rectfill(8 + CAP * 0.3, 48, 1, 10, WHITE); rectfill(8 + TAX * 0.3, 48, 1, 10, WHITE);
+  [`TICKET PRICE $${priceOf()}`, `SCOUTING     $${SETS[1]}M`, `FACILITIES   $${SETS[2]}M`].forEach((t, i) => txt(`${i === finSel ? '>' : ' '} ${t}`, 8, 66 + i * 12, i === finSel ? WHITE : DIM));
+  txt(`FANS FILL ${Math.round(fill(false) * 100)}%  GATE $${money(gate(false))}M`, 8, 106, DIM);
+  txt(`THIS SEASON ${sm(CASH - SCASH)}  LAST ${sm(LASTP)}`.slice(0, 32), 8, 122, WHITE);
+  txt('OWNER', 8, 140, DIM); rectfill(56, 141, 160, 6, PANEL); rectfill(56, 141, PAT * 1.6, 6, PAT < 25 ? RED : GREEN); txt(`${PAT}`, 224, 140, WHITE);
+  txt(`GOAL ${GOALW} WINS${GOALP ? ' AND THE PLAYOFFS' : ''}`.slice(0, 32), 8, 156, GOLD);
+  txt('SCOUTING HELPS THE DRAFT, FACILITIES THE', 8, 176, DIM); txt('FANS AND TRAINING. A DEAL OVER THE TAX', 8, 186, DIM); txt('LINE COSTS 1.5 FOR EACH DOLLAR OVER.', 8, 196, DIM);
+  footer('UD:PICK  LR:CHANGE  B:BACK');
+}
+function drawResign() {
+  header('RE-SIGN', `PAYROLL $${money(payroll(ME, YEAR))}M`);
+  txt('NAME      POS AGE OVR  ASK    YRS', 8, 24, DIM);
+  drawList(rs.map((r) => [`${pname(r.p, 9).padEnd(9)} ${POS[r.p.pos].padEnd(2)}  ${pad(age(r.p, YEAR + 1), 2)}  ${pad(ovr(r.p, YEAR + 1), 2)} ${r.done ? 'SIGNED' : `$${money(ask(r.p, r.n)).padStart(5)}M  ${r.n}`}`, r.done ? GOLD : WHITE]), sel, 36, 16);
+  if (!rs.length) ctxt('NOBODY IS LEAVING', 100, DIM);
+  footer('LR:YEARS  A:SIGN  B:BACK');
+}
+function drawVerdict() {
+  header('OWNER', `${BASE_YEAR + YEAR}`);
+  panel(16, 28, 224, 150);
+  txt(`${wl(ME)}  ${['MISSED THE PLAYOFFS', 'LOST IN ROUND 1', 'LOST IN ROUND 2', 'LOST IN THE SEMIS', 'LOST THE FINALS', 'WON THE TITLE'][RES]}`.slice(0, 30), 24, 36, WHITE);
+  txt(`PROFIT ${sm(LASTP)}   GOAL ${GOALW}`, 24, 48, DIM);
+  verdict().forEach((v, i) => txt(`${v[0].padEnd(20)} ${v[1] > 0 ? '+' : ''}${v[1]}`, 24, 68 + i * 12, v[1] > 0 ? GREEN : RED));
+  txt(`PATIENCE ${PAT}`, 24, 156, PAT <= 0 ? RED : GOLD);
+  if (PAT <= 0) ctxt('YOU ARE FIRED', 190, RED);
+  footer('A:BACK');
 }
 function drawSim() {
   header('SIMULATING', phaseName());
@@ -880,11 +1013,13 @@ function drawTeam() {
   drawList(rows.map((r) => [line(r), r.h ? RED : r.o >= 75 ? GOLD : r.o >= 60 ? WHITE : DIM]), sel, 46, 16);
   if (ed >= 0) {
     const r = rows[sel], e = r.e || { mins: 0, focus: 0 };
-    panel(24, 140, 208, 62);
-    txt(`${pname(r.p, 14)} ${POS[r.p.pos]}  OVR ${r.o}`, 32, 146, GOLD);
-    txt(`${ed === 0 ? '>' : ' '} MINUTES  < ${e.mins === 0 ? 'AUTO' : e.mins === 1 ? 'DNP' : (e.mins - 1) * 2} >`, 32, 162, ed === 0 ? WHITE : DIM);
-    txt(`${ed === 1 ? '>' : ' '} TRAINING < ${FOCUS[e.focus]} >`, 32, 176, ed === 1 ? WHITE : DIM);
-    footer('UD:FIELD  LR:CHANGE  B:DONE');
+    panel(24, 134, 208, 74);
+    txt(`${pname(r.p, 14)} ${POS[r.p.pos]}  OVR ${r.o}`, 32, 140, GOLD);
+    txt(`${ed === 0 ? '>' : ' '} MINUTES  < ${e.mins === 0 ? 'AUTO' : e.mins === 1 ? 'DNP' : (e.mins - 1) * 2} >`, 32, 160, ed === 0 ? WHITE : DIM);
+    txt(`${ed === 1 ? '>' : ' '} TRAINING < ${FOCUS[e.focus]} >`, 32, 174, ed === 1 ? WHITE : DIM);
+    const c = r.c;
+    txt(`${ed === 2 ? '>' : ' '} ${arm ? 'A AGAIN: PAY ' : 'RELEASE: A, COST '}$${money(c ? Math.round(c[0] * c[1] / 2) : 0)}M`.slice(0, 29), 32, 188, ed === 2 ? (arm ? RED : WHITE) : DIM);
+    footer(ed === 2 ? 'UD:FIELD  A:RELEASE  B:DONE' : 'UD:FIELD  LR:CHANGE  B:DONE');
   } else footer(viewTeam === ME ? '<>:VIEW  A:EDIT  Y:CARD  B:BACK' : '<>:RATINGS  Y:CARD  B:BACK');
 }
 function drawCard() {

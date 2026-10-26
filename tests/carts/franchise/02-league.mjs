@@ -72,9 +72,9 @@ const snap = (y) => Array.from({ length: p.NT }, (_, t) => p.roster(t, y).map((q
       const good = sizes.every((s) => s === 15) && all.every((x) => x.c && x.c[0] >= 6 && x.c[1] >= 1 && x.c[1] <= 5) && o.every((v) => v >= 20 && v <= 99)
         && Math.min(...ages) >= 19 && Math.max(...ages) <= 39 && mean(ages) > 24 && mean(ages) < 29
         && mean(o) > 52 && mean(o) < 60 && o.filter((v) => v >= 80).length >= 5 && o.filter((v) => v >= 80).length <= 24 && o.filter((v) => v < 40).length < 60
-        && Math.min(...pays) > 30 && Math.max(...pays) < 340 && mean(pays) > 95 && mean(pays) < 130
+        && Math.min(...pays) >= 85 && Math.max(...pays) <= 150 && mean(pays) > 95 && mean(pays) < 130
         && sd(str) > 2.5 && sd(str) < 6.5 && Math.max(...str) >= 68;
-      ok(good, `seed ${seed}, year ${y}: 15 players a team, ages 19 to 39, mean overall 52 to 60, 5 to 24 stars, payrolls 30 to 340 (mean 95 to 130), a spread of team strengths`,
+      ok(good, `seed ${seed}, year ${y}: 15 players a team, ages 19 to 39, mean overall 52 to 60, 5 to 24 stars, payrolls 85 to 150 (the payroll rule) (mean 95 to 130), a spread of team strengths`,
         `ovr ${mean(o).toFixed(1)} stars ${o.filter((v) => v >= 80).length} age ${mean(ages).toFixed(1)} [${Math.min(...ages)}-${Math.max(...ages)}] pay ${Math.min(...pays).toFixed(0)}-${Math.max(...pays).toFixed(0)} (${mean(pays).toFixed(0)}) str ${Math.min(...str)}-${Math.max(...str)} sd ${sd(str).toFixed(1)}`);
     }
   }
