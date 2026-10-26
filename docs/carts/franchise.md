@@ -223,7 +223,7 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 
 | Asset | Budget |
 |---|---|
-| Code | 60.7 KB of the 64 KB limit after step 6 (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
+| Code | 55.3 KB of the 64 KB limit after step 6 and the size pass (60.7 KB before it) (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
 | Tiles | none yet (the backdrop is one colour); the panels, the court, the portraits' frames and the emblems come with the art pass (of 1,024) |
 | Sprites | none yet (128 in OAM, 32 per line): later the game night's ten dots and the ball, a portrait or two a screen |
 | ROM | 15.0 KB of 128 KB after step 3: `league.bin` (7.0 KB: 30 teams, 450 people) and `names.bin` (8.0 KB: 369 first names, 739 last names, the cities and nicknames) |
@@ -320,7 +320,7 @@ only down (the league's payroll rule has a floor for the computer only). The hub
 now fills the roster as well; the bot drafts (B), signs (X) and plays 25 seasons.
 
 **Results:** the pool has about 100 players in an offseason (38 street, about 60 leaving other teams, a few of the GM's own). The street class averages an overall of 45 (the best near 65); with a payroll of $124M most of the good ones are beyond the cap and the cheap ones are the street class. The draft has about 12 real prospects.
-**The code is 60.7 KB of 64: 4.9 KB left. Trades (step 7) will not fit as they are: a size pass (a minifier that shortens the long names) comes first.**
+**The code was 60.7 KB of 64: 4.9 KB left, which trades (step 7) would not fit. A size pass came first: `"mangle": true` in `meta.json` (`tools/devkit/mangle.mjs`, tested by `tests/console/mangle.mjs`) shortens the names the code declares at its top level and gives 5.3 KB back: 55.3 KB, 10.2 KB left.**
 
 ## 16. Open questions
 
@@ -329,4 +329,4 @@ now fills the roster as well; the bot drafts (B), signs (X) and plays 25 seasons
 - **Real names**: fictional teams and generated players are the plan; no real franchise, league or player name goes in.
 - **More than one base league**: one table of 7 KB plus the seed's jitter is the plan; two or three base leagues (different eras of talent) would cost only 7 KB each if the jitter proves too samey.
 - **Game night speed**: a live game takes about 40 seconds at the fastest pace of the play-by-play (skippable); is that right?
-- **The code budget**: 60.7 KB of 64 KB after step 6; step 7 (trades) has 4.9 KB, so the code needs a size pass first (a build step that renames the long names, as a minifier does, would give back 10 to 15 %; the project has no dependencies, so it would be a small tool of its own). Before that: 48 KB after step 4. If steps 5 to 7 do not fit, the first things to trim are the offseason report's rows, the card's chart and the SHORT phrase table; a second table in ROM (text) does not count against the code.
+- **The code budget**: 55.3 KB of 64 KB after step 6 and the size pass (`"mangle": true`, 60.7 KB before it): 10.2 KB for trades, the art and the polish. Before that: 48 KB after step 4. If steps 5 to 7 do not fit, the first things to trim are the offseason report's rows, the card's chart and the SHORT phrase table; a second table in ROM (text) does not count against the code.

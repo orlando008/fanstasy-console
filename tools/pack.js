@@ -3,7 +3,8 @@
 //   node tools/pack.js carts/src/hello carts/hello.nova
 //
 // The folder holds code.js and optionally:
-//   meta.json   { "title", "author", "description" }; "strip": true packs the code without its comments (to fit the 64 KB limit)
+//   meta.json   { "title", "author", "description" }; "strip": true packs the code without its comments (to fit the 64 KB limit);
+//               "mangle": true (with strip) also shortens the names declared at the top level (tools/devkit/mangle.mjs)
 //   tiles.txt   tile-sheet rows, one hex digit per pixel ('.' means 0)
 //   palette.txt one entry per line: "index rrggbb" (24-bit, converted to RGB555)
 //   map.txt     Map RAM rows from the top, one per line: 4 hex digits per entry
@@ -17,6 +18,7 @@ import { join } from 'node:path';
 import { readAudio } from '../src/formats/audio.js';
 import { MAP_H, MAP_W, SHEET_H, SHEET_W, checkRom, createCart, rgb24to555 } from '../src/formats/cart.js';
 import { writeNova } from '../src/formats/nova-json.js';
+import { mangle } from './devkit/mangle.mjs';
 import { stripComments } from './devkit/strip.mjs';
 
 const [dir, out] = process.argv.slice(2);
@@ -36,6 +38,7 @@ cart.code = read('code.js') ?? '';
 const meta = read('meta.json');
 if (meta) Object.assign(cart.meta, JSON.parse(meta));
 if (cart.meta.strip) cart.code = stripComments(cart.code);   // "strip": true in meta.json: the cart's code without comments (tools/devkit/strip.mjs)
+if (cart.meta.mangle) cart.code = mangle(cart.code).code;      // "mangle": true: the names the code declares at its top level, shortened (tools/devkit/mangle.mjs)
 
 const tiles = read('tiles.txt');
 if (tiles) {

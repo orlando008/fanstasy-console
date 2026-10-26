@@ -1,8 +1,14 @@
 // The test helpers for The Franchise: Basketball Edition: boot the cart with its variables exposed.
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { BTN, boot } from '../../../tools/devkit/harness.mjs';
+import { mangle, rename } from '../../../tools/devkit/mangle.mjs';
+import { stripComments } from '../../../tools/devkit/strip.mjs';
 export { BTN };
 export const CART = fileURLToPath(new URL('../../../carts/franchise.nova', import.meta.url));
+
+// The cart is packed with its top-level names shortened (meta.json "mangle"): the source a test appends gets the same renaming.
+const MAP = mangle(stripComments(readFileSync(new URL('../../../carts/src/franchise/code.js', import.meta.url), 'utf8'))).map;
 
 // Whatever a test needs to read or set is exposed here (the cart's code runs in one scope, so getters see its variables).
 // Add to this list as the game grows.
@@ -22,7 +28,7 @@ const PROBE = `__expose(() => ({
 
 /** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */
 export const newGame = (seed = 1, { title = false, save = null } = {}) =>
-  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + PROBE });
+  boot(CART, { seed, save, extra: rename((title ? '' : 'skipTitle = true;') + PROBE, MAP) });
 export const M = (...names) => names.reduce((m, n) => m | (1 << BTN[n]), 0);
 /** The sfx commands since the last call: [[n, channel], ...]. */
 export const sfxLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'sfx').map((a) => [a[2], a[3]]); vm.audioLog.length = 0; return r; };
