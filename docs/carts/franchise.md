@@ -180,7 +180,7 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 
 **The save is 256 numbers**, so the league is not saved. It comes from two places: **year 0 is in ROM** and **every later year is generated** from the seed.
 
-- **The base league** (`rom/league.bin`, made by `carts/src/franchise/league.py`, a build script with a fixed seed, like `art.py`): **450 players of 12 bytes** (name ids 2, position and height 1, birth year 1, six ratings 6, potential 1, base salary and years 1: the 12th byte a trait for later), the **30 teams**
+- **The base league** (`rom/league.bin`, made by a build script with a fixed seed, like `art.py`, that step 1 adds): **450 players of 12 bytes** (name ids 2, position and height 1, birth year 1, six ratings 6, potential 1, base salary and years 1: the 12th byte a trait for later), the **30 teams**
   (nickname, city, colours, emblem, arena size, rosters as player ids) and a **prospect table** for the first draft: about 6 KB. Because it is made once, the cart needs no generator for year 0, and the
   base league can be **looked at and tuned** (a test asserts its payroll, its age spread and its rating distribution). The career's **seed** makes each league different without a new table: it jitters
   every rating by -3 to +3, shuffles the potential among prospects of a class and fixes the schedule, the game seeds and all the later years.
