@@ -124,11 +124,11 @@
       "name": "franchise",
       "title": "The Franchise: Basketball Edition",
       "author": "NOVA-16",
-      "description": "A basketball front-office simulator: run one of 30 teams as its general manager, with the lineup, the draft, free agency, trades and a salary cap, and watch the games play out. (In progress.)",
+      "description": "A basketball front-office simulator for one general manager: run one of 30 teams for up to 25 seasons. Set the lineup and minutes, train your players, sign free agents under the salary cap, draft with scouting, trade with the computer, set the ticket price, and watch every game night play out as a live court with a play-by-play ticker and a box score, while the owner's patience runs down. (D-pad, A, B, X, Y)",
       "genre": "Strategy",
       "players": "1",
-      "label": null,
-      "png": null
+      "label": "carts/labels/franchise.png",
+      "png": "carts/franchise.nova.png"
     },
     {
       "name": "street",

@@ -1,7 +1,7 @@
 # The Franchise: Basketball Edition: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Spec agreed in outline (one GM, GM-only game nights, the full set of management layers, a base league in ROM with later years generated); scaffolded, the game is still the starter's placeholder
+**Version:** 1.0
+**Status:** Built in eight steps (the league, the game night, the season, the lineup, the money, the draft and free agency, the trades, the art and audio) and released; section 15 has what each step built and measured
 **Cart source:** `carts/src/franchise/` → `carts/franchise.nova`
 
 ---
@@ -335,7 +335,13 @@ items. An entry for a deal that has run out is dropped at NEXT YEAR. Tests: `08-
 
 **Built:** the audio (section 11) and the art (section 12) above, and in `code.js` the cues (`SFX` and `SONG` tables, the sounds in `updateLive`, the draft and the trade, a back sound on B), `emblem()` and `portrait()` (colours set with `color()` as they are drawn), the floor switch in `draw()`, the title's logo, the header with an emblem. `tools/devkit/harness.mjs` no longer counts a test's appended hooks against the 64 KB (the probe is 3 KB and the cart is near the limit); the console itself still checks the whole code. A team's two colours are never the backdrop's (`league.py`; five teams changed, nothing else in the league).
 **A bug the tests found:** a portrait from a negative hash picked a skin tone that did not exist (a crash on the card for some players); `09-art.mjs` draws the card of all 15 players. Tests: `09-art.mjs` (the scenes, the sprites, the teams' colours and shapes, the faces, the card's time).
-**The code is 62.5 KB of 64: 3 KB left.**
+**The code is 62.6 KB of 64: 2.9 KB left.**
+
+**Balance** (`bot.mjs`, `node tools/devkit/sweep.mjs franchise --seeds 6 --set skill=0,1`; skill 0 is a GM who benches his best man, skill 1 one who only sets a training focus; both draft by B, fill the roster with X, re-sign, try a trade once a year and sim 25 seasons; no run is stuck): a GM who does little keeps a middling team for ten years (25 to 33 wins of 58, patience 45 to 100) and then it fades, since the computer's teams are given new people by the slots' own timelines and his are not;
+he is fired in about 4 careers of 6, between seasons 10 and 21; the best one-title run is 1 in 6. That is the point of the bot: the owner's patience does run out for a GM who does nothing, and the market gives a real one room (about $60 to 80M of cap room a year in the later seasons and 5 to 9 players of 70 or more in the free agent pool, the best 84, asking $38M).
+Two stuck states were found with it, both the bot's (the league list with the GM's team last), and a game crash by a GM who sets more than eight players to DNP (`plan()` now keeps five on the floor, and the hurt play when fewer than five are fit; `05-lineup.mjs` checks both).
+**Not built from the outline** (section 7 to 10): the three difficulty settings, the quick start, mood and playing time in a player's ask, awards (MVP, rookie of the year) in the legacy score, scouting reveals that change with time, draft picks as assets in a trade, the computer's own trade proposals, the SELECT side menus and the sort by columns. The spec keeps them above as the next ideas.
+**Released:** `node tools/release.js franchise --keep-label` (the label is the logo over a game night, made from two screenshots; the PNG cart is 66.9 KB of the 147 KB payload), the Library entry and the README row.
 
 ## 16. Open questions
 

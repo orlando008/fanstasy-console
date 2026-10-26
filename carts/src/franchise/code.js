@@ -281,7 +281,7 @@ const today = () => (PHASE === 2 ? -1 : DAY);
 /** A team's rotation for a game: the fit players, best first, each with the minutes planned (the GM's setting or the coach's by rank) and the starting five. */
 function plan(t, y, day) {
   const set = (q) => (q.en && q.en.mins) || 0;
-  const pl = roster(t, y).filter((p) => !hurt(p, y, day)).map((p) => ({ p, o: ovr(p, y), en: ENT.get(p.id) })).sort((a, b) => b.o - a.o);
+  const all = roster(t, y).map((p) => ({ p, o: ovr(p, y), en: ENT.get(p.id) })).sort((a, b) => b.o - a.o), fit = all.filter((q) => !hurt(q.p, y, day)), pl = fit.length < 5 ? all : fit;   // with fewer than five fit, the hurt play
   const mine = t === ME && pl.some((q) => set(q));
   const list = pl.filter((q, i) => i < 13 || (mine && set(q) > 1));
   list.forEach((q, i) => { q.mins = set(q) ? (set(q) - 1) * 2 : TARGET[i] || 0; q.auto = !set(q); q.dnp = set(q) === 1; });
@@ -291,6 +291,7 @@ function plan(t, y, day) {
     for (let s = 0; s < 5; s++) { const q = list.find((x) => x.p.pos === s && !five.includes(x)); if (q) five.push(q); }
     for (const q of list) if (five.length < 5 && !five.includes(q)) five.push(q);
   }
+  for (const q of list) if (five.length < 5 && !five.includes(q)) five.push(q);               // five on the floor whatever the GM set
   list.forEach((q) => { q.on = five.includes(q); });
   return list;
 }

@@ -59,6 +59,21 @@ const SEED = +(process.env.LEAGUE_SEED || 11);
   ok(p.ENT.size === n0, 'an entry that does nothing is dropped');
 }
 
+// 2b. A GM who sets too many to DNP still has five on the floor; a team with fewer than five fit plays its hurt.
+{
+  const vm = newGame(SEED), p = vm.probe(); vm.run(3);
+  const mine = p.plan(p.ME, 0, -1);
+  for (const q of mine.slice(0, 9)) p.edit(q.p, (e) => { e.mins = 1; });               // nine of the thirteen to DNP
+  const pl = p.plan(p.ME, 0, -1);
+  ok(pl.filter((q) => q.on).length === 5, 'five on the floor whatever the GM set', `${pl.filter((q) => q.on).length}`);
+  let sec = 0; const g = p.playGame(0, p.ME, (p.ME + 1) % 30, 3, -1); sec = g.players[0].reduce((a, q) => a + q.sec, 0);
+  ok(sec >= 14400, 'and a whole game is played', `${sec} player-seconds`);
+  // the hurt play when fewer than five are fit
+  const t = (p.ME + 2) % 30, r = p.roster(t, 0);
+  let day = -1, n = 0; for (let d = 0; d < 80 && n < 6; d++) { const h = r.filter((q) => p.hurt(q, 0, d)).length; if (h >= 10) { day = d; break; } }
+  const g2 = p.playGame(0, t, (t + 1) % 30, 4, day); ok(g2.players[0].reduce((a, q) => a + q.sec, 0) >= 14400, 'a team of whom most are hurt still plays', `day ${day}`);
+}
+
 // 3. Training: a focus pays in the offseason.
 {
   let gain = [0, 0, 0, 0, 0], n = [0, 0, 0, 0, 0], capped = true, count = 0;
