@@ -86,7 +86,8 @@ for (const path of paths) {
     let leadRms = 0, leadShare = 0, jump = 0, prev = null, entered = false, pierce = 0;
     for (let k = 0; k * w < L.length; k++) {
       const a = k * w, b = Math.min(L.length, (k + 1) * w), l = rms(Ld, a, b), m = rms(L, a, b);
-      leadRms = Math.max(leadRms, l); leadShare = Math.max(leadShare, l / m); pierce = Math.max(pierce, rms(Lp, a, b));
+      leadRms = Math.max(leadRms, l); pierce = Math.max(pierce, rms(Lp, a, b));
+      if (m > 0.3 * med) leadShare = Math.max(leadShare, l / m);        // not in the silent tail of a song that ends before its last pattern does
       if (!entered && l > 0.005) { entered = true; if (prev) jump = m / prev; }
       prev = m;
     }

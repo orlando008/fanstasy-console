@@ -61,7 +61,7 @@ A tap with no pad within 10 frames (more than 10 early) is **stray**: a ripple, 
 
 | | Pads | Minimum gap |
 |---|---|---|
-| EASY | the notes that fall on a beat, or last a beat or more | 18 frames |
+| EASY | the notes of NORMAL that fall on a beat, or last a beat or more | 18 frames |
 | NORMAL | every melody note of an eighth or longer | 10 frames |
 | HARD | every melody note | 6 frames (10 taps a second) |
 
@@ -73,13 +73,13 @@ Five stretches, each a piece, in the order they open; each has its own time of d
 
 | # | Piece | Composer | Key and time | Tempo | The river |
 |---|---|---|---|---|---|
-| 1 | Minuet in G | Bach (Notebook for Anna Magdalena, Petzold) | G major, 3/4 | about 112 bpm | Dawn: pink and gold on a calm stretch |
-| 2 | Air on the G String | Bach (Orchestral Suite 3) | D major, 4/4 | about 60 bpm | Morning: a mist, long notes |
-| 3 | Für Elise | Beethoven | A minor, 3/8 | about 130 bpm | Noon: bright, the frog's first fast hops |
-| 4 | Moonlight Sonata, first movement | Beethoven | C sharp minor, 4/4 (the triplets) | about 54 bpm | Dusk then night: the melody over a rolling river |
-| 5 | Badinerie | Bach (Orchestral Suite 2) | B minor, 2/4 | about 120 bpm | Starry night: the fastest stretch |
+| 1 | Minuet in G | Bach (Notebook for Anna Magdalena, Petzold) | G major, 3/4 | about 112 bpm (32 bars and the first 8 again) | Dawn: pink and gold on a calm stretch |
+| 2 | Air on the G String | Bach (Orchestral Suite 3) | D major, 4/4 | about 64 bpm | Morning: a mist, long notes |
+| 3 | Für Elise | Beethoven | A minor, 3/8 | about 160 eighths a minute (the whole piece, 2 minutes) | Noon: bright, the frog's first fast hops |
+| 4 | Moonlight Sonata, first movement | Beethoven | C sharp minor, 4/4 (the triplets) | 60 bpm (bars 4 to 27) | Dusk then night: the melody over a rolling river |
+| 5 | Badinerie | Bach (Orchestral Suite 2) | B minor, 2/4 | about 112 bpm | Starry night: the fastest stretch |
 
-The title and the map play Bach's Prelude in C (the arpeggios, looping). Each piece is **written as notes** (`pieces.py`: the melody, the bass and the accompaniment, a few KB of text) and compiled into the song (`audio.json`) and the chart (`rom/charts.bin`) by `audio.py`, so the two cannot disagree. The arrangements are short and simple (a theme and its repeat, 1 to 2 minutes), written from the public domain scores.
+The title and the map play Bach's Prelude in C (the arpeggios, looping). Each piece is **written as notes** (`pieces.py`: the melody, the bass and the accompaniment, a few KB of text) and compiled into the song (`audio.json`) and the chart (`rom/charts.bin`) by `audio.py`, so the two cannot disagree. The notes are the public domain scores' own, read from MIDI files of the Mutopia Project's engravings by `import_score.py` (see Sources in section 15).
 
 ## 7. Opponents or hazards
 
@@ -143,9 +143,11 @@ BG2 affine river (a water texture from the art kit, drawn once and scrolled), BG
 
 **Step 1, results:** a perfect player gets all 72 perfect, S, in flow state. Sweep (6 seeds) of the normal chart: sd 0 is S (26,600 points), sd 3 is A or S (about 24,700), sd 8 is C or D (about 12,800, 66% accuracy). The test piece's levels pass `loud.mjs`.
 
-**Step 2, built:** `pieces.py` now holds the Prelude in C (song 0, looping), SCALE RUN and the five stretches, each as melody, bass and (for the Moonlight triplets) an inner part, with its own voices (a pluck, strings, an electric piano, a flute; `audio.py` defines them). The accompaniment is cut to the melody's length, so a song and its chart always have the same rows. `04-music.mjs` is the **sync check**: it reads `audio.json` and `rom/charts.bin` back and requires every pad to sit on the melody's note of its song (the same row, the same pitch), every melody note to have a pad, the charts' speed to equal the song's, each piece to last 30 to 125 s, the difficulties to keep their gaps, and the pad rates to stay between one every 2.5 s (easy) and 8 a second (hard). `loud.mjs --check` passes for all seven songs (the leads were turned down for the Air, Für Elise and the Badinerie). The bot plays every piece at every difficulty to the results screen (sweep, sd 3: B on all of them at 90 to 95% accuracy).
+**Step 2, built:** the notes are the real scores'. `import_score.py` turns one voice of a MIDI file into the text of `pieces.py` (rows of a fixed grid; the top voice of the right hand or the flute is the melody, the bottom voice of the left hand the bass; `--drop`/`--only` separate the Moonlight's triplets, `--legato` and `--below` and `--fill` handle a staccato sequence, a bass with chord notes and a rest), and the text it wrote is kept in `scores/` so the cart builds without the MIDI files. `pieces.py` has the Prelude in C (song 0, looping, bars 1 to 24), SCALE RUN (the practice piece, written by hand) and the five stretches, each with its voices (a pluck, strings, an electric piano, a flute; `audio.py` defines them): the Minuet (Anh. 114, all 32 bars and the first 8 again, 68 s), the Air (the flute line of Mutopia's flute and guitar arrangement, 75 s), Für Elise (the whole piece, 117 s), the Moonlight (bars 4 to 27 of the first movement: the melody as pads, the triplets on a second channel, the bass on a third, 96 s), the Badinerie (the flute's line with every repeat, 94 s). The easy chart is now a part of the normal one (a note must be an eighth or longer and on a beat). `04-music.mjs` is the **sync check**: it reads `audio.json` and `rom/charts.bin` back and requires every pad to sit on the melody's note of its song (the same row, the same pitch), every melody note to have a pad, the charts' speed to equal the song's, each piece to last 30 to 125 s, the pad rates to stay between one every 2.5 s (easy) and 8 a second (hard), the gaps to keep their least size, and no stretch of ten seconds without a pad. `loud.mjs --check` passes for all seven songs; `loud.mjs` now ignores the silent tail of a song that ends before its last pattern when it measures the lead's share of the mix. The bot plays every piece at every difficulty to the results screen.
 
-**Step 2, results and what is not right yet:** the Minuet's first strain, Für Elise's theme (A and B parts) and the Prelude are written from the scores as remembered; the Minuet's second strain, the Air, the Moonlight melody and the Badinerie are **in the style of** the pieces, not note-for-note, and the Für Elise middle part is only sketched. They need a listener (or a MIDI, ABC or MusicXML file of the public domain score, which a small importer could turn into `pieces.py` text). The difficulties of the slow pieces are close (Minuet normal = hard; the Air and the Moonlight differ by under 10 pads, because they have few short notes): step 7 adds ornament notes (sixteenth runs that only the hard chart keeps). `clash.py` lists some semitone clashes between the invented melody and the harmony in the Moonlight; step 7 smooths them.
+**Step 2, results:** pads in all: Scale Run 88, Minuet 158, Air 122, Für Elise 380, Moonlight 53, Badinerie 456 on hard (easy 56, 110, 32, 58, 47, 98; normal 72, 158, 46, 88, 47, 145). ROM 5.1 KB, 53 of 64 patterns, 7 of 8 songs. The slow pieces' difficulties are close (the Minuet's normal and hard are the same, the Moonlight's three charts hold 47 to 53 pads, the melody being slow): step 7 (balance) can give the hard chart more, for instance the Moonlight's triplets as extra pads.
+
+**Sources of the notes:** Mutopia Project engravings (public domain or Creative Commons, found in the `marmooo/classical-midi-db` collection): Beethoven, Für Elise WoO 59 and Piano Sonata 14 (Moonlight) first movement; Bach, Air from Orchestral Suite 3 (BWV 1068, the flute and guitar arrangement), the Menuet BWV Anh. 114 from the Notebook for Anna Magdalena Bach (by Christian Petzold) and the Prelude in C (BWV 846). The Badinerie (Orchestral Suite 2, BWV 1067) is John Hamm's 1995 General MIDI sequence, as shipped in `jikol1906/bach-visualizer` (no licence is stated there): the notes of the piece are in the public domain, but a sequence can carry its own copyright, so before the game is released the Badinerie's notes should be checked against an engraving with a clear licence (Mutopia or IMSLP), which can replace `scores/badinerie.*` with the same tool.
 
 Each step: build it, run `node tools/check.js flow-state` and `node tools/test.js flow-state`, write its **Built** and **Results** notes under its number here, commit and push.
 

@@ -29,7 +29,7 @@ class Piece:
         for r, p, d in s.notes:
             f = 0
             for k, (name, gap) in enumerate(DIFFS):
-                ok = [r % s.beat == 0 or d >= s.beat, d >= s.eighth, True][k]
+                ok = [(r % s.beat == 0 or d >= s.beat) and d >= s.eighth, d >= s.eighth, True][k]     # easy is a part of normal
                 if ok and (r - last[k]) * s.speed >= gap:
                     f |= 1 << k; last[k] = r
             out.append(f | (min(d, 31) << 3))
@@ -83,79 +83,50 @@ SCALE_RUN = Piece('SCALE RUN', 'TEST', 8, 4, 2,
 
 
 
-def bars(*pats, times=1):
-    """The patterns one after the other (each a text of notes), all repeated `times`."""
-    return ' '.join(pats) * 1 if times == 1 else ' '.join(' '.join(pats) for _ in range(times))
+def score(name):
+    """The note text the importer (import_score.py) wrote for a part of a piece: scores/<name>."""
+    return open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scores', name)).read().strip()
 
 
-# The notes below are written out from the public domain scores, as simplified arrangements: the theme and its repeat, the harmony as a
-# bass. Where a stretch is not the score's own (marked "in the style of"), a listener should say so and the text here is changed.
+def rows_of(text):
+    return sum(int(t.split(':')[1]) for t in text.split())
 
-# --- 1 Minuet in G (Petzold, in the Notebook for Anna Magdalena Bach): G major, 3/4, a row an eighth note, 112 bpm ---
-MIN_A = ['D5:2 G4:1 A4:1 B4:1 C5:1', 'D5:2 G4:2 G4:2', 'E5:2 C5:1 D5:1 E5:1 F#5:1', 'G5:2 G4:2 G4:2',
-         'C5:2 D5:1 C5:1 B4:1 A4:1', 'B4:2 C5:1 B4:1 A4:1 G4:1', 'A4:2 B4:1 A4:1 G4:1 F#4:1', 'G4:6']
-MIN_B = ['B5:2 G5:1 A5:1 B5:1 G5:1', 'A5:2 D5:1 E5:1 F#5:1 G5:1', 'A5:2 D5:2 D5:2', 'C5:2 B4:1 A4:1 B4:1 C5:1',
-         'C5:2 D5:1 C5:1 B4:1 A4:1', 'B4:2 C5:1 B4:1 A4:1 G4:1', 'A4:2 B4:1 A4:1 G4:1 F#4:1', 'G4:6']
-MIN_BASS_A = ['G3', 'G3', 'C3', 'G3', 'C3', 'G3', 'D3', 'G3']
-MIN_BASS_B = ['G3', 'D3', 'D3', 'G3', 'C3', 'G3', 'D3', 'G3']
-MINUET = Piece('MINUET IN G', 'BACH', 16, 2, 1,
-    bars(*MIN_A, *MIN_A, *MIN_B, *MIN_B, *MIN_A),
-    ' '.join(f'{n}:6' for n in MIN_BASS_A * 2 + MIN_BASS_B * 2 + MIN_BASS_A), key=('G', MAJOR))
 
-# --- 2 Air on the G String (Bach, Orchestral Suite 3): D major, 4/4, a row a sixteenth, 60 bpm (the melody in the style of the Air) ---
-AIR_A = ['F#5:12 E5:2 D5:2', 'E5:8 C#5:4 A4:4', 'D5:12 C#5:2 B4:2', 'C#5:8 A4:8', 'B4:8 D5:4 F#5:4', 'E5:12 D5:2 C#5:2', 'D5:8 B4:4 G4:4', 'A4:16']
-AIR_B = ['A5:12 G5:2 F#5:2', 'G5:8 E5:4 C#5:4', 'F#5:12 E5:2 D5:2', 'E5:8 C#5:4 A4:4', 'D5:6 E5:2 F#5:4 G5:4', 'F#5:6 E5:2 D5:4 C#5:4', 'B4:4 C#5:4 D5:4 E5:4', 'D5:16']
-AIR_ROOTS_A = ['D3', 'A2', 'B2', 'F#2', 'G2', 'D3', 'G2', 'A2']
-AIR_ROOTS_B = ['D3', 'A2', 'B2', 'F#2', 'G2', 'A2', 'G2', 'D3']
-AIR = Piece('AIR ON THE G STRING', 'BACH', 15, 4, 2,
-    bars(*AIR_A, *AIR_B, *AIR_A),
-    ' '.join(' '.join([f'{n}:4'] * 4) for n in AIR_ROOTS_A + AIR_ROOTS_B + AIR_ROOTS_A), lead='STRINGS', bassv='BASS', key=('D', MAJOR))
+def pad_to(text, rows):
+    """The text, ended with a rest so it lasts `rows` rows (a part shorter than the melody stays in step)."""
+    n = rows - rows_of(text)
+    return text + (' _:%d' % n if n > 0 else '')
 
-# --- 3 Fur Elise (Beethoven): A minor, 3/8, a row a sixteenth ---
-E_THEME = ['E5:1 D#5:1 E5:1 B4:1 D5:1 C5:1', 'A4:2 _:1 C4:1 E4:1 A4:1', 'B4:2 _:1 E4:1 G#4:1 B4:1']
-E_A1 = 'E5:1 D#5:1 ' + ' '.join(E_THEME) + ' C5:2 _:1 E4:1 E5:1 D#5:1'
-E_A2 = ' '.join(E_THEME) + ' C5:2 _:1 E4:1 C5:1 B4:1 A4:6'
-E_B = ('G4:1 C5:1 D5:1 E5:3 G4:1 F5:1 E5:1 D5:3 G4:1 E5:1 D5:1 C5:3 E4:1 D5:1 C5:1 B4:3 E4:1 E5:1 E4:1 '
-       'E5:1 D#5:1 E5:1 D#5:1 E5:1 B4:1')
-E_C = ('A4:1 C5:1 E5:1 A5:3 E5:1 C5:1 A4:1 G4:1 B4:1 D5:1 G5:3 D5:1 B4:1 G4:1 F4:1 A4:1 C5:1 F5:3 C5:1 A4:1 F4:1 '
-       'E4:1 G#4:1 B4:1 E5:3 D#5:1 E5:1 D#5:1 E5:1 D#5:1 E5:1 B4:1 D5:1 C5:1')
-ELISE_M = ' '.join([E_A1, E_A2, E_B, E_A1, E_A2, E_C, E_A1, E_A2, E_B, E_A1, E_A2, 'A4:6'])
-ELISE_BASS = ' '.join(f'{n}:6' for n in ['A2', 'A2', 'E3', 'A2', 'A2', 'E3', 'A2', 'E3', 'A2'] * 20)
-ELISE = Piece('FUR ELISE', 'BEETHOVEN', 8, 4, 1, ELISE_M, ELISE_BASS, lead='ELEAD', bassv='BASS', key=('A', MINOR))
 
-# --- 4 Moonlight Sonata, first movement (Beethoven): C sharp minor, 4/4 in triplets, a row a sixth of a beat, 54 bpm (the melody in the style of it) ---
-MOON_CH = [('C#3', 'G#3', 'C#4', 'E4'), ('C#3', 'G#3', 'C#4', 'E4'), ('B2', 'G#3', 'C#4', 'E4'), ('A2', 'A3', 'C#4', 'E4'),
-           ('F#2', 'A3', 'C#4', 'F#4'), ('G#2', 'G#3', 'C#4', 'E4'), ('G#2', 'G#3', 'B3', 'F4'), ('C#3', 'G#3', 'C#4', 'E4')]
-MOON_MEL = ['_:24', '_:24',
-            'C#5:9 B4:3 C#5:12', 'E5:9 D#5:3 E5:12', 'E5:9 C#5:3 A4:12', 'A4:9 G#4:3 F#4:12', 'G#4:9 A4:3 B4:12', 'B4:9 A4:3 G#4:12', 'G#4:24', 'G#4:24',
-            'C#5:9 D#5:3 E5:6 G#5:6', 'G#5:9 F#5:3 E5:6 D#5:6', 'E5:9 C#5:3 A4:6 C#5:6', 'A5:9 G#5:3 F#5:6 E5:6', 'G#5:6 F#5:6 E5:6 D#5:6', 'E5:6 B4:6 G#4:6 B4:6', 'C#5:24', 'C#5:24']
-MOON_CH_ALL = MOON_CH * 3
-MOONLIGHT = Piece('MOONLIGHT SONATA', 'BEETHOVEN', 11, 6, 3,
-    ' '.join(MOON_MEL),
-    ' '.join(f'{c[0]}:24' for c in MOON_CH_ALL[:len(MOON_MEL)]),
-    inner=' '.join(' '.join(f'{n}:2' for n in c[1:] * 4) for c in MOON_CH_ALL[:len(MOON_MEL)]),
+# The five stretches are the public domain scores as the Mutopia Project engraved them (the Badinerie is John Hamm's 1995 sequence),
+# read from their MIDI files by import_score.py (the notes are in scores/): the melody is the top voice of the right hand or the flute, the
+# bass the bottom voice of the left hand. The speed (frames to a row) sets the tempo; it is ours, close to the usual one.
+
+# --- 1 Minuet in G (Petzold, Notebook for Anna Magdalena Bach, BWV Anh. 114): G major, 3/4, a row an eighth note, the 32 bars and the first 8 again ---
+MINUET = Piece('MINUET IN G', 'BACH', 16, 2, 1, score('minuet.mel') + ' ' + score('minuet.mel2'),
+    pad_to(score('minuet.bass'), 192) + ' ' + score('minuet.bass2'), key=('G', MAJOR))
+
+# --- 2 Air on the G String (Bach, Orchestral Suite 3, BWV 1068): D major, 4/4, a row a sixteenth, about 64 bpm ---
+AIR = Piece('AIR ON THE G STRING', 'BACH', 14, 4, 2, score('air.mel'), score('air.bass'), lead='STRINGS', key=('D', MAJOR))
+
+# --- 3 Fur Elise (Beethoven, WoO 59): A minor, 3/8, a row a sixteenth; the whole piece ---
+ELISE = Piece('FUR ELISE', 'BEETHOVEN', 11, 4, 2, score('elise.mel'), score('elise.bass'), lead='ELEAD', key=('A', MINOR))
+
+# --- 4 Moonlight Sonata, first movement (Beethoven, Op. 27 no. 2): C sharp minor, 4/4, a row a twelfth of a beat (the triplets are 4 rows), 60 bpm; bars 4 to 27 ---
+MOONLIGHT = Piece('MOONLIGHT SONATA', 'BEETHOVEN', 5, 12, 6, score('moon.mel'), score('moon.bass'), inner=score('moon.inner'),
     lead='EPIANO', bassv='BASS', innerv='EPIANO', key=('C#', MINOR))
 
-# --- 5 Badinerie (Bach, Orchestral Suite 2): B minor, 2/4, a row a sixteenth, about 128 bpm (in the style of the Badinerie) ---
-BAD_A = ['B4:1 D5:1 F#5:1 B5:1 F#5:1 D5:1 B4:2', 'A4:1 C#5:1 E5:1 A5:1 E5:1 C#5:1 A4:2', 'G4:1 B4:1 D5:1 G5:1 D5:1 B4:1 G4:2',
-         'F#4:1 A4:1 C#5:1 F#5:1 C#5:1 A4:1 F#4:2', 'G4:1 A4:1 B4:1 C#5:1 D5:1 E5:1 F#5:1 G5:1', 'F#5:1 E5:1 D5:1 C#5:1 B4:2 B4:2',
-         'C#5:2 A4:2 D5:2 B4:2', 'B4:6 _:2']
-BAD_B = ['F#5:2 B5:2 F#5:2 B5:2', 'E5:2 A5:2 E5:2 A5:2', 'D5:1 E5:1 F#5:1 G5:1 A5:1 B5:1 A5:1 G5:1', 'F#5:4 D5:4',
-         'G5:2 F#5:2 E5:2 D5:2', 'C#5:2 D5:2 E5:2 C#5:2', 'D5:2 B4:2 C#5:2 A#4:2', 'B4:6 _:2']
-BAD_ROOTS_A = ['B2', 'A2', 'G2', 'F#2', 'G2', 'D3', 'F#2', 'B2']
-BAD_ROOTS_B = ['D3', 'C#3', 'B2', 'D3', 'E3', 'A2', 'F#2', 'B2']
-BADINERIE = Piece('BADINERIE', 'BACH', 7, 4, 2,
-    bars(*BAD_A, *BAD_A, *BAD_B, *BAD_B, *BAD_A, *BAD_A, *BAD_B),
-    ' '.join(f'{n}:4 {n}:4' for n in (BAD_ROOTS_A * 2 + BAD_ROOTS_B * 2 + BAD_ROOTS_A * 2 + BAD_ROOTS_B)), lead='FLUTE', bassv='BASS', key=('B', MINOR))
+# --- 5 Badinerie (Bach, Orchestral Suite 2, BWV 1067): B minor, 2/4, a row a sixteenth, about 112 bpm; the flute's line ---
+BADINERIE = Piece('BADINERIE', 'BACH', 8, 4, 2, score('badinerie.mel'), score('badinerie.bass'), lead='FLUTE', key=('B', MINOR))
 
-# --- The title and the map: the Prelude in C (Bach, the Well-Tempered Clavier I), looping; a row a sixteenth ---
-PRE = [('C4 E4 G4 C5 E5', 'C3'), ('C4 D4 A4 D5 F5', 'C3'), ('B3 D4 G4 D5 F5', 'B2'), ('C4 E4 G4 C5 E5', 'C3'),
-       ('C4 E4 A4 E5 A5', 'C3'), ('C4 D4 F#4 A4 D5', 'C3'), ('B3 D4 G4 D5 G5', 'B2'), ('B3 C4 E4 G4 C5', 'B2'),
-       ('A3 C4 E4 G4 C5', 'A2'), ('D3 A3 D4 F#4 C5', 'D3'), ('G3 B3 D4 G4 B4', 'G2'), ('G3 Bb3 E4 G4 C#5', 'G2'),
-       ('F3 A3 D4 A4 D5', 'F2'), ('F#3 C4 D4 A4 D#5', 'F#2'), ('G3 B3 D4 G4 F4', 'G2'), ('C3 E3 G3 C4 E4', 'C2')]
-def pre_bar(n):
-    a, b, c, d, e = n.split()
-    return ' '.join(f'{x}:1' for x in [a, b, c, d, e, c, d, e] * 2)
-PRELUDE = Piece('PRELUDE IN C', 'BACH', 7, 4, 2, ' '.join(pre_bar(n) for n, _ in PRE), ' '.join(f'{r}:16' for _, r in PRE), loop=0, key=('C', MAJOR))
+# --- The title and the map: the Prelude in C (Bach, the Well-Tempered Clavier I, bars 1 to 24), looping; a row a sixteenth; the bass is the first note of each half bar an octave down ---
+def prelude_bass(mel):
+    out, row = [], 0
+    for t in mel.split():
+        n, d = t.split(':')
+        if row % 8 == 0 and n != '_': out.append('%s%d:8' % (n[:-1], int(n[-1]) - 1))
+        row += int(d)
+    return ' '.join(out)
+PRELUDE = Piece('PRELUDE IN C', 'BACH', 7, 4, 2, score('prelude.mel'), prelude_bass(score('prelude.mel')), lead='SOFTPLUCK', loop=0, key=('C', MAJOR))
 
 PIECES = [SCALE_RUN, MINUET, AIR, ELISE, MOONLIGHT, BADINERIE]

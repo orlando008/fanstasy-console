@@ -42,6 +42,8 @@ for (let i = 0; i < count; i++) {
   const gap = (p) => Math.min(...p.map((n, k) => (k ? n.f - p[k - 1].f : 999)));
   ok(gap(per[0]) >= 18 && gap(per[1]) >= 10 && gap(per[2]) >= 6, `${tag}: the pads keep the least gap of their difficulty`, per.map(gap).join(' '));
   ok(per[0].length / secs >= 0.4 && per[2].length / secs <= 8, `${tag}: easy has a pad every 2.5 s at the least, hard at most 8 a second`, `${(per[0].length / secs).toFixed(2)}/s, ${(per[2].length / secs).toFixed(1)}/s`);
+  const longest = (p) => Math.max(...p.map((n, k) => (k ? n.f - p[k - 1].f : n.f)));
+  ok(per.every((p) => longest(p) <= 600), `${tag}: no stretch of ten seconds without a pad, at any difficulty`, per.map(longest).join(' '));
   ok(c.notes.every((n) => n.f >= 0 && n.f / c.speed < s.rows.length), `${tag}: all pads are inside the song`);
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);
