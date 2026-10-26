@@ -7,7 +7,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 {
   const vm = newGame(1), p = vm.probe(); vm.run(1);
   const b = p.rom('charts');
-  ok(b[0] === 1, 'the ROM holds one chart (the test piece)', `${b.length} bytes`);
+  ok(b[0] === 6, 'the ROM holds six charts (the test piece and the five stretches)', `${b.length} bytes`);
   const easy = p.loadChart(0, 0), normal = p.loadChart(0, 1), hard = p.loadChart(0, 2);
   ok(easy.speed === 8 && normal.speed === 8 && hard.speed === 8, 'it knows the song\'s speed: 8 ticks (frames) a row');
   ok(easy.notes.length < normal.notes.length && normal.notes.length < hard.notes.length, 'easy has fewer pads than normal, and normal fewer than hard', `${easy.notes.length} < ${normal.notes.length} < ${hard.notes.length}`);

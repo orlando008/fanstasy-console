@@ -102,7 +102,7 @@ Points as in section 5; the **grade** by the weighted accuracy (perfect 1, good 
 
 ## 11. Audio
 
-Songs: 0 the title and the map (Bach's Prelude in C), 1 to 5 the pieces of section 6. The sound chip's sampled instruments: a harpsichord-like pluck (the Bach), a soft strings (the Air), a flute (the Badinerie's line), an electric piano standing in for a piano (the Beethoven); no drums. Effects (channels 6 and 7 take turns): a tap's **plink** at the pad's pitch, softer than the melody, a **splash** for a miss, a **chime** for the multiplier going up, a **swell** for flow state, a **fanfare** for the end of a stretch, menu sounds. Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato (`node tools/devkit/music/loud.mjs carts/flow-state.nova --check`; playbook section 5), and the effects well under the melody.
+Songs: 0 the title and the map (Bach's Prelude in C, looping), 1 the practice piece SCALE RUN (a steady scale piece, kept for the calibration and the tutorial of step 5), 2 to 6 the five stretches of section 6 (piece *i* of the charts is song *i* + 1). The sound chip's sampled instruments: a harpsichord-like pluck (the Bach), a soft strings (the Air), a flute (the Badinerie's line), an electric piano standing in for a piano (the Beethoven); no drums. Effects (channels 6 and 7 take turns): a tap's **plink** at the pad's pitch, softer than the melody, a **splash** for a miss, a **chime** for the multiplier going up, a **swell** for flow state, a **fanfare** for the end of a stretch, menu sounds. Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato (`node tools/devkit/music/loud.mjs carts/flow-state.nova --check`; playbook section 5), and the effects well under the melody.
 
 ## 12. Video layers
 
@@ -122,11 +122,11 @@ BG2 affine river (a water texture from the art kit, drawn once and scrolled), BG
 
 | Asset | Budget |
 |---|---|
-| Code | 14.6 KB of the 64 KB limit (after step 1) (`node tools/check.js flow-state`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Code | 14.6 KB of the 64 KB limit (after step 2) (`node tools/check.js flow-state`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
 | Tiles | TODO of 1,024 |
 | Sprites | TODO (128 in OAM, 32 per line) |
-| ROM | the charts, 0.4 KB for the test piece (after step 1), TODO KB (about 2.5 KB a piece of melody notes) |
-| Songs / SFX | 6 songs, TODO patterns of 64, TODO effects, sample RAM TODO of 32 KB |
+| ROM | the charts, 3.6 KB for the six pieces (after step 2), 1,042 pads in all (about 2.5 KB a piece of melody notes) |
+| Songs / SFX | 7 songs (the Prelude, Scale Run and five pieces), 29 of 64 patterns, 7 effects (step 6 adds more), sample RAM 14 of 32 KB |
 
 ## 15. Implementation plan
 
@@ -142,6 +142,10 @@ BG2 affine river (a water texture from the art kit, drawn once and scrolled), BG
 **Step 1, built:** `pieces.py` (a `Piece` of melody and bass, `compile_piece` into a song, `charts_blob` into `rom/charts.bin`) with one test piece, SCALE RUN (speed 8, 16 bars of C major); `audio.py` writes the charts as a side effect, so the packed cart check covers them. `code.js`: `loadChart`, the count-in (120 frames) then `music(song, pos)` so the note on row r sounds r x speed frames later, `tap()` (the nearest pad within 10 frames, else a stray), the flow, multiplier (hysteresis at 80), score, grades, pause (stops the music, resumes at the start of the pattern after a 90-frame count-in), results and records in the save (v2). Pads and the frog are plain circles for now. Tests: `01-flow` (screens, music start, pause, a whole piece), `02-rules` (every number of section 5), `03-art` (placeholder). Bot: `bot.mjs` with a timing error `sd` in frames and a `skip` rate.
 
 **Step 1, results:** a perfect player gets all 72 perfect, S, in flow state. Sweep (6 seeds) of the normal chart: sd 0 is S (26,600 points), sd 3 is A or S (about 24,700), sd 8 is C or D (about 12,800, 66% accuracy). The test piece's levels pass `loud.mjs`.
+
+**Step 2, built:** `pieces.py` now holds the Prelude in C (song 0, looping), SCALE RUN and the five stretches, each as melody, bass and (for the Moonlight triplets) an inner part, with its own voices (a pluck, strings, an electric piano, a flute; `audio.py` defines them). The accompaniment is cut to the melody's length, so a song and its chart always have the same rows. `04-music.mjs` is the **sync check**: it reads `audio.json` and `rom/charts.bin` back and requires every pad to sit on the melody's note of its song (the same row, the same pitch), every melody note to have a pad, the charts' speed to equal the song's, each piece to last 30 to 125 s, the difficulties to keep their gaps, and the pad rates to stay between one every 2.5 s (easy) and 8 a second (hard). `loud.mjs --check` passes for all seven songs (the leads were turned down for the Air, Für Elise and the Badinerie). The bot plays every piece at every difficulty to the results screen (sweep, sd 3: B on all of them at 90 to 95% accuracy).
+
+**Step 2, results and what is not right yet:** the Minuet's first strain, Für Elise's theme (A and B parts) and the Prelude are written from the scores as remembered; the Minuet's second strain, the Air, the Moonlight melody and the Badinerie are **in the style of** the pieces, not note-for-note, and the Für Elise middle part is only sketched. They need a listener (or a MIDI, ABC or MusicXML file of the public domain score, which a small importer could turn into `pieces.py` text). The difficulties of the slow pieces are close (Minuet normal = hard; the Air and the Moonlight differ by under 10 pads, because they have few short notes): step 7 adds ornament notes (sixteenth runs that only the hard chart keeps). `clash.py` lists some semitone clashes between the invented melody and the harmony in the Moonlight; step 7 smooths them.
 
 Each step: build it, run `node tools/check.js flow-state` and `node tools/test.js flow-state`, write its **Built** and **Results** notes under its number here, commit and push.
 

@@ -29,16 +29,14 @@ a.instrument('THUD', 'pulse50', 0, 4, 0, 0, 11)
 a.instrument('CRUNCH', 'noise', 0, 8, 3, 6, 9)
 a.instrument('FANFARE', 'pulse25', 0, 6, 11, 6, 9)
 
-# --- 0 The title: A minor, 150 bpm ---
-S = a.song(Key('A', MINOR), 6, echo=(5, 4, 5, 9))
-CH = ['1', '6', '3', '7']
-bars(S, 16, CH, None, drums='soft', bass='long', upper='pad', counter='1 3 5 8 5 3 1 3', ci='ARP')   # the pad first, so the lead does not arrive with a jump
-bars(S, 16, CH, ['A3 - C4 - E4 - A4 -', 'A4 - G4 - F4 - C4 -', 'E4 - G4 - C5 - G4 -', 'D4 - G4 - B4 - G4 -'], li='SOFTHORN', drums='drive', bass='1 - - - 5 - - -', upper='arp1')
-S.finish()
-
-# --- The pieces (song 1 and on): the pads and the sound from the same notes ---
+# --- 0 The title and the map: the Prelude in C; then the pieces (1 on), the pads and the sound from the same notes ---
 a.voice('PLUCK', 'pluck', 15, -0.1)
-for pc in PIECES: compile_piece(a, pc, 'PLUCK', 'BASS')
+a.voice('STRINGS', 'strings', 8, 0.1, a=4)
+a.voice('EPIANO', 'epiano', 15, 0.0)
+a.voice('ELEAD', 'epiano', 10, 0.0)
+a.voice('FLUTE', 'flute', 8, -0.1)
+compile_piece(a, PRELUDE)
+for pc in PIECES: compile_piece(a, pc)
 
 # --- Effects: the order is the SFX table in code.js ---
 a.effect(1, ['E-6', 'OFF'], 'BLIP')                                # 0 menu move
