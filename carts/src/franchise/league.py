@@ -109,14 +109,14 @@ def salary_for(o):
 
 def make(seed=2026):
     r = random.Random(seed)
-    talent = [clamp(int(r.gauss(50, 9)), 32, 68) for _ in range(NT)]
+    talent = [clamp(int(r.gauss(50, 11)), 30, 72) for _ in range(NT)]
     persons = []
     used = set()
     stars = sorted(r.sample(range(NT), 14))                                    # fourteen teams have a star of 85 and over
     for t in range(NT):
         for s in range(SL):
             pos, tier = s % 5, s // 5
-            mean = (70, 61, 56)[tier] + (talent[t] - 50) // 4
+            mean = (70, 61, 56)[tier] + int((talent[t] - 50) * 2 / 5)
             sd = (7, 6, 5)[tier]
             peak_o = clamp(int(r.gauss(mean, sd)), 38, 96)
             if tier == 0 and s == 0 and t in stars: peak_o = clamp(peak_o + 14, 80, 95)

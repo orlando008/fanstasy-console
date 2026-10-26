@@ -5,7 +5,7 @@
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
-const SHADOW = 1, PANEL = 3, RED = 6, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14, WHITE = 15;
+const SHADOW = 1, PANEL = 3, BROWN = 4, RED = 6, ORANGE = 9, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14, WHITE = 15;
 
 // --- Art: made by art.py (tiles.txt, palette.txt, map.txt). The block below is rewritten each time it runs. ---
 
@@ -122,7 +122,7 @@ function gen(id, pos, tier, start, talent, rank) {
   const g = stream(hash(SEED, id, 7)), n = names();
   const rookie = rank >= 0 || g(100) < [40, 55, 70][tier];
   const age0 = rookie ? 19 + g(4) : 24 + g(8), peak = rookie ? 25 + g(4) : Math.min(31, age0 + g(2));
-  const mean = rank >= 0 ? 68 - ((rank * 5) >> 2) : [70, 61, 56][tier] + ((talent - 50) >> 2);
+  const mean = rank >= 0 ? 68 - ((rank * 5) >> 2) : [70, 61, 56][tier] + Math.trunc(((talent - 50) * 2) / 5);
   let O = mean + Math.trunc(((g(13) + g(13) + g(13) - 18) * [7, 6, 5][tier]) / 6);
   if (tier === 0 && rank < 0 && g(100) < 9) O += 12;
   O = clamp(O, 38, 96);
@@ -226,6 +226,116 @@ function strength(t, y) {
   return o.length ? Math.round(o.reduce((s, v) => s + v, 0) / 8) : 0;
 }
 
+// --- The game night (section 5): a game is a pure function of (two rosters, the year, a seed) ---
+// Possession by possession: who shoots, what shot, does it go in, the foul, the rebound; the coach rotates by a minutes plan and by
+// fatigue and fouls; the result is the score by quarter, a box score and a log of events for the live view.
+
+const SENS = 1.0, QLEN = 720, OTLEN = 300, TARGET = [34, 34, 33, 32, 31, 24, 20, 16, 12, 8, 4, 2, 0];   // minutes planned for the 13 by rank
+const SHORT = { three: ['hits a three', 'drains a three', 'from downtown: good'], mid: ['hits a jumper', 'pulls up: good', 'sinks a jumper'], inside: ['scores inside', 'finishes at the rim', 'with the layup'], dunk: ['throws it down'],
+  miss: ['misses', 'rims out', 'no good'], tov: ['turns it over', 'loses the ball', 'bad pass'], steal: ['steals it', 'picks his pocket'], block: ['blocks it', 'swats it away'], foul: ['fouled', 'draws the foul'], ft: ['at the line'], reb: ['rebound'] };
+
+function playGame(y, ht, at, seed) {
+  const g = stream(hash(SEED, seed, ht * 32 + at, y)), sides = [roster(ht, y), roster(at, y)];
+  const T = sides.map((list, k) => {
+    const pl = list.map((p) => ({ p, k, o: ovr(p, y), r: ratings(p, y), fat: 0, sec: 0, pf: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, name: pname(p) })).sort((a, b) => b.o - a.o).slice(0, 13);
+    pl.forEach((q, i) => { q.target = TARGET[i] * 60; });
+    const five = [];                                   // the starting five: the best of each position, then the best left
+    for (let s = 0; s < 5; s++) { const q = pl.find((x) => x.p.pos === s && !five.includes(x)); if (q) five.push(q); }
+    for (const q of pl) if (five.length < 5 && !five.includes(q)) five.push(q);
+    pl.forEach((q) => { q.on = five.includes(q); });
+    return { pl, pts: 0, qs: [], k };
+  });
+  const log = [], gt = { q: 0, left: QLEN }, lead = () => T[0].pts - T[1].pts;
+  let elapsed = 0, off = g(2);
+  const first = off;
+  const lineup = (tm) => { const on = tm.pl.filter((q) => q.on), a = [0, 0, 0, 0, 0, 0]; for (const q of on) for (let i = 0; i < 6; i++) a[i] += (q.r[i] - q.fat / 12) / on.length; return { on, INS: a[0], OUT: a[1], PLY: a[2], DEF: a[3], REB: a[4], ATH: a[5] }; };
+  const pick = (list, f) => { let tot = 0; for (const q of list) tot += f(q); let v = g(1000) / 1000 * tot; for (const q of list) { v -= f(q); if (v <= 0) return q; } return list[list.length - 1]; };
+  const say = (kind, tm, q, text, extra) => log.push({ q: gt.q, left: gt.left, kind, team: tm, s: [T[0].pts, T[1].pts], text: `${q ? q.name : ''} ${text}`.trim(), who: q ? q.name : '', ...extra });
+  const phrase = (k) => SHORT[k][g(SHORT[k].length)];
+  /** The coach: the five with the most need and the freshest legs, who stay on unless someone is clearly better. */
+  function coach(tm) {
+    const blow = Math.abs(lead()) >= 22 && elapsed > 2160;
+    const score = (q) => q.pf >= 6 ? -999 : (q.target * Math.min(1, elapsed / 2880) - q.sec) / 60 * 6 + q.o * 0.5 - q.fat * 0.25 - (q.pf >= 4 ? (gt.q < 3 ? 14 : 8) : 0) + (q.on ? 4 : 0) - (blow && tm.pl.indexOf(q) < 5 ? 30 : 0);
+    const best = tm.pl.slice().sort((a, b) => score(b) - score(a)).slice(0, 5);
+    for (const q of tm.pl) q.on = best.includes(q);
+  }
+  function tick(dt) {
+    dt = Math.max(0, Math.min(dt, gt.left));                       // a period ends on the clock, in the middle of a play if it must
+    elapsed += dt; gt.left -= dt;
+    for (const tm of T) for (const q of tm.pl) { if (q.on) { q.sec += dt; q.fat = Math.min(100, q.fat + dt * (1.55 - q.r[5] / 100) / 5.5); } else q.fat = Math.max(0, q.fat - dt * 0.14); }
+  }
+  /** The free throws of a foul: n shots by the shooter. */
+  function freeThrows(tm, q, n, o) {
+    const p = 0.62 + q.r[1] / 450;
+    let last = false;
+    for (let i = 0; i < n; i++) {
+      q.fta++; last = g(1000) / 1000 < p;
+      if (last) { q.ftm++; q.pts++; tm.pts++; }
+      if (i === n - 1 || last) say(last ? 'ft' : 'ftm', tm.k, q, last ? 'makes the free throw' : 'misses the free throw', {});
+    }
+    return last;
+  }
+  function possession() {
+    const A = T[off], D = T[1 - off], L = lineup(A), M = lineup(D), home = off === 0 ? 0.018 : 0;
+    const dt = 9 + g(13);
+    const q = pick(L.on, (x) => { const w = Math.max(5, (x.r[1] + x.r[0] + x.r[2] * 0.5) / 2.5 - 12); return w * w; });
+    if (g(100) < 8) { const fs = M.on.filter((x) => x.pf < 6), f = fs[g(fs.length)] || M.on[0]; f.pf++; if (g(3) === 0) say('foul', 1 - off, f, 'commits a foul', {}); }
+    const pt = clamp(0.135 + SENS * ((M.DEF - L.PLY) / 1600 + (M.ATH - L.ATH) / 3000), 0.08, 0.2);
+    if (g(1000) / 1000 < pt) {
+      q.tov++;
+      if (g(100) < 50) { const s = pick(M.on, (x) => x.r[3]); s.stl++; say('tov', off, q, `${phrase('tov')}, ${s.name} ${phrase('steal')}`, {}); } else say('tov', off, q, phrase('tov'), {});
+      tick(Math.max(4, dt - 6)); return 1 - off;
+    }
+    const p3 = clamp(0.34 + (q.r[1] - q.r[0]) / 300, 0.06, 0.62), roll = g(1000) / 1000, kind = roll < p3 ? 'three' : roll < p3 + 0.14 ? 'mid' : 'inside';
+    let pm;
+    if (kind === 'inside') pm = clamp(0.48 + SENS * ((q.r[0] - 60) / 520 + (q.r[5] - 60) / 2200 - (M.DEF - 60) / 700 - (M.REB - 60) / 2200), 0.36, 0.66);
+    else if (kind === 'mid') pm = clamp(0.375 + SENS * ((q.r[1] - 60) / 600 - (M.DEF - 60) / 900), 0.28, 0.5);
+    else pm = clamp(0.335 + SENS * ((q.r[1] - 60) / 700 - (M.DEF - 60) / 1100), 0.25, 0.42);
+    pm += home;
+    const made = g(1000) / 1000 < pm, foul = g(1000) / 1000 < (kind === 'inside' ? 0.2 + (q.r[5] - 60) / 800 : kind === 'mid' ? 0.08 : 0.04), pts = kind === 'three' ? 3 : 2;
+    let fouler = null;
+    if (foul) { const fs = M.on.filter((x) => x.pf < 6); fouler = fs[g(fs.length)] || M.on[0]; fouler.pf++; }
+    q.fga++; if (kind === 'three') q.tpa++;
+    if (made) {
+      q.fgm++; q.pts += pts; A.pts += pts; if (kind === 'three') q.tpm++;
+      let asst = null;
+      if (g(100) < 58) { const o2 = L.on.filter((x) => x !== q); asst = pick(o2, (x) => x.r[2]); asst.ast++; }
+      say('make', off, q, `${phrase(kind === 'inside' && q.r[5] > 80 && g(3) === 0 ? 'dunk' : kind)}${asst ? ` (${asst.name})` : ''}`, { shot: kind, pts });
+      tick(dt);
+      if (foul) { say('foul', off, q, `${fouler.name} fouls: and one`, {}); freeThrows(A, q, 1); }
+      return 1 - off;
+    }
+    if (foul) {                                         // fouled in the act: two shots (three from the arc)
+      say('foul', off, q, `${phrase('foul')} by ${fouler.name}`, {}); q.fga--; if (kind === 'three') q.tpa--;
+      tick(dt - 4);
+      const last = freeThrows(A, q, kind === 'three' ? 3 : 2);
+      if (last) return 1 - off;
+    } else {
+      say('miss', off, q, phrase('miss'), { shot: kind });
+      if ((kind === 'inside' || kind === 'mid') && g(1000) / 1000 < 0.14 + (M.ATH - 60) / 1000) { const b = pick(M.on, (x) => x.r[5] + x.r[4]); b.blk++; say('block', 1 - off, b, phrase('block'), {}); }
+      tick(dt);
+    }
+    // the rebound
+    if (g(1000) / 1000 < clamp(0.26 + (L.REB - M.REB) / 1000, 0.18, 0.34)) { const r = pick(L.on, (x) => x.r[4] * x.r[4]); r.reb++; say('reb', off, r, 'offensive rebound', {}); return off; }
+    const r = pick(M.on, (x) => x.r[4] * x.r[4]); r.reb++;
+    return 1 - off;
+  }
+  /** One period: possessions until the clock runs out; the coach looks after every change of possession. */
+  function period(len, starter) {
+    gt.left = len; off = starter;
+    while (gt.left > 0) {
+      coach(T[0]); coach(T[1]);
+      off = possession();
+    }
+    for (const tm of T) tm.qs.push(tm.pts - tm.qs.reduce((a, b) => a + b, 0));
+    say('end', -1, null, gt.q < 4 ? `END OF QUARTER ${gt.q + 1}` : 'END OF PERIOD', {});
+  }
+  coach(T[0]); coach(T[1]);
+  for (gt.q = 0; gt.q < 4; gt.q++) period(QLEN, gt.q === 0 || gt.q === 3 ? first : 1 - first);
+  while (T[0].pts === T[1].pts && gt.q < 9) { gt.q++; period(OTLEN, g(2)); }
+  return { home: ht, away: at, score: [T[0].pts, T[1].pts], qs: [T[0].qs, T[1].qs], players: T.map((tm) => tm.pl), log, periods: gt.q, elapsed };
+}
+
 // --- The entries and the save (section 13): 90 of two numbers each, from slot 76 ---
 
 const S = { seed: 2, team: 3, year: 4, day: 5, phase: 6 }, ENT_COUNT = 75, ENT_BASE = 76, ENT_MAX = 90;
@@ -263,7 +373,7 @@ function setYear(y) { YEAR = clamp(y, 0, MAX_YEAR); dset(S.year, YEAR); }
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null, score = 0;
-let hubSel = 0, newSel = 0, newSeed = 1, rows = [], sel = 0, view = 0, viewTeam = 0, backTo = 'hub', newRows = null;
+let pickOpp = false, G = null, gi = 0, gSpeed = 0, gWait = 0, boxTeam = 0, boxView = 0, hubSel = 0, newSel = 0, newSeed = 1, rows = [], sel = 0, view = 0, viewTeam = 0, backTo = 'hub', newRows = null;
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
@@ -287,7 +397,7 @@ function openTeam(t, from) {
   viewTeam = t; backTo = from; state = 'team'; sel = 0; view = 0;
   rows = roster(t, YEAR).map((p) => ({ p, o: ovr(p, YEAR), r: ratings(p, YEAR), c: contractAt(p, YEAR) })).sort((a, b) => b.o - a.o);
 }
-function openLeague() { state = 'league'; rows = teamRows(); sel = Math.max(0, rows.findIndex((r) => r.t === ME)); }
+function openLeague() { state = 'league'; pickOpp = false; rows = teamRows(); sel = Math.max(0, rows.findIndex((r) => r.t === ME)); }
 function openNew() { state = 'new'; timer = 0; newSeed = rndi(1, 99999); SEED = newSeed; ME = 0; YEAR = 0; ENT.clear(); resetLeague(); newRows = teamRows(); newSel = 0; }
 
 // --- Update ---
@@ -301,6 +411,8 @@ function update() {
   else if (state === 'hub') updateHub();
   else if (state === 'league') updateLeague();
   else if (state === 'team') updateTeam();
+  else if (state === 'live') updateLive();
+  else if (state === 'box') updateBox();
   else if (state === 'over') updateOver();
   else if (state === 'initials') updateInitials();
   else if (state === 'records') updateRecords();
@@ -334,7 +446,7 @@ function updateNew() {
   if (pressed(B)) toTitle();
   if (pressed(A)) { fx(SFX.select); startCareer(newSeed, newRows[newSel].t); }
 }
-const HUB = ['ROSTER', 'LEAGUE', 'NEXT YEAR', 'RETIRE', 'QUIT TO TITLE'];
+const HUB = ['ROSTER', 'LEAGUE', 'PLAY A GAME', 'NEXT YEAR', 'RETIRE', 'QUIT TO TITLE'];
 function updateHub() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   hubSel = menuMove(HUB.length, hubSel);
@@ -342,15 +454,43 @@ function updateHub() {
   fx(SFX.select);
   if (hubSel === 0) openTeam(ME, 'hub');
   else if (hubSel === 1) openLeague();
-  else if (hubSel === 2) setYear(YEAR + 1);
-  else if (hubSel === 3) gameOver(YEAR * 100 + strength(ME, YEAR));
+  else if (hubSel === 2) { openLeague(); pickOpp = true; }
+  else if (hubSel === 3) setYear(YEAR + 1);
+  else if (hubSel === 4) gameOver(YEAR * 100 + strength(ME, YEAR));
   else toTitle();
 }
 function updateLeague() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   listMove(rows.length);
   if (pressed(B)) { state = 'hub'; return; }
-  if (pressed(A)) { fx(SFX.select); openTeam(rows[sel].t, 'league'); }
+  if (pressed(A)) {
+    if (pickOpp) { if (rows[sel].t !== ME) { fx(SFX.select); startGame(rows[sel].t); } return; }
+    fx(SFX.select); openTeam(rows[sel].t, 'league');
+  }
+}
+
+let gameCount = 0;
+/** The game night against a team: worked out at once, then shown event by event. */
+function startGame(opp) {
+  G = playGame(YEAR, ME, opp, ++gameCount); gi = 0; gSpeed = 0; gWait = 0; state = 'live'; boxTeam = 0; boxView = 0; play(SONG.title);
+}
+const SPEEDS = [14, 6, 2];
+function updateLive() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (gi >= G.log.length) { if (pressed(A) || pressed(B)) { fx(SFX.select); state = 'box'; } return; }
+  if (pressed(A)) { gSpeed = (gSpeed + 1) % SPEEDS.length; fx(SFX.move); }
+  if (pressed(B)) { gi = G.log.length; fx(SFX.select); return; }
+  if (++gWait >= SPEEDS[gSpeed]) {
+    gWait = 0;
+    const e = G.log[gi++];
+    if (e.kind === 'make' || e.kind === 'ft') fx(SFX.point);
+  }
+}
+function updateBox() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (pressed(LEFT) || pressed(RIGHT)) { boxTeam ^= 1; fx(SFX.move); }
+  if (pressed(X) || pressed(UP) || pressed(DOWN)) { boxView ^= 1; fx(SFX.move); }
+  if (pressed(B) || pressed(A)) { fx(SFX.select); state = 'hub'; play(SONG.play); }
 }
 function updateTeam() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
@@ -410,6 +550,8 @@ function draw() {
   else if (state === 'hub') drawHub();
   else if (state === 'league') drawLeague();
   else if (state === 'team') drawTeam();
+  else if (state === 'live') drawLive();
+  else if (state === 'box') drawBox();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
   else if (state === 'over') { drawHub(); panel(48, 80, 160, 64); ctxt(YEAR >= MAX_YEAR ? 'CAREER OVER' : 'RETIRED', 92, GOLD); ctxt(`LEGACY ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
@@ -468,6 +610,52 @@ function drawTeam() {
   footer('<>:RATINGS  B:BACK');
 }
 
+
+/** The court: a top view, the home team attacking the right hoop. Dots for the ten on the floor, the ball with the shooter. */
+const FORM = [[0.62, 0.5], [0.72, 0.2], [0.72, 0.8], [0.9, 0.3], [0.88, 0.62]];      // the five on offence, at the right hoop (x, y in the court's width and height)
+function drawCourt(x0, y0, w, h, ev, i) {
+  rectfill(x0, y0, w, h, BROWN); rect(x0, y0, w, h, WHITE);
+  line(x0 + w / 2, y0, x0 + w / 2, y0 + h - 1, WHITE); circ(x0 + w / 2, y0 + h / 2, 10, WHITE);
+  for (const s of [0, 1]) {
+    const bx = s ? x0 + w - 1 : x0, dir = s ? -1 : 1;
+    rect(s ? bx - 30 : bx, y0 + h / 2 - 14, 30, 28, WHITE); circ(bx + dir * 30, y0 + h / 2, 10, WHITE); circfill(bx + dir * 6, y0 + h / 2, 2, ORANGE);
+  }
+  const offTeam = ev && ev.team >= 0 ? ev.team : 0, right = offTeam === 0;                  // a team's ball: its ten dots crowd the hoop it attacks
+  for (let k = 0; k < 2; k++) {
+    const tm = team(k ? G.away : G.home), atk = offTeam === k;
+    for (let j = 0; j < 5; j++) {
+      const f = FORM[j], fx = atk ? f[0] : Math.min(0.96, f[0] + 0.07), fy = atk ? f[1] : 0.5 + (f[1] - 0.5) * 0.8;
+      const sx = x0 + (right ? fx : 1 - fx) * w + (hash(i, k * 7 + j, 1) % 9) - 4, sy = y0 + fy * h + (hash(i, k * 7 + j, 2) % 9) - 4;
+      circfill(sx, sy, 4, tm.c2); circfill(sx, sy, 3, tm.c1);
+      if (atk && j === hash(i, 5) % 5) circfill(sx + (right ? 3 : -3), sy - 3, 2, ORANGE);
+    }
+  }
+}
+function drawLive() {
+  const ev = gi ? G.log[gi - 1] : null, done = gi >= G.log.length, last = G.log[G.log.length - 1];
+  const sc = ev ? ev.s : [0, 0], q = ev ? ev.q : 0, left = ev ? ev.left : QLEN;
+  const a = team(G.away), h = team(G.home);
+  txt(`${a.nick.slice(0, 11).padEnd(11)} ${pad(done ? last.s[1] : sc[1], 3)}`, 8, 6, WHITE);
+  txt(`${h.nick.slice(0, 11).padEnd(11)} ${pad(done ? last.s[0] : sc[0], 3)}`, 8, 18, WHITE);
+  const clk = done ? 'FINAL' : `${q < 4 ? 'Q' + (q + 1) : q === 4 ? 'OT' : 'OT' + (q - 3)} ${Math.floor(Math.max(0, left) / 60)}:${String(Math.max(0, left) % 60).padStart(2, '0')}`;
+  txt(clk, 248 - clk.length * 8, 6, GOLD);
+  txt(`>>${'>'.repeat(gSpeed)}`, 224, 18, DIM);
+  rectfill(4, 30, 248, 1, PANEL);
+  drawCourt(40, 36, 176, 90, ev, gi);
+  const shown = G.log.slice(Math.max(0, gi - 7), gi);
+  shown.forEach((e, k) => txt(e.text.slice(0, 32), 8, 134 + k * 10, k === shown.length - 1 ? (e.kind === 'make' || e.kind === 'ft' ? GOLD : WHITE) : DIM));
+  footer(done ? 'A:BOX SCORE' : 'A:SPEED  B:SKIP');
+}
+function drawBox() {
+  const k = boxTeam, tm = team(k ? G.away : G.home), pl = G.players[k ? 1 : 0];
+  header(`${tm.nick} ${G.score[k ? 1 : 0]}`, `${team(k ? G.home : G.away).nick.slice(0, 8)} ${G.score[k ? 0 : 1]}`);
+  txt(boxView ? 'NAME       ST BL TO PF 3PT  FT' : 'NAME       MN PT RB AS FG', 8, 22, DIM);
+  const sum = (key) => pl.reduce((s, q) => s + q[key], 0);
+  pl.forEach((q, i) => txt(boxView ? `${q.name.padEnd(10)} ${pad(q.stl, 2)} ${pad(q.blk, 2)} ${pad(q.tov, 2)} ${pad(q.pf, 2)} ${pad(q.tpm + '-' + q.tpa, 4)} ${pad(q.ftm + '-' + q.fta, 5)}` : `${q.name.padEnd(10)} ${pad(Math.round(q.sec / 60), 2)} ${pad(q.pts, 2)} ${pad(q.reb, 2)} ${pad(q.ast, 2)} ${pad(q.fgm + '-' + q.fga, 5)}`, 8, 34 + i * 10, i < 5 ? WHITE : DIM));
+  txt(boxView ? `TOTAL      ${pad(sum('stl'), 2)} ${pad(sum('blk'), 2)} ${pad(sum('tov'), 2)} ${pad(sum('pf'), 2)} ${pad(sum('tpm') + '-' + sum('tpa'), 4)} ${pad(sum('ftm') + '-' + sum('fta'), 5)}` : `TOTAL      ${pad(Math.round(sum('sec') / 60), 3)} ${pad(sum('pts'), 2)} ${pad(sum('reb'), 2)} ${pad(sum('ast'), 2)} ${pad(sum('fgm') + '-' + sum('fga'), 5)}`, 8, 34 + pl.length * 10 + 4, GOLD);
+  txt(`BY QUARTER ${G.qs[k].join(' ')}`.slice(0, 32), 8, 34 + pl.length * 10 + 18, DIM);
+  footer('<>:TEAM  X:MORE  B:BACK');
+}
 function drawRecords() {
   panel(24, 16, 208, 192);
   ctxt('TOP 10 LEGACIES', 24, GOLD);

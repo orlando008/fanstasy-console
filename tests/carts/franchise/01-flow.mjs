@@ -33,7 +33,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('DOWN'); vm.press('A'); ok(p.state === 'league' && p.rows.length === 30, 'LEAGUE lists the 30 teams');
   ok(p.rows[p.sel].t === p.ME, 'with the GM\'s team selected');
   vm.press('A'); ok(p.state === 'team' && p.rows.length > 0, 'A opens a team'); vm.press('B'); ok(p.state === 'league', 'and B comes back to the league');
-  vm.press('B'); vm.press('DOWN'); vm.press('A');
+  vm.press('B'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A');
   ok(p.YEAR === 1 && p.dget(p.S.year) === 1, 'NEXT YEAR moves on a year, and saves it');
 }
 
@@ -50,7 +50,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 // 4. The career's end, the top 10 and initials.
 {
   const vm = newGame(3), p = vm.probe(); vm.run(3); p.setYear(7); musicLog(vm);
-  while (p.hubSel !== 3) vm.press('DOWN');
+  while (p.hubSel !== p.HUB.indexOf('RETIRE')) vm.press('DOWN');
   vm.press('A');
   ok(p.state === 'over' && p.rank === 0 && p.score >= 700, 'RETIRE ends the career with a legacy score that makes the top 10', `${p.score} rank ${p.rank}`);
   ok(musicLog(vm).includes(-1), 'the music stops');

@@ -13,12 +13,12 @@ export const newGame = (seed) => boot(seed);          // skipTitle: straight int
 
 export const setup = () => {};
 
-/** From the hub: NEXT YEAR (the third item) until year 24, then RETIRE; A on the screens that follow. Each press is held for one frame in four. */
+/** From the hub: NEXT YEAR until year 24, then RETIRE; A on the screens that follow. Each press is held for one frame in four. */
 export function pad(vm, p, frame) {
   if (frame % 4 !== 0) return 0;
   if (p.state === 'over' || p.state === 'initials') return M(p.state === 'initials' ? 'START' : 'A');
   if (p.state !== 'hub') return M('B');
-  const want = p.YEAR >= p.MAX_YEAR ? 3 : 2;
+  const want = p.HUB.indexOf(p.YEAR >= p.MAX_YEAR ? 'RETIRE' : 'NEXT YEAR');
   return p.hubSel === want ? M('A') : M('DOWN');
 }
 
