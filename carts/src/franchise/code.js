@@ -658,7 +658,7 @@ function updateNew() {
   if (pressed(UP)) newSel = Math.max(0, newSel - 1);
   if (pressed(DOWN)) newSel = Math.min(NT - 1, newSel + 1);
   if (before !== newSel) fx(SFX.move);
-  if (pressed(X)) { fx(SFX.move); newSeed = rndi(1, 99999); SEED = newSeed; resetLeague(); newRows = teamRows(); }
+  if (pressed(X) || pressed(SELECT)) { fx(SFX.move); newSeed = rndi(1, 99999); SEED = newSeed; resetLeague(); newRows = teamRows(); }
   if (pressed(B)) toTitle();
   if (pressed(A)) { fx(SFX.select); startCareer(newSeed, newRows[newSel].t); }
 }
@@ -772,7 +772,7 @@ function updateLive() {
 function updateBox() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   if (pressed(LEFT) || pressed(RIGHT)) { boxTeam ^= 1; fx(SFX.move); }
-  if (pressed(X) || pressed(UP) || pressed(DOWN)) { boxView ^= 1; fx(SFX.move); }
+  if (pressed(UP) || pressed(DOWN)) { boxView ^= 1; fx(SFX.move); }
   if (pressed(B) || pressed(A)) { fx(SFX.select); state = 'hub'; play(SONG.play); }
 }
 function updateTeam() {
@@ -795,7 +795,7 @@ function updateTeam() {
   listMove(rows.length);
   if (pressed(RIGHT) || pressed(R)) { view = (view + 1) % nv; fx(SFX.move); }
   if (pressed(LEFT) || pressed(L)) { view = (view + nv - 1) % nv; fx(SFX.move); }
-  if (pressed(Y)) { fx(SFX.select); cardP = rows[sel].p; state = 'card'; }
+  if (pressed(Y) || pressed(SELECT)) { fx(SFX.select); cardP = rows[sel].p; state = 'card'; }
   if (pressed(A) && mine) { fx(SFX.select); ed = 0; }
   if (pressed(B)) { if (backTo === 'league') { const t = viewTeam; openLeague(); sel = Math.max(0, rows.findIndex((r) => r.t === t)); } else state = 'hub'; }
 }
@@ -834,14 +834,14 @@ function updateFA() {
   if (r && btnp(RIGHT)) r.n = Math.min(5, r.n + 1);
   if (r && btnp(LEFT)) r.n = Math.max(1, r.n - 1);
   if (r && pressed(A) && canSign(r)) { fx(SFX.cash); r.done = true; signDeal(r.p, r.n); }
-  if (pressed(X)) { for (const r of rs.filter((x) => x.own).concat(rs)) if (roster(ME, VY()).length < (r.own ? 15 : 13) && canSign(r)) { r.done = true; signDeal(r.p, r.n); } fx(SFX.cash); }
+  if (pressed(X) || pressed(SELECT)) { for (const r of rs.filter((x) => x.own).concat(rs)) if (roster(ME, VY()).length < (r.own ? 15 : 13) && canSign(r)) { r.done = true; signDeal(r.p, r.n); } fx(SFX.cash); }
   if (pressed(B)) state = 'hub';
 }
 function drawFA() {
   header('FREE AGENTS', `ROOM $${money(CAP - payroll(ME, VY()))}M`);
   txt(`ROSTER ${roster(ME, VY()).length}/15  NAME      POS AGE OVR`.slice(0, 32), 8, 24, DIM);
   drawList(rs.map((r) => [`${r.own ? '*' : ' '}${pname(r.p, 9).padEnd(9)} ${POS[r.p.pos].padEnd(2)} ${pad(age(r.p, VY()), 2)} ${pad(ovr(r.p, VY()), 3)} ${r.done ? ' SIGNED' : `${pad(money(ask(r.p, r.n)), 5)}M ${r.n}Y`}`, r.done ? GOLD : canSign(r) ? WHITE : DIM]), sel, 36, 16);
-  footer('LR:YEARS A:SIGN X:FILL B:BACK');
+  footer('LR:YEARS A:SIGN SELECT:FILL B:BACK');
 }
 
 // --- Trades (section 5): the computer values a player by what he is worth and what he costs ---
@@ -891,10 +891,11 @@ function updateTrade() {
   if (pressed(LEFT) || pressed(RIGHT)) { TR.col ^= 1; fx(SFX.move); }
   const r = L[TR.sel[c]];
   if (pressed(A) && r && (c || tradable(r.p))) { r.on = !r.on; fx(SFX.move); }
+  const more = pressed(R) || (pressed(SELECT) && TR.msg);                       // SELECT: ask what they want, or, when the answer is yes, make the deal
   if (pressed(Y) && r) { cardP = r.p; state = 'card'; }
-  if (pressed(R)) { const p = counter(TR.t, picked(0), picked(1)), x = p && TR.L.find((q) => q.p === p); if (x) { x.on = true; fx(SFX.point); } }
+  if (more) { const p = counter(TR.t, picked(0), picked(1)), x = p && TR.L.find((q) => q.p === p); if (x) { x.on = true; fx(SFX.point); } }
   TR.msg = tradeCheck(TR.t, picked(0), picked(1));
-  if (pressed(X) && !TR.msg) { doTrade(TR.t, picked(0), picked(1)); saveSeason(); fx(SFX.gavel); TR = null; state = 'hub'; }
+  if ((pressed(X) || pressed(SELECT)) && !TR.msg && !more) { doTrade(TR.t, picked(0), picked(1)); saveSeason(); fx(SFX.gavel); TR = null; state = 'hub'; }
   if (pressed(B)) { TR = null; openLeague(); pickT = true; }
 }
 function drawTrade() {
@@ -912,7 +913,7 @@ function drawTrade() {
   const r = TR[TR.col ? 'R' : 'L'][TR.sel[TR.col]], c = r && contractAt(r.p, y);
   if (r) txt(`${pname(r.p, 9)} ${c ? `$${money(c[0])}M ${c[1]}Y` : '-'} WORTH ${worth(r.p, y)}`.slice(0, 32), 8, 186, WHITE);
   txt((TR.msg || 'X: PROPOSE').slice(0, 32), 8, 198, TR.msg ? RED : GREEN);
-  footer('A:PICK <>:SIDE X:OK R:ASK Y:CARD');
+  footer('A:PICK <>:SIDE SELECT:DEAL/ASK');
 }
 
 // --- The draft: 60 prospects, two rounds, the worst record first; the computer takes the best left; scouting sharpens the numbers shown ---
@@ -1088,7 +1089,7 @@ function drawNew() {
   header('NEW CAREER', `SEED ${newSeed}`);
   txt('PICK YOUR TEAM       OVR PAY', 8, 24, DIM);
   drawList(newRows.map((r) => [`${tname(r.t).slice(0, 21).padEnd(21)} ${pad(r.ovr, 2)} ${pad(Math.round(r.pay / 4), 3)}`, r.t < 15 ? CYAN : GREEN]), newSel, 36, 16);
-  footer('A:PICK  X:NEW SEED  B:BACK');
+  footer('A:PICK  SELECT:NEW SEED  B:BACK');
 }
 const wl = (t) => `${WINS[t]}-${LOSS[t]}`;
 const phaseName = () => (PHASE === 0 ? `DAY ${DAY + 1}/${DAYS}` : PHASE === 1 ? ['ROUND 1', 'SEMIS', 'CONF FINALS', 'FINALS'][PRD] : 'OFFSEASON');
@@ -1187,7 +1188,7 @@ function drawTeam() {
     const c = r.c;
     txt(`${ed === 2 ? '>' : ' '} ${arm ? 'A AGAIN: PAY ' : 'RELEASE: A, COST '}$${money(c ? Math.round(c[0] * c[1] / 2) : 0)}M`.slice(0, 29), 32, 188, ed === 2 ? (arm ? RED : WHITE) : DIM);
     footer(ed === 2 ? 'UD:FIELD  A:RELEASE  B:DONE' : 'UD:FIELD  LR:CHANGE  B:DONE');
-  } else footer(viewTeam === ME ? '<>:VIEW  A:EDIT  Y:CARD  B:BACK' : '<>:RATINGS  Y:CARD  B:BACK');
+  } else footer(viewTeam === ME ? '<>:VIEW A:EDIT SELECT:CARD B:BACK' : '<>:RATINGS SELECT:CARD B:BACK');
 }
 function drawCard() {
   const p = cardP, r = ratings(p, YEAR), c = contractAt(p, YEAR), h = hurt(p, YEAR, today()), o = ovr(p, YEAR);
@@ -1249,7 +1250,7 @@ function drawBox() {
   pl.forEach((q, i) => txt(boxView ? `${q.name.padEnd(10)} ${pad(q.stl, 2)} ${pad(q.blk, 2)} ${pad(q.tov, 2)} ${pad(q.pf, 2)} ${pad(q.tpm + '-' + q.tpa, 4)} ${pad(q.ftm + '-' + q.fta, 5)}` : `${q.name.padEnd(10)} ${pad(Math.round(q.sec / 60), 2)} ${pad(q.pts, 2)} ${pad(q.reb, 2)} ${pad(q.ast, 2)} ${pad(q.fgm + '-' + q.fga, 5)}`, 8, 34 + i * 10, i < 5 ? WHITE : DIM));
   txt(boxView ? `TOTAL      ${pad(sum('stl'), 2)} ${pad(sum('blk'), 2)} ${pad(sum('tov'), 2)} ${pad(sum('pf'), 2)} ${pad(sum('tpm') + '-' + sum('tpa'), 4)} ${pad(sum('ftm') + '-' + sum('fta'), 5)}` : `TOTAL      ${pad(Math.round(sum('sec') / 60), 3)} ${pad(sum('pts'), 2)} ${pad(sum('reb'), 2)} ${pad(sum('ast'), 2)} ${pad(sum('fgm') + '-' + sum('fga'), 5)}`, 8, 34 + pl.length * 10 + 4, GOLD);
   txt(`BY QUARTER ${G.qs[k].join(' ')}`.slice(0, 32), 8, 34 + pl.length * 10 + 18, DIM);
-  footer('<>:TEAM  X:MORE  B:BACK');
+  footer('<>:TEAM  UD:MORE  B:BACK');
 }
 function drawRecords() {
   panel(24, 16, 208, 192);

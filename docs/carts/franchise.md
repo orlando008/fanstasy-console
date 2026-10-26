@@ -42,9 +42,9 @@ The core is the D-pad, A, B, START and SELECT (the buttons a phone's touch contr
 | D-pad | Move in a list or a table (up and down: rows; left and right: columns, or the value of a slider or a tab) |
 | A | Select, confirm, advance (sim the next step) |
 | B | Back, cancel, close a panel |
-| SELECT | The screen's side menu (sort by, filter, help) |
-| X / Y | Shortcuts: X sorts the column, Y shows a player's card |
-| L / R | Previous and next tab |
+| SELECT | The screen's second action: a player's card (rosters), fill the roster (free agents), a new seed (the team list), make the deal or ask what they want (a trade). The touch controls have only the D-pad, A, B, START and SELECT, so nothing needs more |
+| X / Y | Shortcuts for the same: X rolls a seed, fills the roster, makes the deal; Y shows a card |
+| L / R | Previous and next tab; R asks what they want in a trade |
 | START | Pause (RESUME, SAVE AND QUIT TO TITLE, QUIT WITHOUT SAVING) |
 
 ## 4. Screen layout

@@ -28,4 +28,28 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   ok(seen.size >= 15, 'a hundred and fifty players have many different faces', `${seen.size} combinations`);
 }
 
+// The touch screen has the D-pad, A, B, START and SELECT only: everything X, Y and R do is on SELECT as well.
+{
+  const vm = newGame(5, { title: true }), p = vm.probe(); vm.run(3);
+  vm.press('A'); vm.run(2); const seed = p.newSeed; vm.press('SELECT'); ok(p.newSeed !== seed, 'SELECT rolls a new seed (the team list)');
+  vm.press('A'); vm.run(2);
+  go(vm, p, 'ROSTER'); vm.press('A'); vm.run(2); vm.press('SELECT'); ok(p.state === 'card', 'SELECT shows a player\'s card'); vm.press('B'); vm.press('B');
+  go(vm, p, 'FREE AGENTS'); vm.press('A'); vm.run(2); ok(p.state === 'fa', 'FREE AGENTS (in the season)');
+  const r0 = p.roster(p.ME, 0).length;
+  for (const q of p.roster(p.ME, 0).slice(0, 3)) p.edit(q, (e) => { e.team = 31; e.sal = 6; e.yrs = 1; e.since = 0; });
+  vm.run(2); vm.press('SELECT'); ok(p.roster(p.ME, 0).length > r0 - 3, 'SELECT fills the roster', `${r0 - 3} -> ${p.roster(p.ME, 0).length}`); vm.press('B');
+  // a trade on the pad's buttons: pick two, SELECT asks while the answer is no, and makes the deal when it is yes
+  const byOvr = (t) => p.roster(t, 0).sort((a, b) => p.ovr(b, 0) - p.ovr(a, 0));
+  let found = null;
+  for (let t = 0; t < 30 && !found; t++) if (t !== p.ME) { const mine = byOvr(p.ME), theirs = byOvr(t); for (let i = 0; i < mine.length && !found; i++) for (let j = 0; j < theirs.length && !found; j++) if (!p.tradeCheck(t, [mine[i]], [theirs[j]]) && i < 6) found = { t, i, j, give: mine[i], get: theirs[j] }; }
+  if (found) {
+    p.openTrade(found.t); vm.run(2);
+    p.TR.L[found.i].on = true; p.TR.R[found.j].on = true; vm.run(2);
+    vm.press('SELECT'); vm.run(2); ok(p.state === 'hub' && p.roster(p.ME, 0).some((x) => x.id === found.get.id), 'SELECT makes a deal the computer accepts');
+  }
+  p.openTrade((p.ME + 3) % 30); vm.run(2); const t2 = p.TR.t; p.TR.L[14] && (p.TR.L[14].on = true); p.TR.R[0].on = true; vm.run(2);
+  const before = p.TR.L.filter((r) => r.on).length; vm.press('SELECT'); vm.run(2);
+  ok(p.state === 'trade' && p.TR.L.filter((r) => r.on).length >= before, 'SELECT on a no asks for more instead', `${before} -> ${p.TR.L.filter((r) => r.on).length}`);
+}
+
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);
