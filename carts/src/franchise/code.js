@@ -1195,12 +1195,12 @@ function drawCard() {
   header(`${names()[0][p.fn]} ${names()[1][p.ln]}`.slice(0, 26), POS[p.pos]);
   txt(`AGE ${age(p, YEAR)}  ${(p.ht / 12) | 0}'${p.ht % 12}"  OVERALL ${o}`, 8, 24, WHITE);
   txt(c ? `$${money(c[0])}M  ${c[1]} YEAR${c[1] > 1 ? 'S' : ''} LEFT` : 'NO CONTRACT', 8, 36, c ? WHITE : DIM);
-  if (h) txt(`OUT ${h}`, 168, 36, RED);
+  if (h) txt(`OUT ${h}`, 176, 36, RED);
   portrait(p, 216, 24, ((p.id < 15360 ? p.id >> 9 : ME) % NT));
   RN.forEach((n, i) => { const y = 52 + i * 12; txt(n, 8, y, DIM); rectfill(40, y + 1, (r[i] - 20) * 1.6, 6, r[i] >= 75 ? GOLD : r[i] >= 60 ? GREEN : DIM); txt(pad(r[i], 2), 40 + (r[i] - 20) * 1.6 + 6, y, WHITE); });
-  txt('OVERALL BY YEAR (AGE UNDER)', 8, 126, DIM);
-  for (let y = Math.max(p.start, YEAR - 9), x = 8; y <= YEAR; y++, x += 24) {
-    const v = ovr(p, y), hgt = Math.max(1, (v - 30) * 0.9);
+  txt('OVERALL BY YEAR (AGE UNDER)', 8, 122, DIM);
+  for (let y = YEAR - Math.min(9, age(p, YEAR) - 19), x = 8; y <= YEAR; y++, x += 24) {         // his years so far, from 19
+    const v = ovr(p, y), hgt = Math.max(1, (v - 30) * 0.7);
     rectfill(x, 190 - hgt, 18, hgt, y === YEAR ? GOLD : PANEL); txt(`${v}`, x + 1, 181 - hgt, WHITE); txt(`${age(p, y)}`, x + 1, 194, DIM);
   }
   footer('B:BACK');
