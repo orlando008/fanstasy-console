@@ -93,10 +93,10 @@ const offseason = (p, year = 2) => { p.setYear(year); while (p.PHASE < 2) p.adva
 {
   const vm = newGame(SEED), p = vm.probe(); vm.run(3);
   offseason(p); vm.run(3);
-  go(vm, p, 'DRAFT'); vm.press('A'); vm.run(2); ok(p.state === 'draft', 'DRAFT opens the draft'); vm.run(2);
+  go(vm, p, 'DRAFT'); vm.press('A'); vm.run(2); ok(p.state === 'draft' && p.playing === p.SONG.draft, 'DRAFT opens the draft, with its song'); vm.run(2);
   if (p.D.pos < 60) { const a = p.D.av.length; vm.press('A'); ok(p.D.av.length < a, 'A takes the player under the cursor'); vm.press('DOWN'); }
   for (let k = 0; k < 3 && p.D.pos < 60; k++) vm.press('B'); vm.run(2);
-  ok(p.D.pos >= 60 && p.state === 'draft', 'the draft ends'); vm.run(2); vm.press('A'); ok(p.state === 'hub', 'A goes back');
+  ok(p.D.pos >= 60 && p.state === 'draft', 'the draft ends'); vm.run(2); vm.press('A'); ok(p.state === 'hub' && p.playing === p.SONG.play, 'A goes back, and the hub song returns');
   go(vm, p, 'FREE AGENTS'); vm.press('A'); vm.run(2); ok(p.state === 'fa' && p.rs.length > 38, 'FREE AGENTS lists the pool');
   vm.press('RIGHT'); ok(p.rs[0].n === 4, 'RIGHT asks for more years');
   const n0 = p.roster(p.ME, p.YEAR + 1).length; vm.press('X'); const n1 = p.roster(p.ME, p.YEAR + 1).length;

@@ -23,8 +23,8 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
 // so they never cut into the music and two can sound at once.
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
-const SONG = { title: 0, play: 1 };
+const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6, back: 7, buzz: 8, swish: 9, whistle: 10, cheer: 11, groan: 12, cash: 13, gavel: 14 };
+const SONG = { title: 0, play: 1, game: 2, draft: 3, win: 4 };      // play: the hub's
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -599,6 +599,7 @@ function openNew() { state = 'new'; timer = 0; newSeed = rndi(1, 99999); SEED = 
 function update() {
   inputMask = readPad(); clock++;
   if (!paused) timer++; // a state's clock: it stands still while paused
+  if (pressed(B) && !paused && state !== 'live') fx(SFX.back);
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'new') updateNew();
@@ -688,8 +689,8 @@ function updateSim() {
   if (pressed(B)) sim.stop = true;
   if (todo.length) { playOne(); return; }
   const g = endDay(); sim.left--; saveSeason();
-  if (sim.watch && g) { G = g; gi = 0; gSpeed = 0; gWait = 0; state = 'live'; boxTeam = G.home === ME ? 0 : 1; boxView = 0; sim = null; play(SONG.title); return; }
-  if (sim.stop || sim.left <= 0 || PHASE !== sim.phase) { state = 'hub'; sim = null; } else beginDay();
+  if (sim.watch && g) { G = g; gi = 0; gSpeed = 0; gWait = 0; state = 'live'; boxTeam = G.home === ME ? 0 : 1; boxView = 0; sim = null; play(SONG.game); return; }
+  if (sim.stop || sim.left <= 0 || PHASE !== sim.phase) { play(PHASE === 2 && CHAMP === ME && sim.phase === 1 ? SONG.win : SONG.play); state = 'hub'; sim = null; } else beginDay();
 }
 const startNext = () => startSim(1, true);
 
@@ -753,7 +754,8 @@ function updateLive() {
   if (++gWait >= SPEEDS[gSpeed]) {
     gWait = 0;
     const e = G.log[gi++];
-    if (e.kind === 'make' || e.kind === 'ft') fx(SFX.point);
+    const k = e.kind, f = k === 'make' ? (e.shot === 'three' ? SFX.cheer : SFX.swish) : k === 'ft' ? SFX.point : k === 'foul' ? SFX.whistle : k === 'end' ? SFX.buzz : k === 'tov' && (e.team === 0) === (G.home === ME) ? SFX.groan : -1;
+    if (f >= 0) fx(f);
   }
 }
 function updateBox() {
@@ -820,8 +822,8 @@ function updateFA() {
   const r = rs[sel];
   if (r && btnp(RIGHT)) r.n = Math.min(5, r.n + 1);
   if (r && btnp(LEFT)) r.n = Math.max(1, r.n - 1);
-  if (r && pressed(A) && canSign(r)) { fx(SFX.point); r.done = true; signDeal(r.p, r.n); }
-  if (pressed(X)) { for (const r of rs.filter((x) => x.own).concat(rs)) if (roster(ME, VY()).length < (r.own ? 15 : 13) && canSign(r)) { r.done = true; signDeal(r.p, r.n); } fx(SFX.point); }
+  if (r && pressed(A) && canSign(r)) { fx(SFX.cash); r.done = true; signDeal(r.p, r.n); }
+  if (pressed(X)) { for (const r of rs.filter((x) => x.own).concat(rs)) if (roster(ME, VY()).length < (r.own ? 15 : 13) && canSign(r)) { r.done = true; signDeal(r.p, r.n); } fx(SFX.cash); }
   if (pressed(B)) state = 'hub';
 }
 function drawFA() {
@@ -881,7 +883,7 @@ function updateTrade() {
   if (pressed(Y) && r) { cardP = r.p; state = 'card'; }
   if (pressed(R)) { const p = counter(TR.t, picked(0), picked(1)), x = p && TR.L.find((q) => q.p === p); if (x) { x.on = true; fx(SFX.point); } }
   TR.msg = tradeCheck(TR.t, picked(0), picked(1));
-  if (pressed(X) && !TR.msg) { doTrade(TR.t, picked(0), picked(1)); saveSeason(); fx(SFX.over); TR = null; state = 'hub'; }
+  if (pressed(X) && !TR.msg) { doTrade(TR.t, picked(0), picked(1)); saveSeason(); fx(SFX.gavel); TR = null; state = 'hub'; }
   if (pressed(B)) { TR = null; openLeague(); pickT = true; }
 }
 function drawTrade() {
@@ -920,6 +922,7 @@ function runAI() {
   if (D.pos >= 60) { for (const [i, n] of D.mine) { const [sal, yrs] = rookie(n); edit(D.list[i], (e) => { e.team = ME; e.sal = sal; e.yrs = yrs; e.since = YEAR + 1; }); } PRD = 5; saveSeason(); }
 }
 function startDraft() {
+  play(SONG.draft);
   const key = (t) => WINS[t] * 8 + (hash(SEED, YEAR, t, 61) % 40), o = Array.from({ length: NT }, (_, t) => t).sort((a, b) => key(a) - key(b));
   D = { order: o.concat(o), pos: 0, log: [], mine: [], list: Array.from({ length: 60 }, (_, i) => prospect(YEAR, i)), av: [] };
   D.av = D.list.map((_, i) => i).sort((a, b) => est(D.list[b], value(D.list[b]), 2) - est(D.list[a], value(D.list[a]), 2));
@@ -927,9 +930,9 @@ function startDraft() {
 }
 function updateDraft() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (D.pos >= 60) { if (pressed(A) || pressed(B)) state = 'hub'; return; }
+  if (D.pos >= 60) { if (pressed(A) || pressed(B)) { state = 'hub'; play(SONG.play); } return; }
   listMove(D.av.length);
-  if (pressed(A)) { fx(SFX.point); takeP(D.av[sel]); runAI(); sel = 0; }
+  if (pressed(A)) { fx(SFX.gavel); takeP(D.av[sel]); runAI(); sel = 0; }
   if (pressed(B)) { while (D.pos < 60) takeP(best()); runAI(); }                 // B: the rest is picked for you
 }
 function drawDraft() {
