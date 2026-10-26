@@ -56,7 +56,7 @@ record, the date, the cap room), a **body** (table, list or panel) and a **foote
 |---|---|
 | Hub | The GM's desk: the next game, the news (injuries, trades, contract offers), and the menu: ROSTER, LINEUP, SCHEDULE, STANDINGS, FINANCES, TRADES, FREE AGENTS, DRAFT, LEAGUE, SIM |
 | Roster | The 15 players: name, position, age, overall, the six ratings, salary and years, health; a player card (Y) with the career line |
-| Lineup | The starting five and the bench order, **minutes** sliders (0 to 48), and a **training focus** for each player |
+| Lineup | In the GM's roster screen (the third view, A to edit): who starts, each player's **minutes** (AUTO, DNP, 2 to 48), his **training focus** and his injury; Y shows the **player card** (ratings as bars and the overall year by year) |
 | Schedule and standings | The next 10 games, the results, the conferences' tables, the playoff picture |
 | Finances | Payroll against the cap and the tax line, the revenue lines, the ticket price slider, the owner's patience bar |
 | Trades | Your roster against a team's: pick players and picks on both sides, the AI's verdict |
@@ -82,10 +82,11 @@ $0.1M units and years left), **health** (injured for n days) and a **mood** for 
 **Overall** = the position's weights over the six ratings (PG: PLY 3, OUT 2, DEF 1, ATH 1, INS 1; C: INS 3, REB 3, DEF 2, ATH 1, ... the tables are in the
 code, and a test asserts their sums), rounded.
 
-**Progression** (each offseason, one pure function of the player's id, age, potential, training focus and the year): up to +6 a rating at 19 to 22,
-+3 at 23 to 25, 0 to +1 at 26 to 29, -1 to -2 at 30 to 32, -3 to -5 at 33 and over, each plus a bounded noise from a hash of (id, year); the
-**training focus** (one rating a player) adds +1 a year to that rating, and costs a little of the others. **Injuries**: each game a player on the court has a 0.4 %
-chance of an injury of 1 to 60 days, more for a tired player.
+**Progression and ageing** (built in steps 1 and 4): a player's ratings in a year are a closed form of his peak ratings and his age (a growth gap before his peak age, a decline after it, athleticism falling first, plus a bounded noise
+from a hash of (id, year)), so ageing needs no state. The **training focus** (one rating a player, set in the lineup editor) is the one thing the GM adds: in each offseason the focused rating gains a point with a chance by age (85 % up to 21, 65 % to 24,
+45 % to 27, 25 % to 30, 10 % after; +2 now and then up to 22), kept as a **bonus** of 0 to 7 in the player's entry. **Injuries** (built in step 4) are a closed form of (seed, player, year, day): a player has a chance of 0.5 % a day (0.8 % over 30) to start an
+injury of 1 to 5 games (60 %), 6 to 15 (30 %), 16 to 30 (8 %) or 31 to 60 (2 %); the hurt do not play, in every team's games. They heal in the offseason. The **minutes** the GM sets for a player (AUTO, DNP, or 2 to 48 in twos) are a part of his
+entry too (5 bits), as the focus is (3 bits); a player the GM has only touched has an entry with no contract (0 years), which changes no roster and no payroll.
 
 ### The game night
 
@@ -214,7 +215,7 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 
 | Asset | Budget |
 |---|---|
-| Code | 41.6 KB of the 64 KB limit after step 3 (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
+| Code | 48.3 KB of the 64 KB limit after step 4 (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
 | Tiles | none yet (the backdrop is one colour); the panels, the court, the portraits' frames and the emblems come with the art pass (of 1,024) |
 | Sprites | none yet (128 in OAM, 32 per line): later the game night's ten dots and the ball, a portrait or two a screen |
 | ROM | 15.0 KB of 128 KB after step 3: `league.bin` (7.0 KB: 30 teams, 450 people) and `names.bin` (8.0 KB: 369 first names, 739 last names, the cities and nicknames) |
@@ -282,6 +283,17 @@ Tests: `04-season.mjs` (the schedule, 6 seasons and their playoffs, the save at 
 **Results:** the schedule is exact (every pair twice, 29 home games each). Over six seasons: a winning percentage spread of 0.13, the best team at 0.78 on average (0.83 at most), a correlation of 0.88 between strength and wins, and different champions. A
 season of 870 games takes about 1.6 s of CPU, which is why a sim spends a frame on each game.
 
+### Built and results: step 4, roster, lineup and training
+
+**Built:** in `code.js`: `injuries(p, y)` and `hurt(p, y, day)` (the closed form above; `playGame` takes the day as a fifth argument and leaves the hurt out), `plan(t, y, day)` (the rotation of a team for a game: the fit players best first, each with minutes planned, and the
+starting five: the coach's, with a player of each position, or the GM's five with the most minutes once he has set any), `touch` and `edit` (an entry with no contract; one that does nothing is dropped), `trainAll` and `nextYear` (the training and the
+offseason report), and the screens: the roster's third view (`*` starts, MIN with a `*` when it is the GM's, FOC, OUT n), the editor (A; UP and DOWN pick the field, LEFT and RIGHT change it, B closes), the **player card** (Y) and the **offseason report** (what became of each player: age,
+overall before and after, what training gave, new and gone). The entry format took the 3 spare bits (focus) and 5 spare bits (minutes) it had; no slot moved. Tests: `05-lineup.mjs` (injury rates and lengths, a hurt player out of the game, the minutes plan and what it does to a game, the save, training by age,
+the screens and the report); the bot tinkers with a lineup every offseason.
+
+**Results:** 7.5 injuries a team a season, 7 games long on average (the longest 40), 0.5 of a team out at a time. A player set to 48 minutes plays about 42 and the DNP not at all. Training: the gain a year is 1.0 for the 21 and under, 0.7 to 24, 0.3 to 27, 0.2 to 30, 0.04 after.
+The code is 48.3 KB of 64: the money, the draft and the trades still have to fit in 16 KB, so the next steps write compactly and share the list and table code (a tracker for the budget is in the open questions).
+
 ## 16. Open questions
 
 - The **length of a season** (58 games here: every team twice) against a real 82; a shorter season is faster to play, a longer one more real.
@@ -289,3 +301,4 @@ season of 870 games takes about 1.6 s of CPU, which is why a sim spends a frame 
 - **Real names**: fictional teams and generated players are the plan; no real franchise, league or player name goes in.
 - **More than one base league**: one table of 7 KB plus the seed's jitter is the plan; two or three base leagues (different eras of talent) would cost only 7 KB each if the jitter proves too samey.
 - **Game night speed**: a live game takes about 40 seconds at the fastest pace of the play-by-play (skippable); is that right?
+- **The code budget**: 48 KB of 64 KB after step 4. If steps 5 to 7 do not fit, the first things to trim are the offseason report's rows, the card's chart and the SHORT phrase table; a second table in ROM (text) does not count against the code.

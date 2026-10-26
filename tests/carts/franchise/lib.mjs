@@ -16,6 +16,7 @@ const PROBE = `__expose(() => ({
   LGB, gen, mkPerson, slotAt, personById, prospect, ratings, baseR, ovr, age, contractAt, roster, payroll, strength, career, pid,
   get DAY() { return DAY; }, get PHASE() { return PHASE; }, get WINS() { return WINS; }, get LOSS() { return LOSS; }, get PT() { return PT; }, get PW() { return PW; }, get PRD() { return PRD; }, get CHAMP() { return CHAMP; }, get TALLY() { return TALLY; }, get MYW() { return MYW; }, get lastRes() { return lastRes; }, get sim() { return sim; }, get stView() { return stView; },
   DAYS, pairs, advanceDay, standing, legacy, saveSeason, loadSeason, resetSeason, myGame, startNext, startSim, confOf, seriesOf, advanceDay,
+  injuries, hurt, plan, touch, edit, trainAll, nextYear, FOCUS, today, get ed() { return ed; }, get cardP() { return cardP; }, TARGET, INJC,
   playGame, setEntry, dropEntry, saveEntries, loadEntries, hasCareer, newCareer, loadCareer, setYear, teamRows, startCareer, S, ENT_COUNT, ENT_BASE, ENT_MAX,
 }));`;;
 

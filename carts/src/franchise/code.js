@@ -140,7 +140,8 @@ function ageRatings(R, peak, age, noise) {
 
 const pid = (t, s, k) => (t * 16 + s) * 32 + k;
 const PEOPLE = new Map(), SLOTS = new Map();
-function resetLeague() { PEOPLE.clear(); SLOTS.clear(); }
+const INJC = new Map();
+function resetLeague() { PEOPLE.clear(); SLOTS.clear(); INJC.clear(); }
 
 /** Person k of slot (t, s), starting in the year start. Person 0 is the base league's row, jittered by the seed. */
 function mkPerson(t, s, k, start) {
@@ -183,7 +184,7 @@ function extend(t, s) {
   if (!arr) SLOTS.set(key, arr = []);
   const last = arr[arr.length - 1], k = arr.length, start = last ? last.to : 0, p = mkPerson(t, s, k, start), en = ENT.get(p.id);
   PEOPLE.set(p.id, p);
-  const taken = en && en.since < p.leave && en.since >= start;
+  const taken = en && en.yrs && en.since < p.leave && en.since >= start;
   const e = { p, from: start, until: taken ? en.since : p.leave, to: taken ? (t === ME && MANUAL ? p.leave : en.since) : p.leave };
   if (t === ME && MANUAL && k) e.empty = true;
   arr.push(e);
@@ -207,7 +208,7 @@ function personById(id) {
 /** What a person is paid in a year and the seasons left of the contract (this one counted), or null: he has no contract. */
 function contractAt(p, y) {
   const en = ENT.get(p.id);
-  if (en && en.since <= y) return y < en.since + en.yrs ? [en.sal, en.since + en.yrs - y] : null;
+  if (en && en.yrs && en.since <= y) return y < en.since + en.yrs ? [en.sal, en.since + en.yrs - y] : null;
   for (const s of p.segs) if (s[0] <= y && y <= s[1]) return [s[2], s[1] - y + 1];
   return null;
 }
@@ -226,6 +227,44 @@ function strength(t, y) {
   return o.length ? Math.round(o.reduce((s, v) => s + v, 0) / 8) : 0;
 }
 
+// --- Injuries (a closed form of the seed, the person, the year and the day) and the coach's plan ---
+
+/** A person's injuries in a year: [the first day out, the first day back] pairs, over the season and the playoffs' days. Mostly a few games; a few last for a season. */
+function injuries(p, y) {
+  const key = p.id * 32 + y;
+  let L = INJC.get(key);
+  if (!L) {
+    L = []; let free = 0;
+    const rate = 5 + (age(p, y) > 30 ? 3 : 0);
+    for (let d = 0; d < 90; d++) if (d >= free && hash(SEED, p.id, y * 128 + d, 31) % 1000 < rate) {
+      const r = hash(SEED, p.id, y * 128 + d, 32) % 100, n = r < 60 ? 1 + (r % 5) : r < 90 ? 6 + (r % 10) : r < 98 ? 16 + (r % 15) : 31 + (r % 30);
+      L.push([d, d + n]); free = d + n;
+    }
+    INJC.set(key, L);
+  }
+  return L;
+}
+/** The days a person is still out on a day (0: he is fit). Day -1: no injuries (the offseason, a test game). */
+function hurt(p, y, day) { for (const [a, b] of injuries(p, y)) if (day >= a && day < b) return b - day; return 0; }
+const today = () => (PHASE === 2 ? -1 : DAY);
+
+/** A team's rotation for a game: the fit players, best first, each with the minutes planned (the GM's setting or the coach's by rank) and the starting five. */
+function plan(t, y, day) {
+  const set = (q) => (q.en && q.en.mins) || 0;
+  const pl = roster(t, y).filter((p) => !hurt(p, y, day)).map((p) => ({ p, o: ovr(p, y), en: ENT.get(p.id) })).sort((a, b) => b.o - a.o);
+  const mine = t === ME && pl.some((q) => set(q));
+  const list = pl.filter((q, i) => i < 13 || (mine && set(q) > 1));
+  list.forEach((q, i) => { q.mins = set(q) ? (set(q) - 1) * 2 : TARGET[i] || 0; q.auto = !set(q); q.dnp = set(q) === 1; });
+  let five = [];
+  if (mine) five = list.filter((q) => !q.dnp).sort((a, b) => b.mins - a.mins || b.o - a.o).slice(0, 5);   // the GM's: the five with the most minutes
+  else {                                                                                                    // the coach's: the best of each position, then the best left
+    for (let s = 0; s < 5; s++) { const q = list.find((x) => x.p.pos === s && !five.includes(x)); if (q) five.push(q); }
+    for (const q of list) if (five.length < 5 && !five.includes(q)) five.push(q);
+  }
+  list.forEach((q) => { q.on = five.includes(q); });
+  return list;
+}
+
 // --- The game night (section 5): a game is a pure function of (two rosters, the year, a seed) ---
 // Possession by possession: who shoots, what shot, does it go in, the foul, the rebound; the coach rotates by a minutes plan and by
 // fatigue and fouls; the result is the score by quarter, a box score and a log of events for the live view.
@@ -234,15 +273,10 @@ const SENS = 1.0, QLEN = 720, OTLEN = 300, TARGET = [34, 34, 33, 32, 31, 24, 20,
 const SHORT = { three: ['hits a three', 'drains a three', 'from downtown: good'], mid: ['hits a jumper', 'pulls up: good', 'sinks a jumper'], inside: ['scores inside', 'finishes at the rim', 'with the layup'], dunk: ['throws it down'],
   miss: ['misses', 'rims out', 'no good'], tov: ['turns it over', 'loses the ball', 'bad pass'], steal: ['steals it', 'picks his pocket'], block: ['blocks it', 'swats it away'], foul: ['fouled', 'draws the foul'], ft: ['at the line'], reb: ['rebound'] };
 
-function playGame(y, ht, at, seed) {
-  const g = stream(hash(SEED, seed, ht * 32 + at, y)), sides = [roster(ht, y), roster(at, y)];
-  const T = sides.map((list, k) => {
-    const pl = list.map((p) => ({ p, k, o: ovr(p, y), r: ratings(p, y), fat: 0, sec: 0, pf: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, name: pname(p) })).sort((a, b) => b.o - a.o).slice(0, 13);
-    pl.forEach((q, i) => { q.target = TARGET[i] * 60; });
-    const five = [];                                   // the starting five: the best of each position, then the best left
-    for (let s = 0; s < 5; s++) { const q = pl.find((x) => x.p.pos === s && !five.includes(x)); if (q) five.push(q); }
-    for (const q of pl) if (five.length < 5 && !five.includes(q)) five.push(q);
-    pl.forEach((q) => { q.on = five.includes(q); });
+function playGame(y, ht, at, seed, day = -1) {
+  const g = stream(hash(SEED, seed, ht * 32 + at, y));
+  const T = [ht, at].map((t, k) => {
+    const pl = plan(t, y, day).map((q) => ({ p: q.p, k, o: q.o, r: ratings(q.p, y), target: q.mins * 60, dnp: q.dnp, on: q.on, fat: 0, sec: 0, pf: 0, pts: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, ftm: 0, fta: 0, name: pname(q.p) }));
     return { pl, pts: 0, qs: [], k };
   });
   const log = [], gt = { q: 0, left: QLEN }, lead = () => T[0].pts - T[1].pts;
@@ -255,7 +289,7 @@ function playGame(y, ht, at, seed) {
   /** The coach: the five with the most need and the freshest legs, who stay on unless someone is clearly better. */
   function coach(tm) {
     const blow = Math.abs(lead()) >= 22 && elapsed > 2160;
-    const score = (q) => q.pf >= 6 ? -999 : (q.target * Math.min(1, elapsed / 2880) - q.sec) / 60 * 6 + q.o * 0.5 - q.fat * 0.25 - (q.pf >= 4 ? (gt.q < 3 ? 14 : 8) : 0) + (q.on ? 4 : 0) - (blow && tm.pl.indexOf(q) < 5 ? 30 : 0);
+    const score = (q) => q.pf >= 6 ? -999 : q.dnp ? -500 : (q.target * Math.min(1, elapsed / 2880) - q.sec) / 60 * 6 + q.o * 0.5 - q.fat * 0.25 - (q.pf >= 4 ? (gt.q < 3 ? 14 : 8) : 0) + (q.on ? 4 : 0) - (blow && tm.pl.indexOf(q) < 5 ? 30 : 0);
     const best = tm.pl.slice().sort((a, b) => score(b) - score(a)).slice(0, 5);
     for (const q of tm.pl) q.on = best.includes(q);
   }
@@ -345,9 +379,9 @@ function saveEntries() {
   const list = [...ENT.values()].slice(-ENT_MAX);
   dset(ENT_COUNT, list.length);
   list.forEach((e, i) => {
-    dset(ENT_BASE + i * 2, e.id | (e.team << 15) | (e.since << 20) | ((e.yrs & 7) << 25));
+    dset(ENT_BASE + i * 2, e.id | (e.team << 15) | (e.since << 20) | ((e.yrs & 7) << 25) | (((e.focus || 0) & 7) << 28));
     let b = 0; for (let k = 5; k >= 0; k--) b = (b << 3) | (e.bonus[k] & 7);
-    dset(ENT_BASE + i * 2 + 1, e.sal | (b << 8));
+    dset(ENT_BASE + i * 2 + 1, e.sal | (b << 8) | (((e.mins || 0) & 31) << 26));
   });
 }
 function loadEntries() {
@@ -355,7 +389,7 @@ function loadEntries() {
   for (let i = 0, n = dget(ENT_COUNT); i < n; i++) {
     const a = dget(ENT_BASE + i * 2), b = dget(ENT_BASE + i * 2 + 1), bonus = [];
     for (let k = 0; k < 6; k++) bonus.push((b >> (8 + k * 3)) & 7);
-    ENT.set(a & 32767, { id: a & 32767, team: (a >> 15) & 31, since: (a >> 20) & 31, yrs: (a >> 25) & 7, sal: b & 255, bonus });
+    ENT.set(a & 32767, { id: a & 32767, team: (a >> 15) & 31, since: (a >> 20) & 31, yrs: (a >> 25) & 7, focus: (a >> 28) & 7, sal: b & 255, bonus, mins: (b >> 26) & 31 });
   }
   resetLeague();
 }
@@ -367,6 +401,13 @@ function newCareer(seed, t) {
   dset(S.seed, seed); dset(S.team, t); dset(S.year, 0); saveEntries(); TALLY = [0, 0, 0, 0, 0, 0]; resetSeason(); saveSeason();
 }
 function loadCareer() { SEED = dget(S.seed); ME = dget(S.team); YEAR = dget(S.year); loadEntries(); loadSeason(); }
+/** The GM's entry for a person (a touch only: no contract, so he stays where he is), made if there is none. */
+const touch = (p) => ENT.get(p.id) || { id: p.id, team: ME, sal: 0, yrs: 0, since: 0, bonus: [0, 0, 0, 0, 0, 0], mins: 0, focus: 0 };
+/** Changes a person's entry with f; an entry that does nothing any more is dropped. */
+function edit(p, f) {
+  const e = touch(p); f(e);
+  if (!e.yrs && !e.mins && !e.focus && e.bonus.every((b) => !b)) dropEntry(e.id); else setEntry(e);
+}
 function setYear(y) { YEAR = clamp(y, 0, MAX_YEAR); dset(S.year, YEAR); resetSeason(); saveSeason(); }
 
 // --- The season (section 5): 58 games a team, then the playoffs; results are kept in the save (slots 40 to 74) ---
@@ -436,7 +477,7 @@ function beginDay() {
   }
 }
 function playOne() {
-  const [h, a, i] = todo.shift(), g = playGame(YEAR, h, a, hash(SEED, YEAR * 1000 + DAY, h, a + 64 * PHASE) | 1), hw = g.score[0] > g.score[1];
+  const [h, a, i] = todo.shift(), g = playGame(YEAR, h, a, hash(SEED, YEAR * 1000 + DAY, h, a + 64 * PHASE) | 1, DAY), hw = g.score[0] > g.score[1];
   if (i < 0) { WINS[hw ? h : a]++; LOSS[hw ? a : h]++; } else PW[i][(hw ? h : a) === PT[2 * i] ? 0 : 1]++;
   if (h === ME || a === ME) {
     mineG = g;
@@ -470,7 +511,7 @@ const legacy = () => TALLY[0] * 100 + TALLY[1] * 30 + TALLY[2] * 10 + TALLY[3] *
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null, score = 0;
-let G = null, gi = 0, gSpeed = 0, gWait = 0, boxTeam = 0, boxView = 0, hubSel = 0, newSel = 0, newSeed = 1, rows = [], sel = 0, view = 0, viewTeam = 0, backTo = 'hub', newRows = null, sim = null, stView = 0;
+let G = null, gi = 0, gSpeed = 0, gWait = 0, boxTeam = 0, boxView = 0, hubSel = 0, newSel = 0, newSeed = 1, rows = [], sel = 0, view = 0, viewTeam = 0, backTo = 'hub', newRows = null, sim = null, stView = 0, ed = -1, cardP = null;
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
@@ -490,10 +531,11 @@ function toHub() { state = 'hub'; timer = 0; hubSel = 0; paused = false; play(SO
 function teamRows() {
   return Array.from({ length: NT }, (_, t) => ({ t, ovr: strength(t, YEAR), pay: payroll(t, YEAR) })).sort((a, b) => b.ovr - a.ovr || a.t - b.t);
 }
-function openTeam(t, from) {
-  viewTeam = t; backTo = from; state = 'team'; sel = 0; view = 0;
-  rows = roster(t, YEAR).map((p) => ({ p, o: ovr(p, YEAR), r: ratings(p, YEAR), c: contractAt(p, YEAR) })).sort((a, b) => b.o - a.o);
+function buildTeam() {
+  const pn = new Map(plan(viewTeam, YEAR, today()).map((q) => [q.p.id, q]));
+  rows = roster(viewTeam, YEAR).map((p) => ({ p, o: ovr(p, YEAR), r: ratings(p, YEAR), c: contractAt(p, YEAR), h: hurt(p, YEAR, today()), q: pn.get(p.id), e: ENT.get(p.id) })).sort((a, b) => b.o - a.o);
 }
+function openTeam(t, from) { viewTeam = t; backTo = from; state = 'team'; sel = 0; view = 0; ed = -1; buildTeam(); }
 function openLeague() { state = 'league'; rows = teamRows(); sel = Math.max(0, rows.findIndex((r) => r.t === ME)); }
 function openNew() { state = 'new'; timer = 0; newSeed = rndi(1, 99999); SEED = newSeed; ME = 0; YEAR = 0; ENT.clear(); resetLeague(); newRows = teamRows(); newSel = 0; }
 
@@ -511,6 +553,8 @@ function update() {
   else if (state === 'sim') updateSim();
   else if (state === 'standings') updateStandings();
   else if (state === 'sched') updateSched();
+  else if (state === 'card') updateCard();
+  else if (state === 'report') updateReport();
   else if (state === 'live') updateLive();
   else if (state === 'box') updateBox();
   else if (state === 'over') updateOver();
@@ -569,7 +613,7 @@ function updateHub() {
   else if (it === 'SIM DAY') startSim(1);
   else if (it === 'SIM WEEK') startSim(7);
   else if (it === 'SIM TO PLAYOFFS' || it === 'SIM TO END') startSim(999);
-  else if (it === 'NEXT YEAR') { if (YEAR >= MAX_YEAR) gameOver(legacy()); else { setYear(YEAR + 1); hubSel = 0; } }
+  else if (it === 'NEXT YEAR') { if (YEAR >= MAX_YEAR) gameOver(legacy()); else { nextYear(); hubSel = 0; } }
   else if (it === 'RETIRE') gameOver(legacy());
   else toTitle();
 }
@@ -583,6 +627,40 @@ function updateSim() {
   if (sim.stop || sim.left <= 0 || PHASE !== sim.phase) { state = 'hub'; sim = null; } else beginDay();
 }
 const startNext = () => startSim(1, true);
+
+const FOCUS = ['NONE', ...RN];
+/** The offseason's training: each player with a focus may gain a point in it (the young most often, +2 now and then); a rating's bonus tops out at 7. */
+function trainAll() {
+  const gains = [];
+  for (const p of roster(ME, YEAR)) {
+    const e = ENT.get(p.id);
+    if (!e || !e.focus) continue;
+    const i = e.focus - 1, a = age(p, YEAR + 1), chance = a <= 21 ? 85 : a <= 24 ? 65 : a <= 27 ? 45 : a <= 30 ? 25 : 10, h = hash(SEED, p.id, YEAR, 41) % 100;
+    if (h < chance && e.bonus[i] < 7) { const n = Math.min(7 - e.bonus[i], a <= 22 && h < chance / 4 ? 2 : 1); e.bonus[i] += n; gains.push([p.id, i, n]); }
+  }
+  return gains;
+}
+/** A new year: the training, the year, and the report of what became of the GM's players. */
+function nextYear() {
+  const was = new Map(roster(ME, YEAR).map((p) => [p.id, [ovr(p, YEAR), p]])), gains = trainAll();
+  setYear(YEAR + 1);
+  const now = roster(ME, YEAR);
+  rows = [];
+  for (const p of now) {
+    const w = was.get(p.id), gn = gains.find((x) => x[0] === p.id);
+    if (w) { const d = ovr(p, YEAR) - w[0]; rows.push([`${pname(p, 10).padEnd(10)} ${pad(age(p, YEAR), 2)} ${pad(w[0], 2)}>${pad(ovr(p, YEAR), 2)} ${(d > 0 ? '+' : '') + d}${gn ? ` TRAINED ${RN[gn[1]]}` : ''}`, d >= 2 ? GOLD : d < 0 ? DIM : WHITE]); }
+    else rows.push([`${pname(p, 10).padEnd(10)} ${pad(age(p, YEAR), 2)} ${pad(ovr(p, YEAR), 2)} NEW`, CYAN]);
+  }
+  for (const [id, w] of was) if (!now.some((p) => p.id === id)) rows.push([`${pname(w[1], 10).padEnd(10)} ${pad(age(w[1], YEAR - 1), 2)} ${pad(w[0], 2)} LEFT`, RED]);
+  for (const id of [...ENT.keys()]) if (!ENT.get(id).yrs && !now.some((p) => p.id === id)) ENT.delete(id);
+  saveEntries(); resetLeague();
+  state = 'report'; sel = 0;
+}
+function updateReport() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  listMove(rows.length);
+  if (pressed(A) || pressed(B)) { fx(SFX.select); state = 'hub'; }
+}
 function updateStandings() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   if (pressed(LEFT) || pressed(L)) { stView = (stView + 2) % 3; fx(SFX.move); }
@@ -623,9 +701,25 @@ function updateBox() {
 }
 function updateTeam() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  const mine = viewTeam === ME, nv = mine ? 3 : 2;
+  if (ed >= 0) {                                                 // the editor: UP and DOWN pick the field, LEFT and RIGHT change it
+    const p = rows[sel].p, e = ENT.get(p.id) || { mins: 0, focus: 0 };
+    if (pressed(A) || pressed(B)) { ed = -1; fx(SFX.select); return; }
+    if (pressed(UP) || pressed(DOWN)) { ed ^= 1; fx(SFX.move); }
+    const d = btnp(RIGHT) ? 1 : btnp(LEFT) ? -1 : 0;
+    if (d) { const n = ed ? 7 : 26, v = ((ed ? e.focus : e.mins) + d + n) % n; fx(SFX.move); edit(p, (x) => { if (ed) x.focus = v; else x.mins = v; }); buildTeam(); }
+    return;
+  }
   listMove(rows.length);
-  if (pressed(LEFT) || pressed(RIGHT) || pressed(L) || pressed(R)) { view ^= 1; fx(SFX.move); }
+  if (pressed(RIGHT) || pressed(R)) { view = (view + 1) % nv; fx(SFX.move); }
+  if (pressed(LEFT) || pressed(L)) { view = (view + nv - 1) % nv; fx(SFX.move); }
+  if (pressed(Y)) { fx(SFX.select); cardP = rows[sel].p; state = 'card'; }
+  if (pressed(A) && mine) { fx(SFX.select); ed = 0; }
   if (pressed(B)) { if (backTo === 'league') { const t = viewTeam; openLeague(); sel = Math.max(0, rows.findIndex((r) => r.t === t)); } else state = 'hub'; }
+}
+function updateCard() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (pressed(B) || pressed(Y) || pressed(A)) { fx(SFX.select); state = 'team'; }
 }
 
 function gameOver(v) {
@@ -682,6 +776,8 @@ function draw() {
   else if (state === 'sim') drawSim();
   else if (state === 'standings') drawStandings();
   else if (state === 'sched') drawSched();
+  else if (state === 'card') drawCard();
+  else if (state === 'report') drawReport();
   else if (state === 'live') drawLive();
   else if (state === 'box') drawBox();
   else if (state === 'initials') drawInitials();
@@ -734,6 +830,8 @@ function drawHub() {
   txt(`${wl(ME)}  ${phaseName()}`, 16, 34, WHITE);
   txt(`OVERALL ${strength(ME, YEAR)}  #${standing(confOf(ME)).indexOf(ME) + 1} IN ${confOf(ME) ? 'WEST' : 'EAST'}`, 16, 46, WHITE);
   txt(nextLine(), 16, 58, GOLD);
+  const out = PHASE < 2 ? roster(ME, YEAR).filter((p) => hurt(p, YEAR, DAY)).length : 0;
+  if (out) txt(`HURT ${out}`, 200, 46, RED);
   txt(lastRes ? `LAST ${lastRes}`.slice(0, 29) : `PAYROLL $${money(payroll(ME, YEAR))}M`, 16, 70, lastRes ? DIM : payroll(ME, YEAR) > CAP ? RED : DIM);
   hubItems().forEach((m, i) => txt(`${i === hubSel ? '> ' : '  '}${m}`, 84, 96 + i * 11, i === hubSel ? WHITE : DIM));
   footer('A:SELECT');
@@ -774,11 +872,41 @@ function drawLeague() {
 function drawTeam() {
   header(tname(viewTeam).slice(0, 24), `${BASE_YEAR + YEAR}`);
   txt(`OVR ${strength(viewTeam, YEAR)}  PAY $${money(payroll(viewTeam, YEAR))}M/$${money(CAP)}M`, 8, 22, DIM);
-  txt(view ? 'NAME        INS OUT PLY DEF REB ATH'.slice(0, 32) : 'POS NAME        AGE OVR PAY   YR', 8, 34, DIM);
-  drawList(rows.map((r) => [view ? `${pname(r.p).padEnd(11)} ${r.r.map((v) => pad(v, 3)).join(' ')}` : `${POS[r.p.pos].padEnd(2)} ${pname(r.p).padEnd(11)} ${pad(age(r.p, YEAR), 3)} ${pad(r.o, 3)} ${pad(r.c ? money(r.c[0]) : '-', 5)} ${r.c ? r.c[1] : '-'}`, r.o >= 75 ? GOLD : r.o >= 60 ? WHITE : DIM]), sel, 46, 16);
-  footer('<>:RATINGS  B:BACK');
+  txt(view === 2 ? '  POS NAME       OVR MIN FOC HURT' : view ? 'NAME        INS OUT PLY DEF REB ATH' : 'POS NAME        AGE OVR PAY   YR', 8, 34, DIM);
+  const line = (r) => {
+    if (view === 2) return `${r.q && r.q.on ? '*' : ' '} ${POS[r.p.pos].padEnd(2)} ${pname(r.p, 10).padEnd(10)} ${pad(r.o, 3)} ${r.h ? '  -' : r.q ? (r.q.dnp ? 'DNP' : pad(r.q.mins, 3)) : '  -'}${r.q && !r.q.auto ? '*' : ' '}${(FOCUS[r.e ? r.e.focus : 0] === 'NONE' ? '' : FOCUS[r.e ? r.e.focus : 0]).padEnd(3)} ${r.h ? 'OUT' + r.h : ''}`;
+    return view ? `${pname(r.p).padEnd(11)} ${r.r.map((v) => pad(v, 3)).join(' ')}` : `${POS[r.p.pos].padEnd(2)} ${pname(r.p).padEnd(11)} ${pad(age(r.p, YEAR), 3)} ${pad(r.o, 3)} ${pad(r.c ? money(r.c[0]) : '-', 5)} ${r.c ? r.c[1] : '-'}`;
+  };
+  drawList(rows.map((r) => [line(r), r.h ? RED : r.o >= 75 ? GOLD : r.o >= 60 ? WHITE : DIM]), sel, 46, 16);
+  if (ed >= 0) {
+    const r = rows[sel], e = r.e || { mins: 0, focus: 0 };
+    panel(24, 140, 208, 62);
+    txt(`${pname(r.p, 14)} ${POS[r.p.pos]}  OVR ${r.o}`, 32, 146, GOLD);
+    txt(`${ed === 0 ? '>' : ' '} MINUTES  < ${e.mins === 0 ? 'AUTO' : e.mins === 1 ? 'DNP' : (e.mins - 1) * 2} >`, 32, 162, ed === 0 ? WHITE : DIM);
+    txt(`${ed === 1 ? '>' : ' '} TRAINING < ${FOCUS[e.focus]} >`, 32, 176, ed === 1 ? WHITE : DIM);
+    footer('UD:FIELD  LR:CHANGE  B:DONE');
+  } else footer(viewTeam === ME ? '<>:VIEW  A:EDIT  Y:CARD  B:BACK' : '<>:RATINGS  Y:CARD  B:BACK');
 }
-
+function drawCard() {
+  const p = cardP, r = ratings(p, YEAR), c = contractAt(p, YEAR), h = hurt(p, YEAR, today()), o = ovr(p, YEAR);
+  header(`${names()[0][p.fn]} ${names()[1][p.ln]}`.slice(0, 26), POS[p.pos]);
+  txt(`AGE ${age(p, YEAR)}  ${(p.ht / 12) | 0}'${p.ht % 12}"  OVERALL ${o}`, 8, 24, WHITE);
+  txt(c ? `$${money(c[0])}M  ${c[1]} YEAR${c[1] > 1 ? 'S' : ''} LEFT` : 'NO CONTRACT', 8, 36, c ? WHITE : DIM);
+  if (h) txt(`OUT ${h} GAMES`, 176, 36, RED);
+  RN.forEach((n, i) => { const y = 52 + i * 12; txt(n, 8, y, DIM); rectfill(40, y + 1, (r[i] - 20) * 1.6, 6, r[i] >= 75 ? GOLD : r[i] >= 60 ? GREEN : DIM); txt(pad(r[i], 2), 40 + (r[i] - 20) * 1.6 + 6, y, WHITE); });
+  txt('OVERALL BY YEAR (AGE UNDER)', 8, 126, DIM);
+  for (let y = Math.max(p.start, YEAR - 9), x = 8; y <= YEAR; y++, x += 24) {
+    const v = ovr(p, y), hgt = Math.max(1, (v - 30) * 0.9);
+    rectfill(x, 190 - hgt, 18, hgt, y === YEAR ? GOLD : PANEL); txt(`${v}`, x + 1, 181 - hgt, WHITE); txt(`${age(p, y)}`, x + 1, 194, DIM);
+  }
+  footer('B:BACK');
+}
+function drawReport() {
+  header('OFFSEASON', `${BASE_YEAR + YEAR}`);
+  txt('PLAYER     AGE OVR', 8, 24, DIM);
+  drawList(rows, sel, 36, 16);
+  footer('A:CONTINUE');
+}
 
 /** The court: a top view, the home team attacking the right hoop. Dots for the ten on the floor, the ball with the shooter. */
 const FORM = [[0.62, 0.5], [0.72, 0.2], [0.72, 0.8], [0.9, 0.3], [0.88, 0.62]];      // the five on offence, at the right hoop (x, y in the court's width and height)
