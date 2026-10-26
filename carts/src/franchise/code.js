@@ -705,7 +705,7 @@ function updateSim() {
 }
 const startNext = () => startSim(1, true);
 
-const FOCUS = ['NONE', ...RN];
+const FOCUS = ['NONE', ...RN], FULL = ['NONE', 'INSIDE', 'SHOOTING', 'PLAYMAKING', 'DEFENSE', 'REBOUNDING', 'ATHLETIC'];   // FULL: what the three letters stand for
 /** The offseason's training: each player with a focus may gain a point in it (the young most often, +2 now and then); a rating's bonus tops out at 7. */
 function trainAll() {
   const gains = [];
@@ -839,9 +839,9 @@ function updateFA() {
 }
 function drawFA() {
   header('FREE AGENTS', `ROOM $${money(CAP - payroll(ME, VY()))}M`);
-  txt(`ROSTER ${roster(ME, VY()).length}/15  NAME      POS AGE OVR`.slice(0, 32), 8, 24, DIM);
+  txt(`ROSTER ${roster(ME, VY()).length}/15  NAME      POS AGE OVR`.slice(0, 31), 8, 24, DIM);
   drawList(rs.map((r) => [`${r.own ? '*' : ' '}${pname(r.p, 9).padEnd(9)} ${POS[r.p.pos].padEnd(2)} ${pad(age(r.p, VY()), 2)} ${pad(ovr(r.p, VY()), 3)} ${r.done ? ' SIGNED' : `${pad(money(ask(r.p, r.n)), 5)}M ${r.n}Y`}`, r.done ? GOLD : canSign(r) ? WHITE : DIM]), sel, 36, 16);
-  footer('LR:YEARS A:SIGN SELECT:FILL B:BACK');
+  footer('LR:YEARS A:SIGN SELECT:FILL');
 }
 
 // --- Trades (section 5): the computer values a player by what he is worth and what he costs ---
@@ -911,8 +911,8 @@ function drawTrade() {
     }
   });
   const r = TR[TR.col ? 'R' : 'L'][TR.sel[TR.col]], c = r && contractAt(r.p, y);
-  if (r) txt(`${pname(r.p, 9)} ${c ? `$${money(c[0])}M ${c[1]}Y` : '-'} WORTH ${worth(r.p, y)}`.slice(0, 32), 8, 186, WHITE);
-  txt((TR.msg || 'X: PROPOSE').slice(0, 32), 8, 198, TR.msg ? RED : GREEN);
+  if (r) txt(`${pname(r.p, 9)} ${c ? `$${money(c[0])}M ${c[1]}Y` : '-'} WORTH ${worth(r.p, y)}`.slice(0, 31), 8, 186, WHITE);
+  txt((TR.msg || 'X: PROPOSE').slice(0, 31), 8, 198, TR.msg ? RED : GREEN);
   footer('A:PICK <>:SIDE SELECT:DEAL/ASK');
 }
 
@@ -956,7 +956,7 @@ function drawDraft() {
     drawList(D.av.map((i) => { const p = D.list[i], v = value(p); return [`${pname(p, 10).padEnd(10)} ${POS[p.pos].padEnd(2)} ${pad(age(p, YEAR), 3)} ${pad(est(p, ovr(p, YEAR), 1), 3)} ${pad(est(p, overall(p.pos, p.R), 2), 3)}`, WHITE]; }), sel, 36, 11);
   }
   D.log.slice(-5).forEach((l, k) => txt(l, 8, 152 + k * 10, k === 4 ? GOLD : DIM));
-  footer(done ? 'A:BACK' : 'A:PICK  B:AUTO  SCOUTING SHARPENS');
+  footer(done ? 'A:BACK' : 'A:PICK  B:AUTO  SCOUTING HELPS');
 }
 function updateFin() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
@@ -1121,10 +1121,10 @@ function drawFin() {
   rectfill(8, 50, 240, 6, PANEL); rectfill(8, 50, Math.min(240, pay * 0.3), 6, c); rectfill(8 + CAP * 0.3, 48, 1, 10, WHITE); rectfill(8 + TAX * 0.3, 48, 1, 10, WHITE);
   [`TICKET PRICE $${priceOf()}`, `SCOUTING     $${SETS[1]}M`, `FACILITIES   $${SETS[2]}M`].forEach((t, i) => txt(`${i === finSel ? '>' : ' '} ${t}`, 8, 66 + i * 12, i === finSel ? WHITE : DIM));
   txt(`FANS FILL ${Math.round(fill(false) * 100)}%  GATE $${money(gate(false))}M`, 8, 106, DIM);
-  txt(`THIS SEASON ${sm(CASH - SCASH)}  LAST ${sm(LASTP)}`.slice(0, 32), 8, 122, WHITE);
+  txt(`THIS SEASON ${sm(CASH - SCASH)}  LAST ${sm(LASTP)}`.slice(0, 31), 8, 122, WHITE);
   txt('OWNER', 8, 140, DIM); rectfill(56, 141, 160, 6, PANEL); rectfill(56, 141, PAT * 1.6, 6, PAT < 25 ? RED : GREEN); txt(`${PAT}`, 224, 140, WHITE);
-  txt(`GOAL ${GOALW} WINS${GOALP ? ' AND THE PLAYOFFS' : ''}`.slice(0, 32), 8, 156, GOLD);
-  txt('SCOUTING HELPS THE DRAFT, FACILITIES THE', 8, 176, DIM); txt('FANS AND TRAINING. A DEAL OVER THE TAX', 8, 186, DIM); txt('LINE COSTS 1.5 FOR EACH DOLLAR OVER.', 8, 196, DIM);
+  txt(`GOAL ${GOALW} WINS${GOALP ? ' AND THE PLAYOFFS' : ''}`.slice(0, 31), 8, 156, GOLD);
+  txt('SCOUTING HELPS THE DRAFT.', 8, 176, DIM); txt('FACILITIES: FANS AND TRAINING.', 8, 186, DIM); txt('OVER THE TAX LINE: $1.5 PER $1.', 8, 196, DIM);
   footer('UD:PICK  LR:CHANGE  B:BACK');
 }
 function drawVerdict() {
@@ -1173,22 +1173,23 @@ function drawLeague() {
 function drawTeam() {
   header(tname(viewTeam).slice(0, 22), `${BASE_YEAR + YEAR}`, viewTeam);
   txt(`OVR ${strength(viewTeam, YEAR)}  PAY $${money(payroll(viewTeam, YEAR))}M/$${money(CAP)}M`, 8, 22, DIM);
-  txt(view === 2 ? '  POS NAME     OVR MIN FOC OUT' : view ? 'NAME        INS OUT PLY DEF REB ATH' : 'POS NAME        AGE OVR PAY   YR', 8, 34, DIM);
+  txt(view === 2 ? '  POS NAME     OVR MIN FOC OUT' : view ? 'NAME    INS OUT PLY DEF REB ATH' : 'POS NAME        AGE OVR PAY   YR', 8, 34, DIM);
   const line = (r) => {
     if (view === 2) return `${r.q && r.q.on ? '*' : ' '} ${POS[r.p.pos].padEnd(2)} ${pname(r.p, 9).padEnd(9)} ${pad(r.o, 3)} ${r.h ? '  -' : r.q ? (r.q.dnp ? 'DNP' : pad(r.q.mins, 3)) : '  -'}${r.q && !r.q.auto ? '*' : ' '}${(FOCUS[r.e ? r.e.focus : 0] === 'NONE' ? '' : FOCUS[r.e ? r.e.focus : 0]).padEnd(3)} ${r.h ? 'OUT' + r.h : ''}`;
-    return view ? `${pname(r.p).padEnd(11)} ${r.r.map((v) => pad(v, 3)).join(' ')}` : `${POS[r.p.pos].padEnd(2)} ${pname(r.p).padEnd(11)} ${pad(age(r.p, YEAR), 3)} ${pad(r.o, 3)} ${pad(r.c ? money(r.c[0]) : '-', 5)} ${r.c ? r.c[1] : '-'}`;
+    return view ? `${pname(r.p, 7).padEnd(7)} ${r.r.map((v) => pad(v, 3)).join(' ')}` : `${POS[r.p.pos].padEnd(2)} ${pname(r.p).padEnd(11)} ${pad(age(r.p, YEAR), 3)} ${pad(r.o, 3)} ${pad(r.c ? money(r.c[0]) : '-', 5)} ${r.c ? r.c[1] : '-'}`;
   };
-  drawList(rows.map((r) => [line(r), r.h ? RED : r.o >= 75 ? GOLD : r.o >= 60 ? WHITE : DIM]), sel, 46, 16);
+  drawList(rows.map((r) => [line(r), r.h ? RED : r.o >= 75 ? GOLD : r.o >= 60 ? WHITE : DIM]), sel, 46, view === 1 ? 13 : 16);
+  if (view === 1) ['INS INSIDE   OUT SHOOTING', 'PLY PLAYMAKING   DEF DEFENSE', 'REB REBOUNDING   ATH ATHLETIC'].forEach((l, i) => txt(l, 8, 180 + i * 10, DIM));
   if (ed >= 0) {
     const r = rows[sel], e = r.e || { mins: 0, focus: 0 };
     panel(24, 134, 208, 74);
     txt(`${pname(r.p, 14)} ${POS[r.p.pos]}  OVR ${r.o}`, 32, 140, GOLD);
     txt(`${ed === 0 ? '>' : ' '} MINUTES  < ${e.mins === 0 ? 'AUTO' : e.mins === 1 ? 'DNP' : (e.mins - 1) * 2} >`, 32, 160, ed === 0 ? WHITE : DIM);
-    txt(`${ed === 1 ? '>' : ' '} TRAINING < ${FOCUS[e.focus]} >`, 32, 174, ed === 1 ? WHITE : DIM);
+    txt(`${ed === 1 ? '>' : ' '} TRAINING < ${FULL[e.focus]} >`, 32, 174, ed === 1 ? WHITE : DIM);
     const c = r.c;
     txt(`${ed === 2 ? '>' : ' '} ${arm ? 'A AGAIN: PAY ' : 'RELEASE: A, COST '}$${money(c ? Math.round(c[0] * c[1] / 2) : 0)}M`.slice(0, 29), 32, 188, ed === 2 ? (arm ? RED : WHITE) : DIM);
     footer(ed === 2 ? 'UD:FIELD  A:RELEASE  B:DONE' : 'UD:FIELD  LR:CHANGE  B:DONE');
-  } else footer(viewTeam === ME ? '<>:VIEW A:EDIT SELECT:CARD B:BACK' : '<>:RATINGS SELECT:CARD B:BACK');
+  } else footer(viewTeam === ME ? '<>:VIEW A:EDIT SELECT:CARD' : '<>:RATINGS SELECT:CARD B:BACK');
 }
 function drawCard() {
   const p = cardP, r = ratings(p, YEAR), c = contractAt(p, YEAR), h = hurt(p, YEAR, today()), o = ovr(p, YEAR);
@@ -1197,7 +1198,7 @@ function drawCard() {
   txt(c ? `$${money(c[0])}M  ${c[1]} YEAR${c[1] > 1 ? 'S' : ''} LEFT` : 'NO CONTRACT', 8, 36, c ? WHITE : DIM);
   if (h) txt(`OUT ${h}`, 176, 36, RED);
   portrait(p, 216, 24, ((p.id < 15360 ? p.id >> 9 : ME) % NT));
-  RN.forEach((n, i) => { const y = 52 + i * 12; txt(n, 8, y, DIM); rectfill(40, y + 1, (r[i] - 20) * 1.6, 6, r[i] >= 75 ? GOLD : r[i] >= 60 ? GREEN : DIM); txt(pad(r[i], 2), 40 + (r[i] - 20) * 1.6 + 6, y, WHITE); });
+  RN.forEach((n, i) => { const y = 52 + i * 12, w = (r[i] - 20) * 1.2; txt(FULL[i + 1], 8, y, DIM); rectfill(96, y + 1, w, 6, r[i] >= 75 ? GOLD : r[i] >= 60 ? GREEN : DIM); txt(pad(r[i], 2), 96 + w + 6, y, WHITE); });
   txt('OVERALL BY YEAR (AGE UNDER)', 8, 122, DIM);
   for (let y = YEAR - Math.min(9, age(p, YEAR) - 19), x = 8; y <= YEAR; y++, x += 24) {         // his years so far, from 19
     const v = ovr(p, y), hgt = Math.max(1, (v - 30) * 0.7);
@@ -1239,7 +1240,7 @@ function drawLive() {
   rectfill(4, 30, 248, 1, PANEL);
   drawCourt(40, 32, 176, 96, ev, gi);
   const shown = G.log.slice(Math.max(0, gi - 7), gi);
-  shown.forEach((e, k) => txt(e.text.slice(0, 32), 8, 134 + k * 10, k === shown.length - 1 ? (e.kind === 'make' || e.kind === 'ft' ? GOLD : WHITE) : DIM));
+  shown.forEach((e, k) => txt(e.text.slice(0, 31), 8, 134 + k * 10, k === shown.length - 1 ? (e.kind === 'make' || e.kind === 'ft' ? GOLD : WHITE) : DIM));
   footer(done ? 'A:BOX SCORE' : 'A:SPEED  B:SKIP');
 }
 function drawBox() {
@@ -1249,7 +1250,7 @@ function drawBox() {
   const sum = (key) => pl.reduce((s, q) => s + q[key], 0);
   pl.forEach((q, i) => txt(boxView ? `${q.name.padEnd(10)} ${pad(q.stl, 2)} ${pad(q.blk, 2)} ${pad(q.tov, 2)} ${pad(q.pf, 2)} ${pad(q.tpm + '-' + q.tpa, 4)} ${pad(q.ftm + '-' + q.fta, 5)}` : `${q.name.padEnd(10)} ${pad(Math.round(q.sec / 60), 2)} ${pad(q.pts, 2)} ${pad(q.reb, 2)} ${pad(q.ast, 2)} ${pad(q.fgm + '-' + q.fga, 5)}`, 8, 34 + i * 10, i < 5 ? WHITE : DIM));
   txt(boxView ? `TOTAL      ${pad(sum('stl'), 2)} ${pad(sum('blk'), 2)} ${pad(sum('tov'), 2)} ${pad(sum('pf'), 2)} ${pad(sum('tpm') + '-' + sum('tpa'), 4)} ${pad(sum('ftm') + '-' + sum('fta'), 5)}` : `TOTAL      ${pad(Math.round(sum('sec') / 60), 3)} ${pad(sum('pts'), 2)} ${pad(sum('reb'), 2)} ${pad(sum('ast'), 2)} ${pad(sum('fgm') + '-' + sum('fga'), 5)}`, 8, 34 + pl.length * 10 + 4, GOLD);
-  txt(`BY QUARTER ${G.qs[k].join(' ')}`.slice(0, 32), 8, 34 + pl.length * 10 + 18, DIM);
+  txt(`BY QUARTER ${G.qs[k].join(' ')}`.slice(0, 31), 8, 34 + pl.length * 10 + 18, DIM);
   footer('<>:TEAM  UD:MORE  B:BACK');
 }
 function drawRecords() {

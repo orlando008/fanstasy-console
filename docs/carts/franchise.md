@@ -76,7 +76,7 @@ better record has home court. The 14 teams that miss it enter the **draft lotter
 
 A player has: a **position** (PG, SG, SF, PF, C), **age** (19 to 38), **height**, six **ratings** from 20 to 99: **INS** (inside
 scoring), **OUT** (outside shooting), **PLY** (playmaking and ball handling), **DEF** (defence), **REB** (rebounding), **ATH**
-(athleticism: speed, jumping, stamina); a hidden **potential** (the ceiling of the **overall**), a **contract** (salary in
+(athleticism: speed, jumping, stamina); the screens spell them out where there is room (the player card, the training editor) and the roster's ratings view has a legend under its table; a hidden **potential** (the ceiling of the **overall**), a **contract** (salary in
 $0.1M units and years left), **health** (injured for n days) and a **mood** for re-signing.
 
 **Overall** = the position's weights over the six ratings (PG: PLY 3, OUT 2, DEF 1, ATH 1, INS 1; C: INS 3, REB 3, DEF 2, ATH 1, ... the tables are in the
