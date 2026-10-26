@@ -134,9 +134,11 @@ signs the GM's own and then the best affordable ones until the roster has 13. A 
 
 ### Trades
 
-Value of a player to the AI = a function of overall, age, potential and contract (a rookie of high potential is worth more than a 33 year old of the same overall; an overpaid player is
-negative). The AI accepts a trade when **the value it receives is at least 1.1 times what it gives**, and when both payrolls stay legal (a team over the cap must send out at
-least as much salary as it takes). Draft picks have a value by the owner's record. The AI proposes trades to you in the news, now and then.
+TRADES is in the hub from the start of the season to day 40 (the deadline) and again after the playoffs; you pick a team and then, on a screen of two rosters, up to three of your men and up to three of theirs. **The value of a man to the computer** is his
+market price for his overall (the pay table of the section above), times 1.25 up to 23 years old, 1.1 to 27, 1 to 30, 0.8 to 33 and 0.6 after, plus 0.3 of what his deal saves (the price less his pay) for each of the next four years: an overpaid man is worth little or
+less than nothing. The computer says yes when **what it receives is at least 1.1 times what it gives**, and when both payrolls stay legal (a team that goes over the $120M cap must send out at least as much pay as it takes), and when your roster would not pass 15. A man signed or drafted this offseason cannot be traded. The computer shows the verdict as you pick
+and R asks it which of your men it would take to make a no into a yes. The computer's players that you get are on your roster at once (next year, in the offseason) with the deal they had; the one you give is on the other team's roster, which lets its weakest man go if it passes 15, and the slot you
+took him from has its next person from then on. A trade makes one entry for each man who moves; the minutes and the focus of a man you give are cleared, his training bonus stays. Draft picks cannot be traded (the save has nothing to hold them), and the computer proposes no trades to you (its teams do nothing on their own); both are left out on purpose.
 
 ## 6. Levels or content
 
@@ -223,7 +225,7 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 
 | Asset | Budget |
 |---|---|
-| Code | 55.3 KB of the 64 KB limit after step 6 and the size pass (60.7 KB before it) (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
+| Code | 59.5 KB of the 64 KB limit after step 7 (55.3 KB before the trades) (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
 | Tiles | none yet (the backdrop is one colour); the panels, the court, the portraits' frames and the emblems come with the art pass (of 1,024) |
 | Sprites | none yet (128 in OAM, 32 per line): later the game night's ten dots and the ball, a portrait or two a screen |
 | ROM | 15.0 KB of 128 KB after step 3: `league.bin` (7.0 KB: 30 teams, 450 people) and `names.bin` (8.0 KB: 369 first names, 739 last names, the cities and nicknames) |
@@ -322,6 +324,14 @@ now fills the roster as well; the bot drafts (B), signs (X) and plays 25 seasons
 **Results:** the pool has about 100 players in an offseason (38 street, about 60 leaving other teams, a few of the GM's own). The street class averages an overall of 45 (the best near 65); with a payroll of $124M most of the good ones are beyond the cap and the cheap ones are the street class. The draft has about 12 real prospects.
 **The code was 60.7 KB of 64: 4.9 KB left, which trades (step 7) would not fit. A size pass came first: `"mangle": true` in `meta.json` (`tools/devkit/mangle.mjs`, tested by `tests/console/mangle.mjs`) shortens the names the code declares at its top level and gives 5.3 KB back: 55.3 KB, 10.2 KB left.**
 
+### Built and results: step 7, trades
+
+**Built:** in `code.js`: `worth`, `tradeCheck` (the reasons in words: PICK PLAYERS, THREE EACH AT MOST, YOUR ROSTER WOULD PASS 15, TOO MANY DEALS (the save holds 90 entries; a trade needs room), OVER THE CAP, THEY ARE OVER THE CAP, THEY WANT MORE (a and b of what they need)),
+`counter` (the least valuable man of yours who turns a no into a yes), `tradable`, `doTrade`, the trade screen (A picks, LEFT and RIGHT change sides, X proposes, R asks, Y shows a card and B comes back) and the TRADES item (the league list in a mode of its own). The hub lost its QUIT TO TITLE item (the pause menu has it) to fit thirteen
+items. An entry for a deal that has run out is dropped at NEXT YEAR. Tests: `08-trades.mjs` (the worth of a man, the verdicts, a trade's entries, rosters and deals, the save, a dozen trades in a row with every roster whole, who cannot be traded and when, the screens); the bot tries a trade each offseason.
+
+**Results:** the computer refuses most lopsided trades by the cap rule (its payroll sits near the cap by the payroll rule, so the pay must match), which makes a trade a matter of matching pay and worth; a one-for-one that it accepts is easy to find (a good young man for an older one of the same pay). The code is 59.5 KB of 64 (4.5 KB left for the art and the polish of step 8).
+
 ## 16. Open questions
 
 - The **length of a season** (58 games here: every team twice) against a real 82; a shorter season is faster to play, a longer one more real.
@@ -329,4 +339,4 @@ now fills the roster as well; the bot drafts (B), signs (X) and plays 25 seasons
 - **Real names**: fictional teams and generated players are the plan; no real franchise, league or player name goes in.
 - **More than one base league**: one table of 7 KB plus the seed's jitter is the plan; two or three base leagues (different eras of talent) would cost only 7 KB each if the jitter proves too samey.
 - **Game night speed**: a live game takes about 40 seconds at the fastest pace of the play-by-play (skippable); is that right?
-- **The code budget**: 55.3 KB of 64 KB after step 6 and the size pass (`"mangle": true`, 60.7 KB before it): 10.2 KB for trades, the art and the polish. Before that: 48 KB after step 4. If steps 5 to 7 do not fit, the first things to trim are the offseason report's rows, the card's chart and the SHORT phrase table; a second table in ROM (text) does not count against the code.
+- **The code budget**: 59.5 KB of 64 KB after step 7 (the size pass, `"mangle": true`, took the code from 60.7 to 55.3 KB before the trades): 4.5 KB left for the art and the polish. Before that: 48 KB after step 4. If steps 5 to 7 do not fit, the first things to trim are the offseason report's rows, the card's chart and the SHORT phrase table; a second table in ROM (text) does not count against the code.

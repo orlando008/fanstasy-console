@@ -11,9 +11,11 @@ export const defaults = { frames: 45000, seeds: 6, set: { skill: [1] } };
 
 export const newGame = (seed) => boot(seed);          // skipTitle: straight into the hub of a career on team 0
 
-export const setup = () => { tinkered = -1; step = 0; signed = -1; drafted = -1; cut = -1; };
+export const setup = () => { tinkered = -1; step = 0; signed = -1; drafted = -1; cut = -1; traded = -1; tstep = 0; };
 
-let tinkered = -1, step = 0, signed = -1, drafted = -1, cut = -1;
+let tinkered = -1, step = 0, signed = -1, drafted = -1, cut = -1, traded = -1, tstep = 0;
+/** The GM tries a trade once a year: a team, his best man, their best man, the computer's counter, then X (it is made if the answer is yes). */
+const TRADE = ['A', 'RIGHT', 'A', 'LEFT', 'R', 'X', 'B', 'B'];
 /** Too many players for next year: the worst one is released (the last row of the roster, A, UP to RELEASE, A twice, B). */
 const CUT = [...Array(16).fill('DOWN'), 'A', 'UP', 'A', 'A', 'B'];
 /** The GM's tinkering with the lineup, once a year in the offseason: open the roster, the lineup view, set the minutes and a training focus on the first player, look at his card. */
@@ -25,6 +27,8 @@ export function pad(vm, p, frame) {
   if (p.state === 'over' || p.state === 'initials') return M(p.state === 'initials' ? 'START' : 'A');
   if (p.state === 'sim') return 0;
   if (p.state === 'report') return M('A');
+  if (p.state === 'league' && p.pickT === true) return M(tstep >= TRADE.length ? 'B' : p.rows[p.sel].t === p.ME ? 'DOWN' : 'A');
+  if (p.state === 'trade') return tstep < TRADE.length ? M(TRADE[tstep++]) : M('B');
   if (p.state === 'draft') return M(p.D.pos < 60 ? 'B' : 'A');                       // B: the rest is picked for the GM
   if (p.state === 'fa') { if (signed !== p.YEAR) { signed = p.YEAR; return M('X'); } return M('B'); }
   if (p.state === 'team' && cut >= 0) { if (cut < CUT.length) return M(CUT[cut++]); cut = -1; return M('B'); }
@@ -34,6 +38,7 @@ export function pad(vm, p, frame) {
   if (p.PHASE === 2 && tinkered !== p.YEAR) { if (items[p.hubSel] !== 'ROSTER') return M('DOWN'); tinkered = p.YEAR; step = 0; return M('A'); }
   if (p.PHASE === 2 && drafted !== p.YEAR && items.includes('DRAFT')) { if (items[p.hubSel] !== 'DRAFT') return M('DOWN'); drafted = p.YEAR; return M('A'); }
   if (p.PHASE === 2 && signed !== p.YEAR) { if (items[p.hubSel] !== 'FREE AGENTS') return M('DOWN'); return M('A'); }
+  if (p.PHASE === 2 && traded !== p.YEAR && signed === p.YEAR) { if (items[p.hubSel] !== 'TRADES') return M('DOWN'); traded = p.YEAR; tstep = 0; return M('A'); }
   if (p.PHASE === 2 && p.roster(p.ME, p.YEAR + 1).length > 15) { if (items[p.hubSel] !== 'ROSTER') return M('DOWN'); cut = 0; return M('A'); }
   const want = items.find((n) => n === 'NEXT YEAR' || n === 'SIM TO PLAYOFFS' || n === 'SIM TO END');
   const target = p.PHASE === 2 && p.YEAR >= p.MAX_YEAR ? 'RETIRE' : want;

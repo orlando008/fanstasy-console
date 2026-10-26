@@ -566,7 +566,7 @@ function verdict() {
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null, score = 0;
-let G = null, gi = 0, gSpeed = 0, gWait = 0, boxTeam = 0, boxView = 0, hubSel = 0, newSel = 0, newSeed = 1, rows = [], sel = 0, view = 0, viewTeam = 0, backTo = 'hub', newRows = null, sim = null, stView = 0, ed = -1, cardP = null, finSel = 0, rs = [], arm = false;
+let G = null, gi = 0, gSpeed = 0, gWait = 0, boxTeam = 0, boxView = 0, hubSel = 0, newSel = 0, newSeed = 1, rows = [], sel = 0, view = 0, viewTeam = 0, backTo = 'hub', newRows = null, sim = null, stView = 0, ed = -1, cardP = null, finSel = 0, rs = [], arm = false, pickT = false, TR = null;
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
@@ -590,8 +590,8 @@ function buildTeam() {
   const y = VY(), pn = new Map(plan(viewTeam, y, today()).map((q) => [q.p.id, q]));
   rows = roster(viewTeam, y).map((p) => ({ p, o: ovr(p, y), r: ratings(p, y), c: contractAt(p, y), h: hurt(p, y, today()), q: pn.get(p.id), e: ENT.get(p.id) })).sort((a, b) => b.o - a.o);
 }
-function openTeam(t, from) { viewTeam = t; backTo = from; state = 'team'; sel = 0; view = 0; ed = -1; buildTeam(); }
-function openLeague() { state = 'league'; rows = teamRows(); sel = Math.max(0, rows.findIndex((r) => r.t === ME)); }
+function openTeam(t, from) { TR = null; viewTeam = t; backTo = from; state = 'team'; sel = 0; view = 0; ed = -1; buildTeam(); }
+function openLeague() { state = 'league'; pickT = false; rows = teamRows(); sel = Math.max(0, rows.findIndex((r) => r.t === ME)); }
 function openNew() { state = 'new'; timer = 0; newSeed = rndi(1, 99999); SEED = newSeed; ME = 0; YEAR = 0; ENT.clear(); resetLeague(); newRows = teamRows(); newSel = 0; }
 
 // --- Update ---
@@ -610,6 +610,7 @@ function update() {
   else if (state === 'sched') updateSched();
   else if (state === 'card') updateCard();
   else if (state === 'fin') updateFin();
+  else if (state === 'trade') updateTrade();
   else if (state === 'fa') updateFA();
   else if (state === 'draft') updateDraft();
   else if (state === 'verdict') updateVerdict();
@@ -651,7 +652,7 @@ function updateNew() {
 }
 /** The hub's menu: what the date allows. */
 function hubItems() {
-  const base = ['FREE AGENTS', 'ROSTER', 'STANDINGS', 'SCHEDULE', 'FINANCES', 'LEAGUE', 'RETIRE', 'QUIT TO TITLE'];
+  const base = ['FREE AGENTS', ...(tradeOpen() ? ['TRADES'] : []), 'ROSTER', 'STANDINGS', 'SCHEDULE', 'FINANCES', 'LEAGUE', 'RETIRE'];
   if (PHASE === 2) return ['NEXT YEAR', ...(PRD < 5 ? ['DRAFT'] : []), 'VERDICT', ...base];
   return [...(roster(ME, YEAR).length < 10 ? [] : [...(myGame() ? ['PLAY NEXT GAME'] : []), 'SIM DAY', 'SIM WEEK', PHASE ? 'SIM TO END' : 'SIM TO PLAYOFFS']), ...base];
 }
@@ -674,6 +675,7 @@ function updateHub() {
   else if (it === 'SIM TO PLAYOFFS' || it === 'SIM TO END') startSim(999);
   else if (it === 'FINANCES') { state = 'fin'; finSel = 0; }
   else if (it === 'FREE AGENTS') { state = 'fa'; sel = 0; rs = pool(); }
+  else if (it === 'TRADES') { openLeague(); pickT = true; }
   else if (it === 'DRAFT') startDraft();
   else if (it === 'VERDICT') state = 'verdict';
   else if (it === 'NEXT YEAR') { const n = roster(ME, YEAR + 1).length; if (n < 10 || n > 15) lastRes = n < 10 ? `NEED 10 PLAYERS, HAVE ${n}` : `CUT TO 15, HAVE ${n}`; else if (PAT <= 0 || YEAR >= MAX_YEAR) { why = PAT <= 0 ? 'FIRED' : 'CAREER OVER'; gameOver(legacy()); } else { nextYear(); hubSel = 0; } }
@@ -715,7 +717,7 @@ function nextYear() {
     else rows.push([`${pname(p, 10).padEnd(10)} ${pad(age(p, YEAR), 2)} ${pad(ovr(p, YEAR), 2)} NEW`, CYAN]);
   }
   for (const [id, w] of was) if (!now.some((p) => p.id === id)) rows.push([`${pname(w[1], 10).padEnd(10)} ${pad(age(w[1], YEAR - 1), 2)} ${pad(w[0], 2)} LEFT`, RED]);
-  for (const id of [...ENT.keys()]) if (ENT.get(id).team !== 30 && (ENT.get(id).team === ME || ENT.get(id).team === 31 || !ENT.get(id).yrs) && !now.some((p) => p.id === id)) ENT.delete(id);
+  for (const id of [...ENT.keys()]) if ((ENT.get(id).yrs && ENT.get(id).since + ENT.get(id).yrs <= YEAR) || ENT.get(id).team !== 30 && (ENT.get(id).team === ME || ENT.get(id).team === 31 || !ENT.get(id).yrs) && !now.some((p) => p.id === id)) ENT.delete(id);
   saveEntries(); resetLeague();
   state = 'report'; sel = 0;
 }
@@ -739,9 +741,7 @@ function updateLeague() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   listMove(rows.length);
   if (pressed(B)) { state = 'hub'; return; }
-  if (pressed(A)) {
-      fx(SFX.select); openTeam(rows[sel].t, 'league');
-  }
+  if (pressed(A) && !(pickT && rows[sel].t === ME)) { fx(SFX.select); if (pickT) openTrade(rows[sel].t); else openTeam(rows[sel].t, 'league'); }
 }
 
 const SPEEDS = [14, 6, 2];
@@ -831,6 +831,77 @@ function drawFA() {
   footer('LR:YEARS A:SIGN X:FILL B:BACK');
 }
 
+// --- Trades (section 5): the computer values a player by what he is worth and what he costs ---
+// A trade is entries: each man who moves gets one for his new team, with his deal; the man the GM takes leaves his team's slot (its next person arrives) and the man he gives stands on the other roster.
+
+const tradeOpen = () => PHASE === 2 || (PHASE === 0 && DAY < 40);
+/** What a man is worth to a team: his market price (more for the young, less for the old), and a share of what his deal saves it. */
+function worth(p, y) {
+  const a = age(p, y), c = contractAt(p, y), m = salaryFor(ovr(p, y)) * (a <= 23 ? 1.25 : a <= 27 ? 1.1 : a <= 30 ? 1 : a <= 33 ? 0.8 : 0.6);
+  return Math.round(m + (c ? (m - c[0]) * Math.min(c[1], 4) * 0.3 : 0));
+}
+const sum = (L, f) => L.reduce((a, p) => a + f(p), 0);
+/** Why a trade cannot be made (an empty string if it can): give, from the GM's team, for get, from team t. */
+function tradeCheck(t, give, get) {
+  const y = VY(), pay = (p) => (contractAt(p, y) || [0])[0], gs = sum(give, pay), rs = sum(get, pay);
+  if (!give.length && !get.length) return 'PICK PLAYERS';
+  if (give.length > 3 || get.length > 3) return 'THREE EACH AT MOST';
+  if (roster(ME, y).length - give.length + get.length > 15) return 'YOUR ROSTER WOULD PASS 15';
+  if (ENT.size + give.length + get.length > 88) return 'TOO MANY DEALS: WAIT A YEAR';
+  if (payroll(ME, y) - gs + rs > CAP && rs > gs) return 'OVER THE CAP: SEND OUT MORE PAY';
+  if (payroll(t, y) - rs + gs > CAP && gs > rs) return 'THEY ARE OVER THE CAP';
+  const a = sum(give, (p) => worth(p, y)), b = sum(get, (p) => worth(p, y));
+  return a >= b * 1.1 ? '' : `THEY WANT MORE (${a} OF ${Math.ceil(b * 1.1)})`;
+}
+/** The man the GM could add to make the other side say yes: the least valuable who does. */
+function counter(t, give, get) {
+  const y = VY();
+  return roster(ME, y).filter((p) => !give.includes(p) && tradable(p)).map((p) => [worth(p, y), p]).sort((a, b) => a[0] - b[0]).map((x) => x[1]).find((p) => !tradeCheck(t, [...give, p], get)) || null;
+}
+const tradable = (p) => { const e = ENT.get(p.id); return !(e && e.yrs && e.since >= VY()); };      // not a man signed or drafted this offseason
+function doTrade(t, give, get) {
+  const y = VY(), s = PHASE === 2 ? YEAR + 1 : YEAR, deal = (p) => { const c = contractAt(p, y); return [c[0], Math.min(c[1], 7)]; };
+  const moves = [...give.map((p) => [p, t]), ...get.map((p) => [p, ME])].map(([p, to]) => [p, to, ...deal(p)]);
+  for (const [p, to, sal, yrs] of moves) edit(p, (e) => { e.team = to; e.sal = sal; e.yrs = yrs; e.since = s; e.mins = 0; e.focus = 0; });
+  lastRes = `TRADED ${give.length} FOR ${get.length}`;
+}
+function openTrade(t) {
+  const y = VY(), mk = (tm) => roster(tm, y).sort((a, b) => ovr(b, y) - ovr(a, y)).map((p) => ({ p, on: false }));
+  TR = { t, L: mk(ME), R: mk(t), col: 0, sel: [0, 0], msg: 'PICK PLAYERS' }; state = 'trade';
+}
+const picked = (c) => TR[c ? 'R' : 'L'].filter((r) => r.on).map((r) => r.p);
+function updateTrade() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  const c = TR.col, L = TR[c ? 'R' : 'L'];
+  if (btnp(UP)) TR.sel[c] = Math.max(0, TR.sel[c] - 1);
+  if (btnp(DOWN)) TR.sel[c] = Math.min(L.length - 1, TR.sel[c] + 1);
+  if (pressed(LEFT) || pressed(RIGHT)) { TR.col ^= 1; fx(SFX.move); }
+  const r = L[TR.sel[c]];
+  if (pressed(A) && r && (c || tradable(r.p))) { r.on = !r.on; fx(SFX.move); }
+  if (pressed(Y) && r) { cardP = r.p; state = 'card'; }
+  if (pressed(R)) { const p = counter(TR.t, picked(0), picked(1)), x = p && TR.L.find((q) => q.p === p); if (x) { x.on = true; fx(SFX.point); } }
+  TR.msg = tradeCheck(TR.t, picked(0), picked(1));
+  if (pressed(X) && !TR.msg) { doTrade(TR.t, picked(0), picked(1)); saveSeason(); fx(SFX.over); TR = null; state = 'hub'; }
+  if (pressed(B)) { TR = null; openLeague(); pickT = true; }
+}
+function drawTrade() {
+  const y = VY();
+  header(`TRADE: ${team(TR.t).nick}`.slice(0, 22), TR.msg ? '' : 'OK');
+  [[4, 'L', 'YOU'], [130, 'R', team(TR.t).nick.slice(0, 10).toUpperCase()]].forEach(([x, k, h], c) => {
+    txt(h, x + 4, 22, c === TR.col ? GOLD : DIM);
+    const L = TR[k], top = clamp(TR.sel[c] - 7, 0, Math.max(0, L.length - 15));
+    for (let i = 0; i < 15 && top + i < L.length; i++) {
+      const r = L[top + i], yy = 32 + i * 10, on = c === TR.col && top + i === TR.sel[c];
+      if (on) rectfill(x, yy - 1, 122, 10, PANEL);
+      txt(`${r.on ? '*' : ' '}${POS[r.p.pos].padEnd(2)} ${pname(r.p, 7).padEnd(7)} ${pad(ovr(r.p, y), 2)}`, x + 2, yy, r.on ? GOLD : on ? WHITE : tradable(r.p) || c ? DIM : RED);
+    }
+  });
+  const r = TR[TR.col ? 'R' : 'L'][TR.sel[TR.col]], c = r && contractAt(r.p, y);
+  if (r) txt(`${pname(r.p, 9)} ${c ? `$${money(c[0])}M ${c[1]}Y` : '-'} WORTH ${worth(r.p, y)}`.slice(0, 32), 8, 186, WHITE);
+  txt((TR.msg || 'X: PROPOSE').slice(0, 32), 8, 198, TR.msg ? RED : GREEN);
+  footer('A:PICK <>:SIDE X:DEAL R:ASK Y:CARD');
+}
+
 // --- The draft: 60 prospects, two rounds, the worst record first; the computer takes the best left; scouting sharpens the numbers shown ---
 
 let D = null;
@@ -885,7 +956,7 @@ function updateVerdict() {
 }
 function updateCard() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (pressed(B) || pressed(Y) || pressed(A)) { fx(SFX.select); state = 'team'; }
+  if (pressed(B) || pressed(Y) || pressed(A)) { fx(SFX.select); state = TR ? 'trade' : 'team'; }
 }
 
 function gameOver(v) {
@@ -944,6 +1015,7 @@ function draw() {
   else if (state === 'sched') drawSched();
   else if (state === 'card') drawCard();
   else if (state === 'fin') drawFin();
+  else if (state === 'trade') drawTrade();
   else if (state === 'fa') drawFA();
   else if (state === 'draft') drawDraft();
   else if (state === 'verdict') drawVerdict();
@@ -1060,9 +1132,9 @@ function drawSched() {
   footer('B:BACK');
 }
 function drawLeague() {
-  header(`LEAGUE ${BASE_YEAR + YEAR}`, 'OVR PAY');
+  header(pickT ? 'TRADE WITH' : `LEAGUE ${BASE_YEAR + YEAR}`, 'OVR PAY');
   drawList(rows.map((r, i) => [`${pad(i + 1, 2)} ${tname(r.t).slice(0, 20).padEnd(20)} ${pad(r.ovr, 2)} ${pad(Math.round(r.pay / 4), 3)}`, r.t === ME ? GOLD : r.t < 15 ? CYAN : GREEN]), sel, 24, 18);
-  footer('A:ROSTER  B:BACK');
+  footer(pickT ? 'A:PICK A TEAM  B:BACK' : 'A:ROSTER  B:BACK');
 }
 function drawTeam() {
   header(tname(viewTeam).slice(0, 24), `${BASE_YEAR + YEAR}`);
