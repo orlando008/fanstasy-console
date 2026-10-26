@@ -23,7 +23,7 @@ def layout(skin, hair, shirt, pants, trim, line='180c14'):
 # The palettes: 0 and 1 the heroes; the rest are the thugs (2: the stage's thug, rewritten when a stage starts).
 PALS = {
     0: layout('e0a070', '5a3820', '4a4448', '584c3c', ['b8b0b0', 'f0ece4']),
-    1: layout('d89868', 'd8b040', '9a2c34', '3a4a78', ['b8b0b0', 'f0ece4']),
+    1: layout('d89868', 'b8602c', '9a2c34', '3a4a78', ['b8b0b0', 'f0ece4']),
     2: layout('e0a878', '3a2418', 'c03830', '38384c', ['302830', '605868']),     # the street's thug (rewritten for each stage)
     3: layout('d8986c', '2a1c14', '8a5a30', '3c3c44', ['c02828', 'e8eef8']),     # the Slasher: a brown vest, a red bandana, a steel blade
     4: layout('e0a878', '3a2c20', '3a7a40', '4a4034', ['d86820', 'f0a040']),     # the Chucker: green, an orange beanie
@@ -92,14 +92,23 @@ def hero_poses(fig):
     return P
 
 
-def thug_poses(fig, attack=True):
+def walk6():
+    """A six-frame walk: the stride, the step down and the passing step, then the same on the other foot (the push-off is left out)."""
+    from rig import mirror_sides
+    return [WALK[0], WALK[1], WALK[2], mirror_sides(WALK[0]), mirror_sides(WALK[1]), mirror_sides(WALK[2])]
+
+
+def thug_poses(fig, attack=True, lite=False):
     """The plain thug: a street fighter's upright guard, a swung punch, and the same falls as the hero."""
     hp = hero_poses(fig)
     P = {k: hp[k] for k in ('hurt', 'fly', 'lie', 'getup')}
     P['getup'] = [hp['getup'][0], pose(TG, y=14, lean=18)]
     P['idle'] = [TG, pose(TG, y=3, arm_n=34, arm_f=48, lean=9)]
     guard_walk = dict(arm_n=34, fore_n=110, arm_f=48, fore_f=105, lean=7)
-    P['walk'] = [pose(k, **guard_walk) for k in fig.animate(WALK, 8)]
+    P['walk'] = [pose(k, **guard_walk) for k in walk6()]
+    if lite:                                              # the other kinds of thug: a still idle and a four-frame walk, to save ROM
+        P['idle'] = P['idle'][:1]
+        P['walk'] = stomp(**guard_walk)
     if attack: P['tpunch'] = [pose(TG, lean=-6, arm_n=-20, fore_n=100, x=-2),            # the arm drawn back
                    pose(TG, lean=16, arm_n=90, fore_n=2, arm_f=34, fore_f=110, x=4, thigh_n=26, thigh_f=-22),   # the blow
                    pose(TG, lean=10, arm_n=50, fore_n=60)]
@@ -237,7 +246,7 @@ def brute_poses(fig):
     P = {k: hp[k] for k in ('hurt', 'fly', 'lie', 'getup')}
     P['getup'] = [hp['getup'][0], pose(BG, y=14, lean=18)]
     P['idle'] = [BG, pose(BG, y=3, arm_n=28, arm_f=38)]
-    P['walk'] = [pose(k, arm_n=24, fore_n=70, arm_f=34, fore_f=64, lean=5) for k in fig.animate(WALK, 8)]
+    P['walk'] = stomp(arm_n=24, fore_n=70, arm_f=34, fore_f=64, lean=5)
     P['hsmash'] = [pose(BG, lean=-10, arm_n=165, fore_n=8, arm_f=165, fore_f=8, x=-2),
                    pose(BG, lean=32, y=8, arm_n=66, fore_n=6, arm_f=62, fore_f=8, x=5, thigh_n=34, thigh_f=-30),
                    pose(BG, lean=16, arm_n=50, fore_n=40, arm_f=52, fore_f=40)]

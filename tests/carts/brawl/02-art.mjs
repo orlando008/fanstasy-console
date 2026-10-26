@@ -14,7 +14,7 @@ const tileEmpty = (vm, t) => { for (let y = 0; y < 8; y++) for (let x = 0; x < 8
   for (let y = 17; y < g.h; y++) for (let x = 0; x < g.w; x++) if (!p.mget(g.mx + x, g.my + y)) holes++;
   ok(holes === 0, 'the pavement fills the screen from y 136 down', `${holes} empty cells`);
   const used = new Set(); for (let t = 0; t < 1024; t++) if (!tileEmpty(vm, t)) used.add(t);
-  ok(used.size < 500, 'the tiles stay within the budget of 500', `${used.size}`);
+  ok(used.size < 600, 'the tiles stay within the budget of 600', `${used.size}`);
   const sky = [2, 60, 120].map((y) => vm.out32[y * 256 + 4] >>> 0);
   ok(new Set(sky).size === 3, 'the sky is a gradient: a different colour down the screen', sky.map((v) => v.toString(16)).join(' '));
 }

@@ -50,10 +50,10 @@ const count = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); let 
   ok(!p.props.includes(q) && p.items.some((i) => i.kind === 'chicken'), 'a thug thrown into a bin smashes it, and the chicken is out');
 }
 
-// 3. Each thing has its own colour.
+// 3. Each thing has its own colour (the world palette, sprite palette 7: entries 240 + the role's number).
 {
   const vm = newGame(1), p = arena(vm); p.player.x = 330; p.player.y = 150; p.cam = 300;
-  const SIG = { apple: [6, 'red'], chicken: [9, 'orange'], money: [14, 'gold'], oneup: [13, 'cyan'], pipe: [10, 'steel'], knife: [15, 'white'] };
+  const SIG = { apple: [251, 'red'], chicken: [243, 'brown'], money: [252, 'gold'], oneup: [246, 'blue'], pipe: [253, 'steel'], knife: [255, 'white'] };
   const seen = {};
   for (const [kind, [entry]] of Object.entries(SIG)) {
     p.items.length = 0; p.items.push({ kind, x: 400, y: 200, h: 0, vz: 0, uses: 5 }); p.player.x = 340; vm.run(2);
@@ -61,11 +61,11 @@ const count = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); let 
     ok(seen[kind][entry] > 12, `a ${kind} shows its ${SIG[kind][1]}`, `${seen[kind][entry]} pixels`);
   }
   const apple = seen.apple, chicken = seen.chicken, money = seen.money;
-  ok(apple[6] > 40 && chicken[6] === 0 && money[6] === 0, 'only the apple is red');
-  ok(chicken[9] > 40 && apple[9] === 0 && money[9] === 0, 'only the chicken is orange');
-  ok(money[14] > 100 && apple[14] === 0 && chicken[14] < money[14] / 3, 'the money bag is gold (the chicken has a little for the shine)');
-  ok(seen.oneup[13] > 100 && seen.pipe[13] === 0, 'the 1UP is a cyan block');
-  const crates = { crate: [4, 9], barrel: [8], bin: [5, 11] }, cx = 400 - p.cam;
+  ok(apple[251] > 40 && chicken[251] === 0 && money[251] === 0, 'only the apple is red');
+  ok(chicken[243] > 40 && apple[243] === 0 && money[243] < chicken[243] / 3, 'the chicken is brown (the money bag has a little for its string)');
+  ok(money[252] > 100 && apple[252] === 0 && chicken[252] < money[252] / 3, 'the money bag is gold (the chicken has a little for the shine)');
+  ok(seen.oneup[246] > 100 && seen.pipe[246] === 0, 'the 1UP is a blue block');
+  const crates = { crate: [243], barrel: [246], bin: [249] }, cx = 400 - p.cam;
   for (const [kind, entries] of Object.entries(crates)) {
     p.items.length = 0; p.props.length = 0; crate(p, 400, 190, 'apple', kind); p.player.x = 340; vm.run(2);
     ok(entries.some((e) => count(vm, e, cx - 20, 150, cx + 20, 195) > 60), `a ${kind} has its own colour`, entries.map((e) => count(vm, e, cx - 20, 150, cx + 20, 195)).join('/'));

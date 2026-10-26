@@ -1,21 +1,19 @@
 # Streets of Woe: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** In progress: building the game with placeholder shapes first (section 12); real fighter art plugs in later
+**Status:** Playable, with drawn art: the fighters, the props, the title and the HUD are sprites (section 12); the first version of the sound is in
 **Cart source:** `carts/src/brawl/` → `carts/brawl.nova`
 
 ---
 
 ## 1. Concept
 
-A Streets of Rage style beat 'em up: one street, one hero, one kind of enemy. The player walks in a lane, punches in a
-three-hit combo, jump-kicks, and clears four waves of thugs while the screen scrolls on. The first version is one level
-with one enemy type, built so that the feel (timing, reach, hit stop, knockdowns) is right before any art exists.
-
-**Game first, art later.** Every fighter is drawn by one small art layer (`drawFighter`) from the same frame table the
-game's rules use, as plain shapes: a hurt box as the body, a head, a fist where the hit box is. When real art arrives
-(`docs/reference/fighter/`, streamed frames) it replaces that one function; the boxes, timings and mechanics do not
-change. A debug view (SELECT) draws every box over any art.
+A Streets of Rage style beat 'em up for one or two players: three stages, each with its boss, a hero who punches in a
+three-hit combo, jump-kicks, grabs, throws and dashes, and thugs of five kinds. The game was built first, with the feel
+(timing, reach, hit stop, knockdowns) right before any art existed; the fighters were plain shapes drawn from the frame
+table. **The art pass has since replaced the shapes**: drawn frames, streamed from the cart's ROM, shown by the same frame
+table (the boxes, timings and mechanics did not change; the boxes' heights did, section 5). A debug view (SELECT) draws every
+box over the art.
 
 ## 2. Core loop
 
@@ -58,23 +56,25 @@ feet, 150 to 208), a world `x`, a **height** `h` above the ground (jumps and kno
 
 Every animation is a list of frames `[duration, hurt, hit]`. Boxes are `[x0, y0, x1, y1]` **relative to the feet, facing
 right, y up is negative**; facing left mirrors x. `hurt` is where the fighter can be hit, `hit` (or `null`) where his
-attack hits. Real art must have its feet at the pivot and fit these boxes (or the boxes are tuned per frame).
+attack hits. The art has its feet at the pivot and fits these boxes. The heights are 0.75 of what they were with the first
+placeholders (a hero 69 px tall in his box; the Brute and the bosses 0.78): the drawn fighters are 72 px (BULL 82), as small as the
+ROM allows (section 12); the widths and the reaches stayed, so the fighting did not change.
 
 | Animation | Frames (duration: hurt / hit) | Total | Damage | Effect |
 |---|---|---|---|---|
-| idle, walk | one frame, looping: stand box `[-14,-92,14,0]` | | | |
-| punch 1 | 4 startup, 3 active (hit `[14,-72,50,-58]`), 7 recovery | 14 | 4 | hit stun 16 |
+| idle, walk | one frame, looping: stand box `[-11,-69,11,0]` | | | |
+| punch 1 | 4 startup, 3 active (hit `[14,-54,50,-44]`), 7 recovery | 14 | 4 | hit stun 16 |
 | punch 2 | 4, 3 (same box), 7 | 14 | 4 | hit stun 16 |
-| hook | 6, 4 (hit `[14,-78,58,-56]`), 12 | 22 | 6 | knockdown: thrown away, 2.4 px a frame |
-| uppercut | 7, 4 (hit `[10,-104,44,-38]`), 14 | 25 | 8 | knockdown: popped up (`vz` 5.0, `vx` 0.6), about 33 frames in the air, lands about 20 px further out |
-| jump kick | the whole jump after A, active from 4 frames after the start (hit `[10,-44,50,-20]`) | | 6 | knockdown |
+| hook | 6, 4 (hit `[14,-58,58,-42]`), 12 | 22 | 6 | knockdown: thrown away, 2.4 px a frame |
+| uppercut | 7, 4 (hit `[10,-78,44,-28]`), 14 | 25 | 8 | knockdown: popped up (`vz` 5.0, `vx` 0.6), about 33 frames in the air, lands about 20 px further out |
+| jump kick | the whole jump after A, active from 4 frames after the start (hit `[10,-33,50,-15]`) | | 6 | knockdown |
 | hurt | 16 frames, stand box | 16 | | |
-| down | in the air, then 40 lying (box `[-40,-18,40,0]`) | | | not hittable |
+| down | in the air, then 40 lying (box `[-40,-14,40,0]`) | | | not hittable |
 | get up | 20 frames | 20 | | invulnerable |
-| thug punch | 18 wind-up, 4 active (hit `[14,-74,52,-60]`), 22 recovery | 44 | 5 | hit stun 16 |
-| pipe swing | 8 start-up, 4 active (hit `[16,-86,84,-46]`), 14 recovery | 26 | 8 | knockdown |
-| knife stab | 3, 3 (hit `[14,-74,66,-54]`), 7 | 13 | 5 | hit stun 14 |
-| special | 5 start-up, 6 active (hit `[-54,-86,54,-24]`, both sides), 14 recovery | 25 | 5 | knockdown; invulnerable for the first 11 frames |
+| thug punch | 18 wind-up, 4 active (hit `[14,-56,52,-45]`), 22 recovery | 44 | 5 | hit stun 16 |
+| pipe swing | 8 start-up, 4 active (hit `[16,-64,84,-34]`), 14 recovery | 26 | 8 | knockdown |
+| knife stab | 3, 3 (hit `[14,-56,66,-40]`), 7 | 13 | 5 | hit stun 14 |
+| special | 5 start-up, 6 active (hit `[-54,-64,54,-18]`, both sides), 14 recovery | 25 | 5 | knockdown; invulnerable for the first 11 frames |
 | grab | held until the thug is thrown, hit away or 120 frames pass; a grab hit takes 8 frames | | 3 a hit | the third hit throws |
 | throw | 14 frames | 14 | 7 | knockdown; the thug flies 3.6 px a frame |
 
@@ -139,7 +139,7 @@ active frames, and both friendly fire on a partner (1 damage and a stun).
 | For | getting out of a crowd | one target, from a distance |
 | Cost | 3 health (needs more than 3) | 4 health (needs more than 4; with exactly 4 he gets the spin) |
 | Frames | 5 start-up, 6 active, 14 recovery | 5 start-up, 10 active, 14 recovery |
-| Hit box | `[-54,-86,54,-24]`: both sides, 54 px | `[10,-96,54,-34]`, in front, **running 4.5 px a frame** while it is active: about 100 px of reach in all |
+| Hit box | `[-54,-64,54,-18]`: both sides, 54 px | `[10,-72,54,-26]`, in front, **running 4.5 px a frame** while it is active: about 100 px of reach in all |
 | Hits | everyone in the box, once each | **the first thing it touches, and no more** (it stops there) |
 | Damage | 5 and a knockdown | **9** and a knockdown that **pops him up** (a lift of 4.2: about 29 px, landing close) |
 
@@ -214,7 +214,7 @@ He wears a brown vest and a yellow bandana and his knife shows as a white blade.
 | Health | **0.6 of a thug's** in his stage: 12, 16 and 19 |
 | Walks | 1.5 times a thug's: 1.2 px across, 0.9 into the screen (1.35 and 1.0 on the docks, 1.5 and 1.1 on the rooftop) |
 | Waits for his turn | 110 px away (a thug 85); with his turn, 70 px away (a thug 36) |
-| Stab | when in the hero's lane (within 6) **40 to 100 px away**: **12 frames** of crouch, then a **lunge** of 7 frames at 3.5 px (24.5 px in all) with the knife out `[10,-76,62,-52]`, then 16 recovery |
+| Stab | when in the hero's lane (within 6) **40 to 100 px away**: **12 frames** of crouch, then a **lunge** of 7 frames at 3.5 px (24.5 px in all) with the knife out `[10,-57,62,-39]`, then 16 recovery |
 | Damage | 5 and a hit stun of 14 |
 | After the stab | he **hops back** 2.5 px a frame for 14 frames, gives up his turn, and waits 50 to 90 frames |
 | Dodging it | a hero who steps out of his lane (more than 12 px) during the crouch is missed |
@@ -243,7 +243,7 @@ He wears a brown vest and a yellow bandana and his knife shows as a white blade.
 | Health | **0.8 of a thug's**: 16, 21 and 26 |
 | Walks | 1.1 times a thug's |
 | Waits at | 100 px from the hero; with his turn, 92 px |
-| Lash | when in the hero's lane (within 6) **60 to 112 px away**: **16 frames** with the whip drawn back (a loop behind her), a **crack** of 4 frames `[10,-72,116,-56]` (the whip is 116 px long: the pipe's reach is 84, the dash's 100), 18 frames of recovery; she then waits 70 to 120 frames |
+| Lash | when in the hero's lane (within 6) **60 to 112 px away**: **16 frames** with the whip drawn back (a loop behind her), a **crack** of 4 frames `[10,-54,116,-42]` (the whip is 116 px long: the pipe's reach is 84, the dash's 100), 18 frames of recovery; she then waits 70 to 120 frames |
 | Damage | 5 and a hit stun of 16 |
 | Dodging it | step out of her lane (more than 12 px) during the wind-up; or **close in** with the dash strike (it reaches 100 px) and she is at the mercy of the hero's fists |
 | Knocked out | 150 points |
@@ -252,11 +252,11 @@ He wears a brown vest and a yellow bandana and his knife shows as a white blade.
 
 | | |
 |---|---|
-| Looks | a wide body in a maroon vest with a gold belt, thick legs, a big bald head (a hurt box of 40 x 100, against a thug's 28 x 92) |
+| Looks | a wide body in a maroon vest with a gold belt, thick legs, a big bald head (a hurt box of 40 x 78, against a thug's 22 x 69) |
 | Health | **2.2 times a thug's**: 44, 57 and 70 |
 | Walks | 0.7 of a thug's: 0.56 px across on the street |
 | Waits at | 95 px from the hero; with his turn, 52 px |
-| Smash | when in the hero's lane (within 6) **30 to 62 px away**: **28 frames** with both fists held high (the longest warning of any thug), a 5-frame club `[10,-98,68,-50]`, 26 frames of recovery; he then waits 100 to 160 frames |
+| Smash | when in the hero's lane (within 6) **30 to 62 px away**: **28 frames** with both fists held high (the longest warning of any thug), a 5-frame club `[10,-76,68,-39]`, 26 frames of recovery; he then waits 100 to 160 frames |
 | Damage | **9 and a knockdown** |
 | **Armour** | a blow that **only stuns** (a punch, a knife stab, the second punch) does its damage and makes him **flash white**, and nothing else: no stun, no knock-back. A blow that **knocks down** (the hook, the uppercut, a jump kick, the dash strike, the spin, a pipe, a thrown pipe, a thrown thug) puts him down as it does any thug, and the blow that takes his last health knocks him out |
 | Grabbed | **no**, front or back (too big) |
@@ -270,7 +270,7 @@ He wears a brown vest and a yellow bandana and his knife shows as a white blade.
 | Health | 1.4 times a thug's |
 | Walks | 0.9 of a thug's |
 | Waits at | 95 px from the hero; with his turn, 75 px |
-| Breath | when in the hero's lane (within 6) **55 to 100 px away**: **24 frames** puffing, a **30-frame flame** `[14,-78,104,-44]`, 22 frames of recovery |
+| Breath | when in the hero's lane (within 6) **55 to 100 px away**: **24 frames** puffing, a **30-frame flame** `[14,-58,104,-33]`, 22 frames of recovery |
 | Damage | the flame **burns**: 3 damage every 10 frames to each hero in it, with no knockdown and no stun (the hero keeps control, and can walk out), a flash on each tick; it burns a thug too |
 | Dodging it | walk away during the puffing, or step out of his lane; the dash strike gets inside his wind-up |
 | Knocked out | 180 points |
@@ -331,15 +331,15 @@ The thug (section 5) and the boss, **BULL** (below).
 
 ### BULL, the boss
 
-A big orange bruiser with a red headband and a gold belt, drawn bigger than a thug (a hurt box of 44 x 116 against 28 x 92;
+A big orange bruiser with a red headband and a gold belt, drawn bigger than a thug (a hurt box of 44 x 90 against 22 x 69;
 lying 104 wide). He has **120 health** (**168** with two heroes: 1.4 times) and a long red bar at the bottom of the screen
 with his name. He comes with 2 thugs (3 with two heroes). No grabs, no attack tokens: he is on his own.
 
 | Move | Frames | Hit | Damage | Effect |
 |---|---|---|---|---|
 | walk | 0.7 px across, 0.5 into the screen, to arm's length (44 px) in the hero's lane | | | |
-| punch | 22 wind-up, 5 active, 26 recovery | `[18,-98,72,-66]` | 8 | hit stun 16 |
-| charge | 26 crouch (he flashes white), then up to **64 frames** at **4.2 px** a frame across the screen, then 30 to pant | `[0,-100,46,-10]` | 10 | knockdown |
+| punch | 22 wind-up, 5 active, 26 recovery | `[18,-76,72,-51]` | 8 | hit stun 16 |
+| charge | 26 crouch (he flashes white), then up to **64 frames** at **4.2 px** a frame across the screen, then 30 to pant | `[0,-78,46,-8]` | 10 | knockdown |
 
 - **He punches** when the hero is in his lane (8 px) 26 to 58 px away and his wait is over, then waits 40 to 80 frames.
 - **He charges** when the hero is in his lane (10 px) 110 px or more away and his wait is over, then waits 70 to 110 frames.
@@ -363,11 +363,11 @@ two thirds or one third of his health (60 and 30). Not grabbable. He comes with 
 | Move | Frames | Hit | Damage | Effect |
 |---|---|---|---|---|
 | walk | 1.5 px across, 1.0 into the screen, to 46 px from the hero | | | |
-| stab 1 | 12 wind-up (the time to step out of his lane), 3 active, 4 recovery | `[14,-78,64,-56]` | 4 | hit stun 14 |
-| stab 2 | 3, 3, 4 (it follows at once) | `[14,-70,66,-48]` | 4 | hit stun 14 |
-| stab 3 | 4, 4, 16 | `[14,-90,72,-30]` | 6 | knockdown |
+| stab 1 | 12 wind-up (the time to step out of his lane), 3 active, 4 recovery | `[14,-61,64,-44]` | 4 | hit stun 14 |
+| stab 2 | 3, 3, 4 (it follows at once) | `[14,-55,66,-37]` | 4 | hit stun 14 |
+| stab 3 | 4, 4, 16 | `[14,-70,72,-23]` | 6 | knockdown |
 | leap | 18 crouch (he flashes white), then 39 frames in the air, 56 px up | none while he rises | | |
-| dive | the same flight, on the way down | `[6,-76,54,-6]` | 7 | knockdown |
+| dive | the same flight, on the way down | `[6,-59,54,-5]` | 7 | knockdown |
 | landing | 22 frames, no guard | | | the opening to hit him in |
 
 - **Stabs:** when the hero is in his lane (8 px) 30 to 60 px away and his wait is over. The three follow each other, each lunging
@@ -389,9 +389,9 @@ his moves are BULL's made harder, plus a slam. **His blows hit a seventh harder*
 
 | Move | Frames | Hit | Damage | Effect |
 |---|---|---|---|---|
-| punch | 18 wind-up (BULL's 22), 5 active, 22 recovery | `[18,-106,78,-72]` | 9 | hit stun 16 |
-| charge | 20 crouch (26), up to 64 frames at 4.2 px, 24 pant; a wall stuns him for **50** frames | `[0,-108,52,-10]` | 12 | knockdown |
-| ground slam | 26 wind-up (both fists up), 8 active, 30 recovery | `[-96,-22,96,0]`: a low wave along the floor, both sides | 9 | knockdown |
+| punch | 18 wind-up (BULL's 22), 5 active, 22 recovery | `[18,-83,78,-56]` | 9 | hit stun 16 |
+| charge | 20 crouch (26), up to 64 frames at 4.2 px, 24 pant; a wall stuns him for **50** frames | `[0,-84,52,-8]` | 12 | knockdown |
+| ground slam | 26 wind-up (both fists up), 8 active, 30 recovery | `[-96,-17,96,0]`: a low wave along the floor, both sides | 9 | knockdown |
 
 - **In reach** (in his lane, 26 to 58 px away) he chooses a **punch or a slam** by chance; **from far off** (110 px or more, in his lane)
   he charges.
@@ -464,13 +464,48 @@ lead 0.034 (0.60 of the mix), entrance 1.16x, pierce 0.005.
 | point (5) | a blip | a thug is knocked out |
 | move, select, pause, over, record | the starter's | the menus, game over, a record |
 
-## 12. Video layers and the art layer
+## 12. Video layers and the art
 
-BG2 a far city (scrolls at 0.3 of the camera), BG1 a chain-link fence (0.6), BG0 the pavement (1.0), the sky a gradient.
-Fighters and the HUD are on the overlay (no sprites yet). **The art layer is one function, `drawFighter(f)`**: the
-placeholder draws shapes from the frame table (the hurt box as the torso with a head and legs, a fist at the hit box,
-brighter while the attack is active, its wind-up shown by the fist drawn back). Real frames replace it: a stream of the
-fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame for frame the same animations and timings.
+BG2 a far city (scrolls at 0.3 of the camera), BG1 a chain-link fence (0.6), BG0 the pavement (1.0), the sky a gradient; the
+fighters, the props, the pickups and the shadows are sprites between them and the overlay; the overlay has the HUD's text and
+bars, the popups, and the effects (the flame, the whip, a knife's blade, the dash's speed lines, a boss's slam).
+
+**The drawn fighters** (`figures.py`, on the art kit's `Figure`, `tools/devkit/art/figure.py`): every fighter is a skeleton
+posed frame by frame, drawn in flat tones with one outline colour, as Streets of Rage is. The hero is the user's model sheet
+(a dark jacket over a white tee, cargo trousers, boots, fingerless gloves); the thugs are a plainer build; the Brute and the
+bosses the boxer's build. Each frame is seated so its lowest pixel is on the bottom row (a crouch keeps its feet on the
+floor) and its pivot on the middle column, so a mirrored frame stays where it was. 72 px for the hero and the thugs, 76 for the
+Brute and RAZOR, 82 for BULL and KINGPIN (BULL's body in a dark vest, with the slam of his own).
+
+| Stream (clips) | Frames | ROM | In tile memory |
+|---|---|---|---|
+| `f` the fighters: `h_` the hero (45 frames: idle 2, walk 8, three punches, hook, uppercut, jump, kick, land, hurt, fall, lie, get up, grab, grab punch, suplex, kneel, spin, dash, pipe; the knife, the weapon throw, the pick-up and the throw reuse others), `t_` the thug (idle 2, walk 6, punch, the falls, held), `k_` `c_` `l_` `f_` the Slasher, the Chucker, the Lasher and the Fire-breather (his head or hat, a still idle, a four-frame walk, hurt and the attack: they fall and get up as the thug), `b_` the Brute | 112 | 70.4 KB | seven slots of 64 tiles, one for each fighter on the screen |
+| `b` the bosses: `u_` BULL and KINGPIN (idle, walk 4, punch, charge, stun, hurt, the falls, the slam), `z_` RAZOR (the stabs, the crouch, the leap, the dive, the landing, the falls) | 42 | 36.6 KB | one slot of 128 tiles, **laid over slots 5 and 6** of `f` while a boss is on (a boss fight has two thugs at most; the game takes the two slots away and the fighters in them start again) |
+| `logo1`, `logo2` the title's two lines of lettering | 1 + 1 | 3.1 KB | 128 tiles each, laid over slots 2 to 6 (the title shows two heroes in slots 0 and 1) |
+| `hands`, `bhands` | | 0.7 KB | where the near hand and the head are in every frame (four bytes): a knife's blade, a whip, a bottle, the flame and the stun stars are drawn from them |
+
+**Slots.** A fighter on the screen has a slot (`slotFor`) as long as he stays on it; a frame is copied into it only where its
+tiles differ from the slot's last frame (`streamSprite`). A seventh enemy on the screen with two heroes has no slot and is not
+drawn (it has not happened in the sweeps: the tokens keep most of them off the hero, and an eighth fighter would need more
+tiles than there are).
+
+**Palettes.** All the fighters share one layout of 15 colours (the outline, three ramps of 3 for skin, hair, shirt and
+trousers, two trim colours), so the same frames show in any palette: 0 the first hero, 1 the second (red jacket, ginger hair),
+2 the stage's thugs (rewritten when a stage loads: red, olive, dark suit), 3 the Slasher, 4 the Chucker, 5 the Lasher, 6 the Fire-breather,
+the Brute or a boss (rewritten when the wave comes or the boss walks in; a boss wave has no Fire-breather for that reason), 7 the world: shadows,
+props, pickups, the thrown weapons, the bottle, the tombstone and the HUD's face. On the title, palette 6 is the logo's gold.
+
+**Sprites.** A fighter is 5 to 18 sprites (9 on average): the frames are covered in the fewest pieces the slot's 64 tiles
+allow (`art.stream(fewer=, cap=)`), and the shadow is two 16 px sprites. Random play for 9,000 frames with two heroes: 20 sprites on a line
+at the median, 28 at the 95th percentile; past 32 the console drops a sliver (0.5 % of the frames, in a pile of seven). OAM peaks near 120 of 128.
+The first fighter in the draw order is the nearest one (a lower sprite index shows on top), and the shadows come last.
+
+**Tiles.** 447 of the 639 for backgrounds (412 are the nine scenes), the fighters' slots 448 to 895, the small things in
+the 35 tiles after the backgrounds and the 128 after the slots (the boss's slot lies over slots 5 and 6, so its tiles are free
+for them): 1,001 of 1,023.
+
+**The small things** (`props.py`): crate, barrel and bin, apple, chicken, money bag, 1UP, pipe and knife (lying and turning over
+in the air), the bottle, the tombstone, the HUD's face (a crop of the hero's first frame; palette 0 or 1 gives each player his own).
 
 ## 13. Persistence (save slots)
 
@@ -485,9 +520,11 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 
 | Asset | Budget |
 |---|---|
-| Code | the source is about 80 KB with its comments and its indentation; `"strip": true` in `meta.json` packs the cart without them (`tools/devkit/strip.mjs`): **60.0 KB of the 64 KB limit (91.6%), 5.5 KB free** (`node tools/check.js brawl`). The limit is hard (a cart over 65,536 bytes does not pack). The drawing code (the shapes) is the biggest part and goes when the real art arrives |
-| Tiles | the nine background scenes of three stages: 412 of the 639 set aside |
-| Sprites | none yet (the final art needs about 128 tiles and 25 KB of ROM a fighter, streamed) |
+| Code | the source is about 90 KB with its comments and its indentation; `"strip": true` in `meta.json` packs the cart without them (`tools/devkit/strip.mjs`): **62.3 KB of the 64 KB limit (95.1%), 3.2 KB free** (`node tools/check.js brawl`). The limit is hard (a cart over 65,536 bytes does not pack). Tests add their probe (about 3 KB) before the cart compiles, so the cart is kept under 62.5 KB for them to boot |
+| Tiles | 1,001 of 1,023: the nine background scenes (412), the seven fighter slots (448), the small things (141) |
+| Sprites | 112 + 42 frames of fighters and two lines of logo in ROM, 70.4 + 36.6 + 3.1 KB; 128 OAM entries and 32 a line, section 12 |
+| ROM | **110.7 KB of the 128 KB** (`rom/f.bin`, `b.bin`, `logo1.bin`, `logo2.bin`, `hands.bin`, `bhands.bin`) |
+| `.nova.png` | **the payload is 135.0 KB of the 147.4 KB the PNG holds (92%)**, with the label a 24-colour indexed PNG of 7 KB (the F7 capture of a frame is 17 to 24 KB, and with it the cart did not fit: the editor refuses to export over 147,443). More art needs ROM taken out first, or the bigger PNG the ROM plan describes (`docs/dev/rom-plan.md`) |
 | Songs / SFX | seven songs (of 8) and fourteen effects; 14 KB of the 32 KB of sample RAM |
 
 ## 15. Implementation plan
@@ -498,12 +535,34 @@ fighter's frames (`art.stream`, `streamSprite`) at the same feet pivot, frame fo
 3. **The thug:** his states and tokens, the waves and the camera locks, deaths and the stage clear.
 4. **Flow:** the HUD, lives and respawn, the score, the stage clear and game over into the records.
 5. **Tests and the bot:** the rules' tests, a bot that plays, and a sweep to balance health and damage.
-6. **Art pass:** real fighter frames (from the user's guard and punch drawings and more poses) behind `drawFighter`.
+6. **Art pass:** drawn fighters (the user's model sheet and more poses), the props, the title and the HUD. *(done, section 12 and the note below)*
 7. **Audio pass:** a street theme, a swing, a hook, a knockdown thud, a jump. *(done)*
 8. **Polish:** the label, the PNG cart, the Library and a README row.
 
 Each step: build it, run `node tools/check.js brawl` and `node tools/test.js brawl`, write its **Built** and **Results**
 notes under its number, commit and push.
+
+### Built and results: the art pass
+
+**Built:** the drawn fighters (`figures.py`, `props.py`, `art.py`), replacing every shape. In order: (1) the boxes' heights at 0.75
+(0.78 for the Brute and the bosses; the widths and reaches kept, so `02-rules`, `10-king` and `14-throws` needed only a look: the
+lying box is as wide as before); (2) the stream of the hero and the thug, slots, `frameIndex`, the sprite shadows (the overlay is above
+every sprite, so a shadow, a prop or a pickup on it would have covered the fighters' feet); (3) the Slasher, the Chucker, the Lasher and
+the Fire-breather (their own heads, a bandana, a beanie, a scarf, their attacks) and the Brute, the palettes that change (`SWAP`, `setPal`);
+(4) the bosses' stream over two slots; (5) the props, pickups, thrown weapons, bottle and tombstone as sprites of the world palette; (6) the title
+(a logo of two streamed lines, two heroes) and the HUD's faces. The kit grew `art.stream(fewer=, cap=)` and a smaller `streamSprite()`
+for streams that are all in ROM. Tests: `18-sprites.mjs` (a frame for every animation, the sprite budget in a pile of seven, the slots
+given and taken back with a boss, the palettes, the logo); `05-items`, `16-revive` and `02-art` now read the new colours.
+
+**Decisions and what they cost.** The fighters are 72 px (not the 96 of the `street` cart): seven on the screen at once could not
+have more than 64 tiles each, and 154 frames of ROM could not be more than 0.7 KB each. A boss fight has two thugs at most, so the
+bosses' slot lies over two of the seven. The boss wave of the rooftop has two Slashers (it had one and a Fire-breather: palette 6 is
+the boss's then). The packed code is 62.3 KB (was 62.4 before the art pass: the shapes' code went, the stream's came), the ROM 110.7 KB
+and **the `.nova.png` payload 92% of what a PNG holds**, with a label squeezed to 24 colours (the F7 capture alone took it past 100%: `release.js` could not export; `PIL`'s `quantize` made the label, and `release.js --keep-label` packed it).
+
+**Results:** the random-play soak (20,000 frames, two seeds): no errors, OAM at most 120 of 128, 34 to 37 sprites on a line at the very worst
+(a sliver or two dropped in a pile of seven; the median is 20); the sweep: no stuck run, as before (the bots reach stage 2 or 3). Still to do:
+a polish of single frames (the faces are the weakest part at 72 px), a broken crate, a frame of the Brute being held back.
 
 ### Built and results: reviving a partner
 
@@ -683,7 +742,7 @@ work: P1 makes the fighting feel right, P2 gives it depth, P3 is content and pol
 
 ### P3: content and polish
 
-- [ ] Real fighter art, with all frames of section 5's frame table plus pick-up, grab, throw, special, blitz, weapon swings and a hurt-in-the-air pose (the art pass)
+- [x] Real fighter art, with the frames of section 5's frame table plus grab, throw, special, dash, weapon swings and a hurt-in-the-air pose (the art pass, section 12). Still to do: a blitz, more weapon types, a broken crate's frame
 - [ ] An intro or cut-scene screen, stage names ("Round 1") and a "GO" arrow (the arrow is built)
 - [ ] Per-stage music and a boss theme; sounds for each weapon, a grab, a throw, a special, breaking a crate, a pick-up
 - [ ] Scenery that scrolls with depth (more layers, moving lights), scripted moments (a car that drives past, a shop window that breaks)

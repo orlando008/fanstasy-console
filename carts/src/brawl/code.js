@@ -16,9 +16,9 @@ const ART = {
   sprites: {},
   scenes: {"city": {"h": 28, "mx": 0, "my": 0, "pal": 1, "w": 32}, "deck": {"h": 28, "mx": 0, "my": 32, "pal": 7, "w": 32}, "dock": {"h": 28, "mx": 128, "my": 0, "pal": 5, "w": 32}, "fence": {"h": 28, "mx": 32, "my": 0, "pal": 2, "w": 32}, "ground": {"h": 28, "mx": 64, "my": 0, "pal": 3, "w": 32}, "harbour": {"h": 28, "mx": 96, "my": 0, "pal": 4, "w": 32}, "planks": {"h": 28, "mx": 160, "my": 0, "pal": 6, "w": 32}, "roofs": {"h": 28, "mx": 224, "my": 0, "pal": 7, "w": 32}, "skyline": {"h": 28, "mx": 192, "my": 0, "pal": 7, "w": 32}},
   colors: {"GLASS": 200},
-  big: {"shadow": {"h": 9, "parts": [[0, 0, 896, 16, 7, 0], [16, 0, 898, 16, 7, 0], [32, 0, 900, 8, 7, 0]], "w": 36}, "shadow2": {"h": 6, "parts": [[0, 0, 901, 8, 7, 0], [8, 0, 902, 8, 7, 0], [16, 0, 903, 8, 7, 0]], "w": 22}},
+  big: {"apple": {"h": 16, "parts": [[0, 0, 428, 16, 7, 0]], "w": 16}, "barrel": {"h": 34, "parts": [[0, 0, 960, 32, 7, 0], [0, 32, 911, 8, 7, 0], [8, 32, 924, 8, 7, 0], [16, 32, 925, 8, 7, 0]], "w": 24}, "bin": {"h": 36, "parts": [[0, 0, 904, 32, 7, 0], [0, 32, 908, 8, 7, 0], [8, 32, 909, 8, 7, 0], [16, 32, 910, 8, 7, 0]], "w": 26}, "bottle": {"h": 18, "parts": [[0, 0, 970, 8, 7, 0], [0, 8, 971, 8, 7, 0], [0, 16, 972, 8, 7, 0]], "w": 8}, "bottleH": {"h": 8, "parts": [[0, 0, 973, 8, 7, 0], [8, 0, 974, 8, 7, 0], [16, 0, 975, 8, 7, 0]], "w": 18}, "chicken": {"h": 18, "parts": [[0, 0, 416, 16, 7, 0], [16, 0, 413, 8, 7, 0], [16, 8, 414, 8, 7, 0], [0, 16, 415, 8, 7, 0], [8, 16, 418, 8, 7, 0]], "w": 22}, "crate": {"h": 30, "parts": [[0, 0, 896, 32, 7, 0]], "w": 28}, "face": {"h": 24, "parts": [[0, 0, 964, 32, 7, 0]], "w": 24}, "knife": {"h": 9, "parts": [[0, 0, 942, 16, 7, 0], [16, 0, 926, 8, 7, 0]], "w": 24}, "knifeV": {"h": 24, "parts": [[0, 0, 968, 16, 7, 0], [0, 16, 927, 8, 7, 0]], "w": 9}, "money": {"h": 20, "parts": [[0, 0, 420, 16, 7, 0], [16, 8, 419, 8, 7, 0], [0, 16, 422, 8, 7, 0], [8, 16, 423, 8, 7, 0]], "w": 18}, "oneup": {"h": 13, "parts": [[0, 0, 424, 16, 7, 0], [16, 0, 426, 8, 7, 0], [16, 8, 427, 8, 7, 0]], "w": 22}, "pipe": {"h": 8, "parts": [[0, 0, 434, 8, 7, 0], [8, 0, 435, 8, 7, 0], [16, 0, 435, 8, 7, 0], [24, 0, 435, 8, 7, 0], [32, 0, 438, 8, 7, 0]], "w": 38}, "pipeV": {"h": 38, "parts": [[0, 0, 439, 8, 7, 0], [0, 8, 442, 8, 7, 0], [0, 16, 442, 8, 7, 0], [0, 24, 442, 8, 7, 0], [0, 32, 443, 8, 7, 0]], "w": 8}, "shadow": {"h": 9, "parts": [[0, 0, 430, 16, 7, 0], [16, 0, 430, 16, 7, 1]], "w": 32}, "shadow2": {"h": 6, "parts": [[0, 0, 940, 16, 7, 0]], "w": 16}, "tomb": {"h": 26, "parts": [[0, 0, 900, 32, 7, 0]], "w": 22}},
   gradients: {"dawn":{"entry":0,"lines":[10437,10437,10437,10437,10437,10437,10438,10438,11462,11494,11494,11495,11495,11495,11495,12519,12519,12520,12552,12552,12552,12552,12553,13577,13577,13577,13577,13609,13610,13610,14634,14634,14634,14635,14635,14635,14667,14667,15691,15692,15692,15692,15692,15692,15693,16749,16749,15725,15726,15726,15726,15727,15759,15759,15760,15760,15760,15761,15761,15793,15793,15794,15794,15794,15795,14771,14771,14804,14804,14804,14805,14805,14805,14806,14838,14838,13815,13815,13815,13816,13816,13816,13817,13849,13849,12826,12826,12826,12827,12827,12827,12860,12860,12860,12860,12860,12892,12892,12892,13916,13916,13948,13948,13948,13949,13949,15005,15005,15005,15005,15005,15037,15037,15037,16061,16061,16093,16093,16093,16094,16094,17150,17150,17150,17150,17150,17182,17182,17182,18206,18206,18238,18238,18238,18238,18239,19295],"y0":0},"night":{"entry":0,"lines":[3136,3136,3136,3136,3136,4160,4160,4160,4160,4160,4160,4160,4160,4160,4160,5216,5216,5216,5216,5216,5216,5216,5216,5216,5217,5217,6241,6241,6241,6241,6273,6273,6273,6273,6273,7297,7297,7297,7297,7297,7297,7297,7297,7297,7297,8353,8353,8353,8353,8353,8353,8353,8353,8353,9409,9409,9410,9410,9410,9410,9410,9410,9410,9410,10466,10466,10466,10466,10466,10466,10466,10466,10466,11522,11522,11522,11522,11522,11522,11523,11523,11523,12579,12579,12579,12579,12579,12579,12579,12579,12579,13635,13635,13635,13636,13636,13636,13668,13668,14692,14693,14693,14693,14725,14725,14725,15750,15750,15782,15782,15782,15783,15783,15783,16839,16839,16839,16840,16840,16840,16872,17896,17896,17897,17897,17929,17929,17929,17929,18954,18954,18986,18986,18986,18986,18987,20043],"y0":0},"sky":{"entry":0,"lines":[4129,4129,4129,4129,4129,4129,4130,4130,4130,5154,5154,5154,5154,5154,5154,5154,5154,5154,5154,6178,6179,6179,6211,6211,6211,6211,6211,6211,7235,7235,7235,7235,7236,7236,7236,7236,8260,8260,8260,8260,8260,8260,8260,8260,8292,9317,9317,9317,9317,9317,9317,9317,9317,9318,9318,9318,9318,9318,9318,9350,10374,10375,10375,10375,10375,10375,10375,10375,10375,10376,10376,10376,10376,10376,10376,11432,11433,11433,11433,11433,11433,11433,11433,11433,11434,11434,11434,11434,11434,11434,11434,12491,12491,12491,12491,12491,12492,12492,12492,12492,12524,12524,12525,12525,12525,12525,12525,12526,12526,12558,12558,12558,12559,12559,12559,12559,12559,12560,12592,12592,12592,12592,12593,12593,12593,12593,12593,12626,12626,12626,12626,13651,13651,13651,13651,13651,13684],"y0":0}},
-  streams: {"b":{"base":768,"clips":{"u_bcharge":[14,3],"u_bpunch":[11,3],"u_bstun":[17,1],"u_fly":[1,1],"u_getup":[3,2],"u_hurt":[0,1],"u_idle":[5,2],"u_kslam":[18,3],"u_lie":[2,1],"u_walk":[7,4],"z_fly":[22,1],"z_getup":[24,2],"z_hurt":[21,1],"z_idle":[26,2],"z_lie":[23,1],"z_rcrouch":[38,1],"z_rdive":[40,1],"z_rland":[41,1],"z_rleap":[39,1],"z_rslash1":[32,3],"z_rslash3":[35,3],"z_walk":[28,4]},"h":104,"rom":"b","rows":8,"slots":1,"w":128},"f":{"base":448,"clips":{"b_fly":[121,1],"b_getup":[123,2],"b_hsmash":[135,3],"b_hurt":[120,1],"b_idle":[125,2],"b_lie":[122,1],"b_walk":[127,8],"c_cthrow":[89,3],"c_hurt":[78,1],"c_idle":[79,2],"c_walk":[81,8],"f_fbreath":[117,3],"f_hurt":[106,1],"f_idle":[107,2],"f_walk":[109,8],"h_dash":[39,3],"h_fly":[27,1],"h_getup":[29,2],"h_gpunch":[32,2],"h_grab":[31,1],"h_hook":[16,3],"h_hurt":[26,1],"h_idle":[0,2],"h_jkick":[23,2],"h_jump":[22,1],"h_land":[25,1],"h_lie":[28,1],"h_punch1":[10,3],"h_punch2":[13,3],"h_revive":[35,1],"h_special":[36,3],"h_suplex":[34,1],"h_uppercut":[19,3],"h_walk":[2,8],"h_wpipe":[42,3],"k_hurt":[64,1],"k_idle":[65,2],"k_sstab":[75,3],"k_walk":[67,8],"l_hurt":[92,1],"l_idle":[93,2],"l_walk":[95,8],"l_wlash":[103,3],"t_fly":[46,1],"t_getup":[48,2],"t_held":[63,1],"t_hurt":[45,1],"t_idle":[50,2],"t_lie":[47,1],"t_tpunch":[60,3],"t_walk":[52,8]},"h":84,"rom":"f","rows":4,"slots":7,"w":96}},
+  streams: {"b":{"base":768,"clips":{"u_bcharge":[14,3],"u_bpunch":[11,3],"u_bstun":[17,1],"u_fly":[1,1],"u_getup":[3,2],"u_hurt":[0,1],"u_idle":[5,2],"u_kslam":[18,3],"u_lie":[2,1],"u_walk":[7,4],"z_fly":[22,1],"z_getup":[24,2],"z_hurt":[21,1],"z_idle":[26,2],"z_lie":[23,1],"z_rcrouch":[38,1],"z_rdive":[40,1],"z_rland":[41,1],"z_rleap":[39,1],"z_rslash1":[32,3],"z_rslash3":[35,3],"z_walk":[28,4]},"h":104,"rom":"b","rows":8,"slots":1,"w":128},"f":{"base":448,"clips":{"b_fly":[99,1],"b_getup":[101,2],"b_hsmash":[109,3],"b_hurt":[98,1],"b_idle":[103,2],"b_lie":[100,1],"b_walk":[105,4],"c_cthrow":[77,3],"c_hurt":[71,1],"c_idle":[72,1],"c_walk":[73,4],"f_fbreath":[95,3],"f_hurt":[89,1],"f_idle":[90,1],"f_walk":[91,4],"h_dash":[39,3],"h_fly":[27,1],"h_getup":[29,2],"h_gpunch":[32,2],"h_grab":[31,1],"h_hook":[16,3],"h_hurt":[26,1],"h_idle":[0,2],"h_jkick":[23,2],"h_jump":[22,1],"h_land":[25,1],"h_lie":[28,1],"h_punch1":[10,3],"h_punch2":[13,3],"h_revive":[35,1],"h_special":[36,3],"h_suplex":[34,1],"h_uppercut":[19,3],"h_walk":[2,8],"h_wpipe":[42,3],"k_hurt":[62,1],"k_idle":[63,1],"k_sstab":[68,3],"k_walk":[64,4],"l_hurt":[80,1],"l_idle":[81,1],"l_walk":[82,4],"l_wlash":[86,3],"t_fly":[46,1],"t_getup":[48,2],"t_held":[61,1],"t_hurt":[45,1],"t_idle":[50,2],"t_lie":[47,1],"t_tpunch":[58,3],"t_walk":[52,6]},"h":84,"rom":"f","rows":4,"slots":7,"w":96},"logo1":{"base":576,"h":40,"rom":"logo1","rows":8,"slots":1,"w":232},"logo2":{"base":768,"h":40,"rom":"logo2","rows":8,"slots":1,"w":232}},
 };
 /** Draw one of ART.big at (x, y), its top left: opts { fx, fy (flip the whole sprite), prio (default 3), pal (every
  * part in this sprite palette, e.g. a hit flash) }. Each part is one spr() (generated by art.py). */
@@ -232,7 +232,7 @@ const GRAB_X = 24, GRAB_Y = 6, GRAB_MAX = 120, GRAB_HITS = 3, GRAB_DMG = 3, THRO
 // Things to pick up, each in its own colour: food heals (apple 10, chicken 30), money is 1,000 points, a 1UP is a life, and the
 // weapons (pipe, knife) are taken with A and used with A. Crates, barrels and bins break in two punches and drop their item.
 const ITEM = { apple: { heal: 10 }, chicken: { heal: 30 }, money: { pts: 1000 }, oneup: { life: 1 }, pipe: { weapon: 'wpipe', uses: 8, name: 'PIPE' }, knife: { weapon: 'wknife', uses: 12, name: 'KNIFE' } };
-const PROP_BOX = { crate: [-14, -23, 14, 0], barrel: [-12, -27, 12, 0], bin: [-12, -28, 12, 0] }, PROP_HP = 8;
+const PROP_BOX = { crate: [-14, -30, 14, 0], barrel: [-12, -34, 12, 0], bin: [-13, -36, 13, 0] }, PROP_HP = 8;
 // The stages: scenes (far, middle, floor: BG2, BG1, BG0), the sky gradient, the song, the thugs' health and shirt colour, the waves
 // (the camera locks at x and n thugs come in, k of them Slashers, c Chuckers, l Lashers, b Brutes, f Fire-breathers; boss: the stage's boss comes with them) and the props with what is inside. Section 6 of the spec.
 const STAGES = [
@@ -289,10 +289,12 @@ function bindScenes(st) {
     bg(l, { mx: s.mx, my: s.my, mw: s.w, mh: s.h, x: 0, y: 0, wrap: true, show: true });
   });
 }
-function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; stage = 0; ST = STAGES[0]; bindScenes(ST); scroll(0); play(SONG.title); }
+function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; stage = 0; ST = STAGES[0]; bindScenes(ST); scroll(0); play(SONG.title); setPal(6, SWAP.logo); resetStreams(); }
+/** Streams share tiles (the logo and the bosses lie over the fighters' slots): after any change of who is on, they load again. */
+function resetStreams() { for (const s of Object.values(ART.streams)) s.loaded = []; slots.clear(); }
 
 function startGame(n = startPlayers) {
-  won = false; paused = false; timer = 0; state = 'play'; players = [];
+  won = false; paused = false; timer = 0; state = 'play'; players = []; resetStreams();
   addHero(0, 90, n > 1 ? 172 : 180);
   if (n > 1) addHero(1, 56, 192);
   loadStage(0);
@@ -1007,11 +1009,10 @@ function drawPlay() {
   const nb = enemies.some((e) => e.kind === 'boss');                 // a boss takes the last two slots: the fighters there start again
   if (nb !== bossOn) { bossOn = nb; slots.clear(); ART.streams.f.loaded = []; ART.streams.b.loaded = []; }
   for (const f of slots.keys()) if (!all.includes(f) || !onScreen(f)) slots.delete(f);
-  for (const i of items) drawItem(i);
   for (const s of shots) drawShot(s);
-  for (const f of all) { if (f.out) drawTomb(f); else if (f.prop) drawProp(f); }
-  for (let k = all.length - 1; k >= 0; k--) if (!all[k].out && !all[k].prop) (all[k].kind === 'boss' ? drawBoss : drawFighter)(all[k]);   // sprites: a lower index shows on top, so the nearest first
-  for (const f of all) drawShadow(f);
+  for (let k = all.length - 1; k >= 0; k--) { const f = all[k]; (f.out ? drawTomb : f.prop ? drawProp : f.kind === 'boss' ? drawBoss : drawFighter)(f); }   // sprites: a lower index shows on top, so the nearest first
+  for (const i of items) drawItem(i);
+  for (const f of [...all, ...items, ...shots.map((s) => ({ x: s.x, y: s.y, h: 0 }))]) drawShadow(f);                                                     // the shadows last: they lie under everything
   for (const b of bits) rf(flr(b.x - cam), flr(b.y), 4, 4, b.c);
   if (showBoxes) for (const f of all) drawBoxes(f);
   for (const o of popups) txt(o.text, flr(o.x - cam) - o.text.length * 4, flr(o.y - o.t * 0.4), o.t > 36 && o.t % 4 < 2 ? DIM : o.c);
@@ -1024,7 +1025,7 @@ function drawShadow(f) {
 }
 
 // SWAP (generated by art.py: do not edit)
-const SWAP = {"thug":[[2083,10776,16060,21311,35,3207,6410,4115,6392,9659,6243,9447,13642,6310,13676],[2083,10743,15003,19230,33,3205,6408,3432,7661,11890,6276,10503,13675,6310,13676],[2083,11767,16027,20254,0,3138,6309,6210,10437,13609,1057,5252,8423,6310,13676]],"fire":[2083,9655,13915,18142,1093,4265,7468,278,4539,10846,2115,5287,8458,4246,8477],"brute":[2083,10711,14971,19198,0,3139,6310,5132,7345,10581,4163,8391,11563,4628,6942],"boss":[[2083,5560,9820,15103,39,3243,6446,1173,5466,9725,5187,9383,12587,5304,6909],[2083,15993,21277,27583,25302,30587,32767,7360,11587,14760,2081,6309,9480,27415,32734],[2083,11767,16027,20254,0,4195,7366,2081,7300,10471,1024,5219,8390,8390,6909],[2083,11767,16027,20254,0,4195,7366,3083,4209,7477,0,3141,6312,6365,10111]]};
+const SWAP = {"thug":[[2083,10776,16060,21311,35,3207,6410,4115,6392,9659,6243,9447,13642,6310,13676],[2083,10743,15003,19230,33,3205,6408,3432,7661,11890,6276,10503,13675,6310,13676],[2083,11767,16027,20254,0,3138,6309,6210,10437,13609,1057,5252,8423,6310,13676]],"fire":[2083,9655,13915,18142,1093,4265,7468,278,4539,10846,2115,5287,8458,4246,8477],"brute":[2083,10711,14971,19198,0,3139,6310,5132,7345,10581,4163,8391,11563,4628,6942],"boss":[[2083,5560,9820,15103,39,3243,6446,1173,5466,9725,5187,9383,12587,5304,6909],[2083,15993,21277,27583,25302,30587,32767,7360,11587,14760,2081,6309,9480,27415,32734],[2083,11767,16027,20254,0,4195,7366,2081,7300,10471,1024,5219,8390,8390,6909],[2083,11767,16027,20254,0,4195,7366,3083,4209,7477,0,3141,6312,6365,10111]],"logo":[2083,5223,4244,4379,6686,7935,21471,0,0,0,0,0,0,0,0]};
 // END SWAP
 /** Set sprite palette p to 15 packed colours (r | g << 5 | b << 10): a stage's thug, a wave's Fire-breather or Brute. */
 function setPal(p, c) { if (p === 6) bossPal = -1; for (let i = 0; i < 15; i++) color(129 + p * 16 + i, c[i] & 31, (c[i] >> 5) & 31, c[i] >> 10); }
@@ -1091,54 +1092,23 @@ function drawFighter(f) {
   }
 }
 
-/** Each thing to pick up has its own colour and shape: red apple, orange chicken, gold money bag, cyan 1UP, steel pipe, white knife. */
-function drawItem(i) {
-  const sx = flr(i.x - cam), sy = flr(i.y - i.h);
-  if (i.h === 0) { rf(sx - 9, sy - 2, 18, 4, SHADOW); }
-  switch (i.kind) {
-    case 'apple': circfill(sx, sy - 7, 6, RED); rf(sx - 1, sy - 16, 2, 5, BROWN); rf(sx + 1, sy - 15, 5, 3, GREEN); break;
-    case 'chicken': circfill(sx - 3, sy - 9, 9, ORANGE); circfill(sx - 6, sy - 12, 3, GOLD); rf(sx + 5, sy - 12, 9, 4, WHITE); circfill(sx + 14, sy - 14, 3, WHITE); circfill(sx + 14, sy - 10, 3, WHITE); break;
-    case 'money': circfill(sx, sy - 8, 8, GOLD); rf(sx - 3, sy - 19, 6, 6, GOLD); rf(sx - 5, sy - 15, 10, 2, BROWN); txt('$', sx - 4, sy - 13, NAVY); break;
-    case 'oneup': rf(sx - 14, sy - 17, 28, 15, CYAN); rect(sx - 14, sy - 17, 28, 15, WHITE); print('1UP', sx - 12, sy - 14, NAVY); break;
-    case 'pipe': rf(sx - 18, sy - 6, 36, 6, DIM); rf(sx - 18, sy - 6, 36, 2, WHITE); rf(sx - 20, sy - 7, 3, 8, DIM); rf(sx + 17, sy - 7, 3, 8, DIM); break;
-    case 'knife': rf(sx - 4, sy - 5, 20, 4, WHITE); rf(sx + 14, sy - 4, 4, 2, WHITE); rf(sx - 16, sy - 6, 12, 6, BROWN); rf(sx - 5, sy - 7, 2, 8, DIM); break;
-  }
-}
-
+/** The small things are sprites of the world palette (7), standing on their bottom edge: crates, barrels and bins, pickups, thrown weapons, bottles, the tombstone. */
+function small(n, x, y, o = {}) { const b = ART.big[n]; bigSprite(b, flr(x - b.w / 2), flr(y - b.h), { pal: 7, ...o }); }
+const drawItem = (i) => small(i.kind, i.x - cam, i.y - i.h);
 function drawShot(s) {
-  if (s.own) {                                                       // a weapon spinning through the air at chest height
-    const sx = flr(s.x - cam), y = flr(s.y) - 53, a = flr(s.t / 2) % 2;
-    rf(sx - 5, flr(s.y) - 1, 10, 3, SHADOW);
-    if (s.kind === 'knife') { if (a) { rf(sx - 8, y - 1, 16, 3, WHITE); rf(sx - 12, y - 2, 5, 5, BROWN); } else { rf(sx - 1, y - 8, 3, 16, WHITE); rf(sx - 2, y + 7, 5, 5, BROWN); } }
-    else if (a) { rf(sx - 14, y - 2, 28, 5, DIM); rf(sx - 14, y - 2, 28, 2, WHITE); } else { rf(sx - 2, y - 14, 5, 28, DIM); rf(sx - 2, y - 14, 2, 28, WHITE); }
-    return;
-  }
-  const sx = flr(s.x - cam), y = flr(s.y) - 20, spin = flr(s.t / 3) % 2;
-  rf(sx - 5, flr(s.y) - 1, 10, 3, SHADOW);
-  if (spin) { rf(sx - 6, y - 3, 12, 6, GREEN); rf(sx + 5, y - 1, 4, 2, GREEN); rf(sx - 4, y - 2, 4, 1, WHITE); }
-  else { rf(sx - 3, y - 6, 6, 12, GREEN); rf(sx - 1, y - 10, 2, 5, GREEN); rf(sx - 2, y - 4, 1, 5, WHITE); }
+  const x = s.x - cam, spin = flr(s.t / (s.own ? 2 : 3)) % 2;
+  if (s.own) small(s.kind + (spin ? '' : 'V'), x, s.y - 41 + 12, { fx: s.vx < 0 });          // a weapon spinning through the air at chest height
+  else small(spin ? 'bottleH' : 'bottle', x, s.y - 14 + 6);
 }
-
 function drawTomb(g) {                                              // a grey stone with a cross and his number; a prompt, or the bar filling while a partner revives him
   const sx = flr(g.x - cam), y = flr(g.y), c = g.pad ? GREEN : CYAN;
-  rf(sx - 10, y - 24, 20, 24, DIM); rf(sx - 8, y - 22, 16, 20, PANEL); rf(sx - 1, y - 20, 3, 14, WHITE); rf(sx - 5, y - 16, 11, 3, WHITE);
-  txt(`P${g.pad + 1}`, sx - 8, y - 36, c);
+  small('tomb', sx, y);
+  txt(`P${g.pad + 1}`, sx - 8, y - 38, c);
   const r = heroes().find((h) => h.anim === 'revive' && tombNear(h) === g);
-  if (r) bar(sx - 16, y - 48, 32, r.revT, REVIVE_TIME, GOLD);
-  else if (clock % 60 < 40 && heroes().some((h) => !h.weapon && h.hp > REVIVE_COST && tombNear(h) === g)) txt('HOLD Y', sx - 24, y - 48, WHITE);
+  if (r) bar(sx - 16, y - 50, 32, r.revT, REVIVE_TIME, GOLD);
+  else if (clock % 60 < 40 && heroes().some((h) => !h.weapon && h.hp > REVIVE_COST && tombNear(h) === g)) txt('HOLD Y', sx - 24, y - 50, WHITE);
 }
-
-function drawProp(q) {
-  const sx = flr(q.x - cam) + (q.flash > 0 ? (q.flash % 2 ? 2 : -2) : 0), by = flr(q.y), b = q.box, w = b[2] - b[0], h = -b[1];
-  const hit = q.flash > 3;
-  if (q.kind === 'crate') {
-    rf(sx - 14, by - 30, w, h, hit ? WHITE : BROWN); rect(sx - 14, by - 30, w, h, ORANGE); line(sx - 14, by - 30, sx + 13, by - 1, ORANGE); line(sx + 13, by - 30, sx - 14, by - 1, ORANGE);
-  } else if (q.kind === 'barrel') {
-    rf(sx - 12, by - 34, w, h, hit ? WHITE : BLUE); rf(sx - 12, by - 27, w, 3, NAVY); rf(sx - 12, by - 9, w, 3, NAVY); rect(sx - 12, by - 34, w, h, NAVY);
-  } else {
-    rf(sx - 12, by - 30, w, 30, hit ? WHITE : DKGREEN); rf(sx - 14, by - 36, w + 4, 7, GREEN); rect(sx - 12, by - 30, w, 30, NAVY);
-  }
-}
+const drawProp = (q) => small(q.kind, q.x - cam + (q.flash > 0 ? (q.flash % 2 ? 2 : -2) : 0), q.y);
 
 /** The weapon in a hero's hand: held up, drawn back for the swing, out along the hit box when it is active. */
 function drawWeapon(f, sx, by, fr, ax, ay) {
@@ -1187,11 +1157,12 @@ function bar(x, y, w, v, max, c) {
 }
 
 function drawHud() {
-  for (const h of players) {                                         // each hero: a bar, his lives and his score
-    const x = h.pad ? 136 : 8;
-    txt(h.pad ? 'P2' : 'P1', x, 6, h.pad ? GREEN : CYAN); bar(x + 18, 6, 70, h.out ? 0 : h.hp, HERO_HP, h.hp > 20 ? GREEN : RED);
-    txt(`x${h.lives}`, x + 94, 6, h.lives > 1 ? WHITE : RED);
-    txt(`${h.score}`.padStart(7, '0'), x, 18, h.out ? DIM : WHITE);
+  for (const h of players) {                                         // each hero: his face, a bar, his lives and his score
+    const x = h.pad ? 136 : 4;
+    bigSprite(ART.big.face, x, 3, { pal: h.pad });
+    txt(`P${h.pad + 1}`, x + 28, 4, h.pad ? GREEN : CYAN); bar(x + 46, 6, 46, h.out ? 0 : h.hp, HERO_HP, h.hp > 20 ? GREEN : RED);
+    txt(`x${h.lives}`, x + 96, 6, h.lives > 1 ? WHITE : RED);
+    txt(`${h.score}`.padStart(7, '0'), x + 28, 18, h.out ? DIM : WHITE);
   }
   if (players.length < 2 && state === 'play' && clock % 60 < 40) txt('P2 PRESS A', 160, 6, DIM);   // the second player can join
   const boss = enemies.find((e) => e.kind === 'boss');
@@ -1203,8 +1174,14 @@ function drawHud() {
 }
 
 function drawTitle() {
-  ctxt('STREETS OF WOE', 50, GOLD);
-  ['1 PLAYER', '2 PLAYERS', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 84, 100 + i * 14, i === titleSel ? WHITE : DIM));
+  const st = ART.streams, idle = st.f.clips.h_idle[0] + flr(clock / 24) % 2;
+  streamSprite(st.logo1, 0, 12, 22, { pal: 6 }); streamSprite(st.logo2, 0, 12, 62, { pal: 6 });
+  for (const [x, pal] of [[48, 0], [208, 1]]) {                                                 // the two heroes, one at each side
+    bigSprite(ART.big.shadow, x - 16, 201, { pal: 7 });
+    streamSprite(st.f, idle, x - 48, 121, { slot: pal, pal, fx: pal === 1 });
+  }
+  panel(76, 114, 104, 52);
+  ['1 PLAYER', '2 PLAYERS', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 84, 122 + i * 14, i === titleSel ? WHITE : DIM));
 }
 
 function drawRecords() {

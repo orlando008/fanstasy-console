@@ -365,6 +365,22 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   (`rom/<name>.bin`, 128 KB in all: docs/dev/rom-plan.md), out of the 64 KB of code: the `street` brawler (96 px, 18
   frames) is 128 tiles and 18.5 KB of ROM, so six or so such fighters fit (without `rom=True` the same frames are
   20 KB of `code.js`). One slot per copy on screen at once (`slots=`); loading costs no measurable time.
+- **A whole cast: Streets of Woe's way** (`carts/src/brawl/figures.py`, `art.py`; its spec section 12). Seven fighters on the
+  screen cannot each have 128 tiles, nor 40 frames of ROM each, so: (1) draw them at 72 px (a 64-tile slot, 0.7 KB a frame) and make the
+  game's boxes fit them; (2) **give every fighter one palette layout** (an outline, three ramps of 3, two trim colours) so the same frames
+  show in any of the eight sprite palettes, and a second hero or a thug's coat for each stage is a palette, not frames (`color()`
+  rewrites one while the game plays); (3) put the whole cast in **one stream** with `slots=7` and hand the slots out in the game
+  (a map of fighter to slot, kept while he is on the screen); (4) a variant (a head, a hat, a scarf) is the same poses drawn again: the
+  body's tiles are shared in ROM, so it costs about 0.3 KB a frame; (5) seat each frame on its lowest pixel and its pivot on the
+  middle column in `render_clips()` (a crouch or a lunge then keeps its feet on the floor, and `fx` mirrors it in place); (6) keep
+  where the hand and the head are in each frame (`ANCHORS`, in a small ROM blob), for a knife, a whip or a flame drawn by code; (7) **a
+  second stream can lie over the first one's slots** (a boss over two of them, a title's logo over five): make it, then set its `base`
+  in `art.streams` and free its tiles in `art.used`; the game reloads (`st.loaded = []`) when who is on changes; (8) `art.stream(...,
+  fewer=2, cap=64)` covers a frame in fewer, bigger pieces while it still fits the slot: fewer sprites on a line (a 72 px fighter was
+  14 to 18 of the 128 sprites; now 9 on average). Everything that has to sort with the fighters (props, pickups, shadows) must be a
+  sprite too: the overlay is always above sprites. Check the sprites with a long random play (`soak.mjs` reports the OAM and the
+  scanline maxima) and the **PNG payload** (`check.js`): packed frames compress to about 0.65 and the `.nova.png` holds 147 KB, so it fills before the ROM does (110 KB of the 128). The **label** counts too: the F7 capture of a busy frame is 17 to 24 KB; squeeze it to 24 colours (`Image.quantize`: 7 KB) and release with `--keep-label`.
+  Drawing 160 frames takes minutes: `BRAWL_FIG_CACHE=<dir>` keeps each fighter's frames between runs (delete one file after changing its poses).
 - **Review a character the way a person would, then check what a person can't.** `review(frames, name=, loop=,
   height=, colours=)` (`review.py`) turns the by-eye checks into findings: a frame touching the picture's edge, noise
   (clusters of one or two pixels), too many colours, a figure the wrong height, a stalled animation, feet that hop

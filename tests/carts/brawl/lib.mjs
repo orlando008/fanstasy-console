@@ -20,7 +20,7 @@ const PROBE = `__expose(() => ({
   ANIM, MOVE, COMBO, HERO_HP, THUG_HP, LANE_TOP, LANE_BOT, LANE_TOL, GRAV, STAND, LYING,
   get LEVEL() { return LEVEL; }, get LEVEL_W() { return LEVEL_W; }, get PROPS() { return PROPS; }, get stage() { return stage; }, get ST() { return ST; }, get bannerT() { return bannerT; }, STAGES, loadStage,
   mkFighter, setAnim, knockDown, worldBox, frameOf, tokens, startGame, landHit, checkHits,
-  SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
+  SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials, frameIndex, slots, SWAP, BPRE, PRE, get bossOn() { return bossOn; },
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */

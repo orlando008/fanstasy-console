@@ -18,7 +18,7 @@ function setup(seed = 1, dx = 20) {
   ok(b.out && p.state === 'play', 'a hero with no lives left is out, and the game goes on');
   ok(p.heroes().length === 1 && p.players.includes(b), 'he is still one of the two, though not in the game');
   const rgb = (i) => { const v = vm.cart.palette[i]; const e = (c) => (c << 3) | (c >> 2); return (e(v & 31) | (e((v >> 5) & 31) << 8) | (e((v >> 10) & 31) << 16) | 0xff000000) >>> 0; };
-  vm.run(2); const sx = Math.round(b.x - p.cam); let grey = 0; for (let y = b.y - 26; y < b.y; y++) for (let x = sx - 12; x < sx + 12; x++) if ((vm.out32[y * 256 + x] >>> 0) === rgb(10)) grey++;
+  vm.run(2); const sx = Math.round(b.x - p.cam); let grey = 0; for (let y = b.y - 26; y < b.y; y++) for (let x = sx - 12; x < sx + 12; x++) if ((vm.out32[y * 256 + x] >>> 0) === rgb(254)) grey++;
   ok(grey > 60, 'a tombstone stands where he fell: a grey stone with a cross', `${grey} pixels`);
 }
 {

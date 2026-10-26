@@ -609,7 +609,7 @@ class Art:
         s.anims[name] = names
         return names
 
-    def stream(s, name, frames, pal=None, region=None, slots=1, rom=False):
+    def stream(s, name, frames, pal=None, region=None, slots=1, rom=False, fewer=0, cap=None):
         """An animation whose frames are loaded into tile memory as they play, as SNES games did: only a slot (enough
         tile rows for its biggest frame) is taken from the tile budget, however many frames there are, and the frames'
         pixels live in code.js as a packed string (8 x 8 tiles shared between frames are stored once). For big
@@ -618,7 +618,8 @@ class Art:
         is [first frame, count]). slots= how many can show at once, each with its own frame (two fighters of the same
         character). In code.js: streamSprite(ART.streams.name, frame, x, y, { fx, prio, pal, slot }). Returns the
         entry; the report gives its slot tiles and code bytes (about 20 KB for a 96 px fighter with 18 frames).
-        rom=True keeps the frames in the cart's ROM instead (rom/<name>.bin, read with rom(); denser, about 15 KB, and
+        fewer=1 or 2 (with cap=64, the tiles a slot may take: a frame that would need more tries less) covers a frame in fewer, bigger pieces (a sprite for a block with three of its four 16 px squares drawn, and one 16 px sprite for two 8 px ones): more tiles in the slot, fewer sprites
+        on a scanline and in OAM (32 a line and 128 in all). rom=True keeps the frames in the cart's ROM instead (rom/<name>.bin, read with rom(); denser, about 15 KB, and
         out of the 64 KB of code), which is the way for big fighters."""
         if name in s.streams: raise ValueError('stream %r already exists' % name)
         clips = None
@@ -638,7 +639,7 @@ class Art:
             if k not in pool_ix: pool_ix[k] = len(pool); pool.append(im)
             return pool_ix[k]
         out_frames, raw_frames, rows = [], [], 0
-        for L in layers0:
+        def cover(L, fewer):
             pieces = []                                        # (size, img, sub, dx, dy)
             for sub, im in sorted(L.items()):
                 s._check_colors(im, s._roles('spr', sub), 'stream %r (palette %d)' % (name, sub))
@@ -647,13 +648,18 @@ class Art:
                         block = im.crop(bx, by, 32, 32)
                         if block.is_empty(): continue
                         quads = [(qx, qy) for qy in (0, 16) for qx in (0, 16) if not block.crop(qx, qy, 16, 16).is_empty()]
-                        if len(quads) == 4: pieces.append((32, block, sub, bx, by)); continue
+                        if len(quads) == 4 or (fewer and len(quads) >= 4 - fewer): pieces.append((32, block, sub, bx, by)); continue
                         for qx, qy in quads:
                             q = block.crop(qx, qy, 16, 16)
                             eighths = [(ex, ey) for ey in (0, 8) for ex in (0, 8) if not q.crop(ex, ey, 8, 8).is_empty()]
-                            if len(eighths) <= 2:
+                            if len(eighths) <= (1 if fewer else 2):
                                 for ex, ey in eighths: pieces.append((8, q.crop(ex, ey, 8, 8), sub, bx + qx + ex, by + qy + ey))
                             else: pieces.append((16, q, sub, bx + qx, by + qy))
+            return pieces
+        for L in layers0:
+            for fw in range(fewer, -1, -1):                    # as few pieces as the slot's tiles allow
+                pieces = cover(L, fw)
+                if not cap or sum((p[0] // 8) ** 2 for p in pieces) <= cap: break
             # place the pieces in the slot (16 tiles a row), biggest first, each aligned as the console needs
             taken, parts = set(), []
             for size, img, sub, dx, dy in sorted(pieces, key=lambda p: -p[0]):

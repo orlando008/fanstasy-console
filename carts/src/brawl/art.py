@@ -11,7 +11,8 @@ from kit import *
 
 art = Art()
 art.region('bg', 1, 447)       # background tiles (three stages: 413 of them)
-art.region('spr', 448, 1023)   # sprites: seven fighter slots of 64 tiles, then the small things (576 tiles)
+art.region('spr', 448, 1023)   # sprites: seven fighter slots of 64 tiles, then (where the boss's slot lies over two of them) the small things
+art.region('mid', 413, 447)    # the tiles between the backgrounds and the sprites: small things too
 art.backdrop('100818')
 art.color(200, '181028', 'GLASS')                                          # the panels' fill, seen through (blend() in code.js)
 
@@ -217,7 +218,7 @@ add('h_', F.make_hero, lambda: F.hero_poses(hero))
 add('t_', F.make_thug, lambda: F.thug_poses(thug))
 for kind, (pre, hair, hat, attack) in F.TYPES.items():
     mk = F.make_type(hair)
-    add(pre, lambda P, m, mk=mk: mk(P, m), lambda mk=mk, attack=attack: {**{k: v for k, v in F.thug_poses(mk(P0), attack=False).items() if k in ('idle', 'walk', 'hurt')}, **attack()}, F.accessory(hat, FP[{'knife': 3, 'chucker': 4, 'lasher': 5, 'fire': 6}[kind]]) if hat else None)
+    add(pre, lambda P, m, mk=mk: mk(P, m), lambda mk=mk, attack=attack: {**{k: v for k, v in F.thug_poses(mk(P0), attack=False, lite=True).items() if k in ('idle', 'walk', 'hurt')}, **attack()}, F.accessory(hat, FP[{'knife': 3, 'chucker': 4, 'lasher': 5, 'fire': 6}[kind]]) if hat else None)
 add('b_', F.make_brute, lambda: F.brute_poses(F.make_brute(P0)))
 def anchor_blob(cl):
     """Each frame's anchors, four bytes: the near hand's x and y, the head's x and y, from the pivot and the ground, plus 128."""
@@ -226,7 +227,10 @@ def anchor_blob(cl):
         for n in range(len(fr)): hb += bytes(max(0, min(255, v + 128)) for v in F.ANCHORS['%s:%d' % (name, n)])
     return bytes(hb)
 
-art.stream('f', clips, pal=P0, region='spr', slots=7, rom=True)
+# The hero's face for the HUD: a crop of his first frame round the head (palette 0 for the first hero, 1 for the second).
+hx, hy = F.ANCHORS['h_idle:0'][2:]
+face = clips['h_idle'][0].crop(F.PIVOT + hx - 12, F.CH - 1 + hy - 17, 24, 24)
+art.stream('f', clips, pal=P0, region='spr', slots=7, rom=True, fewer=int(os.environ.get('BRAWL_FEWER', '1')), cap=64)
 art.rom['hands'] = anchor_blob(clips)
 
 # The bosses: a bigger frame, one slot of 128 tiles that is laid over the fighters' last two slots (5 and 6) while a boss is on:
@@ -241,10 +245,43 @@ art.used.difference_update(range(bs['base'], bs['base'] + 128))
 bs['base'] = art.streams['f']['base'] + 5 * 64
 art.rom['bhands'] = anchor_blob(bclips)
 
-# --- Palette 7, the world's: the small things that sit among the fighters (shadows, and later the props and the pickups). ---
-WORLD = art.sprite_palette(7, {'shadow': '1c1428', 'shade2': '2c2040'})
-art.big_sprite('shadow', ellipse(36, 9, WORLD.shadow), pal=WORLD, region='spr')
-art.big_sprite('shadow2', ellipse(22, 6, WORLD.shadow), pal=WORLD, region='spr')
+# The title's logo: two lines of big lettering (lettering.big_text) streamed like the bosses, onto the fighters' slots 2 to 4
+# and 5 to 6 (the title shows two heroes in slots 0 and 1 and nothing else). Its colours are palette 6 at that moment (the game
+# sets them with SWAP.logo): 1 the outline, 2 the shadow, 3 to 7 a gradient from deep red to pale gold.
+from lettering import big_text
+LOGO = ['180c14', '3a1c28', 'a02020', 'd84020', 'f08030', 'f8b838', 'fff0a0']
+LW, LH = 232, 40
+def logo_line(text):
+    im = Img(LW, LH)
+    t = big_text(text, (3, 4, 5, 6, 7), scale=4, outline=1, shadow=2)
+    im.blit(t, (LW - t.w) // 2, 0)
+    return im
+used_before = set(art.used)
+art.used.difference_update(range(art.streams['f']['base'], art.streams['f']['base'] + 7 * 64))     # room to make them in; they are laid over the slots
+l1 = art.stream('logo1', [logo_line('STREETS')], pal=P0, region='spr', slots=1, rom=True)
+l2 = art.stream('logo2', [logo_line('OF WOE')], pal=P0, region='spr', slots=1, rom=True)
+art.used.clear(); art.used.update(used_before)
+l1['base'] = art.streams['f']['base'] + 2 * 64
+l2['base'] = art.streams['f']['base'] + 5 * 64
+assert l1['rows'] <= 12 and l2['rows'] <= 8, 'the logo needs more tiles than the slots it lies over: %d %d' % (l1['rows'], l2['rows'])
+
+# --- Palette 7, the world's: the small things that sit among the fighters (shadows, props, pickups, thrown weapons), props.py. ---
+import props as PR
+WORLD = art.sprite_palette(7, PR.LAYOUT)
+def small(name, img, piece='auto'):
+    """A small thing as a big sprite wherever there is room: the few tiles between the backgrounds and the fighters first."""
+    for region in ('mid', 'spr'):
+        try: return art.big_sprite(name, img, pal=WORLD, region=region, piece=piece)
+        except MemoryError: pass
+    raise MemoryError('no room for %s' % name)
+for name in ('crate', 'tomb', 'bin', 'barrel', 'chicken', 'money', 'oneup', 'apple'): small(name, PR.ALL[name](WORLD))
+small('face', face)
+small('shadow', ellipse(32, 9, WORLD.shadow), 16); small('shadow2', ellipse(16, 6, WORLD.shadow), 16)
+for name in ('pipe', 'knife'):                       # a weapon lying down or thrown turning over: the long way and the short way
+    img = PR.ALL[name + '_h'](WORLD)
+    small(name, img); small(name + 'V', img.rot90())
+img = PR.bottle_v(WORLD)
+small('bottle', img); small('bottleH', img.rot90())
 
 art.write(sys.argv[1])
 
@@ -253,6 +290,6 @@ import json
 code = os.path.join(sys.argv[1], 'code.js')
 src = open(code, encoding='utf8').read()
 a, b = src.index('// SWAP'), src.index('// END SWAP')
-swap = {'thug': [F.packed(l) for l in F.SWAP['thug']], 'fire': F.packed(F.SWAP['fire']), 'brute': F.packed(F.SWAP['brute']), 'boss': [F.packed(l) for l in F.SWAP['boss']]}
+swap = {'thug': [F.packed(l) for l in F.SWAP['thug']], 'fire': F.packed(F.SWAP['fire']), 'brute': F.packed(F.SWAP['brute']), 'boss': [F.packed(l) for l in F.SWAP['boss']], 'logo': F.packed({'c%d' % i: c for i, c in enumerate(LOGO + ['000000'] * (15 - len(LOGO)))})}
 src = src[:a] + '// SWAP (generated by art.py: do not edit)\nconst SWAP = %s;\n' % json.dumps(swap, separators=(',', ':')) + src[b:]
 open(code, 'w', encoding='utf8', newline='\n').write(src)
