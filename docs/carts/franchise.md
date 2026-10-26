@@ -20,10 +20,9 @@ trades with the computer; salary cap and finances.
 **Why it can work on this console.** The screen is 256 x 224 (32 x 28 characters of the 8 px font), the code is 64 KB and
 the save data is **1 KB** (256 numbers). So the design leans on three ideas, the way real SNES sports games did: (1) **a menu
 game**: every screen is a panel, a table or a list, reachable with the D-pad, A and B; (2) **the starting league lives in ROM**: all 450
-players of year 0 (names, positions, ratings, potential, contracts) and the 30 teams are a table the cart's own build script
-generates once and ships in the cart's ROM (128 KB), so a new career only reads it; (3) **after year 0 the league is a function of the
-seed**: progression, draft classes and the computer's moves come from the seed and the year, never stored, and the save holds only what
-the player changed (section 13).
+players of year 0 and the 30 teams are a table the cart's own build script generates once and ships in the cart's ROM (128 KB); (3) **after
+year 0 every team, player and year is a function of the seed**: a player's whole career (his ratings at each age, his contracts, when he leaves) is a closed form, nothing is replayed, and the save holds only the few
+players the GM touched (section 13).
 
 ## 2. Core loop
 
@@ -178,47 +177,47 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 
 ## 13. Persistence (save slots)
 
-**The save is 256 numbers**, so the league is not saved. It comes from two places: **year 0 is in ROM** and **every later year is generated** from the seed.
+**The save is 256 numbers**, so the league is not saved, and it is not replayed either (a replay would need every old move kept for ever, and dropping one would change the league). **Every team, player and year is a closed-form function of
+(the seed, the team, the slot, the year)**; the save holds only the **entries**: the few players the GM has touched.
 
-- **The base league** (`rom/league.bin`, made by a build script with a fixed seed, like `art.py`, that step 1 adds): **450 players of 12 bytes** (name ids 2, position and height 1, birth year 1, six ratings 6, potential 1, base salary and years 1: the 12th byte a trait for later), the **30 teams**
-  (nickname, city, colours, emblem, arena size, rosters as player ids) and a **prospect table** for the first draft: about 6 KB. Because it is made once, the cart needs no generator for year 0, and the
-  base league can be **looked at and tuned** (a test asserts its payroll, its age spread and its rating distribution). The career's **seed** makes each league different without a new table: it jitters
-  every rating by -3 to +3, shuffles the potential among prospects of a class and fixes the schedule, the game seeds and all the later years.
-- **Every later year is a pure function** of (the base league, the seed, the year and **your moves**): a player's progression is a function of (his row, the year, his training focus, a hash of (id, year));
-  the draft classes are generated from (seed, year) with the same name tables and ids from 450 up; the computer's drafting, free agency, re-signing and retirements are decided by fixed rules over those inputs.
-  Nothing about an AI team is stored: loading **replays the offseasons** from year 0 to the saved year (20 offseasons of 450 players is a few hundred thousand operations: a test keeps it under 200 ms).
-- **The save holds only what the GM changed**: the seed, the year and day, the GM's roster (ids, contracts, training), the **moves** he made (a trade or a signing: an id, a team and a day; about 30; older ones fall off after two seasons, when the league has since moved on), the standings of the year (30 packed numbers), the
-  owner's state, the finances and the career's tally.
-- **Tests:** a save and a load give the same league (every player of every team, compared field by field); a league replayed twice is the same; a **save version** in slot 0 (a change to a progression or AI rule bumps it and an older save is
-  refused with a message, not played into a different league).
+- **Slots and people.** A team has **15 slots** (three of each position; slot 0 to 4 the best of the team, 5 to 9 the second string, 10 to 14 the reserves). A slot holds a **person** for a run of years, then the next person:
+  person *k* of slot *(t, s)* starts the year the person *k - 1* leaves. Person 0 of each slot is a **row of the base league in ROM** (year 0); every later person is generated from a hash of (seed, t, s, k): his origin
+  (a rookie of 19 to 22 or a veteran of 24 to 31), his **peak ratings** and **peak age**, his name, his contracts. No person depends on any other, so nothing cascades and the league is the same whatever the order it is asked in.
+- **A person's ratings in a year are a closed form**: his peak ratings less a **growth gap** before his peak age and a **decline** after it (integer tables, a different rate for each rating: athleticism falls first, shooting last), plus a
+  small noise from a hash of (id, year) that does not accumulate. A **career** is the walk through his contracts (a contract of 1 to 5 years, then he stays on a new contract or leaves, or retires at his retirement age); the walk is a pure function too.
+- **The base league** (`rom/league.bin`, made by a build script with a fixed seed, like `art.py`, that step 1 adds): the **30 teams** (city, nickname, colours, emblem, arena, **talent**) and the **450 persons of year 0** in 15 bytes each (name ids 4,
+  height, age, six peak ratings, peak age, salary and years left): about 7 KB. The career's seed jitters each year-0 rating by -3 to +3 and makes every later person; a team's **talent** decides how good its new persons are (and wanders a little with the years), so teams rise and fall.
+- **Free agents and the draft class** of a year are also functions: the persons whose contracts end and who leave their slot that year (they sign somewhere else, in the game's terms: with a fresh person arriving in the slot of the team that would have bid), and 60 **prospects** from (seed, year, i). The computer's teams do not trade among themselves; their rosters turn over by the slots' own timelines.
+- **The save holds the entries.** An **entry** is a person the GM has touched (drafted, signed, traded for, traded away): his id (a slot person is (t, s, k), a prospect is (year, i)), his **team** now, **contract** (salary, years), the year it started, and his **training bonus** (3 bits for each of the six ratings). A person on an AI team that the GM took leaves his slot **that year**, and the slot's next person starts then; a person the GM trades to an AI team simply stands on its roster (above 15 the AI drops its weakest). **About 90 entries fit** (two numbers each); when the table is full, the oldest entries of players who are not
+  on the GM's team are folded back (the player goes back to his own run); retired players' entries are dropped. The GM's roster is the entries on his team and his team's own slots that he has not given away.
+- **No history is needed to load**: the league of any year is computed on demand (cached per team and year), so "next year" only changes the year. **Tests:** a person's career is the same however it is asked (year by year, backwards, or only at the end); a
+  save and a load give the same league (every roster, field by field); the payrolls, ages and rating distributions of the base league and of a league 10 and 20 years on stay in range; a **save version** in slot 0 (a change to a rule bumps it and an older save is refused with a message).
 
 | Slots | Contents |
 |---|---|
 | 0 | Format version |
 | 1 | Last initials entered |
-| 2-9 | Career: seed, team, year, day, difficulty, phase, owner patience, cash |
+| 2-9 | Career: seed, team and difficulty, year and day, phase, owner patience, cash |
 | 10-39 | Top 10 legacy scores, best first, 3 slots each: score, initials, 1 spare |
-| 40-69 | The GM's roster: player id, contract (salary and years) and training, 2 numbers each |
-| 70-129 | Moves: (id, team, day) in 2 numbers each, 30 moves |
-| 130-159 | The standings: 30 numbers of wins and losses |
-| 160-199 | Finances of the last seasons, awards and the legacy tally |
-| 200-255 | Reserved |
+| 40-74 | The season: the standings (30 teams of wins and losses, two to a number), the finances of the last seasons, awards and the legacy tally |
+| 75 | The number of entries |
+| 76-255 | The entries, two numbers each: **90** |
 
 ## 14. Asset budget
 
 | Asset | Budget |
 |---|---|
-| Code | TODO KB of the 64 KB limit (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: generation, the game sim, the AI, the screens |
-| Tiles | TODO of 1,024: the panels, the court, the font's own, the portraits' frames, the emblems |
-| Sprites | TODO (128 in OAM, 32 per line): the game night's ten dots and the ball, a portrait or two a screen |
-| ROM | TODO of 128 KB: `rom/league.bin` (the base league: about 6 KB), the name tables (about 6 KB), the team names and cities |
-| Songs / SFX | TODO |
+| Code | 20.8 KB of the 64 KB limit after step 1 (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
+| Tiles | none yet (the backdrop is one colour); the panels, the court, the portraits' frames and the emblems come with the art pass (of 1,024) |
+| Sprites | none yet (128 in OAM, 32 per line): later the game night's ten dots and the ball, a portrait or two a screen |
+| ROM | 15.0 KB of 128 KB after step 1: `league.bin` (7.0 KB: 30 teams, 450 people) and `names.bin` (8.0 KB: 369 first names, 739 last names, the cities and nicknames) |
+| Songs / SFX | the starter's two songs and seven effects until the audio pass |
 
 ## 15. Implementation plan
 
-1. **The league:** `league.py` (the base league and the name tables into ROM), the data model that reads it, the seed's jitter, the **replay of later years** (progression, draft classes, the computer's moves), the contracts, the save and
-   load (tests: save then load gives the same league; a replay twice gives the same league; the load time), a **league viewer** screen (a list of the teams, a team's roster). *Checks:* determinism, the rating distributions, the payrolls near the cap,
-   the save budget and the load time.
+1. **The league:** the build script for the base league and the name tables into ROM, the slots and persons (closed-form careers and ratings), the seed's jitter, the contracts, the entries and the save and
+   load (tests: a career is the same however it is asked; save then load gives the same league), a **league viewer** (new career: pick a team; the teams' list; a roster; "next year" to see the league age). *Checks:* determinism, the rating distributions
+   10 and 20 years on, the payrolls near the cap, the save budget.
 2. **The game night:** the possession simulation, the box score, the live view (the court, the scoreboard, the ticker); the calibration of the scoring and of the strength spread (section 5's targets).
 3. **The season:** the schedule, the standings, the playoffs, the hub and the screens' framework (lists, tables, panels, the hints), sim by day, week and to the end.
 4. **Roster and lineup:** the lineup and minutes, training focus, injuries, progression and ageing in the offseason, the player card.
@@ -230,10 +229,29 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 
 Each step: build it, run `node tools/check.js franchise` and `node tools/test.js franchise`, write its **Built** and **Results** notes under its number here, commit and push.
 
+### Built and results: step 1, the league
+
+**Built:** `league.py` (the base league and the name tables into `rom/league.bin` and `rom/names.bin`, a fixed seed), and in `code.js` the league as closed forms: `hash` and `stream`
+(a small xorshift), `person` generation (`gen`, `mkPerson`), `career` (the contracts and the year a person leaves), the ratings of a person in a year (a peak less a growth gap or a decline, athleticism
+falling first, plus a hashed noise that does not build up), the slot timelines (`extend`, `slotAt`), `roster`, `payroll`, `strength`, the draft class (`prospect`), the **entries** (two numbers each, 90 of
+them, from slot 76) with `saveEntries` and `loadEntries`, `newCareer` and `loadCareer`. The screens: the title (NEW CAREER, CONTINUE, RECORDS), the team list with a seed (X rolls it), the hub (ROSTER, LEAGUE, NEXT YEAR,
+RETIRE), the league table, a roster with two views of its columns (age, overall, pay, years; and the six ratings). RETIRE ends a career with a placeholder legacy score (100 a year and the team's strength) that goes into the
+top 10, so the initials and records frame is exercised. Tests: `01-flow.mjs` (the frame and its screens), `02-league.mjs` (the ROM, determinism, the seed, the shape of the league 0, 5, 10 and 20 years on for four seeds,
+careers, prospects, the entries and the save, the load time); the bot runs a 25-year career (a sweep finds no stuck run and every team keeps 15 players).
+
+**Decisions and what they cost.** (1) **No replay**: the first design replayed the offseasons from year 0, but then every move the GM made would have to be kept for ever, and dropping one would change
+the league; the slot model above has no history at all, and the 90 entries are the only state. (2) **The computer's teams do not trade among themselves** and do not react to the GM: their rosters turn over by the slots' own timelines.
+(3) **`MANUAL` is false**: the GM's team gets people in its empty slots for free, like the others, until steps 5 and 6 (contracts, the draft, free agency) give him the tools; then it is true and an empty slot stays empty until he fills it.
+(4) A **person in the GM's team that he traded away leaves his slot** that year; on an AI team the slot's next person starts at once. (5) Salaries (units of $0.25M) were tuned so a team's payroll is about $117M in
+year 0 and $105 to $125M on average later, but a few generated teams reach $200M or more in some years: step 5 gives the computer a payroll rule (it lets people go over the tax line).
+
+**Results:** the league of year 20 is worked out from nothing in 13 ms. Across seeds and years: 15 players a team, ages 19 to 38, an overall of 55 to 58 on average, 8 to 19 stars (80 and over), team strengths of 54 to 76 with a
+spread of 3 to 4. The save: 256 numbers hold the header (2 to 9), the top 10 (10 to 39), the season (40 to 74), the count (75) and 90 entries.
+
 ## 16. Open questions
 
 - The **length of a season** (58 games here: every team twice) against a real 82; a shorter season is faster to play, a longer one more real.
 - **Two-way depth**: whether to add player **traits** (a sharpshooter, a rim protector) beyond the six ratings, for variety.
 - **Real names**: fictional teams and generated players are the plan; no real franchise, league or player name goes in.
-- **More than one base league**: one table of 6 KB plus the seed's jitter is the plan; two or three base leagues (different eras of talent) would cost only 6 KB each if the jitter proves too samey.
+- **More than one base league**: one table of 7 KB plus the seed's jitter is the plan; two or three base leagues (different eras of talent) would cost only 7 KB each if the jitter proves too samey.
 - **Game night speed**: a live game takes about 40 seconds at the fastest pace of the play-by-play (skippable); is that right?

@@ -1,33 +1,32 @@
-// The bot for tools/devkit/sweep.mjs: a player that plays The Franchise: Basketball Edition by itself, so balance and stuck states can be
-// checked over many seeds without a person.
+// The bot for tools/devkit/sweep.mjs: a GM that plays The Franchise: Basketball Edition by itself, so stuck states can be checked over
+// many seeds without a person. In step 1 (the league) it runs a career year by year from the hub and retires at the end.
 //
-//   node tools/devkit/sweep.mjs franchise --seeds 8 --set skill=0,0.5
+//   node tools/devkit/sweep.mjs franchise --seeds 8
 //
-// The contract is in the header of tools/devkit/sweep.mjs: pad() gives the buttons each frame, finished() says the
-// run is over, result() gives the numbers to summarise (and `problems` for anything that must not happen).
-// Replace this with a bot for the real game: the same logic a rival or a hint would use, reading the cart's variables
-// through the probe in lib.mjs (add what it needs there). `skill` here is the chance (0 to 1) of dodging a block.
+// The contract is in the header of tools/devkit/sweep.mjs: pad() gives the buttons each frame, finished() says the run is over, result() gives
+// the numbers to summarise (and `problems` for anything that must not happen). It grows with the game: the lineup, the cap, the draft, the trades.
 import { M, newGame as boot } from './lib.mjs';
 
-export const defaults = { frames: 20000, seeds: 6, set: { skill: [0, 0.5] } };
+export const defaults = { frames: 3000, seeds: 6, set: { skill: [1] } };
 
-export const newGame = (seed) => boot(seed); // skipTitle: straight into play
+export const newGame = (seed) => boot(seed);          // skipTitle: straight into the hub of a career on team 0
 
-let lastFrame = 0;
-export const setup = () => { lastFrame = 0; };
+export const setup = () => {};
 
-/** Dodge the nearest block that is about to land on the player, with probability `skill` (decided once a block gets close). */
-const decided = new WeakMap();
-export function pad(vm, p, frame, opts) {
-  const near = p.blocks.find((b) => b.y > 120 && b.y < 215 && Math.abs(b.x - p.px) < 22 && !b.hit);
-  if (!near) return 0;
-  if (!decided.has(near)) decided.set(near, ((near.x * 7 + frame) % 100) / 100 < (opts.skill ?? 1));
-  if (!decided.get(near)) return 0;
-  return near.x >= p.px ? M('LEFT') : M('RIGHT');
+/** From the hub: NEXT YEAR (the third item) until year 24, then RETIRE; A on the screens that follow. Each press is held for one frame in four. */
+export function pad(vm, p, frame) {
+  if (frame % 4 !== 0) return 0;
+  if (p.state === 'over' || p.state === 'initials') return M(p.state === 'initials' ? 'START' : 'A');
+  if (p.state !== 'hub') return M('B');
+  const want = p.YEAR >= p.MAX_YEAR ? 3 : 2;
+  return p.hubSel === want ? M('A') : M('DOWN');
 }
 
-export const finished = (p) => p.state !== 'play';
+export const finished = (p) => p.state === 'records' || p.state === 'title';
 
 export function result(p) {
-  return { score: p.score, lives: p.lives, problems: p.state === 'play' ? ['still playing'] : [] };
+  const problems = [];
+  if (p.YEAR < p.MAX_YEAR) problems.push('the career ended before the last year');
+  for (let t = 0; t < p.NT; t++) if (p.roster(t, p.YEAR).length !== 15) problems.push(`team ${t} has ${p.roster(t, p.YEAR).length} players`);
+  return { year: p.YEAR, legacy: p.topTen()[0].score, strength: p.strength(p.ME, p.MAX_YEAR), problems };
 }

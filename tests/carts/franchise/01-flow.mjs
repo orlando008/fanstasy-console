@@ -1,67 +1,78 @@
-// The Franchise: Basketball Edition: the frame (title, play, pause, game over, initials, records, saves) and its sound cues.
-// One PASS/FAIL line for each behaviour, written as a sentence. Add a file for each step of the build (02-..., 03-...).
+// The Franchise: Basketball Edition: the frame (title, menus, pause, the career's end, initials, records, saves) and its sound cues.
 import { newGame, M, sfxLog, musicLog } from './lib.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 
-// 1. The title and its menu.
+// 1. The title and its menu: no career yet, so NEW CAREER and RECORDS.
 {
   const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3);
   ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
+  ok(!p.hasCareer(), 'with no career saved the menu has NEW CAREER and RECORDS');
   vm.press('DOWN'); ok(p.titleSel === 1, 'DOWN moves down the menu'); vm.press('UP'); ok(p.titleSel === 0, 'and UP back');
   vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
   sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
+  ok(p.state === 'new', 'NEW CAREER opens the team list');
+  ok(p.newRows.length === 30 && p.newRows.every((r, i, a) => !i || a[i - 1].ovr >= r.ovr), 'with the 30 teams, the best first');
+  const seed = p.newSeed; vm.press('X'); ok(p.newSeed !== seed, 'X rolls a new seed');
+  vm.press('B'); ok(p.state === 'title', 'B goes back');
+  vm.press('A'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); vm.run(2);
+  ok(p.state === 'hub' && p.hasCareer() && p.playing === p.SONG.play, 'A picks the third team and the career begins, with the game song');
+  ok(p.ME === p.newRows[2].t && p.SEED === p.newSeed, 'it is the team chosen, with the seed shown', `${p.ME} ${p.SEED}`);
 }
 
-// 2. Playing: movement, blocks, a hit costs a life.
+// 2. The hub: the rosters, the league, the years.
 {
-  const vm = newGame(1), p = vm.probe(), x0 = p.px;
-  vm.run(10, M('LEFT')); ok(p.px < x0, 'LEFT moves the player');
-  vm.run(20, M('RIGHT')); ok(p.px > x0 - 30, 'and RIGHT');
-  const lives = p.lives; sfxLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.lives === lives - 1, 'a block that lands on the player costs a life');
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch >= 6), 'with the hit sound, on an effects channel (6 or 7)');
+  const vm = newGame(2), p = vm.probe(); vm.run(3);
+  ok(p.state === 'hub' && p.YEAR === 0, 'skipTitle lands in the hub, in year 0');
+  vm.press('A'); ok(p.state === 'team' && p.rows.length === 15, 'ROSTER shows the 15 players');
+  ok(p.rows.every((r, i, a) => !i || a[i - 1].o >= r.o), 'best first');
+  vm.press('RIGHT'); ok(p.view === 1, 'RIGHT shows the ratings'); vm.press('LEFT'); ok(p.view === 0, 'and back');
+  for (let i = 0; i < 4; i++) vm.press('DOWN'); ok(p.sel === 4, 'DOWN moves the selection down the roster');
+  vm.press('B'); ok(p.state === 'hub', 'B goes back to the hub');
+  vm.press('DOWN'); vm.press('A'); ok(p.state === 'league' && p.rows.length === 30, 'LEAGUE lists the 30 teams');
+  ok(p.rows[p.sel].t === p.ME, 'with the GM\'s team selected');
+  vm.press('A'); ok(p.state === 'team' && p.rows.length > 0, 'A opens a team'); vm.press('B'); ok(p.state === 'league', 'and B comes back to the league');
+  vm.press('B'); vm.press('DOWN'); vm.press('A');
+  ok(p.YEAR === 1 && p.dget(p.S.year) === 1, 'NEXT YEAR moves on a year, and saves it');
 }
 
 // 3. Pause.
 {
-  const vm = newGame(2), p = vm.probe(); vm.run(30);
+  const vm = newGame(2), p = vm.probe(); vm.run(3);
   vm.press('START'); ok(p.paused, 'START pauses');
-  const y = p.blocks.map((b) => b.y).join(); vm.run(30); ok(p.blocks.map((b) => b.y).join() === y, 'and the game stands still');
-  const t = p.timer; vm.press('DOWN'); vm.press('A'); vm.run(2);
-  ok(!p.paused && p.score === 0 && p.timer < t, 'RESTART starts the game again');
-  vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
+  vm.press('DOWN'); vm.press('A'); vm.run(2); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
+  ok(p.hasCareer(), 'the career is saved');
+  vm.press('A'); vm.run(2);
+  ok(p.state === 'hub' && p.YEAR === 0, 'CONTINUE brings the career back');
 }
 
-// 4. Game over, the top 10 and initials.
+// 4. The career's end, the top 10 and initials.
 {
-  const vm = newGame(3), p = vm.probe(); p.score = 120; p.lives = 1; musicLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.state === 'over' && p.rank === 0, 'the last life ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
-  ok(musicLog(vm).includes(-1), 'the game song stops');
-  vm.run(70); vm.press('A');
-  ok(p.state === 'initials', 'A asks for initials');
-  vm.run(25); // START is ignored for a moment, so a press from the game does not skip it
+  const vm = newGame(3), p = vm.probe(); vm.run(3); p.setYear(7); musicLog(vm);
+  while (p.hubSel !== 3) vm.press('DOWN');
+  vm.press('A');
+  ok(p.state === 'over' && p.rank === 0 && p.score >= 700, 'RETIRE ends the career with a legacy score that makes the top 10', `${p.score} rank ${p.rank}`);
+  ok(musicLog(vm).includes(-1), 'the music stops');
+  vm.run(70); vm.press('A'); ok(p.state === 'initials', 'A asks for initials');
+  vm.run(25);
   vm.press('UP'); vm.press('RIGHT'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT'); vm.press('DOWN'); vm.press('START');
   ok(p.state === 'records', 'START saves them and shows the records');
   const e = p.topTen()[0];
-  ok(e.score === 120 && e.initials === 'BC9', 'the score is saved with the initials as typed (UP is the next letter, DOWN from A wraps to 9)', `${e.score} ${e.initials}`);
-  ok(vm.m.save[p.TOP_SLOT] === 120, 'in the save slots');
+  ok(e.initials === 'BC9' && e.score === p.score, 'the score is saved with the initials as typed', `${e.score} ${e.initials}`);
 }
 {
   const vm = newGame(4), p = vm.probe();
-  const list = [50, 20, 90, 10, 70, 30, 100, 60, 40, 80].map((s) => p.insertTop({ score: s, initials: 'AAA' }));
+  [50, 20, 90, 10, 70, 30, 100, 60, 40, 80].forEach((s) => p.insertTop({ score: s, initials: 'AAA' }));
   ok(p.topTen().map((e) => e.score).join() === '100,90,80,70,60,50,40,30,20,10', 'the top 10 is kept best first');
   ok(p.insertTop({ score: 5, initials: 'ZZZ' }) === -1 && p.insertTop({ score: 0, initials: 'ZZZ' }) === -1, 'a score below the tenth, or nothing, does not get in');
 }
 
-// 5. Frames are quick.
+// 5. Frames are quick, even on the busiest screen.
 {
-  const vm = newGame(5), times = [];
-  for (let i = 0; i < 600; i++) { vm.step(i % 40 < 20 ? M('LEFT') : M('RIGHT')); times.push(vm.m.stats.cpu); }
+  const vm = newGame(5), times = [], p = vm.probe(); vm.run(3);
+  vm.press('DOWN'); vm.press('A');                                       // the league list: 30 teams' strengths and payrolls
+  for (let i = 0; i < 600; i++) { vm.step(i % 40 < 20 ? M('DOWN') : M('UP')); times.push(vm.m.stats.cpu); }
   times.sort((a, b) => a - b); const p99 = times[Math.floor(times.length * 0.99)];
   ok(p99 < 8 * (process.env.CI ? 3 : 1), 'frames are quick', `99th percentile ${p99.toFixed(2)} ms`);
 }

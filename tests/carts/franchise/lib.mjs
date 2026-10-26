@@ -8,11 +8,14 @@ export const CART = fileURLToPath(new URL('../../../carts/franchise.nova', impor
 // Add to this list as the game grows.
 const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
-  get score() { return score; }, set score(v) { score = v; }, get lives() { return lives; }, set lives(v) { lives = v; },
-  get blocks() { return blocks; }, get px() { return px; }, get ART() { return ART; }, mget: (x, y) => mget(x, y), get rank() { return rank; }, get initials() { return initials; },
-  get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
-  SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
-}));`;
+  get score() { return score; }, get rank() { return rank; }, get initials() { return initials; }, get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
+  get hubSel() { return hubSel; }, get sel() { return sel; }, get rows() { return rows; }, get view() { return view; }, get newRows() { return newRows; }, get newSeed() { return newSeed; },
+  get SEED() { return SEED; }, set SEED(v) { SEED = v; resetLeague(); }, get ME() { return ME; }, set ME(v) { ME = v; resetLeague(); }, get YEAR() { return YEAR; }, set YEAR(v) { YEAR = v; },
+  get ART() { return ART; }, dget: (i) => dget(i), dset: (i, v) => dset(i, v), SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
+  NT, SL, POS, RN, CAP, TAX, FLOOR, BASE_YEAR, MAX_YEAR, MANUAL, ENT, hash, stream, names, team, talentAt, overall, salaryFor, resetLeague,
+  LGB, gen, mkPerson, slotAt, personById, prospect, ratings, baseR, ovr, age, contractAt, roster, payroll, strength, career, pid,
+  setEntry, dropEntry, saveEntries, loadEntries, hasCareer, newCareer, loadCareer, setYear, teamRows, startCareer, S, ENT_COUNT, ENT_BASE, ENT_MAX,
+}));`;;
 
 /** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */
 export const newGame = (seed = 1, { title = false, save = null } = {}) =>
