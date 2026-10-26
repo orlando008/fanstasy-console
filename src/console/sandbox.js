@@ -23,9 +23,10 @@ export class CartError extends Error {
 /**
  * Compile and run the cart's top level with the given API object. Returns the
  * lifecycle hooks it defined. Throws CartError with a source line on failure.
+ * ownSource (the dev tools' harness): the cart's own code, when `source` has a test's hooks appended; only it counts against the limit.
  */
-export function compileCart(source, api) {
-  const bytes = codeBytes(source);
+export function compileCart(source, api, ownSource = source) {
+  const bytes = codeBytes(ownSource);
   if (bytes > CODE_LIMIT) {
     throw new CartError(`Cart code is ${bytes} bytes; the limit is ${CODE_LIMIT}`);
   }
