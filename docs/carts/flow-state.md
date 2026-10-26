@@ -123,8 +123,8 @@ BG2 affine river (a water texture from the art kit, drawn once and scrolled), BG
 | Asset | Budget |
 |---|---|
 | Code | 14.6 KB of the 64 KB limit (after step 2) (`node tools/check.js flow-state`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
-| Tiles | TODO of 1,024 |
-| Sprites | TODO (128 in OAM, 32 per line) |
+| Tiles | 276 of 1,024 (the template art; step 3 adds the river and the frog) |
+| Sprites | none yet (the pads and the frog are drawn shapes until step 3; 128 in OAM, 32 per line) |
 | ROM | the charts, 3.6 KB for the six pieces (after step 2), 1,042 pads in all (about 2.5 KB a piece of melody notes) |
 | Songs / SFX | 7 songs (the Prelude, Scale Run and five pieces), 29 of 64 patterns, 7 effects (step 6 adds more), sample RAM 14 of 32 KB |
 
