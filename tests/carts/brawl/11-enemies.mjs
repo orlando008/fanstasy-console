@@ -34,7 +34,7 @@ const mk = (p, x, { v = 0, knife = false, ai = 'fight', hp = 20 } = {}) => { con
   const vm = newGame(1), p = vm.probe(); vm.run(2);
   ok(counts(p.STAGES[0]).join() === '0,0,0,1,0', 'the street has one, in the last wave before the boss');
   ok(counts(p.STAGES[1]).join() === '0,1,1,2,0', 'the docks have more, from the second wave');
-  ok(counts(p.STAGES[2]).join() === '1,1,2,2,1', 'the rooftop a lot, and one with the boss');
+  ok(counts(p.STAGES[2]).join() === '1,1,2,2,2', 'the rooftop a lot, and two with the boss');
   p.loadStage(1); p.enemies = []; p.wave = 3; p.cam = 768; p.locked = false; vm.run(4);
   const ks = p.enemies.filter((e) => e.type === 'knife');
   ok(p.locked && p.enemies.length === 5 && ks.length === 2, 'a wave with k = 2 brings 2 Slashers among its 5 (and a Lasher)', `${ks.length} of ${p.enemies.length}`);
@@ -99,9 +99,9 @@ const mk = (p, x, { v = 0, knife = false, ai = 'fight', hp = 20 } = {}) => { con
   ok(max === 2, 'Slashers and thugs share the same two turns at a time', `${max}`);
 }
 
-// 4. The rooftop's boss wave has a Slasher with its thugs.
+// 4. The rooftop's boss wave has two Slashers with KINGPIN (the Fire-breather's palette is the bosses').
 {
   const vm = newGame(1), p = vm.probe(); vm.run(2); p.loadStage(2); vm.run(2); p.enemies = []; p.props = []; p.wave = p.LEVEL.length - 1; p.cam = 768; p.player.x = 800; p.locked = false; vm.run(4);
-  ok(p.enemies.filter((e) => e.kind === 'thug' && e.type === 'knife').length === 1 && p.enemies.filter((e) => e.kind === 'boss').length === 1, 'the rooftop\'s last wave: KINGPIN, a Slasher and a thug', `${p.enemies.map((e) => e.kind + e.type).join()}`);
+  ok(p.enemies.filter((e) => e.kind === 'thug' && e.type === 'knife').length === 2 && p.enemies.filter((e) => e.kind === 'boss').length === 1, 'the rooftop\'s last wave: KINGPIN and two Slashers', `${p.enemies.map((e) => e.kind + e.type).join()}`);
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

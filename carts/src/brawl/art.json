@@ -233,6 +233,86 @@
     "trim1": 15
    }
   },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "hair0": 5,
+    "hair1": 6,
+    "hair2": 7,
+    "line": 1,
+    "pants0": 11,
+    "pants1": 12,
+    "pants2": 13,
+    "shirt0": 8,
+    "shirt1": 9,
+    "shirt2": 10,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4,
+    "trim0": 14,
+    "trim1": 15
+   }
+  },
+  "spr4": {
+   "base": 192,
+   "colors": {
+    "hair0": 5,
+    "hair1": 6,
+    "hair2": 7,
+    "line": 1,
+    "pants0": 11,
+    "pants1": 12,
+    "pants2": 13,
+    "shirt0": 8,
+    "shirt1": 9,
+    "shirt2": 10,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4,
+    "trim0": 14,
+    "trim1": 15
+   }
+  },
+  "spr5": {
+   "base": 208,
+   "colors": {
+    "hair0": 5,
+    "hair1": 6,
+    "hair2": 7,
+    "line": 1,
+    "pants0": 11,
+    "pants1": 12,
+    "pants2": 13,
+    "shirt0": 8,
+    "shirt1": 9,
+    "shirt2": 10,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4,
+    "trim0": 14,
+    "trim1": 15
+   }
+  },
+  "spr6": {
+   "base": 224,
+   "colors": {
+    "hair0": 5,
+    "hair1": 6,
+    "hair2": 7,
+    "line": 1,
+    "pants0": 11,
+    "pants1": 12,
+    "pants2": 13,
+    "shirt0": 8,
+    "shirt1": 9,
+    "shirt2": 10,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4,
+    "trim0": 14,
+    "trim1": 15
+   }
+  },
   "spr7": {
    "base": 240,
    "colors": {
@@ -242,7 +322,10 @@
   }
  },
  "rom": [
-  "f"
+  "b",
+  "bhands",
+  "f",
+  "hands"
  ],
  "scenes": {
   "city": {
@@ -311,9 +394,16 @@
  },
  "sprites": {},
  "streams": {
+  "b": {
+   "base": 768,
+   "frames": 42,
+   "rom": true,
+   "rows": 8,
+   "slots": 1
+  },
   "f": {
    "base": 448,
-   "frames": 71,
+   "frames": 138,
    "rom": true,
    "rows": 4,
    "slots": 7

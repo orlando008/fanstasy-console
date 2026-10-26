@@ -10,7 +10,7 @@ const mk = (p, x, { ai = 'fight', hp = 28 } = {}) => { const t = p.mkFighter('th
   const vm = newGame(1), p = vm.probe(); vm.run(2);
   ok(p.ROLE.fire.hp === 1.4 && p.ROLE.fire.pts === 180 && p.ROLE.fire.speed === 0.9 && p.ROLE.fire.reach[0] >= 55 && p.ROLE.fire.reach[1] === 100, 'a Fire-breather has 1.4 times a thug\'s health, walks at 0.9 and is worth 180; he breathes from 55 to 100 px');
   const f = (s) => s.waves.map((w) => w.f || 0).join();
-  ok(f(p.STAGES[0]) === '0,0,0,0,0' && f(p.STAGES[1]) === '0,1,0,0,0' && f(p.STAGES[2]) === '1,1,0,0,1', 'none in the street; one in the docks\' second wave; the rooftop has them in the first two waves and with the boss', `${f(p.STAGES[1])} ${f(p.STAGES[2])}`);
+  ok(f(p.STAGES[0]) === '0,0,0,0,0' && f(p.STAGES[1]) === '0,1,0,0,0' && f(p.STAGES[2]) === '1,1,0,0,0', 'none in the street; one in the docks\' second wave; the rooftop has them in the first two waves (and none with the boss: the boss has palette 6)', `${f(p.STAGES[1])} ${f(p.STAGES[2])}`);
   ok(p.STAGES.every((s) => s.waves.every((w) => (w.k || 0) + (w.c || 0) + (w.l || 0) + (w.b || 0) + (w.f || 0) <= w.n)), 'no wave has more special enemies than enemies');
   p.loadStage(1); p.enemies = []; p.props = []; p.wave = 1; p.cam = 300; p.locked = false; vm.run(4);
   const e = p.enemies.find((x) => x.type === 'fire');
