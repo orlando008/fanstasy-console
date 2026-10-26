@@ -122,10 +122,10 @@ BG2 affine river (a water texture from the art kit, drawn once and scrolled), BG
 
 | Asset | Budget |
 |---|---|
-| Code | TODO of the 64 KB limit (`node tools/check.js flow-state`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Code | 14.6 KB of the 64 KB limit (after step 1) (`node tools/check.js flow-state`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
 | Tiles | TODO of 1,024 |
 | Sprites | TODO (128 in OAM, 32 per line) |
-| ROM | the charts, TODO KB (about 2.5 KB a piece of melody notes) |
+| ROM | the charts, 0.4 KB for the test piece (after step 1), TODO KB (about 2.5 KB a piece of melody notes) |
 | Songs / SFX | 6 songs, TODO patterns of 64, TODO effects, sample RAM TODO of 32 KB |
 
 ## 15. Implementation plan
@@ -138,6 +138,10 @@ BG2 affine river (a water texture from the art kit, drawn once and scrolled), BG
 6. **Audio pass:** the effects (plink, splash, chimes, swell, fanfare), the mix against the music.
 7. **Balance:** the bot at several accuracies over every piece and difficulty (a perfect run should be S and in flow state most of the time; one 10 frames out should not pass a hard chart), the charts' density.
 8. **Polish and release:** the label, the PNG cart, the Library (`node tools/release.js flow-state`), a README row.
+
+**Step 1, built:** `pieces.py` (a `Piece` of melody and bass, `compile_piece` into a song, `charts_blob` into `rom/charts.bin`) with one test piece, SCALE RUN (speed 8, 16 bars of C major); `audio.py` writes the charts as a side effect, so the packed cart check covers them. `code.js`: `loadChart`, the count-in (120 frames) then `music(song, pos)` so the note on row r sounds r x speed frames later, `tap()` (the nearest pad within 10 frames, else a stray), the flow, multiplier (hysteresis at 80), score, grades, pause (stops the music, resumes at the start of the pattern after a 90-frame count-in), results and records in the save (v2). Pads and the frog are plain circles for now. Tests: `01-flow` (screens, music start, pause, a whole piece), `02-rules` (every number of section 5), `03-art` (placeholder). Bot: `bot.mjs` with a timing error `sd` in frames and a `skip` rate.
+
+**Step 1, results:** a perfect player gets all 72 perfect, S, in flow state. Sweep (6 seeds) of the normal chart: sd 0 is S (26,600 points), sd 3 is A or S (about 24,700), sd 8 is C or D (about 12,800, 66% accuracy). The test piece's levels pass `loud.mjs`.
 
 Each step: build it, run `node tools/check.js flow-state` and `node tools/test.js flow-state`, write its **Built** and **Results** notes under its number here, commit and push.
 

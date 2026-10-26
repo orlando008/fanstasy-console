@@ -1,6 +1,6 @@
 # Flow State's audio: carts/src/flow-state/audio.json.
 #   python3 carts/src/flow-state/audio.py carts/src/flow-state/audio.json
-# Two songs (0 the title, 1 the game) and the effects numbered as SFX in code.js. Written with the song
+# Songs: 0 the title, then the pieces (pieces.py: the notes; this script compiles them into songs and into rom/charts.bin) and the effects numbered as SFX in code.js. Written with the song
 # toolkit (tools/devkit/music/kit.py; its header explains the bar() arguments). Rules (playbook section 5):
 # leads are quiet, with no vibrato; songs use channels 0 to 5 and effects 6 and 7 (code.js takes turns); the drums are
 # samples on channel 5. The new sound chip (SPEC 5): sampled instruments from samples.py (a.voice) and an echo per song.
@@ -9,12 +9,13 @@
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/music'))
 from kit import *
+from pieces import *
 
 a = Audio(chip=2)
 a.sample(kick()); a.sample(snare()); a.sample(hat(0.05, 70, 3)); a.sample(hat(0.15, 22, 5))
 
 a.voice('LEAD', 'flute', 5, -0.15)
-a.voice('BASS', 'bass', 12)
+a.voice('BASS', 'bass', 14)
 a.instrument('HAT', 'sample', 0, 0, 15, 0, 4, pan=0.25, sample=2)
 a.instrument('OHAT', 'sample', 0, 0, 15, 0, 4, pan=0.25, sample=3)
 a.voice('PAD', 'strings', 5, 0.2)
@@ -35,12 +36,9 @@ bars(S, 16, CH, None, drums='soft', bass='long', upper='pad', counter='1 3 5 8 5
 bars(S, 16, CH, ['A3 - C4 - E4 - A4 -', 'A4 - G4 - F4 - C4 -', 'E4 - G4 - C5 - G4 -', 'D4 - G4 - B4 - G4 -'], li='SOFTHORN', drums='drive', bass='1 - - - 5 - - -', upper='arp1')
 S.finish()
 
-# --- 1 The game: C major, 128 bpm ---
-S = a.song(Key('C', MAJOR), 7, echo=(5, 4, 5, 9))
-CH = ['1', '5', '6', '4']
-bars(S, 16, CH, ['C4 - E4 - G4 - E4 -', 'D4 - G4 - B4 - G4 -', 'E4 - A4 - C5 - A4 -', 'C4 - F4 - A4 - F4 -'], li='LEAD', drums='basic', bass='1 - 5 - 1 - 5 -', upper='arp')
-bars(S, 16, CH, ['G4 - E4 - C4 - E4 -', 'B4 - G4 - D4 - G4 -', 'A4 - C5 - E5 - C5 -', 'A4 - F4 - C4 - F4 .'], li='SOFTHORN', drums='basic', bass='1 - 5 - 1 - 5 -', upper='arp1')
-S.finish()
+# --- The pieces (song 1 and on): the pads and the sound from the same notes ---
+a.voice('PLUCK', 'pluck', 15, -0.1)
+for pc in PIECES: compile_piece(a, pc, 'PLUCK', 'BASS')
 
 # --- Effects: the order is the SFX table in code.js ---
 a.effect(1, ['E-6', 'OFF'], 'BLIP')                                # 0 menu move
@@ -51,4 +49,6 @@ a.effect(6, ['G-4', 'E-4', 'C-4', None, 'D-4', None, 'C-4', 'OFF'], 'FANFARE')  
 a.effect(1, ['C-6', 'G-6', 'OFF'], 'BLIP')                         # 5 a point
 a.effect(4, ['C-5', 'E-5', 'G-5', 'C-6', None, 'G-5', 'C-6', 'OFF'], 'FANFARE')  # 6 a record
 
-a.write(sys.argv[1], songs=2)
+a.write(sys.argv[1], songs=1 + len(PIECES))
+os.makedirs(os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), 'rom'), exist_ok=True)
+open(os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), 'rom', 'charts.bin'), 'wb').write(charts_blob(PIECES))   # the charts, from the same notes

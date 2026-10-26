@@ -1,33 +1,42 @@
-// The bot for tools/devkit/sweep.mjs: a player that plays Flow State by itself, so balance and stuck states can be
+// The bot for tools/devkit/sweep.mjs: a player that taps Flow State's pads by itself, with a timing error, so the windows, the flow and the grades can be
 // checked over many seeds without a person.
 //
-//   node tools/devkit/sweep.mjs flow-state --seeds 8 --set skill=0,0.5
+//   node tools/devkit/sweep.mjs flow-state --seeds 6 --set sd=0,2,4
 //
-// The contract is in the header of tools/devkit/sweep.mjs: pad() gives the buttons each frame, finished() says the
-// run is over, result() gives the numbers to summarise (and `problems` for anything that must not happen).
-// Replace this with a bot for the real game: the same logic a rival or a hint would use, reading the cart's variables
-// through the probe in lib.mjs (add what it needs there). `skill` here is the chance (0 to 1) of dodging a block.
+// The contract is in the header of tools/devkit/sweep.mjs. Options: sd, the standard deviation of the bot's timing error in frames (0 is a perfect player;
+// 3 or 4 is a good human, 8 a poor one); skip, the share of pads it never taps (0 to 1); piece and diff, what to play.
 import { M, newGame as boot } from './lib.mjs';
 
-export const defaults = { frames: 20000, seeds: 6, set: { skill: [0, 0.5] } };
+export const defaults = { frames: 12000, seeds: 6, set: { sd: [0, 3, 8] } };
 
-export const newGame = (seed) => boot(seed); // skipTitle: straight into play
+let startOpts = {}, runSeed = 1;
+export const newGame = (seed, opts = {}) => { startOpts = opts; runSeed = seed; const vm = boot(seed); return vm; };
+export const setup = (vm, p, opts = {}) => { done = new WeakSet(); if (opts.piece !== undefined || opts.diff !== undefined) p.startPiece(opts.piece ?? 0, opts.diff ?? 1); };
 
-let lastFrame = 0;
-export const setup = () => { lastFrame = 0; };
+/** A number from -1 to 1 that is the same every time for the same pad and seed (the sum of three uniform hashes: roughly a bell). */
+const uniform = (f, seed, n) => { let x = (f * 73856093 + seed * 19349663 + n * 83492791) >>> 0; x ^= x >>> 15; x = Math.imul(x, 0x2c1b3c6d) >>> 0; x ^= x >>> 12; return (x >>> 0) / 4294967296; };
+const noise = (f, seed, k) => (uniform(f, seed, k) + uniform(f, seed, k + 1) + uniform(f, seed, k + 2) - 1.5) / 0.75;
 
-/** Dodge the nearest block that is about to land on the player, with probability `skill` (decided once a block gets close). */
-const decided = new WeakMap();
-export function pad(vm, p, frame, opts) {
-  const near = p.blocks.find((b) => b.y > 120 && b.y < 215 && Math.abs(b.x - p.px) < 22 && !b.hit);
-  if (!near) return 0;
-  if (!decided.has(near)) decided.set(near, ((near.x * 7 + frame) % 100) / 100 < (opts.skill ?? 1));
-  if (!decided.get(near)) return 0;
-  return near.x >= p.px ? M('LEFT') : M('RIGHT');
+let done = new WeakSet();
+export function pad(vm, p, frame, opts = {}) {
+  if (p.state === 'title') return M('A');
+  if (p.state === 'results') return 0;
+  if (p.state !== 'play') return 0;
+  const sd = opts.sd ?? 0, skip = opts.skip ?? 0, seed = opts.seed ?? runSeed;
+  for (const n of p.notes) {
+    if (n.r || done.has(n)) continue;
+    if (uniform(n.f, seed, 7) < skip) { done.add(n); continue; }
+    if (p.st >= n.f + Math.round(noise(n.f, seed, 1) * sd * 1.2)) { done.add(n); return M('A'); }
+    break;
+  }
+  return 0;
 }
 
-export const finished = (p) => p.state !== 'play';
+export const finished = (p) => p.state === 'results';
 
 export function result(p) {
-  return { score: p.score, lives: p.lives, problems: p.state === 'play' ? ['still playing'] : [] };
+  const problems = [];
+  const total = p.counts.reduce((a, b) => a + b, 0);
+  if (total !== p.notes.filter((n) => n.r !== 5).length) problems.push('a pad was not judged');
+  return { score: p.score, grade: p.gradeOf(p.accuracy()), accuracy: Math.round(p.accuracy() * 100), perfect: p.counts[0], good: p.counts[1], ok: p.counts[2], miss: p.counts[3], combo: p.bestCombo, problems };
 }

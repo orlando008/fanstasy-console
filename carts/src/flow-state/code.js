@@ -1,11 +1,10 @@
-// Flow State
-// Scaffolded by tools/new-cart.js. A tiny working game (dodge the falling blocks) around everything every cart
-// needs: a title, play, pause, game over, a saved top 10 with initials, a records screen, sound and music cues,
-// a skipTitle hook and save slots. Replace the play part, keep the frame. See docs/dev/playbook.md.
+// Flow State: a frog on a river of lily pads, a one-button rhythm game to Bach and Beethoven (docs/carts/flow-state.md).
+// The music is the clock: a song's row lasts `speed` frames, so a chart (rom/charts.bin, made from the same notes as the song) is in
+// time with it to the frame. `tm` counts frames of song time from the start of the piece; the music starts when it reaches `musicAt`.
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
-const SHADOW = 1, PANEL = 3, RED = 6, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14, WHITE = 15;
+const SHADOW = 1, PANEL = 3, RED = 6, ORANGE = 9, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14, WHITE = 15;
 
 // --- Art: made by art.py (tiles.txt, palette.txt, map.txt). The block below is rewritten each time it runs. ---
 
@@ -30,7 +29,7 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // so they never cut into the music and two can sound at once.
 
 const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
-const SONG = { title: 0, play: 1 };
+const SONG = { title: 0 };                                           // the pieces are songs 1 and on
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -44,27 +43,9 @@ function play(song) {
 
 // --- Save slots (SPEC 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
-const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-
-function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)) }; }
-function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); }
-const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
-
-/** Put a score into the top 10 if it makes it. Returns its row, or -1. */
-function insertTop(e) {
-  if (!e.score) return -1;
-  const list = topTen(), at = list.findIndex((x) => e.score > x.score);
-  if (at < 0) return -1;
-  list.splice(at, 0, e);
-  for (let i = at; i < TOP_N; i++) writeEntry(i, list[i]);
-  return at;
-}
-/** Three characters, 8 bits each. */
-const packInitials = (str) => (str.charCodeAt(0) << 16) | (str.charCodeAt(1) << 8) | str.charCodeAt(2);
-const unpackInitials = (v) => (v ? String.fromCharCode((v >> 16) & 255, (v >> 8) & 255, v & 255) : '---');
-const lastInitials = () => (dget(INITIALS_SLOT) ? unpackInitials(dget(INITIALS_SLOT)) : 'AAA');
+const VERSION_SLOT = 0, SAVE_VERSION = 2, LAG_SLOT = 1, OPEN_SLOT = 2, BEST_SLOT = 10;
+const DIFF_NAMES = ['EASY', 'NORMAL', 'HARD'];
+const bestSlot = (piece, diff) => BEST_SLOT + (piece * 3 + diff) * 2;            // the score; the grade (0 none, 1 D to 5 S) and the best combo
 
 // --- Input: edge-triggered presses (btnp repeats; menus want one press) ---
 
@@ -72,34 +53,78 @@ let inputMask = 0, prevMask = 0;
 const BUTTONS = [UP, DOWN, LEFT, RIGHT, A, B, X, Y, L, R, START, SELECT];
 function readPad() { let m = 0; for (const b of BUTTONS) if (btn(b)) m |= 1 << b; return m; }
 const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) === 0;
+const tapped = () => pressed(A) || pressed(B) || pressed(X) || pressed(Y) || pressed(L) || pressed(R);
+
+// --- The rules (spec section 5) ---
+
+const LOOKAHEAD = 110, LEAD = 120, RESUME_LEAD = 90, WIN = [3, 6, 10], FLOW_START = 30;     // frames: how far ahead a pad shows, the count-in, the count-in after a pause, the windows
+const JUDGE = [{ name: 'PERFECT', flow: 5, pts: 100 }, { name: 'GOOD', flow: 3, pts: 70 }, { name: 'OK', flow: 1, pts: 40 }];
+const MISS_FLOW = -12, STRAY_FLOW = -2, GRADES = ['D', 'C', 'B', 'A', 'S'];
+
+/** The chart of a piece for a difficulty, from the ROM: { speed, notes: [{ f (the frame), pitch, dur (rows), r (0 waiting, 1 to 3 the judgement, 4 missed, 5 skipped) }] }. */
+function loadChart(i, diff) {
+  const b = rom('charts'), off = b[1 + 2 * i] | (b[2 + 2 * i] << 8), n = b[off + 2] | (b[off + 3] << 8), notes = [];
+  for (let k = 0; k < n; k++) {
+    const o = off + 4 + 4 * k, fl = b[o + 3];
+    if (fl & (1 << diff)) notes.push({ f: b[o] | (b[o + 1] << 8), pitch: b[o + 2], dur: fl >> 3, r: 0 });
+  }
+  return { speed: b[off], notes };
+}
+const multiplier = () => (inFlow ? 4 : flow >= 70 ? 3 : flow >= 40 ? 2 : 1);
+const flowName = () => ['CALM', 'FLOWING', 'DEEP', 'FLOW STATE'][multiplier() - 1];
+
+/** A pad hit with judgement g (0 perfect, 1 good, 2 ok): the points at the multiplier the flow gives now, then the flow moves. */
+function hit(n, g) {
+  n.r = g + 1; combo++; bestCombo = Math.max(bestCombo, combo); counts[g]++;
+  score += JUDGE[g].pts * multiplier();
+  setFlow(flow + JUDGE[g].flow);
+  show(JUDGE[g].name, g === 0 ? GOLD : g === 1 ? GREEN : CYAN); fx(SFX.point);
+}
+function miss(n) { n.r = 4; combo = 0; counts[3]++; setFlow(flow + MISS_FLOW); show('MISS', RED); fx(SFX.hit); }
+function setFlow(v) { flow = clamp(v, 0, 100); if (flow >= 90) inFlow = true; else if (flow < 80) inFlow = false; }
+function show(text, c) { judgeText = text; judgeColour = c; judgeAt = clock; }
+
+/** A tap at song time st: the nearest pad not hit yet within the widest window is judged; a tap with no pad near is a stray. */
+function tap(st) {
+  let best = null;
+  for (const n of notes) if (!n.r && Math.abs(n.f - st) <= WIN[2] && (!best || Math.abs(n.f - st) < Math.abs(best.f - st))) best = n;
+  hopAt = clock;
+  if (!best) { setFlow(flow + STRAY_FLOW); return; }
+  const d = Math.abs(best.f - st);
+  hit(best, d <= WIN[0] ? 0 : d <= WIN[1] ? 1 : 2);
+}
+const accuracy = () => { const n = counts[0] + counts[1] + counts[2] + counts[3]; return n ? (counts[0] + 0.7 * counts[1] + 0.4 * counts[2]) / n : 0; };
+const gradeOf = (acc) => (acc >= 0.95 ? 4 : acc >= 0.85 ? 3 : acc >= 0.7 ? 2 : acc >= 0.5 ? 1 : 0);
 
 // --- State ---
 
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
-let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
-let score = 0, lives = 3, px = 120, blocks = [];
-const HOME = { x: 120 };
+let titleSel = 0, pauseSel = 0;
+let piece = 0, diff = 1, notes = [], speed = 8, tm = 0, musicAt = 0, started = false, lag = 0;
+let score = 0, combo = 0, bestCombo = 0, flow = FLOW_START, inFlow = false, counts = [0, 0, 0, 0], hopAt = -99, judgeText = '', judgeColour = WHITE, judgeAt = -99, endAt = 0, newBest = false;
+const st = () => tm - lag;                                          // the song time the player hears now
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
     for (let i = 0; i < 256; i++) dset(i, 0);
     dset(VERSION_SLOT, SAVE_VERSION);
   }
-  // The background: the ground on layer 0 along the bottom of the screen, the hills behind it on layer 1 (each its
-  // region of Map RAM, placed with a negative scroll and not repeated), the sky a gradient in scanline() below.
+  lag = dget(LAG_SLOT) ? dget(LAG_SLOT) - 16 : 0;
   const f = ART.scenes.field, h = ART.scenes.hills;
   bg(0, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, x: 0, y: -(224 - f.h * 8), wrap: false, show: true });
   bg(1, { mx: h.mx, my: h.my, mw: h.w, mh: h.h, x: 0, y: -(224 - f.h * 8 - h.h * 8 + 8), wrap: false, show: true });
   blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (ART.colors.GLASS) are see-through
-  if (skipTitle) startGame(); else toTitle();
+  if (skipTitle) startPiece(0, 1); else toTitle();
 }
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
-function startGame() {
-  score = 0; lives = 3; px = HOME.x; blocks = []; paused = false; timer = 0; state = 'play';
-  play(SONG.play);
+/** A piece from its start: the count-in, then the music when song time reaches 0. */
+function startPiece(i, d) {
+  piece = i; diff = d; const c = loadChart(i, d); notes = c.notes; speed = c.speed;
+  score = 0; combo = 0; bestCombo = 0; flow = FLOW_START; inFlow = false; counts = [0, 0, 0, 0]; judgeAt = -99; newBest = false;
+  tm = -LEAD; musicAt = 0; started = false; endAt = 0; paused = false; timer = 0; state = 'play'; play(-1);
 }
 
 // --- Update ---
@@ -110,8 +135,7 @@ function update() {
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'play') updatePlay();
-  else if (state === 'over') updateOver();
-  else if (state === 'initials') updateInitials();
+  else if (state === 'results') updateResults();
   else if (state === 'records') updateRecords();
   prevMask = inputMask;
 }
@@ -120,86 +144,91 @@ function updateTitle() {
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) startGame(); else { state = 'records'; hl = -1; timer = 0; }
+    if (titleSel === 0) startPiece(0, 1); else { state = 'records'; timer = 0; }
   }
 }
 
-/** The game itself: replace this. Left and right move; blocks fall; a hit costs a life. */
+/** One frame of a piece: the clock, the music's start, the taps, the pads that were missed, the end. */
 function updatePlay() {
-  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (btn(LEFT)) px = Math.max(8, px - 3);
-  if (btn(RIGHT)) px = Math.min(248, px + 3);
-  if (timer % 30 === 0) blocks.push({ x: rndi(8, 248), y: -8 });
-  for (const b of blocks) {
-    b.y += 2 + Math.min(3, score / 40);
-    if (b.y > 196 && b.y < 212 && Math.abs(b.x - px) < 12 && !b.hit) { b.hit = true; lives--; fx(SFX.hit); }
-    if (b.y > 224 && !b.hit && !b.done) { b.done = true; score += 10; fx(SFX.point); }
-  }
-  blocks = blocks.filter((b) => b.y < 232);
-  if (lives <= 0) gameOver();
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); music(-1); playing = -1; return; }
+  tm++;
+  if (!started && tm >= musicAt) { started = true; playing = piece + 1; music(piece + 1, musicAt / (64 * speed)); }
+  if (tapped()) tap(st());
+  for (const n of notes) if (!n.r && n.f + WIN[2] < st()) miss(n);
+  const last = notes.length ? notes[notes.length - 1].f : 0;
+  if (!endAt && st() > last + WIN[2] && notes.every((n) => n.r)) endAt = clock;
+  if (endAt && clock > endAt + 90) finish();
 }
 
-function gameOver() {
-  state = 'over'; timer = 0; play(-1); fx(SFX.over);
-  rank = insertTop({ score, initials: lastInitials() });
+function finish() {
+  endAt = 0; state = 'results'; timer = 0;
+  const g = gradeOf(accuracy()), s = bestSlot(piece, diff);
+  newBest = score > dget(s);
+  if (newBest) { dset(s, score); dset(s + 1, (g + 1) | (bestCombo << 4)); }
+  if (dget(OPEN_SLOT) < piece + 2) dset(OPEN_SLOT, piece + 2);
+  fx(SFX.record);
 }
 
-function updateOver() {
-  if (timer < 60 || !(pressed(A) || pressed(START))) return;
-  fx(SFX.select);
-  if (rank >= 0) { state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0 }; fx(SFX.record); }
-  else toTitle();
-}
-
-/** UP/DOWN pick a letter, LEFT/RIGHT (or A and B) move, START saves (as does A on the last letter). */
-function updateInitials() {
-  const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
-  if (pressed(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; fx(SFX.move); }
-  if (pressed(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; fx(SFX.move); }
-  if (pressed(LEFT) || pressed(B)) ini.pos = Math.max(0, ini.pos - 1);
-  if (pressed(RIGHT)) ini.pos = Math.min(2, ini.pos + 1);
-  const done = pressed(START) || (pressed(A) && ini.pos === 2);
-  if (pressed(A) && ini.pos < 2) ini.pos++;
-  if (!done || timer < 20) return;
-  const v = packInitials(ini.chars.join(''));
-  dset(INITIALS_SLOT, v); dset(TOP_SLOT + rank * ENTRY + 1, v);
-  fx(SFX.select);
-  state = 'records'; hl = rank; timer = 0;
+function updateResults() {
+  if (timer > 30 && (pressed(A) || pressed(START))) { fx(SFX.select); toTitle(); }
 }
 
 function updateRecords() {
   if ((pressed(START) || pressed(A) || pressed(B)) && timer > 20) { fx(SFX.select); toTitle(); }
 }
 
+/** Resume starts the music again at the start of the pattern the piece was in, after a count-in: pads whose time went by stay as they were. */
+function resume() {
+  paused = false;
+  const pat = Math.max(0, Math.floor(Math.max(0, tm) / (64 * speed)));
+  musicAt = pat * 64 * speed; tm = musicAt - RESUME_LEAD; started = false;
+  for (const n of notes) if (!n.r && n.f < musicAt) n.r = 5;            // too near the cut to play: skipped
+}
+
 function updatePause() {
   if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
   if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
-  if (pressed(B) || (pressed(START) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
+  if (pressed(B) || (pressed(START) && pauseSel === 0)) { fx(SFX.pause); resume(); }
   else if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (pauseSel === 0) paused = false;
-    else if (pauseSel === 1) startGame(); // restart
-    else toTitle(); // quitting abandons the game: nothing is recorded
+    if (pauseSel === 0) resume();
+    else if (pauseSel === 1) startPiece(piece, diff); // restart
+    else toTitle(); // quitting abandons the piece: nothing is recorded
   }
 }
 
 // --- Draw ---
 
+const HORIZON = 62, FROG_Y = 186, SWAY = 72;
+/** A pad's place on the river: p is 0 as it appears at the horizon and 1 when it reaches the frog. */
+const padPos = (n, p) => ({ x: 128 + clamp((n.pitch - 52) / 14, -1, 1) * SWAY * p, y: HORIZON + (FROG_Y - HORIZON) * p, r: 2 + 13 * p });
+
 function draw() {
   cls();
-  if (state === 'play' || state === 'over') drawPlay();
+  if (state === 'play') drawPlay();
   else if (state === 'title') drawTitle();
-  else if (state === 'initials') drawInitials();
+  else if (state === 'results') drawResults();
   else if (state === 'records') drawRecords();
-  if (state === 'over') { panel(48, 80, 160, 64); ctxt('GAME OVER', 92, RED); ctxt(`SCORE ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
   if (paused) drawPause();
 }
 
 function drawPlay() {
-  sprite(ART.sprites.player, px - 8, 196);
-  for (const b of blocks) if (!b.hit) sprite(ART.sprites.gem, b.x - 8, b.y - 2);
-  txt(`SCORE ${score}`, 8, 6, WHITE);
-  txt(`LIVES ${lives}`, 192, 6, lives > 1 ? WHITE : RED);
+  rectfill(0, HORIZON - 2, 256, 164, ART.colors.GLASS);                                          // the river
+  circ(128, FROG_Y, 15, WHITE);
+  for (const n of notes) {
+    const p = 1 - (n.f - st()) / LOOKAHEAD;
+    if (p < 0 || p > 1.25 || n.r === 5) continue;
+    const q = padPos(n, p), c = n.r === 4 ? RED : n.r ? (n.r === 1 ? GOLD : n.r === 2 ? GREEN : CYAN) : GREEN;
+    if (n.r && n.r !== 4) continue;                                                                // a hit pad is under the frog now
+    circfill(q.x, q.y, q.r, c); circ(q.x, q.y, q.r, DIM);
+  }
+  const age = clock - hopAt, hop = age < 12 ? Math.sin(Math.PI * age / 12) * 22 : 0;
+  circfill(128, FROG_Y - hop, 11, GREEN); circfill(122, FROG_Y - hop - 7, 3, WHITE); circfill(134, FROG_Y - hop - 7, 3, WHITE);
+  rectfill(10, 40, 12, 124, PANEL); rectfill(11, 41 + 122 - flow * 1.22, 10, flow * 1.22, inFlow ? GOLD : flow >= 70 ? GREEN : flow >= 40 ? CYAN : DIM);
+  txt(`${flowName()} x${multiplier()}`, 28, 40, inFlow ? GOLD : WHITE);
+  txt(`SCORE ${score}`, 8, 6, WHITE); txt(`COMBO ${combo}`, 168, 6, WHITE);
+  if (clock - judgeAt < 30) ctxt(judgeText, 150, judgeColour);
+  if (tm < 0) ctxt(String(Math.ceil(-tm / 40)), 100, GOLD);
 }
 
 function drawTitle() {
@@ -207,31 +236,25 @@ function drawTitle() {
   ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
 }
 
-function drawRecords() {
-  panel(24, 16, 208, 192);
-  ctxt('TOP 10', 24, GOLD);
-  topTen().forEach((e, i) => {
-    const y = 48 + i * 14, on = i === hl;
-    if (on && timer % 40 < 30) rectfill(28, y - 2, 200, 12, PANEL);
-    txt(String(i + 1).padStart(2), 40, y, i === 0 ? GOLD : DIM);
-    txt(e.score ? e.initials : '---', 72, y, on ? GOLD : WHITE);
-    txt(e.score ? String(e.score).padStart(8) : '', 128, y, i === 0 ? GOLD : WHITE);
-  });
-  if (timer % 60 < 40) ctxt('START: BACK', 192, DIM);
+function drawResults() {
+  panel(40, 40, 176, 140);
+  ctxt(newBest ? 'NEW BEST!' : 'DONE', 50, GOLD);
+  ctxt(`GRADE ${GRADES[gradeOf(accuracy())]}`, 70, WHITE);
+  ctxt(`SCORE ${score}`, 88, WHITE);
+  ctxt(`ACCURACY ${Math.round(accuracy() * 100)}%`, 104, DIM);
+  ctxt(`PERFECT ${counts[0]} GOOD ${counts[1]}`, 120, DIM); ctxt(`OK ${counts[2]} MISS ${counts[3]}`, 132, DIM);
+  ctxt(`BEST COMBO ${bestCombo}`, 148, DIM);
+  if (timer > 30 && timer % 60 < 40) ctxt('A: CONTINUE', 164, WHITE);
 }
 
-function drawInitials() {
-  const ini = initials;
-  panel(24, 40, 208, 144);
-  ctxt(rank === 0 ? 'NEW HIGH SCORE!' : `TOP 10: #${rank + 1}`, 52, GOLD);
-  ctxt(String(score), 68, WHITE);
-  ctxt('ENTER YOUR INITIALS', 90, DIM);
-  for (let i = 0; i < 3; i++) {
-    const on = i === ini.pos, x = 84 + i * 32;
-    rect(x - 2, 106, 28, 20, on ? GOLD : PANEL);
-    txt(ini.chars[i], x + 10, 112, on ? GOLD : WHITE);
+function drawRecords() {
+  panel(24, 16, 208, 192);
+  ctxt('BEST SCORES', 24, GOLD);
+  for (let d = 0; d < 3; d++) {
+    const s = bestSlot(0, d), g = dget(s + 1) & 15;
+    txt(DIFF_NAMES[d], 40, 56 + d * 16, WHITE); txt(String(dget(s)).padStart(8), 120, 56 + d * 16, GOLD); txt(g ? GRADES[g - 1] : '-', 200, 56 + d * 16, WHITE);
   }
-  if (timer % 60 < 40) ctxt('START: SAVE', 160, WHITE);
+  if (timer % 60 < 40) ctxt('A: BACK', 192, DIM);
 }
 
 function drawPause() {
