@@ -153,6 +153,9 @@ def build(outdir, seed=2026):
     for t, (c, n) in enumerate(TEAMS):
         c1, c2 = r.randrange(16), r.randrange(16)
         while c2 == c1: c2 = r.randrange(16)
+        if c1 == 0: c1 = 1 + t % 15                      # colour 0 is the backdrop: a team never wears it (no draw from r, so nothing else in the league moves)
+        if c2 == 0: c2 = 1 + (t + 7) % 15
+        if c2 == c1: c2 = 1 + c1 % 15
         teams += bytes([t, t, c1, c2, r.randrange(8), r.randint(150, 205), talent[t], r.randint(20, 90)])
     rows = bytearray()
     for p in persons:

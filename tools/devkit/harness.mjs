@@ -38,7 +38,7 @@ export function boot(path, { seed = 1, save = null, extra = '' } = {}) {
   ppu.reset(); ppu.loadPalette(cart.palette); ppu.loadSheet(cart.tiles); ppu.map.set(cart.map);
   overlay.clip(); overlay.cls(); prng.seed(seed);
   if (save) m.save.set(save);
-  const hooks = compileCart(cart.code + '\n' + extra, api);
+  const hooks = compileCart(cart.code + '\n' + extra, api, cart.code);   // the test's own hooks (extra) do not count against the 64 KB
   hooks.init?.();
   const out32 = new Uint32Array(SCREEN_W * SCREEN_H);
   const blank = new Overlay();

@@ -173,17 +173,16 @@ or rookie of the year you drafted, 1 for each $10M of profit over the career, ..
 
 ## 11. Audio
 
-Songs: 0 the title, 1 the hub (a mellow looping groove), 2 the game night (a brisk beat, a crowd swell on big plays), 3 the draft (tense, a stinger on each pick), 4 the
-title win (a fanfare). Effects: menu move, select, back, a buzzer, a swish, a dribble run, a whistle, a crowd cheer and groan, a cash register (a signing), a gavel
-(a trade). Songs use channels 0 to 5; effects take turns on 6 and 7. Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no
-vibrato, no jump of more than 1.5x where it enters (`node tools/devkit/music/loud.mjs carts/franchise.nova --check`; playbook section 5).
+Songs (`audio.py`): 0 the title (A minor, 150 bpm), 1 the hub (F major, 100 bpm, mellow: an electric piano over a soft groove and a strings pad), 2 the game night (E minor, 150 bpm, brisk: a soft horn and a flute lead, an arpeggio, a driving beat),
+3 the draft (D minor, 90 bpm, tense: strings and a plucked line, the beat comes in for the last bars), 4 the title win (C major, a fanfare once through). Effects (the `SFX` table in `code.js`): 0 menu move, 1 select, 2 pause, 3 a hit, 4 game over, 5 a free throw, 6 a record,
+7 back (B), 8 the buzzer (the end of a period), 9 a swish (a basket), 10 a whistle (a foul), 11 a cheer (a three), 12 a groan (your turnover), 13 a cash register (a signing), 14 a gavel (a pick, a trade). The cues: the game night plays song 2 and the hub song comes back with the box score; the draft plays song 3;
+a title won plays song 4 when the playoffs end. Songs use channels 0 to 5; effects take turns on 6 and 7. All five songs pass `loud.mjs --check` (the lead alone 0.020 to 0.035 RMS and 0.52 to 0.72 of the mix, no jump where it enters) and `clash.py` (no lead note against its chord). Sample RAM 14.0 of 32 KB.
 
 ## 12. Video layers
 
-BG0 a panel look (the court floor in dark wood tones, a frame), BG1 and BG2 the arena silhouette behind the game night; sprites: the **court** dots (ten players
-and the ball), the **portraits** (a 24 x 24 face for each player drawn from his id: a skin tone, a hairstyle, a face shape, drawn with the art kit's `head()` and
-shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones and 5 hair colours in palettes) and the **emblems** (30 from a shape and two colours); the overlay: the text and the tables. The art is made in code by
-`carts/src/franchise/art.py` (the art toolkit); the tile and sprite budget is in section 14.
+**BG0 is the floor**, two full-screen pictures in Map RAM that code.js switches between: a dark hardwood floor behind the menus and the tables, and the **court** (lighter wood, the lines, the keys, the free throw circles, the three-point arcs, the centre circle) behind the game night, whose dots and hoops are drawn over it. The planks repeat 32 x 16, so the two cost 206 of the 255 BG tiles together with the lines.
+Sprites: the **emblems** (six shapes of 16 px: a ball, a shield, a star, a diamond, a hexagon with a band, a bolt; a team's emblem is its shape in its two colours, set with `color()` when it is drawn, in palette 6 or 7: the header of the hub, a team, a trade, and both teams on the scoreboard), the **portraits** (six hair styles of 32 px, drawn with the art kit's `head()` on a jersey: the skin (four tones), the hair (five colours, grey after 33 for some) and the style come from the player's id, the jersey from his team; shown on the player card) and the title's **logo** (a big sprite) with a ball.
+The overlay: the text and the tables, on see-through indigo panels; its colours 1, 3 and 10 are set by the art script (an indigo shadow, a blue frame, a pale blue for the quiet text) so no panel is the default brown and grey (`colors.mjs --check`: muddy panels 0.00). The art is made in code by `carts/src/franchise/art.py` (the art toolkit); the budget is in section 14.
 
 ## 13. Persistence (save slots)
 
@@ -225,11 +224,11 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 
 | Asset | Budget |
 |---|---|
-| Code | 59.5 KB of the 64 KB limit after step 7 (55.3 KB before the trades) (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
-| Tiles | none yet (the backdrop is one colour); the panels, the court, the portraits' frames and the emblems come with the art pass (of 1,024) |
-| Sprites | none yet (128 in OAM, 32 per line): later the game night's ten dots and the ball, a portrait or two a screen |
-| ROM | 15.0 KB of 128 KB after step 3: `league.bin` (7.0 KB: 30 teams, 450 people) and `names.bin` (8.0 KB: 369 first names, 739 last names, the cities and nicknames) |
-| Songs / SFX | the starter's two songs and seven effects until the audio pass |
+| Code | 62.5 KB of the 64 KB limit after step 8's art (`node tools/check.js franchise`); `"strip": true` and `"mangle": true` in `meta.json` (55.3 KB after step 6's size pass, 59.5 KB with the trades, 62.5 KB with the art block and the screens that use it) |
+| Tiles | 436 of 1,024: 206 of the 255 BG tiles (the two floors), 120 sprite tiles (6 emblems, 6 portraits, the logo) |
+| Sprites | at most 5 on a screen (two emblems on the scoreboard, a portrait, a logo), of 128 in OAM |
+| ROM | 15.0 KB of 128 KB: `league.bin` (7.0 KB: 30 teams, 450 people) and `names.bin` (8.0 KB: 369 first names, 739 last names, the cities and nicknames) |
+| Songs / SFX | 5 songs (9 patterns), 15 effects, sample RAM 14.0 of 32 KB |
 
 ## 15. Implementation plan
 
@@ -331,6 +330,12 @@ now fills the roster as well; the bot drafts (B), signs (X) and plays 25 seasons
 items. An entry for a deal that has run out is dropped at NEXT YEAR. Tests: `08-trades.mjs` (the worth of a man, the verdicts, a trade's entries, rosters and deals, the save, a dozen trades in a row with every roster whole, who cannot be traded and when, the screens); the bot tries a trade each offseason.
 
 **Results:** the computer refuses most lopsided trades by the cap rule (its payroll sits near the cap by the payroll rule, so the pay must match), which makes a trade a matter of matching pay and worth; a one-for-one that it accepts is easy to find (a good young man for an older one of the same pay). The code is 59.5 KB of 64 (4.5 KB left for the art and the polish of step 8).
+
+### Built and results: step 8 (so far), the audio and the art
+
+**Built:** the audio (section 11) and the art (section 12) above, and in `code.js` the cues (`SFX` and `SONG` tables, the sounds in `updateLive`, the draft and the trade, a back sound on B), `emblem()` and `portrait()` (colours set with `color()` as they are drawn), the floor switch in `draw()`, the title's logo, the header with an emblem. `tools/devkit/harness.mjs` no longer counts a test's appended hooks against the 64 KB (the probe is 3 KB and the cart is near the limit); the console itself still checks the whole code. A team's two colours are never the backdrop's (`league.py`; five teams changed, nothing else in the league).
+**A bug the tests found:** a portrait from a negative hash picked a skin tone that did not exist (a crash on the card for some players); `09-art.mjs` draws the card of all 15 players. Tests: `09-art.mjs` (the scenes, the sprites, the teams' colours and shapes, the faces, the card's time).
+**The code is 62.5 KB of 64: 3 KB left.**
 
 ## 16. Open questions
 
