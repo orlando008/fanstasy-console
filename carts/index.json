@@ -121,6 +121,16 @@
       "png": "carts/rags-to-riches.nova.png"
     },
     {
+      "name": "franchise",
+      "title": "The Franchise: Basketball Edition",
+      "author": "NOVA-16",
+      "description": "A basketball front-office simulator: run one of 30 teams as its general manager, with the lineup, the draft, free agency, trades and a salary cap, and watch the games play out. (In progress.)",
+      "genre": "Strategy",
+      "players": "1",
+      "label": null,
+      "png": null
+    },
+    {
       "name": "street",
       "title": "Street",
       "author": "NOVA-16",
