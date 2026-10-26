@@ -1,4 +1,66 @@
 {
+ "big": {
+  "shadow": {
+   "h": 9,
+   "parts": [
+    [
+     0,
+     0,
+     896,
+     16,
+     7,
+     0
+    ],
+    [
+     16,
+     0,
+     898,
+     16,
+     7,
+     0
+    ],
+    [
+     32,
+     0,
+     900,
+     8,
+     7,
+     0
+    ]
+   ],
+   "w": 36
+  },
+  "shadow2": {
+   "h": 6,
+   "parts": [
+    [
+     0,
+     0,
+     901,
+     8,
+     7,
+     0
+    ],
+    [
+     8,
+     0,
+     902,
+     8,
+     7,
+     0
+    ],
+    [
+     16,
+     0,
+     903,
+     8,
+     7,
+     0
+    ]
+   ],
+   "w": 22
+  }
+ },
  "colors": {
   "GLASS": 200
  },
@@ -110,8 +172,78 @@
     "white": 13,
     "yellow": 12
    }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "hair0": 5,
+    "hair1": 6,
+    "hair2": 7,
+    "line": 1,
+    "pants0": 11,
+    "pants1": 12,
+    "pants2": 13,
+    "shirt0": 8,
+    "shirt1": 9,
+    "shirt2": 10,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4,
+    "trim0": 14,
+    "trim1": 15
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "hair0": 5,
+    "hair1": 6,
+    "hair2": 7,
+    "line": 1,
+    "pants0": 11,
+    "pants1": 12,
+    "pants2": 13,
+    "shirt0": 8,
+    "shirt1": 9,
+    "shirt2": 10,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4,
+    "trim0": 14,
+    "trim1": 15
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "hair0": 5,
+    "hair1": 6,
+    "hair2": 7,
+    "line": 1,
+    "pants0": 11,
+    "pants1": 12,
+    "pants2": 13,
+    "shirt0": 8,
+    "shirt1": 9,
+    "shirt2": 10,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4,
+    "trim0": 14,
+    "trim1": 15
+   }
+  },
+  "spr7": {
+   "base": 240,
+   "colors": {
+    "shade2": 2,
+    "shadow": 1
+   }
   }
  },
+ "rom": [
+  "f"
+ ],
  "scenes": {
   "city": {
    "h": 28,
@@ -178,7 +310,16 @@
   }
  },
  "sprites": {},
+ "streams": {
+  "f": {
+   "base": 448,
+   "frames": 71,
+   "rom": true,
+   "rows": 4,
+   "slots": 7
+  }
+ },
  "tiles": {},
- "used": 412,
+ "used": 872,
  "version": 1
 }

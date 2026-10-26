@@ -10,8 +10,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../
 from kit import *
 
 art = Art()
-art.region('bg', 1, 639)       # background tiles (three stages)
-art.region('spr', 640, 1023)   # sprites (the fighters' frames, later)
+art.region('bg', 1, 447)       # background tiles (three stages: 413 of them)
+art.region('spr', 448, 1023)   # sprites: seven fighter slots of 64 tiles, then the small things (576 tiles)
 art.backdrop('100818')
 art.color(200, '181028', 'GLASS')                                          # the panels' fill, seen through (blend() in code.js)
 
@@ -186,5 +186,24 @@ for yy in range(172, 201):                                                      
     for xx in range(118, 139):
         if xx in (118, 119, 137, 138) or (185 <= yy <= 187): deck.px[yy][xx] = ROOF.white
 art.scene('deck', deck, pal=ROOF, at=(0, 32), region='bg')
+
+# =====================================================================================================================
+# The fighters: drawn figures (figures.py), streamed from the cart's ROM into slots of 64 tiles as they play.
+# =====================================================================================================================
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import figures as F
+FP = {k: art.sprite_palette(k, v) for k, v in F.PALS.items()}
+P0 = FP[0]
+hero = F.make_hero(P0)
+thug = F.make_thug(P0)
+clips = {}
+for pre, make, poses in (('h_', F.make_hero, F.hero_poses(hero)), ('t_', F.make_thug, F.thug_poses(thug))):
+    for k, v in F.render_clips(lambda m: make(P0, m), poses).items(): clips[pre + k] = v
+art.stream('f', clips, pal=P0, region='spr', slots=7, rom=True)
+
+# --- Palette 7, the world's: the small things that sit among the fighters (shadows, and later the props and the pickups). ---
+WORLD = art.sprite_palette(7, {'shadow': '1c1428', 'shade2': '2c2040'})
+art.big_sprite('shadow', ellipse(36, 9, WORLD.shadow), pal=WORLD, region='spr')
+art.big_sprite('shadow2', ellipse(22, 6, WORLD.shadow), pal=WORLD, region='spr')
 
 art.write(sys.argv[1])
