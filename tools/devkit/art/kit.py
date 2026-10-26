@@ -41,7 +41,10 @@ of it). Each is a module of its own here, and comes with `from kit import *`:
   detail.py     face(), hair(), crease(), stroke(), bunch(): the hand-drawn layer on top of the volumes
   draw.py       Canvas, oval(), blob(), brush() ...: figures drawn in designed shapes and flat tones, a pixel at a time
                 where it matters (the way to draw characters; speckle() measures what is left to clean)
-  figure.py     head() (side, three-quarters, front, back; four expressions, seven hair styles), Figure: a drawn body on a rig's skeleton
+  review.py     review(frames), findings_text(): edges, noise, colours, feet that hop between frames, stalled animations
+  figure.py     head() (side, three-quarters, front, back; four expressions, seven hair styles, and 'shaggy' traced from
+                reference art), Figure: a drawn body on a rig's skeleton
+  trace.py      turn an artist's reference drawing into templates: recover_grid(), clean(), align(), trace_head()
   preview.py    Sheet: a PNG of pictures, ramps and layer stacks, straight from art.py
   and here      art.big_sprite() (bigSprite() in code.js), art.animation(), art.stream() (frames loaded as they play:
                 streamSprite(); rom=True keeps them in the cart's ROM, rom/<name>.bin), art.gradient() (gradientLine() in scanline()), art.variant(),
@@ -98,10 +101,23 @@ class Img:
         return im
 
     @classmethod
-    def from_rows(cls, rows, key=None, mirror=None, odd=False):
+    def from_rows(cls, rows, key=None, mirror=None, odd=False, strict=False, size=None):
         """A picture from rows of text: '.' or ' ' is 0, a hex digit its index. `key` maps other characters to indices
         (e.g. key={'#': 3}). mirror='x' takes the rows as the left half and makes the whole, symmetric picture (odd=True
-        shares the last column as the centre); mirror='y' the top half."""
+        shares the last column as the centre); mirror='y' the top half. strict=True is for grids an artist or a tool
+        hands over (docs/reference/): every row the same width, only '.' for transparent, only the characters of `key`
+        or hex digits otherwise, and an error that names the row and column; size=(w, h) also checks the dimensions.
+        Nothing is padded, cropped or guessed."""
+        if strict:
+            if not rows: raise ValueError('grid: no rows')
+            w0 = len(rows[0])
+            for y, r in enumerate(rows):
+                if len(r) != w0: raise ValueError('grid: row %d is %d wide, row 0 is %d' % (y, len(r), w0))
+                for x, ch in enumerate(r):
+                    if ch != '.' and ch not in (key or {}) and ch not in '0123456789abcdefABCDEF':
+                        raise ValueError('grid: row %d, column %d: %r is not in the key (and not a hex digit)' % (y, x, ch))
+            if size is not None and (w0, len(rows)) != tuple(size):
+                raise ValueError('grid: %d x %d, expected %d x %d' % (w0, len(rows), size[0], size[1]))
         if mirror:
             from shade import mirrored
             return mirrored(cls.from_rows(rows, key), odd=odd, axis=mirror)
@@ -114,6 +130,23 @@ class Img:
                 im.px[y][x] = key[ch] if ch in key else int(ch, 16)
         im._check()
         return im
+
+    def patch(s, rows, x=0, y=0, key=None, erase='~'):
+        """Exact-pixel corrections over a picture (after rendering a figure, fix the pixels the shapes got wrong): rows of
+        text with their top left at (x, y). '.' leaves a pixel as it is (it does not erase), a hex digit or a character of
+        `key` sets it, `erase` (default '~') makes it transparent. A grid that sticks out of the picture is an error.
+        Returns the picture, so it chains."""
+        key = key or {}
+        if y < 0 or x < 0 or y + len(rows) > s.h or any(x + len(r) > s.w for r in rows):
+            raise ValueError('patch: %d x %d at (%d, %d) does not fit in %d x %d' % (max(map(len, rows)), len(rows), x, y, s.w, s.h))
+        for j, r in enumerate(rows):
+            for i, ch in enumerate(r):
+                if ch == '.': continue
+                if ch == erase: s.px[y + j][x + i] = 0
+                elif ch in key: s.px[y + j][x + i] = key[ch]
+                elif ch in '0123456789abcdefABCDEF': s.px[y + j][x + i] = int(ch, 16)
+                else: raise ValueError('patch: row %d, column %d: %r is not in the key' % (j, i, ch))
+        return s
 
     def _check(s):
         for row in s.px:
@@ -576,7 +609,7 @@ class Art:
         s.anims[name] = names
         return names
 
-    def stream(s, name, frames, pal=None, region=None, slots=1, rom=False):
+    def stream(s, name, frames, pal=None, region=None, slots=1, rom=False, fewer=0, cap=None):
         """An animation whose frames are loaded into tile memory as they play, as SNES games did: only a slot (enough
         tile rows for its biggest frame) is taken from the tile budget, however many frames there are, and the frames'
         pixels live in code.js as a packed string (8 x 8 tiles shared between frames are stored once). For big
@@ -585,7 +618,8 @@ class Art:
         is [first frame, count]). slots= how many can show at once, each with its own frame (two fighters of the same
         character). In code.js: streamSprite(ART.streams.name, frame, x, y, { fx, prio, pal, slot }). Returns the
         entry; the report gives its slot tiles and code bytes (about 20 KB for a 96 px fighter with 18 frames).
-        rom=True keeps the frames in the cart's ROM instead (rom/<name>.bin, read with rom(); denser, about 15 KB, and
+        fewer=1 or 2 (with cap=64, the tiles a slot may take: a frame that would need more tries less) covers a frame in fewer, bigger pieces (a sprite for a block with three of its four 16 px squares drawn, and one 16 px sprite for two 8 px ones): more tiles in the slot, fewer sprites
+        on a scanline and in OAM (32 a line and 128 in all). rom=True keeps the frames in the cart's ROM instead (rom/<name>.bin, read with rom(); denser, about 15 KB, and
         out of the 64 KB of code), which is the way for big fighters."""
         if name in s.streams: raise ValueError('stream %r already exists' % name)
         clips = None
@@ -605,7 +639,7 @@ class Art:
             if k not in pool_ix: pool_ix[k] = len(pool); pool.append(im)
             return pool_ix[k]
         out_frames, raw_frames, rows = [], [], 0
-        for L in layers0:
+        def cover(L, fewer):
             pieces = []                                        # (size, img, sub, dx, dy)
             for sub, im in sorted(L.items()):
                 s._check_colors(im, s._roles('spr', sub), 'stream %r (palette %d)' % (name, sub))
@@ -614,13 +648,18 @@ class Art:
                         block = im.crop(bx, by, 32, 32)
                         if block.is_empty(): continue
                         quads = [(qx, qy) for qy in (0, 16) for qx in (0, 16) if not block.crop(qx, qy, 16, 16).is_empty()]
-                        if len(quads) == 4: pieces.append((32, block, sub, bx, by)); continue
+                        if len(quads) == 4 or (fewer and len(quads) >= 4 - fewer): pieces.append((32, block, sub, bx, by)); continue
                         for qx, qy in quads:
                             q = block.crop(qx, qy, 16, 16)
                             eighths = [(ex, ey) for ey in (0, 8) for ex in (0, 8) if not q.crop(ex, ey, 8, 8).is_empty()]
-                            if len(eighths) <= 2:
+                            if len(eighths) <= (1 if fewer else 2):
                                 for ex, ey in eighths: pieces.append((8, q.crop(ex, ey, 8, 8), sub, bx + qx + ex, by + qy + ey))
                             else: pieces.append((16, q, sub, bx + qx, by + qy))
+            return pieces
+        for L in layers0:
+            for fw in range(fewer, -1, -1):                    # as few pieces as the slot's tiles allow
+                pieces = cover(L, fw)
+                if not cap or sum((p[0] // 8) ** 2 for p in pieces) <= cap: break
             # place the pieces in the slot (16 tiles a row), biggest first, each aligned as the console needs
             taken, parts = set(), []
             for size, img, sub, dx, dy in sorted(pieces, key=lambda p: -p[0]):
@@ -749,7 +788,7 @@ class Art:
         if s.gradients:
             out += GRADIENT_JS
         if s.streams:
-            out += STREAM_JS
+            out += STREAM_JS if any('rom' not in v for v in s.streams.values()) else _rom_only(STREAM_JS)
         return out
 
     def write(s, outdir, quiet=False):
@@ -927,6 +966,13 @@ function streamSprite(st, k, x, y, opts = {}) {
   }
 }"""
 
+def _rom_only(js):
+    """streamSprite() without the unpacking of frames packed into code.js, for a cart whose streams are all in ROM."""
+    a = js.index("  const A = '0123"); b = js.index("  if (!st.px && st.rom) {")
+    c = js.index("  if (!st.px) {"); d = js.index("  const slot = opts.slot")
+    return js[:a] + js[b:c] + js[d:]
+
+
 GRADIENT_JS = """
 /** In scanline(y): set the CGRAM entry of a gradient from ART.gradients to its colour for line y (generated by art.py). */
 function gradientLine(g, y) {
@@ -955,6 +1001,7 @@ from texture import noise, fbm, level, texture, variants, tile_fill  # noqa: E40
 from scenery import sky, stars, orb, clouds, mountains, hills, treeline, floor, rope, ellipse  # noqa: E402  backgrounds
 from lettering import big_text, hud_bar, frame, scale2x, smooth_scale  # noqa: E402  HUD lettering, bars and frames
 from detail import face, hair, crease, stroke, bunch  # noqa: E402  the hand-drawn layer: faces, hair, folds
-from rig import Rig, pose, filmstrip, lerp_pose, mirror_sides, STAND, GUARD, WALK, PUNCH, KICK, HIT, JUMP  # noqa: E402  characters from a skeleton
+from rig import Rig, pose, filmstrip, lerp_pose, mirror_sides, STAND, GUARD, WALK, PUNCH, KICK, HIT, JUMP, STANCE, CROSS  # noqa: E402  characters from a skeleton
 from draw import Canvas, oval, blob, curve, poly, brush, speckle  # noqa: E402  drawing figures in designed shapes and flat tones
 from figure import head, Figure, tones  # noqa: E402  drawn heads (three views, expressions, hair) and bodies on a rig
+from review import review, findings_text  # noqa: E402  the checks a person makes by eye, as findings an agent can read

@@ -1,0 +1,295 @@
+# Brawl's art: tiles.txt, palette.txt, map.txt, art.json and the ART block of code.js.
+#   python3 carts/src/brawl/art.py carts/src/brawl
+# Stage 1, the street (docs/carts/brawl.md, section 12): a gradient sky set line by line, a far city on BG2, a chain-link fence on
+# BG1 and flat paving on BG0 (palettes 1 to 3); stage 2, the docks: a night harbour with cranes, stacked containers and wooden
+# planks (palettes 4 to 6, Map RAM columns 96 to 191); stage 3, the rooftop, has the one palette left (7, entries 113 to 127, freed by dropping three unused overlay colours) for all
+# three of its scenes (Map RAM columns 192 to 255 and row 32), each a full 256 x 224 picture that repeats sideways as the camera scrolls. The fighters are
+# placeholder shapes drawn by the game for now (no sprites): real frames plug in later behind drawFighter().
+import os, sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
+from kit import *
+
+art = Art()
+art.region('bg', 1, 447)       # background tiles (three stages: 413 of them)
+art.region('spr', 448, 1023)   # sprites: seven fighter slots of 64 tiles, then (where the boss's slot lies over two of them) the small things
+art.region('mid', 413, 447)    # the tiles between the backgrounds and the sprites: small things too
+art.backdrop('100818')
+art.color(200, '181028', 'GLASS')                                          # the panels' fill, seen through (blend() in code.js)
+
+# --- The sky: dusk purple to a warm glow at the horizon, a colour for every line down to the pavement. ---
+art.gradient('sky', ['0c0820', '281848', '583060', 'a05868'], y0=0, y1=136)
+
+# --- BG2: the city, buildings with lit windows and neon, repeating every 128 px. ---
+CITY = art.palette(1, {'block': recede(ramp('382c58', 3), 0.3, '583060'), 'win': ['c8a048', 'f8e090'], 'neon': ['f050a0', '50e0f0'], 'roof': '201838'})
+city = Img(128, 128)
+x = 0; k = 0
+while x < 128:
+    w = 14 + int(hsh(k * 7 + 1) % 14)
+    top = 34 + int(hsh(k * 13 + 5) % 50)
+    for yy in range(top, 128):
+        for xx in range(x, min(128, x + w)):
+            edge = xx == x
+            city.px[yy][xx] = CITY.roof if yy == top else CITY.block[0] if edge else CITY.block[1 if (xx + yy) % 7 else 0]
+    for wy in range(top + 4, 120, 6):                    # windows: two pixels wide, some lit
+        for wx in range(x + 3, min(128, x + w) - 2, 4):
+            h = hsh(wx * 31 + wy * 17 + k)
+            c = CITY.win[1] if h % 5 == 0 else CITY.win[0] if h % 3 == 0 else None
+            if c:
+                city.pset(wx, wy, c); city.pset(wx + 1, wy, c); city.pset(wx, wy + 1, CITY.block[2]); city.pset(wx + 1, wy + 1, CITY.block[2])
+    if k % 3 == 1:                                       # a neon sign
+        for xx in range(x + 2, min(128, x + w) - 2): city.pset(xx, top + 6, CITY.neon[k % 2]); city.pset(xx, top + 8, CITY.neon[k % 2])
+    x += w + 1; k += 1
+far = Img(256, 224); far.blit(city, 0, 12); far.blit(city, 128, 12)
+art.scene('city', far, pal=CITY, at=(0, 0), region='bg')
+
+# --- BG1: a chain-link fence on posts, the city showing through it; it ends where the pavement starts (y 136). ---
+FENCE = art.palette(2, {'wire': ramp('a0a8c0', 3), 'post': ramp('606878', 3)})
+fence = Img(256, 224)
+mesh = texture('fence', 16, 16, FENCE.wire, size=8)
+for y in range(76, 140):
+    for x in range(256):
+        v = mesh.px[y % 16][x % 16]
+        if v: fence.px[y][x] = v
+for x in range(0, 256, 64):                              # posts, shaded like pipes, and the top rail
+    post = shaded(Img(4, 76).rect(0, 0, 4, 76, 1), FENCE.post, kind='cylinder-y')
+    fence.blit(post, x + 30, 70)
+rail = shaded(Img(256, 4).rect(0, 0, 256, 4, 1), FENCE.post, kind='cylinder-x')
+fence.blit(rail, 0, 72)
+art.scene('fence', fence, pal=FENCE, at=(32, 0), region='bg')
+
+# --- BG0: the pavement, flat slabs seen from the front with a kerb on top: the lane the fighters walk in. ---
+FLOOR = art.palette(3, {'slab': ramp('8a8090', 4), 'kerb': ramp('b0a8b8', 3)})
+ground = Img(256, 224)
+slab = texture('paving', 32, 16, FLOOR.slab, bw=16, bh=8)
+for y in range(140, 224):
+    for x in range(256):
+        ground.px[y][x] = slab.px[y % 16][x % 32]
+for y in range(136, 140):                                # the kerb: lit top edge, shaded face
+    for x in range(256):
+        ground.px[y][x] = FLOOR.kerb[2] if y == 136 else FLOOR.kerb[1] if y == 137 else FLOOR.kerb[0]
+art.scene('ground', ground, pal=FLOOR, at=(64, 0), region='bg')
+
+# =====================================================================================================================
+# Stage 2, the docks: a night harbour, shipping containers, and the planks of a pier (palettes 4, 5, 6).
+# =====================================================================================================================
+art.gradient('night', ['04101c', '0c2840', '1c5068', '5a9098'], y0=0, y1=136)
+
+# --- BG2: the harbour, cranes against the sky and a far shore across dark water with moonlit glints (repeats every 256 px). ---
+HARB = art.palette(4, {'sil': ramp('1c3050', 3), 'light': ['f0d070', 'fff8d0'], 'water': ramp('284870', 4), 'glint': 'a8d8e8', 'red': 'e04050'})
+harb = Img(256, 224)
+shore = Img(64, 40)                                      # 36 rows of water and a far shore, repeated four times across: tiles are shared
+for y in range(0, 36):                                   # the water, darker towards the pier
+    for x in range(64): shore.px[y + 4][x] = HARB.water[3 - min(3, y // 9)]
+for y in range(3, 36, 3):                                # glints of the moon on it
+    for k in range(2):
+        gx = int(hsh(y * 13 + k * 7) % 56); shore.line(gx, y + 4, gx + 2 + int(hsh(y + k) % 5), y + 4, HARB.glint)
+x = 0; k = 0
+while x < 60:                                            # the far shore: low sheds and container stacks, a few lit windows
+    w = 8 + int(hsh(k * 5 + 3) % 3) * 4; h = 4 + int(hsh(k * 11 + 1) % 3) * 2
+    for yy in range(4 - h, 4):
+        for xx in range(x, min(63, x + w)):
+            if yy >= 0: shore.px[yy][xx] = HARB.sil[k % 2]
+    if k % 2 == 0 and 4 - h + 2 >= 0: shore.pset(x + 2, 4 - h + 2, HARB.light[0])
+    x += w + 4; k += 1
+for i in range(4): harb.blit(shore, i * 64, 96)
+def crane(cx, h):
+    for yy in range(100 - h, 101): harb.pset(cx, yy, HARB.sil[2]); harb.pset(cx + 1, yy, HARB.sil[2]); harb.pset(cx + 3, yy, HARB.sil[2])   # the tower
+    for xx in range(cx - 34, cx + 40): harb.pset(xx, 100 - h, HARB.sil[2]); harb.pset(xx, 101 - h, HARB.sil[2])                           # the jib
+    for xx in range(cx - 30, cx, 5): harb.line(xx, 101 - h, cx, 100 - h + 16, HARB.sil[1])                                               # its braces
+    harb.line(cx + 38, 102 - h, cx + 38, 100 - h + 20, HARB.sil[1]); harb.pset(cx - 33, 99 - h, HARB.red); harb.pset(cx + 38, 99 - h, HARB.red)
+crane(44, 78); crane(172, 66)
+art.scene('harbour', harb, pal=HARB, at=(96, 0), region='bg')
+
+# --- BG1: containers stacked on the quay, one or two high, rust, teal, mustard and grey; they end where the planks start (y 136). ---
+DOCK = art.palette(5, {'rust': ramp('a04830', 3), 'teal': ramp('2e7880', 3), 'mustard': ramp('c09830', 3), 'steel': ramp('586070', 3), 'ink': '101820'})
+dock = Img(256, 224)
+cols = [DOCK.rust, DOCK.teal, DOCK.mustard, DOCK.steel]
+for i in range(4):
+    n = 1 + int(hsh(i * 9 + 4) % 2)
+    for lvl in range(n):
+        y1 = 136 - lvl * 32; y0 = y1 - 32; x0 = i * 64 + 8; c = cols[(i + lvl * 2) % 4]
+        for yy in range(y0, y1):
+            for xx in range(x0, x0 + 48):
+                dock.px[yy][xx] = c[2] if yy == y0 else c[0] if yy >= y1 - 2 else c[0] if (xx - x0) % 8 == 0 else c[1]   # the lit top edge, a dark foot, ribs
+        for yy in range(y0 + 3, y1 - 3): dock.pset(x0 + 46, yy, DOCK.ink); dock.pset(x0 + 42, yy, DOCK.ink)                  # the doors
+art.scene('dock', dock, pal=DOCK, at=(128, 0), region='bg')
+
+# --- BG0: the planks of the pier, boards 8 px deep with staggered joints, and the mooring rope along the edge: the lane. ---
+PLANK = art.palette(6, {'wood': ramp('7a5a3a', 4), 'edge': ramp('4a3828', 3), 'rope': 'b09860', 'water': ramp('142840', 2)})
+plank = Img(256, 224)
+for y in range(136, 140):
+    for x in range(256): plank.px[y][x] = PLANK.water[0] if y > 137 else PLANK.rope if y == 137 else PLANK.edge[1]
+for row, y0 in enumerate(range(140, 224, 8)):
+    off = (row * 24) % 48                                  # joints stagger by half a board, on the tile grid
+    for x in range(256):
+        board = (x + off) // 48; jx = (x + off) % 48
+        for y in range(y0, min(224, y0 + 8)):
+            c = PLANK.wood[1 + (board + row) % 2]
+            if y == y0: c = PLANK.wood[3]
+            elif y == y0 + 7: c = PLANK.edge[0]
+            if jx == 0: c = PLANK.edge[0]
+            plank.px[y][x] = c
+        if jx in (3, 44) and y0 + 3 < 224: plank.pset(x, y0 + 3, PLANK.edge[1])        # the nails
+art.scene('planks', plank, pal=PLANK, at=(160, 0), region='bg')
+
+# =====================================================================================================================
+# Stage 3, the rooftop: dawn over a skyline, rooftop structures, a concrete deck with a helipad. One palette (7) for the three scenes.
+# =====================================================================================================================
+art.gradient('dawn', ['283050', '6a5880', 'e08860', 'f8d090'], y0=0, y1=136)
+ROOF = art.palette(7, {'far': ['3a3a68', '2a2a50'], 'lit': 'f0c070', 'red': 'e04040',
+                       'struct': ['505068', '6a6a80', '8a8aa0'], 'deck': ['504c44', '706c62', '8a8478', 'a09a8c'], 'yellow': 'f0d040', 'white': 'f0f0e8'})
+
+# --- BG2: a skyline of towers in the dawn haze with a few lit windows and red aerial lights (repeats every 256 px). ---
+sky3 = Img(256, 224)
+x = 0; k = 0
+while x < 248:
+    w = 16 + int(hsh(k * 7 + 2) % 3) * 8; top = 40 + int(hsh(k * 13 + 3) % 4) * 14
+    for yy in range(top, 136):
+        for xx in range(x, min(255, x + w)): sky3.px[yy][xx] = ROOF.far[0] if (xx - x) % 8 else ROOF.far[1]
+    for wy in range(top + 6, 130, 10):
+        for wx in range(x + 4, min(255, x + w) - 4, 8):
+            if hsh(wx * 3 + wy * 5 + k) % 4 == 0: sky3.pset(wx, wy, ROOF.lit); sky3.pset(wx + 1, wy, ROOF.lit)
+    if k % 3 == 0: sky3.line(x + w // 2, top - 12, x + w // 2, top, ROOF.far[1]); sky3.pset(x + w // 2, top - 13, ROOF.red)   # an aerial and its light
+    x += w + 8; k += 1
+art.scene('skyline', sky3, pal=ROOF, at=(192, 0), region='bg')
+
+# --- BG1: rooftop things standing behind the deck: vents, a water tank on legs, a stairwell hut, a railing; down to y 136. ---
+roofs = Img(256, 224)
+def block(x0, y0, w, h, c):                                  # a box with a lit top, a shaded foot and a seam
+    for yy in range(y0, y0 + h):
+        for xx in range(x0, x0 + w):
+            roofs.px[yy][xx] = ROOF.struct[2] if yy == y0 else ROOF.struct[0] if yy >= y0 + h - 2 or xx == x0 + w - 1 else ROOF.struct[c]
+block(8, 104, 40, 32, 1); block(16, 112, 8, 8, 0); block(32, 112, 8, 8, 0)                    # an air-conditioning unit with two grilles
+for lx in (72, 100, 124): roofs.rect(lx, 112, 4, 24, ROOF.struct[0])                          # a water tank on legs
+for yy in range(88, 112):
+    for xx in range(68, 130): roofs.px[yy][xx] = ROOF.struct[1] if (xx + yy // 3) % 9 else ROOF.struct[0]
+roofs.rect(68, 88, 62, 2, ROOF.struct[2]); roofs.rect(66, 86, 66, 3, ROOF.struct[0])
+block(152, 80, 40, 56, 1); block(168, 104, 14, 32, 0)                                          # a stairwell hut and its door
+for xx in range(200, 256, 8): roofs.rect(xx, 112, 2, 24, ROOF.struct[1])                      # a railing
+roofs.rect(200, 112, 56, 2, ROOF.struct[2]); roofs.rect(200, 124, 56, 2, ROOF.struct[1])
+art.scene('roofs', roofs, pal=ROOF, at=(224, 0), region='bg')
+
+# --- BG0: the deck, slabs of concrete with a low wall along the back, and a helipad's circle and H in the middle of each 256 px. ---
+deck = Img(256, 224)
+for y in range(136, 140):
+    for x in range(256): deck.px[y][x] = ROOF.deck[3] if y == 136 else ROOF.deck[2] if y == 137 else ROOF.deck[0]          # the parapet
+for y in range(140, 224):
+    for x in range(256):
+        c = ROOF.deck[1 + ((x // 32 + y // 16) % 2)]
+        if x % 32 == 0 or y % 16 == 0: c = ROOF.deck[0]                                                                       # the seams
+        deck.px[y][x] = c
+for yy in range(150, 222):                                                                                                   # the helipad: a ring ...
+    for xx in range(88, 168):
+        dx, dy = xx - 128, (yy - 186) * 1.1
+        r = (dx * dx + dy * dy) ** 0.5
+        if 34 <= r <= 37: deck.px[yy][xx] = ROOF.yellow
+for yy in range(172, 201):                                                                                                   # ... and an H
+    for xx in range(118, 139):
+        if xx in (118, 119, 137, 138) or (185 <= yy <= 187): deck.px[yy][xx] = ROOF.white
+art.scene('deck', deck, pal=ROOF, at=(0, 32), region='bg')
+
+# =====================================================================================================================
+# The fighters: drawn figures (figures.py), streamed from the cart's ROM into slots of 64 tiles as they play.
+# =====================================================================================================================
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import figures as F
+FP = {k: art.sprite_palette(k, v) for k, v in F.PALS.items()}
+P0 = FP[0]
+hero = F.make_hero(P0)
+thug = F.make_thug(P0)
+clips = {}
+# Drawing the figures takes a few minutes: with BRAWL_FIG_CACHE=<dir> each fighter's frames are kept in a file there (delete
+# the file of one you changed) and read back on the next run.
+CACHE = os.environ.get('BRAWL_FIG_CACHE')
+def add(pre, make, poses, acc=None, into=None, size=None):
+    f = os.path.join(CACHE, pre + '.pkl') if CACHE else None
+    if f and os.path.exists(f):
+        import pickle
+        got, anchors = pickle.load(open(f, 'rb'))
+        F.ANCHORS.update(anchors)
+    else:
+        got = F.render_clips(lambda m: make(P0, m), poses(), acc, pre, size)
+        if f:
+            import pickle
+            os.makedirs(CACHE, exist_ok=True)
+            pickle.dump((got, {k: v for k, v in F.ANCHORS.items() if k.startswith(pre)}), open(f, 'wb'))
+    for k, v in got.items(): (clips if into is None else into)[pre + k] = v
+add('h_', F.make_hero, lambda: F.hero_poses(hero))
+add('t_', F.make_thug, lambda: F.thug_poses(thug))
+for kind, (pre, hair, hat, attack) in F.TYPES.items():
+    mk = F.make_type(hair)
+    add(pre, lambda P, m, mk=mk: mk(P, m), lambda mk=mk, attack=attack: {**{k: v for k, v in F.thug_poses(mk(P0), attack=False, lite=True).items() if k in ('idle', 'walk', 'hurt')}, **attack()}, F.accessory(hat, FP[{'knife': 3, 'chucker': 4, 'lasher': 5, 'fire': 6}[kind]]) if hat else None)
+add('b_', F.make_brute, lambda: F.brute_poses(F.make_brute(P0)))
+def anchor_blob(cl):
+    """Each frame's anchors, four bytes: the near hand's x and y, the head's x and y, from the pivot and the ground, plus 128."""
+    hb = bytearray()
+    for name, fr in cl.items():
+        for n in range(len(fr)): hb += bytes(max(0, min(255, v + 128)) for v in F.ANCHORS['%s:%d' % (name, n)])
+    return bytes(hb)
+
+# The hero's face for the HUD: a crop of his first frame round the head (palette 0 for the first hero, 1 for the second).
+hx, hy = F.ANCHORS['h_idle:0'][2:]
+face = clips['h_idle'][0].crop(F.PIVOT + hx - 12, F.CH - 1 + hy - 17, 24, 24)
+art.stream('f', clips, pal=P0, region='spr', slots=7, rom=True, fewer=int(os.environ.get('BRAWL_FEWER', '1')), cap=64)
+art.rom['hands'] = anchor_blob(clips)
+
+# The bosses: a bigger frame, one slot of 128 tiles that is laid over the fighters' last two slots (5 and 6) while a boss is on:
+# the game keeps those two free then (a boss fight has two thugs at most), and the tiles the stream would have taken are free for
+# the small things.
+bclips = {}
+add('u_', F.make_bull, lambda: F.bull_poses(F.make_bull(P0)), F.bull_acc(FP[6]), bclips, (F.BW, F.BH))
+add('z_', F.make_razor, lambda: F.razor_poses(F.make_razor(P0)), None, bclips, (F.BW, F.BH))
+bs = art.stream('b', bclips, pal=P0, region='spr', slots=1, rom=True)
+assert bs['rows'] == 8, 'a boss frame needs more than 128 tiles'
+art.used.difference_update(range(bs['base'], bs['base'] + 128))
+bs['base'] = art.streams['f']['base'] + 5 * 64
+art.rom['bhands'] = anchor_blob(bclips)
+
+# The title's logo: two lines of big lettering (lettering.big_text) streamed like the bosses, onto the fighters' slots 2 to 4
+# and 5 to 6 (the title shows two heroes in slots 0 and 1 and nothing else). Its colours are palette 6 at that moment (the game
+# sets them with SWAP.logo): 1 the outline, 2 the shadow, 3 to 7 a gradient from deep red to pale gold.
+from lettering import big_text
+LOGO = ['180c14', '3a1c28', 'a02020', 'd84020', 'f08030', 'f8b838', 'fff0a0']
+LW, LH = 232, 40
+def logo_line(text):
+    im = Img(LW, LH)
+    t = big_text(text, (3, 4, 5, 6, 7), scale=4, outline=1, shadow=2)
+    im.blit(t, (LW - t.w) // 2, 0)
+    return im
+used_before = set(art.used)
+art.used.difference_update(range(art.streams['f']['base'], art.streams['f']['base'] + 7 * 64))     # room to make them in; they are laid over the slots
+l1 = art.stream('logo1', [logo_line('STREETS')], pal=P0, region='spr', slots=1, rom=True)
+l2 = art.stream('logo2', [logo_line('OF WOE')], pal=P0, region='spr', slots=1, rom=True)
+art.used.clear(); art.used.update(used_before)
+l1['base'] = art.streams['f']['base'] + 2 * 64
+l2['base'] = art.streams['f']['base'] + 5 * 64
+assert l1['rows'] <= 12 and l2['rows'] <= 8, 'the logo needs more tiles than the slots it lies over: %d %d' % (l1['rows'], l2['rows'])
+
+# --- Palette 7, the world's: the small things that sit among the fighters (shadows, props, pickups, thrown weapons), props.py. ---
+import props as PR
+WORLD = art.sprite_palette(7, PR.LAYOUT)
+def small(name, img, piece='auto'):
+    """A small thing as a big sprite wherever there is room: the few tiles between the backgrounds and the fighters first."""
+    for region in ('mid', 'spr'):
+        try: return art.big_sprite(name, img, pal=WORLD, region=region, piece=piece)
+        except MemoryError: pass
+    raise MemoryError('no room for %s' % name)
+for name in ('crate', 'tomb', 'bin', 'barrel', 'chicken', 'money', 'oneup', 'apple'): small(name, PR.ALL[name](WORLD))
+small('face', face)
+small('shadow', ellipse(32, 9, WORLD.shadow), 16); small('shadow2', ellipse(16, 6, WORLD.shadow), 16)
+for name in ('pipe', 'knife'):                       # a weapon lying down or thrown turning over: the long way and the short way
+    img = PR.ALL[name + '_h'](WORLD)
+    small(name, img); small(name + 'V', img.rot90())
+img = PR.bottle_v(WORLD)
+small('bottle', img); small('bottleH', img.rot90())
+
+art.write(sys.argv[1])
+
+# The palettes that change as the game plays, into code.js between its SWAP markers.
+import json
+code = os.path.join(sys.argv[1], 'code.js')
+src = open(code, encoding='utf8').read()
+a, b = src.index('// SWAP'), src.index('// END SWAP')
+swap = {'thug': [F.packed(l) for l in F.SWAP['thug']], 'fire': F.packed(F.SWAP['fire']), 'brute': F.packed(F.SWAP['brute']), 'boss': [F.packed(l) for l in F.SWAP['boss']], 'logo': F.packed({'c%d' % i: c for i, c in enumerate(LOGO + ['000000'] * (15 - len(LOGO)))})}
+src = src[:a] + '// SWAP (generated by art.py: do not edit)\nconst SWAP = %s;\n' % json.dumps(swap, separators=(',', ':')) + src[b:]
+open(code, 'w', encoding='utf8', newline='\n').write(src)

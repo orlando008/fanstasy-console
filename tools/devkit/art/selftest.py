@@ -310,6 +310,39 @@ for view in ('side', 'three', 'front', 'back'):
     ok(set(fp.hair) & him.colors() and (view == 'back' or fp.white in him.colors()) and speckle(him) < 0.12, 'head %s: hair, eyes, clean (speckle %.2f)' % (view, speckle(him)))
     if view == 'three': ok(sum(1 for r in him.px for v in r if v == fp.white) >= 6, 'three-quarters: both eyes show')
 ok(raises(lambda: head(Canvas(8, 8), 4, 4, 8, fp.skin, view='top'), 'view is'), 'head: an unknown view is an error')
+for view in ('three', 'side'):
+    for expr in ('neutral', 'angry', 'hurt', 'shout'):
+        sc = Canvas(72, 72); head(sc, 30, 40, 48, fp.skin, fp.hair, view=view, expression=expr, style='shaggy', line=fp.line)
+        si = sc.render(outline=fp.line)
+        ok(set(fp.hair) & si.colors() and fp.skin[1] in si.colors() and sum(1 for r in si.px for v in r if v) > 1200, "head(style='shaggy') %s %s: the traced reference, its hair and planes" % (view, expr))
+small = Canvas(40, 40); head(small, 18, 20, 20, fp.skin, fp.hair, view='three', style='shaggy', line=fp.line)
+ok(small.render().colors() & set(fp.skin), 'and below 26 px the simple head stands in')
+from trace import loops, strip_halo, BODY_COLOURS
+halo = ['.....', '.wkkw', '.wkkw', '.wwww', '.....']
+ok(strip_halo(halo) == ['.....', '..kk.', '..kk.', '.....', '.....'] or strip_halo(halo)[1:3] == ['..kk.', '..kk.'], 'strip_halo: the pale fringe outside a figure goes, its dark body stays', str(strip_halo(halo)))
+inner = ['.kkkkk.', '.kwwwk.', '.kwwwk.', '.kkkkk.']
+ok(strip_halo(inner) == inner, "strip_halo: white inside the figure's outline is kept (a shirt)")
+ok(strip_halo(['kkkk.....', 'kkkk..k..', 'kkkk.....'], speck=3)[1] == 'kkkk.....', 'strip_halo: a stray pixel floating outside the figure is removed')
+# --- Strict grids, patches and the frame review (kit.py, review.py) ---
+ok(Img.from_rows(['.1', '2.'], strict=True, size=(2, 2)).px == [[0, 1], [2, 0]], 'from_rows(strict=True): a clean grid reads as before')
+ok(raises(lambda: Img.from_rows(['..', '.'], strict=True), 'row 1 is 1 wide'), 'strict: a ragged row is an error that names the row')
+ok(raises(lambda: Img.from_rows(['.x'], strict=True), 'row 0, column 1'), 'strict: an unknown character names its row and column')
+ok(raises(lambda: Img.from_rows(['.. '], strict=True), 'column 2'), 'strict: a space is not transparent (only a dot is)')
+ok(raises(lambda: Img.from_rows(['..'], strict=True, size=(3, 1)), 'expected 3 x 1'), 'strict: the size is checked, never padded or cropped')
+pi = Img.from_rows(['11', '11']).patch(['.2', '~.'], key={'k': 5})
+ok(pi.px == [[1, 2], [0, 1]], "patch: '.' leaves a pixel, a digit sets it, '~' erases")
+ok(Img(3, 1).patch(['k'], x=2, key={'k': 7}).px == [[0, 0, 7]] and raises(lambda: Img(2, 2).patch(['11'], x=1), 'does not fit'), 'patch: a key character sets, and a grid that sticks out is an error')
+fa = Img(20, 20).rect(5, 4, 8, 14, 3)
+rv = review([fa, fa.copy(), Img(20, 20)], name='t', height=30)
+codes = {f['code'] for f in rv['findings']}
+ok(not rv['ok'] and {'EMPTY', 'IDENTICAL', 'HEIGHT'} <= codes, 'review: an empty frame is an error; a stalled one and a wrong height are warnings', str(sorted(codes)))
+hop = Img.make(20, 20, lambda x, y: 3 if 5 <= x < 13 and 2 <= y < 12 else 0); lowr = Img.make(20, 20, lambda x, y: 3 if 5 <= x < 13 and 6 <= y < 16 else 0)
+ok('FEET' in {f['code'] for f in review([hop, lowr])['findings']}, 'review: the soles jumping between frames is FEET')
+wf = Figure('brawler', height=64, line=fp.line, skin=fp.skin, hair=fp.hair, shirt=fp.shirt, pants=fp.pants, shoes=fp.hair)
+wk = review([wf.render(p) for p in wf.animate(WALK, 8)], name='walk', loop=True)
+ok(wk['ok'] and not [x for x in wk['findings'] if x['code'] in ('FEET', 'EMPTY', 'IDENTICAL')], "review: a Figure's walk cycle is clean (its feet swing sideways without a warning)", findings_text(wk))
+ok('EDGE' in {f['code'] for f in review([Img(10, 10).rect(0, 0, 4, 4, 2)])['findings']} and 'SPECKLE' in {f['code'] for f in review([Img.make(20, 20, lambda x, y: 1 + (x + y) % 2)])['findings']}, 'review: touching the edge, and noise')
+ok(sorted(len(l) for l in loops({(0, 0), (1, 0), (0, 1), (1, 1), (5, 5)})) == [4, 4] and len(loops({(0, 0), (1, 0), (2, 0), (0, 1), (2, 1), (0, 2), (1, 2), (2, 2)})) == 2, 'trace.loops: outlines of pixel regions, holes as loops of their own')
 fg = Figure('brawler', height=64, line=fp.line, skin=fp.skin, hair=fp.hair, shirt=fp.shirt, pants=fp.pants, shoes=fp.hair, face='angry', hair_style='swept')
 frames = [fg.render(p) for p in fg.animate(PUNCH, 4, loop=False)]
 ok(all(f.w == fg.w and fp.line in f.colors() and set(fp.shirt) & f.colors() for f in frames), 'Figure: frames of a punch in the palette, outlined in the shared line colour')
@@ -433,22 +466,23 @@ console.log(JSON.stringify({ body: at(108, 80), eye: at(111, 61), eyeR: at(160 +
     ok(bv['gem'] == rgb555(bart.palettes[('spr', 5)].hexes['gem2']), 'with the part in the other palette over it')
     ok(bv['sky0'] != bv['sky99'] and bv['sky0'] == rgb555('102040'), 'and gradientLine() in scanline() paints the backdrop line by line', str((bv['sky0'], bv['sky99'])))
     # streams: frames loaded into a slot as they play; their frames in code.js, then in the cart's ROM
-    for in_rom in (False, True):
+    for in_rom, fewer in ((False, 0), (True, 0), (True, 2)):         # frames in code.js; in ROM; in ROM covered in fewer, bigger pieces
         sart = Art(); sart.region('spr', 256, 1023)
         spal = sart.sprite_palette(0, {'a': ramp('c04040', 3), 'b': ramp('4060c0', 3)})
         fa = Img(40, 40).rect(0, 0, 40, 40, spal.a[1]).rect(4, 4, 8, 8, spal.a[2])
         fb = Img(40, 40).rect(0, 0, 40, 20, spal.b[1]).rect(20, 20, 20, 20, spal.b[0])
-        sst = sart.stream('box', {'one': [fa], 'two': [fb, fa]}, pal=spal, slots=2, rom=in_rom)
+        sst = sart.stream('box', {'one': [fa], 'two': [fb, fa]}, pal=spal, slots=2, rom=in_rom, fewer=fewer, cap=64 if fewer else None)
         ok(sst['clips'] == {'one': [0, 1], 'two': [1, 2]} and sst['rows'] % 4 == 0 and len(sart.used) - 1 == sst['rows'] * 16 * 2, 'stream: clips, and only its slots taken from the tile budget', str((sst['rows'], len(sart.used))))
         ok(raises(lambda: sart.stream('bad', [fa, Img(8, 8)], pal=spal), 'same size'), 'stream: frames of different sizes are an error')
-        ssrc = os.path.join(work, 'stream%d' % in_rom); os.makedirs(ssrc)
+        ssrc = os.path.join(work, 'stream%d%d' % (in_rom, fewer)); os.makedirs(ssrc)
         open(os.path.join(ssrc, 'code.js'), 'w').write('%s\n%s\nlet t = 0;\nfunction update() { t++; }\nfunction draw() { cls(); const s = ART.streams.box; streamSprite(s, t < 2 ? 0 : 1, 10, 10); streamSprite(s, 2, 100, 10, { slot: 1, fx: true }); }\n' % (ART_BEGIN, ART_END))
         open(os.path.join(ssrc, 'meta.json'), 'w').write('{"title": "Stream"}')
         sart.write(ssrc, quiet=True)
         if in_rom:
             ok(os.path.exists(os.path.join(ssrc, 'rom', 'box.bin')) and 'pool' not in sst and sst['rom'] == 'box', 'stream(rom=True): the frames go to rom/box.bin, not into code.js')
-        sout = os.path.join(work, 'stream%d.nova' % in_rom); node('tools/pack.js', ssrc, sout)
-        sprobe = os.path.join(work, 'sprobe%d.mjs' % in_rom)
+            ok('st.pool' not in open(os.path.join(ssrc, 'code.js')).read(), 'and a cart whose streams are all in ROM has streamSprite() without the unpacking of frames packed into code.js')
+        sout = os.path.join(work, 'stream%d%d.nova' % (in_rom, fewer)); node('tools/pack.js', ssrc, sout)
+        sprobe = os.path.join(work, 'sprobe%d%d.mjs' % (in_rom, fewer))
         open(sprobe, 'w').write("""import { boot } from '%s/tools/devkit/harness.mjs';
     const vm = boot(process.argv[2]);
     const at = (x, y) => { const v = vm.out32[y * 256 + x]; return [v & 255, (v >> 8) & 255, (v >> 16) & 255]; };

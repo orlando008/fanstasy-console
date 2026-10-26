@@ -133,7 +133,9 @@ test is not in CI (it needs Playwright and Chromium). On CI the tests' frame-tim
 
 ## 3. Limits and rules of the console
 
-- **Code** 64 KB (65,536 UTF-8 bytes). Moto Crosser is at 93%. Tables of level data are the big spender: keep
+- **Code** 64 KB (65,536 UTF-8 bytes). A cart whose `meta.json` says `"strip": true` is packed **without its comments, blank lines and indentation**
+  (`tools/devkit/strip.mjs`): write the reasons in the source as you like, and the shipped cart does not pay for them (Streets of Woe's
+  source is 80 KB, its cart 60 KB). It is the first thing to try when a game nears the limit; after it, the console's own `clamp`, `abs` and `sgn` are shorter than the `Math` forms, and a short name for a call you make a hundred times (`const rf = rectfill`) is worth its bytes. Moto Crosser is at 93%. Tables of level data are the big spender: keep
   them compact (`[kind, lane, x]` arrays), generate repetitive tiles in code rather than data, and measure with
   `node tools/check.js <name>` as you go, not at the end.
 - **Screen** 256 x 224; BG0 front, BG1 middle, BG2 back; sprites 8, 16 or 32 px, **128 in OAM, 32 per scanline**
@@ -325,7 +327,10 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   `light()` a lit band, `seam()` a line where one part overlaps another, `ink()` and `dot()` pixel-exact lines and
   glints (eyes, mouths); `render()` counts the samples into pixels, outlines and tidies (folds stray pixels away).
   `head(d, x, y, H, skin, hair, view='side' | 'three' | 'front' | 'back', expression=, style=)` draws a head from templates of
-  planes (brow ridge, sockets, nose, cheekbone, jaw) at any size, and `Figure('brawler', height, line=, skin=, hair=,
+  planes (brow ridge, sockets, nose, cheekbone, jaw) at any size; `style='shaggy'` is the head traced from the user's
+  reference drawings (`docs/reference/`, `trace.py`), its planes, hair and expressions, from 26 px tall. Reference art
+  from the person beats any template of mine: ask for it (flat tones, real pixel size), trace it, keep it in
+  `docs/reference/` with what it informs, and `Figure('brawler', height, line=, skin=, hair=,
   shirt=, pants=, shoes=, top='tee' | 'tank' | 'long' | 'bare')` a whole character on a rig's skeleton, posed and
   animated like a rig. Its default `view='three'` cheats the chest and face towards the camera as Streets of Rage and
   Street Fighter do (a pure profile hides the chest behind a bulky near shoulder: the user's note on the first one). Give it one `line` colour for all its outlines (Streets of Rage does): one sprite palette then
@@ -360,6 +365,36 @@ The difference between NES-looking and SNES-looking art is mostly shading, depth
   (`rom/<name>.bin`, 128 KB in all: docs/dev/rom-plan.md), out of the 64 KB of code: the `street` brawler (96 px, 18
   frames) is 128 tiles and 18.5 KB of ROM, so six or so such fighters fit (without `rom=True` the same frames are
   20 KB of `code.js`). One slot per copy on screen at once (`slots=`); loading costs no measurable time.
+- **A whole cast: Streets of Woe's way** (`carts/src/brawl/figures.py`, `art.py`; its spec section 12). Seven fighters on the
+  screen cannot each have 128 tiles, nor 40 frames of ROM each, so: (1) draw them at 72 px (a 64-tile slot, 0.7 KB a frame) and make the
+  game's boxes fit them; (2) **give every fighter one palette layout** (an outline, three ramps of 3, two trim colours) so the same frames
+  show in any of the eight sprite palettes, and a second hero or a thug's coat for each stage is a palette, not frames (`color()`
+  rewrites one while the game plays); (3) put the whole cast in **one stream** with `slots=7` and hand the slots out in the game
+  (a map of fighter to slot, kept while he is on the screen); (4) a variant (a head, a hat, a scarf) is the same poses drawn again: the
+  body's tiles are shared in ROM, so it costs about 0.3 KB a frame; (5) seat each frame on its lowest pixel and its pivot on the
+  middle column in `render_clips()` (a crouch or a lunge then keeps its feet on the floor, and `fx` mirrors it in place); (6) keep
+  where the hand and the head are in each frame (`ANCHORS`, in a small ROM blob), for a knife, a whip or a flame drawn by code; (7) **a
+  second stream can lie over the first one's slots** (a boss over two of them, a title's logo over five): make it, then set its `base`
+  in `art.streams` and free its tiles in `art.used`; the game reloads (`st.loaded = []`) when who is on changes; (8) `art.stream(...,
+  fewer=2, cap=64)` covers a frame in fewer, bigger pieces while it still fits the slot: fewer sprites on a line (a 72 px fighter was
+  14 to 18 of the 128 sprites; now 9 on average). Everything that has to sort with the fighters (props, pickups, shadows) must be a
+  sprite too: the overlay is always above sprites. Check the sprites with a long random play (`soak.mjs` reports the OAM and the
+  scanline maxima) and the **PNG payload** (`check.js`): packed frames compress to about 0.65 and the `.nova.png` holds 147 KB, so it fills before the ROM does (110 KB of the 128). The **label** counts too: the F7 capture of a busy frame is 17 to 24 KB; squeeze it to 24 colours (`Image.quantize`: 7 KB) and release with `--keep-label`.
+  Drawing 160 frames takes minutes: `BRAWL_FIG_CACHE=<dir>` keeps each fighter's frames between runs (delete one file after changing its poses).
+- **Review a character the way a person would, then check what a person can't.** `review(frames, name=, loop=,
+  height=, colours=)` (`review.py`) turns the by-eye checks into findings: a frame touching the picture's edge, noise
+  (clusters of one or two pixels), too many colours, a figure the wrong height, a stalled animation, feet that hop
+  between frames (`FEET`; a walk's feet swing sideways and are not flagged, an idle's are with `smooth=True`). It
+  catches what makes a sprite look wrong without anyone seeing it, and it never says a sprite looks good: only
+  looking does (a `Sheet` at 6x, then the Read tool; if you cannot look at the picture, say so and do not claim a
+  visual review). The revision loop, from the user's sprite engine spec (`docs/reference/`): write down specific
+  defects ("the near fist merges into the chest", not "looks off"), change only the source that causes them, keep
+  the palette, proportions and every area that already works, render again and compare before and after, at most
+  five rounds per pose, keeping the best version. Score a pose 1 to 5 on each of: silhouette (understood at 1x?),
+  anatomy (head, limbs, hands and feet plausible?), consistency (same proportions, costume and face as the others?),
+  shading (do flat clusters describe volume?), pixel discipline (clusters, not noise?) and, for an animation,
+  motion (readable, steady, well timed?), and note why. For exact fixes after a render: `Img.patch(rows)` ('.' leaves
+  a pixel, '~' erases); for a grid someone handed over: `Img.from_rows(rows, strict=True, size=(w, h))`.
 - **Details on sculpted figures** (`detail.py`): `face()`, `hair()`, `crease()`, `bunch()`, `stroke()` draw on a
   rendered Sculpt or Rig (`Rig(..., face='angry', hair_style='swept', folds=True)`). For a character, prefer `Figure`.
 - **HUD and titles:** `big_text()` (smooth scaled, gradient-filled, outlined, shadowed), `hud_bar()`, `frame()`.
