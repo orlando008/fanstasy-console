@@ -51,8 +51,8 @@ const season = (p) => { while (p.PHASE < 2) p.advanceDay(); return p.CASH - p.SC
   p.edit(q, (e) => { e.team = p.ME; e.sal = sal; e.yrs = 3; e.since = Y; });
   const r1 = p.roster(p.ME, Y), r3 = p.roster(p.ME, Y + 2), r4 = p.roster(p.ME, Y + 3);
   ok(r1.some((x) => x.id === q.id) && p.contractAt(q, Y)[0] === sal && p.contractAt(q, Y)[1] === 3, 'he is on the roster next year, at that pay', `${p.contractAt(q, Y)}`);
-  ok(r1.length === 15 && r3.length === 15 && r4.length === 15 && !r4.some((x) => x.id === q.id), 'the roster stays at 15 while he stays and after he goes', `${r1.length} ${r3.length} ${r4.length}`);
-  ok(new Set(r1.map((x) => x.id)).size === 15 && new Set(r3.map((x) => x.id)).size === 15, 'nobody twice');
+  ok(r3.some((x) => x.id === q.id) && !r4.some((x) => x.id === q.id), 'he stays for the three years and goes after them', `${r1.length} ${r3.length} ${r4.length}`);
+  ok(new Set(r1.map((x) => x.id)).size === r1.length && new Set(r3.map((x) => x.id)).size === r3.length && r1.length <= 15 && r3.length <= 15, 'nobody twice, and nobody comes in his place');
   const p0 = p.payroll(p.ME, Y);
   p.edit(ex[1], (e) => { e.team = p.ME; e.sal = 200; e.yrs = 2; e.since = Y; });
   ok(p.payroll(p.ME, Y) > p0 && p.contractAt(ex[1], Y)[0] === 200, 'a deal of his own is not scaled down');
@@ -63,21 +63,19 @@ const season = (p) => { while (p.PHASE < 2) p.advanceDay(); return p.CASH - p.SC
   ok(e.sal === sal && e.yrs === 3 && e.since === Y && p.roster(p.ME, Y + 1).some((x) => x.id === q.id), 'and the save keeps the deal');
 }
 
-// 3b. Re-signing again and again: the roster is 15 at every moment of twenty years.
+// 3b. Re-signing and filling the roster again and again: it stays between 13 and 15 at every moment of twenty years.
 {
   const vm = newGame(SEED), p = vm.probe(); vm.run(3);
   let bad = '', deals = 0;
   for (let y = 0; y < 22 && !bad; y++) {
     while (p.PHASE < 2) p.advanceDay();
-    for (const q of p.expiring()) {
-      p.signDeal(q, 1 + ((q.id + y) % 5)); deals++;
-      const n = p.roster(p.ME, p.YEAR).length, m = p.roster(p.ME, p.YEAR + 1).length, ids = new Set(p.roster(p.ME, p.YEAR + 1).map((x) => x.id)).size;
-      if (n !== 15 || m !== 15 || ids !== 15) bad = `year ${p.YEAR}: ${n} now, ${m} next, ${ids} different`;
-    }
+    const rs = p.pool(), mine = rs.filter((r) => r.own).concat(rs);
+    for (const r of mine) if (p.roster(p.ME, p.VY()).length < (r.own ? 15 : 13) && p.canSign(r)) { r.done = true; p.signDeal(r.p, 1 + ((r.p.id + y) % 5)); deals++; }
+    const n = p.roster(p.ME, p.YEAR + 1).length, ids = new Set(p.roster(p.ME, p.YEAR + 1).map((x) => x.id)).size;
+    if (n < 13 || n > 15 || ids !== n) bad = `year ${p.YEAR}: ${n} next year, ${ids} different`;
     p.nextYear();
-    if (p.roster(p.ME, p.YEAR).length !== 15) bad = `year ${p.YEAR} after the new year: ${p.roster(p.ME, p.YEAR).length}`;
   }
-  ok(!bad && deals > 20, 'twenty years of re-signing everybody: 15 players at every step', `${deals} deals ${bad}`);
+  ok(!bad && deals > 20, 'twenty years of re-signing and filling: 13 to 15 players every year', `${deals} deals ${bad}`);
 }
 
 // 4. The tax: a payroll over the line costs 1.5 a dollar over.
@@ -132,10 +130,9 @@ const season = (p) => { while (p.PHASE < 2) p.advanceDay(); return p.CASH - p.SC
   vm.press('A'); ok(p.ed === 2 && p.CASH === cash, 'A once only asks'); vm.press('A'); vm.run(2);
   ok(p.ed === -1 && p.CASH === cash - Math.round(c[0] * c[1] / 2), 'A again pays half of what is left of the deal', `${(cash - p.CASH) / 4}M of ${c[0] / 4}M x ${c[1]}`);
   const after = p.roster(p.ME, 0);
-  ok(after.length === 15 && !after.some((x) => x.id === who.id), 'he is gone and a new man has his place', `${after.length}`);
+  ok(after.length === before.length - 1 && !after.some((x) => x.id === who.id), 'he is gone and nobody takes his place', `${after.length}`);
   vm.press('B'); while (p.PHASE < 2) p.advanceDay(); vm.run(3);
   go(vm, p, 'VERDICT'); vm.press('A'); ok(p.state === 'verdict', 'VERDICT in the offseason'); vm.run(2); vm.press('B');
-  if (p.expiring().length) { go(vm, p, 'RE-SIGN'); vm.press('A'); ok(p.state === 'resign' && p.rs.length > 0, 'RE-SIGN lists those who are leaving'); vm.press('RIGHT'); ok(p.rs[0].n === 4, 'RIGHT asks for more years'); vm.press('A'); ok(p.rs[0].done && p.ENT.get(p.rs[0].p.id).sal === p.ask(p.rs[0].p, 4), 'A signs him at the price asked'); vm.run(2); vm.press('B'); }
   ok(p.state === 'hub', 'back at the hub');
   const ms = []; go(vm, p, 'FINANCES'); vm.press('A'); for (let i = 0; i < 200; i++) { vm.step(0); ms.push(vm.m.stats.cpu); } ms.sort((a, b) => a - b);
   ok(ms[198] < 8 * (process.env.CI ? 3 : 1), 'the finance screen draws quickly', `${ms[198].toFixed(2)} ms`);

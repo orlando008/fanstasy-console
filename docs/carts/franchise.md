@@ -121,15 +121,16 @@ At 0 you are **fired** when you press NEXT YEAR. The **legacy score** adds 1 for
 
 ### The draft
 
-60 prospects a year (generated from the seed and the year), two rounds. **Scouting** (the budget) decides how true the displayed potential is (error of +/-15 with no scouting, +/-3 with the maximum).
-The lottery for the 14 non-playoff teams; the AI drafts the best available by its own scouted value with a bit of noise. The GM picks when his slot comes, or
-auto-picks. Drafted players sign the rookie scale; second-rounders sign for the minimum.
+60 prospects a year (generated from the seed and the year), two rounds of 30 picks, the worst records first (the wins, with a hashed nudge: a small lottery). The class is thin: the first 12 to 15 are players
+of a peak of 55 to 75; the rest are fillers. **Scouting** (the budget, $0 to 5M) decides how true the numbers on the board are: the overall shown is off by up to 5 and the potential (the peak overall) by up to 10 with no scouting, and exact at the maximum (a fixed error for each
+prospect). The computer takes the best left (the peak plus the overall now); the GM picks when his slot comes, or presses B and the rest is picked for him. Rookie scale: pick 1 gets $8.5M for four years, down to the minimum by about pick 20; the second round, two years at the minimum. The draft is one sitting: leaving it
+unfinished changes nothing. The players the computer drafts do not appear in the league (its teams fill their places by the slots' own timelines).
 
 ### Free agency
 
-A pool of the players whose contracts ended and who were not re-signed: each has an **ask** (a function of overall, age and potential) and a **mood** towards your team (winning,
-playing time, money, hype). Free agency runs **three rounds** ("days 1, 7 and 30"): you make offers, the AI teams with cap room make theirs, and a player signs with the
-best **offer value** (salary, years and mood). Your own expiring players are in the pool too; offering first with a bonus makes them stay.
+The pool, in the offseason: the **street class** (38 ordinary players a year, ids from 15360, made like the reserves) and **everybody whose deal ends** on the other 29 teams, and the GM's own whose deals end (marked `*`; the old RE-SIGN is part of it); in the season, only the street class. Each has an **ask**
+(section above: his market price by his overall, age and a mood of 92 to 108 %, a little more for years over one for the old, a little less for the young) and the GM chooses the years (1 to 5) and signs (A). **The soft cap**: a team over the $120M cap can only sign its own players, or a player who asks $3M or less. A roster is 15 at the most. X
+signs the GM's own and then the best affordable ones until the roster has 13. A deal starts next year (now, in the season); the player the GM signs is gone from his old team's slot, which gets its next person. There are no rounds, and no bidding by the computer: the pool is what is left for the GM. **The roster rules**: with fewer than 10 players the GM cannot sim or play (he must sign), and NEXT YEAR needs 10 to 15 players on next year's roster.
 
 ### Trades
 
@@ -212,7 +213,7 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 | 40-54 | The standings: wins and losses of two teams to a number (6 bits each) |
 | 57-59 | The playoff teams of the round: 5 bits each, 6 to a number |
 | 60-61 | The series' wins in the round: 3 bits for each side, 4 series to a number |
-| 62-63 | The playoff round; the champion of the year (+1) |
+| 62-63 | The playoff round (5 once the draft is done); the champion of the year (+1) |
 | 65-70 | The career tally: titles, finals, conference finals, series won, wins, losses |
 | 72-73 | The GM's results of the season, a bit a day (1 is a win) |
 | 75 | The number of entries |
@@ -222,7 +223,7 @@ shared between palettes: 6 hairstyles x 2 face shapes in frames, 4 skin tones an
 
 | Asset | Budget |
 |---|---|
-| Code | 56.6 KB of the 64 KB limit after step 5 (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
+| Code | 60.7 KB of the 64 KB limit after step 6 (`node tools/check.js franchise`); `"strip": true` in `meta.json` from the start. The logic is compact and pure: the league, then the game sim, the AI, the screens |
 | Tiles | none yet (the backdrop is one colour); the panels, the court, the portraits' frames and the emblems come with the art pass (of 1,024) |
 | Sprites | none yet (128 in OAM, 32 per line): later the game night's ten dots and the ball, a portrait or two a screen |
 | ROM | 15.0 KB of 128 KB after step 3: `league.bin` (7.0 KB: 30 teams, 450 people) and `names.bin` (8.0 KB: 369 first names, 739 last names, the cities and nicknames) |
@@ -256,7 +257,7 @@ careers, prospects, the entries and the save, the load time); the bot runs a 25-
 
 **Decisions and what they cost.** (1) **No replay**: the first design replayed the offseasons from year 0, but then every move the GM made would have to be kept for ever, and dropping one would change
 the league; the slot model above has no history at all, and the 90 entries are the only state. (2) **The computer's teams do not trade among themselves** and do not react to the GM: their rosters turn over by the slots' own timelines.
-(3) **`MANUAL` is false**: the GM's team gets people in its empty slots for free, like the others, until steps 5 and 6 (contracts, the draft, free agency) give him the tools; then it is true and an empty slot stays empty until he fills it.
+(3) **`MANUAL` is true from step 6**: the GM's team no longer gets people in its empty slots for free (before it did); an empty place stays empty until he fills it with a re-signing, a free agent or a rookie. The save format is 2.
 (4) A **person in the GM's team that he traded away leaves his slot** that year; on an AI team the slot's next person starts at once. (5) Salaries (units of $0.25M) were tuned so a team's payroll is about $117M in
 year 0 and $105 to $125M on average later, but a few generated teams reach $200M or more in some years: step 5 gives the computer a payroll rule (it lets people go over the tax line).
 
@@ -311,6 +312,16 @@ scouting, the payroll rule, a re-signing and the roster that stays 15, the tax, 
 **Results:** the payroll rule puts every team between $89.5M and $146M. A season's profit with the usual budget runs from -$26M to +$14M across eight teams (the mean about $0), a bad payroll plus the tax can lose $130M. A team of the worst strength is fired in about 12 seasons if the GM does nothing; a strong team's patience stays at 85 to 100.
 Nobody's deal ends before the third season (the league's first contracts are 3 to 5 years), so RE-SIGN starts in the third offseason. **The code is 56.6 KB of 64: 8.9 KB left for the draft, free agency and trades, which is not much; see the open questions.**
 
+### Built and results: step 6, the draft and free agency
+
+**Built:** `MANUAL` is true and the save format is 2. In `code.js`: the street class (`street`, ids 15360 up), `pool`, `canSign` (the soft cap and the roster of 15), `signDeal` and `ask` working for the next year (`VY`: the year the GM works on, next year in the offseason), the FREE AGENTS screen (LEFT and RIGHT the years, A signs, X fills to 13), the draft
+(`startDraft`, `takeP`, `runAI`, `est`, `value`, `rookie`, the DRAFT screen with the board sorted by what scouting shows, the last five picks under it), the roster rules in the hub (under 10 players no sim and no game; NEXT YEAR needs 10 to 15), the roster screen showing next year's roster in the offseason, a release that costs nothing for a deal made this offseason, and the GM's payroll scaled
+only down (the league's payroll rule has a floor for the computer only). The hub's menu is 9 pixels a line (twelve items). A draft class is a little deeper (the rank slope 3/4 instead of 5/4). Tests: `07-draft.mjs` (the street class, the pool, the cap rule, the order, the picks, the rookie deals, the save, scouting, the screens and the roster limits); `06-money.mjs`'s long re-signing test
+now fills the roster as well; the bot drafts (B), signs (X) and plays 25 seasons.
+
+**Results:** the pool has about 100 players in an offseason (38 street, about 60 leaving other teams, a few of the GM's own). The street class averages an overall of 45 (the best near 65); with a payroll of $124M most of the good ones are beyond the cap and the cheap ones are the street class. The draft has about 12 real prospects.
+**The code is 60.7 KB of 64: 4.9 KB left. Trades (step 7) will not fit as they are: a size pass (a minifier that shortens the long names) comes first.**
+
 ## 16. Open questions
 
 - The **length of a season** (58 games here: every team twice) against a real 82; a shorter season is faster to play, a longer one more real.
@@ -318,4 +329,4 @@ Nobody's deal ends before the third season (the league's first contracts are 3 t
 - **Real names**: fictional teams and generated players are the plan; no real franchise, league or player name goes in.
 - **More than one base league**: one table of 7 KB plus the seed's jitter is the plan; two or three base leagues (different eras of talent) would cost only 7 KB each if the jitter proves too samey.
 - **Game night speed**: a live game takes about 40 seconds at the fastest pace of the play-by-play (skippable); is that right?
-- **The code budget**: 56.6 KB of 64 KB after step 5; steps 6 and 7 must share 8.9 KB, or the code needs a size pass first (a build step that renames the long names, as a minifier does, would give back 10 to 15 %; the project has no dependencies, so it would be a small tool of its own). Before that: 48 KB after step 4. If steps 5 to 7 do not fit, the first things to trim are the offseason report's rows, the card's chart and the SHORT phrase table; a second table in ROM (text) does not count against the code.
+- **The code budget**: 60.7 KB of 64 KB after step 6; step 7 (trades) has 4.9 KB, so the code needs a size pass first (a build step that renames the long names, as a minifier does, would give back 10 to 15 %; the project has no dependencies, so it would be a small tool of its own). Before that: 48 KB after step 4. If steps 5 to 7 do not fit, the first things to trim are the offseason report's rows, the card's chart and the SHORT phrase table; a second table in ROM (text) does not count against the code.

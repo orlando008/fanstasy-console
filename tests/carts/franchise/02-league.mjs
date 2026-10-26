@@ -60,7 +60,7 @@ const snap = (y) => Array.from({ length: p.NT }, (_, t) => p.roster(t, y).map((q
 // 4. The shape of the league, in year 0 and 10 and 20 years on, for several seeds.
 {
   for (const seed of [1, 777, 40000, 9]) {
-    p.SEED = seed; p.ME = seed % 30; p.resetLeague();
+    p.SEED = seed; p.ME = -1; p.resetLeague();
     for (const y of [0, 5, 10, 20]) {
       const all = [], pays = [], str = [], sizes = [];
       for (let t = 0; t < 30; t++) {
@@ -131,7 +131,7 @@ const snap = (y) => Array.from({ length: p.NT }, (_, t) => p.roster(t, y).map((q
   const own = p.roster(7, 0).find((q) => q.k === undefined && q.id === p.pid(7, 0, 0)) || p.personById(p.pid(7, 0, 0));
   p.setEntry({ id: own.id, team: 20, since: 2, yrs: 2, sal: 40, bonus: [0, 0, 0, 0, 0, 0] });
   ok(p.roster(20, 2).some((q) => q.id === own.id) && !p.roster(7, 2).some((q) => q.id === own.id), 'a person the GM trades away is on the other team and not on his');
-  ok(p.roster(7, 2).length === 15 || !p.MANUAL, 'the GM\'s team is not left a person short while the team runs on autopilot');
+  ok(p.MANUAL && p.roster(7, 2).length < 15, 'the GM\'s team is a person short: his place stays empty for the GM to fill');
   const full = [0, 1, 2, 3, 6].map((y) => snap(y)).join('\n=\n');
   ok(full !== before, 'the entries change the league');
   // save, wipe, load

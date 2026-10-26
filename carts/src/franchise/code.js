@@ -38,7 +38,7 @@ function play(song) {
 
 // --- Save slots (SPEC 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
+const VERSION_SLOT = 0, SAVE_VERSION = 2, INITIALS_SLOT = 1;
 const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
@@ -78,7 +78,7 @@ const WEIGHT = [[1, 2, 3, 1, 1, 2], [1, 3, 2, 1, 1, 2], [2, 2, 1, 2, 1, 2], [3, 
 const GROW = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 19], DECL = [0, 1, 2, 4, 6, 9, 13, 18, 24, 31, 39, 48];
 const GR = [10, 10, 10, 10, 10, 8], DR = [8, 6, 7, 10, 10, 16];
 const CAP = 480, TAX = 600, FLOOR = 360;          // the cap $120M, the tax line $150M, the minimum payroll $90M, in units of $0.25M
-const BASE_YEAR = 2030, MAX_YEAR = 24, MANUAL = false;   // MANUAL: the GM's team gets no free arrivals (steps 5 and 6 turn it on)
+const BASE_YEAR = 2030, MAX_YEAR = 24, MANUAL = true;   // MANUAL: the GM's team gets no free arrivals: its empty places are filled by the draft, free agency and re-signing
 
 let SEED = 1, ME = 0, YEAR = 0;
 const ENT = new Map();                              // the entries: id -> { id, team, sal, yrs, since, bonus }
@@ -122,7 +122,7 @@ function gen(id, pos, tier, start, talent, rank) {
   const g = stream(hash(SEED, id, 7)), n = names();
   const rookie = rank >= 0 || g(100) < [40, 55, 70][tier];
   const age0 = rookie ? 19 + g(4) : 24 + g(8), peak = rookie ? 25 + g(4) : Math.min(31, age0 + g(2));
-  const mean = rank >= 0 ? 68 - ((rank * 5) >> 2) : [70, 61, 56][tier] + Math.trunc(((talent - 50) * 2) / 5);
+  const mean = rank >= 0 ? 68 - ((rank * 3) >> 2) : [70, 61, 56][tier] + Math.trunc(((talent - 50) * 2) / 5);
   let O = mean + Math.trunc(((g(13) + g(13) + g(13) - 18) * [7, 6, 5][tier]) / 6);
   if (tier === 0 && rank < 0 && g(100) < 9) O += 12;
   O = clamp(O, 38, 96);
@@ -198,9 +198,12 @@ function slotAt(t, s, y) {
     if (y < e.to) return y >= e.from && y < e.until && !e.empty ? e.p : null;
   }
 }
-/** Any person by id: a slot person (t, s, k) or a prospect. */
+/** The free agents nobody signed (38 a year, ids 15360 up, 39 to a year): ordinary players of the reserves' kind. */
+const street = (y, i) => { const id = 15360 + y * 39 + i; let p = PEOPLE.get(id); if (!p) PEOPLE.set(id, p = career(gen(id, hash(SEED, id, 3) % 5, 2, y, 42, -1))); return p; };
+/** Any person by id: a slot person (t, s, k), a street free agent or a prospect. */
 function personById(id) {
   if (id >= 16384) return prospect((id - 16384) >> 6, id & 63);
+  if (id >= 15360) return street(((id - 15360) / 39) | 0, (id - 15360) % 39);
   const k = id & 31, s = (id >> 5) & 15, t = id >> 9;
   while (!SLOTS.get(t * 16 + s) || SLOTS.get(t * 16 + s).length <= k) extend(t, s);
   return SLOTS.get(t * 16 + s)[k].p;
@@ -219,7 +222,7 @@ function kOf(t, y) {
   if (k === undefined && t < NT) {
     let R = 0, E = 0;
     for (const p of roster(t, y)) { const c = rawC(p, y), en = ENT.get(p.id); if (c) { if (en && en.yrs && en.since <= y) E += c[0]; else R += c[0]; } }
-    k = R ? clamp(Math.round((clamp(R + E, FLOOR, TAX - 20) - E) * 100 / R), 30, 300) : 100;
+    k = R ? clamp(Math.round((clamp(R + E, t === ME ? 0 : FLOOR, TAX - 20) - E) * 100 / R), 30, 300) : 100;
     KM.set(key, k);
   }
   return k || 100;
@@ -513,7 +516,7 @@ function endDay() {
     CASH += share(400) - share(costs());                                      // the TV share ($100M) and the costs, by the day
     if (++DAY >= DAYS) {
       const pay = payroll(ME, YEAR);
-      CASH -= (pay > TAX ? Math.round((pay - TAX) * 1.5) : 0) + (pay < FLOOR ? FLOOR - pay : 0);     // the tax, or the shortfall to the minimum payroll
+      CASH -= (pay > TAX ? Math.round((pay - TAX) * 1.5) : 0) + (pay < FLOOR && YEAR ? FLOOR - pay : 0);     // the tax, or the shortfall to the minimum payroll
       PHASE = 1; seedPlayoffs(); RES = PT.includes(ME) ? 1 : 0;
     }
   }
@@ -539,6 +542,7 @@ const legacy = () => TALLY[0] * 100 + TALLY[1] * 30 + TALLY[2] * 10 + TALLY[3] *
 // Units are $0.25M. Money moves a day at a time: the TV share and the costs by the day, the gate with each home game; the tax at the end of the season.
 
 let PAT = 60, CASH = START_CASH, SCASH = START_CASH, SETS = [3, 1, 1], GOALW = 29, GOALP = 0, LASTP = 0, RES = 0, why = '';   // the owner's patience, cash, the season's start cash, ticket price / scouting / facilities, goals, last profit, the playoff result (0 missed, 1 in, +1 a series won)
+const VY = () => (PHASE === 2 ? YEAR + 1 : YEAR);                         // the year the GM is working on: next year, in the offseason
 const priceOf = () => 30 + SETS[0] * 10;
 const costs = () => payroll(ME, YEAR) + 48 + (SETS[1] + SETS[2]) * 4;                // the payroll, the upkeep ($12M), scouting and facilities
 function demand() {
@@ -583,8 +587,8 @@ function teamRows() {
   return Array.from({ length: NT }, (_, t) => ({ t, ovr: strength(t, YEAR), pay: payroll(t, YEAR) })).sort((a, b) => b.ovr - a.ovr || a.t - b.t);
 }
 function buildTeam() {
-  const pn = new Map(plan(viewTeam, YEAR, today()).map((q) => [q.p.id, q]));
-  rows = roster(viewTeam, YEAR).map((p) => ({ p, o: ovr(p, YEAR), r: ratings(p, YEAR), c: contractAt(p, YEAR), h: hurt(p, YEAR, today()), q: pn.get(p.id), e: ENT.get(p.id) })).sort((a, b) => b.o - a.o);
+  const y = VY(), pn = new Map(plan(viewTeam, y, today()).map((q) => [q.p.id, q]));
+  rows = roster(viewTeam, y).map((p) => ({ p, o: ovr(p, y), r: ratings(p, y), c: contractAt(p, y), h: hurt(p, y, today()), q: pn.get(p.id), e: ENT.get(p.id) })).sort((a, b) => b.o - a.o);
 }
 function openTeam(t, from) { viewTeam = t; backTo = from; state = 'team'; sel = 0; view = 0; ed = -1; buildTeam(); }
 function openLeague() { state = 'league'; rows = teamRows(); sel = Math.max(0, rows.findIndex((r) => r.t === ME)); }
@@ -606,7 +610,8 @@ function update() {
   else if (state === 'sched') updateSched();
   else if (state === 'card') updateCard();
   else if (state === 'fin') updateFin();
-  else if (state === 'resign') updateResign();
+  else if (state === 'fa') updateFA();
+  else if (state === 'draft') updateDraft();
   else if (state === 'verdict') updateVerdict();
   else if (state === 'report') updateReport();
   else if (state === 'live') updateLive();
@@ -646,9 +651,9 @@ function updateNew() {
 }
 /** The hub's menu: what the date allows. */
 function hubItems() {
-  const base = ['ROSTER', 'STANDINGS', 'SCHEDULE', 'FINANCES', 'LEAGUE', 'RETIRE', 'QUIT TO TITLE'];
-  if (PHASE === 2) return ['NEXT YEAR', ...(expiring().length ? ['RE-SIGN'] : []), 'VERDICT', ...base];
-  return [...(myGame() ? ['PLAY NEXT GAME'] : []), 'SIM DAY', 'SIM WEEK', PHASE ? 'SIM TO END' : 'SIM TO PLAYOFFS', ...base];
+  const base = ['FREE AGENTS', 'ROSTER', 'STANDINGS', 'SCHEDULE', 'FINANCES', 'LEAGUE', 'RETIRE', 'QUIT TO TITLE'];
+  if (PHASE === 2) return ['NEXT YEAR', ...(PRD < 5 ? ['DRAFT'] : []), 'VERDICT', ...base];
+  return [...(roster(ME, YEAR).length < 10 ? [] : [...(myGame() ? ['PLAY NEXT GAME'] : []), 'SIM DAY', 'SIM WEEK', PHASE ? 'SIM TO END' : 'SIM TO PLAYOFFS']), ...base];
 }
 const HUB = hubItems;
 function updateHub() {
@@ -668,9 +673,10 @@ function updateHub() {
   else if (it === 'SIM WEEK') startSim(7);
   else if (it === 'SIM TO PLAYOFFS' || it === 'SIM TO END') startSim(999);
   else if (it === 'FINANCES') { state = 'fin'; finSel = 0; }
-  else if (it === 'RE-SIGN') { state = 'resign'; sel = 0; rs = expiring().map((p) => ({ p, n: 3, done: false })); }
+  else if (it === 'FREE AGENTS') { state = 'fa'; sel = 0; rs = pool(); }
+  else if (it === 'DRAFT') startDraft();
   else if (it === 'VERDICT') state = 'verdict';
-  else if (it === 'NEXT YEAR') { if (PAT <= 0 || YEAR >= MAX_YEAR) { why = PAT <= 0 ? 'FIRED' : 'CAREER OVER'; gameOver(legacy()); } else { nextYear(); hubSel = 0; } }
+  else if (it === 'NEXT YEAR') { const n = roster(ME, YEAR + 1).length; if (n < 10 || n > 15) lastRes = n < 10 ? `NEED 10 PLAYERS, HAVE ${n}` : `CUT TO 15, HAVE ${n}`; else if (PAT <= 0 || YEAR >= MAX_YEAR) { why = PAT <= 0 ? 'FIRED' : 'CAREER OVER'; gameOver(legacy()); } else { nextYear(); hubSel = 0; } }
   else if (it === 'RETIRE') { why = 'RETIRED'; gameOver(legacy()); }
   else toTitle();
 }
@@ -763,8 +769,8 @@ function updateTeam() {
     const p = rows[sel].p, e = ENT.get(p.id) || { mins: 0, focus: 0 };
     if (ed === 2 && pressed(A)) {                                // release: the second press does it, and half of what is left of the deal is paid now
       if (!arm) { arm = true; fx(SFX.select); return; }
-      const c = contractAt(p, YEAR); arm = false; ed = -1; fx(SFX.over);
-      if (c) { CASH -= Math.round(c[0] * c[1] / 2); edit(p, (x) => { x.team = 31; x.sal = c[0]; x.yrs = 1; x.since = YEAR; }); saveSeason(); buildTeam(); sel = Math.min(sel, rows.length - 1); }
+      const c = contractAt(p, VY()), en = ENT.get(p.id); arm = false; ed = -1; fx(SFX.over);
+      if (c) { if (!(en && en.yrs && en.since >= VY())) CASH -= Math.round(c[0] * c[1] / 2); edit(p, (x) => { x.team = 31; x.sal = c[0]; x.yrs = 1; x.since = VY(); }); saveSeason(); buildTeam(); sel = Math.min(sel, rows.length - 1); }
       return;
     }
     if (pressed(A) || pressed(B)) { ed = -1; arm = false; fx(SFX.select); return; }
@@ -785,30 +791,92 @@ function expiring() {
   const end = (p) => { const e = ENT.get(p.id); return e && e.yrs ? e.since + e.yrs : p.leave; };
   return roster(ME, YEAR).filter((p) => end(p) === YEAR + 1 && age(p, YEAR + 1) <= 36).sort((a, b) => ovr(b, YEAR) - ovr(a, YEAR));
 }
-/** A deal of n more years from next year. One who is already on a deal of his own has it rewritten from this year, so there is no gap in his years. */
+/** A deal of n years from next year (now, in the season). One who is already on a deal of his own has it rewritten from this year, so there is no gap in his years. */
 function signDeal(p, n) {
   const e = ENT.get(p.id), cur = e && e.yrs && e.since <= YEAR;
-  edit(p, (x) => { x.team = ME; x.sal = ask(p, n); x.since = cur ? YEAR : YEAR + 1; x.yrs = n + (cur ? 1 : 0); });
+  edit(p, (x) => { x.team = ME; x.sal = ask(p, n); x.since = cur ? YEAR : VY(); x.yrs = n + (cur ? 1 : 0); });
 }
-/** What a player asks for n more years, in units: his market price, a little either way by his mood, more for the old on long deals. */
+/** What a player asks for n years, in units: his market price, a little either way by his mood, more for the old on long deals. */
 function ask(p, n) {
-  const a = age(p, YEAR + 1), m = 92 + (hash(SEED, p.id, YEAR, 51) % 17) + (RES ? 0 : 4);
-  return clamp(Math.floor(salaryFor(ovr(p, YEAR + 1)) * m * (100 + (a >= 29 ? (n - 1) * 3 : -(n - 1) * 2)) / 10000), 6, 200);
+  const a = age(p, VY()), m = 92 + (hash(SEED, p.id, YEAR, 51) % 17) + (RES ? 0 : 4);
+  return clamp(Math.floor(salaryFor(ovr(p, VY())) * m * (100 + (a >= 29 ? (n - 1) * 3 : -(n - 1) * 2)) / 10000), 6, 200);
+}
+/** The free agents: the street class of the year, and in the offseason everybody whose deal ends (the GM's own marked). */
+function pool() {
+  const L = [], y = VY();
+  for (let i = 0; i < 38; i++) L.push({ p: street(y, i) });
+  if (PHASE === 2) {
+    for (const p of expiring()) L.push({ p, own: 1 });
+    for (let t = 0; t < NT; t++) if (t !== ME) for (let s = 0; s < SL; s++) { const p = slotAt(t, s, YEAR); if (p && p.leave === y && age(p, y) <= 36) L.push({ p }); }
+  }
+  for (const r of L) { const e = ENT.get(r.p.id); r.n = 3; r.done = !!(e && e.yrs && e.team === ME && e.since >= y); }
+  return L.sort((a, b) => ovr(b.p, y) - ovr(a.p, y));
+}
+/** The soft cap: a team over it can only re-sign its own or pay up to $3M; a roster is 15 at the most. */
+const canSign = (r) => !r.done && roster(ME, VY()).length < 15 && (r.own || payroll(ME, VY()) + ask(r.p, r.n) <= CAP || ask(r.p, r.n) <= 12);
+function updateFA() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  listMove(rs.length);
+  const r = rs[sel];
+  if (r && btnp(RIGHT)) r.n = Math.min(5, r.n + 1);
+  if (r && btnp(LEFT)) r.n = Math.max(1, r.n - 1);
+  if (r && pressed(A) && canSign(r)) { fx(SFX.point); r.done = true; signDeal(r.p, r.n); }
+  if (pressed(X)) { for (const r of rs.filter((x) => x.own).concat(rs)) if (roster(ME, VY()).length < (r.own ? 15 : 13) && canSign(r)) { r.done = true; signDeal(r.p, r.n); } fx(SFX.point); }
+  if (pressed(B)) state = 'hub';
+}
+function drawFA() {
+  header('FREE AGENTS', `ROOM $${money(CAP - payroll(ME, VY()))}M`);
+  txt(`ROSTER ${roster(ME, VY()).length}/15  NAME      POS AGE OVR`.slice(0, 32), 8, 24, DIM);
+  drawList(rs.map((r) => [`${r.own ? '*' : ' '}${pname(r.p, 9).padEnd(9)} ${POS[r.p.pos].padEnd(2)} ${pad(age(r.p, VY()), 2)} ${pad(ovr(r.p, VY()), 3)} ${r.done ? ' SIGNED' : `${pad(money(ask(r.p, r.n)), 5)}M ${r.n}Y`}`, r.done ? GOLD : canSign(r) ? WHITE : DIM]), sel, 36, 16);
+  footer('LR:YEARS A:SIGN X:FILL B:BACK');
+}
+
+// --- The draft: 60 prospects, two rounds, the worst record first; the computer takes the best left; scouting sharpens the numbers shown ---
+
+let D = null;
+const rookie = (n) => [Math.max(6, 34 - n - (n >> 1)), n < 30 ? 4 : 2];
+const value = (p) => overall(p.pos, p.R) + ovr(p, YEAR);
+const est = (p, v, k) => { const r = (5 - SETS[1]) * k; return v + (hash(SEED, p.id, 61, k) % (2 * r + 1)) - r; };
+function best() { return D.av.reduce((a, b) => (value(D.list[b]) > value(D.list[a]) ? b : a)); }
+function takeP(i) {
+  const t = D.order[D.pos];
+  D.av = D.av.filter((x) => x !== i); D.log.push(`${pad(D.pos + 1, 2)} ${team(t).nick.slice(0, 9).padEnd(9)} ${pname(D.list[i], 10)}`);
+  if (t === ME) D.mine.push([i, D.pos]);
+  D.pos++;
+}
+function runAI() {
+  while (D.pos < 60 && D.order[D.pos] !== ME) takeP(best());
+  if (D.pos >= 60) { for (const [i, n] of D.mine) { const [sal, yrs] = rookie(n); edit(D.list[i], (e) => { e.team = ME; e.sal = sal; e.yrs = yrs; e.since = YEAR + 1; }); } PRD = 5; saveSeason(); }
+}
+function startDraft() {
+  const key = (t) => WINS[t] * 8 + (hash(SEED, YEAR, t, 61) % 40), o = Array.from({ length: NT }, (_, t) => t).sort((a, b) => key(a) - key(b));
+  D = { order: o.concat(o), pos: 0, log: [], mine: [], list: Array.from({ length: 60 }, (_, i) => prospect(YEAR, i)), av: [] };
+  D.av = D.list.map((_, i) => i).sort((a, b) => est(D.list[b], value(D.list[b]), 2) - est(D.list[a], value(D.list[a]), 2));
+  runAI(); state = 'draft'; sel = 0;
+}
+function updateDraft() {
+  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (D.pos >= 60) { if (pressed(A) || pressed(B)) state = 'hub'; return; }
+  listMove(D.av.length);
+  if (pressed(A)) { fx(SFX.point); takeP(D.av[sel]); runAI(); sel = 0; }
+  if (pressed(B)) { while (D.pos < 60) takeP(best()); runAI(); }                 // B: the rest is picked for you
+}
+function drawDraft() {
+  const done = D.pos >= 60;
+  header('DRAFT', done ? 'DONE' : `PICK ${D.pos + 1}`);
+  if (done) { txt('YOUR PICKS', 8, 26, DIM); D.mine.forEach(([i, n], k) => txt(`${pad(n + 1, 2)} ${pname(D.list[i], 10)} ${POS[D.list[i].pos]} ${age(D.list[i], YEAR)} OVR ${ovr(D.list[i], YEAR)}`, 8, 38 + k * 10, WHITE)); if (!D.mine.length) txt('NONE', 8, 38, DIM); }
+  else {
+    txt('NAME       POS AGE OVR POT', 8, 24, DIM);
+    drawList(D.av.map((i) => { const p = D.list[i], v = value(p); return [`${pname(p, 10).padEnd(10)} ${POS[p.pos].padEnd(2)} ${pad(age(p, YEAR), 3)} ${pad(est(p, ovr(p, YEAR), 1), 3)} ${pad(est(p, overall(p.pos, p.R), 2), 3)}`, WHITE]; }), sel, 36, 11);
+  }
+  D.log.slice(-5).forEach((l, k) => txt(l, 8, 152 + k * 10, k === 4 ? GOLD : DIM));
+  footer(done ? 'A:BACK' : 'A:PICK  B:AUTO  SCOUTING SHARPENS');
 }
 function updateFin() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   finSel = menuMove(3, finSel);
   const d = btnp(RIGHT) ? 1 : btnp(LEFT) ? -1 : 0;
   if (d) { SETS[finSel] = clamp(SETS[finSel] + d, 0, finSel ? 5 : 10); fx(SFX.move); saveSeason(); }
-  if (pressed(B)) state = 'hub';
-}
-function updateResign() {
-  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  listMove(rs.length);
-  const r = rs[sel];
-  if (r && btnp(RIGHT)) r.n = Math.min(5, r.n + 1);
-  if (r && btnp(LEFT)) r.n = Math.max(1, r.n - 1);
-  if (r && pressed(A) && !r.done) { fx(SFX.point); r.done = true; signDeal(r.p, r.n); }
   if (pressed(B)) state = 'hub';
 }
 function updateVerdict() {
@@ -876,7 +944,8 @@ function draw() {
   else if (state === 'sched') drawSched();
   else if (state === 'card') drawCard();
   else if (state === 'fin') drawFin();
-  else if (state === 'resign') drawResign();
+  else if (state === 'fa') drawFA();
+  else if (state === 'draft') drawDraft();
   else if (state === 'verdict') drawVerdict();
   else if (state === 'report') drawReport();
   else if (state === 'live') drawLive();
@@ -935,13 +1004,13 @@ function drawHub() {
   if (out) txt(`HURT ${out}`, 200, 43, RED);
   txt(lastRes ? `LAST ${lastRes}`.slice(0, 29) : `GOAL ${GOALW} WINS`, 16, 65, DIM);
   txt(`CASH $${money(CASH)}M`, 16, 76, CASH < 0 ? RED : DIM); txt(`OWNER ${PAT}`, 160, 76, PAT < 25 ? RED : DIM);
-  hubItems().forEach((m, i) => txt(`${i === hubSel ? '> ' : '  '}${m}`, 84, 94 + i * 10, i === hubSel ? WHITE : DIM));
+  hubItems().forEach((m, i) => txt(`${i === hubSel ? '> ' : '  '}${m}`, 84, 93 + i * 9, i === hubSel ? WHITE : DIM));
   footer('A:SELECT');
 }
 const sm = (u) => `${u < 0 ? '-' : '+'}$${money(Math.abs(u))}M`;
 function drawFin() {
   header('FINANCES', `CASH $${money(CASH)}M`);
-  const pay = payroll(ME, YEAR), c = pay > TAX ? RED : pay > CAP ? ORANGE : GREEN;
+  const pay = payroll(ME, VY()), c = pay > TAX ? RED : pay > CAP ? ORANGE : GREEN;
   txt(`PAYROLL $${money(pay)}M`, 8, 26, c); txt(`CAP $${money(CAP)}M  TAX LINE $${money(TAX)}M`, 8, 38, DIM);
   rectfill(8, 50, 240, 6, PANEL); rectfill(8, 50, Math.min(240, pay * 0.3), 6, c); rectfill(8 + CAP * 0.3, 48, 1, 10, WHITE); rectfill(8 + TAX * 0.3, 48, 1, 10, WHITE);
   [`TICKET PRICE $${priceOf()}`, `SCOUTING     $${SETS[1]}M`, `FACILITIES   $${SETS[2]}M`].forEach((t, i) => txt(`${i === finSel ? '>' : ' '} ${t}`, 8, 66 + i * 12, i === finSel ? WHITE : DIM));
@@ -951,13 +1020,6 @@ function drawFin() {
   txt(`GOAL ${GOALW} WINS${GOALP ? ' AND THE PLAYOFFS' : ''}`.slice(0, 32), 8, 156, GOLD);
   txt('SCOUTING HELPS THE DRAFT, FACILITIES THE', 8, 176, DIM); txt('FANS AND TRAINING. A DEAL OVER THE TAX', 8, 186, DIM); txt('LINE COSTS 1.5 FOR EACH DOLLAR OVER.', 8, 196, DIM);
   footer('UD:PICK  LR:CHANGE  B:BACK');
-}
-function drawResign() {
-  header('RE-SIGN', `PAYROLL $${money(payroll(ME, YEAR))}M`);
-  txt('NAME      POS AGE OVR  ASK    YRS', 8, 24, DIM);
-  drawList(rs.map((r) => [`${pname(r.p, 9).padEnd(9)} ${POS[r.p.pos].padEnd(2)}  ${pad(age(r.p, YEAR + 1), 2)}  ${pad(ovr(r.p, YEAR + 1), 2)} ${r.done ? 'SIGNED' : `$${money(ask(r.p, r.n)).padStart(5)}M  ${r.n}`}`, r.done ? GOLD : WHITE]), sel, 36, 16);
-  if (!rs.length) ctxt('NOBODY IS LEAVING', 100, DIM);
-  footer('LR:YEARS  A:SIGN  B:BACK');
 }
 function drawVerdict() {
   header('OWNER', `${BASE_YEAR + YEAR}`);
