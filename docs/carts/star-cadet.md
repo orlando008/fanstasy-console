@@ -1,0 +1,195 @@
+# Star Cadet Pinball: Cart Specification
+
+**Version:** 0.2 (spec agreed in outline)
+**Status:** Spec written; scaffolded, the game is still the starter's placeholder
+**Cart source:** `carts/src/star-cadet/` → `carts/star-cadet.nova`
+
+---
+
+## 1. Concept
+
+A pinball game in the spirit of the classic space-themed table that shipped with a famous operating system: one tall **scrolling table**, a plunger, two flippers, pop bumpers, ramps, orbits and drop targets, and a **career**: light the lamps, take a **mission**, finish it and rise in **rank** from Cadet to Fleet Admiral. Up to four players take turns on one device. It is a new game with its own table, names and art; it borrows the genre's rules of thumb, not another game's layout.
+
+**Decisions made with the user:** one **tall scrolling table** (the camera follows the ball), **ranks and missions** as the long goal, **1 to 4 players taking turns** (hot-seat), the table in the 256 x 224 screen with a 64 pixel panel for the score.
+
+**Why it can work on this console.** The ball's physics is a few hundred lines of arithmetic done four times a frame (segments, circles and two rotating flippers); the table's picture is a Map RAM scene (Map RAM is 2,048 x 1,024 pixels, the table 192 x 640); the flippers, the ball, the bumpers and the targets are sprites; lamps are tile swaps in the map. The sound chip gives the thunks and chimes and a music that can rise with the rank.
+
+## 2. Core loop
+
+Launch a ball with the plunger, keep it alive with the flippers, shoot the lit shots. Each ball ends when it drains (or on a tilt); the end-of-ball **bonus** is counted; the next player (or the next ball) is served. A game is three balls a player. Along the way: light the three top lanes for a bonus multiplier, hit the targets to light the **mission lamps**, shoot the **gate** to start the mission of your rank, complete it to be promoted, and keep going for an extra ball, a multiball and the final mission. The game ends after the last ball of the last player; a top score is entered with initials.
+
+## 3. Controls
+
+| Button | Use |
+|---|---|
+| LEFT (also B, L) | Left flipper |
+| RIGHT (also A, R) | Right flipper |
+| DOWN (hold, then release) or A (a tap launches softly) | The plunger: how long it is held is the power |
+| UP | Nudge the table (limited: a third nudge in a ball is a warning, the fourth a **tilt**) |
+| START | Pause (RESUME, RESTART, QUIT TO TITLE) |
+| SELECT | On the title: the records. In play: nothing (reserved) |
+| D-pad, A | Menus: UP and DOWN choose, A selects, B goes back |
+
+The game is playable on the touch controls (D-pad, A, B, START, SELECT): the flippers are LEFT and RIGHT or B and A, so two thumbs work.
+
+## 4. Screen layout
+
+256 x 224. The **table** is the left 192 pixels (the visible 224 rows of a table 640 rows tall: the camera follows the ball, eased, and shows the flippers whenever the ball is in the lower half); the **panel** is the right 64 pixels: the player, the score (8 digits), the ball number, the rank and a four line message area (the mission and its timer, or the last award), the bonus multiplier and a row of small lamps for the mission targets. Behind the panel a starfield drifts.
+
+| Screen | What |
+|---|---|
+| Title | The logo over a slowly scrolling table (attract mode), PLAY, RECORDS |
+| Players | 1 to 4 (LEFT and RIGHT), A to start |
+| Play | The table, the panel, the message area |
+| Bonus | After each ball: the bonus counted up (targets, missions, rank) times the multiplier |
+| Pause | START: RESUME, RESTART, QUIT TO TITLE |
+| Game over | Each player's score and rank; a name entry if a score is in the top 10 |
+| Records | The top 10 (score, initials, rank) and the best rank reached |
+
+**The table** (world coordinates, x right 0 to 192, y down 0 to 640; the ball is 5 pixels in radius):
+
+| Feature | Place | What |
+|---|---|---|
+| Plunger lane | x 176 to 192, from y 612 up to y 90 | The ball waits at y 600; the lane curves left into the top arch |
+| Top arch | y 0 to 80 | A half circle of radius 88 centred at x 88 |
+| Top lanes | y 62, x 52, 88 and 124 | Three rollover lanes: all three lit gives the next bonus multiplier (x2 to x6) |
+| Gate (kickout) | (88, 104) | A hole the ball falls into and is kicked out of: starts a mission when the lamps are lit |
+| Pop bumpers | (66, 168), (110, 168), (88, 204) | Three round bumpers, radius 11 |
+| Left and right orbits | along the walls, y 120 to 330 | A lane round the table that returns to the top: the left one has a spinner |
+| Drop targets | x 74 to 102, y 290 | A bank of three |
+| Standup targets | 2 on each side wall at y 250 and 330 | Four: they light the mission lamps |
+| Ramps | left from (30, 400) to (66, 150), right from (162, 400) to (126, 150) | Raised: the ball passes over the floor's walls; each has a lit award |
+| Slingshots | left (36, 510) to (62, 540), right (156, 510) to (130, 540) | Kick the ball away |
+| Inlanes, outlanes | y 470 to 570 each side | The inlanes feed the flippers; the left outlane has a lit **kickback** |
+| Flippers | pivots (62, 588) and (130, 588) | Length 34, rest 30 degrees below horizontal, 28 degrees above when up; the gap between the tips at rest is 24 |
+| Drain | below y 620 between the outlanes | The ball is lost |
+
+(The numbers are a first design; the table is data (section 5, "The table is data") and step 2 tunes them with the bot and a drawing of the table.)
+
+## 5. The rules
+
+**Time and physics.** 60 frames a second, **4 substeps a frame** (a substep moves the ball at most 4 pixels, under its radius, so it cannot pass through a wall). Positions and velocities are in pixels and pixels a frame.
+
+| Quantity | Value |
+|---|---|
+| Gravity (down the table, the tilt of a real one) | 0.18 pixel a frame squared |
+| Maximum speed | 14 pixels a frame |
+| Wall bounce (the share of the normal speed kept) | 0.45 |
+| Pop bumper | kicks the ball away at 6 pixels a frame (and always at least 5) |
+| Slingshot | kicks at 7, along the slingshot's normal |
+| Rolling friction | 0.9995 a substep (the ball slows a little) |
+| Flipper | swings up in 5 frames (a speed of about 0.2 radians a frame) and down in 7; the ball takes the speed of the point of the flipper it touches |
+| Plunger | held 60 frames is full power; the launch speed is 4 + 10 x power pixels a frame |
+| Nudge | adds a push of 1.2 pixels a frame sideways and a shake of the camera; at most 3 a ball, the 4th is a TILT (flippers off, no bonus) |
+
+**The table is data.** Walls are polylines of segments, bumpers circles, targets and the gate small shapes, each with a *layer* (0 the floor, 1 a ramp): a ball on a ramp collides only with the ramp's rails and the things on layer 1, and is drawn above the table; ramp entrances and exits move the ball between layers. A collision is the closest point of a shape to the ball: if it is nearer than the radius the ball is pushed out along the normal and its velocity along the normal is reflected and scaled by the shape's bounce. A flipper is a capsule (a segment with a radius) that turns about its pivot; the ball's velocity is reflected relative to the velocity of the flipper's point of contact.
+
+**Balls and players.** Three balls a player; one to four players take turns, each with a score, a rank, the lamps of their mission and a bonus multiplier of their own, kept while the others play. A ball is served by the plunger; the **ball save** (the first 12 seconds of a ball, and a lit lamp) puts a drained ball back at the plunger once. When a ball drains the bonus is counted; with a multiball the game continues until the last ball drains. An **extra ball** is awarded at 500,000 points and by a mission.
+
+**The lamps and the bonus multiplier.** The three top lanes light as the ball rolls over them (the flippers rotate which are lit); all three lit lights the next multiplier x2, x3, x4, x5, x6 and starts again. The multiplier lasts until the ball drains.
+
+**Missions and ranks.** Nine ranks: Cadet, Ensign, Pilot, Lieutenant, Commander, Captain, Commodore, Admiral, Fleet Admiral. A player has a rank and each rank has a **mission**:
+
+| Rank | Mission | Objective (in the time given) |
+|---|---|---|
+| 1 Cadet | Launch Drill | 15 hits on the pop bumpers (60 s) |
+| 2 Ensign | Asteroid Belt | all four standup targets, then the drop bank (60 s) |
+| 3 Pilot | Slalom Run | left ramp, right ramp, left, right (75 s) |
+| 4 Lieutenant | Orbit Lock | the left orbit 3 times (75 s) |
+| 5 Commander | Docking | 5 ramp shots, then the gate (90 s): unlocks multiball |
+| 6 Captain | Fuel Run | 50 spins of the spinner (60 s) |
+| 7 Commodore | Wormhole | the gate 3 times (75 s) |
+| 8 Admiral | Battle Fleet | a three ball multiball: 3 jackpots (a jackpot is a ramp shot while 2 or more balls are in play) |
+| 9 Fleet Admiral | Mothership | every shot of the table once, in any order (120 s), then a final jackpot |
+
+To start a mission: light the **mission lamps** (hit the standup targets and the drop bank; three lit) and shoot the gate; the table goes into mission mode (the lamps show the objective, the panel the timer). Completing it promotes the player one rank (500,000 x the new rank's number as a bonus, an extra ball at ranks 3, 6 and 9), lights a new set of lamps and plays the fanfare; running out of time ends the mission with no penalty (the gate can be shot again). Fleet Admiral's mission completed ends the career: every later mission is worth a jackpot of 5,000,000.
+
+**Tilt.** A tilt ends the ball at once with no bonus; a nudge is a push of the table, not of the ball, and the camera shakes.
+
+## 6. Levels or content
+
+One table (section 4), nine missions (section 5). The **look**: a space station table: a deep blue playfield with a pale grid and amber inserts (the lamps), chrome rails, a starfield in the panel; the ranks' insignia are small icons on the panel. The rank also sets the table's **light**: from a dim cool blue at Cadet to a warm bright gold at Fleet Admiral (palette tints, as Flow State did for its times of day).
+
+## 7. Opponents or hazards
+
+The table itself: the outlanes and the drain, the tilt, the mission timers, the drop targets that reset. In a multiplayer game the other players are turns, not opponents on the table.
+
+## 8. Modes
+
+Normal play (1 to 4 players). **Attract mode** on the title (a demo ball plays itself on the scrolling table). No practice mode.
+
+## 9. Scoring
+
+| Event | Points (x the bonus multiplier only for the end-of-ball bonus) |
+|---|---|
+| Pop bumper | 100 |
+| Slingshot | 10 |
+| Standup target | 500 |
+| Drop target (a bank cleared: 5,000) | 1,000 |
+| Spinner spin | 100 (lit: 300) |
+| Ramp (lit: 2,500) | 1,000 |
+| Orbit | 2,000 |
+| Top lane | 500 |
+| Gate shot | 5,000 |
+| Mission completed | 500,000 x the new rank's number |
+| Jackpot (multiball) | 1,000,000 |
+| End-of-ball bonus | (1,000 per mission lamp lit + 10,000 per rank) x the bonus multiplier |
+
+An extra ball at 500,000; a replay is not given.
+
+## 10. Screens and flow
+
+1. **Title:** PLAY (players), RECORDS; attract mode after 20 seconds.
+2. **Players:** 1 to 4; A starts player 1's first ball.
+3. **Play:** the plunger, the table; START pauses (the ball is frozen, the music stops); a drained ball goes to **Bonus**, then the next ball or the next player's turn ("PLAYER 2").
+4. **Game over:** after the last ball of the last player: the scores; a name entry for each top 10 score.
+5. **Records.**
+
+## 11. Audio
+
+Songs: 0 the title (a slow arpeggio over a pad), 1 play (a steady pulse and a light lead, quiet: the table's sounds are the point), 2 mission (the pulse quickens), 3 multiball, 4 the final mission; the music's layers rise with the rank (the lead enters at Lieutenant, the drums at Commander). Effects (channels 6 and 7 take turns): the flippers' thunk (up and down), each bumper's pop at a different pitch, the slingshot, the targets, the drop bank, a lane's tick, the ramp, the spinner (a tick each spin), the gate's swallow and spit, the plunger and the launch, the drain, the ball save, a nudge, a tilt warning and the tilt, the bonus count, a mission's start and its fanfare, a rank up, the extra ball, a high score. Levels: the lead at most 0.07 RMS and 0.75 of the mix, effects 0.01 to 0.06, and the effects well under the music's peaks (`loud.mjs --check`).
+
+## 12. Video layers
+
+BG0 the table (a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the starfield of the panel (parallax), the overlay the panel's text and the message area; sprites: the ball (16 px, with a shadow), the two flippers (rotated frames), the bumpers (rest and hit), the slingshots' rubbers, the targets and the drop targets (up and down), the spinner, the plunger, the ball's shadow on a ramp. Lamps are tile swaps in the map (lit and unlit variants of each insert), so a table of fifty lamps costs no sprites. The rank's light is a set of palette tints.
+
+## 13. Persistence (save slots)
+
+| Slots | Contents |
+|---|---|
+| 0 | Format version |
+| 1 | The best rank reached (1 to 9) |
+| 2 | Games played |
+| 10-39 | The top 10: for each, the score, the initials (3 letters packed) and the rank |
+| 40-255 | Reserved |
+
+## 14. Asset budget
+
+| Asset | Budget |
+|---|---|
+| Code | TODO of the 64 KB limit (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Tiles | TODO of 1,024 (the table is 1,920 map cells: most must be repeated textures and flips) |
+| Sprites | TODO (128 in OAM, 32 per line): the ball, up to 3 balls, 2 flippers, 3 bumpers, 2 slings, 7 targets, the spinner, the plunger |
+| ROM | the table's data if it is larger than a few KB |
+| Songs / SFX | 5 songs, TODO patterns of 64, about 30 effects, sample RAM TODO of 32 KB |
+
+## 15. Implementation plan
+
+1. **The ball and the flippers (a vertical slice):** a flat test table (walls, a plunger lane, two flippers, a drain), the ball with gravity, four substeps and the collision functions (segment, circle, capsule), the plunger, the flippers' swing and their effect on the ball; plain shapes; tests of the physics (no tunnelling, bounces, the flipper's launch, energy) and a bot that flips.
+2. **The table:** the table as data (walls, bumpers, slings, lanes, targets, the drop bank, the spinner, the gate, ramps with layers, the kickback) and a collision and scoring hook for each; tests of every element; the bot plays it.
+3. **The scrolling table and its art:** the camera, the 24 x 80 tile scene, the sprites, the lamps as tile swaps, the panel and the starfield; the budget.
+4. **The rules:** scoring, the lanes and the multiplier, the bonus, the ball save, the extra ball, the nudge and the tilt, balls and 1 to 4 players, the game over.
+5. **Missions and ranks:** the gate, the nine missions with their timers, the rank and its light, the multiball.
+6. **The flow:** the title, the player select, the pause, the bonus and game over screens, the top 10 with initials, the records, the attract mode.
+7. **Audio:** the songs (rising with the rank) and the effects; the levels.
+8. **Balance and release:** the bot at several skills (a ball should last a minute or two, a bot of average skill should reach Lieutenant or so), the polish, the label, the PNG cart, the Library (`node tools/release.js star-cadet`), a README row.
+
+Each step: build it, run `node tools/check.js star-cadet` and `node tools/test.js star-cadet`, write its **Built** and **Results** notes under its number here, commit and push.
+
+## 16. Open questions
+
+- **How the physics feels.** The numbers of section 5 are the usual ones for a pinball of this size, but only a person can say whether the ball is too floaty or too heavy; step 1 builds a table to play on first, and the numbers are constants in one place.
+- **Ramps.** A two level table (the ball on a ramp ignores the floor's walls and is drawn above them) is the part most likely to need a redesign (an entry that catches the ball, an exit that drops it); step 2 builds them before the missions depend on them.
+- **The camera.** Following the ball with an ease works in most of a table; at a fast shot up the table it may lag, so the camera leads the ball by a part of its speed.
+- **Touch.** Two thumbs on LEFT and RIGHT or on B and A; it has to be tried on a phone.
+- **A second table.** Not planned: one table with nine missions is the game.
