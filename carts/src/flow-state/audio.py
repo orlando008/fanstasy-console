@@ -34,6 +34,7 @@ a.voice('PLUCK', 'pluck', 15, -0.1)
 a.voice('STRINGS', 'strings', 8, 0.1, a=0)
 a.voice('EPIANO', 'epiano', 15, 0.0)
 a.voice('ELEAD', 'epiano', 5, 0.0)
+a.voice('TICK', 'epiano', 15, 0.0)                                   # the Air's bass pulse: an electric piano tick, so the beat the pads follow can be heard
 a.voice('FLUTE', 'flute', 4, -0.1, a=0)
 a.voice('SOFTPLUCK', 'pluck', 10, -0.1)
 compile_piece(a, PRELUDE)

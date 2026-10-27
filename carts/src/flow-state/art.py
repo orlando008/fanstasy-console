@@ -20,7 +20,10 @@ art = Art()
 art.region('bg', 1, 639)       # background tiles: the river is the most of them
 art.region('spr', 640, 1023)   # sprites (a 16 px sprite takes four tiles)
 art.backdrop('68a8e0')
-art.color(200, '121a3a', 'GLASS')                                          # the panels' fill, seen through (blend() in code.js)
+art.color(200, '121a3a', 'GLASS')
+art.color(201, '160c04', 'GLOW_OK')                                         # the hit line's bands, seen through (code.js drawHitBar)
+art.color(202, '2c2208', 'GLOW_GOOD')
+art.color(203, '584818', 'GLOW_PERFECT')                                          # the panels' fill, seen through (blend() in code.js)
 art.color(1, '10143a', 'SHADOW')                                           # the overlay's text shadow
 art.color(3, '3a4c88', 'PANEL')                                            # its frames and rules
 art.color(10, 'a8bcf0', 'DIM')                                             # its quiet text

@@ -2,6 +2,9 @@
  "colors": {
   "DIM": 10,
   "GLASS": 200,
+  "GLOW_GOOD": 202,
+  "GLOW_OK": 201,
+  "GLOW_PERFECT": 203,
   "PANEL": 3,
   "SHADOW": 1
  },

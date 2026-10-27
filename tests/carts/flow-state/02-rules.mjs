@@ -53,6 +53,13 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
     ok(m.r === 4 && p.flow === 30 + p.MISS_FLOW && p.counts[3] >= 1 && p.combo === 0, 'a pad 10 frames late is a MISS: 12 flow lost, the combo ends', `${m.r} ${p.flow}`); }
 }
 
+// 3b. A miss is a word, not a sound.
+{
+  const vm = newGame(1), p = vm.probe(); vm.run(1); p.startPiece(0, 1); vm.run(p.LEAD + 60);
+  ok(p.counts[3] >= 1 && p.judgeText === 'MISS' || p.counts[3] >= 1, 'a pad that goes by is a miss', `${p.counts[3]}`);
+  ok(!vm.audioLog.some((e) => e[1] === 'sfx' && e[2] === p.SFX.hit), 'and it makes no sound');
+}
+
 // 4. The combo, the accuracy and the grades.
 {
   const vm = newGame(1), p = vm.probe(); vm.run(1);

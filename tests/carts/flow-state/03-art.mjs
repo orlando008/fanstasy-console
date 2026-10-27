@@ -36,17 +36,31 @@ const oam = (vm) => { const o = []; for (let i = 0; i < vm.ppu.oamCount; i++) o.
 // 3. The pads sit on the water: the line of a pad is the line the river shows at its distance; one at the frog is on the frog's line.
 {
   const vm = newGame(3), p = vm.probe(); vm.run(1); p.startPiece(0, 1);
-  const n = p.notes[12], expect = (tau) => { const z = p.Z0 + p.V * tau, k = p.FOCAL / z, S = k >= 0.75 ? 32 : k >= 0.38 ? 16 : 8; return { k, S, x: 128 + n.lane * p.LANE * k - S / 2, y: p.HORIZON - 1 + p.HEIGHT * k - S * 0.62 }; };
-  for (const [tau, S] of [[90, 8], [25, 16], [0, 32]]) {
+  const n = p.notes[12], expect = (tau) => { const z = p.ZH + p.V * tau, k = p.FOCAL / z, S = k >= 0.75 ? 32 : k >= 0.38 ? 16 : 8; return { k, S, x: 128 + n.lane * p.LANE * k - S / 2, y: p.HORIZON - 1 + p.HEIGHT * k - S * 0.62 }; };
+  for (const [tau, S] of [[90, 8], [25, 16], [-10, 32]]) {
     p.tm = n.f - tau - 1; vm.run(1);                                     // update() adds a frame before the picture is drawn
     const e = expect(tau), pads = oam(vm).filter((o) => o.tile === p.ART.sprites['pad' + S].tile && Math.abs(o.x - e.x) < 1.5);
     ok(e.S === S && pads.length === 1 && Math.abs(pads[0].y - e.y) <= 1, `a pad ${tau} frames from the frog is a ${S} px sprite on the line the river shows at its distance`, `${pads.length ? pads[0].y : 'none'} vs ${e.y.toFixed(1)}`);
   }
-  p.tm = n.f - 1; vm.run(1); const q = expect(0); ok(Math.abs(q.y + 32 * 0.62 - p.FROG_Y) < 1, 'at its time the pad is on the frog\'s line', `${(q.y + 32 * 0.62).toFixed(1)} and ${p.FROG_Y}`);
+  p.tm = n.f - 1; vm.run(1); const q = expect(0); ok(Math.abs(q.y + q.S * 0.62 - p.lineY(p.ZH)) < 1 && p.lineY(p.ZH) < p.FROG_Y - 30, 'at its time the pad is on the hit line, well in front of the frog', `${(q.y + q.S * 0.62).toFixed(1)}, the frog at ${p.FROG_Y}`);
   const lanes = new Set(p.notes.map((m) => m.lane)); ok([...lanes].every((l) => l >= -2 && l <= 2) && lanes.size >= 3, 'the pads use at least three lanes of five, by pitch', [...lanes].sort().join());
   const hi = p.notes.filter((m) => m.lane === 2).map((m) => m.pitch), lo = p.notes.filter((m) => m.lane === -2).map((m) => m.pitch);
   ok(Math.min(...hi) > Math.max(...lo), 'a higher note is in a lane to the right of a lower one');
   p.tm = n.f - 201; vm.run(1); ok(!oam(vm).some((o) => o.size < 32 && [p.ART.sprites.pad8.tile, p.ART.sprites.pad16.tile].includes(o.tile) && Math.abs(o.x - (128 + n.lane * p.LANE * 0.1)) < 3 && o.y < p.HORIZON + 10), 'a pad does not show before its look-ahead');
+}
+
+
+// 3b. The hit line: a glowing bar where a perfect tap is, its good and ok windows around it, in the size of the windows in frames.
+{
+  const vm = newGame(3), p = vm.probe(); vm.run(1); p.startPiece(0, 1); p.tm = -50; vm.run(2);
+  const px = (x, y) => vm.out32[y * 256 + x] >>> 0, lum = (c) => (c & 255) + ((c >> 8) & 255) + ((c >> 16) & 255);
+  const mid = Math.round(p.lineY(p.ZH)), edge = Math.round(p.lineY(p.ZH + p.V * p.WIN[2])) - 3, far = mid + 45;
+  ok(lum(px(100, mid)) > lum(px(100, far)) + 80, 'a bar of light lies across the river at the hit line', `${lum(px(100, mid))} against ${lum(px(100, far))}`);
+  const row = (z) => { const y = Math.round(p.lineY(z)); let t = 0; for (let x = 80; x < 120; x++) t += lum(px(x, y)); return t / 40; };
+  ok(row(p.ZH) > row(p.ZH + p.V * 5) && row(p.ZH + p.V * 5) > row(p.ZH + p.V * 8) && row(p.ZH + p.V * 8) > row(p.ZH + p.V * 14) + 10, 'brightest at the perfect window, fainter in the good and the ok, and none outside', [0, 5, 8, 14].map((w) => Math.round(row(p.ZH + p.V * w))).join(' '));
+  const top = p.lineY(p.ZH + p.V * 3), bottom = p.lineY(p.ZH - p.V * 3);
+  ok(Math.abs((bottom - top) - 2 * 3 * p.V * p.HEIGHT * p.FOCAL / (p.ZH * p.ZH)) < 3, 'the perfect band is as tall as 3 frames either side of it on the water', `${(bottom - top).toFixed(1)} px`);
+  ok(p.BAR_TOP < mid && mid < p.BAR_END, 'the lines that add its light are the bar\'s');
 }
 
 // 4. The frog: still on its pad, then a hop to the lane of the pad it hits.

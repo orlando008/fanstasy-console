@@ -13,7 +13,7 @@ const ART = {
   tiles: {},
   sprites: {"frog_air": {"pal": 1, "size": 32, "tile": 704}, "frog_crouch": {"pal": 1, "size": 32, "tile": 652}, "frog_land": {"pal": 1, "size": 32, "tile": 708}, "frog_sit": {"pal": 1, "size": 32, "tile": 648}, "orb": {"pal": 2, "size": 32, "tile": 712}, "pad16": {"pal": 0, "size": 16, "tile": 644}, "pad32": {"pal": 0, "size": 32, "tile": 640}, "pad8": {"pal": 0, "size": 8, "tile": 646}},
   scenes: {"far": {"h": 8, "mx": 0, "my": 0, "pal": 2, "w": 32}, "reeds": {"h": 28, "mx": 0, "my": 64, "pal": 3, "w": 32}, "river": {"h": 128, "mx": 128, "my": 0, "pal": 1, "w": 128}},
-  colors: {"DIM": 10, "GLASS": 200, "PANEL": 3, "SHADOW": 1},
+  colors: {"DIM": 10, "GLASS": 200, "GLOW_GOOD": 202, "GLOW_OK": 201, "GLOW_PERFECT": 203, "PANEL": 3, "SHADOW": 1},
 };
 // END ART
 /** Queue one of ART.sprites at (x, y), above the background; opts as for spr (fx, fy ...). */
@@ -74,7 +74,7 @@ function hit(n, g) {
   setFlow(flow + JUDGE[g].flow);
   show(JUDGE[g].name, g === 0 ? GOLD : g === 1 ? GREEN : CYAN); fx(SFX.point);
 }
-function miss(n) { n.r = 4; combo = 0; counts[3]++; setFlow(flow + MISS_FLOW); show('MISS', RED); fx(SFX.hit); }
+function miss(n) { n.r = 4; combo = 0; counts[3]++; setFlow(flow + MISS_FLOW); show('MISS', RED); }                       // the word in red says it: no sound, it would cut into the music's flow
 function setFlow(v) { flow = clamp(v, 0, 100); if (flow >= 90) inFlow = true; else if (flow < 80) inFlow = false; }
 function show(text, c) { judgeText = text; judgeColour = c; judgeAt = clock; }
 
@@ -82,7 +82,7 @@ function show(text, c) { judgeText = text; judgeColour = c; judgeAt = clock; }
 function tap(st) {
   let best = null;
   for (const n of notes) if (!n.r && Math.abs(n.f - st) <= WIN[2] && (!best || Math.abs(n.f - st) < Math.abs(best.f - st))) best = n;
-  hopFrom = frogX; hopTo = best ? 128 + best.lane * LANE : frogX; hopAt = clock;
+  hopFrom = frogX; hopFromY = frogY; hopTo = best ? 128 + best.lane * LANE : frogX; hopZ = best ? ZH + V * (best.f - st) : Z0; hopAt = clock;
   if (!best) { setFlow(flow + STRAY_FLOW); return; }
   const d = Math.abs(best.f - st);
   hit(best, d <= WIN[0] ? 0 : d <= WIN[1] ? 1 : 2);
@@ -210,9 +210,12 @@ function updatePause() {
 
 // The river is a floor seen in perspective (BG2, affine: a new matrix on every line, SPEC 4.5): the line y shows the water z world
 // pixels ahead of the camera, z = HEIGHT * FOCAL / (y - HORIZON + 1); a pad z ahead is drawn on the same line, so it sits on the water.
-// The frog is at Z0. The river flows V world pixels a frame, so a pad shows LOOKAHEAD frames before it reaches the frog.
-const HORIZON = 64, FOCAL = 128, HEIGHT = 123, Z0 = 128, V = 5, FROG_Y = 186, LANE = 45, HOPF = 14;
-let frogX = 128, hopFrom = 128, hopTo = 128, pieceEnd = 1, camY = 0;
+// The frog is at Z0. The river flows V world pixels a frame, so a pad shows LOOKAHEAD frames before it reaches the hit line, ZH, a little
+// ahead of the frog: a pad on the line is a perfect tap (the glowing bar marks the windows); the frog jumps onto it as it floats on to him.
+const HORIZON = 64, FOCAL = 128, HEIGHT = 123, Z0 = 128, ZH = 185, V = 5, FROG_Y = 186, LANE = 45, HOPF = 14;
+const lineY = (z) => HORIZON - 1 + HEIGHT * FOCAL / z;                                       // the screen line of the water z ahead
+const BAR_TOP = flr(lineY(ZH + V * 10)), BAR_END = flr(lineY(ZH - V * 10)) + 1;           // the lines of the hit bar (the ok window's edges)
+let frogX = 128, frogY = FROG_Y, hopFrom = 128, hopFromY = FROG_Y, hopTo = 128, hopZ = Z0, pieceEnd = 1, camY = 0;
 
 /** A lane from -2 to 2 for each pad, from its pitch (the lowest tenth of the notes to the highest tenth), so the frog's hops draw the melody. */
 function setLanes() {
@@ -278,26 +281,39 @@ function draw() {
 
 /** The sprites of the river: the frog (first, so it is on top of the pad under it), that pad, and the pads on their way. */
 function drawFrogAndPads() {
-  const age = clock - hopAt, e = age < HOPF ? 0.5 - Math.cos(Math.PI * age / HOPF) / 2 : 1, fx = lerp(hopFrom, hopTo, e), up = age < HOPF ? Math.sin(Math.PI * age / HOPF) * (hopFrom === hopTo ? 10 : 26) : 0;
-  frogX = fx;
-  const pose = age < 3 ? 'crouch' : age < HOPF - 3 ? 'air' : age < HOPF + 4 ? 'land' : 'sit', home = age < HOPF / 2 ? hopFrom : hopTo;
-  sprite(ART.sprites['frog_' + pose], fx - 16, FROG_Y - 26 - up);
+  const age = clock - hopAt, a = age / HOPF;
+  let fx = hopTo, fy = FROG_Y, up = 0;
+  if (age < HOPF) {                                                                          // the hop: to the pad as it floats on towards the frog (a stray tap hops in place)
+    const e = 0.5 - Math.cos(Math.PI * a) / 2, z = Math.max(Z0, hopZ - V * age), k = FOCAL / z;
+    fx = lerp(hopFrom, 128 + (hopTo - 128) * k, e); fy = lerp(hopFromY, Math.min(FROG_Y, lineY(z)), e);
+    up = Math.sin(Math.PI * a) * (hopZ === Z0 ? 10 : 16);
+  }
+  frogX = fx; frogY = fy;
+  const pose = age < 3 ? 'crouch' : age < HOPF - 3 ? 'air' : age < HOPF + 4 ? 'land' : 'sit', home = age < HOPF - 3 ? hopFrom : hopTo;
+  sprite(ART.sprites['frog_' + pose], fx - 16, fy - 26 - up);
   sprite(ART.sprites.pad32, home - 16, FROG_Y + 2 - 20);
   if (state !== 'play') return;
   for (const n of notes) {
-    const z = Z0 + V * (n.f - st());
-    if (z > Z0 + V * LOOKAHEAD) break;
-    if (z < 98 || n.r === 5 || (n.r && n.r !== 4)) continue;                                   // a pad that was hit is the frog's now; one missed goes by
+    const z = ZH + V * (n.f - st());
+    if (z > ZH + V * LOOKAHEAD) break;
+    if (z < (n.r && n.r !== 4 ? Z0 : 98) || n.r === 5) continue;                               // a pad that was hit goes under the frog; one missed floats on and off the screen
     const k = FOCAL / z, S = k >= 0.75 ? 32 : k >= 0.38 ? 16 : 8;
     sprite(ART.sprites['pad' + S], 128 + n.lane * LANE * k - S / 2, HORIZON - 1 + HEIGHT * k - S * 0.62);
   }
 }
 
+/** The hit line: a glowing bar across the river where a pad is a perfect tap, with the good and ok windows fainter around it (the windows' real size in frames). */
+function drawHitBar() {
+  const half = 92, bands = [[WIN[2], ART.colors.GLOW_OK], [WIN[1], ART.colors.GLOW_GOOD], [WIN[0], ART.colors.GLOW_PERFECT]];
+  for (const [w, c] of bands) { const y0 = lineY(ZH + V * w), y1 = lineY(ZH - V * w); rectfill(128 - half, y0, half * 2, y1 - y0, c); }
+}
+
 function drawPlay() {
+  drawHitBar();
   rectfill(10, 40, 12, 124, PANEL); rectfill(11, 41 + 122 - flow * 1.22, 10, flow * 1.22, inFlow ? GOLD : flow >= 70 ? GREEN : flow >= 40 ? CYAN : DIM);
   txt(`${flowName()} x${multiplier()}`, 28, 40, inFlow ? GOLD : WHITE);
   txt(`SCORE ${score}`, 8, 6, WHITE); txt(`COMBO ${combo}`, 168, 6, WHITE);
-  if (clock - judgeAt < 30) ctxt(judgeText, 150, judgeColour);
+  if (clock - judgeAt < 30) ctxt(judgeText, 118, judgeColour);
   if (tm < 0) ctxt(String(Math.ceil(-tm / 40)), 100, GOLD);
 }
 
@@ -349,6 +365,7 @@ const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
 function scanline(y) {
   if (y < HORIZON) { const c = skyAt(y); color(0, c[0], c[1], c[2]); return; }
   if (y === HORIZON) { bg(1, { show: false }); bg(2, { show: true }); }
+  if (state === 'play') { if (y === BAR_TOP) blend({ layers: ['overlay'], op: 'add' }); else if (y === BAR_END) blend({ layers: ['overlay'], half: true }); }   // the bar adds its light to the water; the panels mix
   const z = HEIGHT * FOCAL / (y - HORIZON + 1), s = z / FOCAL;
   affine({ a: s, b: 512 - 128, c: 0, d: ((camY - z) % 1024 + 1024) % 1024, cx: 128, cy: 0 });
   bgscroll(2, 0, 1 - y);

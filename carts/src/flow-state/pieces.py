@@ -12,14 +12,15 @@ DIFFS = [('EASY', 18), ('NORMAL', 10), ('HARD', 6)]          # the shortest gap 
 
 
 class Piece:
-    def __init__(s, title, composer, speed, beat, eighth, melody, bass, inner='', lead='PLUCK', bassv='BASS', innerv='PLUCK', key=('C', MAJOR), loop=None, echo=(5, 4, 5, 9), extra_mod=None, extra_src='inner'):
+    def __init__(s, title, composer, speed, beat, eighth, melody, bass, inner='', lead='PLUCK', bassv='BASS', innerv='PLUCK', key=('C', MAJOR), loop=None, echo=(5, 4, 5, 9), extra_mod=None, extra_src='inner', melody_diffs=7):
         """beat: rows to a beat (the easy chart's pads fall on it); eighth: rows to the shortest note the normal chart keeps.
         inner: an accompaniment on channel 1; extra_mod = ((modulus, (rows,)), ...) for easy, normal and hard: the inner notes that start at those rows of each
         modulus are pads too (the Moonlight's triplets, under a melody too slow to play alone). lead, bassv, innerv: the names of the voices (audio.py defines them)."""
         s.title, s.composer, s.speed, s.beat, s.eighth = title, composer, speed, beat, eighth
-        s.lead, s.bassv, s.innerv, s.key, s.loop, s.echo, s.extra_mod, s.extra_src = lead, bassv, innerv, key, loop, echo, extra_mod, extra_src
+        s.lead, s.bassv, s.innerv, s.key, s.loop, s.echo, s.extra_mod, s.extra_src, s.melody_diffs = lead, bassv, innerv, key, loop, echo, extra_mod, extra_src, melody_diffs
         s.notes, s.bass, s.inner = parse(melody), parse(bass), parse(inner)
-        end = max(r + d for r, _, d in s.notes)                       # the melody sets the length; the accompaniment is cut to it
+        end = max(r + d for r, _, d in s.notes)                       # the melody sets the length (to the end of its last pattern of 64 rows); the accompaniment is cut to it
+        end += (-end) % 64
         s.bass, s.inner = [x for x in s.bass if x[0] < end], [x for x in s.inner if x[0] < end]
         s.rows = max(r + d for r, _, d in s.notes + s.bass + s.inner)
         s.rows += (-s.rows) % 64
@@ -31,7 +32,7 @@ class Piece:
             f = 0
             for k, (name, gap) in enumerate(DIFFS):
                 ok = [(r % s.beat == 0 or d >= s.beat) and d >= s.eighth, d >= s.eighth, True][k]     # easy is a part of normal
-                if ok and (r - last[k]) * s.speed >= gap:
+                if ok and s.melody_diffs >> k & 1 and (r - last[k]) * s.speed >= gap:
                     f |= 1 << k; last[k] = r
             out.append(f | (min(d, 31) << 3))
         return out
@@ -107,6 +108,11 @@ def score(name):
     return open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scores', name)).read().strip()
 
 
+def shift(text, semitones):
+    """The note text moved up by semitones (rests stay)."""
+    return ' '.join(t if t[0] == '_' else '%s:%s' % (nn(pitch(t.split(':')[0]) + semitones).replace('-', ''), t.split(':')[1]) for t in text.split())
+
+
 def rows_of(text):
     return sum(int(t.split(':')[1]) for t in text.split())
 
@@ -126,7 +132,7 @@ MINUET = Piece('MINUET IN G', 'BACH', 16, 2, 1, score('minuet.mel') + ' ' + scor
     pad_to(score('minuet.bass'), 192) + ' ' + score('minuet.bass2'), key=('G', MAJOR))
 
 # --- 2 Air on the G String (Bach, Orchestral Suite 3, BWV 1068): D major, 4/4, a row a sixteenth, about 64 bpm ---
-AIR = Piece('AIR ON THE G STRING', 'BACH', 14, 4, 2, score('air.mel'), score('air.bass'), lead='STRINGS', key=('D', MAJOR),
+AIR = Piece('AIR ON THE G STRING', 'BACH', 14, 4, 2, score('air.mel'), shift(score('air.bass'), 12) + ' D4:4 D4:4 D4:4 D4:4', lead='STRINGS', bassv='TICK', key=('D', MAJOR), melody_diffs=4,
     extra_src='bass', extra_mod=((4, (0,)), (2, (0,)), (2, (0,))))      # the bass's steady pulse is the pads' beat: each beat on easy, each eighth on normal and hard
 
 # --- 3 Fur Elise (Beethoven, WoO 59): A minor, 3/8, a row a sixteenth; the whole piece ---
