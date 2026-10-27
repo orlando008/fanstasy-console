@@ -122,9 +122,9 @@ BG2 affine river (a water texture from the art kit, drawn once and scrolled), BG
 
 | Asset | Budget |
 |---|---|
-| Code | 14.6 KB of the 64 KB limit (after step 2) (`node tools/check.js flow-state`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
-| Tiles | 276 of 1,024 (the template art; step 3 adds the river and the frog) |
-| Sprites | none yet (the pads and the frog are drawn shapes until step 3; 128 in OAM, 32 per line) |
+| Code | 20.2 KB of the 64 KB limit (after step 3) (`node tools/check.js flow-state`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Tiles | 619 of 1,023 (518 for the river, the far bank, the stars and the reeds; 101 for the sprites) |
+| Sprites | at most 18 in OAM in a hard piece, at most 4 on a line (128 and 32 are the limits) |
 | ROM | the charts, 3.6 KB for the six pieces (after step 2), 1,042 pads in all (about 2.5 KB a piece of melody notes) |
 | Songs / SFX | 7 songs (the Prelude, Scale Run and five pieces), 29 of 64 patterns, 7 effects (step 6 adds more), sample RAM 14 of 32 KB |
 
@@ -150,6 +150,10 @@ BG2 affine river (a water texture from the art kit, drawn once and scrolled), BG
 **Sources of the notes:** Mutopia Project engravings (public domain or Creative Commons, found in the `marmooo/classical-midi-db` collection): Beethoven, Für Elise WoO 59 and Piano Sonata 14 (Moonlight) first movement; Bach, Air from Orchestral Suite 3 (BWV 1068, the flute and guitar arrangement), the Menuet BWV Anh. 114 from the Notebook for Anna Magdalena Bach (by Christian Petzold) and the Prelude in C (BWV 846). The Badinerie (Orchestral Suite 2, BWV 1067) is John Hamm's 1995 General MIDI sequence, as shipped in `jikol1906/bach-visualizer` (no licence is stated there): the notes of the piece are in the public domain, but a sequence can carry its own copyright, so before the game is released the Badinerie's notes should be checked against an engraving with a clear licence (Mutopia or IMSLP), which can replace `scores/badinerie.*` with the same tool.
 
 **Review build (between steps 2 and 3):** PLAY opens a plain list of the six pieces (UP and DOWN) and the three difficulties (LEFT and RIGHT), A plays, B goes back; it stands in for the journey's map until step 5.
+
+**Step 3, built:** `art.py` draws the river (BG2): a 1,024 x 1,024 picture of water between two banks, every part of it repeating every 64 pixels (the bank's edge, the grass, the flowers and eight floating leaves in 256), so the whole costs 518 tiles with the far bank and the reeds. `code.js` draws it in perspective: `scanline(y)` sets the affine matrix of each line below the horizon (line 64) for the water z = 123 x 128 / (y - 63) pixels ahead, and the river's position is `-tm x V`, so it flows with the song and stops with a pause. **The pads use the same formula**: a pad `z = 128 + 5 x (its frame - song time)` ahead is drawn on line `63 + 123 x 128 / z`, scaled by `128 / z` (three sprite sizes: 32, 16 and 8 pixels) and placed across by its **lane**, one of five from the pitch (the lowest tenth of the piece's notes to the highest tenth), so the frog's hops draw the melody. At its time a pad is on the frog's line (186) and the size of the frog's pad. The frog (four 32 px poses: sit, crouch, air, land) sits on its pad and hops to the lane of the pad it hits in 14 frames, or in place on a stray tap. The far bank (BG1: hills and a line of trees, with stars) drifts slowly; the near reeds (BG0) frame the two lower corners; the sun or moon is a sprite behind the far bank (priority 0). **The five times of day are tints** of the noon palettes (`TOD`: a multiplier and an addition for red, green and blue, the sky at the top, the middle and the horizon, the stars' brightness and the sun or moon's place and colour; the sprites take half of the tint); a piece goes from one to the next over its length, so the Moonlight sets from dusk into night; the water is hazier towards the horizon, line by line. Tests: `03-art.mjs` (the pads on the river's line at their distance, the lanes, the hop, the five skies, the stars, the sprite count).
+
+**Step 3, results:** the river, the far bank and the frog look as intended in all five lights (read in screenshots, `tools/devkit/shots.mjs`); 1.9 ms of a frame on average (11 at most) in a hard piece, 18 sprites at most. Not done yet (step 4): the HUD is still plain (a bar, text), the pads have no judgement colours or ripples, and the title has no logo; the fireflies, dragonflies and the jumping fish of section 4 come with step 4's look.
 
 Each step: build it, run `node tools/check.js flow-state` and `node tools/test.js flow-state`, write its **Built** and **Results** notes under its number here, commit and push.
 

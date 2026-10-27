@@ -1,19 +1,29 @@
 {
  "colors": {
-  "GLASS": 200
+  "DIM": 10,
+  "GLASS": 200,
+  "PANEL": 3,
+  "SHADOW": 1
  },
- "gradients": [
-  "sky"
- ],
  "palettes": {
   "bg1": {
    "base": 16,
    "colors": {
-    "bloom": 5,
-    "grass0": 1,
-    "grass1": 2,
-    "grass2": 3,
-    "grass3": 4
+    "bloom0": 14,
+    "bloom1": 15,
+    "dirt0": 12,
+    "dirt1": 13,
+    "foam": 8,
+    "grass0": 9,
+    "grass1": 10,
+    "grass2": 11,
+    "leaf0": 6,
+    "leaf1": 7,
+    "w0": 1,
+    "w1": 2,
+    "w2": 3,
+    "w3": 4,
+    "w4": 5
    }
   },
   "bg2": {
@@ -21,55 +31,127 @@
    "colors": {
     "hill0": 1,
     "hill1": 2,
-    "hill2": 3
+    "hill2": 3,
+    "star": 7,
+    "tree0": 4,
+    "tree1": 5,
+    "tree2": 6
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "cat0": 5,
+    "cat1": 6,
+    "dark": 7,
+    "reed0": 1,
+    "reed1": 2,
+    "reed2": 3,
+    "reed3": 4
    }
   },
   "spr0": {
    "base": 128,
    "colors": {
     "edge": 1,
-    "fire0": 7,
-    "fire1": 8,
-    "gold0": 9,
-    "gold1": 10,
-    "gold2": 11,
-    "hull0": 2,
-    "hull1": 3,
-    "hull2": 4,
-    "hull3": 5,
-    "white": 6
+    "flower0": 7,
+    "flower1": 8,
+    "hi": 6,
+    "pad0": 2,
+    "pad1": 3,
+    "pad2": 4,
+    "pad3": 5,
+    "under": 9
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "eye": 7,
+    "line": 1,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4,
+    "skin3": 5,
+    "spot": 6,
+    "toe": 8
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "body": 2,
+    "core": 3,
+    "halo": 1
    }
   }
  },
  "scenes": {
-  "field": {
+  "far": {
    "h": 8,
    "mx": 0,
    "my": 0,
-   "pal": 1,
-   "w": 32
-  },
-  "hills": {
-   "h": 8,
-   "mx": 32,
-   "my": 0,
    "pal": 2,
    "w": 32
+  },
+  "reeds": {
+   "h": 28,
+   "mx": 0,
+   "my": 64,
+   "pal": 3,
+   "w": 32
+  },
+  "river": {
+   "h": 128,
+   "mx": 128,
+   "my": 0,
+   "pal": 1,
+   "w": 128
   }
  },
  "sprites": {
-  "gem": {
-   "pal": 0,
-   "size": 16,
-   "tile": 258
+  "frog_air": {
+   "pal": 1,
+   "size": 32,
+   "tile": 704
   },
-  "player": {
+  "frog_crouch": {
+   "pal": 1,
+   "size": 32,
+   "tile": 652
+  },
+  "frog_land": {
+   "pal": 1,
+   "size": 32,
+   "tile": 708
+  },
+  "frog_sit": {
+   "pal": 1,
+   "size": 32,
+   "tile": 648
+  },
+  "orb": {
+   "pal": 2,
+   "size": 32,
+   "tile": 712
+  },
+  "pad16": {
    "pal": 0,
    "size": 16,
-   "tile": 256
+   "tile": 644
+  },
+  "pad32": {
+   "pal": 0,
+   "size": 32,
+   "tile": 640
+  },
+  "pad8": {
+   "pal": 0,
+   "size": 8,
+   "tile": 646
   }
  },
  "tiles": {},
- "used": 160,
+ "used": 619,
  "version": 1
 }

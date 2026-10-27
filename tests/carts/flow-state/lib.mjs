@@ -13,6 +13,7 @@ const PROBE = `__expose(() => ({
   get lag() { return lag; }, set lag(v) { lag = v; }, get musicAt() { return musicAt; }, get started() { return started; }, get piece() { return piece; }, get diff() { return diff; }, get newBest() { return newBest; },
   get titleSel() { return titleSel; }, get pickPiece() { return pickPiece; }, set pickPiece(v) { pickPiece = v; }, get pickDiff() { return pickDiff; }, PIECES, DIFFS, get pauseSel() { return pauseSel; }, get judgeText() { return judgeText; }, get ART() { return ART; },
   multiplier, flowName, accuracy, gradeOf, loadChart, startPiece, tap, bestSlot, dget: (i) => dget(i), dset: (i, v) => dset(i, v), rom: (n) => rom(n),
+  HORIZON, FOCAL, HEIGHT, Z0, V, FROG_Y, LANE, HOPF, STAR, ORB, TOD, PIECE_TOD, get frogX() { return frogX; }, get tod() { return tod; }, applyTod, mixTod, skyAt,
   LOOKAHEAD, LEAD, RESUME_LEAD, WIN, JUDGE, MISS_FLOW, STRAY_FLOW, FLOW_START, GRADES, SFX, SONG,
 }));`;
 
