@@ -52,18 +52,18 @@ The flippers are laid out for two hands, as on a real table: a thumb on the D-pa
 | Plunger lane | x 176 to 192, from y 612 up to y 96 | The ball waits on the lane's floor (y 607); the top arch turns it left |
 | Top arch | y 0 to 96 | A half circle of radius 96 centred at x 96 (16 segments) |
 | Top lanes | y 62, x 52, 88 and 124 | Three rollover lanes: all three lit gives the next bonus multiplier (x2 to x6) |
-| Gate (kickout) | (88, 104) | A hole the ball falls into and is kicked out of: starts a mission when the lamps are lit |
-| Pop bumpers | (66, 168), (110, 168), (88, 204) | Three round bumpers, radius 11 |
-| Left and right orbits | along the walls, y 120 to 330 | A lane round the table that returns to the top: the left one has a spinner |
-| Drop targets | x 74 to 102, y 290 | A bank of three |
-| Standup targets | 2 on each side wall at y 250 and 330 | Four: they light the mission lamps |
-| Ramps | left from (30, 400) to (66, 150), right from (162, 400) to (126, 150) | Raised: the ball passes over the floor's walls; each has a lit award |
-| Slingshots | left (36, 510) to (62, 540), right (156, 510) to (130, 540) | Kick the ball away |
-| Inlanes, outlanes | y 470 to 570 each side | The inlanes feed the flippers; the left outlane has a lit **kickback** |
+| Gate (kickout) | (88, 104), radius 7 | A hole: the ball is swallowed, scores 5,000, is held three quarters of a second and spat out down the table, to the other side each time (step 5: it starts the mission when the lamps are lit) |
+| Pop bumpers | (66, 168), (110, 168), (88, 204) | Three round bumpers, radius 11: they throw the ball away at 6 px a frame or more |
+| Orbits | lanes 24 wide on each side, x 0 to 24 and x 152 to 176, y 150 to 330 | A ball shot up one scores the orbit (2,000); the left one has a **spinner** at y 226 to 254. Slanted **wire gates** (a rail that stops only a ball coming down) at the top and at the bottom of each lane turn a ball from the plunger, and a ball coming out of an orbit, into the table rather than into the outlane |
+| Drop targets | three, slanted, from (71, 287) to (100, 296) | A bank of three: each is 1,000, a cleared bank 5,000, and it comes back up after 1.5 seconds. (They are slanted so a ball cannot balance on them.) |
+| Standup targets | the inner guide of each orbit, at y 190 to 204 and y 262 to 276 | Four: the first hit of each lights it (500); all four lit counts one set and they start again (step 5: they light the mission lamps) |
+| Ramps | left from (40, 420) to (12, 165), right from (136, 420) to (164, 165) | A ball hit up the table at 4 px a frame or more, into the mouth, is carried along the ramp over the table (it touches nothing) and comes out at the top of the orbit lane; each has a lit award (2,500 instead of 1,000) |
+| Slingshots | left face (32, 480) to (44, 545), right face (144, 480) to (132, 545) | Kick the ball away from the face at 7 px a frame or more |
+| Inlanes, outlanes | y 480 to 590 each side, mirrored about x 88 | An inlane guide from (16, 492) down to (16, 540) and on to the flipper's pivot; the channel inside it, between it and the slingshot, is the **inlane** and feeds the flipper; the channel outside it, 16 px wide, is the **outlane** and drains. The left outlane has a **kickback** (once a ball) |
 | Flippers | pivots (48, 588) and (128, 588) | Length 34, rest 30 degrees below horizontal, 28 degrees above when up; the gap between the tips at rest is 21 |
-| Drain | below y 620 between the outlanes | The ball is lost |
+| Drain | below y 632 (outside the plunger lane) | The ball is lost |
 
-(The numbers are a first design; the table is data (section 5, "The table is data") and step 2 tunes them with the bot and a drawing of the table.)
+(The numbers are the table as built in step 2, tuned with the tests and the bot; step 8 balances it.)
 
 ## 5. The rules
 
@@ -166,7 +166,7 @@ BG0 the table (a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the
 
 | Asset | Budget |
 |---|---|
-| Code | 17 KB of the 64 KB limit after step 1 (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Code | 26 KB of the 64 KB limit after step 2 (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
 | Tiles | 276 of 1,024 after step 1, all the starter's (the table's art comes in step 3; the table is 1,920 map cells: most must be repeated textures and flips) |
 | Sprites | none yet (128 in OAM, 32 per line): the ball, up to 3 balls, 2 flippers, 3 bumpers, 2 slings, 7 targets, the spinner, the plunger |
 | ROM | the table's data if it is larger than a few KB |
@@ -209,10 +209,33 @@ Each step: build it, run `node tools/check.js star-cadet` and `node tools/test.j
   the run allows, and one with 0.2 drains it after about 20 s. That is a property of a table with no bumpers, not of the physics: step 2
   puts things in the ball's way. Playing by hand is what is still missing: only a person can say whether the ball feels right.
 
+### Step 2 built: the table's elements
+
+- `carts/src/star-cadet/code.js`: the table as data (`WALLS`, `BUMPERS`, `SLINGS`, `STANDUPS`, `DROPS`, `RAMPS`, `GATE`, the lanes, the spinner,
+  the wire gates in `ONEWAY`) and one function for each kind of thing the ball does: `collide` for solids (it remembers the normal), `kick`
+  (leave at least this fast), `struck` (a hit scores once: each element has a cooldown), `sensors` (the lanes, the spinner, the orbits, the gate,
+  the ramps' mouths and the kickback, checked every substep) and the ramp and the gate's hold inside `stepTable` (a ball on a ramp, or in the
+  gate, is moved by the table, not by physics). Counters for everything are in `stats`; the points are in `PTS`. Drawn as plain shapes; the
+  lit lamps and the drop targets show their state.
+- Ramps are **scripted**, not a second physics layer: a ball that enters a mouth fast enough follows the ramp's line at 7 px a frame and
+  nothing on the floor touches it (that was the open question of section 16, and the answer is simpler than a layer flag).
+- What the tests found: a ball dropped from the plunger fell straight down the left orbit lane (so the arch's curve now meets slanted wire
+  gates at the top of both lanes); a ball coming out of an orbit fell straight into the outlane (so wire gates at the bottoms too); the gate
+  swallowed its own ball again the moment it let go (it is spat out below its reach); and a flat drop-target bank could hold a ball still (so it is slanted).
+- `tests/carts/star-cadet/03-table.mjs`: every element is hit with a ball placed and aimed at it (bumpers, slingshots, lanes, standups, drops,
+  both orbits and the spinner, the gate, both ramps, the outlanes and the kickback, the inlanes), then 24,000 frames of random flipping for
+  stuck, lost or non-numeric balls. `02-physics.mjs` was kept: the open places the tests used moved; the energy check stops at the first element hit,
+  since a bumper is meant to add energy.
+- **Results:** 113 checks pass (`verify`). Every element works when a ball is aimed at it, and 24,000 frames of random flipping never lose,
+  freeze or corrupt the ball. The bot (it only flips when the ball comes near a flipper) keeps a ball alive for the 40 s a run allows, and in that
+  time hits the bumpers 3 times, the slingshots about 22, clears the drop bank once, turns the spinner, takes 2 ramps and never touches the gate or
+  the top lanes: it juggles the ball low on the table. So the elements are covered by their tests, not by the bot; step 8 gives the bot aim
+  (and the balance: how long a ball lives with a bot of each skill). Playing it by hand is what is still missing.
+
 ## 16. Open questions
 
 - **How the physics feels.** The numbers of section 5 are the usual ones for a pinball of this size, but only a person can say whether the ball is too floaty or too heavy; step 1 builds a table to play on first, and the numbers are constants in one place.
-- **Ramps.** A two level table (the ball on a ramp ignores the floor's walls and is drawn above them) is the part most likely to need a redesign (an entry that catches the ball, an exit that drops it); step 2 builds them before the missions depend on them.
+- **Ramps.** Settled in step 2: a ramp is a scripted ride (the ball follows a line over the table and touches nothing), not a second layer of physics.
 - **The camera.** Following the ball with an ease works in most of a table; at a fast shot up the table it may lag, so the camera leads the ball by a part of its speed.
 - **Touch.** Two thumbs on LEFT and RIGHT or on B and A; it has to be tried on a phone.
 - **A second table.** Not planned: one table with nine missions is the game.

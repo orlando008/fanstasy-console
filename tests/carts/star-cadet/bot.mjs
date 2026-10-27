@@ -9,7 +9,7 @@
 // through the probe in lib.mjs (add what it needs there). `skill` here is the chance (0 to 1) of dodging a block.
 import { M, newGame as boot } from './lib.mjs';
 
-export const defaults = { frames: 3000, seeds: 6, set: { skill: [0.2, 0.6, 1] } };
+export const defaults = { frames: 9000, seeds: 1, set: { skill: [0.2, 0.6, 1] } };
 
 export const newGame = (seed) => boot(seed); // skipTitle: straight into play
 
@@ -42,5 +42,6 @@ export const finished = (p) => p.state !== 'play' || ballFrames > 2400;
 
 export function result(p) {
   const n = balls.length || 1;
-  return { score: p.score, drained, avgBallSeconds: Math.round(balls.reduce((a, b) => a + b, 0) / n / 6) / 10, highest: Math.round(maxBall), problems: worstStill > 120 ? [`the ball stood still for ${worstStill} frames`] : [] };
+  const st = p.stats, kinds = ['bump', 'sling', 'standup', 'drop', 'spin', 'orbit', 'lane', 'gate', 'ramp', 'kick'];
+  return { score: p.score, kinds: kinds.filter((k) => st[k] > 0).length, bump: st.bump, sling: st.sling, standup: st.standup, drop: st.drop, bank: st.bank, spin: st.spin, orbit: st.orbit, lane: st.lane, gate: st.gate, ramp: st.ramp, drained, avgBallSeconds: Math.round(balls.reduce((a, b) => a + b, 0) / n / 6) / 10, highest: Math.round(maxBall), problems: worstStill > 120 ? [`the ball stood still for ${worstStill} frames`] : [] };
 }

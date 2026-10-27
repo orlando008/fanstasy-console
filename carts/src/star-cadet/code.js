@@ -80,34 +80,66 @@ const LANE_X = 176, LANE_FLOOR = 612, BALL_HOME = { x: 184, y: LANE_FLOOR - BR }
 const PLUNGE_FRAMES = 60; // held this long is full power; the launch speed is 4 + 10 x power
 const DRAIN_Y = 632;
 
-/** The walls: segments [x0, y0, x1, y1]. A top arch of radius 96 over the table, the plunger lane on the right, and the
- *  guides that feed the flippers. */
+/** The walls: segments [x0, y0, x1, y1, r] (r: a post's radius, else 0). A top arch of radius 96 over the table, the plunger
+ *  lane on the right, the outlanes and inlanes with their guides down to the flippers, the two orbits' inner guides (with gaps
+ *  where the standup targets are) and the posts between the top lanes. */
 const WALLS = (() => {
   const w = [];
   for (let i = 0; i < 16; i++) { // the arch: a half circle of 16 segments
     const a0 = Math.PI + (Math.PI * i) / 16, a1 = Math.PI + (Math.PI * (i + 1)) / 16;
     w.push([96 + 96 * Math.cos(a0), 96 + 96 * Math.sin(a0), 96 + 96 * Math.cos(a1), 96 + 96 * Math.sin(a1)]);
   }
-  w.push([0, 96, 0, 512]); // the left wall
-  w.push([0, 512, 48, 588]); // the left guide, into the left flipper's pivot
+  w.push([0, 96, 0, TABLE_H]); // the left wall, on down past the outlane
   w.push([TABLE_W, 96, TABLE_W, LANE_FLOOR]); // the right wall of the lane
-  w.push([LANE_X, 120, LANE_X, 512]); // the lane's inner wall
-  w.push([LANE_X, 512, 128, 588]); // the right guide
+  w.push([LANE_X, 120, LANE_X, LANE_FLOOR]); // the lane's inner wall, which is also the right outlane's outer wall
   w.push([LANE_X, LANE_FLOOR, TABLE_W, LANE_FLOOR]); // the lane's floor
+  for (const m of [0, 1]) { // the two sides, the right one mirrored about x = 88
+    const X = (x) => (m ? 176 - x : x);
+    w.push([X(16), 492, X(16), 540], [X(16), 540, X(48), 588]); // the inlane guide: the outlane is outside it, the inlane inside
+    w.push([X(32), 480, X(32), 545], [X(32), 545, X(44), 545]); // the back and bottom of the slingshot
+    w.push([X(24), 150, X(24), 190], [X(24), 204, X(24), 262], [X(24), 276, X(24), 330]); // the orbit's inner guide
+  }
+  w.push([70, 44, 70, 76, 2], [106, 44, 106, 76, 2]); // the posts between the three top lanes
   return w;
 })();
+/** The elements. Bumpers and slingshots kick the ball; standup targets light; drop targets go down; a ramp carries the ball. */
+const BUMP_R = 11, BUMP_KICK = 6, SLING_KICK = 7, COOL = 8, HIT_FLASH = 6; // radius; the least speed away from it; frames
+const BUMPERS = [[66, 168], [110, 168], [88, 204]].map(([x, y]) => ({ x, y, flash: 0, cool: 0 }));
+const SLINGS = [[32, 480, 44, 545], [144, 480, 132, 545]].map(([x0, y0, x1, y1]) => ({ x0, y0, x1, y1, flash: 0, cool: 0 }));
+const STANDUPS = [[24, 190, 24, 204], [24, 262, 24, 276], [152, 190, 152, 204], [152, 262, 152, 276]].map(([x0, y0, x1, y1]) => ({ x0, y0, x1, y1, lit: false, flash: 0, cool: 0 }));
+const DROPS = [0, 1, 2].map((i) => ({ x0: 71 + 10 * i, y0: 287 + 10 * i / 3, x1: 80 + 10 * i, y1: 290 + 10 * i / 3, down: false, flash: 0 })); // slanted, so a ball cannot balance on it
+const TARGET_R = 2, DROP_RESET = 90; // a target's radius; the frames before a cleared bank comes back up
+const LANE_XS = [52, 88, 124], LANE_Y = 62, LANE_HW = 18; // the three top lanes: where their rollover sensors are
+const GATE = { x: 88, y: 104, r: 7 }, GATE_HOLD = 45; // the kickout hole; frames the ball is held
+const SPIN = { x0: 4, x1: 20, y0: 226, y1: 254, per: 8 }; // the spinner in the left orbit: a spin for each 8 px of travel
+const ORBIT_Y = 160, ORBIT_IN = 330, ORBIT_X = [24, 152]; // an orbit counts when the ball goes up its lane from y 330 to y 160
+const RAMPS = [
+  { ex: 40, ey: 420, tx: 12, ty: 165, evx: 1.5, evy: 2, lit: false }, // the left ramp: up the table, out at the top of the left orbit
+  { ex: 136, ey: 420, tx: 164, ty: 165, evx: -1.5, evy: 2, lit: false },
+].map((r) => ({ ...r, len: Math.hypot(r.tx - r.ex, r.ty - r.ey) }));
+// Wire gates at the top and the bottom of the two orbit lanes: a slanted rail that only stops a ball coming down, so a ball from the
+// plunger is turned into the table, and a ball up an orbit goes through.
+const ONEWAY = [[0, 142, 22, 152], [176, 142, 154, 152], [0, 358, 22, 370], [176, 358, 154, 370]]; // and a ball coming out of an orbit is turned into the table, not into the outlane
+const RAMP_SPEED = 7, RAMP_IN = 12, RAMP_MIN = 4; // px a frame along a ramp; the entrance's radius; the least speed up the table to get on
+const KICKBACK = { x: 16, y0: 575, y1: 606, v: 13 }; // the left outlane's kickback
+const PTS = { bump: 100, sling: 10, standup: 500, drop: 1000, bank: 5000, spin: 100, ramp: 1000, rampLit: 2500, orbit: 2000, lane: 500, gate: 5000 };
+let stats = {}, laneLit = [false, false, false], kickback = true, spinAcc = 0, orbitArm = [false, false], dropTimer = 0, gateSide = 1;
+const resetStats = () => { stats = { bump: 0, sling: 0, standup: 0, drop: 0, bank: 0, spin: 0, ramp: 0, orbit: 0, lane: 0, laneDone: 0, standupDone: 0, gate: 0, kick: 0 }; };
+resetStats();
+
 /** Flippers: pivot, side (+1 points right), angle, and the last swing (radians a frame, for the ball). */
 const makeFlippers = () => [{ x: 48, y: 588, s: 1, a: REST_A, w: 0 }, { x: 128, y: 588, s: -1, a: REST_A, w: 0 }];
 const flipTip = (f) => ({ x: f.x + f.s * FLEN * Math.cos(f.a), y: f.y + FLEN * Math.sin(f.a) });
 
-/** Push the ball out of a capsule (or a segment, r 0) and bounce it. vs: the surface's velocity at the contact. */
+let CN = [0, -1]; // the normal of the last collision
+/** Push the ball out of a capsule (or a segment, r 0) and bounce it. vsAt(t): the surface's velocity at the contact. */
 function collide(b, x0, y0, x1, y1, r, e, vsAt) {
   const dx = x1 - x0, dy = y1 - y0, len2 = dx * dx + dy * dy;
   const t = len2 ? clamp(((b.x - x0) * dx + (b.y - y0) * dy) / len2, 0, 1) : 0;
   const cx = x0 + dx * t, cy = y0 + dy * t, ox = b.x - cx, oy = b.y - cy, d2 = ox * ox + oy * oy, reach = BR + r;
   if (d2 >= reach * reach) return false;
   const d = Math.sqrt(d2), nx = d ? ox / d : 0, ny = d ? oy / d : -1;
-  b.x = cx + nx * reach; b.y = cy + ny * reach;
+  b.x = cx + nx * reach; b.y = cy + ny * reach; CN = [nx, ny];
   const vs = vsAt ? vsAt(t) : [0, 0];
   const vn = (b.vx - vs[0]) * nx + (b.vy - vs[1]) * ny;
   if (vn < 0) {
@@ -115,6 +147,43 @@ function collide(b, x0, y0, x1, y1, r, e, vsAt) {
     b.vx += k * nx; b.vy += k * ny;
   }
   return true;
+}
+/** Make the ball leave the last thing it hit at least this fast. */
+function kick(b, v) {
+  const vn = b.vx * CN[0] + b.vy * CN[1];
+  if (vn < v) { b.vx += (v - vn) * CN[0]; b.vy += (v - vn) * CN[1]; }
+}
+/** An element was hit: true once in a while (its cooldown), so a ball touching it for several substeps scores once. */
+function struck(el) { if (el.cool > 0) return false; el.cool = COOL; el.flash = HIT_FLASH; return true; }
+function award(n) { score += n; }
+
+/** The sensors and the things that move the ball by themselves: lanes, spinner, orbits, the gate, ramps and the kickback. */
+function sensors(b) {
+  LANE_XS.forEach((x, i) => {
+    if (Math.abs(b.x - x) < LANE_HW && Math.abs(b.y - LANE_Y) < 6 && !laneLit[i]) {
+      laneLit[i] = true; stats.lane++; award(PTS.lane); fx(SFX.point);
+      if (laneLit.every(Boolean)) { stats.laneDone++; laneLit = [false, false, false]; }
+    }
+  });
+  if (b.x > SPIN.x0 && b.x < SPIN.x1 && b.y > SPIN.y0 && b.y < SPIN.y1) {
+    spinAcc += Math.abs(b.vy) / SUB;
+    while (spinAcc >= SPIN.per) { spinAcc -= SPIN.per; stats.spin++; award(PTS.spin); }
+  }
+  ORBIT_X.forEach((ox, k) => {
+    const inL = k === 0 ? b.x < ox : b.x > ox && b.x < LANE_X, side = b.y > ORBIT_Y - 10 && b.y < ORBIT_IN + 10;
+    if (inL && b.y > ORBIT_IN - 14 && b.y < ORBIT_IN + 6 && b.vy < -1) orbitArm[k] = true;
+    else if (orbitArm[k] && inL && b.y < ORBIT_Y) { orbitArm[k] = false; stats.orbit++; award(PTS.orbit); fx(SFX.point); }
+    else if (orbitArm[k] && !inL && side && b.y < ORBIT_IN - 20) orbitArm[k] = false; // left the lane: no orbit
+  });
+  if (Math.hypot(b.x - GATE.x, b.y - GATE.y) < GATE.r - 2) {
+    b.x = GATE.x; b.y = GATE.y; b.vx = b.vy = 0; b.hold = GATE_HOLD * SUB; stats.gate++; award(PTS.gate); fx(SFX.point);
+  }
+  for (const r of RAMPS) {
+    if (Math.hypot(b.x - r.ex, b.y - r.ey) < RAMP_IN && b.vy < -RAMP_MIN) { b.ramp = { r, d: 0 }; stats.ramp++; fx(SFX.point); }
+  }
+  if (kickback && b.x < KICKBACK.x && b.y > KICKBACK.y0 && b.y < KICKBACK.y1 && b.vy > 0) {
+    kickback = false; b.vx = 0.5; b.vy = -KICKBACK.v; stats.kick++; fx(SFX.point);
+  }
 }
 
 /** One frame of the table: the flippers swing, the ball moves in SUB substeps. hold: the flippers' buttons [left, right]. */
@@ -125,11 +194,37 @@ function stepTable(b, flips, hold) {
       f.a = hold[k] ? Math.max(UP_A, f.a - W_UP / SUB) : Math.min(REST_A, f.a + W_DOWN / SUB);
       f.w = (f.a - a0) * SUB;
     });
+    if (b.ramp) { // carried along a ramp, above the table: nothing on it is touched
+      const r = b.ramp.r, d = (b.ramp.d += RAMP_SPEED / SUB), t = Math.min(1, d / r.len);
+      b.x = r.ex + (r.tx - r.ex) * t; b.y = r.ey + (r.ty - r.ey) * t; b.vx = b.vy = 0;
+      if (d >= r.len) { b.vx = r.evx; b.vy = r.evy; b.ramp = null; award(r.lit ? PTS.rampLit : PTS.ramp); }
+      continue;
+    }
+    if (b.hold > 0) { // in the gate's hole
+      if (--b.hold === 0) { gateSide = -gateSide; b.y = GATE.y + GATE.r + 1; b.vx = 1.2 * gateSide; b.vy = 5; } // out of the hole's reach
+      continue;
+    }
     b.vy += GRAV / SUB;
     const sp = Math.hypot(b.vx, b.vy);
     if (sp > VMAX) { b.vx *= VMAX / sp; b.vy *= VMAX / sp; }
     b.x += b.vx / SUB; b.y += b.vy / SUB;
-    for (const w of WALLS) collide(b, w[0], w[1], w[2], w[3], 0, WALL_E);
+    for (const w of WALLS) collide(b, w[0], w[1], w[2], w[3], w[4] || 0, WALL_E);
+    if (b.vy > 0) for (const w of ONEWAY) collide(b, w[0], w[1], w[2], w[3], 0, WALL_E);
+    for (const e of BUMPERS) if (collide(b, e.x, e.y, e.x, e.y, BUMP_R, WALL_E)) {
+      kick(b, BUMP_KICK); if (struck(e)) { stats.bump++; award(PTS.bump); fx(SFX.hit); }
+    }
+    for (const e of SLINGS) if (collide(b, e.x0, e.y0, e.x1, e.y1, 0, WALL_E)) {
+      kick(b, SLING_KICK); if (struck(e)) { stats.sling++; award(PTS.sling); fx(SFX.move); }
+    }
+    for (const e of STANDUPS) if (collide(b, e.x0, e.y0, e.x1, e.y1, TARGET_R, WALL_E) && struck(e) && !e.lit) {
+      e.lit = true; stats.standup++; award(PTS.standup); fx(SFX.point);
+      if (STANDUPS.every((q) => q.lit)) { stats.standupDone++; for (const q of STANDUPS) q.lit = false; }
+    }
+    for (const e of DROPS) if (!e.down && collide(b, e.x0, e.y0, e.x1, e.y1, TARGET_R, WALL_E)) {
+      e.down = true; e.flash = HIT_FLASH; stats.drop++; award(PTS.drop); fx(SFX.point);
+      if (DROPS.every((q) => q.down)) { stats.bank++; award(PTS.bank); dropTimer = DROP_RESET; }
+    }
+    sensors(b);
     for (const f of flips) {
       const tip = flipTip(f);
       collide(b, f.x, f.y, tip.x, tip.y, FR, FLIP_E, (t) => {
@@ -138,6 +233,8 @@ function stepTable(b, flips, hold) {
       });
     }
   }
+  for (const e of [...BUMPERS, ...SLINGS, ...STANDUPS, ...DROPS]) { if (e.cool > 0) e.cool--; if (e.flash > 0) e.flash--; }
+  if (dropTimer > 0 && --dropTimer === 0) for (const e of DROPS) e.down = false;
 }
 
 // --- Input: edge-triggered presses (btnp repeats; menus want one press) ---
@@ -173,13 +270,16 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 function startGame() {
-  score = 0; balls = 3; flips = makeFlippers(); serve(); paused = false; timer = 0; state = 'play';
+  score = 0; balls = 3; flips = makeFlippers(); resetStats(); laneLit = [false, false, false];
+  for (const e of STANDUPS) e.lit = false;
+  for (const e of DROPS) e.down = false;
+  serve(); paused = false; timer = 0; state = 'play';
   play(SONG.play);
 }
 
 /** A new ball in the plunger lane. */
 function serve() {
-  ball = { x: BALL_HOME.x, y: BALL_HOME.y, vx: 0, vy: 0 }; plunge = 0;
+  ball = { x: BALL_HOME.x, y: BALL_HOME.y, vx: 0, vy: 0, ramp: null, hold: 0 }; plunge = 0; kickback = true; orbitArm = [false, false];
   camY = clamp(ball.y - 150, 0, TABLE_H - VIEW_H);
 }
 const inLane = () => ball.x > LANE_X && ball.y > LANE_FLOOR - 40;
@@ -284,14 +384,25 @@ function draw() {
 
 function drawPlay() {
   rectfill(0, 0, 256, 224, 2);
-  const cy = Math.round(camY), sy = (y) => Math.round(y - cy);
-  for (const w of WALLS) line(Math.round(w[0]), sy(w[1]), Math.round(w[2]), sy(w[3]), WHITE);
+  const cy = Math.round(camY), sy = (y) => Math.round(y - cy), R = Math.round;
+  const seg = (x0, y0, x1, y1, c) => line(R(x0), sy(y0), R(x1), sy(y1), c);
+  for (const w of WALLS) seg(w[0], w[1], w[2], w[3], WHITE);
+  for (const w of ONEWAY) seg(w[0], w[1], w[2], w[3], DIM);
+  for (const r of RAMPS) { seg(r.ex - 6, r.ey, r.tx - 6, r.ty, DIM); seg(r.ex + 6, r.ey, r.tx + 6, r.ty, DIM); circ(R(r.ex), sy(r.ey), RAMP_IN, r.lit ? GOLD : DIM); }
+  LANE_XS.forEach((x, i) => circfill(x, sy(LANE_Y), 4, laneLit[i] ? GOLD : PANEL));
+  circ(GATE.x, sy(GATE.y), GATE.r, CYAN);
+  rect(SPIN.x0, sy(SPIN.y0), SPIN.x1 - SPIN.x0, SPIN.y1 - SPIN.y0, DIM);
+  for (const e of BUMPERS) circfill(e.x, sy(e.y), BUMP_R, e.flash ? WHITE : RED);
+  for (const e of SLINGS) { seg(e.x0, e.y0, e.x1, e.y1, e.flash ? WHITE : RED); seg(e.x0 + 1, e.y0, e.x1 + 1, e.y1, e.flash ? WHITE : RED); }
+  for (const e of STANDUPS) for (let i = -1; i <= 1; i++) seg(e.x0 + i, e.y0, e.x1 + i, e.y1, e.lit ? GOLD : GREEN);
+  for (const e of DROPS) if (!e.down) for (let i = -1; i <= 1; i++) seg(e.x0, e.y0 + i, e.x1, e.y1 + i, CYAN); else seg(e.x0, e.y0, e.x1, e.y1, PANEL);
   for (const f of flips) {
     const tip = flipTip(f);
-    for (let i = 0; i <= 8; i++) circfill(Math.round(f.x + (tip.x - f.x) * i / 8), sy(f.y + (tip.y - f.y) * i / 8), FR, GOLD);
+    for (let i = 0; i <= 8; i++) circfill(R(f.x + (tip.x - f.x) * i / 8), sy(f.y + (tip.y - f.y) * i / 8), FR, GOLD);
   }
   if (inLane()) rectfill(LANE_X + 6, sy(LANE_FLOOR - 4 + plunge * 14), 8, 4, DIM); // the plunger, pulled back
-  circfill(Math.round(ball.x), sy(ball.y), BR, WHITE);
+  if (kickback) circfill(8, sy(590), 3, GREEN); // the kickback is armed
+  circfill(R(ball.x), sy(ball.y), BR, ball.ramp ? GOLD : WHITE);
   rectfill(TABLE_W, 0, 256 - TABLE_W, 224, SHADOW);
   txt('SCORE', 198, 8, DIM); txt(String(score), 252 - String(score).length * 8, 18, WHITE);
   txt('BALL', 198, 40, DIM); txt(String(4 - balls), 198, 50, balls > 1 ? WHITE : RED);

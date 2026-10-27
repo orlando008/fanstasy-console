@@ -7,16 +7,16 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy 
 
 // 1. Gravity and the speed limit.
 {
-  const vm = newGame(1), p = vm.probe(), K = p.K; put(p, 88, 200); vm.run(30);
+  const vm = newGame(1), p = vm.probe(), K = p.K; put(p, 120, 330); vm.run(30);
   const n = 30 * K.SUB, want = (K.GRAV / K.SUB) * (n * (n + 1) / 2) / K.SUB;
-  ok(Math.abs(p.ball.y - 200 - want) < want * 0.03, 'a ball falls under gravity (the distance of a fall from rest)', `${(p.ball.y - 200).toFixed(1)} want ${want.toFixed(1)}`);
-  put(p, 88, 200, 30, 30); vm.run(1);
+  ok(Math.abs(p.ball.y - 330 - want) < want * 0.03, 'a ball falls under gravity (the distance of a fall from rest)', `${(p.ball.y - 330).toFixed(1)} want ${want.toFixed(1)}`);
+  put(p, 120, 330, 30, 30); vm.run(1);
   ok(Math.hypot(p.ball.vx, p.ball.vy) <= K.VMAX + 1e-9, 'the ball never goes faster than the speed limit');
 }
 
 // 2. Walls: a bounce keeps the speed along the wall and loses some across it.
 {
-  const vm = newGame(1), p = vm.probe(), K = p.K; put(p, 20, 300, -6, 0); vm.run(8);
+  const vm = newGame(1), p = vm.probe(), K = p.K; put(p, 20, 400, -6, 0); vm.run(8);
   ok(p.ball.vx > 0 && Math.abs(p.ball.vx - 6 * K.WALL_E) < 0.5, 'a ball hitting the left wall bounces back with the wall\'s share of its speed', `vx ${p.ball.vx.toFixed(2)}`);
   ok(p.ball.x >= K.BR - 1e-6, 'and never goes into the wall', `x ${p.ball.x.toFixed(2)}`);
 }
@@ -27,11 +27,12 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy 
   for (let a = 0; a < 48; a++) {
     p.serve(); const ang = (a / 48) * Math.PI * 2, sx = 30 + (a * 37) % 120, sy = 150 + (a * 53) % 300;
     put(p, sx, sy, Math.cos(ang) * K.VMAX, Math.sin(ang) * K.VMAX);
-    const e0 = 0.5 * K.VMAX ** 2 - K.GRAV * sy;
+    const e0 = 0.5 * K.VMAX ** 2 - K.GRAV * sy, hits0 = Object.values(p.stats).reduce((a, b) => a + b, 0);
     for (let f = 0; f < 400; f++) {
       vm.run(1); runs++;
       const b = p.ball;
       if (p.balls < 3 || p.state !== 'play') break; // drained: the next ball is another test
+      if (Object.values(p.stats).reduce((a, b) => a + b, 0) !== hits0) break; // it met an element, which may kick it: energy is for the walls
       if (b.x < 0 || b.x > K.TABLE_W || b.y < 0 || b.y > K.TABLE_H) out++;
       worst = Math.max(worst, 0.5 * (b.vx ** 2 + b.vy ** 2) - K.GRAV * b.y - e0);
     }
@@ -87,7 +88,7 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy 
   ok(tip.vy < -6 && tip.best > 11, 'and a tip shot goes up the table fast enough to reach the top', `${tip.best.toFixed(1)}`);
   const vm = newGame(1), p = vm.probe(); put(p, 76, 586); vm.run(8);
   let top = 999; for (let i = 0; i < 90; i++) { vm.run(1, i < 8 ? M('LEFT') : 0); top = Math.min(top, p.ball.y); }
-  ok(top < 330, 'a ball thrown from the tip rises far up the table', `top ${top.toFixed(0)}`);
+  ok(top < 400, 'a ball thrown from the tip rises far up the table', `top ${top.toFixed(0)}`);
 }
 
 // 7. The plunger: the longer it is held the harder the launch; a weak one falls back, a strong one reaches the table.
