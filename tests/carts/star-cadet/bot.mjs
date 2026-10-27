@@ -32,7 +32,7 @@ export function pad(vm, p, frame, opts) {
       const roll = ((frame * 2654435761 + k * 97 + p.ball.x * 13) >>> 0) % 1000 / 1000;
       late[k] = roll < skill ? frame : frame + 9; until[k] = late[k] + 11;
     }
-    if (frame >= late[k] && frame < until[k]) m |= k === 0 ? M('LEFT') : M('RIGHT');
+    if (frame >= late[k] && frame < until[k]) m |= k === 0 ? M('LEFT') : M('A');
   });
   return m;
 }

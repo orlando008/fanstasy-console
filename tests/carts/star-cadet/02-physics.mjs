@@ -49,9 +49,21 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy 
   ok(f[1].a === K.REST_A, 'and only the one that is held');
   vm.run(5); ok(f[0].a > K.UP_A + 0.5 && f[0].a < K.REST_A, 'then falls (slower than it rose)');
   vm.run(2); ok(f[0].a === K.REST_A, 'and is down again after 6 frames');
-  vm.run(4, M('RIGHT')); ok(Math.abs(f[1].a - K.UP_A) < 1e-9 && f[0].a === K.REST_A, 'the right one is its own button');
+  vm.run(4, M('A')); ok(Math.abs(f[1].a - K.UP_A) < 1e-9 && f[0].a === K.REST_A, 'the right one is its own button');
   const tipL = p.flipTip(f[0]), tipR = p.flipTip(f[1]);
   ok(tipR.x - tipL.x > 12 && tipR.x - tipL.x < 30, 'the tips of the two at rest leave a gap wider than the ball', `${(tipR.x - tipL.x).toFixed(1)} px`);
+}
+
+// 4b. One hand each: the D-pad is the left flipper, the buttons on the right are the right one; the shoulder buttons do neither.
+{
+  const down = (names) => { const vm = newGame(1), p = vm.probe(); vm.run(6, M(...names)); return [p.flips[0].a < p.K.REST_A, p.flips[1].a < p.K.REST_A]; };
+  ok(['UP', 'DOWN', 'LEFT', 'RIGHT'].every((b) => { const [l, r] = down([b]); return l && !r; }), 'every direction of the D-pad lifts the left flipper, and only that one');
+  ok(['A', 'B', 'X', 'Y'].every((b) => { const [l, r] = down([b]); return !l && r; }), 'every one of A, B, X and Y lifts the right flipper, and only that one');
+  const [l, r] = down(['L', 'R', 'SELECT']); ok(!l && !r, 'the shoulder buttons and SELECT lift neither (they are for nudging)');
+  const [l2, r2] = down(['LEFT', 'B']); ok(l2 && r2, 'a button of each hand lifts both');
+  const hold = (names) => { const vm = newGame(1), p = vm.probe(); vm.run(30, M(...names)); return p.plunge; };
+  ok(hold(['DOWN']) > 0.4 && hold(['A']) > 0.4 && hold(['LEFT']) > 0.4 && hold(['Y']) > 0.4, 'while the ball waits in the lane any button of either hand pulls the plunger');
+  ok(hold(['L']) === 0 && hold([]) === 0, 'and the shoulder buttons do not');
 }
 
 // 5. A ball left alone on the flippers rolls down and drains.
@@ -121,7 +133,7 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy 
   vm.run(60, M('DOWN')); let min = 1e9, max = -1e9;
   for (let i = 0; i < 200; i++) { vm.run(1); min = Math.min(min, p.camY); max = Math.max(max, p.camY); }
   ok(min >= 0 && max <= K.TABLE_H - K.VIEW_H + 1e-9 && min < 100, 'the view follows a launched ball to the top, and never leaves the table', `${min.toFixed(0)} to ${max.toFixed(0)}`);
-  const trace = () => { const v = newGame(7), q = v.probe(); const out = []; v.run(55, M('DOWN')); for (let i = 0; i < 600; i++) { v.run(1, i % 90 < 8 ? M('LEFT') : i % 90 < 50 ? M('RIGHT') : 0); out.push(q.ball.x.toFixed(4), q.ball.y.toFixed(4)); } return out.join(); };
+  const trace = () => { const v = newGame(7), q = v.probe(); const out = []; v.run(55, M('DOWN')); for (let i = 0; i < 600; i++) { v.run(1, i % 90 < 8 ? M('LEFT') : i % 90 < 50 ? M('A') : 0); out.push(q.ball.x.toFixed(4), q.ball.y.toFixed(4)); } return out.join(); };
   ok(trace() === trace(), 'the same buttons give the same ball, to the last digit');
 }
 

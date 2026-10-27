@@ -20,7 +20,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(1), p = vm.probe();
   ok(p.balls === 3 && p.inLane(), 'a game starts with three balls and the first in the plunger lane');
   vm.run(6, M('LEFT')); ok(p.flips[0].a < p.flips[1].a, 'LEFT lifts the left flipper');
-  vm.run(6, M('RIGHT')); ok(p.flips[1].a < p.flips[0].a, 'and RIGHT the right one');
+  vm.run(6, M('A')); ok(p.flips[1].a < p.flips[0].a, 'and A the right one');
 }
 
 // 3. Pause.

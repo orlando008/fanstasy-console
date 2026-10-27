@@ -143,6 +143,8 @@ function stepTable(b, flips, hold) {
 // --- Input: edge-triggered presses (btnp repeats; menus want one press) ---
 
 let inputMask = 0, prevMask = 0;
+// The flippers: one hand each. Anything on the D-pad is the left flipper, any of the four buttons on the right is the right one.
+const PAD_LEFT = [UP, DOWN, LEFT, RIGHT], PAD_RIGHT = [A, B, X, Y];
 const BUTTONS = [UP, DOWN, LEFT, RIGHT, A, B, X, Y, L, R, START, SELECT];
 function readPad() { let m = 0; for (const b of BUTTONS) if (btn(b)) m |= 1 << b; return m; }
 const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) === 0;
@@ -207,10 +209,10 @@ function updateTitle() {
 /** The game: the flippers, the plunger and the ball. */
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  held = [btn(LEFT) || btn(B) || btn(L), btn(RIGHT) || btn(A) || btn(R)];
-  if (pressed(LEFT) || pressed(RIGHT) || pressed(B) || pressed(A)) { if (!inLane()) fx(SFX.move); }
+  held = [PAD_LEFT.some((k) => btn(k)), PAD_RIGHT.some((k) => btn(k))];
+  if (!inLane() && PAD_LEFT.concat(PAD_RIGHT).some((k) => pressed(k))) fx(SFX.move);
   const waiting = inLane() && ball.vy >= 0 && ball.y >= BALL_HOME.y - 1;
-  if (waiting && (btn(DOWN) || btn(A))) plunge = Math.min(1, plunge + 1 / PLUNGE_FRAMES);
+  if (waiting && (held[0] || held[1])) plunge = Math.min(1, plunge + 1 / PLUNGE_FRAMES);
   else if (waiting && plunge > 0.04) { ball.vy = -(4 + 10 * plunge); plunge = 0; fx(SFX.point); }
   else if (!waiting) plunge = 0;
   stepTable(ball, flips, held);

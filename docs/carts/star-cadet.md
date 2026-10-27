@@ -22,15 +22,14 @@ Launch a ball with the plunger, keep it alive with the flippers, shoot the lit s
 
 | Button | Use |
 |---|---|
-| LEFT (also B, L) | Left flipper |
-| RIGHT (also A, R) | Right flipper |
-| DOWN (hold, then release) or A (a tap launches softly) | The plunger: how long it is held is the power |
-| UP | Nudge the table (limited: a third nudge in a ball is a warning, the fourth a **tilt**) |
+| Any D-pad direction (UP, DOWN, LEFT, RIGHT) | The **left flipper**: the left hand |
+| Any of A, B, X, Y | The **right flipper**: the right hand |
+| Either hand, held, then released (while the ball waits in the lane) | The plunger: how long it is held is the power |
+| L, R (the shoulder buttons) | Nudge the table left and right; SELECT nudges up. Limited: a third nudge in a ball is a warning, the fourth a **tilt** (step 4) |
 | START | Pause (RESUME, RESTART, QUIT TO TITLE) |
-| SELECT | On the title: the records. In play: nothing (reserved) |
-| D-pad, A | Menus: UP and DOWN choose, A selects, B goes back |
+| Menus | D-pad UP and DOWN choose, A selects, B goes back; SELECT on the title: the records |
 
-The game is playable on the touch controls (D-pad, A, B, START, SELECT): the flippers are LEFT and RIGHT or B and A, so two thumbs work.
+The flippers are laid out for two hands, as on a real table: a thumb on the D-pad and a thumb on the face buttons, so neither hand does both. (The first draft had LEFT and RIGHT or B and A, which is one hand; the user asked for this.) With the touch controls it is the D-pad on the left and the buttons on the right.
 
 ## 4. Screen layout
 
@@ -191,7 +190,7 @@ Each step: build it, run `node tools/check.js star-cadet` and `node tools/test.j
 - `carts/src/star-cadet/code.js`: the table and its physics in one block at the top, every number a constant: the walls as segments (the
   arch, the side walls, the lane, the two guides into the flippers), `collide` (a ball against a segment or a capsule, with the surface's
   own speed for a flipper), `stepTable` (4 substeps: the flippers swing, gravity, the move, the walls, the flippers) and the plunger (hold
-  DOWN or A, release to launch at 4 + 10 x power). A ball that falls out below the flippers is a drain: the next of three balls is
+  any button, release to launch at 4 + 10 x power). A ball that falls out below the flippers is a drain: the next of three balls is
   served. The view follows the ball (eased, clamped to the table). Drawn as plain shapes; the starter's title, pause, game over,
   initials and records screens are unchanged.
 - Numbers that came out of playing it in the harness (so section 4 and 5 now say these, not the first draft's): gravity 0.12 (with 0.18 a
@@ -203,6 +202,9 @@ Each step: build it, run `node tools/check.js star-cadet` and `node tools/test.j
   power, three balls, the pause, the camera, determinism). `01-flow.mjs` was changed from the starter's blocks to the ball and flippers;
   the starter's art test was removed (it tested the placeholder art; step 3 adds the table's). `bot.mjs` plunges at full power and
   flips when the ball comes near a flipper (`skill` is the chance a flip is on time, otherwise it is 9 frames late).
+- **Controls, after the first review:** the first draft had LEFT and RIGHT (or B and A) for the flippers, which is one hand. Now any D-pad
+  direction is the left flipper and any of A, B, X, Y the right one, so each thumb has a flipper; the plunger takes a hold of any of them;
+  L, R and SELECT are kept for nudging. (A test checks every button.)
 - **Results:** the table is empty, so nothing takes the ball's energy: a bot with `skill` 0.6 or better keeps one ball up for the 40 s
   the run allows, and one with 0.2 drains it after about 20 s. That is a property of a table with no bumpers, not of the physics: step 2
   puts things in the ball's way. Playing by hand is what is still missing: only a person can say whether the ball feels right.
