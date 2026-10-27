@@ -1,7 +1,7 @@
 # Flow State: Cart Specification
 
-**Version:** 0.2 (spec agreed in outline)
-**Status:** Spec written; scaffolded, the game is still the starter's placeholder
+**Version:** 1.0 (built: all eight steps of section 15)
+**Status:** Released in the Library (`carts/flow-state.nova.png`); under review in [PR #60](https://github.com/orlando008/fanstasy-console/pull/60). Open: the Badinerie's licence and a person's check of feel and of the notes (section 16)
 **Cart source:** `carts/src/flow-state/` → `carts/flow-state.nova`
 
 ---
@@ -204,11 +204,14 @@ A perfect player gets an S on every chart and is in flow state 75 to 97 % of the
 
 **Step 7, not done:** the bot models a person with one number; real players have a bias (a steady early or late tap, which the calibration is for) and bad stretches, so the real ladder will need a person to confirm it (the first thing to try if a grade feels too easy is the C threshold, then the targets of the flow, the `JUDGE` targets and `MISS_K`, and `gradeOf`, in `code.js`).
 
+**Step 8, built:** the title has pads drifting down the river towards the frog, so the Library's picture (the title at 3.5 seconds, `carts/labels/flow-state.png`) shows the game; `meta.json` has the Library's description; the README has the game's row; `node tools/release.js flow-state` made `carts/flow-state.nova.png` (57 % of the PNG's 147 KB); `carts/src/flow-state/scores/SOURCES.md` says where each score came from and what is open (the Badinerie); the playbook has a section on rhythm games (section 10) and `tools/devkit/music/onset.mjs` checks how soon a song's first note sounds. The audit: all eight test files pass (`node tools/test.js flow-state`, 247 checks), `verify.js` passes for the cart and for every other cart (the loudness tool's one change, ignoring a song's silent tail, was checked on all of them), the bot plays every piece at every difficulty through the title, the map and the calibration to the results, a soak of random presses runs clean, 2 ms a frame on average, 38 KB of the 64 KB of code, 926 of the 1,023 tiles, 49 of the 64 effects, 53 of the 64 patterns.
+
 Each step: build it, run `node tools/check.js flow-state` and `node tools/test.js flow-state`, write its **Built** and **Results** notes under its number here, commit and push.
 
 ## 16. Open questions
 
-- **The speakers' delay.** The calibration finds one number, but the audio worklet's delay can differ between a phone and a laptop; the calibration screen must be quick and obvious, and offered on the first play.
-- **The notes.** The pieces are written from the scores by hand: each needs a check by ear by a person (the sync is by arithmetic, the notes are not); the spec lists each piece's source (IMSLP, public domain editions) as it is written.
-- **Held notes.** The Air and the Moonlight Sonata have long notes; a pad you hold (press and release on the note's end) would suit them. Left out of the first version, one tap a pad.
-- **A second button for chords.** Not needed with one button: the chart follows the melody only.
+- **The Badinerie's licence.** Its notes come from John Hamm's 1995 sequence (`carts/src/flow-state/scores/SOURCES.md`): the repository it was found in states no licence. Before a public release replace it with an engraving of clear licence (the commands are in `SOURCES.md`); the other pieces come from Mutopia (public domain or Creative Commons: attribution may be due for a Creative Commons file, which the file does not say).
+- **A person's check.** Everything here is checked by arithmetic, by tests and by a bot; nobody has heard the music or felt the timing in this document's making except through the user's reviews. The notes were taken from scores, not played by ear; the calibration measures a tick, not music; the bot models one number of timing error. Things to try first if a player complains: the C threshold and the flow's targets (`gradeOf`, `JUDGE`, `MISS_K` in `code.js`), the plinks' loudness on a fast piece (section 11), the glow bar's strength in full daylight, the density of a chart (`pieces.py`).
+- **The speakers' delay.** The calibration finds one number, but the audio worklet's delay can differ between a phone and a laptop; it is offered on the first play and again on the map (SELECT).
+- **Held notes.** The Air and the Moonlight Sonata have long notes; a pad you hold (press and release on the note's end) would suit them. Left out: one tap a pad.
+- **Touch controls.** The game needs only the D-pad, A, B, START and SELECT, which the console's touch controls have; it has been run only with a keyboard and the bot.

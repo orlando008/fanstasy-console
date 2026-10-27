@@ -247,3 +247,16 @@ cart runs there is nothing on screen but the game.
   connection once visited. Done in
   [orlando008/fanstasy-console#47](https://github.com/orlando008/fanstasy-console/pull/47): `sw.js`,
   `manifest.webmanifest` and `tools/icons.js` (SPEC 11.3), checked by `tests/console/offline.mjs`.
+
+---
+
+## Added while building Flow State (October 2026)
+
+- [x] **An onset check for rhythm games** (`tools/devkit/music/onset.mjs`): when each song's first lead note reaches a quarter of its level, so a slowly swelling voice
+  is caught before a player taps late against it. Done in [orlando008/fanstasy-console#60](https://github.com/orlando008/fanstasy-console/pull/60); the playbook's
+  section 10 has the rule.
+- [ ] **A general score importer** (`tools/devkit/music/midi_notes.py`): `carts/src/flow-state/import_score.py` turns one voice of a MIDI file into note text
+  (grid, top or bottom voice, legato, a pitch limit, separating a repeated figure). Move it to the tools, give it a test, and let a song cart (not only a rhythm game) start
+  from a public domain score.
+- [ ] **A licence check for what a cart ships**: a `SOURCES.md` next to imported scores, art or samples is written by hand (`carts/src/flow-state/scores/SOURCES.md`);
+  `check.js` could warn when a cart has imported data and no such file.

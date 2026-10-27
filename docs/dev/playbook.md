@@ -460,3 +460,35 @@ What the checks found in the games, so the same is not done again:
 - **Measuring what is not there**: `loud.mjs` read a song's tempo only from channel 1, so Summit Rush (tempo on channel
   5) was measured at the wrong speed and its title lead was over the limit unseen; `sfx.mjs` read the left side only,
   so effects panned right looked quieter than they were. Both now measure what the player hears.
+
+## 10. A rhythm game on this console (Flow State)
+
+What building `flow-state` taught (its spec is `docs/carts/flow-state.md`; every point has a test in `tests/carts/flow-state/`):
+
+- **The music is the clock.** A song's speed is the ticks (60 to a second) of a row, so a note on row `r` sounds `r x speed` frames after `music(song, pos)`.
+  Write the notes once (`pieces.py`) and make the song and the chart from them (`audio.py` writes `rom/charts.bin` as well as `audio.json`): they cannot
+  disagree, and a test reads both back and checks every pad against the song (`04-music.mjs`). No audio analysis is needed.
+- **A voice must start when its row says.** A slow attack makes a note sound late against its pad, and a player taps what they hear: the Air's strings were 94 ms
+  to full level and every tap landed three frames behind. `tools/devkit/music/onset.mjs` prints when each song's first note reaches a quarter of its level;
+  set a rhythm game's lead voices to attack 0 and keep it under about 15 ms.
+- **A chart follows one thing the player can hear.** Pads on both the bass and the melody ornaments of the Air could not be tapped to; pads on the bass alone, played as
+  a clear tick, could. Say on the menu what each chart follows. Make a slow melody playable with a second voice (`extra_src`, `extra_mod`), and a hard chart with
+  every note, but not faster than a person can tap (no two pads closer than 9 frames).
+- **Scores from public domain files.** `carts/src/flow-state/import_score.py` turns one voice of a MIDI file (Mutopia has engravings; the `marmooo/classical-midi-db`
+  repository collects them) into note text; `scores/SOURCES.md` records where each came from and its licence. The first versions written from memory were wrong in
+  the Air, the Moonlight and the Minuet's second half: take the notes from a score.
+- **The calibration is a number of frames.** Tap to a tick on a steady beat, take the **median** of how late the taps are (a stray tap does not spoil it), limit it
+  to -15 to 15, and subtract it from the song time (`st = tm - lag`) for the pads and the judgement alike. Offer it the first time, and save it.
+- **A meter that counts saturates.** A flow or health meter that goes up a fixed amount a hit and down a fixed amount a miss goes to the top for every player better
+  than a coin toss. Move it a part of the way to a target with each judgement (`code.js`: `JUDGE`, `MISS_K`) and it measures how well the player has been playing.
+  Simulate the rule offline for a few accuracies before changing it (the first step of `step 7` in the spec).
+- **Balance with a bot that is human.** `bot.mjs` taps with a timing error (`sd` frames) that grows when the pads come fast; run it at 0, 3, 6 and 10 over every
+  piece and difficulty (`sweep.mjs ... --set sd=0,3,6,10`) and write down what grade and share of flow state each should get (`08-balance.mjs`).
+- **The picture.** A floor in perspective is the `mode7` demo's affine matrix per line; a thing on the floor (a pad) uses the same formula (`y = horizon + height x
+  focal / z`), so it sits on the water; the five times of day are tints of one palette set (`color(i)` reads an entry), not five pictures. Every procedural detail
+  of a big repeating picture must repeat with the tile (a 1,024 px river costs 518 tiles when everything repeats every 64 px, and over 1,000 when it does not).
+  The overlay is above the sprites, so a big letter or a character beside a panel stands on open ground, not behind the panel; sprites in palettes 4 to 7 with
+  `blend({ layers: ['spr'], op: 'add' })` are the glows.
+- **No sound for a failure that the screen already shows** (the miss's splash cut into the music's flow), and nothing that needs the player to see the screen to hear a
+  beat. Effects are sampled and soft (0.006 to 0.022 RMS against a song's 0.04 to 0.07); a hit's plink has the pitch class of its note (one effect for each).
+

@@ -410,6 +410,12 @@ function drawFrogAndPads() {
     sprite(r, hopTo - S / 2, FROG_Y + 6 - S * 0.62, { pal: [5, 6, 4][lastG] });
   }
   sprite(ART.sprites.pad32, home - 16, FROG_Y + 2 - 20);
+  if (state === 'title') {                                                                     // on the title a few pads drift down the river towards the frog
+    for (let i = 0; i < 5; i++) {
+      const z = lerp(720, 100, ((i * 72 + clock) % 360) / 360), k = FOCAL / z, S = k >= 0.75 ? 32 : k >= 0.38 ? 16 : 8;
+      sprite(ART.sprites['pad' + S], 128 + [-2, 1, -1, 2, 0][i] * LANE * k - S / 2, HORIZON - 1 + HEIGHT * k - S * 0.62);
+    }
+  }
   if (state !== 'play' && state !== 'calib') return;
   for (const n of notes) {
     const z = ZH + V * (n.f - st());
