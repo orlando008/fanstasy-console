@@ -37,7 +37,7 @@ The flippers are laid out for two hands, as on a real table: a thumb on the D-pa
 
 | Screen | What |
 |---|---|
-| Title | The logo over a slowly scrolling table (attract mode), PLAY, RECORDS |
+| Title | The logo over the table, scrolling slowly, PLAY, RECORDS, and the best rank, high score and games played in the side panel; after 20 seconds without a button the table plays by itself (the **attract mode**: a demo game that scores and records nothing, until a button is pressed) |
 | Players | 1 to 4 (LEFT and RIGHT), A to start |
 | Play | The table, the panel, the message area |
 | Bonus | After each ball: the bonus counted up (targets, missions, rank) times the multiplier |
@@ -156,18 +156,19 @@ BG0 the table (a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the
 
 | Slots | Contents |
 |---|---|
-| 0 | Format version |
-| 1 | The best rank reached (1 to 9) |
+| 0 | Format version (2: an older save is cleared) |
+| 1 | The best rank reached (1 to 9; 10 is a finished career) |
 | 2 | Games played |
-| 10-39 | The top 10: for each, the score, the initials (3 letters packed) and the rank |
+| 3 | The initials last entered |
+| 10-39 | The top 10: for each, the score, the initials (3 letters packed) and the rank number the game reached |
 | 40-255 | Reserved |
 
 ## 14. Asset budget
 
 | Asset | Budget |
 |---|---|
-| Code | 44.5 KB of the 64 KB limit after step 5 (68%: the audio, the flow polish and the balance need a few KB more; `strip` and `mangle` in `meta.json` would give back about a fifth) (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
-| Tiles | 712 of 1,024 after step 3: 465 of the 479 for the background (the floor 16, the decor and ramps about 400, the stars about 40: the table's 1,920 map cells share by repeating and flipping) and 247 of the 544 for sprites |
+| Code | 48.7 KB of the 64 KB limit after step 6 (74%: the audio, the flow polish and the balance need a few KB more; `strip` and `mangle` in `meta.json` would give back about a fifth) (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Tiles | 848 of 1,024 after step 6: 465 of the 479 for the background (the floor 16, the decor and ramps about 400, the stars about 40: the table's 1,920 map cells share by repeating and flipping) and 383 of the 544 for sprites (136 of them the logo) |
 | Sprites | 45 of the 128 in OAM in play, at most 11 on a line (of 32): the ball, 2 flippers of 3 to 8 pieces, 3 bumpers, 2 slingshots of 8 pieces, 4 standups, 3 drops, the spinner, the plunger and its spring, up to 7 lamps with their glows. Up to 3 balls with the multiball |
 | ROM | the table's data if it is larger than a few KB |
 | Songs / SFX | 5 songs, about 30 effects (now the starter's 2 songs, 4 patterns of 64, 7 effects and 12.7 of 32 KB of sample RAM) |
@@ -285,6 +286,19 @@ Each step: build it, run `node tools/check.js star-cadet` and `node tools/test.j
   and the rank in the bonus, and the table's light going from blue to gold.
 - **Results:** 6 test files; the soak is clean. The balance (are 60 seconds enough for 15 bumper hits, how hard it is to light the lamps) waits for step 8, when the bot learns
   to aim: today's bot only lights two lamps and never shoots the gate.
+
+### Step 6 built: the flow
+
+- `carts/src/star-cadet/code.js`: the **title** shows the table scrolling slowly behind the three-line logo (big sprites from `art.py`), a glass menu (PLAY, RECORDS) and, in the
+  side panel, the best rank, the high score and the games played; **the attract mode** (`startDemo`, `demoPad`: a one player game whose flipper presses come from a small
+  bot of the cart instead of the pad; a button ends it, three balls end it, it records nothing, and the number of players picked is kept); **the player select** over the same
+  table; **the saves** (slot layout in section 13: the best rank and the games played are updated at the end of each game, and each top 10 record keeps the rank it reached);
+  **the game over** screen with each player's rank and score and NEW BEST RANK; **the records** with a rank column and the best rank and games below. The pause (RESUME,
+  RESTART, QUIT TO TITLE) and the initials entry are unchanged. `drawPlay` was split into `drawTable` (also used behind the menus) and the panel.
+- `tests/carts/star-cadet/07-flow.mjs`: the 20 second wait and the demo (it plays, a press ends it, three balls end it, nothing is saved, the players picked come back), the
+  saves (games played, the best rank, a lower rank not lowering it, the career as 10, several players as one game, a version 1 save cleared), the pause and the records.
+  `04-art.mjs` follows the table now showing on the title.
+- **Results:** 7 test files; soak clean (64 sprites at most); 136 more sprite tiles for the logo (383 of 544).
 
 ## 16. Open questions
 

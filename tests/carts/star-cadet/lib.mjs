@@ -16,6 +16,7 @@ const PROBE = `__expose(() => ({
   set laneLit(v) { laneLit = v; }, startGame, beginBall, afterBall, say, award, SAVE_FRAMES, EXTRA_AT, MULT_MAX, NUDGE_V, BONUS_COUNT, BONUS_HOLD, BALLS,
   get bs() { return bs; }, get rk() { return rk; }, set rk(v) { rk = v; }, get lamps() { return lamps; }, set lamps(v) { lamps = v; }, get career() { return career; }, set career(v) { career = v; },
   get mission() { return mission; }, get banner() { return banner; }, startMission, completeMission, failMission, MISSIONS, RANK_NAMES, SHOTS, emit, processEvents, applyRankLight, color: (i) => color(i),
+  get demo() { return demo; }, get idle() { return idle; }, get newBest() { return newBest; }, startDemo, toTitle, rankLabel, rankNo, readEntry, IDLE_DEMO, BEST_SLOT: 1, GAMES_SLOT: 2, INITIALS_SLOT: 3, get wantPlayers() { return wantPlayers; },
   K: { BR, SUB, GRAV, VMAX, WALL_E, FLIP_E, FLEN, FR, REST_A, UP_A, LANE_X, LANE_FLOOR, BALL_HOME, DRAIN_Y, TABLE_W, TABLE_H, VIEW_H }, get ART() { return ART; }, mget: (x, y) => mget(x, y), get rank() { return rank; }, get initials() { return initials; },
   get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
   SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,

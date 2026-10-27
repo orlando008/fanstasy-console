@@ -17,7 +17,9 @@ put(p, 88, 300); vm.run(60);
 ok(ppu.layers[0].y === Math.round(p.camY) && ppu.layers[1].y === Math.round(p.camY), 'both table layers scroll with the camera', `${ppu.layers[0].y} ${p.camY.toFixed(1)}`);
 {
   const t = newGame(1, { title: true }); t.run(3);
-  ok(!t.ppu.layers[0].show && !t.ppu.layers[1].show && t.ppu.layers[2].show, 'on the title the table is hidden and the stars show');
+  ok(t.ppu.layers[0].show && t.ppu.layers[1].show, 'on the title the table is shown behind the menu, scrolling slowly');
+  const y0 = t.ppu.layers[0].y; t.run(120); ok(t.ppu.layers[0].y !== y0 && t.ppu.layers[0].y === t.ppu.layers[1].y, 'its two layers scroll together');
+  t.press('DOWN'); t.press('A'); t.run(3); ok(t.probe().state === 'records' && !t.ppu.layers[0].show && !t.ppu.layers[1].show && t.ppu.layers[2].show, 'on the records the table is hidden and the stars show');
 }
 
 // 2. The floor is solid: no hole shows the backdrop anywhere on the table.

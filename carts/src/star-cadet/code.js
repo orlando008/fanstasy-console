@@ -15,7 +15,7 @@ const ART = {
   sprites: {"ball": {"pal": 0, "size": 16, "tile": 480}, "bump": {"pal": 2, "size": 32, "tile": 512}, "bump_hit": {"pal": 2, "size": 32, "tile": 516}, "drop": {"pal": 3, "size": 16, "tile": 674}, "drop_down": {"pal": 3, "size": 16, "tile": 676}, "glow": {"pal": 4, "size": 16, "tile": 704}, "lamp": {"pal": 3, "size": 8, "tile": 678}, "lamp_on": {"pal": 3, "size": 8, "tile": 679}, "plunger": {"pal": 3, "size": 16, "tile": 714}, "spin0": {"pal": 3, "size": 16, "tile": 706}, "spin1": {"pal": 3, "size": 16, "tile": 708}, "spin2": {"pal": 3, "size": 16, "tile": 710}, "spin3": {"pal": 3, "size": 16, "tile": 712}, "spring": {"pal": 3, "size": 8, "tile": 694}, "stand": {"pal": 3, "size": 16, "tile": 646}, "stand_hit": {"pal": 3, "size": 16, "tile": 672}},
   scenes: {"decor": {"h": 80, "mx": 24, "my": 0, "pal": 2, "w": 24}, "decor_hi": {"h": 80, "mx": 24, "my": 0, "pal": 2, "w": 24}, "floor": {"h": 80, "mx": 0, "my": 0, "pal": 1, "w": 24}, "stars": {"h": 28, "mx": 48, "my": 0, "pal": 3, "w": 8}},
   colors: {"GLASS": 200},
-  big: {"flip0": {"h": 48, "parts": [[0, 16, 482, 16, 1, 0], [16, 16, 484, 16, 1, 0], [16, 32, 486, 16, 1, 0], [32, 32, 488, 16, 1, 0]], "w": 48}, "flip1": {"h": 48, "parts": [[0, 16, 490, 16, 1, 0], [16, 16, 492, 16, 1, 0], [32, 24, 494, 8, 1, 0], [16, 32, 495, 8, 1, 0], [24, 32, 510, 8, 1, 0], [32, 32, 520, 16, 1, 0]], "w": 48}, "flip2": {"h": 48, "parts": [[0, 16, 522, 16, 1, 0], [16, 16, 524, 16, 1, 0], [32, 24, 511, 8, 1, 0], [40, 24, 526, 8, 1, 0], [24, 32, 527, 8, 1, 0], [32, 32, 542, 8, 1, 0], [40, 32, 543, 8, 1, 0]], "w": 48}, "flip3": {"h": 48, "parts": [[0, 16, 552, 16, 1, 0], [16, 16, 554, 16, 1, 0], [32, 16, 556, 16, 1, 0], [32, 32, 558, 8, 1, 0], [40, 32, 559, 8, 1, 0]], "w": 48}, "flip4": {"h": 48, "parts": [[0, 16, 576, 16, 1, 0], [16, 16, 578, 16, 1, 0], [32, 16, 580, 16, 1, 0]], "w": 48}, "flip5": {"h": 48, "parts": [[0, 16, 582, 16, 1, 0], [16, 16, 584, 16, 1, 0], [32, 16, 586, 16, 1, 0]], "w": 48}, "flip6": {"h": 48, "parts": [[24, 8, 574, 8, 1, 0], [0, 16, 588, 16, 1, 0], [16, 16, 590, 16, 1, 0], [32, 8, 575, 8, 1, 0], [40, 8, 608, 8, 1, 0], [32, 16, 609, 8, 1, 0], [40, 16, 610, 8, 1, 0]], "w": 48}, "flip7": {"h": 48, "parts": [[16, 8, 611, 8, 1, 0], [24, 8, 612, 8, 1, 0], [0, 16, 614, 16, 1, 0], [16, 16, 616, 16, 1, 0], [32, 8, 613, 8, 1, 0], [40, 8, 618, 8, 1, 0], [32, 16, 619, 8, 1, 0], [40, 16, 620, 8, 1, 0]], "w": 48}, "flip8": {"h": 48, "parts": [[16, 8, 621, 8, 1, 0], [24, 8, 622, 8, 1, 0], [0, 16, 640, 16, 1, 0], [16, 16, 642, 16, 1, 0], [32, 0, 644, 16, 1, 0], [32, 16, 558, 8, 1, 1]], "w": 48}, "sling": {"h": 96, "parts": [[8, 0, 623, 8, 3, 0], [8, 8, 624, 8, 3, 0], [8, 16, 625, 8, 3, 0], [8, 24, 626, 8, 3, 0], [16, 24, 627, 8, 3, 0], [0, 32, 648, 32, 3, 0], [8, 64, 628, 8, 3, 0], [16, 64, 629, 8, 3, 0]], "w": 32}, "sling_hit": {"h": 96, "parts": [[8, 0, 634, 8, 3, 0], [8, 8, 635, 8, 3, 0], [8, 16, 636, 8, 3, 0], [8, 24, 637, 8, 3, 0], [16, 24, 638, 8, 3, 0], [0, 32, 652, 32, 3, 0], [8, 64, 628, 8, 3, 0], [16, 64, 639, 8, 3, 0]], "w": 32}},
+  big: {"flip0": {"h": 48, "parts": [[0, 16, 482, 16, 1, 0], [16, 16, 484, 16, 1, 0], [16, 32, 486, 16, 1, 0], [32, 32, 488, 16, 1, 0]], "w": 48}, "flip1": {"h": 48, "parts": [[0, 16, 490, 16, 1, 0], [16, 16, 492, 16, 1, 0], [32, 24, 494, 8, 1, 0], [16, 32, 495, 8, 1, 0], [24, 32, 510, 8, 1, 0], [32, 32, 520, 16, 1, 0]], "w": 48}, "flip2": {"h": 48, "parts": [[0, 16, 522, 16, 1, 0], [16, 16, 524, 16, 1, 0], [32, 24, 511, 8, 1, 0], [40, 24, 526, 8, 1, 0], [24, 32, 527, 8, 1, 0], [32, 32, 542, 8, 1, 0], [40, 32, 543, 8, 1, 0]], "w": 48}, "flip3": {"h": 48, "parts": [[0, 16, 552, 16, 1, 0], [16, 16, 554, 16, 1, 0], [32, 16, 556, 16, 1, 0], [32, 32, 558, 8, 1, 0], [40, 32, 559, 8, 1, 0]], "w": 48}, "flip4": {"h": 48, "parts": [[0, 16, 576, 16, 1, 0], [16, 16, 578, 16, 1, 0], [32, 16, 580, 16, 1, 0]], "w": 48}, "flip5": {"h": 48, "parts": [[0, 16, 582, 16, 1, 0], [16, 16, 584, 16, 1, 0], [32, 16, 586, 16, 1, 0]], "w": 48}, "flip6": {"h": 48, "parts": [[24, 8, 574, 8, 1, 0], [0, 16, 588, 16, 1, 0], [16, 16, 590, 16, 1, 0], [32, 8, 575, 8, 1, 0], [40, 8, 608, 8, 1, 0], [32, 16, 609, 8, 1, 0], [40, 16, 610, 8, 1, 0]], "w": 48}, "flip7": {"h": 48, "parts": [[16, 8, 611, 8, 1, 0], [24, 8, 612, 8, 1, 0], [0, 16, 614, 16, 1, 0], [16, 16, 616, 16, 1, 0], [32, 8, 613, 8, 1, 0], [40, 8, 618, 8, 1, 0], [32, 16, 619, 8, 1, 0], [40, 16, 620, 8, 1, 0]], "w": 48}, "flip8": {"h": 48, "parts": [[16, 8, 621, 8, 1, 0], [24, 8, 622, 8, 1, 0], [0, 16, 640, 16, 1, 0], [16, 16, 642, 16, 1, 0], [32, 0, 644, 16, 1, 0], [32, 16, 558, 8, 1, 1]], "w": 48}, "logo_cadet": {"h": 27, "parts": [[0, 0, 776, 32, 3, 0], [32, 0, 780, 32, 3, 0], [64, 0, 832, 32, 3, 0], [96, 0, 836, 32, 3, 0]], "w": 123}, "logo_pinball": {"h": 19, "parts": [[0, 0, 736, 16, 3, 0], [16, 0, 738, 16, 3, 0], [32, 0, 740, 16, 3, 0], [48, 0, 742, 16, 3, 0], [64, 0, 744, 16, 3, 0], [80, 0, 746, 16, 3, 0], [96, 0, 746, 16, 3, 0]], "w": 115}, "logo_star": {"h": 27, "parts": [[0, 0, 716, 32, 3, 0], [32, 0, 768, 32, 3, 0], [64, 0, 772, 32, 3, 0]], "w": 99}, "sling": {"h": 96, "parts": [[8, 0, 623, 8, 3, 0], [8, 8, 624, 8, 3, 0], [8, 16, 625, 8, 3, 0], [8, 24, 626, 8, 3, 0], [16, 24, 627, 8, 3, 0], [0, 32, 648, 32, 3, 0], [8, 64, 628, 8, 3, 0], [16, 64, 629, 8, 3, 0]], "w": 32}, "sling_hit": {"h": 96, "parts": [[8, 0, 634, 8, 3, 0], [8, 8, 635, 8, 3, 0], [8, 16, 636, 8, 3, 0], [8, 24, 637, 8, 3, 0], [16, 24, 638, 8, 3, 0], [0, 32, 652, 32, 3, 0], [8, 64, 628, 8, 3, 0], [16, 64, 639, 8, 3, 0]], "w": 32}},
   anims: {"flip": ["flip0", "flip1", "flip2", "flip3", "flip4", "flip5", "flip6", "flip7", "flip8"]},
 };
 /** Draw one of ART.big at (x, y), its top left: opts { fx, fy (flip the whole sprite), prio (default 3), pal (every
@@ -49,12 +49,12 @@ function play(song) {
 
 // --- Save slots (SPEC 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
-const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
+const VERSION_SLOT = 0, SAVE_VERSION = 2, BEST_SLOT = 1, GAMES_SLOT = 2, INITIALS_SLOT = 3; // the best rank reached (1 to 10: 10 is the finished career), games played, the last initials
+const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, rank number (slots 10 to 39)
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)) }; }
-function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); }
+function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)), rn: dget(s + 2) }; }
+function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); dset(s + 2, e.rn || 0); }
 const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
 
 /** Put a score into the top 10 if it makes it. Returns its row, or -1. */
@@ -274,7 +274,7 @@ let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let score = 0, balls = BALLS, ball = null, flips = [], plunge = 0, camY = 0, held = [false, false], heldPrev = [false, false];
-let rk = 0, lamps = [false, false, false], career = false, mission = null, banner = null, floorBase = [];
+let wantPlayers = 1, newBest = 0, demo = false, idle = 0, titleCam = 0, rk = 0, lamps = [false, false, false], career = false, mission = null, banner = null, floorBase = [];
 let nPlayers = 1, cur = 0, players = [], nudges = 0, tilted = false, saveT = 0, saved = false, shake = 0, bonusRes = null, initQueue = [], firstRank = -1;
 
 function init() {
@@ -290,10 +290,11 @@ function init() {
   bg(2, { mx: st.mx, my: st.my, mw: st.w, mh: st.h, x: 0, y: 0, wrap: true, show: true });
   for (let i = 17; i < 32; i++) floorBase[i] = color(i); // the floor's colours, before the rank's light changes them
   blend({ layers: ['overlay', 'spr'], op: 'add' }); // the panel's glass (overlay colours from 192) and the lamps' glow (sprite palette 4) add light
+  flips = makeFlippers(); ball = newBall(BALL_HOME.x, BALL_HOME.y); bs = []; // a table to show behind the menus
   if (skipTitle) startGame(); else toTitle();
 }
 
-function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
+function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; demo = false; idle = 0; nPlayers = wantPlayers; flips = makeFlippers(); bs = []; lamps = [false, false, false]; mission = null; banner = null; play(SONG.title); }
 
 /** The state of each player that is kept while the others play (the rest of the table is the ball's and starts again). */
 const makePlayer = () => ({ score: 0, balls: BALLS, lanes: [false, false, false], stand: [false, false, false, false], extra: 0, given: false, rk: 0, lamps: [false, false, false], career: false });
@@ -313,6 +314,19 @@ function startGame(n = nPlayers) {
   loadPlayer(0); beginBall();
   state = n > 1 ? 'turn' : 'play';
   play(SONG.play);
+}
+
+/** The attract mode: a game that plays itself (it scores nothing and records nothing) until a button is pressed. */
+function startDemo() { startGame(1); demo = true; play(SONG.title); }
+/** What a demo player does: pull the plunger to the full, then flip when the ball comes near a flipper. */
+function demoPad() {
+  const b = ball, pad = [false, false];
+  if (inLane() && bs.length === 1) { pad[0] = plunge < 0.97; return { pad, plunge: true }; }
+  flips.forEach((f, k) => {
+    const tip = flipTip(f);
+    for (const x of bs) if (x.y > 545 && x.vy > -2 && Math.abs(x.x - (f.x + tip.x) / 2) < 30 && Math.abs(x.y - (f.y + tip.y) / 2) < 22 && (k ? x.x > 76 : x.x < 100)) pad[k] = (clock >> 3) % 3 !== 2;
+  });
+  return { pad, plunge: false };
 }
 
 /** A new ball for the player whose turn it is: the things that belong to one ball start again. */
@@ -348,7 +362,11 @@ function update() {
   prevMask = inputMask;
 }
 
+const IDLE_DEMO = 20 * 60; // frames on the title before the table plays by itself
+
 function updateTitle() {
+  idle = inputMask ? 0 : idle + 1;
+  if (idle > IDLE_DEMO) { startDemo(); return; }
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
@@ -361,13 +379,15 @@ function updatePlayers() {
   if (pressed(LEFT) || pressed(DOWN)) { nPlayers = Math.max(1, nPlayers - 1); fx(SFX.move); }
   if (pressed(RIGHT) || pressed(UP)) { nPlayers = Math.min(4, nPlayers + 1); fx(SFX.move); }
   if (pressed(B)) { fx(SFX.move); toTitle(); }
-  else if ((pressed(A) || pressed(START)) && timer > 10) { fx(SFX.select); startGame(); }
+  else if ((pressed(A) || pressed(START)) && timer > 10) { fx(SFX.select); wantPlayers = nPlayers; startGame(); }
 }
 
 /** The game: the flippers, the plunger, the nudges and the ball. */
 function updatePlay() {
-  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  const pushed = [PAD_LEFT.some((k) => btn(k)), PAD_RIGHT.some((k) => btn(k))];
+  if (demo) { if (inputMask && !prevMask) { toTitle(); return; } } // a press ends the demo
+  else if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  const ai = demo ? demoPad() : null;
+  const pushed = demo ? ai.pad : [PAD_LEFT.some((k) => btn(k)), PAD_RIGHT.some((k) => btn(k))];
   held = tilted ? [false, false] : pushed;
   if (!inLane() && !tilted) {
     if (pushed[0] && !heldPrev[0]) { laneLit.push(laneLit.shift()); fx(SFX.move); } // the flippers turn the lane lights, left and right
@@ -378,8 +398,8 @@ function updatePlay() {
   if (waiting && (pushed[0] || pushed[1])) plunge = Math.min(1, plunge + 1 / PLUNGE_FRAMES);
   else if (waiting && plunge > 0.04) { ball.vy = -(4 + 10 * plunge); plunge = 0; if (!saved) saveT = SAVE_FRAMES; fx(SFX.point); }
   else if (!waiting) plunge = 0;
-  const side = pressed(L) ? -1 : pressed(R) ? 1 : 0;
-  if ((side || pressed(SELECT)) && !inLane() && !tilted && bs.some((b) => !b.ramp && !b.hold)) nudge(side, pressed(SELECT));
+  const side = demo ? 0 : pressed(L) ? -1 : pressed(R) ? 1 : 0;
+  if ((side || (!demo && pressed(SELECT))) && !inLane() && !tilted && bs.some((b) => !b.ramp && !b.hold)) nudge(side, pressed(SELECT));
   stepTable(bs, flips, held);
   processEvents();
   if (mission) tickMission();
@@ -398,7 +418,10 @@ function updatePlay() {
 // --- Ranks and missions (SPEC 5) ---
 
 const RANK_NAMES = ['CADET', 'ENSIGN', 'PILOT', 'LIEUTENANT', 'COMMANDER', 'CAPTAIN', 'COMMODORE', 'ADMIRAL', 'FLEET ADMIRAL'];
-const RANK_SHORT = ['CADET', 'ENSIGN', 'PILOT', 'LIEUT', 'CMDR', 'CAPTAIN', 'COMMODRE', 'ADMIRAL', 'FLT ADM']; // for the panel, 8 letters at most
+const RANK_SHORT = ['CADET', 'ENSIGN', 'PILOT', 'LIEUT', 'CMDR', 'CAPTAIN', 'COMDORE', 'ADMIRAL', 'FLT ADM']; // for the panel, 7 letters at most
+/** A rank by its number, 1 to 9 (10 is a finished career), for the panel and the records. */
+const rankLabel = (n) => (n > 9 ? 'FLTADM*' : n > 0 ? RANK_SHORT[n - 1] : '');
+const rankNo = (q) => (q.career ? 10 : q.rk + 1);
 const RANK_BONUS = 10000, RANK_PRIZE = 500000, JACKPOT = 1000000, SHOTS = ['bump', 'sling', 'standup', 'drop', 'spin', 'rampL', 'rampR', 'orbitL', 'orbitR', 'gate', 'lane'];
 const EXTRA_AT_RANK = [1, 4, 7]; // completing the mission of these ranks (Ensign, Commander, Admiral) promotes to Pilot, Captain and Fleet Admiral: an extra ball
 /** A mission: its name, its time in seconds, the line that says what to do, and `on(m, k)`: the objective's rule for each thing the ball does (true when done). */
@@ -502,6 +525,7 @@ function drain() {
 const BONUS_COUNT = 90, BONUS_HOLD = 45; // frames the bonus counts up, and waits when done
 const bonusShown = () => Math.ceil(bonusRes.total * Math.min(1, timer / BONUS_COUNT));
 function updateBonus() {
+  if (demo && timer > 30) { afterBall(); return; }
   const done = timer >= BONUS_COUNT;
   if (!done && timer % 5 === 0) fx(SFX.point);
   if (pressed(A) || pressed(START)) { // a press skips the counting; another goes on
@@ -525,17 +549,21 @@ function afterBall() {
 }
 
 /** A turn's splash: whose ball it is. */
-function updateTurn() { if (timer > 90 || (timer > 15 && (pressed(A) || pressed(START)))) { state = 'play'; timer = 0; } }
+function updateTurn() { if (demo) { state = 'play'; return; } if (timer > 90 || (timer > 15 && (pressed(A) || pressed(START)))) { state = 'play'; timer = 0; } }
 
 function gameOver() {
+  if (demo) { toTitle(); return; }
   state = 'over'; timer = 0; play(-1); fx(SFX.over);
+  dset(GAMES_SLOT, dget(GAMES_SLOT) + 1); // the games played, and the best rank reached by anyone
+  newBest = Math.max(...players.map(rankNo)) > dget(BEST_SLOT) ? Math.max(...players.map(rankNo)) : 0;
+  if (newBest) dset(BEST_SLOT, newBest);
   initQueue = players.map((q, i) => i).sort((a, b) => players[b].score - players[a].score); firstRank = -1;
 }
 
 /** The next score that makes the top 10 asks for initials (best score first); true if there was one. */
 function nextInitials() {
   while (initQueue.length) {
-    const i = initQueue.shift(), r = insertTop({ score: players[i].score, initials: lastInitials() });
+    const i = initQueue.shift(), r = insertTop({ score: players[i].score, initials: lastInitials(), rn: rankNo(players[i]) });
     if (r < 0) continue;
     rank = r; if (firstRank < 0) firstRank = r;
     state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0, who: i }; fx(SFX.record);
@@ -586,12 +614,11 @@ function updatePause() {
 
 function draw() {
   cls();
-  const table = state === 'play' || state === 'over' || state === 'turn' || state === 'bonus';
-  if (!table) { bg(0, { show: false }); bg(1, { show: false }); }
+  const inPlay = state === 'play' || state === 'over' || state === 'turn' || state === 'bonus', menu = state === 'title' || state === 'players';
+  if (!inPlay && !menu) { bg(0, { show: false }); bg(1, { show: false }); }
   bg(2, { y: Math.round(clock * 0.25) });
-  if (table) drawPlay();
-  else if (state === 'title') drawTitle();
-  else if (state === 'players') drawPlayers();
+  if (inPlay) drawPlay();
+  else if (menu) { drawTable(Math.round(208 + 208 * Math.sin(clock / 300))); drawMenuPanel(); if (state === 'title') drawTitle(); else drawPlayers(); }
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
   if (state === 'turn') drawTurn();
@@ -602,7 +629,16 @@ function draw() {
 
 /** The picture of the table: sprites over the two background layers, which scroll with the camera; the panel on the overlay. */
 function drawPlay() {
-  const cy = Math.round(camY) + (shake > 0 ? (shake & 1 ? 2 : -2) : 0), sy = (y) => Math.round(y - cy), R = Math.round, S = ART.sprites, B = ART.big;
+  const cy = Math.round(camY) + (shake > 0 ? (shake & 1 ? 2 : -2) : 0);
+  drawTable(cy);
+  if (mission || (banner && banner.t > 0)) drawBanner();
+  drawPanel(cy);
+  if (demo && clock % 60 < 40) ctab('DEMO: PRESS ANY BUTTON', 196, WHITE);
+}
+
+/** The table: both background layers scrolled to cy, and every part of it as a sprite. */
+function drawTable(cy) {
+  const sy = (y) => Math.round(y - cy), R = Math.round, S = ART.sprites, B = ART.big;
   bg(0, { y: cy, show: true }); bg(1, { y: cy, show: true });
   const P = { prio: 2 }; // the table's parts: over the rails, under a ramp
   // lamps and their glow: under the decor (priority 1)
@@ -628,8 +664,6 @@ function drawPlay() {
     bigSprite(B['flip' + n], R(k ? f.x - 38 : f.x - 10), sy(f.y) - 24, { ...P, fx: !!k });
   });
   for (const b of bs) sprite(S.ball, R(b.x) - 8, sy(b.y + (b === ball && inLane() && plunge > 0 ? plunge * 12 : 0)) - 8, { prio: b.ramp ? 3 : 2 });
-  if (mission || (banner && banner.t > 0)) drawBanner();
-  drawPanel(cy);
 }
 
 /** Short scores for the list of players: 12345, 151K, 1.2M. */
@@ -641,7 +675,7 @@ function drawPanel(cy) {
   rectfill(TABLE_W, 0, 256 - TABLE_W, 224, ART.colors.GLASS); line(TABLE_W, 0, TABLE_W, 223, PANEL);
   txt(nPlayers > 1 ? `P${cur + 1}` : 'SCORE', 198, 6, GOLD);
   txt(String(score), 252 - String(score).length * 8, 16, WHITE);
-  txt(`BALL ${BALLS + 1 - balls}`, 198, 28, balls > 1 ? DIM : RED);
+  txt(`BALL ${Math.min(BALLS, BALLS + 1 - balls)}`, 198, 28, balls > 1 ? DIM : RED);
   txt(RANK_SHORT[rk], 198, 40, career ? GOLD : CYAN);
   if (mult > 1) txt(`MULT X${mult}`, 198, 52, CYAN);
   if (saveT > 0 && clock % 40 < 28) txt('SAVE', 198, 62, GREEN);
@@ -686,42 +720,59 @@ function drawBonus() {
 }
 
 function drawOver() {
-  panel(16, 60, 224, 40 + players.length * 14 + 28);
-  ctxt('GAME OVER', 68, RED);
   const best = Math.max(...players.map((q) => q.score));
+  panel(8, 56, 240, 44 + players.length * 14 + (newBest ? 14 : 0) + 16);
+  ctxt('GAME OVER', 64, RED);
   players.forEach((q, i) => {
-    const y = 90 + i * 14, top = nPlayers > 1 && q.score === best;
-    txt(nPlayers > 1 ? `PLAYER ${i + 1}` : 'SCORE', 40, y, top ? GOLD : DIM); txt(String(q.score), 216 - String(q.score).length * 8, y, top ? GOLD : WHITE);
+    const y = 84 + i * 14, top = nPlayers > 1 && q.score === best;
+    txt(nPlayers > 1 ? `P${i + 1}` : '', 20, y, top ? GOLD : DIM);
+    txt(rankLabel(rankNo(q)), 44, y, CYAN); txt(String(q.score), 236 - String(q.score).length * 8, y, top ? GOLD : WHITE);
   });
-  if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 90 + players.length * 14 + 12, DIM);
+  if (newBest) ctxt(`NEW BEST RANK: ${rankLabel(newBest)}`, 84 + players.length * 14, GOLD);
+  if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 84 + players.length * 14 + (newBest ? 14 : 0) + 4, DIM);
+}
+
+/** The right panel of the title and the player select: the best rank reached, the games played and the best score. */
+function drawMenuPanel() {
+  rectfill(TABLE_W, 0, 256 - TABLE_W, 224, ART.colors.GLASS); line(TABLE_W, 0, TABLE_W, 223, PANEL);
+  const best = dget(BEST_SLOT), top = readEntry(0);
+  txt('BEST', 198, 12, DIM); txt(best ? rankLabel(best) : '-', 198, 24, GOLD);
+  txt('HIGH', 198, 48, DIM); txt(top.score ? String(top.score) : '-', 252 - (top.score ? String(top.score).length : 1) * 8, 60, WHITE);
+  txt('GAMES', 198, 84, DIM); txt(String(dget(GAMES_SLOT)), 198, 96, WHITE);
 }
 
 function drawPlayers() {
-  ctxt('HOW MANY PLAYERS?', 70, GOLD);
+  panel(18, 90, 156, 82);
+  ctab('HOW MANY PLAYERS?', 98, GOLD);
   for (let i = 1; i <= 4; i++) {
-    const x = 56 + (i - 1) * 40, on = i === nPlayers;
-    if (on) rect(x - 6, 96, 28, 32, GOLD);
-    txt(String(i), x + 6, 108, on ? WHITE : DIM);
+    const x = 30 + (i - 1) * 34, on = i === nPlayers;
+    if (on) rect(x - 4, 114, 24, 24, GOLD);
+    txt(String(i), x + 4, 123, on ? WHITE : DIM);
   }
-  ctxt('LEFT / RIGHT: CHOOSE', 150, DIM); ctxt('A: START   B: BACK', 164, DIM);
+  ctab('LEFT / RIGHT: CHOOSE', 146, DIM); ctab('A: START   B: BACK', 158, DIM);
 }
 
 function drawTitle() {
-  ctxt('STAR CADET PINBALL', 50, GOLD);
-  ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
+  [['logo_star', 6], ['logo_cadet', 38], ['logo_pinball', 76]].forEach(([n, y]) => bigSprite(ART.big[n], 96 - ART.big[n].w / 2, y, { prio: 3 }));
+  panel(32, 118, 128, 50);
+  ['PLAY', 'RECORDS'].forEach((t, i) => ctab(`${i === titleSel ? '> ' : '  '}${t}`, 128 + i * 16, i === titleSel ? WHITE : DIM));
+  ctab('1 TO 4 PLAYERS', 184, DIM);
 }
 
 function drawRecords() {
-  panel(24, 16, 208, 192);
-  ctxt('TOP 10', 24, GOLD);
+  panel(8, 12, 240, 200);
+  ctxt('TOP 10', 20, GOLD);
   topTen().forEach((e, i) => {
-    const y = 48 + i * 14, on = i === hl;
-    if (on && timer % 40 < 30) rectfill(28, y - 2, 200, 12, PANEL);
-    txt(String(i + 1).padStart(2), 40, y, i === 0 ? GOLD : DIM);
-    txt(e.score ? e.initials : '---', 72, y, on ? GOLD : WHITE);
-    txt(e.score ? String(e.score).padStart(8) : '', 128, y, i === 0 ? GOLD : WHITE);
+    const y = 40 + i * 14, on = i === hl;
+    if (on && timer % 40 < 30) rectfill(12, y - 2, 232, 12, PANEL);
+    txt(String(i + 1).padStart(2), 18, y, i === 0 ? GOLD : DIM);
+    txt(e.score ? e.initials : '---', 46, y, on ? GOLD : WHITE);
+    txt(e.score ? String(e.score).padStart(8) : '', 84, y, i === 0 ? GOLD : WHITE);
+    if (e.score) txt(rankLabel(e.rn), 160, y, CYAN);
   });
-  if (timer % 60 < 40) ctxt('START: BACK', 192, DIM);
+  const best = dget(BEST_SLOT);
+  ctxt(`BEST RANK ${best ? rankLabel(best) : '-'}   GAMES ${dget(GAMES_SLOT)}`, 184, DIM);
+  if (timer % 60 < 40) ctxt('START: BACK', 198, WHITE);
 }
 
 function drawInitials() {

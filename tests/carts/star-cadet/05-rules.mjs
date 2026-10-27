@@ -82,8 +82,8 @@ const launch = (vm, n = 60) => { vm.run(n, M('DOWN')); vm.run(2); }; // a full p
   vm.press('RIGHT'); vm.press('RIGHT'); ok(p.nPlayers === 3, 'RIGHT adds a player', `${p.nPlayers}`);
   vm.press('LEFT'); vm.press('LEFT'); vm.press('LEFT'); ok(p.nPlayers === 1, 'LEFT takes one off, to a minimum of one');
   for (let i = 0; i < 6; i++) vm.press('RIGHT'); ok(p.nPlayers === 4, 'and four is the most');
-  vm.press('B'); ok(p.state === 'title', 'B goes back to the title');
-  vm.press('A'); vm.run(12); vm.press('LEFT'); vm.press('LEFT'); vm.run(12); vm.press('A');
+  vm.press('B'); ok(p.state === 'title' && p.nPlayers === 1, 'B goes back to the title (the choice is not kept until a game starts)');
+  vm.press('A'); vm.run(12); vm.press('RIGHT'); vm.run(12); vm.press('A');
   ok(p.state === 'turn' && p.players.length === 2 && p.cur === 0, 'A starts the game with that many players: player 1 first, with a splash for the turn', `${p.state}`);
   vm.run(20); vm.press('A'); ok(p.state === 'play', 'A on the splash goes on');
 }

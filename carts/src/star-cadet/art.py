@@ -358,4 +358,8 @@ for y in range(8):
         im.px[y][x] = parts.steel[1] if (x + y) % 4 < 2 else parts.edge
 art.sprite('spring', im, pal=parts, region='spr')
 
+# The logo on the title, in three lines, as big sprites in the 'parts' palette (gold with an ink outline)
+for name, word, sc in (('logo_star', 'STAR', 3), ('logo_cadet', 'CADET', 3), ('logo_pinball', 'PINBALL', 2)):
+    art.big_sprite(name, big_text(word, parts.gold, scale=sc, outline=parts.edge), pal=parts, region='spr')
+
 art.write(sys.argv[1])
