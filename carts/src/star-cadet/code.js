@@ -160,14 +160,23 @@ function kick(b, v) {
 }
 /** An element was hit: true once in a while (its cooldown), so a ball touching it for several substeps scores once. */
 function struck(el) { if (el.cool > 0) return false; el.cool = COOL; el.flash = HIT_FLASH; return true; }
-function award(n) { score += n; }
+// The rules' numbers (SPEC 5 and 9).
+const SAVE_FRAMES = 12 * 60, EXTRA_AT = 500000, MULT_MAX = 6, NUDGE_V = 1.2, NUDGE_WARN = 3, NUDGE_TILT = 4, BALLS = 3;
+const BONUS = { standup: 1000, drop: 500, bank: 5000, ramp: 2000, orbit: 2000, gate: 5000 }; // what each shot adds to the end-of-ball bonus
+let mult = 1, bonus = 0, extraBalls = 0, extraGiven = false, msg = '', msgT = 0;
+function say(t) { msg = t; msgT = 150; }
+const earn = (k) => { bonus += BONUS[k]; };
+function award(n) {
+  score += n;
+  if (!extraGiven && score >= EXTRA_AT) { extraGiven = true; extraBalls++; say('EXTRA BALL'); fx(SFX.record); }
+}
 
 /** The sensors and the things that move the ball by themselves: lanes, spinner, orbits, the gate, ramps and the kickback. */
 function sensors(b) {
   LANE_XS.forEach((x, i) => {
     if (Math.abs(b.x - x) < LANE_HW && Math.abs(b.y - LANE_Y) < 6 && !laneLit[i]) {
       laneLit[i] = true; stats.lane++; award(PTS.lane); fx(SFX.point);
-      if (laneLit.every(Boolean)) { stats.laneDone++; laneLit = [false, false, false]; }
+      if (laneLit.every(Boolean)) { stats.laneDone++; laneLit = [false, false, false]; if (mult < MULT_MAX) { mult++; say('BONUS X' + mult); } }
     }
   });
   if (b.x > SPIN.x0 && b.x < SPIN.x1 && b.y > SPIN.y0 && b.y < SPIN.y1) {
@@ -177,11 +186,11 @@ function sensors(b) {
   ORBIT_X.forEach((ox, k) => {
     const inL = k === 0 ? b.x < ox : b.x > ox && b.x < LANE_X, side = b.y > ORBIT_Y - 10 && b.y < ORBIT_IN + 10;
     if (inL && b.y > ORBIT_IN - 14 && b.y < ORBIT_IN + 6 && b.vy < -1) orbitArm[k] = true;
-    else if (orbitArm[k] && inL && b.y < ORBIT_Y) { orbitArm[k] = false; stats.orbit++; award(PTS.orbit); fx(SFX.point); }
+    else if (orbitArm[k] && inL && b.y < ORBIT_Y) { orbitArm[k] = false; stats.orbit++; award(PTS.orbit); earn('orbit'); fx(SFX.point); }
     else if (orbitArm[k] && !inL && side && b.y < ORBIT_IN - 20) orbitArm[k] = false; // left the lane: no orbit
   });
   if (Math.hypot(b.x - GATE.x, b.y - GATE.y) < GATE.r - 2) {
-    b.x = GATE.x; b.y = GATE.y; b.vx = b.vy = 0; b.hold = GATE_HOLD * SUB; stats.gate++; award(PTS.gate); fx(SFX.point);
+    b.x = GATE.x; b.y = GATE.y; b.vx = b.vy = 0; b.hold = GATE_HOLD * SUB; stats.gate++; award(PTS.gate); earn('gate'); fx(SFX.point);
   }
   for (const r of RAMPS) {
     if (Math.hypot(b.x - r.ex, b.y - r.ey) < RAMP_IN && b.vy < -RAMP_MIN) { b.ramp = { r, d: 0 }; stats.ramp++; fx(SFX.point); }
@@ -202,7 +211,7 @@ function stepTable(b, flips, hold) {
     if (b.ramp) { // carried along a ramp, above the table: nothing on it is touched
       const r = b.ramp.r, d = (b.ramp.d += RAMP_SPEED / SUB), t = Math.min(1, d / r.len);
       b.x = r.ex + (r.tx - r.ex) * t; b.y = r.ey + (r.ty - r.ey) * t; b.vx = b.vy = 0;
-      if (d >= r.len) { b.vx = r.evx; b.vy = r.evy; b.ramp = null; award(r.lit ? PTS.rampLit : PTS.ramp); }
+      if (d >= r.len) { b.vx = r.evx; b.vy = r.evy; b.ramp = null; award(r.lit ? PTS.rampLit : PTS.ramp); earn('ramp'); }
       continue;
     }
     if (b.hold > 0) { // in the gate's hole
@@ -222,12 +231,12 @@ function stepTable(b, flips, hold) {
       kick(b, SLING_KICK); if (struck(e)) { stats.sling++; award(PTS.sling); fx(SFX.move); }
     }
     for (const e of STANDUPS) if (collide(b, e.x0, e.y0, e.x1, e.y1, TARGET_R, WALL_E) && struck(e) && !e.lit) {
-      e.lit = true; stats.standup++; award(PTS.standup); fx(SFX.point);
+      e.lit = true; stats.standup++; award(PTS.standup); earn('standup'); fx(SFX.point);
       if (STANDUPS.every((q) => q.lit)) { stats.standupDone++; for (const q of STANDUPS) q.lit = false; }
     }
     for (const e of DROPS) if (!e.down && collide(b, e.x0, e.y0, e.x1, e.y1, TARGET_R, WALL_E)) {
-      e.down = true; e.flash = HIT_FLASH; stats.drop++; award(PTS.drop); fx(SFX.point);
-      if (DROPS.every((q) => q.down)) { stats.bank++; award(PTS.bank); dropTimer = DROP_RESET; }
+      e.down = true; e.flash = HIT_FLASH; stats.drop++; award(PTS.drop); earn('drop'); fx(SFX.point);
+      if (DROPS.every((q) => q.down)) { stats.bank++; award(PTS.bank); earn('bank'); dropTimer = DROP_RESET; }
     }
     sensors(b);
     for (const f of flips) {
@@ -256,7 +265,8 @@ const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) ===
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
-let score = 0, balls = 3, ball = null, flips = [], plunge = 0, camY = 0, held = [false, false];
+let score = 0, balls = BALLS, ball = null, flips = [], plunge = 0, camY = 0, held = [false, false], heldPrev = [false, false];
+let nPlayers = 1, cur = 0, players = [], nudges = 0, tilted = false, saveT = 0, saved = false, shake = 0, bonusRes = null, initQueue = [], firstRank = -1;
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
@@ -275,17 +285,35 @@ function init() {
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
-function startGame() {
-  score = 0; balls = 3; flips = makeFlippers(); resetStats(); laneLit = [false, false, false];
-  for (const e of STANDUPS) e.lit = false;
-  for (const e of DROPS) e.down = false;
-  serve(); paused = false; timer = 0; state = 'play';
+/** The state of each player that is kept while the others play (the rest of the table is the ball's and starts again). */
+const makePlayer = () => ({ score: 0, balls: BALLS, lanes: [false, false, false], stand: [false, false, false, false], extra: 0, given: false });
+function loadPlayer(i) {
+  const q = players[i]; cur = i;
+  score = q.score; balls = q.balls; laneLit = q.lanes.slice(); extraBalls = q.extra; extraGiven = q.given;
+  STANDUPS.forEach((e, k) => { e.lit = q.stand[k]; });
+}
+function savePlayer() {
+  Object.assign(players[cur], { score, balls, lanes: laneLit.slice(), stand: STANDUPS.map((e) => e.lit), extra: extraBalls, given: extraGiven });
+}
+
+function startGame(n = nPlayers) {
+  nPlayers = n; players = Array.from({ length: n }, makePlayer);
+  flips = makeFlippers(); resetStats(); msgT = 0; paused = false; timer = 0;
+  loadPlayer(0); beginBall();
+  state = n > 1 ? 'turn' : 'play';
   play(SONG.play);
 }
 
-/** A new ball in the plunger lane. */
+/** A new ball for the player whose turn it is: the things that belong to one ball start again. */
+function beginBall() {
+  mult = 1; bonus = 0; nudges = 0; tilted = false; saveT = 0; saved = false; shake = 0; kickback = true; dropTimer = 0;
+  for (const e of DROPS) e.down = false;
+  serve();
+}
+
+/** The ball in the plunger lane (a saved ball comes back here too). */
 function serve() {
-  ball = { x: BALL_HOME.x, y: BALL_HOME.y, vx: 0, vy: 0, ramp: null, hold: 0 }; plunge = 0; kickback = true; orbitArm = [false, false];
+  ball = { x: BALL_HOME.x, y: BALL_HOME.y, vx: 0, vy: 0, ramp: null, hold: 0 }; plunge = 0; orbitArm = [false, false];
   camY = clamp(ball.y - 150, 0, TABLE_H - VIEW_H);
 }
 const inLane = () => ball.x > LANE_X && ball.y > LANE_FLOOR - 40;
@@ -298,6 +326,9 @@ function update() {
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'play') updatePlay();
+  else if (state === 'players') updatePlayers();
+  else if (state === 'turn') updateTurn();
+  else if (state === 'bonus') updateBonus();
   else if (state === 'over') updateOver();
   else if (state === 'initials') updateInitials();
   else if (state === 'records') updateRecords();
@@ -308,40 +339,111 @@ function updateTitle() {
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) startGame(); else { state = 'records'; hl = -1; timer = 0; }
+    if (titleSel === 0) { state = 'players'; timer = 0; } else { state = 'records'; hl = -1; timer = 0; }
   }
 }
 
-/** The game: the flippers, the plunger and the ball. */
+/** How many players: LEFT and RIGHT (or UP and DOWN) choose one to four, A starts, B goes back. */
+function updatePlayers() {
+  if (pressed(LEFT) || pressed(DOWN)) { nPlayers = Math.max(1, nPlayers - 1); fx(SFX.move); }
+  if (pressed(RIGHT) || pressed(UP)) { nPlayers = Math.min(4, nPlayers + 1); fx(SFX.move); }
+  if (pressed(B)) { fx(SFX.move); toTitle(); }
+  else if ((pressed(A) || pressed(START)) && timer > 10) { fx(SFX.select); startGame(); }
+}
+
+/** The game: the flippers, the plunger, the nudges and the ball. */
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  held = [PAD_LEFT.some((k) => btn(k)), PAD_RIGHT.some((k) => btn(k))];
-  if (!inLane() && PAD_LEFT.concat(PAD_RIGHT).some((k) => pressed(k))) fx(SFX.move);
+  const pushed = [PAD_LEFT.some((k) => btn(k)), PAD_RIGHT.some((k) => btn(k))];
+  held = tilted ? [false, false] : pushed;
+  if (!inLane() && !tilted) {
+    if (pushed[0] && !heldPrev[0]) { laneLit.push(laneLit.shift()); fx(SFX.move); } // the flippers turn the lane lights, left and right
+    if (pushed[1] && !heldPrev[1]) { laneLit.unshift(laneLit.pop()); fx(SFX.move); }
+  }
+  heldPrev = pushed;
   const waiting = inLane() && ball.vy >= 0 && ball.y >= BALL_HOME.y - 1;
-  if (waiting && (held[0] || held[1])) plunge = Math.min(1, plunge + 1 / PLUNGE_FRAMES);
-  else if (waiting && plunge > 0.04) { ball.vy = -(4 + 10 * plunge); plunge = 0; fx(SFX.point); }
+  if (waiting && (pushed[0] || pushed[1])) plunge = Math.min(1, plunge + 1 / PLUNGE_FRAMES);
+  else if (waiting && plunge > 0.04) { ball.vy = -(4 + 10 * plunge); plunge = 0; if (!saved) saveT = SAVE_FRAMES; fx(SFX.point); }
   else if (!waiting) plunge = 0;
+  const side = pressed(L) ? -1 : pressed(R) ? 1 : 0;
+  if ((side || pressed(SELECT)) && !inLane() && !tilted && !ball.ramp && !ball.hold) nudge(side, pressed(SELECT));
   stepTable(ball, flips, held);
+  if (saveT > 0) saveT--;
+  if (shake > 0) shake--;
+  if (msgT > 0) msgT--;
   const want = clamp(ball.y - 150, 0, TABLE_H - VIEW_H);
   camY += (want - camY) * 0.12;
   if (ball.y > DRAIN_Y && ball.x < LANE_X) drain();
 }
 
-function drain() {
-  fx(SFX.hit); balls--;
-  if (balls <= 0) gameOver(); else serve();
+/** A shove of the table: the ball is pushed (L left, R right, SELECT up); the third in a ball is a warning, the fourth a tilt. */
+function nudge(side, up) {
+  nudges++;
+  if (nudges >= NUDGE_TILT) { tilted = true; say('TILT'); fx(SFX.over); return; }
+  if (nudges === NUDGE_WARN) say('WARNING');
+  ball.vx += side * NUDGE_V; if (up) ball.vy -= NUDGE_V;
+  shake = 8; fx(SFX.move);
 }
+
+/** The ball is lost: a saved ball goes back to the plunger; otherwise the ball is over. */
+function drain() {
+  if (saveT > 0 && !saved) { saved = true; saveT = 0; say('BALL SAVED'); fx(SFX.record); serve(); return; }
+  fx(SFX.hit);
+  const b = tilted ? 0 : bonus * mult;
+  if (b > 0) { // the bonus is counted on its own screen: the shots of the ball times the multiplier
+    bonusRes = { base: bonus, mult, total: b }; award(b); state = 'bonus'; timer = 0;
+  } else afterBall();
+}
+
+const BONUS_COUNT = 90, BONUS_HOLD = 45; // frames the bonus counts up, and waits when done
+const bonusShown = () => Math.ceil(bonusRes.total * Math.min(1, timer / BONUS_COUNT));
+function updateBonus() {
+  const done = timer >= BONUS_COUNT;
+  if (!done && timer % 5 === 0) fx(SFX.point);
+  if (pressed(A) || pressed(START)) { // a press skips the counting; another goes on
+    if (!done && timer > 10) timer = BONUS_COUNT; else if (done && timer > BONUS_COUNT + 10) afterBall();
+  } else if (timer > BONUS_COUNT + BONUS_HOLD) afterBall();
+}
+
+/** After a ball's bonus: an extra ball plays the same player again; otherwise the next player with a ball left; or the game is over. */
+function afterBall() {
+  if (extraBalls > 0) { extraBalls--; beginBall(); say('SHOOT AGAIN'); state = 'play'; return; }
+  balls--; savePlayer();
+  for (let i = 1; i <= nPlayers; i++) {
+    const j = (cur + i) % nPlayers;
+    if (players[j].balls > 0) {
+      loadPlayer(j); beginBall(); timer = 0;
+      state = nPlayers > 1 ? 'turn' : 'play';
+      return;
+    }
+  }
+  gameOver();
+}
+
+/** A turn's splash: whose ball it is. */
+function updateTurn() { if (timer > 90 || (timer > 15 && (pressed(A) || pressed(START)))) { state = 'play'; timer = 0; } }
 
 function gameOver() {
   state = 'over'; timer = 0; play(-1); fx(SFX.over);
-  rank = insertTop({ score, initials: lastInitials() });
+  initQueue = players.map((q, i) => i).sort((a, b) => players[b].score - players[a].score); firstRank = -1;
+}
+
+/** The next score that makes the top 10 asks for initials (best score first); true if there was one. */
+function nextInitials() {
+  while (initQueue.length) {
+    const i = initQueue.shift(), r = insertTop({ score: players[i].score, initials: lastInitials() });
+    if (r < 0) continue;
+    rank = r; if (firstRank < 0) firstRank = r;
+    state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0, who: i }; fx(SFX.record);
+    return true;
+  }
+  return false;
 }
 
 function updateOver() {
   if (timer < 60 || !(pressed(A) || pressed(START))) return;
   fx(SFX.select);
-  if (rank >= 0) { state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0 }; fx(SFX.record); }
-  else toTitle();
+  if (!nextInitials()) toTitle();
 }
 
 /** UP/DOWN pick a letter, LEFT/RIGHT (or A and B) move, START saves (as does A on the last letter). */
@@ -357,7 +459,7 @@ function updateInitials() {
   const v = packInitials(ini.chars.join(''));
   dset(INITIALS_SLOT, v); dset(TOP_SLOT + rank * ENTRY + 1, v);
   fx(SFX.select);
-  state = 'records'; hl = rank; timer = 0;
+  if (!nextInitials()) { state = 'records'; hl = firstRank; timer = 0; }
 }
 
 function updateRecords() {
@@ -380,20 +482,23 @@ function updatePause() {
 
 function draw() {
   cls();
-  const table = state === 'play' || state === 'over';
+  const table = state === 'play' || state === 'over' || state === 'turn' || state === 'bonus';
   if (!table) { bg(0, { show: false }); bg(1, { show: false }); }
   bg(2, { y: Math.round(clock * 0.25) });
-  if (state === 'play' || state === 'over') drawPlay();
+  if (table) drawPlay();
   else if (state === 'title') drawTitle();
+  else if (state === 'players') drawPlayers();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  if (state === 'over') { panel(48, 80, 160, 64); ctxt('GAME OVER', 92, RED); ctxt(`SCORE ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
+  if (state === 'turn') drawTurn();
+  else if (state === 'bonus') drawBonus();
+  else if (state === 'over') drawOver();
   if (paused) drawPause();
 }
 
 /** The picture of the table: sprites over the two background layers, which scroll with the camera; the panel on the overlay. */
 function drawPlay() {
-  const cy = Math.round(camY), sy = (y) => Math.round(y - cy), R = Math.round, S = ART.sprites, B = ART.big;
+  const cy = Math.round(camY) + (shake > 0 ? (shake & 1 ? 2 : -2) : 0), sy = (y) => Math.round(y - cy), R = Math.round, S = ART.sprites, B = ART.big;
   bg(0, { y: cy, show: true }); bg(1, { y: cy, show: true });
   const P = { prio: 2 }; // the table's parts: over the rails, under a ramp
   // lamps and their glow: under the decor (priority 1)
@@ -417,15 +522,71 @@ function drawPlay() {
     bigSprite(B['flip' + n], R(k ? f.x - 38 : f.x - 10), sy(f.y) - 24, { ...P, fx: !!k });
   });
   sprite(S.ball, R(ball.x) - 8, sy(ball.y + (inLane() && plunge > 0 ? plunge * 12 : 0)) - 8, { prio: ball.ramp ? 3 : 2 });
-  // the panel: glass over the starfield
+  drawPanel(cy);
+}
+
+/** Short scores for the list of players: 12345, 151K, 1.2M. */
+const short = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e5 ? Math.floor(n / 1000) + 'K' : String(n));
+
+/** The panel: glass over the starfield with the player, the score, the ball, the multiplier, a message, a map of the table and every player's score. */
+function drawPanel(cy) {
+  const R = Math.round;
   rectfill(TABLE_W, 0, 256 - TABLE_W, 224, ART.colors.GLASS); line(TABLE_W, 0, TABLE_W, 223, PANEL);
-  txt('SCORE', 198, 8, DIM); txt(String(score), 252 - String(score).length * 8, 18, WHITE);
-  txt('BALL', 198, 40, DIM); txt(String(4 - balls), 198, 50, balls > 1 ? WHITE : RED);
+  txt(nPlayers > 1 ? `P${cur + 1}` : 'SCORE', 198, 6, GOLD);
+  txt(String(score), 252 - String(score).length * 8, 16, WHITE);
+  txt(`BALL ${BALLS + 1 - balls}`, 198, 30, balls > 1 ? DIM : RED);
+  if (mult > 1) txt(`MULT X${mult}`, 198, 42, CYAN);
+  if (saveT > 0 && clock % 40 < 28) txt('SAVE', 198, 42 + (mult > 1 ? 10 : 0), GREEN);
+  if (msgT > 0 && (msgT > 30 || msgT % 8 < 5)) msg.split(' ').forEach((w, i) => txt(w, 198, 62 + i * 10, tilted ? RED : GOLD));
   // a map of the table: the ball and what the screen shows
-  const mx = 208, my = 72;
+  const mx = 208, my = 90;
   rect(mx - 1, my - 1, TABLE_W / 8 + 2, TABLE_H / 8 + 2, PANEL);
   rect(mx, my + R(cy / 8), TABLE_W / 8, VIEW_H / 8, DIM);
   rectfill(mx + R(ball.x / 8) - 1, my + R(ball.y / 8) - 1, 2, 2, WHITE);
+  if (nPlayers > 1) players.forEach((q, i) => {
+    const v = short(i === cur ? score : q.score);
+    txt(`${i + 1}`, 194, 180 + i * 10, i === cur ? GOLD : DIM); txt(v, 252 - v.length * 8, 180 + i * 10, i === cur ? WHITE : DIM);
+  });
+}
+
+const ctab = (s, y, c) => txt(s, 96 - s.length * 4, y, c); // centred on the table, not the screen
+
+function drawTurn() {
+  panel(24, 76, 144, 56);
+  ctab(`PLAYER ${cur + 1}`, 88, GOLD);
+  ctab(`BALL ${BALLS + 1 - balls}`, 102, WHITE);
+  if (timer % 60 < 40) ctab('HOLD A BUTTON', 118, WHITE);
+}
+
+function drawBonus() {
+  const r = bonusRes, v = bonusShown();
+  panel(16, 64, 160, 88);
+  ctab('BALL BONUS', 72, GOLD);
+  ctab(`${r.base}`, 90, WHITE);
+  ctab(`X ${r.mult}`, 102, CYAN);
+  ctab(String(v), 120, v >= r.total ? GOLD : WHITE);
+  if (timer >= BONUS_COUNT && timer % 60 < 40) ctab('A: CONTINUE', 138, DIM);
+}
+
+function drawOver() {
+  panel(16, 60, 224, 40 + players.length * 14 + 28);
+  ctxt('GAME OVER', 68, RED);
+  const best = Math.max(...players.map((q) => q.score));
+  players.forEach((q, i) => {
+    const y = 90 + i * 14, top = nPlayers > 1 && q.score === best;
+    txt(nPlayers > 1 ? `PLAYER ${i + 1}` : 'SCORE', 40, y, top ? GOLD : DIM); txt(String(q.score), 216 - String(q.score).length * 8, y, top ? GOLD : WHITE);
+  });
+  if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 90 + players.length * 14 + 12, DIM);
+}
+
+function drawPlayers() {
+  ctxt('HOW MANY PLAYERS?', 70, GOLD);
+  for (let i = 1; i <= 4; i++) {
+    const x = 56 + (i - 1) * 40, on = i === nPlayers;
+    if (on) rect(x - 6, 96, 28, 32, GOLD);
+    txt(String(i), x + 6, 108, on ? WHITE : DIM);
+  }
+  ctxt('LEFT / RIGHT: CHOOSE', 150, DIM); ctxt('A: START   B: BACK', 164, DIM);
 }
 
 function drawTitle() {
@@ -450,7 +611,7 @@ function drawInitials() {
   const ini = initials;
   panel(24, 40, 208, 144);
   ctxt(rank === 0 ? 'NEW HIGH SCORE!' : `TOP 10: #${rank + 1}`, 52, GOLD);
-  ctxt(String(score), 68, WHITE);
+  ctxt((nPlayers > 1 ? `PLAYER ${ini.who + 1}: ` : '') + String(players[ini.who].score), 68, WHITE);
   ctxt('ENTER YOUR INITIALS', 90, DIM);
   for (let i = 0; i < 3; i++) {
     const on = i === ini.pos, x = 84 + i * 32;

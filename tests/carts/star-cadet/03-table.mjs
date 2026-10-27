@@ -129,7 +129,7 @@ const total = (p) => Object.values(p.stats).reduce((a, b) => a + b, 0);
   until(vm, () => p.stats.kick > 0, 80);
   ok(p.stats.kick === 1 && !p.kickback && p.ball.vy < -10, 'the first ball down the left outlane is kicked back up the table');
   vm.run(150); ok(p.balls === 3 || p.ball.y < 600, 'and is back in play (not drained)');
-  put(p, 8, 540, 0, 3); vm.run(150);
+  p.bonus = 0; put(p, 8, 540, 0, 3); vm.run(150);
   ok(p.stats.kick === 1 && p.balls === 2, 'the kickback is used once: the next ball down that lane drains');
   ok(p.kickback === true, 'and the ball after that has its kickback again');
   const vm2 = newGame(1), q = vm2.probe(); put(q, 168, 540, 0, 3); vm2.run(150);

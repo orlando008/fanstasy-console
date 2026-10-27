@@ -79,13 +79,13 @@ The flippers are laid out for two hands, as on a real table: a thumb on the D-pa
 | Rolling friction | none for now (a ball's energy is kept except in bounces) |
 | Flipper | swings up in 4 frames (0.25 radians a frame, 8.6 pixels a frame at the tip) and down in 6; bounce 0.7 against the flipper's own speed, so a ball hit with the tip leaves at about 13 pixels a frame and one hit near the pivot at about 5 |
 | Plunger | held 60 frames is full power; the launch speed is 4 + 10 x power pixels a frame |
-| Nudge | adds a push of 1.2 pixels a frame sideways and a shake of the camera; at most 3 a ball, the 4th is a TILT (flippers off, no bonus) |
+| Nudge | L pushes the ball left, R right, SELECT up, by 1.2 pixels a frame, and the view shakes; the 3rd in a ball is a WARNING, the 4th a TILT (flippers dead, no bonus); they count for the ball and start again with the next; ignored while the ball waits in the lane, on a ramp or in the gate |
 
 **The table is data.** Walls are polylines of segments, bumpers circles, targets and the gate small shapes, each with a *layer* (0 the floor, 1 a ramp): a ball on a ramp collides only with the ramp's rails and the things on layer 1, and is drawn above the table; ramp entrances and exits move the ball between layers. A collision is the closest point of a shape to the ball: if it is nearer than the radius the ball is pushed out along the normal and its velocity along the normal is reflected and scaled by the shape's bounce. A flipper is a capsule (a segment with a radius) that turns about its pivot; the ball's velocity is reflected relative to the velocity of the flipper's point of contact.
 
-**Balls and players.** Three balls a player; one to four players take turns, each with a score, a rank, the lamps of their mission and a bonus multiplier of their own, kept while the others play. A ball is served by the plunger; the **ball save** (the first 12 seconds of a ball, and a lit lamp) puts a drained ball back at the plunger once. When a ball drains the bonus is counted; with a multiball the game continues until the last ball drains. An **extra ball** is awarded at 500,000 points and by a mission.
+**Balls and players.** Three balls a player; one to four players take turns, each with a score, a rank, the lamps of their mission and a bonus multiplier of their own, kept while the others play. A ball is served by the plunger; the **ball save** (the first 12 seconds from the launch; the wait in the lane does not count; the panel blinks SAVE while it lasts) puts a drained ball back at the plunger once. When a ball drains the bonus is counted; with a multiball the game continues until the last ball drains. An **extra ball** is awarded at 500,000 points and by a mission.
 
-**The lamps and the bonus multiplier.** The three top lanes light as the ball rolls over them (the flippers rotate which are lit); all three lit lights the next multiplier x2, x3, x4, x5, x6 and starts again. The multiplier lasts until the ball drains.
+**The lamps and the bonus multiplier.** The three top lanes light as the ball rolls over them (a press of a flipper shifts which are lit, the left one left and the right one right); all three lit lights the next multiplier x2, x3, x4, x5, x6 and starts again. The multiplier lasts until the ball drains.
 
 **Missions and ranks.** Nine ranks: Cadet, Ensign, Pilot, Lieutenant, Commander, Captain, Commodore, Admiral, Fleet Admiral. A player has a rank and each rank has a **mission**:
 
@@ -132,7 +132,7 @@ Normal play (1 to 4 players). **Attract mode** on the title (a demo ball plays i
 | Gate shot | 5,000 |
 | Mission completed | 500,000 x the new rank's number |
 | Jackpot (multiball) | 1,000,000 |
-| End-of-ball bonus | (1,000 per mission lamp lit + 10,000 per rank) x the bonus multiplier |
+| End-of-ball bonus | what the ball's shots added (a standup 1,000, a drop target 500, a cleared bank 5,000, a ramp 2,000, an orbit 2,000, the gate 5,000; step 5 adds 10,000 per rank) x the bonus multiplier, counted on its own screen |
 
 An extra ball at 500,000; a replay is not given.
 
@@ -251,6 +251,24 @@ Each step: build it, run `node tools/check.js star-cadet` and `node tools/test.j
 - **Results:** 45 sprites and at most 11 on a line in play (limits 128 and 32), the frame takes about 2 ms (median), 465 of the 479 background tiles are
   used (the decor is the big spender: the ramps' two ribbons are about 100 tiles each. A third ramp or more decoration would need the split moved).
   The label is the table at the start of a ball: the logo, the flippers and the plunger.
+
+### Step 4 built: the rules
+
+- `carts/src/star-cadet/code.js`: **players** (`makePlayer`, `loadPlayer`, `savePlayer`: a score, balls, lit lanes, lit standup targets and extra balls are a
+  player's own and are swapped in and out when the turn changes; the rest of the table is the ball's), **the lanes and the multiplier** (a full set: x2
+  up to x6, until the ball drains; a press of a flipper turns the lit lanes), **the bonus** (`BONUS`: each shot adds to it; at the drain it is multiplied and
+  counted up on its own screen: A skips the count and goes on), **the ball save** (12 seconds from the launch, once a ball), **the extra ball** (500,000 points,
+  once a player, replays the same ball: "SHOOT AGAIN"), **the nudge and the tilt** (`nudge`: L, R and SELECT; the 3rd warns, the 4th tilts), and the flow
+  between balls: `drain` (a saved ball goes back to the plunger; a ball with a bonus goes to the bonus screen; else straight on), `afterBall` (an extra ball, the
+  next player with a ball left, or the game over), the turn splash for two or more players, the **player select** (PLAY asks 1 to 4) and a **game over**
+  that lists every player and asks for initials for each score in the top 10, the best first.
+- The panel shows the player, the score, the ball, the multiplier, SAVE, a four line message and every player's score; the table shakes on a nudge.
+- `tests/carts/star-cadet/05-rules.mjs`: the multiplier up to x6 and its reset, the lane lights turning, the bonus of each shot and its screen, the save (once, 12
+  seconds, not while waiting), the extra ball (once, same ball), each nudge, the warning, the tilt (flippers dead, no bonus, clean next ball), the player select,
+  three players taking turns in order with their own scores and lanes, the game over, and two scores asking for initials in order. `01-flow.mjs` follows the new
+  screens (PLAY asks how many players; the score is asked for after the game over screen). `bot.mjs` presses through the splash and the bonus screens.
+- **Results:** 5 test files; the soak (random buttons, including nudges and tilts) is clean, 57 sprites at most.
+  The balance of all of this (how often the save is used, how big a bonus is) waits for step 8.
 
 ## 16. Open questions
 

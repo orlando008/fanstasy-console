@@ -21,6 +21,7 @@ export function pad(vm, p, frame, opts) {
   const skill = opts.skill ?? 1;
   if (p.balls < lastBalls) { balls.push(ballFrames); ballFrames = 0; drained++; lastBalls = p.balls; }
   ballFrames++;
+  if (p.state === 'turn' || p.state === 'bonus') return frame % 2 ? M('A') : 0; // the splash and the bonus count: press through
   if (p.inLane()) return p.plunge >= 0.97 ? 0 : M('DOWN');
   maxBall = Math.max(maxBall, 640 - p.ball.y);
   still = Math.hypot(p.ball.vx, p.ball.vy) < 0.05 ? still + 1 : 0; worstStill = Math.max(worstStill, still); // a ball that stops is stuck
@@ -38,7 +39,7 @@ export function pad(vm, p, frame, opts) {
 }
 
 // A flat table never takes the ball's energy, so a good bot may never drain: a run ends after 40 s on one ball, as well as at game over.
-export const finished = (p) => p.state !== 'play' || ballFrames > 2400;
+export const finished = (p) => !['play', 'turn', 'bonus'].includes(p.state) || ballFrames > 2400;
 
 export function result(p) {
   const n = balls.length || 1;

@@ -12,7 +12,9 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
   sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
+  ok(p.state === 'players', 'PLAY asks how many players');
+  vm.run(12); vm.press('A');
+  ok(p.state === 'play' && p.playing === p.SONG.play && p.nPlayers === 1, 'A starts a one player game, with the game song');
 }
 
 // 2. Playing: a ball in the plunger lane; the flippers answer the buttons.
@@ -37,10 +39,10 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 {
   const vm = newGame(3), p = vm.probe(); p.score = 120; p.balls = 1; musicLog(vm);
   p.ball.x = 88; p.ball.y = 700; vm.run(5);
-  ok(p.state === 'over' && p.rank === 0, 'the last ball ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
+  ok(p.state === 'over', 'the last ball ends the game');
   ok(musicLog(vm).includes(-1), 'the game song stops');
   vm.run(70); vm.press('A');
-  ok(p.state === 'initials', 'A asks for initials');
+  ok(p.state === 'initials' && p.rank === 0, 'A asks for initials, for a score in the top 10 (the best is the first row)', `rank ${p.rank}`);
   vm.run(25); // START is ignored for a moment, so a press from the game does not skip it
   vm.press('UP'); vm.press('RIGHT'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT'); vm.press('DOWN'); vm.press('START');
   ok(p.state === 'records', 'START saves them and shows the records');
