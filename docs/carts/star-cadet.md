@@ -146,7 +146,20 @@ An extra ball at 500,000; a replay is not given.
 
 ## 11. Audio
 
-Songs: 0 the title (a slow arpeggio over a pad), 1 play (a steady pulse and a light lead, quiet: the table's sounds are the point), 2 mission (the pulse quickens), 3 multiball, 4 the final mission; the music's layers rise with the rank (the lead enters at Lieutenant, the drums at Commander). Effects (channels 6 and 7 take turns): the flippers' thunk (up and down), each bumper's pop at a different pitch, the slingshot, the targets, the drop bank, a lane's tick, the ramp, the spinner (a tick each spin), the gate's swallow and spit, the plunger and the launch, the drain, the ball save, a nudge, a tilt warning and the tilt, the bonus count, a mission's start and its fanfare, a rank up, the extra ball, a high score. Levels: the lead at most 0.07 RMS and 0.75 of the mix, effects 0.01 to 0.06, and the effects well under the music's peaks (`loud.mjs --check`).
+Seven songs, since a song's channels cannot be muted from code, so the layers that rise with the rank are songs of their own, which `playSong()` picks each frame (the music
+restarts only when the song changes): **0** the title (A minor, 150 bpm, a pad and an arpeggio, then a soft horn over drums; it also plays in the attract mode); **1** the table
+for a Cadet, an Ensign and a Pilot (E minor, 128 bpm: only the bass and an arpeggio, a pulse); **2** the same with the flute lead, from a Lieutenant; **3** with the drums as well,
+from a Commander on; **4** a mission (A minor, 150 bpm, quicker, a soft horn and drums); **5** the Admiral's multiball (D minor, 180 bpm, heavy drums); **6** the last mission (E minor,
+180 bpm, a march, with strings and a counter-melody). Sampled voices (`audio.py`): flute, soft horn, bass, strings, plucked arpeggio, the kit's drums, with a room's echo.
+
+Effects (35; channels 6 and 7 take turns; the numbers are the `SFX` table in `code.js`): the menus' move, select and pause (0 to 2); a flipper up (a low thunk) and down (softer) (3, 4);
+the three bumpers, a chord apart: C, E and G (5 to 7); a slingshot (8); a standup target (9), a drop target (10), the cleared bank (11); a lane's tick (12) and the three lanes' chime
+(13); a ramp's whoosh (14); the spinner's tick (15, every third spin); the gate swallowing (16) and spitting (17); the plunger's launch (18); a drain (19); a ball saved (20); a nudge
+(21), the warning's three beeps (22), the tilt (23); a tick of the bonus count (24); a mission starting (25), the rank-up fanfare (26), a mission failed (27); an extra ball (28); a
+record (29); game over (30); a mission lamp (31); an orbit (32); the kickback (33); a jackpot (34). All sampled (tom, marimba, celesta, strings, soft horn, orchestra hit), soft like the music.
+
+Levels (measured by `loud.mjs --check` and `sfx.mjs`, both clean): the songs' median 0.04 to 0.06, the lead alone 0.03 to 0.035 (0.56 to 0.70 of the mix; the limits are 0.07 and 0.75),
+the peaks 0.12 to 0.22, the lead's piercing band 0.003 to 0.007 (the limit is 0.012); the effects 0.010 to 0.041 RMS (the quietest, a tick, 0.010; the loudest, a tilt, 0.041).
 
 ## 12. Video layers
 
@@ -167,11 +180,11 @@ BG0 the table (a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the
 
 | Asset | Budget |
 |---|---|
-| Code | 48.7 KB of the 64 KB limit after step 6 (74%: the audio, the flow polish and the balance need a few KB more; `strip` and `mangle` in `meta.json` would give back about a fifth) (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Code | 49.8 KB of the 64 KB limit after step 7 (76%: the audio, the flow polish and the balance need a few KB more; `strip` and `mangle` in `meta.json` would give back about a fifth) (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
 | Tiles | 848 of 1,024 after step 6: 465 of the 479 for the background (the floor 16, the decor and ramps about 400, the stars about 40: the table's 1,920 map cells share by repeating and flipping) and 383 of the 544 for sprites (136 of them the logo) |
 | Sprites | 45 of the 128 in OAM in play, at most 11 on a line (of 32): the ball, 2 flippers of 3 to 8 pieces, 3 bumpers, 2 slingshots of 8 pieces, 4 standups, 3 drops, the spinner, the plunger and its spring, up to 7 lamps with their glows. Up to 3 balls with the multiball |
 | ROM | the table's data if it is larger than a few KB |
-| Songs / SFX | 5 songs, about 30 effects (now the starter's 2 songs, 4 patterns of 64, 7 effects and 12.7 of 32 KB of sample RAM) |
+| Songs / SFX | 7 songs, 35 effects: 16 patterns of 64, 18 instruments of 32, 17.3 KB of the 32 KB of sample RAM |
 
 ## 15. Implementation plan
 
@@ -299,6 +312,19 @@ Each step: build it, run `node tools/check.js star-cadet` and `node tools/test.j
   saves (games played, the best rank, a lower rank not lowering it, the career as 10, several players as one game, a version 1 save cleared), the pause and the records.
   `04-art.mjs` follows the table now showing on the title.
 - **Results:** 7 test files; soak clean (64 sprites at most); 136 more sprite tiles for the logo (383 of 544).
+
+### Step 7 built: the audio
+
+- `carts/src/star-cadet/audio.py`: the seven songs and 35 effects of section 11, built with the song kit; `code.js` has the new `SFX` and `SONG` tables, one cue for each
+  thing (`fx(SFX.bump + n)` for bumper n ...), and `playSong()` (the table's song by rank, or the mission's), called each frame outside the attract mode.
+- The levels were measured and fixed: the first effects of the table were too quiet (a slingshot, a lane's tick, a lamp and a jackpot were 0.003 to 0.006 RMS: raised to 0.012 to
+  0.021), and a mission song had two minor seconds against its chords (`clash.py`; two notes changed).
+- `tests/carts/star-cadet/08-audio.mjs`: the cart has the seven songs and an effect with notes for each name; each effect is played by the thing it is for (flippers, each bumper at its own
+  pitch, the slingshots, the targets, the lanes and the set, the spinner and the orbit, a ramp, the gate in and out, the kickback, the drain, the launch, the save, a nudge, the warning and the
+  tilt, the bonus tick, an extra ball, the lamps, a mission, a rank up, a failure, a jackpot, game over, a record), all on channels 6 and 7; the music follows the rank (the three layers) and
+  the mission (and goes back), the title and the demo have the title's song, the game over stops it, and it is not restarted every frame.
+- **Results:** 8 test files; the soak is clean; 18 of 35 effects and 2 of the 7 songs are heard in 8,000 frames of random buttons (the others need a rank or a mission: the tests play them).
+  I cannot hear any of it: the numbers say it is quiet, clear of the music's lead and not piercing; whether it is pleasant is for a person to judge.
 
 ## 16. Open questions
 

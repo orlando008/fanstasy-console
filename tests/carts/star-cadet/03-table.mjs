@@ -18,7 +18,7 @@ const total = (p) => Object.values(p.stats).reduce((a, b) => a + b, 0);
     const away = ((p.ball.x - e.x) * p.ball.vx + (p.ball.y - e.y) * p.ball.vy) / Math.hypot(p.ball.x - e.x, p.ball.y - e.y);
     ok(p.stats.bump === 1 && p.score === p.PTS.bump, `bumper ${i + 1} scores 100, once, when the ball hits it`, `after ${n} frames: ${p.stats.bump} hits, ${p.score}`);
     ok(away >= 5 && speed(p.ball) >= 5.5, `and throws the ball away from it at 5 px a frame or more`, `${away.toFixed(1)}`);
-    ok(sfxLog(vm).some(([s, ch]) => s === p.SFX.hit && ch >= 6), 'with its sound, on an effects channel');
+    ok(sfxLog(vm).some(([s, ch]) => s === p.SFX.bump + i && ch >= 6), 'with its own sound (each bumper a different pitch), on an effects channel');
   }
 }
 

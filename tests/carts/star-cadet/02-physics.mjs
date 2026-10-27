@@ -71,7 +71,7 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy 
 {
   const vm = newGame(1), p = vm.probe(); put(p, 70, 540); sfxLog(vm); vm.run(240);
   ok(p.balls === 2 && p.inLane(), 'a ball left on the flippers rolls off between them, and the next one is served', `balls ${p.balls}`);
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch >= 6), 'with the drain sound, on an effects channel');
+  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.drain && ch >= 6), 'with the drain sound, on an effects channel');
 }
 
 // 6. A flip: the tip throws harder than the root and sends the ball up the table.

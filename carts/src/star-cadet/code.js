@@ -34,8 +34,12 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
 // so they never cut into the music and two can sound at once.
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
-const SONG = { title: 0, play: 1 };
+// The effects (audio.py, in this order). The three bumpers are three pitches, bump + their number.
+const SFX = { move: 0, select: 1, pause: 2, flipUp: 3, flipDown: 4, bump: 5, sling: 8, standup: 9, drop: 10, bank: 11, lane: 12, laneSet: 13, ramp: 14, spin: 15,
+  gateIn: 16, gateOut: 17, launch: 18, drain: 19, save: 20, nudge: 21, warn: 22, tilt: 23, tick: 24, mission: 25, rankUp: 26, fail: 27, extra: 28, record: 29,
+  over: 30, lamp: 31, orbit: 32, kick: 33, jackpot: 34 };
+// The songs: the title; the table in three layers that rise with the rank (the lead from Lieutenant, the drums from Commander); a mission, the multiball, the last mission.
+const SONG = { title: 0, play: 1, mission: 4, multi: 5, final: 6 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -170,36 +174,36 @@ function say(t) { msg = t; msgT = 150; }
 const earn = (k) => { bonus += BONUS[k]; };
 function award(n) {
   score += n;
-  if (!extraGiven && score >= EXTRA_AT) { extraGiven = true; extraBalls++; say('EXTRA BALL'); fx(SFX.record); }
+  if (!extraGiven && score >= EXTRA_AT) { extraGiven = true; extraBalls++; say('EXTRA BALL'); fx(SFX.extra); }
 }
 
 /** The sensors and the things that move the ball by themselves: lanes, spinner, orbits, the gate, ramps and the kickback. */
 function sensors(b) {
   LANE_XS.forEach((x, i) => {
     if (Math.abs(b.x - x) < LANE_HW && Math.abs(b.y - LANE_Y) < 6 && !laneLit[i]) {
-      laneLit[i] = true; stats.lane++; award(PTS.lane); emit('lane'); fx(SFX.point);
-      if (laneLit.every(Boolean)) { stats.laneDone++; laneLit = [false, false, false]; if (mult < MULT_MAX) { mult++; say('BONUS X' + mult); } }
+      laneLit[i] = true; stats.lane++; award(PTS.lane); emit('lane'); fx(SFX.lane);
+      if (laneLit.every(Boolean)) { fx(SFX.laneSet); stats.laneDone++; laneLit = [false, false, false]; if (mult < MULT_MAX) { mult++; say('BONUS X' + mult); } }
     }
   });
   if (b.x > SPIN.x0 && b.x < SPIN.x1 && b.y > SPIN.y0 && b.y < SPIN.y1) {
     spinAcc += Math.abs(b.vy) / SUB; spinPhase += Math.abs(b.vy) / SUB / 4;
-    while (spinAcc >= SPIN.per) { spinAcc -= SPIN.per; stats.spin++; award(PTS.spin); emit('spin'); }
+    while (spinAcc >= SPIN.per) { spinAcc -= SPIN.per; stats.spin++; award(PTS.spin); emit('spin'); if (stats.spin % 3 === 0) fx(SFX.spin); }
   }
   ORBIT_X.forEach((ox, k) => {
     const inL = k === 0 ? b.x < ox : b.x > ox && b.x < LANE_X, side = b.y > ORBIT_Y - 10 && b.y < ORBIT_IN + 10;
     if (inL && b.y > ORBIT_IN - 14 && b.y < ORBIT_IN + 6 && b.vy < -1) b.arm[k] = true;
-    else if (b.arm[k] && inL && b.y < ORBIT_Y) { b.arm[k] = false; stats.orbit++; stats[k ? 'orbitR' : 'orbitL']++; award(PTS.orbit); earn('orbit'); emit(k ? 'orbitR' : 'orbitL'); fx(SFX.point); }
+    else if (b.arm[k] && inL && b.y < ORBIT_Y) { b.arm[k] = false; stats.orbit++; stats[k ? 'orbitR' : 'orbitL']++; award(PTS.orbit); earn('orbit'); emit(k ? 'orbitR' : 'orbitL'); fx(SFX.orbit); }
     else if (b.arm[k] && !inL && side && b.y < ORBIT_IN - 20) b.arm[k] = false; // left the lane: no orbit
   });
   if (b.nogate > 0) b.nogate--; // a ball that has just left the gate does not fall into it again at once (the bumpers send it back up)
   else if (Math.hypot(b.x - GATE.x, b.y - GATE.y) < GATE.r - 2) {
-    b.x = GATE.x; b.y = GATE.y; b.vx = b.vy = 0; b.hold = GATE_HOLD * SUB; stats.gate++; award(PTS.gate); earn('gate'); emit('gate'); fx(SFX.point);
+    b.x = GATE.x; b.y = GATE.y; b.vx = b.vy = 0; b.hold = GATE_HOLD * SUB; stats.gate++; award(PTS.gate); earn('gate'); emit('gate'); fx(SFX.gateIn);
   }
   for (const r of RAMPS) {
-    if (Math.hypot(b.x - r.ex, b.y - r.ey) < RAMP_IN && b.vy < -RAMP_MIN) { b.ramp = { r, d: 0 }; stats.ramp++; fx(SFX.point); }
+    if (Math.hypot(b.x - r.ex, b.y - r.ey) < RAMP_IN && b.vy < -RAMP_MIN) { b.ramp = { r, d: 0 }; stats.ramp++; fx(SFX.ramp); }
   }
   if (kickback && b.x < KICKBACK.x && b.y > KICKBACK.y0 && b.y < KICKBACK.y1 && b.vy > 0) {
-    kickback = false; b.vx = 0.5; b.vy = -KICKBACK.v; stats.kick++; fx(SFX.point);
+    kickback = false; b.vx = 0.5; b.vy = -KICKBACK.v; stats.kick++; fx(SFX.kick);
   }
 }
 
@@ -226,7 +230,7 @@ function stepBall(b, flips) {
     return;
   }
   if (b.hold > 0) { // in the gate's hole
-    if (--b.hold === 0) { gateSide = -gateSide; b.y = GATE.y + GATE.r + 1; b.vx = 1.2 * gateSide; b.vy = 5; b.nogate = NOGATE; } // out of the hole's reach
+    if (--b.hold === 0) { gateSide = -gateSide; b.y = GATE.y + GATE.r + 1; b.vx = 1.2 * gateSide; b.vy = 5; b.nogate = NOGATE; fx(SFX.gateOut); } // out of the hole's reach
     return;
   }
   b.vy += GRAV / SUB;
@@ -236,18 +240,18 @@ function stepBall(b, flips) {
   for (const w of WALLS) collide(b, w[0], w[1], w[2], w[3], w[4] || 0, WALL_E);
   if (b.vy > 0) for (const w of ONEWAY) collide(b, w[0], w[1], w[2], w[3], 0, WALL_E);
   for (const e of BUMPERS) if (collide(b, e.x, e.y, e.x, e.y, BUMP_R, WALL_E)) {
-    kick(b, BUMP_KICK); if (struck(e)) { stats.bump++; award(PTS.bump); emit('bump'); fx(SFX.hit); }
+    kick(b, BUMP_KICK); if (struck(e)) { stats.bump++; award(PTS.bump); emit('bump'); fx(SFX.bump + BUMPERS.indexOf(e)); }
   }
   for (const e of SLINGS) if (collide(b, e.x0, e.y0, e.x1, e.y1, 0, WALL_E)) {
-    kick(b, SLING_KICK); if (struck(e)) { stats.sling++; award(PTS.sling); emit('sling'); fx(SFX.move); }
+    kick(b, SLING_KICK); if (struck(e)) { stats.sling++; award(PTS.sling); emit('sling'); fx(SFX.sling); }
   }
   for (const e of STANDUPS) if (collide(b, e.x0, e.y0, e.x1, e.y1, TARGET_R, WALL_E) && struck(e) && !e.lit) {
-    e.lit = true; stats.standup++; award(PTS.standup); earn('standup'); emit('standup'); fx(SFX.point);
+    e.lit = true; stats.standup++; award(PTS.standup); earn('standup'); emit('standup'); fx(SFX.standup);
     if (STANDUPS.every((q) => q.lit)) { stats.standupDone++; emit('standupSet'); for (const q of STANDUPS) q.lit = false; }
   }
   for (const e of DROPS) if (!e.down && collide(b, e.x0, e.y0, e.x1, e.y1, TARGET_R, WALL_E)) {
-    e.down = true; e.flash = HIT_FLASH; stats.drop++; award(PTS.drop); earn('drop'); emit('drop'); fx(SFX.point);
-    if (DROPS.every((q) => q.down)) { stats.bank++; award(PTS.bank); earn('bank'); emit('bank'); dropTimer = DROP_RESET; }
+    e.down = true; e.flash = HIT_FLASH; stats.drop++; award(PTS.drop); earn('drop'); emit('drop'); fx(SFX.drop);
+    if (DROPS.every((q) => q.down)) { stats.bank++; award(PTS.bank); earn('bank'); emit('bank'); fx(SFX.bank); dropTimer = DROP_RESET; }
   }
   sensors(b);
   for (const f of flips) {
@@ -313,7 +317,12 @@ function startGame(n = nPlayers) {
   flips = makeFlippers(); resetStats(); msgT = 0; paused = false; timer = 0;
   loadPlayer(0); beginBall();
   state = n > 1 ? 'turn' : 'play';
-  play(SONG.play);
+  if (!demo) playSong();
+}
+
+/** The music follows the game: the table's song by rank (more layers as the rank rises), or the mission's. */
+function playSong() {
+  play(mission ? (mission.r === 8 ? SONG.final : MISSIONS[mission.r].multi ? SONG.multi : SONG.mission) : SONG.play + (rk >= 4 ? 2 : rk >= 3 ? 1 : 0));
 }
 
 /** The attract mode: a game that plays itself (it scores nothing and records nothing) until a button is pressed. */
@@ -390,18 +399,20 @@ function updatePlay() {
   const pushed = demo ? ai.pad : [PAD_LEFT.some((k) => btn(k)), PAD_RIGHT.some((k) => btn(k))];
   held = tilted ? [false, false] : pushed;
   if (!inLane() && !tilted) {
-    if (pushed[0] && !heldPrev[0]) { laneLit.push(laneLit.shift()); fx(SFX.move); } // the flippers turn the lane lights, left and right
-    if (pushed[1] && !heldPrev[1]) { laneLit.unshift(laneLit.pop()); fx(SFX.move); }
+    if (pushed[0] && !heldPrev[0]) { laneLit.push(laneLit.shift()); fx(SFX.flipUp); } // the flippers turn the lane lights, left and right
+    if (pushed[1] && !heldPrev[1]) { laneLit.unshift(laneLit.pop()); fx(SFX.flipUp); }
+    if ((!pushed[0] && heldPrev[0]) || (!pushed[1] && heldPrev[1])) fx(SFX.flipDown);
   }
   heldPrev = pushed;
   const waiting = inLane() && ball.vy >= 0 && ball.y >= BALL_HOME.y - 1;
   if (waiting && (pushed[0] || pushed[1])) plunge = Math.min(1, plunge + 1 / PLUNGE_FRAMES);
-  else if (waiting && plunge > 0.04) { ball.vy = -(4 + 10 * plunge); plunge = 0; if (!saved) saveT = SAVE_FRAMES; fx(SFX.point); }
+  else if (waiting && plunge > 0.04) { ball.vy = -(4 + 10 * plunge); plunge = 0; if (!saved) saveT = SAVE_FRAMES; fx(SFX.launch); }
   else if (!waiting) plunge = 0;
   const side = demo ? 0 : pressed(L) ? -1 : pressed(R) ? 1 : 0;
   if ((side || (!demo && pressed(SELECT))) && !inLane() && !tilted && bs.some((b) => !b.ramp && !b.hold)) nudge(side, pressed(SELECT));
   stepTable(bs, flips, held);
   processEvents();
+  if (!demo) playSong();
   if (mission) tickMission();
   if (saveT > 0) saveT--;
   if (shake > 0) shake--;
@@ -411,7 +422,7 @@ function updatePlay() {
   camY += (want - camY) * 0.12;
   for (const b of bs.slice()) {
     if (!(b.y > DRAIN_Y && b.x < LANE_X)) continue;
-    if (bs.length > 1) { bs.splice(bs.indexOf(b), 1); ball = bs[0]; fx(SFX.hit); } else { drain(); break; }
+    if (bs.length > 1) { bs.splice(bs.indexOf(b), 1); ball = bs[0]; fx(SFX.drain); } else { drain(); break; }
   }
 }
 
@@ -456,7 +467,7 @@ const flash = (a, b) => { banner = { a, b, t: 150 }; };
 function processEvents() {
   for (const k of evq) {
     if (mission) {
-      if (k === 'jackpot') { if (MISSIONS[mission.r].multi) award(JACKPOT); else continue; }
+      if (k === 'jackpot') { if (MISSIONS[mission.r].multi) { award(JACKPOT); fx(SFX.jackpot); } else continue; }
       if (MISSIONS[mission.r].on(mission, k)) completeMission();
       continue;
     }
@@ -469,17 +480,17 @@ function processEvents() {
 /** A mission lamp: lit by a full set of standup targets, by the drop bank and by a ramp; all three light the gate. */
 function setLamp(i) {
   if (lamps[i]) return;
-  lamps[i] = true; fx(SFX.point);
+  lamps[i] = true; fx(SFX.lamp);
   say(lamps.every(Boolean) ? 'GATE LIT' : `LAMP ${i + 1}`);
 }
 
 /** The gate was shot with all three lamps lit: this rank's mission begins (after the last rank, a jackpot instead). */
 function startMission() {
   lamps = [false, false, false];
-  if (career) { award(RANK_PRIZE * 10); say('JACKPOT'); flash('MOTHERSHIP', 'JACKPOT 5000000'); fx(SFX.record); return; }
+  if (career) { award(RANK_PRIZE * 10); say('JACKPOT'); flash('MOTHERSHIP', 'JACKPOT 5000000'); fx(SFX.jackpot); return; }
   const d = MISSIONS[rk];
   mission = { r: rk, left: d.time * 60, n: 0, step: 0, set: {} };
-  flash(d.name, d.text(mission)); fx(SFX.select);
+  flash(d.name, d.text(mission)); fx(SFX.mission);
   if (d.multi) { // two more balls come out of the gate behind the one that is in it, and there is no save
     saved = true; saveT = 0;
     for (let i = 1; i <= 2; i++) bs.push(newBall(GATE.x, GATE.y, (GATE_HOLD + 25 * i) * SUB));
@@ -491,7 +502,7 @@ function tickMission() {
   else if (MISSIONS[mission.r].multi && bs.length < 2) failMission('MULTIBALL OVER');
 }
 
-function failMission(why) { mission = null; lamps = [true, true, true]; flash('MISSION FAILED', why); fx(SFX.over); }
+function failMission(why) { mission = null; lamps = [true, true, true]; flash('MISSION FAILED', why); fx(SFX.fail); }
 
 /** Done: the prize (500,000 times the new rank's number), the new rank, an extra ball at some, and the lamps start again. */
 function completeMission() {
@@ -500,22 +511,22 @@ function completeMission() {
   if (r < 8) rk = r + 1; else career = true;
   if (EXTRA_AT_RANK.includes(r)) { extraBalls++; say('EXTRA BALL'); } else say('RANK UP');
   lamps = [false, false, false]; applyRankLight();
-  flash('RANK UP', RANK_NAMES[rk] + (career ? ' *' : '')); fx(SFX.record);
+  flash('RANK UP', RANK_NAMES[rk] + (career ? ' *' : '')); fx(SFX.rankUp);
 }
 
 /** A shove of the table: the ball is pushed (L left, R right, SELECT up); the third in a ball is a warning, the fourth a tilt. */
 function nudge(side, up) {
   nudges++;
-  if (nudges >= NUDGE_TILT) { tilted = true; say('TILT'); fx(SFX.over); return; }
-  if (nudges === NUDGE_WARN) say('WARNING');
+  if (nudges >= NUDGE_TILT) { tilted = true; say('TILT'); fx(SFX.tilt); return; }
+  if (nudges === NUDGE_WARN) { say('WARNING'); fx(SFX.warn); }
   for (const b of bs) if (!b.ramp && !b.hold) { b.vx += side * NUDGE_V; if (up) b.vy -= NUDGE_V; }
-  shake = 8; fx(SFX.move);
+  shake = 8; fx(SFX.nudge);
 }
 
 /** The ball is lost: a saved ball goes back to the plunger; otherwise the ball is over. */
 function drain() {
-  if (saveT > 0 && !saved) { saved = true; saveT = 0; say('BALL SAVED'); fx(SFX.record); serve(); return; }
-  fx(SFX.hit); if (mission) failMission('BALL LOST');
+  if (saveT > 0 && !saved) { saved = true; saveT = 0; say('BALL SAVED'); fx(SFX.save); serve(); return; }
+  fx(SFX.drain); if (mission) failMission('BALL LOST');
   const base = bonus + rk * RANK_BONUS, b = tilted ? 0 : base * mult;
   if (b > 0) { // the bonus is counted on its own screen: the shots of the ball (and 10,000 for each rank) times the multiplier
     bonusRes = { base, mult, total: b }; award(b); state = 'bonus'; timer = 0;
@@ -527,7 +538,7 @@ const bonusShown = () => Math.ceil(bonusRes.total * Math.min(1, timer / BONUS_CO
 function updateBonus() {
   if (demo && timer > 30) { afterBall(); return; }
   const done = timer >= BONUS_COUNT;
-  if (!done && timer % 5 === 0) fx(SFX.point);
+  if (!done && timer % 5 === 0) fx(SFX.tick);
   if (pressed(A) || pressed(START)) { // a press skips the counting; another goes on
     if (!done && timer > 10) timer = BONUS_COUNT; else if (done && timer > BONUS_COUNT + 10) afterBall();
   } else if (timer > BONUS_COUNT + BONUS_HOLD) afterBall();
