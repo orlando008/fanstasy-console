@@ -19,7 +19,8 @@ const noise = (f, seed, k) => (uniform(f, seed, k) + uniform(f, seed, k + 1) + u
 
 let done = new WeakSet();
 export function pad(vm, p, frame, opts = {}) {
-  if (p.state === 'title') return M('A');
+  if (p.state === 'title' || p.state === 'map') return M('A');
+  if (p.state === 'calib') return M('B');
   if (p.state === 'results') return 0;
   if (p.state !== 'play') return 0;
   const sd = opts.sd ?? 0, skip = opts.skip ?? 0, seed = opts.seed ?? runSeed;

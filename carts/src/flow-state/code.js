@@ -111,8 +111,15 @@ const gradeOf = (acc) => (acc >= 0.95 ? 4 : acc >= 0.85 ? 3 : acc >= 0.7 ? 2 : a
 let skipTitle = false; // tests set this to land straight in the game
 let look = 0, lastMult = 1, lastG = -1, bannerText = '', bannerColour = WHITE, bannerAt = -99;   // the flow look (0 calm to 1 flow state), the last multiplier, the last hit's judgement, a banner
 let state = 'title', paused = false, timer = 0, clock = 0;
-let titleSel = 0, pauseSel = 0, pickPiece = 1, pickDiff = 1;
+let titleSel = 0, pauseSel = 0, mapSel = 1, mapDiff = 1, mapMsg = '', mapMsgAt = -999, opened = 0, savedLag = 0, cal = null;
+let mapX = 0, mapY = 0, mapFromX = 0, mapFromY = 0, mapAge = 99, mapTod = [];
 const PIECES = ['PRACTICE: SCALE RUN', 'MINUET IN G', 'AIR ON THE G STRING', 'FUR ELISE', 'MOONLIGHT SONATA', 'BADINERIE'], DIFFS = ['EASY', 'NORMAL', 'HARD'];
+const SHORT = ['PRACTICE', 'MINUET', 'AIR', 'ELISE', 'MOONLIGHT', 'BADINERIE'], BY = ['FOR YOUR SPEAKERS', 'BACH', 'BACH', 'BEETHOVEN', 'BEETHOVEN', 'BACH'], WHEN = ['NOON', 'DAWN', 'MORNING', 'NOON', 'DUSK TO NIGHT', 'NIGHT'];
+/** What a chart's pads follow, in words: a player has to know which part of the music to tap along to. */
+const followsOf = (p, d) => [() => 'THE SCALE', () => 'THE MELODY', () => (d < 2 ? 'THE BASS PULSE' : 'THE PULSE, THE MELODY'), () => 'THE MELODY',
+  () => (d === 0 ? 'THE MELODY AND THE BEAT' : 'THE MELODY, THE ARPEGGIO'), () => 'THE FLUTE'][p]();
+const openN = () => Math.max(1, dget(OPEN_SLOT));                                   // the stretches open (1 to 5); the practice piece, stop 0, is always open
+const isOpen = (i) => i === 0 || i <= openN();
 let piece = 0, diff = 1, notes = [], speed = 8, tm = 0, musicAt = 0, started = false, lag = 0;
 let score = 0, combo = 0, bestCombo = 0, flow = FLOW_START, inFlow = false, counts = [0, 0, 0, 0], hopAt = -99, judgeText = '', judgeColour = WHITE, judgeAt = -99, endAt = 0, newBest = false;
 const st = () => tm - lag;                                          // the song time the player hears now
@@ -133,6 +140,12 @@ function init() {
 }
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; look = 0; resetStamp(); play(SONG.title); }
+/** The map, with the frog on the stop `sel` (the stretch that was played, or the one just opened). */
+function toMap(sel = mapSel) {
+  state = 'map'; timer = 0; paused = false; look = 0; resetStamp(); play(SONG.title); mapSel = sel; mapTod = tod.slice();
+  mapX = stopX(mapSel); mapY = stopY(mapSel); mapAge = 99;
+  if (opened) { mapSel = opened; mapMsg = 'A NEW STRETCH IS OPEN'; mapMsgAt = clock; opened = 0; mapFromX = mapX; mapFromY = mapY; mapAge = 0; }
+}
 
 /** A piece from its start: the count-in, then the music when song time reaches 0. */
 function startPiece(i, d) {
@@ -151,7 +164,8 @@ function update() {
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'play') updatePlay();
-  else if (state === 'pick') updatePick();
+  else if (state === 'map') updateMap();
+  else if (state === 'calib') updateCalib();
   else if (state === 'results') updateResults();
   else if (state === 'records') updateRecords();
   prevMask = inputMask;
@@ -161,18 +175,68 @@ function updateTitle() {
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) { state = 'pick'; timer = 0; } else { state = 'records'; timer = 0; }
+    if (titleSel === 0) toMap(); else { state = 'records'; timer = 0; }
   }
 }
 
-/** Choose a piece (UP and DOWN) and a difficulty (LEFT and RIGHT); the journey's map takes this place in step 5. */
-function updatePick() {
-  if (pressed(UP)) { pickPiece = (pickPiece + PIECES.length - 1) % PIECES.length; fx(SFX.move); }
-  if (pressed(DOWN)) { pickPiece = (pickPiece + 1) % PIECES.length; fx(SFX.move); }
-  if (pressed(LEFT)) { pickDiff = (pickDiff + 2) % 3; fx(SFX.move); }
-  if (pressed(RIGHT)) { pickDiff = (pickDiff + 1) % 3; fx(SFX.move); }
-  if (pressed(B)) { state = 'title'; timer = 0; fx(SFX.move); }
-  else if (pressed(A) || pressed(START)) { fx(SFX.select); startPiece(pickPiece, pickDiff); }
+const stopX = (i) => 30 + i * 39, stopY = (i) => flr(112 + 9 * Math.sin(i * 1.6));
+/** The map: LEFT and RIGHT choose a stretch, UP and DOWN the difficulty, A plays (the first time, the calibration comes first), SELECT the calibration, B the title. */
+function updateMap() {
+  const before = mapSel;
+  if (pressed(LEFT)) mapSel = (mapSel + PIECES.length - 1) % PIECES.length;
+  if (pressed(RIGHT)) mapSel = (mapSel + 1) % PIECES.length;
+  if (before !== mapSel) { fx(SFX.move); mapFromX = mapX; mapFromY = mapY; mapAge = 0; mapMsg = ''; }
+  if (pressed(UP)) { mapDiff = (mapDiff + 2) % 3; fx(SFX.move); }
+  if (pressed(DOWN)) { mapDiff = (mapDiff + 1) % 3; fx(SFX.move); }
+  if (mapAge < 99) mapAge++;
+  const e = clamp(mapAge / 14, 0, 1), k = 0.5 - Math.cos(Math.PI * e) / 2;
+  mapX = lerp(mapFromX, stopX(mapSel), k); mapY = lerp(mapFromY, stopY(mapSel), k) - (e < 1 ? Math.sin(Math.PI * e) * 18 : 0);
+  if (pressed(B)) { toTitle(); fx(SFX.move); }
+  else if (pressed(SELECT)) { fx(SFX.select); startCalib(false); }
+  else if (pressed(A) || pressed(START)) {
+    if (!isOpen(mapSel)) { mapMsg = 'FINISH THE STRETCH BEFORE IT'; mapMsgAt = clock; fx(SFX.move); return; }
+    fx(SFX.select);
+    if (!dget(LAG_SLOT)) startCalib(true); else startPiece(mapSel, mapDiff);
+  }
+}
+
+// --- The calibration (spec section 5): a steady tick and a pad coming to the frog's line on it; the median of how late the taps are is the offset the
+// speakers add, in frames (-15 to 15), kept in save slot 1 as the value + 16. During it `lag` is 0 and `tm` counts frames from the start.
+
+const CAL_BEATS = 16, CAL_GAP = 40, CAL_FIRST = 90, CAL_NEED = 6;
+function startCalib(then) {
+  savedLag = lag; lag = 0; state = 'calib'; timer = 0; play(-1); paused = false;
+  notes = []; for (let k = 0; k < CAL_BEATS; k++) notes.push({ f: CAL_FIRST + k * CAL_GAP, pitch: 0, dur: 4, r: 0, lane: [-1, 0, 1, 0][k % 4] });
+  tm = 0; cal = { errs: [], then, stage: 'tap', off: 0, first: !dget(LAG_SLOT) }; frogX = hopFrom = hopTo = 128; hopAt = -99; lastG = 0; look = 0;
+}
+function updateCalib() {
+  if (cal.stage === 'tap') {
+    tm++;
+    for (const n of notes) if (n.f === tm) fx(SFX.point);                                      // the tick: the sound the player taps to
+    if (tapped()) {
+      let best = null;
+      for (const n of notes) if (!n.r && Math.abs(n.f - tm) <= 20 && (!best || Math.abs(n.f - tm) < Math.abs(best.f - tm))) best = n;
+      hopFrom = frogX; hopFromY = frogY; hopTo = best ? 128 + best.lane * LANE : frogX; hopZ = best ? ZH + V * (best.f - tm) : Z0; hopAt = clock;
+      if (best) { best.r = 1; cal.errs.push(tm - best.f); }
+    }
+    if (pressed(B)) endCalib(false);
+    else if (tm > notes[notes.length - 1].f + 30 || cal.errs.length >= 14) {
+      const v = cal.errs.slice(2).sort((a, b) => a - b);                                        // the first two taps are the player settling in
+      if (v.length < CAL_NEED) cal.stage = 'fail'; else { cal.off = clamp(v[v.length >> 1], -15, 15); cal.stage = 'done'; }
+    }
+  } else {
+    if (cal.stage === 'done') { if (pressed(LEFT)) cal.off = Math.max(-15, cal.off - 1); if (pressed(RIGHT)) cal.off = Math.min(15, cal.off + 1); }
+    if (pressed(START)) { fx(SFX.select); startCalib(cal.then); }
+    else if (pressed(B)) endCalib(false);
+    else if (pressed(A) && cal.stage === 'done') endCalib(true);
+  }
+}
+/** Leave the calibration: keep the offset (save it) or not; the first time, leaving it also stops it being offered again. */
+function endCalib(save) {
+  fx(SFX.select);
+  if (save) { lag = cal.off; dset(LAG_SLOT, lag + 16); } else { lag = savedLag; if (!dget(LAG_SLOT)) dset(LAG_SLOT, 16); }
+  const then = cal.then; cal = null;
+  if (then) startPiece(mapSel, mapDiff); else toMap();
 }
 
 /** One frame of a piece: the clock, the music's start, the taps, the pads that were missed, the end. */
@@ -192,12 +256,12 @@ function finish() {
   const g = gradeOf(accuracy()), s = bestSlot(piece, diff);
   newBest = score > dget(s); setStamp(g);
   if (newBest) { dset(s, score); dset(s + 1, (g + 1) | (bestCombo << 4)); }
-  if (dget(OPEN_SLOT) < piece + 2) dset(OPEN_SLOT, piece + 2);
+  if (piece >= 1 && piece < 5 && openN() < piece + 1) { dset(OPEN_SLOT, piece + 1); opened = piece + 1; }   // a stretch played to the end opens the next
   fx(SFX.record);
 }
 
 function updateResults() {
-  if (timer > 30 && (pressed(A) || pressed(START))) { fx(SFX.select); toTitle(); }
+  if (timer > 30 && (pressed(A) || pressed(START))) { fx(SFX.select); toMap(piece); }
 }
 
 function updateRecords() {
@@ -220,7 +284,7 @@ function updatePause() {
     fx(SFX.select);
     if (pauseSel === 0) resume();
     else if (pauseSel === 1) startPiece(piece, diff); // restart
-    else toTitle(); // quitting abandons the piece: nothing is recorded
+    else toMap(piece); // quitting abandons the piece: nothing is recorded
   }
 }
 
@@ -277,6 +341,13 @@ function applyTod(v) {
 }
 /** Each frame: the time of day from the piece's progress (or the title's), and the palettes when it has changed enough to see. */
 function updateTod() {
+  if (state === 'map') {                                                                      // the light of the stretch the frog is on, eased from the one before
+    const tgt = TOD[PIECE_TOD[mapSel][0]]; let moved = 0;
+    mapTod = mapTod.map((v, i) => { const n = v + (tgt[i] - v) * 0.12; moved += Math.abs(tgt[i] - n); return n; });
+    if (moved > 0.02 || todKey !== 'map') { applyTod(mapTod); todKey = moved > 0.02 ? 'map~' : 'map'; }
+    return;
+  }
+  if (state === 'calib') { if (todKey !== 'calib') { todKey = 'calib'; applyTod(TOD[2]); } return; }
   const [a, b] = state === 'title' || state === 'pick' || state === 'records' ? TITLE_TOD : PIECE_TOD[piece] || [2, 2];
   const k = state === 'play' ? clamp(tm / pieceEnd, 0, 1) : state === 'results' ? 1 : 0, key = `${a}${b}${flr(k * 40)}.${flr(look * 20)}`;
   if (key !== todKey) { todKey = key; applyTod(mixTod(a, b, k)); }
@@ -292,14 +363,15 @@ function draw() {
   camY = state === 'play' ? -tm * V : -clock * 1.5;                                          // the river flows with the song
   bg(1, { show: true, x: flr(clock * 0.15) }); bg(2, { show: false }); affine({ a: 1, b: 0, c: 0, d: 1, cx: 0, cy: 0 });
   look += ((state === 'play' && !paused ? (multiplier() - 1) / 3 : 0) - look) * 0.04;
-  blend(state === 'play' && !paused ? { layers: ['overlay', 'spr'], op: 'add' } : { layers: ['overlay'], half: true });   // in play the glows add their light; in the menus the panels mix
+  blend((state === 'play' || state === 'calib') && !paused ? { layers: ['overlay', 'spr'], op: 'add' } : { layers: ['overlay'], half: true });   // in play the glows add their light; in the menus the panels mix
   updateTod();
   sprite({ tile: ART.sprites.orb.tile, size: 32, pal: ART.sprites.orb.pal }, tod[16] - 16, tod[17] - 16, { prio: 0 });
-  drawFrogAndPads();
+  if (state === 'map') drawMapSprites(); else if (state !== 'records') drawFrogAndPads();
   drawFireflies();
   if (state === 'play') drawPlay();
+  else if (state === 'map') drawMap();
+  else if (state === 'calib') drawCalib();
   else if (state === 'title') drawTitle();
-  else if (state === 'pick') drawPick();
   else if (state === 'results') drawResults();
   else if (state === 'records') drawRecords();
   if (paused) drawPause();
@@ -324,12 +396,12 @@ function drawFrogAndPads() {
   sprite(ART.sprites['frog_' + pose], fx - 16, fy - 26 - up);
   if (look > 0.8 && state === 'play') bigSprite(ART.big.halo, fx - 24, fy - 12 - up - 24);   // the frog glows
   const rp = age - HOPF;
-  if (state === 'play' && lastG >= 0 && rp >= 0 && rp < 18) {                                // a ripple on the water where the frog landed, in the colour of the judgement
+  if ((state === 'play' || state === 'calib') && lastG >= 0 && rp >= 0 && rp < 18) {                                // a ripple on the water where the frog landed, in the colour of the judgement
     const S = rp < 6 ? 8 : rp < 12 ? 16 : 32, r = ART.sprites['ripple' + S + (S === 32 && rp > 14 ? 'b' : '')];
     sprite(r, hopTo - S / 2, FROG_Y + 6 - S * 0.62, { pal: [5, 6, 4][lastG] });
   }
   sprite(ART.sprites.pad32, home - 16, FROG_Y + 2 - 20);
-  if (state !== 'play') return;
+  if (state !== 'play' && state !== 'calib') return;
   for (const n of notes) {
     const z = ZH + V * (n.f - st());
     if (z > ZH + V * LOOKAHEAD) break;
@@ -389,12 +461,51 @@ function drawTitle() {
   ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
 }
 
-function drawPick() {
-  panel(24, 36, 208, 150);
-  ctxt('CHOOSE A PIECE', 46, GOLD);
-  PIECES.forEach((s, i) => txt(`${i === pickPiece ? '> ' : '  '}${s}`, 40, 70 + i * 14, i === pickPiece ? WHITE : DIM));
-  DIFFS.forEach((s, i) => txt(s, 56 + i * 52, 164, i === pickDiff ? GOLD : DIM));
-  ctxt('A PLAY   B BACK', 180, DIM);
+/** The frog and the stops of the map, as sprites: an open stop is a pad, a closed one a small pad. */
+function drawMapSprites() {
+  sprite(ART.sprites[mapAge < 14 ? 'frog_air' : 'frog_sit'], mapX - 16, mapY - 28);
+  for (let i = 0; i < PIECES.length; i++) {
+    const S = isOpen(i) ? 32 : 16;
+    sprite(ART.sprites['pad' + S], stopX(i) - S / 2, stopY(i) - S * 0.62);
+  }
+}
+
+function drawMap() {
+  ctxt('THE RIVER', 4, GOLD);
+  ctxt('A PLAY  B BACK  SELECT SPEAKERS', 16, DIM); ctxt('<> STRETCH    ^v LEVEL', 26, DIM);
+  for (let i = 0; i < PIECES.length; i++) {
+    const x = stopX(i), y = stopY(i);
+    if (i + 1 < PIECES.length) for (let k = 1; k < 4; k++) rectfill(flr(lerp(x, stopX(i + 1), k / 4)) + 6, flr(lerp(y, stopY(i + 1), k / 4)) + 2, 2, 2, i + 1 <= openN() ? GOLD : DIM);    // the river's path
+    if (!isOpen(i)) { rectfill(x - 3, y - 4, 7, 5, WHITE); rect(x - 2, y - 8, 5, 4, WHITE); }                                                      // a lock
+    else txt(i ? String(i) : 'P', x - 3, y - 4, i === mapSel ? GOLD : WHITE);
+  }
+  if (clock - mapMsgAt < 120) ctxt(mapMsg, 44, GOLD);
+  panel(8, 146, 240, 66);
+  const open = isOpen(mapSel);
+  txt(open ? PIECES[mapSel] : '? ? ?  LOCKED', 16, 152, open ? GOLD : DIM); txt(`${BY[mapSel]}  ${WHEN[mapSel]}`.slice(0, 30), 16, 162, DIM);
+  if (!open) { txt('FINISH THE STRETCH BEFORE IT', 16, 182, WHITE); return; }
+  for (let d = 0; d < 3; d++) {
+    const s = bestSlot(mapSel, d), g = dget(s + 1) & 15, y = 174 + d * 10, c = d === mapDiff ? WHITE : DIM;
+    txt(`${d === mapDiff ? '>' : ' '} ${DIFFS[d]}`, 16, y, c);
+    if (g) { txt(GRADES[g - 1], 120, y, LEVEL_GRADE[g - 1]); txt(String(dget(s)).padStart(7), 140, y, c); txt(`x${dget(s + 1) >> 4}`, 204, y, DIM); } else txt('-', 120, y, DIM);
+  }
+  txt(followsOf(mapSel, mapDiff), 16, 204, CYAN);
+}
+const LEVEL_GRADE = [DIM, ORANGE, CYAN, GREEN, GOLD];                                      // the grades D to S in colour
+
+function drawCalib() {
+  drawHitBar();
+  ctxt('CALIBRATION', 8, GOLD);
+  if (cal.stage === 'tap') {
+    ctxt(cal.first ? 'FIRST: A QUICK SPEAKER CHECK' : 'HOW LATE ARE YOUR SPEAKERS?', 22, WHITE);
+    ctxt('TAP A WITH EACH TICK', 34, DIM); ctxt(`${Math.min(cal.errs.length, 14)} OF 14      B: SKIP`, 46, DIM);
+    return;
+  }
+  panel(36, 66, 184, 88);
+  if (cal.stage === 'fail') { ctxt('TOO FEW TAPS', 78, RED); ctxt('TAP A WITH EACH TICK', 92, DIM); ctxt('START: AGAIN   B: SKIP', 120, WHITE); return; }
+  const o = cal.off; ctxt(o === 0 ? 'RIGHT ON TIME' : `${Math.abs(o)} FRAME${Math.abs(o) > 1 ? 'S' : ''} ${o > 0 ? 'LATE' : 'EARLY'}`, 76, GOLD);
+  ctxt(`${Math.round(o * 1000 / 60)} MS`, 88, DIM); ctxt('LEFT RIGHT: ADJUST', 100, DIM);
+  ctxt('A: SAVE   B: CANCEL', 118, WHITE); ctxt('START: AGAIN', 132, DIM);
 }
 
 function drawResults() {
@@ -416,19 +527,25 @@ function drawResults() {
 }
 
 function drawRecords() {
-  panel(24, 16, 208, 192);
-  ctxt('BEST SCORES', 24, GOLD);
-  for (let d = 0; d < 3; d++) {
-    const s = bestSlot(0, d), g = dget(s + 1) & 15;
-    txt(DIFF_NAMES[d], 40, 56 + d * 16, WHITE); txt(String(dget(s)).padStart(8), 120, 56 + d * 16, GOLD); txt(g ? GRADES[g - 1] : '-', 200, 56 + d * 16, WHITE);
+  panel(4, 12, 248, 196);
+  ctxt('BEST SCORES', 20, GOLD);
+  DIFFS.forEach((d, i) => txt(d.slice(0, 4), 106 + i * 50, 38, DIM));
+  for (let p = 0; p < PIECES.length; p++) {
+    const y = 52 + p * 24;
+    txt(SHORT[p], 12, y, isOpen(p) ? WHITE : DIM);
+    for (let d = 0; d < 3; d++) {
+      const s = bestSlot(p, d), g = dget(s + 1) & 15, x = 100 + d * 50;
+      if (g) { txt(GRADES[g - 1], x, y, LEVEL_GRADE[g - 1]); txt(dget(s) >= 100000 ? `${flr(dget(s) / 1000)}K` : `${(dget(s) / 1000).toFixed(1)}K`, x + 10, y, WHITE); txt(`x${dget(s + 1) >> 4}`, x + 10, y + 9, DIM); }
+      else txt('-', x, y, DIM);
+    }
   }
-  if (timer % 60 < 40) ctxt('A: BACK', 192, DIM);
+  if (timer % 60 < 40) ctxt('A: BACK', 196, DIM);
 }
 
 function drawPause() {
   panel(64, 80, 128, 64);
   ctxt('PAUSED', 88, GOLD);
-  ['RESUME', 'RESTART', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
+  ['RESUME', 'RESTART', 'QUIT TO MAP'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
 }
 
 function panel(x, y, w, h) { rectfill(x, y, w, h, ART.colors.GLASS); rect(x, y, w, h, PANEL); }

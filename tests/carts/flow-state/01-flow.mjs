@@ -12,11 +12,12 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('DOWN'); ok(p.titleSel === 1, 'DOWN moves down the menu'); vm.press('UP'); ok(p.titleSel === 0, 'and UP back');
   vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('A'); ok(p.state === 'title', 'A goes back to the title');
-  vm.press('A'); ok(p.state === 'pick', 'PLAY opens the choice of a piece');
-  vm.press('DOWN'); ok(p.pickPiece === 2, 'DOWN chooses the next piece'); vm.press('RIGHT'); ok(p.pickDiff === 2, 'RIGHT a harder difficulty'); vm.press('LEFT'); vm.press('LEFT'); ok(p.pickDiff === 0, 'and LEFT an easier one');
-  vm.press('B'); ok(p.state === 'title', 'B goes back'); vm.press('A'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT');
-  musicLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.piece === 0 && p.diff === 1, 'A starts the piece chosen (here the practice piece, normal)');
+  vm.press('A'); ok(p.state === 'map' && p.mapSel === 1 && p.mapDiff === 1, 'PLAY opens the map, on the first stretch and normal');
+  vm.press('RIGHT'); ok(p.mapSel === 2, 'RIGHT chooses the next stretch'); vm.press('DOWN'); ok(p.mapDiff === 2, 'DOWN a harder difficulty'); vm.press('UP'); vm.press('UP'); ok(p.mapDiff === 0, 'and UP an easier one');
+  vm.press('B'); ok(p.state === 'title', 'B goes back'); vm.press('A'); vm.press('LEFT'); vm.press('LEFT'); vm.press('DOWN');
+  ok(p.mapSel === 0 && p.mapDiff === 1, 'LEFT twice from the third stop is the practice piece', `${p.mapSel}`);
+  musicLog(vm); vm.press('A'); ok(p.state === 'calib', 'the first time, the calibration is offered before the piece'); vm.press('B');
+  ok(p.state === 'play' && p.piece === 0 && p.diff === 1, 'skipping it starts the piece chosen (here the practice piece, normal)');
   ok(p.tm === -p.LEAD + 1 || p.tm === -p.LEAD, 'with a count-in before the music', `${p.tm}`);
   ok(p.playing === -1 && !p.started, 'the title song stops and the piece\'s music has not begun');
 }
@@ -45,21 +46,21 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const log = vm.audioLog.filter((a) => a[1] === 'music');
   ok(log.length === 1 && log[0][2] === 1 && log[0][3] === 1, 'the music starts again at the second pattern', JSON.stringify(log));
   vm.press('START'); vm.press('DOWN'); vm.press('A'); ok(p.state === 'play' && p.tm === -p.LEAD + 1 || p.tm === -p.LEAD, 'RESTART begins the piece again');
-  vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back');
+  vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'map' && !p.paused && p.mapSel === 0, 'QUIT TO MAP goes back to the map, on the piece');
 }
 
 // 4. A whole piece with a perfect player: the results, the saves.
 {
   const vm = bot.newGame(4), p = vm.probe(); vm.run(2);
-  bot.setup(vm, p, { sd: 0, seed: 4 });
+  bot.setup(vm, p, { sd: 0, seed: 4, piece: 1 });
   let f = 0; while (p.state !== 'results' && f++ < 6000) vm.step(bot.pad(vm, p, f, { sd: 0, seed: 4 }));
   ok(p.state === 'results', 'the piece ends in the results', `after ${f} frames`);
   ok(p.counts[0] === p.notes.length && p.counts[3] === 0 && p.accuracy() === 1, 'a perfect player hits every pad perfectly', `${p.counts.join()} of ${p.notes.length}`);
   ok(p.gradeOf(p.accuracy()) === 4 && p.newBest, 'it is an S and a new best');
-  ok(p.dget(p.bestSlot(0, 1)) === p.score && (p.dget(p.bestSlot(0, 1) + 1) & 15) === 5, 'the best score and grade are saved', `${p.score}`);
+  ok(p.dget(p.bestSlot(1, 1)) === p.score && (p.dget(p.bestSlot(1, 1) + 1) & 15) === 5, 'the best score and grade are saved', `${p.score}`);
   ok(p.dget(2) === 2, 'and the next stretch is open');
-  vm.run(40); vm.press('A'); ok(p.state === 'title', 'A goes back to the title');
-  vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'the records show it'); vm.run(2);
+  vm.run(40); vm.press('A'); ok(p.state === 'map' && p.mapSel === 2 && p.mapMsg === 'A NEW STRETCH IS OPEN', 'A goes back to the map, on the stretch just opened');
+  vm.press('B'); vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'the records show it'); vm.run(2);
 }
 
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);
