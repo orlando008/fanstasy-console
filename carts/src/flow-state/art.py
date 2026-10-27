@@ -15,10 +15,11 @@
 import math, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *
+from lettering import big_text
 
 art = Art()
-art.region('bg', 1, 639)       # background tiles: the river is the most of them
-art.region('spr', 640, 1023)   # sprites (a 16 px sprite takes four tiles)
+art.region('bg', 1, 559)       # background tiles: the river is the most of them
+art.region('spr', 560, 1023)   # sprites (a 16 px sprite takes four tiles)
 art.backdrop('68a8e0')
 art.color(200, '121a3a', 'GLASS')
 art.color(201, '160c04', 'GLOW_OK')                                         # the hit line's bands, seen through (code.js drawHitBar)
@@ -190,6 +191,40 @@ for y in range(32):
         elif d <= 11 and (x + y) % 2 == 0: orb.pset(x, y, ORB.halo)
         elif d <= 14 and (x % 2 == 0 and y % 2 == 0): orb.pset(x, y, ORB.halo)
 art.sprite('orb', orb, pal=ORB, region='spr')
+
+# --- Step 4: the flow-state look. Sprite palettes 4 to 7 are the console's see-through ones: with blend() on 'spr' (op add), their light is added to what is
+# under them, so a glow is a sprite in palette 4, 5 or 6. The three ring palettes share the ring's indices 1 to 3 (cyan, gold, green: the ok, perfect and
+# good ripples); gold also holds the firefly (4 to 6) and the halo (7 to 9). Palette 3 is the lettering: a gold ramp that code.js recolours for each grade. ---
+LOGO = art.sprite_palette(3, {'ink': '1c1428', 'gold': ramp('f0b030', 5, at=3, step=0.14), 'shade': '6a3410'})
+RING_CY = art.sprite_palette(4, {'ring': ['1c4458', '3c8aa8', '9ce0f0']})
+GLOWS = art.sprite_palette(5, {'ring': ['583c10', 'b08828', 'fff0a0'], 'fly': ['3c4c10', '98b828', 'f4ffb0'], 'halo': ['201808', '40300c', '705818']})
+RING_GR = art.sprite_palette(6, {'ring': ['1c4a1c', '40a040', 'b0f0a0']})
+art.big_sprite('logo', big_text('FLOW STATE', LOGO.gold, scale=2, outline=LOGO.ink, shadow=LOGO.shade), pal=LOGO, region='spr')
+for ch in ('3', '2', '1'): art.big_sprite('n' + ch, big_text(ch, LOGO.gold, scale=4, outline=LOGO.ink, shadow=LOGO.shade), pal=LOGO, region='spr')
+art.big_sprite('go', big_text('GO', LOGO.gold, scale=4, outline=LOGO.ink, shadow=LOGO.shade), pal=LOGO, region='spr')
+for ch in 'SABCD': art.big_sprite('grade' + ch, big_text(ch, LOGO.gold, scale=4, outline=LOGO.ink, shadow=LOGO.shade), pal=LOGO, region='spr')
+
+
+def ripple(S, phase):
+    """A flattened ring on the water: the light bright on the outer edge, fading inside."""
+    im = Img(S, S)
+    for y in range(S):
+        for x in range(S):
+            d = math.hypot((x + 0.5 - S / 2) / (S / 2), (y + 0.5 - S * 0.62) / (S * 0.26))
+            if 0.62 <= d <= 1.0: im.pset(x, y, GLOWS.ring[2 if d > 0.88 else 1] if phase == 0 else GLOWS.ring[1 if d > 0.88 else 0])
+    return im
+
+
+for S, ph in ((8, 0), (16, 0), (32, 0), (32, 1)): art.sprite('ripple%d%s' % (S, 'b' if ph else ''), ripple(S, ph), pal=GLOWS, region='spr')
+fly = Img(8, 8)
+for dx, dy, c in ((0, 0, 2), (1, 0, 1), (-1, 0, 1), (0, 1, 1), (0, -1, 1)): fly.pset(3 + dx, 3 + dy, GLOWS.fly[c])
+art.sprite('fly', fly, pal=GLOWS, region='spr')
+halo = Img(48, 48)
+for y in range(48):
+    for x in range(48):
+        d = math.hypot(x - 23.5, (y - 25.5) * 1.15) / 24
+        if d < 1: halo.pset(x, y, GLOWS.halo[2 if d < 0.55 else 1 if d < 0.8 else 0] if (x + y) % 2 == 0 or d < 0.55 else 0)
+art.big_sprite('halo', halo, pal=GLOWS, region='spr')
 
 if len(sys.argv) > 1 and sys.argv[1].endswith('.png'):
     sh = Sheet(scale=6)
