@@ -16,7 +16,7 @@ const PROBE = `__expose(() => ({
   multiplier, flowName, accuracy, gradeOf, loadChart, startPiece, tap, bestSlot, dget: (i) => dget(i), dset: (i, v) => dset(i, v), rom: (n) => rom(n),
   HORIZON, FOCAL, HEIGHT, Z0, ZH, lineY, V, FROG_Y, LANE, HOPF, STAR, ORB, TOD, PIECE_TOD, get frogX() { return frogX; }, get tod() { return tod; }, applyTod, mixTod, skyAt,
   get look() { return look; }, set look(v) { look = v; }, get lastG() { return lastG; }, get bannerText() { return bannerText; }, get bannerAt() { return bannerAt; }, LEVEL_COLOURS, STAMP, STAMP_COLOURS, setStamp, resetStamp, setFlow, drawPond,
-  LOOKAHEAD, LEAD, RESUME_LEAD, WIN, JUDGE, MISS_FLOW, STRAY_FLOW, FLOW_START, GRADES, SFX, SONG,
+  LOOKAHEAD, LEAD, RESUME_LEAD, WIN, JUDGE, MISS_K, STRAY_FLOW, FLOW_START, GRADES, SFX, SONG,
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into play: the first piece, normal). save: a save to start from. */

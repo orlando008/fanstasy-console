@@ -12,12 +12,17 @@ DIFFS = [('EASY', 18), ('NORMAL', 10), ('HARD', 6)]          # the shortest gap 
 
 
 class Piece:
-    def __init__(s, title, composer, speed, beat, eighth, melody, bass, inner='', lead='PLUCK', bassv='BASS', innerv='PLUCK', key=('C', MAJOR), loop=None, echo=(5, 4, 5, 9), extra_mod=None, extra_src='inner', melody_diffs=7):
+    def __init__(s, title, composer, speed, beat, eighth, melody, bass, inner='', lead='PLUCK', bassv='BASS', innerv='PLUCK', key=('C', MAJOR), loop=None, echo=(5, 4, 5, 9), extra_mod=None, extra_src='inner', melody_diffs=7, grids=None, gaps=None):
         """beat: rows to a beat (the easy chart's pads fall on it); eighth: rows to the shortest note the normal chart keeps.
         inner: an accompaniment on channel 1; extra_mod = ((modulus, (rows,)), ...) for easy, normal and hard: the inner notes that start at those rows of each
-        modulus are pads too (the Moonlight's triplets, under a melody too slow to play alone). lead, bassv, innerv: the names of the voices (audio.py defines them)."""
+        modulus are pads too (the Moonlight's triplets, under a melody too slow to play alone). lead, bassv, innerv: the names of the voices (audio.py defines them).
+        extra_src: 'inner' or 'bass', where the extra pads come from. melody_diffs: the difficulties (a bit mask: easy 1, normal 2, hard 4) whose chart has the melody's
+        notes; a melody too slow or too free to tap (the Air's) is tapped on its bass at the lower ones. grids = (rows, rows): instead of the eighth and beat rules, easy keeps
+        the notes that start on a multiple of the first number of rows (or last that long) and normal the second's; hard keeps all. gaps = (frames, frames, frames): the
+        least gap of each difficulty (18, 10 and 6 by default)."""
         s.title, s.composer, s.speed, s.beat, s.eighth = title, composer, speed, beat, eighth
-        s.lead, s.bassv, s.innerv, s.key, s.loop, s.echo, s.extra_mod, s.extra_src, s.melody_diffs = lead, bassv, innerv, key, loop, echo, extra_mod, extra_src, melody_diffs
+        s.lead, s.bassv, s.innerv, s.key, s.loop, s.echo, s.extra_mod, s.extra_src, s.melody_diffs, s.grids = lead, bassv, innerv, key, loop, echo, extra_mod, extra_src, melody_diffs, grids
+        s.gaps = gaps or tuple(g for _, g in DIFFS)
         s.notes, s.bass, s.inner = parse(melody), parse(bass), parse(inner)
         end = max(r + d for r, _, d in s.notes)                       # the melody sets the length (to the end of its last pattern of 64 rows); the accompaniment is cut to it
         end += (-end) % 64
@@ -30,8 +35,9 @@ class Piece:
         out, last = [], [-999, -999, -999]
         for r, p, d in s.notes:
             f = 0
-            for k, (name, gap) in enumerate(DIFFS):
-                ok = [(r % s.beat == 0 or d >= s.beat) and d >= s.eighth, d >= s.eighth, True][k]     # easy is a part of normal
+            for k, gap in enumerate(s.gaps):
+                if s.grids: ok = [r % s.grids[0] == 0 or d >= s.grids[0], r % s.grids[1] == 0 or d >= s.grids[1], True][k]
+                else: ok = [(r % s.beat == 0 or d >= s.beat) and d >= s.eighth, d >= s.eighth, True][k]     # easy is a part of normal
                 if ok and s.melody_diffs >> k & 1 and (r - last[k]) * s.speed >= gap:
                     f |= 1 << k; last[k] = r
             out.append(f | (min(d, 31) << 3))
@@ -45,7 +51,8 @@ class Piece:
         if s.extra_mod:
             kept = [[r for (r, p, d), fl in zip(s.notes, s.flags()) if fl >> k & 1] for k in range(3)]
             flags = {}
-            for k, (name, gap) in enumerate(DIFFS):
+            for k, gap in enumerate(s.gaps):
+                if s.extra_mod[k] is None: continue
                 last = -999
                 for r, p, d in (s.inner if s.extra_src == 'inner' else s.bass):
                     if r % s.extra_mod[k][0] not in s.extra_mod[k][1]: continue
@@ -129,21 +136,23 @@ def pad_to(text, rows):
 
 # --- 1 Minuet in G (Petzold, Notebook for Anna Magdalena Bach, BWV Anh. 114): G major, 3/4, a row an eighth note, the 32 bars and the first 8 again ---
 MINUET = Piece('MINUET IN G', 'BACH', 16, 2, 1, score('minuet.mel') + ' ' + score('minuet.mel2'),
-    pad_to(score('minuet.bass'), 192) + ' ' + score('minuet.bass2'), key=('G', MAJOR))
+    pad_to(score('minuet.bass'), 192) + ' ' + score('minuet.bass2'), key=('G', MAJOR), grids=(4, 2),
+    extra_src='bass', extra_mod=(None, None, (1, (0,))))      # easy: a note every two beats; normal: the beats; hard: every note and the bass line
 
 # --- 2 Air on the G String (Bach, Orchestral Suite 3, BWV 1068): D major, 4/4, a row a sixteenth, about 64 bpm ---
 AIR = Piece('AIR ON THE G STRING', 'BACH', 14, 4, 2, score('air.mel'), shift(score('air.bass'), 12) + ' D4:4 D4:4 D4:4 D4:4', lead='STRINGS', bassv='TICK', key=('D', MAJOR), melody_diffs=4,
     extra_src='bass', extra_mod=((4, (0,)), (2, (0,)), (2, (0,))))      # the bass's steady pulse is the pads' beat: each beat on easy, each eighth on normal and hard
 
 # --- 3 Fur Elise (Beethoven, WoO 59): A minor, 3/8, a row a sixteenth; the whole piece ---
-ELISE = Piece('FUR ELISE', 'BEETHOVEN', 11, 4, 2, score('elise.mel'), score('elise.bass'), lead='ELEAD', key=('A', MINOR))
+ELISE = Piece('FUR ELISE', 'BEETHOVEN', 11, 4, 2, score('elise.mel'), score('elise.bass'), lead='ELEAD', key=('A', MINOR), grids=(4, 2))      # easy: a note a beat; normal: the eighths; hard: all
 
 # --- 4 Moonlight Sonata, first movement (Beethoven, Op. 27 no. 2): C sharp minor, 4/4, a row a twelfth of a beat (the triplets are 4 rows), 60 bpm; bars 4 to 27 ---
 MOONLIGHT = Piece('MOONLIGHT SONATA', 'BEETHOVEN', 5, 12, 6, score('moon.mel'), score('moon.bass'), inner=score('moon.inner'),
     lead='EPIANO', bassv='BASS', innerv='EPIANO', key=('C#', MINOR), extra_mod=((12, (0,)), (12, (0, 8)), (4, (0,))))      # easy: each beat; normal: the beat and the third triplet; hard: every triplet
 
 # --- 5 Badinerie (Bach, Orchestral Suite 2, BWV 1067): B minor, 2/4, a row a sixteenth, about 112 bpm; the flute's line ---
-BADINERIE = Piece('BADINERIE', 'BACH', 8, 4, 2, score('badinerie.mel'), score('badinerie.bass'), lead='FLUTE', key=('B', MINOR))
+BADINERIE = Piece('BADINERIE', 'BACH', 8, 4, 2, score('badinerie.mel'), score('badinerie.bass'), lead='FLUTE', key=('B', MINOR),
+    grids=(8, 4), gaps=(18, 10, 9))      # easy: a note a bar; normal: the beats; hard: nearly all (no two under 9 frames apart: 7.5 taps a second is not a game)
 
 # --- The title and the map: the Prelude in C (Bach, the Well-Tempered Clavier I, bars 1 to 24), looping; a row a sixteenth; the bass is the first note of each half bar an octave down ---
 def prelude_bass(mel):

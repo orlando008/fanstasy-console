@@ -65,8 +65,10 @@ const tapped = () => pressed(A) || pressed(B) || pressed(X) || pressed(Y) || pre
 // --- The rules (spec section 5) ---
 
 const LOOKAHEAD = 110, LEAD = 120, RESUME_LEAD = 90, WIN = [3, 6, 10], FLOW_START = 30;     // frames: how far ahead a pad shows, the count-in, the count-in after a pause, the windows
-const JUDGE = [{ name: 'PERFECT', flow: 5, pts: 100 }, { name: 'GOOD', flow: 3, pts: 70 }, { name: 'OK', flow: 1, pts: 40 }];
-const MISS_FLOW = -12, STRAY_FLOW = -2, GRADES = ['D', 'C', 'B', 'A', 'S'];
+// The flow moves a part of the way to a target with each pad: a perfect is 12% of the way to 100, a good 10% to 82, an ok 10% to 55, a miss 20% to 0 (so the
+// meter is the recent quality of the play, not a count: a player at 95% sits in flow state, one at 75% in deep water, one at 55% in flowing water).
+const JUDGE = [{ name: 'PERFECT', to: 100, k: 0.12, pts: 100 }, { name: 'GOOD', to: 82, k: 0.10, pts: 70 }, { name: 'OK', to: 55, k: 0.10, pts: 40 }];
+const MISS_K = 0.20, STRAY_FLOW = -2, GRADES = ['D', 'C', 'B', 'A', 'S'];
 
 /** The chart of a piece for a difficulty, from the ROM: { speed, notes: [{ f (the frame), pitch, dur (rows), r (0 waiting, 1 to 3 the judgement, 4 missed, 5 skipped) }] }. */
 function loadChart(i, diff) {
@@ -84,11 +86,11 @@ const flowName = () => ['CALM', 'FLOWING', 'DEEP', 'FLOW STATE'][multiplier() - 
 function hit(n, g) {
   n.r = g + 1; combo++; bestCombo = Math.max(bestCombo, combo); counts[g]++;
   score += JUDGE[g].pts * multiplier();
-  setFlow(flow + JUDGE[g].flow);
+  setFlow(flow + (JUDGE[g].to - flow) * JUDGE[g].k);
   show(JUDGE[g].name, g === 0 ? GOLD : g === 1 ? GREEN : CYAN); fx(plinkOf(g, n.pitch)); lastG = g;
   if (combo % 10 === 0) banner(`${combo} COMBO`, GOLD);
 }
-function miss(n) { n.r = 4; combo = 0; counts[3]++; setFlow(flow + MISS_FLOW); show('MISS', RED); }                       // the word in red says it: no sound, it would cut into the music's flow
+function miss(n) { n.r = 4; combo = 0; counts[3]++; setFlow(flow * (1 - MISS_K)); show('MISS', RED); }                       // the word in red says it: no sound, it would cut into the music's flow
 const LEVEL_COLOURS = [CYAN, GREEN, ORANGE, GOLD];
 function setFlow(v) {
   flow = clamp(v, 0, 100); if (flow >= 90) inFlow = true; else if (flow < 80) inFlow = false;
@@ -107,7 +109,7 @@ function tap(st) {
   hit(best, d <= WIN[0] ? 0 : d <= WIN[1] ? 1 : 2);
 }
 const accuracy = () => { const n = counts[0] + counts[1] + counts[2] + counts[3]; return n ? (counts[0] + 0.7 * counts[1] + 0.4 * counts[2]) / n : 0; };
-const gradeOf = (acc) => (acc >= 0.95 ? 4 : acc >= 0.85 ? 3 : acc >= 0.7 ? 2 : acc >= 0.5 ? 1 : 0);
+const gradeOf = (acc) => (acc >= 0.95 ? 4 : acc >= 0.85 ? 3 : acc >= 0.7 ? 2 : acc >= 0.6 ? 1 : 0);
 
 // --- State ---
 
@@ -119,8 +121,9 @@ let mapX = 0, mapY = 0, mapFromX = 0, mapFromY = 0, mapAge = 99, mapTod = [];
 const PIECES = ['PRACTICE: SCALE RUN', 'MINUET IN G', 'AIR ON THE G STRING', 'FUR ELISE', 'MOONLIGHT SONATA', 'BADINERIE'], DIFFS = ['EASY', 'NORMAL', 'HARD'];
 const SHORT = ['PRACTICE', 'MINUET', 'AIR', 'ELISE', 'MOONLIGHT', 'BADINERIE'], BY = ['FOR YOUR SPEAKERS', 'BACH', 'BACH', 'BEETHOVEN', 'BEETHOVEN', 'BACH'], WHEN = ['NOON', 'DAWN', 'MORNING', 'NOON', 'DUSK TO NIGHT', 'NIGHT'];
 /** What a chart's pads follow, in words: a player has to know which part of the music to tap along to. */
-const followsOf = (p, d) => [() => 'THE SCALE', () => 'THE MELODY', () => (d < 2 ? 'THE BASS PULSE' : 'THE PULSE, THE MELODY'), () => 'THE MELODY',
-  () => (d === 0 ? 'THE MELODY AND THE BEAT' : 'THE MELODY, THE ARPEGGIO'), () => 'THE FLUTE'][p]();
+const followsOf = (p, d) => [() => 'THE SCALE', () => ['THE MELODY, EVERY OTHER BEAT', 'THE MELODY ON THE BEAT', 'EVERY NOTE AND THE BASS'][d],
+  () => (d < 2 ? 'THE BASS PULSE' : 'THE PULSE, THE MELODY'), () => ['THE MELODY, A NOTE A BEAT', 'THE MELODY IN EIGHTHS', 'EVERY NOTE OF THE MELODY'][d],
+  () => (d === 0 ? 'THE MELODY AND THE BEAT' : 'THE MELODY, THE ARPEGGIO'), () => ['THE FLUTE, A NOTE A BAR', 'THE FLUTE ON THE BEAT', 'THE FLUTE, NEARLY EVERY NOTE'][d]][p]();
 const openN = () => Math.max(1, dget(OPEN_SLOT));                                   // the stretches open (1 to 5); the practice piece, stop 0, is always open
 const isOpen = (i) => i === 0 || i <= openN();
 let piece = 0, diff = 1, notes = [], speed = 8, tm = 0, musicAt = 0, started = false, lag = 0;

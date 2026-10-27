@@ -12,7 +12,7 @@ const save = (over) => { const s = new Int32Array(256); s[0] = 2; for (const [k,
   const vm = newGame(1), p = vm.probe(); vm.run(1);
   const all = []; for (let i = 0; i < 6; i++) for (let d = 0; d < 3; d++) all.push(p.followsOf(i, d));
   ok(all.every((t) => t && t.length <= 29), 'every stop and difficulty says what its pads follow, in words that fit the screen', `${Math.max(...all.map((t) => t.length))} characters at most`);
-  ok(p.followsOf(2, 0) === 'THE BASS PULSE' && p.followsOf(2, 2) === 'THE PULSE, THE MELODY' && p.followsOf(1, 1) === 'THE MELODY', 'the Air\'s easy chart follows its bass; its hard chart the bass and the melody; the Minuet its melody');
+  ok(p.followsOf(2, 0) === 'THE BASS PULSE' && p.followsOf(2, 2) === 'THE PULSE, THE MELODY' && p.followsOf(1, 1) === 'THE MELODY ON THE BEAT', 'the Air\'s easy chart follows its bass; its hard chart the bass and the melody; the Minuet\'s normal the melody on the beat');
 }
 
 // 2. The unlocks.

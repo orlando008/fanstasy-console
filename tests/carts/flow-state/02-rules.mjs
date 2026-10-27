@@ -29,7 +29,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   ok([7, 8, 9, 10].every((d) => at(d).r === 3) && [7, 10].every((d) => at(d, true).r === 3), '7 to 10 frames is OK');
   { const n = at(11, true); ok(n.r === 0 && p.flow === p.FLOW_START + p.STRAY_FLOW, 'a tap more than 10 frames early is stray: no pad is hit, 2 flow is lost', `${n.r} ${p.flow}`); }
   { p.startPiece(0, 2); const a = p.notes[8], b = p.notes[9]; p.tap((a.f + b.f) / 2 - 1); ok(a.r === 3 && b.r === 0 || a.r === 0 && b.r === 3, 'a tap hits one pad: the nearer', `${a.r} ${b.r}`); }
-  { p.startPiece(0, 1); const n = p.notes[2]; p.tap(n.f); p.tap(n.f + 1); ok(n.r === 1 && p.counts[0] === 1 && p.flow === 30 + 5 - 2, 'a second tap on the same pad is stray'); }
+  { p.startPiece(0, 1); const n = p.notes[2]; p.tap(n.f); p.tap(n.f + 1); ok(n.r === 1 && p.counts[0] === 1 && Math.abs(p.flow - (30 + 70 * 0.12 - 2)) < 1e-9, 'a second tap on the same pad is stray'); }
 }
 
 // 3. The flow, the multiplier and the points.
@@ -39,8 +39,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const mult = (v) => { p.startPiece(0, 1); p.flow = v; return p.multiplier(); };
   ok([0, 39].every((v) => mult(v) === 1) && [40, 69].every((v) => mult(v) === 2) && [70, 89].every((v) => mult(v) === 3), '0 to 39 is x1, 40 to 69 x2, 70 to 89 x3', `${[0, 39, 40, 69, 70, 89].map(mult)}`);
   { p.startPiece(0, 1); p.flow = 90; p.tap(p.notes[0].f); ok(p.inFlow && p.multiplier() === 4 && p.flowName() === 'FLOW STATE', '90 and over is FLOW STATE, x4'); }
-  { p.startPiece(0, 1); p.flow = 95; p.tap(p.notes[0].f); p.tap(p.notes[1].f);
-    const flowAfter = p.flow; ok(flowAfter === 100 && p.inFlow, 'the flow tops out at 100'); }
+  { p.startPiece(0, 1); p.flow = 100; p.tap(p.notes[0].f); ok(p.flow === 100 && p.inFlow, 'the flow tops out at 100'); }
   { p.startPiece(0, 1); p.flow = 100; p.tap(p.notes[0].f); for (let i = 0; i < 3; i++) p.tap(0.5 + 9999);   // strays
     ok(p.flow === 94 && p.inFlow, 'once in flow state it stays above 80', `${p.flow}`); }
   { p.startPiece(0, 1); p.flow = 100; p.tap(p.notes[0].f); for (let i = 0; i < 8; i++) p.tap(99999 + i); ok(p.flow === 84 && p.inFlow, 'an 8 stray taps later it still holds at 84', `${p.flow}`); }
@@ -48,9 +47,10 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const pts = (flow0, d) => { p.startPiece(0, 1); p.flow = flow0; p.tap(-50); p.flow = flow0; p.tap(p.notes[0].f + d); return p.score; };
   ok(pts(30, 0) === 100 && pts(45, 0) === 200 && pts(75, 0) === 300 && pts(95, 0) === 400, 'a perfect is 100 points times the multiplier', `${pts(30, 0)} ${pts(45, 0)} ${pts(75, 0)} ${pts(95, 0)}`);
   ok(pts(30, 5) === 70 && pts(30, 9) === 40, 'a good is 70 and an ok 40');
-  { p.startPiece(0, 1); p.tap(p.notes[0].f); ok(p.flow === 35, 'a perfect adds 5 flow'); p.startPiece(0, 1); p.tap(p.notes[0].f + 5); ok(p.flow === 33, 'a good adds 3'); p.startPiece(0, 1); p.tap(p.notes[0].f + 9); ok(p.flow === 31, 'an ok adds 1'); }
+  { const from = (d) => { p.startPiece(0, 1); p.tap(p.notes[0].f + d); return p.flow; };
+    ok(Math.abs(from(0) - (30 + 70 * 0.12)) < 1e-9, 'a perfect moves the flow 12% of the way to 100'); ok(Math.abs(from(5) - (30 + 52 * 0.10)) < 1e-9, 'a good 10% of the way to 82'); ok(Math.abs(from(9) - (30 + 25 * 0.10)) < 1e-9, 'an ok 10% of the way to 55'); }
   { p.startPiece(0, 1); const m = p.notes[0]; vm.run(1); vm.run(p.LEAD + 40);                                  // the first pad goes by with no tap
-    ok(m.r === 4 && p.flow === 30 + p.MISS_FLOW && p.counts[3] >= 1 && p.combo === 0, 'a pad 10 frames late is a MISS: 12 flow lost, the combo ends', `${m.r} ${p.flow}`); }
+    ok(m.r === 4 && Math.abs(p.flow - 30 * (1 - p.MISS_K)) < 1e-9 && p.counts[3] >= 1 && p.combo === 0, 'a pad 10 frames late is a MISS: a fifth of the flow is lost, the combo ends', `${m.r} ${p.flow}`); }
 }
 
 // 3b. A miss is a word, not a sound.
@@ -66,7 +66,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   p.startPiece(0, 1); for (let i = 0; i < 5; i++) p.tap(p.notes[i].f); ok(p.combo === 5 && p.bestCombo === 5, 'each hit adds to the combo');
   p.tap(-50); ok(p.combo === 5, 'a stray does not end it');
   p.startPiece(0, 1); p.counts[0] = 90; p.counts[1] = 10; ok(Math.abs(p.accuracy() - 0.97) < 1e-9, 'accuracy weighs perfect 1, good 0.7, ok 0.4 and miss 0', `${p.accuracy()}`);
-  ok(p.gradeOf(0.95) === 4 && p.gradeOf(0.949) === 3 && p.gradeOf(0.85) === 3 && p.gradeOf(0.7) === 2 && p.gradeOf(0.5) === 1 && p.gradeOf(0.49) === 0, 'grades: S 95, A 85, B 70, C 50, D below', `${[0.95, 0.949, 0.85, 0.7, 0.5, 0.49].map(p.gradeOf)}`);
+  ok(p.gradeOf(0.95) === 4 && p.gradeOf(0.949) === 3 && p.gradeOf(0.85) === 3 && p.gradeOf(0.7) === 2 && p.gradeOf(0.6) === 1 && p.gradeOf(0.59) === 0, 'grades: S 95, A 85, B 70, C 60, D below', `${[0.95, 0.949, 0.85, 0.7, 0.6, 0.59].map(p.gradeOf)}`);
   ok(p.GRADES.join('') === 'DCBAS', 'named D C B A S');
 }
 
