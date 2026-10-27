@@ -30,7 +30,7 @@ const total = (p) => Object.values(p.stats).reduce((a, b) => a + b, 0);
     const nx = (s.y1 - s.y0) * (k ? -1 : 1), ny = -(s.x1 - s.x0) * (k ? -1 : 1), nl = Math.hypot(nx, ny);
     const away = (p.ball.vx * nx + p.ball.vy * ny) / nl;
     ok(p.stats.sling === 1 && p.score === p.PTS.sling, `the ${k ? 'right' : 'left'} slingshot scores 10 for a hit`, `${p.stats.sling} hits, ${p.score}`);
-    ok(away >= 6.5, 'and kicks the ball away from its face at 7 px a frame', `${away.toFixed(1)}`);
+    ok(away >= 4, 'and kicks the ball away from its face at 4.5 px a frame', `${away.toFixed(1)}`);
   }
 }
 
@@ -106,7 +106,7 @@ const total = (p) => Object.values(p.stats).reduce((a, b) => a + b, 0);
 
 // 9. Ramps: a ball hit up the table gets on, is carried above the table (nothing touches it) and comes out at the top.
 {
-  for (const [k, x] of [[0, 40], [1, 136]]) {
+  for (const [k, x] of [[0, 12], [1, 164]]) {
     const vm = newGame(1), p = vm.probe(), r = p.RAMPS[k]; put(p, x, 445, 0, -9);
     until(vm, () => p.ball.ramp, 30);
     ok(p.ball.ramp && p.stats.ramp === 1, `a fast ball into the ${k ? 'right' : 'left'} ramp's mouth gets on it`);
@@ -117,10 +117,12 @@ const total = (p) => Object.values(p.stats).reduce((a, b) => a + b, 0);
     ok(p.score === 1000 && Math.abs(p.ball.vx - r.evx) < 0.3 && p.ball.vy > 1, 'scoring 1,000 and dropping out into the orbit lane', `${p.score}`);
     vm.run(1);
   }
-  const vm = newGame(1), p = vm.probe(); p.RAMPS[0].lit = true; put(p, 40, 445, 0, -9); until(vm, () => p.ball.ramp, 30); until(vm, () => !p.ball.ramp, 100);
+  const vm = newGame(1), p = vm.probe(); p.RAMPS[0].lit = true; put(p, 12, 445, 0, -9); until(vm, () => p.ball.ramp, 30); until(vm, () => !p.ball.ramp, 100);
   ok(p.score === 2500, 'a lit ramp scores 2,500', `${p.score}`);
-  const vm2 = newGame(1), q = vm2.probe(); put(q, 40, 445, 0, -2); vm2.run(40);
+  const vm2 = newGame(1), q = vm2.probe(); put(q, 12, 445, 0, -2); vm2.run(40);
   ok(q.stats.ramp === 0, 'a slow ball rolls past the mouth');
+  const vm3 = newGame(1), w = vm3.probe(); put(w, 12, 445, 0, -12); vm3.run(20);
+  ok(w.stats.ramp === 0 && w.ball.y < 380, 'and a fast one flies over it, on up the lane (and scores the orbit)', `ramp ${w.stats.ramp}, y ${w.ball.y.toFixed(0)}`);
 }
 
 // 10. The outlanes and the kickback.

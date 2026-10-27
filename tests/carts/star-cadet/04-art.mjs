@@ -67,7 +67,7 @@ ok(ppu.layers[0].y === Math.round(p.camY) && ppu.layers[1].y === Math.round(p.ca
   let ball = -1; for (let i = 0; i < P.oamCount; i++) if (P.oamTile[i] === A.sprites.ball.tile) ball = i;
   ok(ball >= 0 && P.oamX[ball] + 8 === Math.round(q.ball.x), 'the ball is a sprite, centred on the ball');
   ok(P.oamPrio[ball] === 2, 'at priority 2, under a ramp');
-  put(q, 40, 445, 0, -9); for (let i = 0; i < 40 && !q.ball.ramp; i++) t.run(1);
+  put(q, 12, 445, 0, -9); for (let i = 0; i < 40 && !q.ball.ramp; i++) t.run(1);
   t.run(1); let b2 = -1; for (let i = 0; i < P.oamCount; i++) if (P.oamTile[i] === A.sprites.ball.tile) b2 = i;
   ok(q.ball.ramp && P.oamPrio[b2] === 3, 'and on a ramp at priority 3, over it');
 }

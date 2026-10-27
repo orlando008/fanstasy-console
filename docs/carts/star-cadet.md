@@ -52,13 +52,13 @@ The flippers are laid out for two hands, as on a real table: a thumb on the D-pa
 | Plunger lane | x 176 to 192, from y 612 up to y 96 | The ball waits on the lane's floor (y 607); the top arch turns it left |
 | Top arch | y 0 to 96 | A half circle of radius 96 centred at x 96 (16 segments) |
 | Top lanes | y 62, x 52, 88 and 124 | Three rollover lanes: all three lit gives the next bonus multiplier (x2 to x6) |
-| Gate (kickout) | (88, 104), radius 7 | A hole: the ball is swallowed, scores 5,000, is held three quarters of a second and spat out down the table, to the other side each time (with the three mission lamps lit it starts the player's mission) |
+| Gate (kickout) | (88, 104), radius 10 | A hole: the ball is swallowed, scores 5,000, is held three quarters of a second and spat out down the table, to the other side each time (with the three mission lamps lit it starts the player's mission) |
 | Pop bumpers | (66, 168), (110, 168), (88, 204) | Three round bumpers, radius 11: they throw the ball away at 6 px a frame or more |
-| Orbits | lanes 24 wide on each side, x 0 to 24 and x 152 to 176, y 150 to 330 | A ball shot up one scores the orbit (2,000); the left one has a **spinner** at y 226 to 254. Slanted **wire gates** (a rail that stops only a ball coming down) at the top and at the bottom of each lane turn a ball from the plunger, and a ball coming out of an orbit, into the table rather than into the outlane |
+| Orbits | lanes 24 wide on each side, x 0 to 24 and x 152 to 176, from y 410 up to y 158 (the guides come down to y 410, so a ball shot up the lane stays in it) | A ball shot up one scores the orbit (2,000); the left one has a **spinner** at y 226 to 254. Slanted **wire gates** (a rail that stops only a ball coming down) at the top of each lane and under the end of its guide (y 418 to 430) turn a ball from the plunger, and a ball coming out of an orbit or a ramp, into the table rather than into the outlane |
 | Drop targets | three, slanted, from (71, 287) to (100, 296) | A bank of three: each is 1,000, a cleared bank 5,000, and it comes back up after 1.5 seconds. (They are slanted so a ball cannot balance on them.) |
-| Standup targets | the inner guide of each orbit, at y 190 to 204 and y 262 to 276 | Four: the first hit of each lights it (500); all four lit counts one set and they start again (a full set lights the first mission lamp) |
-| Ramps | left from (40, 420) to (12, 165), right from (136, 420) to (164, 165) | A ball hit up the table at 4 px a frame or more, into the mouth, is carried along the ramp over the table (it touches nothing) and comes out at the top of the orbit lane; each has a lit award (2,500 instead of 1,000) |
-| Slingshots | left face (32, 480) to (44, 545), right face (144, 480) to (132, 545) | Kick the ball away from the face at 7 px a frame or more |
+| Standup targets | the inner guide of each orbit, at y 184 to 206 and y 258 to 280 (22 px each: the first, 14 px, were hit about three times a game) | Four: the first hit of each lights it (500); all four lit counts one set and they start again (a full set lights the first mission lamp) |
+| Ramps | left from (12, 420) to (12, 165), right from (164, 420) to (164, 165): they run up the orbit lanes, whose balls are drawn over them | A ball hit up the table at 3.5 to 9.5 px a frame, into the mouth, is carried along the ramp over the table (it touches nothing) and comes out at the top of the lane; a faster ball flies over the mouth and on up the lane (an orbit); each ramp has a lit award (2,500 instead of 1,000). When the **gate is open** (all three lamps lit, or the mission needs it) the ramp flies on and ends in the gate |
+| Slingshots | left face (32, 480) to (44, 545), right face (144, 480) to (132, 545) | Kick the ball away from the face at 4.5 px a frame or more (at 7, and still at 5.5, two slingshots kept a ball bouncing between them for ever, above the flippers) |
 | Inlanes, outlanes | y 480 to 590 each side, mirrored about x 88 | An inlane guide from (16, 492) down to (16, 540) and on to the flipper's pivot; the channel inside it, between it and the slingshot, is the **inlane** and feeds the flipper; the channel outside it, 16 px wide, is the **outlane** and drains. The left outlane has a **kickback** (once a ball) |
 | Flippers | pivots (48, 588) and (128, 588) | Length 34, rest 30 degrees below horizontal, 28 degrees above when up; the gap between the tips at rest is 21 |
 | Drain | below y 632 (outside the plunger lane) | The ball is lost |
@@ -75,7 +75,7 @@ The flippers are laid out for two hands, as on a real table: a thumb on the D-pa
 | Maximum speed | 14 pixels a frame |
 | Wall bounce (the share of the normal speed kept) | 0.45 |
 | Pop bumper | kicks the ball away at 6 pixels a frame (and always at least 5) |
-| Slingshot | kicks at 7, along the slingshot's normal |
+| Slingshot | kicks at 4.5, along the slingshot's normal |
 | Rolling friction | none for now (a ball's energy is kept except in bounces) |
 | Flipper | swings up in 4 frames (0.25 radians a frame, 8.6 pixels a frame at the tip) and down in 6; bounce 0.7 against the flipper's own speed, so a ball hit with the tip leaves at about 13 pixels a frame and one hit near the pivot at about 5 |
 | Plunger | held 60 frames is full power; the launch speed is 4 + 10 x power pixels a frame |
@@ -91,17 +91,17 @@ The flippers are laid out for two hands, as on a real table: a thumb on the D-pa
 
 | Rank | Mission | Objective (in the time given) |
 |---|---|---|
-| 1 Cadet | Launch Drill | 15 hits on the pop bumpers (60 s) |
-| 2 Ensign | Asteroid Belt | all four standup targets, then the drop bank (60 s) |
-| 3 Pilot | Slalom Run | left ramp, right ramp, left, right (75 s) |
-| 4 Lieutenant | Orbit Lock | the left orbit 3 times (75 s) |
-| 5 Commander | Docking | 5 ramp shots, then the gate (90 s): unlocks multiball |
+| 1 Cadet | Launch Drill | 10 hits on the pop bumpers (75 s) |
+| 2 Ensign | Asteroid Belt | three standup targets, then three drop targets (75 s) |
+| 3 Pilot | Slalom Run | four ramp shots, either side (75 s) |
+| 4 Lieutenant | Orbit Lock | 3 orbits, either side (90 s) |
+| 5 Commander | Docking | 5 ramp shots, then a ramp into the open gate (90 s) |
 | 6 Captain | Fuel Run | 50 spins of the spinner (60 s) |
-| 7 Commodore | Wormhole | the gate 3 times (75 s) |
+| 7 Commodore | Wormhole | the gate 3 times, by ramp (90 s) |
 | 8 Admiral | Battle Fleet | a three ball multiball: 3 jackpots (a jackpot is a ramp shot while 2 or more balls are in play) |
-| 9 Fleet Admiral | Mothership | every shot of the table once, in any order (120 s), then a final jackpot |
+| 9 Fleet Admiral | Mothership | every one of the eleven shots of the table once, in any order (150 s), then a final ramp into the gate |
 
-To start a mission: light the three **mission lamps** (a full set of the four standup targets, the drop bank, and a ramp shot; the panel says GATE LIT and the gate glows) and shoot the **gate**. The banner at the top of the table shows the mission, what is left and the time; a ball lost ends the mission. Completing it promotes the player one rank (500,000 x the new rank's number as a prize, an extra ball on reaching Pilot, Captain and Fleet Admiral), clears the lamps and changes the table's light; running out of time (or losing the ball, or the multiball ending) fails it with no penalty, and the lamps stay lit, so the gate starts it again. The Admiral's mission is a **multiball**: two more balls come out of the gate behind the first (no ball save), and a ramp shot while two or more balls are in play is a jackpot of 1,000,000. Fleet Admiral's mission completed ends the career (the prize is 5,000,000): every later gate with the lamps lit is a jackpot of 5,000,000. The **light** of the table follows the rank, from a dim cool blue (Cadet) to a warm bright gold (Fleet Admiral): the floor's palette is rewritten.
+To start a mission: light the three **mission lamps** (two standup targets lit, two drop targets down, and a ramp shot; a full set of the standups or the whole bank lights its lamp at once; the panel says GATE LIT and the gate glows) and shoot the **gate**: it is hit by a ball that finds it, and **a ramp flies on into it while it is lit**, as it does while a mission needs it. The banner at the top of the table shows the mission, what is left and the time; a ball lost ends the mission. Completing it promotes the player one rank (500,000 x the new rank's number as a prize, an extra ball on reaching Pilot, Captain and Fleet Admiral), clears the lamps and changes the table's light; running out of time (or losing the ball, or the multiball ending) fails it with no penalty, and the lamps stay lit, so the gate starts it again. The Admiral's mission is a **multiball**: two more balls come out of the gate behind the first (no ball save), and a ramp shot while two or more balls are in play is a jackpot of 1,000,000. Fleet Admiral's mission completed ends the career (the prize is 5,000,000): every later gate with the lamps lit is a jackpot of 5,000,000. The **light** of the table follows the rank, from a dim cool blue (Cadet) to a warm bright gold (Fleet Admiral): the floor's palette is rewritten.
 
 **Tilt.** A tilt ends the ball at once with no bonus; a nudge is a push of the table, not of the ball, and the camera shakes.
 

@@ -36,7 +36,7 @@ const heard = (vm) => { const l = sfxLog(vm); heard.bad = l.filter(([, ch]) => c
   put(p, 72, 255, 0, 3); vm.run(30); h = heard(vm); ok(h.includes(p.SFX.drop), 'a drop target');
   p.laneLit = [true, true, false]; put(p, 124, 30, 0, 2); vm.run(25); h = heard(vm); ok(h.includes(p.SFX.lane) && h.includes(p.SFX.laneSet), 'a lane ticks, and a full set of lanes has its chime');
   put(p, 12, 345, 0, -8); vm.run(50); h = heard(vm); ok(h.includes(p.SFX.spin) && h.includes(p.SFX.orbit), 'the spinner ticks and an orbit swoops');
-  put(p, 40, 445, 0, -9); vm.run(50); h = heard(vm); ok(h.includes(p.SFX.ramp), 'a ramp whooshes');
+  put(p, 12, 445, 0, -9); vm.run(50); h = heard(vm); ok(h.includes(p.SFX.ramp), 'a ramp whooshes');
   put(p, 88, 140, 0, -4); vm.run(14); h = heard(vm); ok(h.includes(p.SFX.gateIn), 'the gate swallows the ball'); vm.run(60); h = heard(vm); ok(h.includes(p.SFX.gateOut), 'and spits it out');
   put(p, 8, 540, 0, 3); vm.run(40); h = heard(vm); ok(h.includes(p.SFX.kick), 'the kickback kicks');
   put(p, 88, 700); vm.run(2); h = heard(vm); ok(h.includes(p.SFX.drain), 'a ball drains');
@@ -58,8 +58,8 @@ const heard = (vm) => { const l = sfxLog(vm); heard.bad = l.filter(([, ch]) => c
   const { vm, p } = game(); heard(vm);
   didv(vm, p, 'standupSet'); ok(heard(vm).includes(p.SFX.lamp), 'a mission lamp pings');
   p.lamps = [true, true, true]; didv(vm, p, 'gate'); ok(heard(vm).includes(p.SFX.mission), 'a mission starts with a horn');
-  didv(vm, p, ...Array(15).fill('bump')); ok(heard(vm).includes(p.SFX.rankUp), 'a rank up has its fanfare');
-  p.lamps = [true, true, true]; did(p, 'gate'); heard(vm); p.mission.left = 2; vm.run(3); ok(heard(vm).includes(p.SFX.fail), 'a failed mission sighs');
+  didv(vm, p, ...Array(10).fill('bump')); ok(heard(vm).includes(p.SFX.rankUp), 'a rank up has its fanfare');
+  p.lamps = [true, true, true]; did(p, 'gate'); vm.run(60, M('DOWN')); vm.run(5); heard(vm); p.mission.left = 2; vm.run(3); ok(heard(vm).includes(p.SFX.fail), 'a failed mission sighs');
   const j = game(7); j.p.lamps = [true, true, true]; put(j.p, 88, 124, 0, -4); j.vm.run(8); heard(j.vm); didv(j.vm, j.p, 'jackpot'); ok(heard(j.vm).includes(j.p.SFX.jackpot), 'a jackpot has its hit');
 }
 {
@@ -81,9 +81,9 @@ const heard = (vm) => { const l = sfxLog(vm); heard.bad = l.filter(([, ch]) => c
   ok(song(0, true).playing === S.mission && song(5, true).playing === S.mission, 'a mission has its own song, quicker');
   ok(song(7, true).playing === S.multi, 'the Admiral\'s multiball its heavier one');
   ok(song(8, true).playing === S.final, 'and the last mission its march');
-  const r = song(0, true); did(r.p, ...Array(15).fill('bump')); r.vm.run(2);
+  const r = song(0, true); did(r.p, ...Array(10).fill('bump')); r.vm.run(2);
   ok(r.p.playing === S.play, 'a completed mission goes back to the table\'s song (a Cadet is an Ensign: still the first)');
-  const f = song(2, true); f.p.mission.left = 2; f.vm.run(3); ok(f.p.playing === S.play, 'and a failed one too');
+  const f = song(2, true); f.vm.run(60, M('DOWN')); f.vm.run(5); f.p.mission.left = 2; f.vm.run(3); ok(f.p.playing === S.play, 'and a failed one too');
   const up = game(2); up.vm.run(3); up.p.lamps = [true, true, true]; did(up.p, 'gate'); up.vm.run(2); musicLog(up.vm); did(up.p, ...Array(3).fill('x'), 'rampL'); // not the right mission: no change
   const rk3 = game(2); rk3.p.lamps = [true, true, true]; did(rk3.p, 'gate'); did(rk3.p, 'rampL', 'rampR', 'rampL', 'rampR'); rk3.vm.run(2);
   ok(rk3.p.rk === 3 && rk3.p.playing === S.play + 1, 'a promotion to Lieutenant changes the song to the one with the lead');

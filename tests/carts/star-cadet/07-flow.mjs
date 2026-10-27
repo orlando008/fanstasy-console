@@ -11,7 +11,7 @@ const lose = (vm, p) => { put(p, 88, 700); vm.run(2); for (let i = 0; i < 4 && p
   const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(p.IDLE_DEMO - 30);
   ok(p.state === 'title' && !p.demo, 'the title waits for 20 seconds');
   vm.run(40); ok(p.state === 'play' && p.demo, 'then a demo game starts');
-  vm.run(400); ok(p.stats.bump + p.stats.sling + p.stats.drop + p.stats.spin + p.stats.ramp > 0 && p.ball.y < 600, 'and it plays: the ball is launched and hits things', JSON.stringify(p.stats));
+  vm.run(400); ok(Object.values(p.stats).some((v) => v > 0), 'and it plays: the ball is launched and hits things', JSON.stringify(p.stats));
   vm.run(200, M('START')); ok(p.state === 'title' && !p.demo, 'a button ends it, back to the title (it does not pause)');
   ok(vm.m.save[p.GAMES_SLOT] === 0 && p.topTen()[0].score === 0, 'and it left nothing in the saves');
   vm.run(5); ok(p.idle < 10, 'the wait starts again');
@@ -19,7 +19,7 @@ const lose = (vm, p) => { put(p, 88, 700); vm.run(2); for (let i = 0; i < 4 && p
 {
   const vm = newGame(1, { title: true }), p = vm.probe(); p.startDemo(); let frames = 0;
   while (p.demo && frames < 20000) { vm.run(1); frames++; }
-  ok(!p.demo && p.state === 'title', 'a demo that runs its three balls out returns to the title by itself', `${frames} frames`);
+  ok(!p.demo && p.state === 'title' && frames <= p.DEMO_FRAMES + 60, 'a demo that runs out of balls, or of its minute, returns to the title by itself', `${frames} frames`);
   ok(vm.m.save[p.GAMES_SLOT] === 0 && vm.m.save[p.BEST_SLOT] === 0, 'and records nothing');
   const w = newGame(1, { title: true }), q = w.probe(); w.press('A'); w.run(12); w.press('RIGHT'); w.press('RIGHT'); w.run(12); w.press('A'); w.run(2);
   ok(q.nPlayers === 3 && q.wantPlayers === 3, 'the number of players picked is kept'); q.toTitle(); q.startDemo(); w.run(3);

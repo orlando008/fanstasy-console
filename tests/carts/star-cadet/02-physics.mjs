@@ -16,7 +16,7 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy 
 
 // 2. Walls: a bounce keeps the speed along the wall and loses some across it.
 {
-  const vm = newGame(1), p = vm.probe(), K = p.K; put(p, 20, 400, -6, 0); vm.run(8);
+  const vm = newGame(1), p = vm.probe(), K = p.K; put(p, 20, 450, -6, 0); vm.run(8);
   ok(p.ball.vx > 0 && Math.abs(p.ball.vx - 6 * K.WALL_E) < 0.5, 'a ball hitting the left wall bounces back with the wall\'s share of its speed', `vx ${p.ball.vx.toFixed(2)}`);
   ok(p.ball.x >= K.BR - 1e-6, 'and never goes into the wall', `x ${p.ball.x.toFixed(2)}`);
 }

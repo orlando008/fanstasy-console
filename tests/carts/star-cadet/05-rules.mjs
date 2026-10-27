@@ -46,7 +46,7 @@ const launch = (vm, n = 60) => { vm.run(n, M('DOWN')); vm.run(2); }; // a full p
   launch(vm); ok(p.saveT > 0 && p.saveT <= p.SAVE_FRAMES, 'the launch starts it', `${p.saveT} frames`);
   lose(vm, p); ok(p.balls === 3 && p.inLane() && p.saved && p.msg === 'BALL SAVED', 'a ball lost in that time comes back to the plunger and no ball is used');
   launch(vm); lose(vm, p); ok(p.balls === 2, 'but only once: the next loss counts');
-  const vm2 = newGame(1), q = vm2.probe(); launch(vm2); vm2.run(q.SAVE_FRAMES + 5); put(q, 88, 700); vm2.run(2);
+  const vm2 = newGame(1), q = vm2.probe(); launch(vm2); vm2.run(q.SAVE_FRAMES + 5); q.bonus = 0; put(q, 88, 700); vm2.run(2);
   ok(q.balls === 2, 'and after 12 seconds a lost ball is lost', `${q.balls}`);
 }
 

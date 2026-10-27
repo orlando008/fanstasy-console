@@ -293,28 +293,28 @@ for k in range(9):
     frames.append(im)
 art.animation('flip', frames, pal=flipp, region='spr')
 
-# The slingshots: a rubber band along the face in front of a wedge, 32 x 96, at rest and hit; the right one is mirrored
-for name, hot in (('sling', False), ('sling_hit', True)):
+# The slingshots: a dark wedge with a rubber band stretched along its face between two steel posts, 32 x 96, at rest (red) and hit (hot orange);
+# the right one is mirrored
+for name, ramp_ in (('sling', bump.rest), ('sling_hit', bump.hot)):
     im = Img(32, 96)
     s = G['SLINGS'][0]
     x0, y0, x1, y1 = s['x0'] - 22, s['y0'] - 476, s['x1'] - 22, s['y1'] - 476       # the face, placed in the picture
-    # the wedge: the triangle between the face and the vertical back
-    for y in range(96):
+    for y in range(96):                                                              # the wedge: the triangle between the face and the vertical back
         for x in range(32):
             px, py = x + 0.5, y + 0.5
             if y0 <= py <= 545 - 476 and x >= x0 - 0.5:
                 fx_ = x0 + (x1 - x0) * (py - y0) / (y1 - y0)
-                if px <= fx_ - 1.4: put(im, x, y, parts.steel[1] if px < x0 + 1.5 else parts.steel[0])
-    capsule(im, x0 + 0.5, y0, x1 + 0.5, y1, 1.9, parts.edge)
-    capsule(im, x0 + 0.5, y0, x1 + 0.5, y1, 1.4, parts.gold[2] if hot else parts.green[1] if False else parts.cyan[1])
-    capsule(im, x0 + 0.2, y0, x1 + 0.2, y1, 0.5, parts.gold[1] if hot else parts.cyan[0])
-    art.big_sprite(name, im, pal=parts, region='spr')
+                if px <= fx_ - 2.2: put(im, x, y, bump.cap[0] if px > x0 + 2.5 else bump.cap[1])
+    capsule(im, x0 + 0.5, y0, x1 + 0.5, y1, 2.4, bump.edge)                            # the rubber: an ink edge, the band, a highlight
+    capsule(im, x0 + 0.5, y0, x1 + 0.5, y1, 1.8, lambda x, y, t, d, side: ramp_[3] if side < -0.7 else ramp_[2] if side < 0.8 else ramp_[1])
+    for (px_, py_) in ((x0 + 0.5, y0), (x1 + 0.5, y1)): sphere(im, px_, py_, 2.6, bump.cap, spec=bump.white, edge=bump.edge)   # the posts
+    art.big_sprite(name, im, pal=bump, region='spr')
 
-# The standup targets: 16 x 16, a bar on the left (a left guide's, facing right; mirrored for the right guide), dark and lit
+# The standup targets: 32 x 32, a bar 22 px tall on the left (a left guide's, facing right; mirrored for the right guide), dark and lit
 for name, hot in (('stand', False), ('stand_hit', True)):
-    im = Img(16, 16)
-    capsule(im, 3, 1.5, 3, 14.5, 3.0, parts.edge)
-    capsule(im, 3, 1.5, 3, 14.5, 2.3, (lambda x, y, t, d, side: parts.gold[2] if side < -0.8 and False else (parts.gold[2] if x < 3 else parts.gold[1]) if hot else (parts.green[2] if x < 3 else parts.green[1])))
+    im = Img(32, 32)
+    capsule(im, 3, 5.5, 3, 26.5, 3.0, parts.edge)
+    capsule(im, 3, 5.5, 3, 26.5, 2.3, (lambda x, y, t, d, side: (parts.gold[2] if x < 3 else parts.gold[1]) if hot else (parts.green[2] if x < 3 else parts.green[1])))
     art.sprite(name, im, pal=parts, region='spr')
 
 # The drop targets: 16 x 16, a slanted bar standing up, and the same lying flat (down)
