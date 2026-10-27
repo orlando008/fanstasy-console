@@ -44,7 +44,7 @@
       "name": "star-cadet",
       "title": "Star Cadet Pinball",
       "author": "NOVA-16",
-      "description": "A tall scrolling pinball table: ranks, missions and 1 to 4 players.",
+      "description": "A pinball table that scrolls: nine ranks, missions, one thumb for each flipper and 1 to 4 players.",
       "genre": "Arcade",
       "players": "1-4",
       "label": "carts/labels/star-cadet.png",

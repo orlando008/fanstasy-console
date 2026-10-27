@@ -1,7 +1,7 @@
 # Star Cadet Pinball: Cart Specification
 
-**Version:** 0.2 (spec agreed in outline)
-**Status:** Spec written; scaffolded, the game is still the starter's placeholder
+**Version:** 1.0
+**Status:** Built (steps 1 to 8), released in the Library
 **Cart source:** `carts/src/star-cadet/` → `carts/star-cadet.nova`
 
 ---
@@ -180,7 +180,7 @@ BG0 the table (a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the
 
 | Asset | Budget |
 |---|---|
-| Code | 49.8 KB of the 64 KB limit after step 7 (76%: the audio, the flow polish and the balance need a few KB more; `strip` and `mangle` in `meta.json` would give back about a fifth) (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Code | 52.2 KB of the 64 KB limit after step 8 (80%: the audio, the flow polish and the balance need a few KB more; `strip` and `mangle` in `meta.json` would give back about a fifth) (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
 | Tiles | 848 of 1,024 after step 6: 465 of the 479 for the background (the floor 16, the decor and ramps about 400, the stars about 40: the table's 1,920 map cells share by repeating and flipping) and 383 of the 544 for sprites (136 of them the logo) |
 | Sprites | 45 of the 128 in OAM in play, at most 11 on a line (of 32): the ball, 2 flippers of 3 to 8 pieces, 3 bumpers, 2 slingshots of 8 pieces, 4 standups, 3 drops, the spinner, the plunger and its spring, up to 7 lamps with their glows. Up to 3 balls with the multiball |
 | ROM | the table's data if it is larger than a few KB |
@@ -325,6 +325,32 @@ Each step: build it, run `node tools/check.js star-cadet` and `node tools/test.j
   the mission (and goes back), the title and the demo have the title's song, the game over stops it, and it is not restarted every frame.
 - **Results:** 8 test files; the soak is clean; 18 of 35 effects and 2 of the 7 songs are heard in 8,000 frames of random buttons (the others need a rank or a mission: the tests play them).
   I cannot hear any of it: the numbers say it is quiet, clear of the music's lead and not piercing; whether it is pleasant is for a person to judge.
+
+### Step 8 built: balance and release
+
+The balance was done with two tools in `tests/carts/star-cadet/`: **`aim.mjs`**, which plays every flip once (a ball at rest on a flipper at each distance from the pivot, the flipper pressed) and
+lists what the ball hits, and **`missions.mjs`**, which plays each mission from its start at several skills. `bot.mjs` is now a player that cradles the ball on the raised flipper, lets it down and
+flips when it has rolled to the distance that sends it where the game wants (the lamps first, then a ramp into the gate; or the mission's objective); `skill` is the noise on that distance, a late
+reaction and a chance to miss. What they found, and the changes (the first numbers were the first draft's):
+
+- **No flip reached a ramp, an orbit or the gate.** The ramp mouths were where the geometry looked good; the shots land elsewhere (a left flipper's go up the right wall, the right one's up the left).
+  The ramps now start at the lanes (x 12 and 164, y 420) and take any ball hit up at 3.5 to 8.6 px a frame: **a window of 10 px of the flipper** (18 to 27 from the pivot). A faster ball flies over the
+  mouth and up the lane, an orbit (a 2 px window), which the guides, now down to y 410, keep in the lane. The gate was reachable only by chance (bumpers and the drop bank fill the middle): while it
+  is lit, or the mission needs it, **a ramp flies on into it**.
+- **Traps.** The bot found a ball standing still for three minutes in a V between a wire gate and an orbit guide; a test that puts a ball at rest on a grid of places (`09-traps.mjs`) and the bot found
+  two more (the lower wire gates against the longer guides; two slingshots bouncing a ball between them for ever, even at 5.5: **4.5** now). Slanted rails end clear of the walls.
+- **Ball life.** The bot's balls lived 10 to 60 seconds, which cannot finish a 75 second mission: **a lost ball puts a mission on hold** (its time, on the next ball; a multiball cannot be held), and the
+  clock stops while the ball waits at the plunger.
+- **Lamps and goals made reachable** (the bot hit the standups about three times a game): the standup targets are 22 px (not 14); the first lamp is two standup targets lit (or a full set), the second two
+  drop targets (or the bank); the missions are 10 bumper hits (75 s), three standups then three drop targets (90 s), three ramps (90 s), two orbits (90 s), three ramps then the gate (120 s), 30 spins (90 s; the
+  spinner gives a spin each 4 px, not 8), two gates (120 s), three jackpots (90 s) and the eleven shots (150 s). The attract mode ends after a minute.
+- **Results** (the bot, 4 tries each, at skill 0.5, 0.8 and 0.95; a four try table is noisy, and a bot is not a person): the first missions are completed most of the time (Launch Drill 100, 0 and 100 %,
+  Asteroid Belt 50, 0 and 75 %), the middle ones sometimes (Orbit Lock and Fuel Run 0, 0 and 100 %, Wormhole 75, 0 and 100 %), the multiball and the last one rarely: the shape of a climb. The 0 % at 0.8 is
+  one bad bot (it lets a ball fall between the flippers three times running); the 0.95 bot is as good as this bot gets. Nothing here is a person's feel: only a person can say whether 75 seconds for ten
+  bumper hits is generous or stingy, and everything is a constant at the top of `code.js` (`MISSIONS`, `LAMP_*`, `RAMP_*`, `SAVE_FRAMES`, `SLING_KICK`).
+- The slingshots were redrawn (a rubber band between two posts, red at rest and orange when hit), the title scrolls only over the top of the table (the floor's logo would sit behind the menu), and the
+  Library label is the title screen. `README.md` has the final row; `docs/dev/playbook.md` has a section 11 on what this game taught.
+- `tests/carts/star-cadet/09-traps.mjs` and the updated `06-missions.mjs` (the lamps by count, a ramp into the gate, a mission on hold, the new goals) are new; 9 test files in all.
 
 ## 16. Open questions
 

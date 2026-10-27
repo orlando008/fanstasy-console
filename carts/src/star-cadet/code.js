@@ -646,7 +646,7 @@ function draw() {
   if (!inPlay && !menu) { bg(0, { show: false }); bg(1, { show: false }); }
   bg(2, { y: Math.round(clock * 0.25) });
   if (inPlay) drawPlay();
-  else if (menu) { drawTable(Math.round(208 + 208 * Math.sin(clock / 300))); drawMenuPanel(); if (state === 'title') drawTitle(); else drawPlayers(); }
+  else if (menu) { drawTable(Math.round(96 + 96 * Math.sin(clock / 300))); drawMenuPanel(); if (state === 'title') drawTitle(); else drawPlayers(); }
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
   if (state === 'turn') drawTurn();
