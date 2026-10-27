@@ -27,14 +27,11 @@ ok(audio.songs[0].loop !== null && audio.songs[0].loop !== undefined, 'the title
 for (let i = 0; i < count; i++) {
   const c = chart(i), s = song(i + 1), tag = `piece ${i}`;
   ok(c.speed === s.speed, `${tag}: the chart and the song have the same speed`, `${c.speed} ${s.speed}`);
-  const bad = c.notes.filter((n) => {
-    if (n.f % c.speed) return true;
-    const cell = s.rows[n.f / c.speed] && s.rows[n.f / c.speed][0];
-    return !cell || !cell.n || pitchOf(cell.n) !== n.pitch;
-  });
-  ok(bad.length === 0, `${tag}: every pad is on the melody's note (same row, same pitch)`, bad.length ? `${bad.length} off, the first at frame ${bad[0].f}` : `${c.notes.length} pads`);
-  const melody = s.rows.filter((r) => r[0] && r[0].n && r[0].n !== 'OFF').length;
-  ok(melody === c.notes.length, `${tag}: and every melody note has a pad`, `${melody} notes, ${c.notes.length} pads`);
+  const at = (n, ch) => { const cell = s.rows[n.f / c.speed] && s.rows[n.f / c.speed][ch]; return cell && cell.n && pitchOf(cell.n) === n.pitch; };
+  const bad = c.notes.filter((n) => n.f % c.speed || !(at(n, 0) || at(n, 1) || at(n, 2)));              // a pad is on the melody's note, or (the Moonlight's triplets, the Air's pulse) the inner voice's or the bass's
+  ok(bad.length === 0, `${tag}: every pad is on a note of its song (same row, same pitch)`, bad.length ? `${bad.length} off, the first at frame ${bad[0].f}` : `${c.notes.length} pads`);
+  const melody = s.rows.filter((r) => r[0] && r[0].n && r[0].n !== 'OFF').length, onMelody = c.notes.filter((n) => at(n, 0)).length;
+  ok(melody === onMelody, `${tag}: and every melody note has a pad`, `${melody} notes, ${onMelody} pads on them, ${c.notes.length - onMelody} on the inner voice`);
   const secs = s.rows.length * s.speed / 60;
   ok(secs >= 30 && secs <= 125, `${tag}: it lasts between half a minute and two`, `${secs.toFixed(0)} s`);
   const per = [0, 1, 2].map((d) => c.notes.filter((n) => n.flags >> d & 1));
