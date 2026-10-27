@@ -10,7 +10,7 @@
 // The main site and each pull request's preview (pr/<n>/, on the same origin) have a worker each, with its own copy:
 // the main site's leaves pr/ alone.
 
-const VERSION = 'bd6feee5f87b';
+const VERSION = '63e583b7e638';
 const FILES = [
   "./",
   "carts/alien-swarm.nova",
