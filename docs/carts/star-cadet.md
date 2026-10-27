@@ -167,11 +167,11 @@ BG0 the table (a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the
 
 | Asset | Budget |
 |---|---|
-| Code | TODO of the 64 KB limit (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
-| Tiles | TODO of 1,024 (the table is 1,920 map cells: most must be repeated textures and flips) |
-| Sprites | TODO (128 in OAM, 32 per line): the ball, up to 3 balls, 2 flippers, 3 bumpers, 2 slings, 7 targets, the spinner, the plunger |
+| Code | 17 KB of the 64 KB limit after step 1 (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Tiles | 276 of 1,024 after step 1, all the starter's (the table's art comes in step 3; the table is 1,920 map cells: most must be repeated textures and flips) |
+| Sprites | none yet (128 in OAM, 32 per line): the ball, up to 3 balls, 2 flippers, 3 bumpers, 2 slings, 7 targets, the spinner, the plunger |
 | ROM | the table's data if it is larger than a few KB |
-| Songs / SFX | 5 songs, TODO patterns of 64, about 30 effects, sample RAM TODO of 32 KB |
+| Songs / SFX | 5 songs, about 30 effects (now the starter's 2 songs, 4 patterns of 64, 7 effects and 12.7 of 32 KB of sample RAM) |
 
 ## 15. Implementation plan
 
