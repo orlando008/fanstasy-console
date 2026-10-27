@@ -166,9 +166,9 @@ BG0 the table (a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the
 
 | Asset | Budget |
 |---|---|
-| Code | 26 KB of the 64 KB limit after step 2 (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
-| Tiles | 276 of 1,024 after step 1, all the starter's (the table's art comes in step 3; the table is 1,920 map cells: most must be repeated textures and flips) |
-| Sprites | none yet (128 in OAM, 32 per line): the ball, up to 3 balls, 2 flippers, 3 bumpers, 2 slings, 7 targets, the spinner, the plunger |
+| Code | 28 KB of the 64 KB limit after step 3 (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Tiles | 712 of 1,024 after step 3: 465 of the 479 for the background (the floor 16, the decor and ramps about 400, the stars about 40: the table's 1,920 map cells share by repeating and flipping) and 247 of the 544 for sprites |
+| Sprites | 45 of the 128 in OAM in play, at most 11 on a line (of 32): the ball, 2 flippers of 3 to 8 pieces, 3 bumpers, 2 slingshots of 8 pieces, 4 standups, 3 drops, the spinner, the plunger and its spring, up to 7 lamps with their glows. Up to 3 balls with the multiball |
 | ROM | the table's data if it is larger than a few KB |
 | Songs / SFX | 5 songs, about 30 effects (now the starter's 2 songs, 4 patterns of 64, 7 effects and 12.7 of 32 KB of sample RAM) |
 
@@ -231,6 +231,26 @@ Each step: build it, run `node tools/check.js star-cadet` and `node tools/test.j
   time hits the bumpers 3 times, the slingshots about 22, clears the drop bank once, turns the spinner, takes 2 ramps and never touches the gate or
   the top lanes: it juggles the ball low on the table. So the elements are covered by their tests, not by the bot; step 8 gives the bot aim
   (and the balance: how long a ball lives with a bot of each skill). Playing it by hand is what is still missing.
+
+### Step 3 built: the table's picture
+
+- `carts/src/star-cadet/art.py` draws the table **from the physics' own numbers**: it runs the physics block of `code.js` in node and reads back the
+  walls, the bumpers, the ramps and the rest, so the picture cannot drift from where the ball bounces. Three background layers:
+  **BG1 the floor** (a deep-blue plate with a grid and specks, 32 x 32 px repeating: 16 different tiles for 24 x 80 cells), **BG0 the decor** (a chrome
+  rail along every wall, posts, the gate's hole, a ring under each bumper, arrows, the logo, a ringed planet and the two ramps' teal ribbons), and **BG2 the
+  starfield** behind the panel (64 x 224, wrapping, drifting). Both table layers scroll with the camera.
+- **Ramps go over and under**, by the compositing order of SPEC 4.8: the ribbon's cells carry the high-priority bit, a ball on the floor is a priority 2
+  sprite (under the ribbon) and a ball on a ramp priority 3 (over it); the flippers, bumpers and targets are priority 2, the lamps priority 1
+  (under the rails). A ball in an orbit lane disappears under a ramp that crosses it and comes out the other side.
+- Sprites: the ball (a lit steel sphere), the bumpers (rest and lit), nine flipper frames from rest to up as big sprites (the right is the left mirrored),
+  the slingshots (rest and hit, big sprites, the right mirrored), the standup and drop targets (up and down), the spinner (four frames, turned by the ball's
+  travel), the plunger and its spring (the ball is drawn sinking with it as it is pulled), and the lamps with an additive glow in sprite palette 4.
+- The panel is a glass overlay over the starfield with the score, the ball and **a map of the table** (the ball and what the screen shows).
+- `tests/carts/star-cadet/04-art.mjs`: the layers and their scroll, the solid floor, a tile on every rail of the physics, the ramps' high-priority bit,
+  the ball's priority off and on a ramp, the flipper frames, a lit lamp for a lane rolled over, the budget. The starter's placeholder art and its sky are gone.
+- **Results:** 45 sprites and at most 11 on a line in play (limits 128 and 32), the frame takes about 2 ms (median), 465 of the 479 background tiles are
+  used (the decor is the big spender: the ramps' two ribbons are about 100 tiles each. A third ramp or more decoration would need the split moved).
+  The label is the table at the start of a ball: the logo, the flippers and the plunger.
 
 ## 16. Open questions
 

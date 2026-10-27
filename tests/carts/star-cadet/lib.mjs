@@ -9,7 +9,7 @@ export const CART = fileURLToPath(new URL('../../../carts/star-cadet.nova', impo
 const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
   get score() { return score; }, set score(v) { score = v; }, get balls() { return balls; }, set balls(v) { balls = v; },
-  get ball() { return ball; }, get flips() { return flips; }, get plunge() { return plunge; }, get camY() { return camY; }, serve, inLane, stepTable, BUMPERS, SLINGS, STANDUPS, DROPS, RAMPS, LANE_XS, GATE, SPIN, KICKBACK, PTS, get stats() { return stats; }, get laneLit() { return laneLit; }, get kickback() { return kickback; }, set kickback(v) { kickback = v; }, WALLS, makeFlippers, flipTip,
+  get ball() { return ball; }, get flips() { return flips; }, get plunge() { return plunge; }, get camY() { return camY; }, serve, inLane, stepTable, ONEWAY, BUMPERS, SLINGS, STANDUPS, DROPS, RAMPS, LANE_XS, GATE, SPIN, KICKBACK, PTS, get stats() { return stats; }, get laneLit() { return laneLit; }, get kickback() { return kickback; }, set kickback(v) { kickback = v; }, WALLS, makeFlippers, flipTip,
   K: { BR, SUB, GRAV, VMAX, WALL_E, FLIP_E, FLEN, FR, REST_A, UP_A, LANE_X, LANE_FLOOR, BALL_HOME, DRAIN_Y, TABLE_W, TABLE_H, VIEW_H }, get ART() { return ART; }, mget: (x, y) => mget(x, y), get rank() { return rank; }, get initials() { return initials; },
   get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
   SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
