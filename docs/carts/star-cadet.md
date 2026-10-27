@@ -50,8 +50,8 @@ The game is playable on the touch controls (D-pad, A, B, START, SELECT): the fli
 
 | Feature | Place | What |
 |---|---|---|
-| Plunger lane | x 176 to 192, from y 612 up to y 90 | The ball waits at y 600; the lane curves left into the top arch |
-| Top arch | y 0 to 80 | A half circle of radius 88 centred at x 88 |
+| Plunger lane | x 176 to 192, from y 612 up to y 96 | The ball waits on the lane's floor (y 607); the top arch turns it left |
+| Top arch | y 0 to 96 | A half circle of radius 96 centred at x 96 (16 segments) |
 | Top lanes | y 62, x 52, 88 and 124 | Three rollover lanes: all three lit gives the next bonus multiplier (x2 to x6) |
 | Gate (kickout) | (88, 104) | A hole the ball falls into and is kicked out of: starts a mission when the lamps are lit |
 | Pop bumpers | (66, 168), (110, 168), (88, 204) | Three round bumpers, radius 11 |
@@ -61,7 +61,7 @@ The game is playable on the touch controls (D-pad, A, B, START, SELECT): the fli
 | Ramps | left from (30, 400) to (66, 150), right from (162, 400) to (126, 150) | Raised: the ball passes over the floor's walls; each has a lit award |
 | Slingshots | left (36, 510) to (62, 540), right (156, 510) to (130, 540) | Kick the ball away |
 | Inlanes, outlanes | y 470 to 570 each side | The inlanes feed the flippers; the left outlane has a lit **kickback** |
-| Flippers | pivots (62, 588) and (130, 588) | Length 34, rest 30 degrees below horizontal, 28 degrees above when up; the gap between the tips at rest is 24 |
+| Flippers | pivots (48, 588) and (128, 588) | Length 34, rest 30 degrees below horizontal, 28 degrees above when up; the gap between the tips at rest is 21 |
 | Drain | below y 620 between the outlanes | The ball is lost |
 
 (The numbers are a first design; the table is data (section 5, "The table is data") and step 2 tunes them with the bot and a drawing of the table.)
@@ -72,13 +72,13 @@ The game is playable on the touch controls (D-pad, A, B, START, SELECT): the fli
 
 | Quantity | Value |
 |---|---|
-| Gravity (down the table, the tilt of a real one) | 0.18 pixel a frame squared |
+| Gravity (down the table, the tilt of a real one) | 0.12 pixel a frame squared |
 | Maximum speed | 14 pixels a frame |
 | Wall bounce (the share of the normal speed kept) | 0.45 |
 | Pop bumper | kicks the ball away at 6 pixels a frame (and always at least 5) |
 | Slingshot | kicks at 7, along the slingshot's normal |
-| Rolling friction | 0.9995 a substep (the ball slows a little) |
-| Flipper | swings up in 5 frames (a speed of about 0.2 radians a frame) and down in 7; the ball takes the speed of the point of the flipper it touches |
+| Rolling friction | none for now (a ball's energy is kept except in bounces) |
+| Flipper | swings up in 4 frames (0.25 radians a frame, 8.6 pixels a frame at the tip) and down in 6; bounce 0.7 against the flipper's own speed, so a ball hit with the tip leaves at about 13 pixels a frame and one hit near the pivot at about 5 |
 | Plunger | held 60 frames is full power; the launch speed is 4 + 10 x power pixels a frame |
 | Nudge | adds a push of 1.2 pixels a frame sideways and a shake of the camera; at most 3 a ball, the 4th is a TILT (flippers off, no bonus) |
 
@@ -185,6 +185,27 @@ BG0 the table (a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the
 8. **Balance and release:** the bot at several skills (a ball should last a minute or two, a bot of average skill should reach Lieutenant or so), the polish, the label, the PNG cart, the Library (`node tools/release.js star-cadet`), a README row.
 
 Each step: build it, run `node tools/check.js star-cadet` and `node tools/test.js star-cadet`, write its **Built** and **Results** notes under its number here, commit and push.
+
+### Step 1 built: the ball and the flippers
+
+- `carts/src/star-cadet/code.js`: the table and its physics in one block at the top, every number a constant: the walls as segments (the
+  arch, the side walls, the lane, the two guides into the flippers), `collide` (a ball against a segment or a capsule, with the surface's
+  own speed for a flipper), `stepTable` (4 substeps: the flippers swing, gravity, the move, the walls, the flippers) and the plunger (hold
+  DOWN or A, release to launch at 4 + 10 x power). A ball that falls out below the flippers is a drain: the next of three balls is
+  served. The view follows the ball (eased, clamped to the table). Drawn as plain shapes; the starter's title, pause, game over,
+  initials and records screens are unchanged.
+- Numbers that came out of playing it in the harness (so section 4 and 5 now say these, not the first draft's): gravity 0.12 (with 0.18 a
+  full pull could not reach the top), the flippers swing up in 4 frames and down in 6 (5 and 7 threw the ball too weakly: a tip shot
+  has to reach the top of the table), a flipper bounce of 0.7, pivots at 48 and 128 (a gap of 21 between the tips, wider than the ball),
+  the arch a circle of radius 96.
+- `tests/carts/star-cadet/02-physics.mjs` (gravity, the speed limit, a wall bounce, 48 fast balls from everywhere that never leave the
+  table nor gain energy, the flippers' swing times and the gap, a ball left alone drains, the tip throws harder than the pivot, the plunger's
+  power, three balls, the pause, the camera, determinism). `01-flow.mjs` was changed from the starter's blocks to the ball and flippers;
+  the starter's art test was removed (it tested the placeholder art; step 3 adds the table's). `bot.mjs` plunges at full power and
+  flips when the ball comes near a flipper (`skill` is the chance a flip is on time, otherwise it is 9 frames late).
+- **Results:** the table is empty, so nothing takes the ball's energy: a bot with `skill` 0.6 or better keeps one ball up for the 40 s
+  the run allows, and one with 0.2 drains it after about 20 s. That is a property of a table with no bumpers, not of the physics: step 2
+  puts things in the ball's way. Playing by hand is what is still missing: only a person can say whether the ball feels right.
 
 ## 16. Open questions
 

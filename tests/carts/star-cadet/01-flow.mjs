@@ -15,22 +15,19 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
 }
 
-// 2. Playing: movement, blocks, a hit costs a life.
+// 2. Playing: a ball in the plunger lane; the flippers answer the buttons.
 {
-  const vm = newGame(1), p = vm.probe(), x0 = p.px;
-  vm.run(10, M('LEFT')); ok(p.px < x0, 'LEFT moves the player');
-  vm.run(20, M('RIGHT')); ok(p.px > x0 - 30, 'and RIGHT');
-  const lives = p.lives; sfxLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.lives === lives - 1, 'a block that lands on the player costs a life');
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch >= 6), 'with the hit sound, on an effects channel (6 or 7)');
+  const vm = newGame(1), p = vm.probe();
+  ok(p.balls === 3 && p.inLane(), 'a game starts with three balls and the first in the plunger lane');
+  vm.run(6, M('LEFT')); ok(p.flips[0].a < p.flips[1].a, 'LEFT lifts the left flipper');
+  vm.run(6, M('RIGHT')); ok(p.flips[1].a < p.flips[0].a, 'and RIGHT the right one');
 }
 
 // 3. Pause.
 {
-  const vm = newGame(2), p = vm.probe(); vm.run(30);
+  const vm = newGame(2), p = vm.probe(); vm.run(30, M('DOWN'));
   vm.press('START'); ok(p.paused, 'START pauses');
-  const y = p.blocks.map((b) => b.y).join(); vm.run(30); ok(p.blocks.map((b) => b.y).join() === y, 'and the game stands still');
+  const y = p.ball.y; vm.run(30); ok(p.ball.y === y, 'and the game stands still');
   const t = p.timer; vm.press('DOWN'); vm.press('A'); vm.run(2);
   ok(!p.paused && p.score === 0 && p.timer < t, 'RESTART starts the game again');
   vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
@@ -38,9 +35,9 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 
 // 4. Game over, the top 10 and initials.
 {
-  const vm = newGame(3), p = vm.probe(); p.score = 120; p.lives = 1; musicLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.state === 'over' && p.rank === 0, 'the last life ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
+  const vm = newGame(3), p = vm.probe(); p.score = 120; p.balls = 1; musicLog(vm);
+  p.ball.x = 88; p.ball.y = 700; vm.run(5);
+  ok(p.state === 'over' && p.rank === 0, 'the last ball ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
   ok(musicLog(vm).includes(-1), 'the game song stops');
   vm.run(70); vm.press('A');
   ok(p.state === 'initials', 'A asks for initials');

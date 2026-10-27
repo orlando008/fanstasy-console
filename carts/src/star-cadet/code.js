@@ -66,6 +66,80 @@ const packInitials = (str) => (str.charCodeAt(0) << 16) | (str.charCodeAt(1) << 
 const unpackInitials = (v) => (v ? String.fromCharCode((v >> 16) & 255, (v >> 8) & 255, v & 255) : '---');
 const lastInitials = () => (dget(INITIALS_SLOT) ? unpackInitials(dget(INITIALS_SLOT)) : 'AAA');
 
+// --- The table and its physics (SPEC 4, 5). World pixels: x 0 to 192 across, y 0 to 640 down; the ball is 5 px in radius. ---
+// All the numbers are here, in one place, because only playing can say how the ball should feel.
+
+const TABLE_W = 192, TABLE_H = 640, VIEW_H = 224;
+const BR = 5, SUB = 4; // ball radius; substeps a frame (a substep moves the ball at most 3.5 px, under its radius)
+const GRAV = 0.12, VMAX = 14; // px per frame squared; px per frame
+const WALL_E = 0.45, FLIP_E = 0.7, REST_CUT = 0.3; // bounce of a wall and of a flipper; below this normal speed a hit does not bounce
+const FLEN = 34, FR = 4; // a flipper is a capsule: length, radius
+const REST_A = 30 * Math.PI / 180, UP_A = -28 * Math.PI / 180; // its angle (down is positive), at rest and held up
+const W_UP = (REST_A - UP_A) / 4, W_DOWN = (REST_A - UP_A) / 6; // radians a frame: up in 4 frames, down in 6
+const LANE_X = 176, LANE_FLOOR = 612, BALL_HOME = { x: 184, y: LANE_FLOOR - BR };
+const PLUNGE_FRAMES = 60; // held this long is full power; the launch speed is 4 + 10 x power
+const DRAIN_Y = 632;
+
+/** The walls: segments [x0, y0, x1, y1]. A top arch of radius 96 over the table, the plunger lane on the right, and the
+ *  guides that feed the flippers. */
+const WALLS = (() => {
+  const w = [];
+  for (let i = 0; i < 16; i++) { // the arch: a half circle of 16 segments
+    const a0 = Math.PI + (Math.PI * i) / 16, a1 = Math.PI + (Math.PI * (i + 1)) / 16;
+    w.push([96 + 96 * Math.cos(a0), 96 + 96 * Math.sin(a0), 96 + 96 * Math.cos(a1), 96 + 96 * Math.sin(a1)]);
+  }
+  w.push([0, 96, 0, 512]); // the left wall
+  w.push([0, 512, 48, 588]); // the left guide, into the left flipper's pivot
+  w.push([TABLE_W, 96, TABLE_W, LANE_FLOOR]); // the right wall of the lane
+  w.push([LANE_X, 120, LANE_X, 512]); // the lane's inner wall
+  w.push([LANE_X, 512, 128, 588]); // the right guide
+  w.push([LANE_X, LANE_FLOOR, TABLE_W, LANE_FLOOR]); // the lane's floor
+  return w;
+})();
+/** Flippers: pivot, side (+1 points right), angle, and the last swing (radians a frame, for the ball). */
+const makeFlippers = () => [{ x: 48, y: 588, s: 1, a: REST_A, w: 0 }, { x: 128, y: 588, s: -1, a: REST_A, w: 0 }];
+const flipTip = (f) => ({ x: f.x + f.s * FLEN * Math.cos(f.a), y: f.y + FLEN * Math.sin(f.a) });
+
+/** Push the ball out of a capsule (or a segment, r 0) and bounce it. vs: the surface's velocity at the contact. */
+function collide(b, x0, y0, x1, y1, r, e, vsAt) {
+  const dx = x1 - x0, dy = y1 - y0, len2 = dx * dx + dy * dy;
+  const t = len2 ? clamp(((b.x - x0) * dx + (b.y - y0) * dy) / len2, 0, 1) : 0;
+  const cx = x0 + dx * t, cy = y0 + dy * t, ox = b.x - cx, oy = b.y - cy, d2 = ox * ox + oy * oy, reach = BR + r;
+  if (d2 >= reach * reach) return false;
+  const d = Math.sqrt(d2), nx = d ? ox / d : 0, ny = d ? oy / d : -1;
+  b.x = cx + nx * reach; b.y = cy + ny * reach;
+  const vs = vsAt ? vsAt(t) : [0, 0];
+  const vn = (b.vx - vs[0]) * nx + (b.vy - vs[1]) * ny;
+  if (vn < 0) {
+    const k = -(1 + (vn > -REST_CUT ? 0 : e)) * vn;
+    b.vx += k * nx; b.vy += k * ny;
+  }
+  return true;
+}
+
+/** One frame of the table: the flippers swing, the ball moves in SUB substeps. hold: the flippers' buttons [left, right]. */
+function stepTable(b, flips, hold) {
+  for (let i = 0; i < SUB; i++) {
+    flips.forEach((f, k) => {
+      const a0 = f.a;
+      f.a = hold[k] ? Math.max(UP_A, f.a - W_UP / SUB) : Math.min(REST_A, f.a + W_DOWN / SUB);
+      f.w = (f.a - a0) * SUB;
+    });
+    b.vy += GRAV / SUB;
+    const sp = Math.hypot(b.vx, b.vy);
+    if (sp > VMAX) { b.vx *= VMAX / sp; b.vy *= VMAX / sp; }
+    b.x += b.vx / SUB; b.y += b.vy / SUB;
+    for (const w of WALLS) collide(b, w[0], w[1], w[2], w[3], 0, WALL_E);
+    for (const f of flips) {
+      const tip = flipTip(f);
+      collide(b, f.x, f.y, tip.x, tip.y, FR, FLIP_E, (t) => {
+        const r = t * FLEN; // the contact's speed: its distance from the pivot times the turn
+        return [-f.s * Math.sin(f.a) * r * f.w, Math.cos(f.a) * r * f.w];
+      });
+    }
+  }
+}
+
 // --- Input: edge-triggered presses (btnp repeats; menus want one press) ---
 
 let inputMask = 0, prevMask = 0;
@@ -78,8 +152,7 @@ const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) ===
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
-let score = 0, lives = 3, px = 120, blocks = [];
-const HOME = { x: 120 };
+let score = 0, balls = 3, ball = null, flips = [], plunge = 0, camY = 0, held = [false, false];
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
@@ -98,9 +171,16 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 function startGame() {
-  score = 0; lives = 3; px = HOME.x; blocks = []; paused = false; timer = 0; state = 'play';
+  score = 0; balls = 3; flips = makeFlippers(); serve(); paused = false; timer = 0; state = 'play';
   play(SONG.play);
 }
+
+/** A new ball in the plunger lane. */
+function serve() {
+  ball = { x: BALL_HOME.x, y: BALL_HOME.y, vx: 0, vy: 0 }; plunge = 0;
+  camY = clamp(ball.y - 150, 0, TABLE_H - VIEW_H);
+}
+const inLane = () => ball.x > LANE_X && ball.y > LANE_FLOOR - 40;
 
 // --- Update ---
 
@@ -124,19 +204,24 @@ function updateTitle() {
   }
 }
 
-/** The game itself: replace this. Left and right move; blocks fall; a hit costs a life. */
+/** The game: the flippers, the plunger and the ball. */
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (btn(LEFT)) px = Math.max(8, px - 3);
-  if (btn(RIGHT)) px = Math.min(248, px + 3);
-  if (timer % 30 === 0) blocks.push({ x: rndi(8, 248), y: -8 });
-  for (const b of blocks) {
-    b.y += 2 + Math.min(3, score / 40);
-    if (b.y > 196 && b.y < 212 && Math.abs(b.x - px) < 12 && !b.hit) { b.hit = true; lives--; fx(SFX.hit); }
-    if (b.y > 224 && !b.hit && !b.done) { b.done = true; score += 10; fx(SFX.point); }
-  }
-  blocks = blocks.filter((b) => b.y < 232);
-  if (lives <= 0) gameOver();
+  held = [btn(LEFT) || btn(B) || btn(L), btn(RIGHT) || btn(A) || btn(R)];
+  if (pressed(LEFT) || pressed(RIGHT) || pressed(B) || pressed(A)) { if (!inLane()) fx(SFX.move); }
+  const waiting = inLane() && ball.vy >= 0 && ball.y >= BALL_HOME.y - 1;
+  if (waiting && (btn(DOWN) || btn(A))) plunge = Math.min(1, plunge + 1 / PLUNGE_FRAMES);
+  else if (waiting && plunge > 0.04) { ball.vy = -(4 + 10 * plunge); plunge = 0; fx(SFX.point); }
+  else if (!waiting) plunge = 0;
+  stepTable(ball, flips, held);
+  const want = clamp(ball.y - 150, 0, TABLE_H - VIEW_H);
+  camY += (want - camY) * 0.12;
+  if (ball.y > DRAIN_Y && ball.x < LANE_X) drain();
+}
+
+function drain() {
+  fx(SFX.hit); balls--;
+  if (balls <= 0) gameOver(); else serve();
 }
 
 function gameOver() {
@@ -196,10 +281,18 @@ function draw() {
 }
 
 function drawPlay() {
-  sprite(ART.sprites.player, px - 8, 196);
-  for (const b of blocks) if (!b.hit) sprite(ART.sprites.gem, b.x - 8, b.y - 2);
-  txt(`SCORE ${score}`, 8, 6, WHITE);
-  txt(`LIVES ${lives}`, 192, 6, lives > 1 ? WHITE : RED);
+  rectfill(0, 0, 256, 224, 2);
+  const cy = Math.round(camY), sy = (y) => Math.round(y - cy);
+  for (const w of WALLS) line(Math.round(w[0]), sy(w[1]), Math.round(w[2]), sy(w[3]), WHITE);
+  for (const f of flips) {
+    const tip = flipTip(f);
+    for (let i = 0; i <= 8; i++) circfill(Math.round(f.x + (tip.x - f.x) * i / 8), sy(f.y + (tip.y - f.y) * i / 8), FR, GOLD);
+  }
+  if (inLane()) rectfill(LANE_X + 6, sy(LANE_FLOOR - 4 + plunge * 14), 8, 4, DIM); // the plunger, pulled back
+  circfill(Math.round(ball.x), sy(ball.y), BR, WHITE);
+  rectfill(TABLE_W, 0, 256 - TABLE_W, 224, SHADOW);
+  txt('SCORE', 198, 8, DIM); txt(String(score), 252 - String(score).length * 8, 18, WHITE);
+  txt('BALL', 198, 40, DIM); txt(String(4 - balls), 198, 50, balls > 1 ? WHITE : RED);
 }
 
 function drawTitle() {
