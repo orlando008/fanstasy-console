@@ -32,7 +32,10 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
 // so they never cut into the music and two can sound at once.
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
+// The effects (audio.py, in this order): soft sampled bells and wooden bars, well under the music. A hit's plink has the pitch class of the pad that was hit
+// (12 pitch classes for each of the three judgements, from SFX.plink on); a miss has no sound at all, the word is enough.
+const SFX = { move: 0, select: 1, pause: 2, stray: 3, up2: 4, up3: 5, swell: 6, fanfare: 7, fanfareLow: 8, record: 9, tick: 10, count: 11, go: 12, plink: 13 };
+const plinkOf = (g, pitch) => SFX.plink + g * 12 + pitch % 12;
 const SONG = { title: 0 };                                           // the pieces are songs 1 and on
 const SFX_CH = [7, 6];
 let fxNext = 0;
@@ -82,14 +85,14 @@ function hit(n, g) {
   n.r = g + 1; combo++; bestCombo = Math.max(bestCombo, combo); counts[g]++;
   score += JUDGE[g].pts * multiplier();
   setFlow(flow + JUDGE[g].flow);
-  show(JUDGE[g].name, g === 0 ? GOLD : g === 1 ? GREEN : CYAN); fx(SFX.point); lastG = g;
+  show(JUDGE[g].name, g === 0 ? GOLD : g === 1 ? GREEN : CYAN); fx(plinkOf(g, n.pitch)); lastG = g;
   if (combo % 10 === 0) banner(`${combo} COMBO`, GOLD);
 }
 function miss(n) { n.r = 4; combo = 0; counts[3]++; setFlow(flow + MISS_FLOW); show('MISS', RED); }                       // the word in red says it: no sound, it would cut into the music's flow
 const LEVEL_COLOURS = [CYAN, GREEN, ORANGE, GOLD];
 function setFlow(v) {
   flow = clamp(v, 0, 100); if (flow >= 90) inFlow = true; else if (flow < 80) inFlow = false;
-  const m = multiplier(); if (m > lastMult) banner(flowName(), LEVEL_COLOURS[m - 1]); lastMult = m;
+  const m = multiplier(); if (m > lastMult) { banner(flowName(), LEVEL_COLOURS[m - 1]); fx(m === 2 ? SFX.up2 : m === 3 ? SFX.up3 : SFX.swell); } lastMult = m;
 }
 function banner(text, c) { bannerText = text; bannerColour = c; bannerAt = clock; }
 function show(text, c) { judgeText = text; judgeColour = c; judgeAt = clock; }
@@ -99,7 +102,7 @@ function tap(st) {
   let best = null;
   for (const n of notes) if (!n.r && Math.abs(n.f - st) <= WIN[2] && (!best || Math.abs(n.f - st) < Math.abs(best.f - st))) best = n;
   hopFrom = frogX; hopFromY = frogY; hopTo = best ? 128 + best.lane * LANE : frogX; hopZ = best ? ZH + V * (best.f - st) : Z0; hopAt = clock;
-  if (!best) { setFlow(flow + STRAY_FLOW); return; }
+  if (!best) { setFlow(flow + STRAY_FLOW); fx(SFX.stray); return; }
   const d = Math.abs(best.f - st);
   hit(best, d <= WIN[0] ? 0 : d <= WIN[1] ? 1 : 2);
 }
@@ -144,7 +147,7 @@ function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; l
 function toMap(sel = mapSel) {
   state = 'map'; timer = 0; paused = false; look = 0; resetStamp(); play(SONG.title); mapSel = sel; mapTod = tod.slice();
   mapX = stopX(mapSel); mapY = stopY(mapSel); mapAge = 99;
-  if (opened) { mapSel = opened; mapMsg = 'A NEW STRETCH IS OPEN'; mapMsgAt = clock; opened = 0; mapFromX = mapX; mapFromY = mapY; mapAge = 0; }
+  if (opened) { mapSel = opened; mapMsg = 'A NEW STRETCH IS OPEN'; mapMsgAt = clock; opened = 0; fx(SFX.up3); mapFromX = mapX; mapFromY = mapY; mapAge = 0; }
 }
 
 /** A piece from its start: the count-in, then the music when song time reaches 0. */
@@ -194,7 +197,7 @@ function updateMap() {
   if (pressed(B)) { toTitle(); fx(SFX.move); }
   else if (pressed(SELECT)) { fx(SFX.select); startCalib(false); }
   else if (pressed(A) || pressed(START)) {
-    if (!isOpen(mapSel)) { mapMsg = 'FINISH THE STRETCH BEFORE IT'; mapMsgAt = clock; fx(SFX.move); return; }
+    if (!isOpen(mapSel)) { mapMsg = 'FINISH THE STRETCH BEFORE IT'; mapMsgAt = clock; fx(SFX.stray); return; }
     fx(SFX.select);
     if (!dget(LAG_SLOT)) startCalib(true); else startPiece(mapSel, mapDiff);
   }
@@ -212,7 +215,7 @@ function startCalib(then) {
 function updateCalib() {
   if (cal.stage === 'tap') {
     tm++;
-    for (const n of notes) if (n.f === tm) fx(SFX.point);                                      // the tick: the sound the player taps to
+    for (const n of notes) if (n.f === tm) fx(SFX.tick);                                       // the tick: the sound the player taps to
     if (tapped()) {
       let best = null;
       for (const n of notes) if (!n.r && Math.abs(n.f - tm) <= 20 && (!best || Math.abs(n.f - tm) < Math.abs(best.f - tm))) best = n;
@@ -242,6 +245,8 @@ function endCalib(save) {
 /** One frame of a piece: the clock, the music's start, the taps, the pads that were missed, the end. */
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); music(-1); playing = -1; return; }
+  const r = tm - musicAt;                                                                      // the count-in: a tick for each of 3, 2 and 1 (40 frames apart), and GO as the music starts
+  if (r <= 0 && r % 40 === 0) fx(r ? SFX.count : SFX.go);
   tm++;
   if (!started && tm >= musicAt) { started = true; playing = piece + 1; music(piece + 1, musicAt / (64 * speed)); }
   if (tapped()) tap(st());
@@ -257,10 +262,11 @@ function finish() {
   newBest = score > dget(s); setStamp(g);
   if (newBest) { dset(s, score); dset(s + 1, (g + 1) | (bestCombo << 4)); }
   if (piece >= 1 && piece < 5 && openN() < piece + 1) { dset(OPEN_SLOT, piece + 1); opened = piece + 1; }   // a stretch played to the end opens the next
-  fx(SFX.record);
+  fx(g >= 3 ? SFX.fanfare : SFX.fanfareLow);                                                   // the end of a stretch: bells (soft ones for a lower grade); a new best sparkles after
 }
 
 function updateResults() {
+  if (timer === 40 && newBest) fx(SFX.record);
   if (timer > 30 && (pressed(A) || pressed(START))) { fx(SFX.select); toMap(piece); }
 }
 
@@ -272,7 +278,7 @@ function updateRecords() {
 function resume() {
   paused = false;
   const pat = Math.max(0, Math.floor(Math.max(0, tm) / (64 * speed)));
-  musicAt = pat * 64 * speed; tm = musicAt - RESUME_LEAD; started = false;
+  musicAt = pat * 64 * speed; tm = musicAt - RESUME_LEAD; started = false; fx(SFX.count);
   for (const n of notes) if (!n.r && n.f < musicAt) n.r = 5;            // too near the cut to play: skipped
 }
 

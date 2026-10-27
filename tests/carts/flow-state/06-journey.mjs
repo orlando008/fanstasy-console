@@ -67,7 +67,7 @@ const save = (over) => { const s = new Int32Array(256); s[0] = 2; for (const [k,
   ok(p.state === 'map' && p.lag === off && p.dget(p.LAG_SLOT) === off + 16, 'A saves it (in slot 1, plus 16) and goes back to the map', `${p.lag} ${p.dget(p.LAG_SLOT)}`);
   const before = p.lag; vm.press('SELECT'); vm.run(1); vm.press('B'); ok(p.state === 'map' && p.lag === before && p.dget(p.LAG_SLOT) === off + 16, 'B leaves it as it was');
   vm.press('SELECT'); vm.run(1); const beats = []; vm.run(1);
-  const sfx = []; const log = () => vm.audioLog.filter((e) => e[1] === 'sfx' && e[2] === p.SFX.point).length;
+  const sfx = []; const log = () => vm.audioLog.filter((e) => e[1] === 'sfx' && e[2] === p.SFX.tick).length;
   const b0 = log(); vm.run(p.CAL_FIRST + 5 * p.CAL_GAP + 4); ok(log() - b0 === 6, 'a tick sounds on each beat (the sound the player taps to)', `${log() - b0}`);
   vm.press('B');
 }

@@ -57,7 +57,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 {
   const vm = newGame(1), p = vm.probe(); vm.run(1); p.startPiece(0, 1); vm.run(p.LEAD + 60);
   ok(p.counts[3] >= 1 && p.judgeText === 'MISS' || p.counts[3] >= 1, 'a pad that goes by is a miss', `${p.counts[3]}`);
-  ok(!vm.audioLog.some((e) => e[1] === 'sfx' && e[2] === p.SFX.hit), 'and it makes no sound');
+  ok(!vm.audioLog.some((e) => e[1] === 'sfx' && e[2] >= p.SFX.stray && e[2] !== p.SFX.count && e[2] !== p.SFX.go), 'and it makes no sound (only the count-in\'s ticks were heard)');
 }
 
 // 4. The combo, the accuracy and the grades.
