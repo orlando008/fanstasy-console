@@ -127,7 +127,7 @@ MINUET = Piece('MINUET IN G', 'BACH', 16, 2, 1, score('minuet.mel') + ' ' + scor
 
 # --- 2 Air on the G String (Bach, Orchestral Suite 3, BWV 1068): D major, 4/4, a row a sixteenth, about 64 bpm ---
 AIR = Piece('AIR ON THE G STRING', 'BACH', 14, 4, 2, score('air.mel'), score('air.bass'), lead='STRINGS', key=('D', MAJOR),
-    extra_src='bass', extra_mod=((8, (0,)), (4, (0,)), (2, (0,))))      # the bass's steady pulse gives the pads a beat: each half note, each beat, each eighth
+    extra_src='bass', extra_mod=((4, (0,)), (2, (0,)), (2, (0,))))      # the bass's steady pulse is the pads' beat: each beat on easy, each eighth on normal and hard
 
 # --- 3 Fur Elise (Beethoven, WoO 59): A minor, 3/8, a row a sixteenth; the whole piece ---
 ELISE = Piece('FUR ELISE', 'BEETHOVEN', 11, 4, 2, score('elise.mel'), score('elise.bass'), lead='ELEAD', key=('A', MINOR))
