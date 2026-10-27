@@ -12,8 +12,11 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('DOWN'); ok(p.titleSel === 1, 'DOWN moves down the menu'); vm.press('UP'); ok(p.titleSel === 0, 'and UP back');
   vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('A'); ok(p.state === 'title', 'A goes back to the title');
+  vm.press('A'); ok(p.state === 'pick', 'PLAY opens the choice of a piece');
+  vm.press('DOWN'); ok(p.pickPiece === 2, 'DOWN chooses the next piece'); vm.press('RIGHT'); ok(p.pickDiff === 2, 'RIGHT a harder difficulty'); vm.press('LEFT'); vm.press('LEFT'); ok(p.pickDiff === 0, 'and LEFT an easier one');
+  vm.press('B'); ok(p.state === 'title', 'B goes back'); vm.press('A'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT');
   musicLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.piece === 0 && p.diff === 1, 'PLAY starts the first piece on normal');
+  ok(p.state === 'play' && p.piece === 0 && p.diff === 1, 'A starts the piece chosen (here the practice piece, normal)');
   ok(p.tm === -p.LEAD + 1 || p.tm === -p.LEAD, 'with a count-in before the music', `${p.tm}`);
   ok(p.playing === -1 && !p.started, 'the title song stops and the piece\'s music has not begun');
 }

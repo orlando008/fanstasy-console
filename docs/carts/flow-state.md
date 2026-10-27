@@ -149,6 +149,8 @@ BG2 affine river (a water texture from the art kit, drawn once and scrolled), BG
 
 **Sources of the notes:** Mutopia Project engravings (public domain or Creative Commons, found in the `marmooo/classical-midi-db` collection): Beethoven, Für Elise WoO 59 and Piano Sonata 14 (Moonlight) first movement; Bach, Air from Orchestral Suite 3 (BWV 1068, the flute and guitar arrangement), the Menuet BWV Anh. 114 from the Notebook for Anna Magdalena Bach (by Christian Petzold) and the Prelude in C (BWV 846). The Badinerie (Orchestral Suite 2, BWV 1067) is John Hamm's 1995 General MIDI sequence, as shipped in `jikol1906/bach-visualizer` (no licence is stated there): the notes of the piece are in the public domain, but a sequence can carry its own copyright, so before the game is released the Badinerie's notes should be checked against an engraving with a clear licence (Mutopia or IMSLP), which can replace `scores/badinerie.*` with the same tool.
 
+**Review build (between steps 2 and 3):** PLAY opens a plain list of the six pieces (UP and DOWN) and the three difficulties (LEFT and RIGHT), A plays, B goes back; it stands in for the journey's map until step 5.
+
 Each step: build it, run `node tools/check.js flow-state` and `node tools/test.js flow-state`, write its **Built** and **Results** notes under its number here, commit and push.
 
 ## 16. Open questions

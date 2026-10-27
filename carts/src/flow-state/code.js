@@ -100,7 +100,8 @@ const gradeOf = (acc) => (acc >= 0.95 ? 4 : acc >= 0.85 ? 3 : acc >= 0.7 ? 2 : a
 
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
-let titleSel = 0, pauseSel = 0;
+let titleSel = 0, pauseSel = 0, pickPiece = 1, pickDiff = 1;
+const PIECES = ['PRACTICE: SCALE RUN', 'MINUET IN G', 'AIR ON THE G STRING', 'FUR ELISE', 'MOONLIGHT SONATA', 'BADINERIE'], DIFFS = ['EASY', 'NORMAL', 'HARD'];
 let piece = 0, diff = 1, notes = [], speed = 8, tm = 0, musicAt = 0, started = false, lag = 0;
 let score = 0, combo = 0, bestCombo = 0, flow = FLOW_START, inFlow = false, counts = [0, 0, 0, 0], hopAt = -99, judgeText = '', judgeColour = WHITE, judgeAt = -99, endAt = 0, newBest = false;
 const st = () => tm - lag;                                          // the song time the player hears now
@@ -135,6 +136,7 @@ function update() {
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'play') updatePlay();
+  else if (state === 'pick') updatePick();
   else if (state === 'results') updateResults();
   else if (state === 'records') updateRecords();
   prevMask = inputMask;
@@ -144,8 +146,18 @@ function updateTitle() {
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) startPiece(0, 1); else { state = 'records'; timer = 0; }
+    if (titleSel === 0) { state = 'pick'; timer = 0; } else { state = 'records'; timer = 0; }
   }
+}
+
+/** Choose a piece (UP and DOWN) and a difficulty (LEFT and RIGHT); the journey's map takes this place in step 5. */
+function updatePick() {
+  if (pressed(UP)) { pickPiece = (pickPiece + PIECES.length - 1) % PIECES.length; fx(SFX.move); }
+  if (pressed(DOWN)) { pickPiece = (pickPiece + 1) % PIECES.length; fx(SFX.move); }
+  if (pressed(LEFT)) { pickDiff = (pickDiff + 2) % 3; fx(SFX.move); }
+  if (pressed(RIGHT)) { pickDiff = (pickDiff + 1) % 3; fx(SFX.move); }
+  if (pressed(B)) { state = 'title'; timer = 0; fx(SFX.move); }
+  else if (pressed(A) || pressed(START)) { fx(SFX.select); startPiece(pickPiece, pickDiff); }
 }
 
 /** One frame of a piece: the clock, the music's start, the taps, the pads that were missed, the end. */
@@ -207,6 +219,7 @@ function draw() {
   cls();
   if (state === 'play') drawPlay();
   else if (state === 'title') drawTitle();
+  else if (state === 'pick') drawPick();
   else if (state === 'results') drawResults();
   else if (state === 'records') drawRecords();
   if (paused) drawPause();
@@ -234,6 +247,14 @@ function drawPlay() {
 function drawTitle() {
   ctxt('FLOW STATE', 50, GOLD);
   ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
+}
+
+function drawPick() {
+  panel(24, 36, 208, 150);
+  ctxt('CHOOSE A PIECE', 46, GOLD);
+  PIECES.forEach((s, i) => txt(`${i === pickPiece ? '> ' : '  '}${s}`, 40, 70 + i * 14, i === pickPiece ? WHITE : DIM));
+  DIFFS.forEach((s, i) => txt(s, 56 + i * 52, 164, i === pickDiff ? GOLD : DIM));
+  ctxt('A PLAY   B BACK', 180, DIM);
 }
 
 function drawResults() {
