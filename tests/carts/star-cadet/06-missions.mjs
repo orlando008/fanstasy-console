@@ -1,0 +1,109 @@
+// Star Cadet Pinball, step 5: ranks and missions. The three lamps, the gate, the nine missions, the prizes, the rank's light, the multiball.
+// One PASS/FAIL line for each behaviour, written as a sentence.
+import { newGame, M } from './lib.mjs';
+let fails = 0;
+const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
+const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy }); };
+/** Say that the ball did these things (the table's own events), and let the rules take them. */
+const did = (p, ...ks) => { for (const k of ks) p.emit(k); p.processEvents(); };
+const game = (rk = 0) => { const vm = newGame(1), p = vm.probe(); p.rk = rk; p.extraGiven = true; return { vm, p }; }; // (extraGiven: the 500,000-point extra ball is not what is tested here)
+/** The ball is lost, and the bonus screen (a rank is worth 10,000) is pressed through. */
+const lose = (vm, p) => { Object.assign(p.ball, { x: 88, y: 700 }); vm.run(2); for (let i = 0; i < 4 && p.state === 'bonus'; i++) { vm.run(20); vm.press('A'); } vm.run(2); };
+
+// 1. The three lamps: a full set of standup targets, the drop bank and a ramp; all three light the gate.
+{
+  const { vm, p } = game();
+  ok(p.lamps.join() === 'false,false,false' && !p.mission, 'a game starts with the lamps out and no mission');
+  did(p, 'standupSet'); ok(p.lamps.join() === 'true,false,false', 'a full set of the four standup targets lights the first lamp');
+  did(p, 'bank'); ok(p.lamps.join() === 'true,true,false', 'the drop bank the second');
+  did(p, 'gate'); ok(!p.mission, 'the gate with the lamps not all lit starts nothing');
+  did(p, 'rampR'); ok(p.lamps.every(Boolean) && p.msg === 'GATE LIT', 'a ramp (either) the third, and the gate is lit');
+  did(p, 'gate'); ok(p.mission && p.mission.r === 0 && p.lamps.every((l) => !l), 'the gate then starts the mission of the player\'s rank, and uses the lamps up');
+  // by real play: a ball into the standup targets
+  const g = game(); for (const [x, y, vx] of [[60, 197, -4], [60, 269, -4], [116, 197, 4], [116, 269, 4]]) { put(g.p, x, y, vx, 0); g.vm.run(25); }
+  ok(g.p.stats.standupDone === 1 && g.p.lamps[0], 'and a real ball hitting all four standup targets lights it');
+}
+
+// 2. Each of the nine missions: its rules, by the table's own events.
+{
+  const play = (rk, ...evs) => { const { p } = game(rk); p.lamps = [true, true, true]; did(p, 'gate'); const m = p.mission; for (const k of evs) did(p, k); return { p, m }; };
+  const rep = (k, n) => Array(n).fill(k);
+  let r = play(0, ...rep('bump', 14)); ok(r.p.mission && r.p.rk === 0, 'Cadet: 14 bumper hits are not enough');
+  did(r.p, 'bump'); ok(!r.p.mission && r.p.rk === 1, 'the 15th completes it, and the cadet is an ensign');
+  r = play(1, 'standupSet', 'bank'); ok(!r.p.mission && r.p.rk === 2, 'Ensign: a full set of the targets, then the drop bank');
+  r = play(1, 'bank', 'standupSet'); ok(r.p.mission && r.p.rk === 1, 'in the other order it does not count');
+  r = play(2, 'rampL', 'rampR', 'rampL'); ok(r.p.mission, 'Pilot: left, right, left ... (three of four)');
+  did(r.p, 'rampR'); ok(!r.p.mission && r.p.rk === 3, 'and the fourth completes it');
+  r = play(2, 'rampL', 'rampL', 'rampL'); ok(r.p.mission && r.p.mission.n === 1, 'a ramp out of order counts for nothing');
+  r = play(3, ...rep('orbitL', 2), 'orbitR'); ok(r.p.mission && r.p.mission.n === 2, 'Lieutenant: the left orbit three times (the right does not count)');
+  did(r.p, 'orbitL'); ok(!r.p.mission && r.p.rk === 4, 'the third completes it');
+  r = play(4, ...rep('rampL', 5)); ok(r.p.mission, 'Commander: five ramp shots are not yet it ...');
+  did(r.p, 'gate'); ok(!r.p.mission && r.p.rk === 5, '... the gate after them is');
+  r = play(5, ...rep('spin', 49)); ok(r.p.mission, 'Captain: 49 spins'); did(r.p, 'spin'); ok(!r.p.mission && r.p.rk === 6, 'the 50th completes it');
+  r = play(6, 'gate', 'gate'); ok(r.p.mission, 'Commodore: the gate twice'); did(r.p, 'gate'); ok(!r.p.mission && r.p.rk === 7, 'the third completes it');
+  r = play(8, ...r.p.SHOTS.slice(0, 10)); ok(r.p.mission, 'Fleet Admiral: ten of the eleven different shots'); did(r.p, 'lane');
+  ok(r.p.mission && Object.keys(r.p.mission.set).length === 11, 'the eleventh, then a final shot ...'); did(r.p, 'gate');
+  ok(!r.p.mission && r.p.career, '... at the gate completes it, and the career is done');
+}
+
+// 2b. One mission by real play: lamps lit, a ball up to the gate, fifteen real bumper hits.
+{
+  const { vm, p } = game(); p.lamps = [true, true, true]; put(p, 88, 124, 0, -4); vm.run(8);
+  ok(p.mission && p.mission.r === 0 && p.banner.a === 'LAUNCH DRILL', 'a ball that reaches the gate with the lamps lit starts the mission, with its name on a banner');
+  vm.run(60); const s0 = p.score;
+  for (let i = 0; i < 40 && p.mission; i++) { put(p, 26, 168, 5, 0); vm.run(10); }
+  ok(!p.mission && p.rk === 1 && p.score - s0 >= 1000000, 'fifteen real bumper hits complete it and promote the player', `rank ${p.rk}, ${p.stats.bump} hits`);
+}
+
+// 3. The multiball of the Admiral's mission: three balls out of the gate, jackpots on ramps while there are two or more, and no save.
+{
+  const { vm, p } = game(7); p.lamps = [true, true, true]; put(p, 88, 124, 0, -4); vm.run(12);
+  ok(p.mission && p.mission.r === 7 && p.bs.length === 3, 'the mission puts three balls in play, two more in the gate behind the first', `${p.bs.length} balls`);
+  ok(p.saved, 'with no ball save');
+  vm.run(110); ok(p.bs.every((b) => !b.hold) && p.bs.length === 3, 'they come out of the gate one after another', p.bs.map((b) => `${b.x.toFixed(0)},${b.y.toFixed(0)} h${b.hold}`).join(' '));
+  const s0 = p.score; did(p, 'rampL'); did(p, 'jackpot'); ok(p.mission.n >= 1 && p.score - s0 >= 1000000, 'a ramp with several balls in play is a jackpot of 1,000,000', `${p.score - s0}`);
+  const n = p.bs.length; Object.assign(p.bs[0], { x: 88, y: 700 }); vm.run(2); ok(p.bs.length === n - 1 && p.balls === 3 && p.state === 'play', 'a ball lost in a multiball costs nothing while others are in play');
+  Object.assign(p.bs[0], { x: 88, y: 700 }); vm.run(2); ok(!p.mission && p.state === 'play', 'but when only one is left the mission is over', `${p.msg} ${p.banner && p.banner.a}`);
+  const g = game(7); g.p.lamps = [true, true, true]; put(g.p, 88, 124, 0, -4); g.vm.run(12); did(g.p, 'jackpot', 'jackpot', 'jackpot');
+  ok(!g.p.mission && g.p.rk === 8, 'three jackpots complete it: Fleet Admiral');
+  ok(g.p.extraBalls === 1, 'with the extra ball of the new rank (Fleet Admiral)');
+}
+
+// 4. Time, loss, prizes.
+{
+  const { vm, p } = game(); p.lamps = [true, true, true]; did(p, 'gate');
+  ok(p.mission.left === 60 * 60, 'a mission has its time: Cadet\'s is 60 seconds', `${p.mission.left}`);
+  vm.run(100); ok(p.mission.left === 3600 - 100 || p.mission.left < 3600, 'it counts down in play');
+  p.mission.left = 2; vm.run(3); ok(!p.mission && p.banner.a === 'MISSION FAILED' && p.rk === 0, 'when the time runs out the mission is failed, with no penalty');
+  ok(p.lamps.every(Boolean), 'and the lamps stay lit, so the gate starts it again');
+  did(p, 'gate'); ok(p.mission && p.mission.left === 3600, 'which it does');
+  vm.press('START'); const left = p.mission.left; vm.run(60); ok(p.paused && p.mission.left === left, 'a pause stops the clock');
+  vm.press('START'); const s0 = p.score; put(p, 88, 700); vm.run(2);
+  ok(!p.mission && p.score >= s0, 'a ball lost ends the mission, and the next ball starts without one');
+  const q = game(); q.p.lamps = [true, true, true]; did(q.p, 'gate'); const s1 = q.p.score; did(q.p, ...Array(15).fill('bump'));
+  ok(q.p.score - s1 === 1000000, 'the prize is 500,000 times the number of the new rank (an ensign is 2)', `${q.p.score - s1}`);
+  const w = game(4); w.p.lamps = [true, true, true]; did(w.p, 'gate'); const s2 = w.p.score; did(w.p, ...Array(5).fill('rampL'), 'gate');
+  ok(w.p.rk === 5 && w.p.score - s2 === 3000000 && w.p.extraBalls === 1, 'a captain is 6: 3,000,000 and an extra ball', `${w.p.score - s2}`);
+  const e = game(1); e.p.lamps = [true, true, true]; did(e.p, 'gate', 'standupSet', 'bank'); ok(e.p.rk === 2 && e.p.extraBalls === 1, 'a pilot (3) gets an extra ball too');
+  const c = game(8); c.p.career = true; c.p.lamps = [true, true, true]; const s3 = c.p.score; did(c.p, 'gate');
+  ok(!c.p.mission && c.p.score - s3 >= 5000000, 'after the last rank every gate with the lamps lit is a jackpot of 5,000,000');
+}
+
+// 5. Rank is the player's: kept on their turn, shown, in the bonus, and the table's light follows it.
+{
+  const vm = newGame(1), p = vm.probe(); p.startGame(2);
+  p.rk = 5; vm.run(100); vm.press('A'); lose(vm, p);
+  ok(p.cur === 1 && p.rk === 0, 'the next player has their own rank', `${p.cur} ${p.rk}`);
+  vm.run(100); vm.press('A'); lose(vm, p);
+  ok(p.cur === 0 && p.rk === 5, 'and the first gets theirs back');
+  const one = newGame(1), q = one.probe(); q.rk = 3; q.bonus = 1000; q.mult = 2; put(q, 88, 700); one.run(2);
+  ok(q.bonusRes.base === 1000 + 3 * 10000 && q.bonusRes.total === 62000, 'the bonus has 10,000 for each rank, times the multiplier', `${q.bonusRes.total}`);
+}
+{
+  const { vm, p } = game(0); const lum = (i) => { const [r, g, b] = p.color(i); return [r, g, b]; };
+  p.applyRankLight(); const cad = lum(18); p.rk = 8; p.applyRankLight(); const adm = lum(18);
+  ok(cad[2] > cad[0] && adm[0] > adm[2], 'the floor\'s light goes from a cool blue (a cadet) to a warm gold (a fleet admiral)', `${cad} -> ${adm}`);
+  ok(adm[0] + adm[1] + adm[2] > cad[0] + cad[1] + cad[2], 'and brighter');
+}
+
+console.log(fails ? `${fails} FAILED` : 'all passed'); process.exit(fails ? 1 : 0);

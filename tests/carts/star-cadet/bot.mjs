@@ -13,14 +13,15 @@ export const defaults = { frames: 9000, seeds: 1, set: { skill: [0.2, 0.6, 1] } 
 
 export const newGame = (seed) => boot(seed); // skipTitle: straight into play
 
-let until = [0, 0], late = [0, 0], lastBalls = 3, drained = 0, maxBall = 0, still = 0, worstStill = 0, ballFrames = 0, balls = [];
-export const setup = () => { until = [0, 0]; late = [0, 0]; lastBalls = 3; drained = 0; maxBall = 0; still = 0; worstStill = 0; ballFrames = 0; balls = []; };
+let missions = 0, lastRk = 0, until = [0, 0], late = [0, 0], lastBalls = 3, drained = 0, maxBall = 0, still = 0, worstStill = 0, ballFrames = 0, balls = [];
+export const setup = () => { missions = 0; lastRk = 0; until = [0, 0]; late = [0, 0]; lastBalls = 3; drained = 0; maxBall = 0; still = 0; worstStill = 0; ballFrames = 0; balls = []; };
 
 /** Plunge at full power; then flip when the ball comes near a flipper. `skill` is the chance that a flip is on time (otherwise it is late). */
 export function pad(vm, p, frame, opts) {
   const skill = opts.skill ?? 1;
   if (p.balls < lastBalls) { balls.push(ballFrames); ballFrames = 0; drained++; lastBalls = p.balls; }
   ballFrames++;
+  if (p.rk !== lastRk) { if (p.rk > lastRk) missions++; lastRk = p.rk; }
   if (p.state === 'turn' || p.state === 'bonus') return frame % 2 ? M('A') : 0; // the splash and the bonus count: press through
   if (p.inLane()) return p.plunge >= 0.97 ? 0 : M('DOWN');
   maxBall = Math.max(maxBall, 640 - p.ball.y);
@@ -44,5 +45,5 @@ export const finished = (p) => !['play', 'turn', 'bonus'].includes(p.state) || b
 export function result(p) {
   const n = balls.length || 1;
   const st = p.stats, kinds = ['bump', 'sling', 'standup', 'drop', 'spin', 'orbit', 'lane', 'gate', 'ramp', 'kick'];
-  return { score: p.score, kinds: kinds.filter((k) => st[k] > 0).length, bump: st.bump, sling: st.sling, standup: st.standup, drop: st.drop, bank: st.bank, spin: st.spin, orbit: st.orbit, lane: st.lane, gate: st.gate, ramp: st.ramp, drained, avgBallSeconds: Math.round(balls.reduce((a, b) => a + b, 0) / n / 6) / 10, highest: Math.round(maxBall), problems: worstStill > 120 ? [`the ball stood still for ${worstStill} frames`] : [] };
+  return { score: p.score, rank: p.rk, lamps: p.lamps.filter(Boolean).length, missions: missions, kinds: kinds.filter((k) => st[k] > 0).length, bump: st.bump, sling: st.sling, standup: st.standup, drop: st.drop, bank: st.bank, spin: st.spin, orbit: st.orbit, lane: st.lane, gate: st.gate, ramp: st.ramp, drained, avgBallSeconds: Math.round(balls.reduce((a, b) => a + b, 0) / n / 6) / 10, highest: Math.round(maxBall), problems: worstStill > 120 ? [`the ball stood still for ${worstStill} frames`] : [] };
 }

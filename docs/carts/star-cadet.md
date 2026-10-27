@@ -52,11 +52,11 @@ The flippers are laid out for two hands, as on a real table: a thumb on the D-pa
 | Plunger lane | x 176 to 192, from y 612 up to y 96 | The ball waits on the lane's floor (y 607); the top arch turns it left |
 | Top arch | y 0 to 96 | A half circle of radius 96 centred at x 96 (16 segments) |
 | Top lanes | y 62, x 52, 88 and 124 | Three rollover lanes: all three lit gives the next bonus multiplier (x2 to x6) |
-| Gate (kickout) | (88, 104), radius 7 | A hole: the ball is swallowed, scores 5,000, is held three quarters of a second and spat out down the table, to the other side each time (step 5: it starts the mission when the lamps are lit) |
+| Gate (kickout) | (88, 104), radius 7 | A hole: the ball is swallowed, scores 5,000, is held three quarters of a second and spat out down the table, to the other side each time (with the three mission lamps lit it starts the player's mission) |
 | Pop bumpers | (66, 168), (110, 168), (88, 204) | Three round bumpers, radius 11: they throw the ball away at 6 px a frame or more |
 | Orbits | lanes 24 wide on each side, x 0 to 24 and x 152 to 176, y 150 to 330 | A ball shot up one scores the orbit (2,000); the left one has a **spinner** at y 226 to 254. Slanted **wire gates** (a rail that stops only a ball coming down) at the top and at the bottom of each lane turn a ball from the plunger, and a ball coming out of an orbit, into the table rather than into the outlane |
 | Drop targets | three, slanted, from (71, 287) to (100, 296) | A bank of three: each is 1,000, a cleared bank 5,000, and it comes back up after 1.5 seconds. (They are slanted so a ball cannot balance on them.) |
-| Standup targets | the inner guide of each orbit, at y 190 to 204 and y 262 to 276 | Four: the first hit of each lights it (500); all four lit counts one set and they start again (step 5: they light the mission lamps) |
+| Standup targets | the inner guide of each orbit, at y 190 to 204 and y 262 to 276 | Four: the first hit of each lights it (500); all four lit counts one set and they start again (a full set lights the first mission lamp) |
 | Ramps | left from (40, 420) to (12, 165), right from (136, 420) to (164, 165) | A ball hit up the table at 4 px a frame or more, into the mouth, is carried along the ramp over the table (it touches nothing) and comes out at the top of the orbit lane; each has a lit award (2,500 instead of 1,000) |
 | Slingshots | left face (32, 480) to (44, 545), right face (144, 480) to (132, 545) | Kick the ball away from the face at 7 px a frame or more |
 | Inlanes, outlanes | y 480 to 590 each side, mirrored about x 88 | An inlane guide from (16, 492) down to (16, 540) and on to the flipper's pivot; the channel inside it, between it and the slingshot, is the **inlane** and feeds the flipper; the channel outside it, 16 px wide, is the **outlane** and drains. The left outlane has a **kickback** (once a ball) |
@@ -101,7 +101,7 @@ The flippers are laid out for two hands, as on a real table: a thumb on the D-pa
 | 8 Admiral | Battle Fleet | a three ball multiball: 3 jackpots (a jackpot is a ramp shot while 2 or more balls are in play) |
 | 9 Fleet Admiral | Mothership | every shot of the table once, in any order (120 s), then a final jackpot |
 
-To start a mission: light the **mission lamps** (hit the standup targets and the drop bank; three lit) and shoot the gate; the table goes into mission mode (the lamps show the objective, the panel the timer). Completing it promotes the player one rank (500,000 x the new rank's number as a bonus, an extra ball at ranks 3, 6 and 9), lights a new set of lamps and plays the fanfare; running out of time ends the mission with no penalty (the gate can be shot again). Fleet Admiral's mission completed ends the career: every later mission is worth a jackpot of 5,000,000.
+To start a mission: light the three **mission lamps** (a full set of the four standup targets, the drop bank, and a ramp shot; the panel says GATE LIT and the gate glows) and shoot the **gate**. The banner at the top of the table shows the mission, what is left and the time; a ball lost ends the mission. Completing it promotes the player one rank (500,000 x the new rank's number as a prize, an extra ball on reaching Pilot, Captain and Fleet Admiral), clears the lamps and changes the table's light; running out of time (or losing the ball, or the multiball ending) fails it with no penalty, and the lamps stay lit, so the gate starts it again. The Admiral's mission is a **multiball**: two more balls come out of the gate behind the first (no ball save), and a ramp shot while two or more balls are in play is a jackpot of 1,000,000. Fleet Admiral's mission completed ends the career (the prize is 5,000,000): every later gate with the lamps lit is a jackpot of 5,000,000. The **light** of the table follows the rank, from a dim cool blue (Cadet) to a warm bright gold (Fleet Admiral): the floor's palette is rewritten.
 
 **Tilt.** A tilt ends the ball at once with no bonus; a nudge is a push of the table, not of the ball, and the camera shakes.
 
@@ -132,7 +132,7 @@ Normal play (1 to 4 players). **Attract mode** on the title (a demo ball plays i
 | Gate shot | 5,000 |
 | Mission completed | 500,000 x the new rank's number |
 | Jackpot (multiball) | 1,000,000 |
-| End-of-ball bonus | what the ball's shots added (a standup 1,000, a drop target 500, a cleared bank 5,000, a ramp 2,000, an orbit 2,000, the gate 5,000; step 5 adds 10,000 per rank) x the bonus multiplier, counted on its own screen |
+| End-of-ball bonus | what the ball's shots added (a standup 1,000, a drop target 500, a cleared bank 5,000, a ramp 2,000, an orbit 2,000, the gate 5,000) plus 10,000 for each rank above Cadet x the bonus multiplier, counted on its own screen |
 
 An extra ball at 500,000; a replay is not given.
 
@@ -269,6 +269,22 @@ Each step: build it, run `node tools/check.js star-cadet` and `node tools/test.j
   screens (PLAY asks how many players; the score is asked for after the game over screen). `bot.mjs` presses through the splash and the bonus screens.
 - **Results:** 5 test files; the soak (random buttons, including nudges and tilts) is clean, 57 sprites at most.
   The balance of all of this (how often the save is used, how big a bonus is) waits for step 8.
+
+### Step 5 built: ranks and missions
+
+- `carts/src/star-cadet/code.js`: **ranks** (`RANK_NAMES`, a rank for each player, kept on their turn), **the nine missions** (`MISSIONS`: a name, a time and a rule `on(m, k)` that is given each
+  thing the ball does), **the events** (the table's handlers `emit` what happened: a bumper, a sling, a standup or a full set, a drop target or the bank, a spin, a ramp
+  (left or right), an orbit (left or right), the gate, a lane, a jackpot; `processEvents` takes them after the frame's physics, so a mission is a few lines and is tested
+  without a ball), **the lamps** (`setLamp`, `startMission`, `completeMission`, `failMission`), **the multiball** (the balls are now a list, `bs`, with `ball` the first; `stepTable`
+  swings the flippers once and moves every ball; a ball lost with others in play costs nothing, and the camera follows the lowest ball) and **the rank's light** (`applyRankLight`).
+- The panel shows the rank; the mission is a banner over the top of the table with what is left and the clock; three lamps sit under the gate and the gate glows when lit.
+- Found by the multiball test: a ball let out of the gate falls on the bumpers, which throw it straight back up into the gate (for a single ball too): a ball that has just left
+  the gate now ignores it for 2.5 seconds.
+- `tests/carts/star-cadet/06-missions.mjs`: the lamps, every mission's rule (and the wrong order, and the wrong orbit), a mission by real bumper hits, the multiball (three balls,
+  jackpots, losing balls, the mission ending with one ball left), the time, a ball lost, the pause, the prizes and extra balls, the career jackpot, each player's own rank
+  and the rank in the bonus, and the table's light going from blue to gold.
+- **Results:** 6 test files; the soak is clean. The balance (are 60 seconds enough for 15 bumper hits, how hard it is to light the lamps) waits for step 8, when the bot learns
+  to aim: today's bot only lights two lamps and never shoots the gate.
 
 ## 16. Open questions
 
