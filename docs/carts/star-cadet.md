@@ -166,7 +166,7 @@ BG0 the table (a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the
 
 | Asset | Budget |
 |---|---|
-| Code | 28 KB of the 64 KB limit after step 3 (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Code | 44.5 KB of the 64 KB limit after step 5 (68%: the audio, the flow polish and the balance need a few KB more; `strip` and `mangle` in `meta.json` would give back about a fifth) (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
 | Tiles | 712 of 1,024 after step 3: 465 of the 479 for the background (the floor 16, the decor and ramps about 400, the stars about 40: the table's 1,920 map cells share by repeating and flipping) and 247 of the 544 for sprites |
 | Sprites | 45 of the 128 in OAM in play, at most 11 on a line (of 32): the ball, 2 flippers of 3 to 8 pieces, 3 bumpers, 2 slingshots of 8 pieces, 4 standups, 3 drops, the spinner, the plunger and its spring, up to 7 lamps with their glows. Up to 3 balls with the multiball |
 | ROM | the table's data if it is larger than a few KB |
