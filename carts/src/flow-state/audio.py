@@ -31,10 +31,10 @@ a.instrument('FANFARE', 'pulse25', 0, 6, 11, 6, 9)
 
 # --- 0 The title and the map: the Prelude in C; then the pieces (1 on), the pads and the sound from the same notes ---
 a.voice('PLUCK', 'pluck', 15, -0.1)
-a.voice('STRINGS', 'strings', 8, 0.1, a=4)
+a.voice('STRINGS', 'strings', 8, 0.1, a=0)
 a.voice('EPIANO', 'epiano', 15, 0.0)
 a.voice('ELEAD', 'epiano', 5, 0.0)
-a.voice('FLUTE', 'flute', 4, -0.1)
+a.voice('FLUTE', 'flute', 4, -0.1, a=0)
 a.voice('SOFTPLUCK', 'pluck', 10, -0.1)
 compile_piece(a, PRELUDE)
 for pc in PIECES: compile_piece(a, pc)

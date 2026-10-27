@@ -155,6 +155,8 @@ BG2 affine river (a water texture from the art kit, drawn once and scrolled), BG
 
 **Step 3, results:** the river, the far bank and the frog look as intended in all five lights (read in screenshots, `tools/devkit/shots.mjs`); 1.9 ms of a frame on average (11 at most) in a hard piece, 18 sprites at most. Not done yet (step 4): the HUD is still plain (a bar, text), the pads have no judgement colours or ripples, and the title has no logo; the fireflies, dragonflies and the jumping fish of section 4 come with step 4's look.
 
+**Fix after review (the Air):** the Air's strings took 94 ms to reach full level against 6 ms for the Minuet, so the sound seemed to come after its pad and a player who taps on what they hear landed late on every note. The strings and the Badinerie's flute now start at once (attack 0; the sound reaches a quarter of its level in 6 ms in every piece, measured by rendering the first melody note of each: the check is a script in the session, not yet a test).
+
 Each step: build it, run `node tools/check.js flow-state` and `node tools/test.js flow-state`, write its **Built** and **Results** notes under its number here, commit and push.
 
 ## 16. Open questions
