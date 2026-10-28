@@ -91,7 +91,7 @@ export function pad(vm, p, frame, opts) {
     const door = p.doors.find((d) => d.r === Math.floor((f.y + K.BOX_H / 2) / K.CELL) && p.cellAt(d.side, d.r) === K.DOOR);
     if (door && (chance(door.r, 7, 0.4 + 0.6 * skill) || f.hp < f.maxHp)) return M(door.side ? 'RIGHT' : 'LEFT');
     // Walking into a wall (a block a cell up): jump over it.
-    still = m && Math.abs(f.x - lastX) < 0.01 ? still + 1 : 0; lastX = f.x;
+    still = m && Math.abs(f.x - lastX) < 1 ? still + 1 : 0; lastX = f.x; // (against a wall the faller jitters by a pixel)
     if (still > 15) { still = 0; return m | fire(); }
     if (foe && Math.abs(foe.y - fy) < 16 && Math.abs(foe.x - mid) < 40) return M(foe.x > mid ? 'RIGHT' : 'LEFT') | fire(); // jump at it
     if (f.onLedge) return m | (frame % 2 ? M('DOWN') : 0);
