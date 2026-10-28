@@ -1,7 +1,7 @@
 # The Ivory Tower: Cart Specification
 
 **Version:** 0.2 (spec agreed in outline)
-**Status:** Step 1 built (the rules on plain slabs); steps 2 to 8 to come
+**Status:** Steps 1 (the rules) and 2 (the marble) built; steps 3 to 8 to come
 **Cart source:** `carts/src/ivory-tower/` → `carts/ivory-tower.nova`
 
 ---
@@ -165,6 +165,15 @@ the overlap and the slice (one or two pieces that fall with gravity 0.25), the p
 placeholder layers are hidden. `tests/carts/ivory-tower/02-slab.mjs` tests the arithmetic; `bot.mjs` taps with an error that grows as `skill` falls.
 
 *Results.* The tests, `verify`, and `smoke` pass. The sweep (6 seeds): a sloppy bot (skill 0.3) reaches about 12 floors in 15 s, a fair one (0.7) about 34 floors (best run of perfects 4) in 30 s, an exact one 73 floors, then it slips when the speed nears its cap (the window gets about one frame wide). A first guess to tune in step 7. Slab colours, marble, sky, landmarks, banner and audio are later steps (the sound cues are still the starter's). Points are kept (10 a floor, 10 x the run for a perfect) but the landmark bonus is step 4.
+
+**Step 2: built and results.**
+
+*Built.* The five marbles, drawn on the overlay each frame from a slab's floor number (`drawSlab` in `code.js`): a stone fill, a lit band, 3 to 5 slanted veins (some strong, some faint, from a hash of the floor and the vein's number), a bevel (bright top and left, dark bottom and right) and a streak of gloss,
+clipped to the slab. The marbles' colours are 8 entries each in CGRAM 144 to 183 (set in `init`: Carrara, Verde, Nero, Rosa, Azul, a new one every 10 floors), the ring's gold is 208 (see-through). The veins hang on `ox`, where the slab was before it was cut, so a cut slab and a slice keep their pattern.
+A slice tumbles: it carries its floor (its marble), turns (a shear, drawn a row at a time) and falls off the screen. A perfect makes a ring that spreads from the slab for 18 frames and 5 sparkles (small stars on the overlay) that rise for 34. `art.py` no longer has the template's ground, hills, ship and gem: the sky gradient (now all 224 lines) and GLASS are all it makes until step 3.
+`tests/carts/ivory-tower/03-marble.mjs`: the marble of each floor, the colours in CGRAM, the same slab wherever it is drawn, a cut slab keeping its veins, nothing drawn outside a slab, the slice and the ring's life, and the speed of a tall tower with its effects.
+
+*Results.* All the tests pass; a tall tower with its effects draws in about 1 ms a frame (the limit in the test is 8). Looked at in screenshots: the white Carrara base with grey veins, the green, then the black marble with gold veins at floor 20 read well against the sky. Left for later: the plinth is still a grey block; the slabs' shadow on the sky and the glow of a landmark come with the sky in step 3.
 
 Each step: build it, run `node tools/check.js ivory-tower` and `node tools/test.js ivory-tower`, write its **Built** and **Results** notes under its number here, commit and push.
 

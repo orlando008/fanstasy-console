@@ -5,71 +5,10 @@
  "gradients": [
   "sky"
  ],
- "palettes": {
-  "bg1": {
-   "base": 16,
-   "colors": {
-    "bloom": 5,
-    "grass0": 1,
-    "grass1": 2,
-    "grass2": 3,
-    "grass3": 4
-   }
-  },
-  "bg2": {
-   "base": 32,
-   "colors": {
-    "hill0": 1,
-    "hill1": 2,
-    "hill2": 3
-   }
-  },
-  "spr0": {
-   "base": 128,
-   "colors": {
-    "edge": 1,
-    "fire0": 7,
-    "fire1": 8,
-    "gold0": 9,
-    "gold1": 10,
-    "gold2": 11,
-    "hull0": 2,
-    "hull1": 3,
-    "hull2": 4,
-    "hull3": 5,
-    "white": 6
-   }
-  }
- },
- "scenes": {
-  "field": {
-   "h": 8,
-   "mx": 0,
-   "my": 0,
-   "pal": 1,
-   "w": 32
-  },
-  "hills": {
-   "h": 8,
-   "mx": 32,
-   "my": 0,
-   "pal": 2,
-   "w": 32
-  }
- },
- "sprites": {
-  "gem": {
-   "pal": 0,
-   "size": 16,
-   "tile": 258
-  },
-  "player": {
-   "pal": 0,
-   "size": 16,
-   "tile": 256
-  }
- },
+ "palettes": {},
+ "scenes": {},
+ "sprites": {},
  "tiles": {},
- "used": 160,
+ "used": 0,
  "version": 1
 }

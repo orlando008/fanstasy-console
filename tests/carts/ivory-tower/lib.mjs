@@ -11,7 +11,7 @@ const PROBE = `__expose(() => ({
   get floors() { return floors; }, get points() { return points; }, get run() { return run; }, set run(v) { run = v; }, get perfects() { return perfects; }, get bestRun() { return bestRun; },
   get tower() { return tower; }, get slab() { return slab; }, set slab(v) { slab = v; }, get slices() { return slices; }, get cam() { return cam; },
   get rank() { return rank; }, get initials() { return initials; }, get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
-  speed, nextSlab, screenY, drop, SFX, SONG, TOP_SLOT, ENTRY, BEST_SLOT, GAMES_SLOT, insertTop, topTen, packInitials, unpackInitials,
+  get rings() { return rings; }, get sparks() { return sparks; }, drawSlab, marbleOf, hash, MARBLE_BASE, RING, MARBLES, speed, nextSlab, screenY, drop, SFX, SONG, TOP_SLOT, ENTRY, BEST_SLOT, GAMES_SLOT, insertTop, topTen, packInitials, unpackInitials,
   K: { SLAB_H, BASE_W, CENTRE, REACH, PERFECT, MIN_OVERLAP, REGROW, REGROW_FROM, SPEED0, SPEED_STEP, SPEED_MAX, BASE_Y, TOP_Y, COUNT_IN, FALL_FRAMES },
 }));`;
 
