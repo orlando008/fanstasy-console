@@ -1,7 +1,7 @@
 # The Ivory Tower: Cart Specification
 
 **Version:** 0.2 (spec agreed in outline)
-**Status:** Steps 1 to 7 (the rules, the marble, the sky and the landmarks, the scoring, the flow, the audio, the balance) built; step 8 to come
+**Status:** Built: all eight steps; released to the Library
 **Cart source:** `carts/src/ivory-tower/` → `carts/ivory-tower.nova`
 
 ---
@@ -218,6 +218,13 @@ a speed step of 0.03 gave 13 / 19 / 38 / 63, of 0.06 12 / 17 / 30 / 42. *Chosen:
 
 *Results.* A casual player (about 6 frames of error) climbs about 13 floors in 15 seconds, a fair one (3 frames) about 21 floors in 22 s, a good one (2 frames) about 40 floors in 34 s, an expert (1 frame) about 68 floors in 48 s (the first floors are slow by design: a slab takes two seconds to cross at the start). The sweep ran clean (no stuck state, the soak of `verify` too).
 The regrow matters little to a bot, which rarely strings perfects; for a person who does, it is the reward of a long run (a perfect 10 in a row is 10 + 20 ... + 100 points and a slab as wide as it began). A person is not a bot: this is the first thing to change after playing it. A run is short at the start and long at the end by design, and the best height is the thing to beat.
+
+**Step 8: built and results.**
+
+*Built.* The label (`release.js --wait 2500`: the title, a tower of 5 floors over the courtyard with the logo and the menu), the PNG cart, the Library entry (`carts/index.json`, shelf Arcade, one player), the README row, the playbook's section 12 (what this game taught), and the budget table filled in. The spec's open questions are answered or noted: the feel is set by the bot and is the first thing to change after playing it;
+the side view reads well on 256 x 224 (the slab and the tower are easy to see against the layers); the overlay's cost is about 1 ms a frame, and the ring and sparkles are overlay shapes.
+
+*Results.* `node tools/verify.js ivory-tower` (with the tests), `smoke`, the sweep and `check.js` pass; the PNG cart decodes to exactly the packed cart (47 KB of 147 KB).
 
 Each step: build it, run `node tools/check.js ivory-tower` and `node tools/test.js ivory-tower`, write its **Built** and **Results** notes under its number here, commit and push.
 
