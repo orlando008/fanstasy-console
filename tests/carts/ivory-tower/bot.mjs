@@ -5,7 +5,9 @@
 //
 // The contract is in the header of tools/devkit/sweep.mjs: pad() gives the buttons each frame, finished() says the
 // run is over, result() gives the numbers to summarise (and `problems` for anything that must not happen).
-// It taps when the sliding slab is over the place it aims for: the top of the tower plus an error, which is larger the lower `skill` (0 to 1) is.
+// It taps when the sliding slab is over the place it aims for: the top of the tower plus an error. A person's error is in time, not in pixels (a thumb
+// is early or late by some frames), so it is `sigma` frames of the slab's travel: the faster the slab, the larger the error in pixels. `skill` (0 to 1)
+// gives the sigma: 1 is half a frame (an expert), 0.7 about 3 frames (a good player), 0.3 about 7 (a casual one).
 import { M, newGame as boot } from './lib.mjs';
 
 export const defaults = { frames: 30000, seeds: 6, set: { skill: [0.3, 0.7, 1] } };
@@ -23,7 +25,7 @@ export function pad(vm, p, frame, opts) {
   const skill = opts.skill ?? 1;
   if (!p.slab || p.state !== 'play') return (last = 0);
   const t = p.tower[p.tower.length - 1];
-  if (aimFor !== p.slab) { aimFor = p.slab; aim = gauss() * (1 - skill) * 14; }   // one error for each slab
+  if (aimFor !== p.slab) { aimFor = p.slab; aim = gauss() * (0.5 + (1 - skill) * 9.5) * p.speed(); }   // one error for each slab
   const reach = p.speed() / 2 + 0.5;
   const tap = Math.abs(p.slab.x - (t.x + aim)) <= reach && !last;                     // a new press needs the button up on the frame before
   return (last = tap ? M('A') : 0);

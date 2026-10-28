@@ -1,7 +1,7 @@
 # The Ivory Tower: Cart Specification
 
 **Version:** 0.2 (spec agreed in outline)
-**Status:** Steps 1 to 6 (the rules, the marble, the sky and the landmarks, the scoring, the flow, the audio) built; steps 7 and 8 to come
+**Status:** Steps 1 to 7 (the rules, the marble, the sky and the landmarks, the scoring, the flow, the audio, the balance) built; step 8 to come
 **Cart source:** `carts/src/ivory-tower/` → `carts/ivory-tower.nova`
 
 ---
@@ -21,8 +21,8 @@ any width is cheap; the tower scrolls by moving what is drawn, not by a map; the
 ## 2. Core loop
 
 A slab slides across the top of the tower at a speed that grows with the height. The player drops it with one press. It lands on the slab below: the part that overhangs falls away, the rest becomes the new top of the tower
-and the next slab (the width that is left) starts to slide. A drop within 3 pixels of dead on is **perfect**: it keeps the full width, rings a note one step higher than the last perfect, and after three in a row each perfect gives
-3 pixels of width back, up to the width of the first slab. A drop that shares no width with the slab below falls past the tower: the run is over. The tower's height in floors is the score that matters.
+and the next slab (the width that is left) starts to slide. A drop within 4 pixels of dead on is **perfect**: it keeps the full width, rings a note one step higher than the last perfect, and after three in a row each perfect gives
+4 pixels of width back, up to the width of the first slab. A drop that shares no width with the slab below falls past the tower: the run is over. The tower's height in floors is the score that matters.
 
 ## 3. Controls
 
@@ -55,11 +55,11 @@ is room above for the sliding slab and the sky. A small panel at the top left sh
 | Quantity | Value |
 |---|---|
 | Slide speed at floor 1 | 1.6 px a frame |
-| Slide speed | grows 0.045 px a frame each floor, up to 4.8 px a frame (at floor 72 and above) |
+| Slide speed | grows 0.04 px a frame each floor, up to 4.8 px a frame (at floor 80 and above) |
 | Where a slab starts | alternately off the left and off the right edge of the screen, at the top of the view; it slides across and back (turns at 24 px beyond the screen edge) |
-| Perfect window | the drop is within 3 px of dead on |
+| Perfect window | the drop is within 4 px of dead on |
 | A perfect | the slab takes the exact place of the one below (keeping its width); the **perfect run** goes up by one |
-| Regrow | from the third perfect in a row, each perfect adds 3 px to the slab's width (the slab grows each side by 1.5 px), up to 96 px; the run stops at a drop that is not perfect |
+| Regrow | from the third perfect in a row, each perfect adds 4 px to the slab's width (the slab grows each side by 2 px), up to 96 px; the run stops at a drop that is not perfect |
 | A drop that is not perfect | the part of the slab beyond the edges of the one below is sliced off: the slab shrinks to the overlap; the run is over |
 | A miss | an overlap of less than 2 px: the slab is not placed, it falls, the game is over |
 | Narrowest slab | 2 px: below that is a miss |
@@ -210,11 +210,20 @@ the note of its run on a pentatonic ladder (D E F# A B across two octaves: 10 no
 `07-audio.mjs` tests the table, the cues, the ladder and the switches. *Results.* `loud.mjs --check`: all songs within the limits (the tune alone at most 0.035 RMS and 0.70 of the mix, pierce 0.005 against the limit of 0.012); `clash.py`: no clashes; the effects measure 0.010 to 0.035 RMS (`sfx.mjs`), in the range of 0.01 to 0.05. I cannot hear them: the numbers say they are at a sensible level and the tune is in key, nothing more;
 if a sound is too loud, too thin or too sweet, the instruments' `vol` and the `LADDER` are at the top of `audio.py`.
 
+**Step 7: built and results.**
+
+*Built.* The bot's error is now in time, as a thumb's is: `sigma` frames of the slab's travel (0.5 + (1 - skill) x 9.5 frames), so the faster the slab, the larger the error in pixels (before it was a fixed number of pixels, which does not get harder with the height). `08-balance.mjs` runs the bot at four skills and holds the ranges below as a guard on the numbers.
+I tried the three numbers that set the feel on their own and together (8 seeds each, mean floors at skill 0.5 / 0.7 / 0.85 / 0.95): the start (perfect window 3 px, regrow 3, speed step 0.045) gave 12 / 18 / 32 / 55; a window of 2 px 12 / 16 / 29 / 44, of 4 px 13 / 18 / 37 / 62; a regrow of 2 px or 5 px hardly moves anything (53 and 56 for the expert);
+a speed step of 0.03 gave 13 / 19 / 38 / 63, of 0.06 12 / 17 / 30 / 42. *Chosen:* window 4 px, regrow 4 px (2 px each side), speed step 0.04 (the cap, 4.8 px a frame, from floor 80): 13 / 20 / 41 / 67.
+
+*Results.* A casual player (about 6 frames of error) climbs about 13 floors in 15 seconds, a fair one (3 frames) about 21 floors in 22 s, a good one (2 frames) about 40 floors in 34 s, an expert (1 frame) about 68 floors in 48 s (the first floors are slow by design: a slab takes two seconds to cross at the start). The sweep ran clean (no stuck state, the soak of `verify` too).
+The regrow matters little to a bot, which rarely strings perfects; for a person who does, it is the reward of a long run (a perfect 10 in a row is 10 + 20 ... + 100 points and a slab as wide as it began). A person is not a bot: this is the first thing to change after playing it. A run is short at the start and long at the end by design, and the best height is the thing to beat.
+
 Each step: build it, run `node tools/check.js ivory-tower` and `node tools/test.js ivory-tower`, write its **Built** and **Results** notes under its number here, commit and push.
 
 ## 16. Open questions
 
-- **The feel.** The speed curve and the perfect window are the whole game: Stack is hard to put down because the window is just forgiving enough; the numbers of section 5 are a first guess, constants in one place, to be set by playing and by the bot.
+- **The feel.** The speed curve and the perfect window are the whole game: Stack is hard to put down because the window is just forgiving enough. They are set (step 7) by a bot whose error is in frames, not by a hand: the numbers are constants in one place (the top of `code.js`), and a person's playing is what will tell if they are right.
 - **Side view, not isometric.** Stack is seen from a corner, with slabs that slide along two axes alternately. Here the tower is seen from the front and the slab slides in one line: simpler to draw and read on 256 x 224, but a different game feel; if it feels too easy, the
   slab could alternate between a front and a deep slide (shown as a slab that shrinks in perspective).
 - **The overlay for the slabs.** Fifteen or so slabs are drawn each frame (a fill, a few veins and highlights each); if the overlay's cost, or its being above the sprites, gets in the way of the sparkles (sprites cannot appear over it), the sparkles are overlay shapes too.

@@ -77,8 +77,8 @@ let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 // --- The tower and its rules (SPEC 5). Pixels and pixels a frame; the numbers are here, in one place, because only playing can set them. ---
 
 const SLAB_H = 8, BASE_W = 96, CENTRE = 128, REACH = 110; // a slab is 8 px thick; the first is 96 wide; a slab's centre slides over CENTRE +- REACH
-const PERFECT = 3, MIN_OVERLAP = 2, REGROW = 3, REGROW_FROM = 3; // a drop within 3 px is perfect; the third perfect in a row starts to give width back, 3 px each
-const SPEED0 = 1.6, SPEED_STEP = 0.045, SPEED_MAX = 4.8; // the slide's speed at floor 0, how much each floor adds, and its limit
+const PERFECT = 4, MIN_OVERLAP = 2, REGROW = 4, REGROW_FROM = 3; // a drop within 4 px is perfect; the third perfect in a row starts to give width back, 4 px each
+const SPEED0 = 1.6, SPEED_STEP = 0.04, SPEED_MAX = 4.8; // the slide's speed at floor 0, how much each floor adds, and its limit
 const BASE_Y = 176, TOP_Y = 140; // the screen y of the base slab's top at the start, and of the top slab's top once the tower is tall
 const COUNT_IN = 60, FALL_FRAMES = 50, GRAVITY = 0.25; // frames before the first slab; a missed slab falls this long before the game is over
 const POINTS_FLOOR = 10, POINTS_PERFECT = 10, PERFECT_CAP = 10, POINTS_LANDMARK = 100; // a floor, each perfect (times the run, up to the cap), a landmark

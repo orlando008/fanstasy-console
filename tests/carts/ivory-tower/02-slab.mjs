@@ -10,31 +10,32 @@ const top = (p) => p.tower[p.tower.length - 1];
 {
   const p = newGame(1).probe(), K = p.K;
   ok(top(p).w === K.BASE_W && top(p).x === K.CENTRE - K.BASE_W / 2, 'the base slab is 96 wide and centred');
-  ok(p.speed(0) === K.SPEED0 && Math.abs(p.speed(10) - 2.05) < 1e-9 && p.speed(500) === K.SPEED_MAX && Math.abs(p.speed(72) - 4.84) > 0 && p.speed(72) === K.SPEED_MAX, 'the slide speed grows 0.045 a floor up to 4.8');
+  ok(p.speed(0) === K.SPEED0 && Math.abs(p.speed(10) - (K.SPEED0 + 10 * K.SPEED_STEP)) < 1e-9 && p.speed(500) === K.SPEED_MAX && p.speed(Math.ceil((K.SPEED_MAX - K.SPEED0) / K.SPEED_STEP)) === K.SPEED_MAX && p.speed(Math.floor((K.SPEED_MAX - K.SPEED0) / K.SPEED_STEP) - 1) < K.SPEED_MAX, 'the slide speed grows a little each floor, up to its cap');
 }
 {
   const p = newGame(1).probe();
   ok(dropAt(p, 0) && p.floors === 1 && top(p).w === 96 && p.run === 1, 'a drop dead on keeps the width and counts a perfect');
-  ok(dropAt(p, 3) && top(p).w === 96 && p.run === 2, 'within 3 px is still perfect');
-  ok(dropAt(p, -3) && top(p).w === 96 && p.run === 3, 'and so is -3');
+  ok(dropAt(p, p.K.PERFECT) && top(p).w === 96 && p.run === 2, 'within the perfect window (4 px) is still perfect');
+  ok(dropAt(p, -p.K.PERFECT) && top(p).w === 96 && p.run === 3, 'and so on the other side');
   ok(p.points === 3 * 10 + 10 + 20 + 30, 'points: 10 a floor and 10 x the run for each perfect', `${p.points}`);
+  dropAt(p, p.K.PERFECT + 1); ok(top(p).w === 96 - p.K.PERFECT - 1 && p.run === 0, 'one pixel more is not perfect');
 }
 {
   const p = newGame(1).probe();
   dropAt(p, 10);
   ok(top(p).w === 86 && top(p).x === p.K.CENTRE - 48 + 10 && p.run === 0, 'a drop 10 px right keeps the 86 px overlap and ends the run');
   ok(p.slices.length === 1 && p.slices[0].w === 10, 'and slices off 10 px');
-  dropAt(p, -4);
-  ok(top(p).w === 82 && p.slices.length === 2, 'a drop 4 px left (not perfect) slices 4 px off the other side');
+  const w1 = top(p).w; dropAt(p, -(p.K.PERFECT + 1));
+  ok(top(p).w === w1 - p.K.PERFECT - 1 && p.slices.length === 2, 'a drop just outside the window slices that much off the other side');
 }
 {
   const p = newGame(1).probe();
   dropAt(p, 20); dropAt(p, 0); dropAt(p, 0);                // 76 wide, two perfects: no regrow yet
   ok(top(p).w === 76 && p.run === 2, 'two perfects in a row do not regrow');
   dropAt(p, 0);
-  ok(top(p).w === 79 && p.run === 3, 'the third gives 3 px back');
+  ok(top(p).w === 76 + p.K.REGROW && p.run === 3, 'the third gives the regrow back');
   const x0 = top(p).x; dropAt(p, 0);
-  ok(top(p).w === 82 && top(p).x === x0 - 1.5, 'each side by 1.5 px', `${top(p).x}`);
+  ok(top(p).w === 76 + 2 * p.K.REGROW && top(p).x === x0 - p.K.REGROW / 2, 'half of it each side', `${top(p).x}`);
   for (let i = 0; i < 20; i++) dropAt(p, 0);
   ok(top(p).w === 96, 'but never past the base width');
 }

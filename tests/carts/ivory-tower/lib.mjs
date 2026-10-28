@@ -2,7 +2,7 @@
 import { fileURLToPath } from 'node:url';
 import { BTN, boot } from '../../../tools/devkit/harness.mjs';
 export { BTN };
-export const CART = fileURLToPath(new URL('../../../carts/ivory-tower.nova', import.meta.url));
+export const CART = process.env.IVORY_CART || fileURLToPath(new URL('../../../carts/ivory-tower.nova', import.meta.url));   // IVORY_CART: a variant of the cart, for tuning runs (see the balance notes in the spec)
 
 // Whatever a test needs to read or set is exposed here (the cart's code runs in one scope, so getters see its variables).
 // Add to this list as the game grows.
