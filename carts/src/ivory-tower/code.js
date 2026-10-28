@@ -79,11 +79,15 @@ const PERFECT = 3, MIN_OVERLAP = 2, REGROW = 3, REGROW_FROM = 3; // a drop withi
 const SPEED0 = 1.6, SPEED_STEP = 0.045, SPEED_MAX = 4.8; // the slide's speed at floor 0, how much each floor adds, and its limit
 const BASE_Y = 176, TOP_Y = 140; // the screen y of the base slab's top at the start, and of the top slab's top once the tower is tall
 const COUNT_IN = 60, FALL_FRAMES = 50, GRAVITY = 0.25; // frames before the first slab; a missed slab falls this long before the game is over
-const POINTS_FLOOR = 10, POINTS_PERFECT = 10, PERFECT_CAP = 10;
+const POINTS_FLOOR = 10, POINTS_PERFECT = 10, PERFECT_CAP = 10, POINTS_LANDMARK = 100; // a floor, each perfect (times the run, up to the cap), a landmark
+const METRES = 3, LADDER = 10; // a floor is 3 m; the perfect chime climbs a ladder of 10 notes, then repeats an octave higher
+let bestAtStart = 0;
 
 let floors = 0, tower = [], slab = null, slices = [], run = 0, bestRun = 0, perfects = 0, cam = 0, points = 0, newBest = false;
 let rings = [], sparks = []; // the perfect's ring (one for each perfect, a few frames) and its sparkles
 const speed = (n = floors) => Math.min(SPEED_MAX, SPEED0 + SPEED_STEP * n);
+/** The perfect's chime for a run of n: the note on a ladder of 10 (a pentatonic scale), and 1 for the repeat an octave higher after the tenth. */
+const chimeNote = (n) => (n - 1) % LADDER, chimeOctave = (n) => Math.min(1, Math.floor((n - 1) / LADDER));
 const DROP_BUTTONS = [UP, DOWN, LEFT, RIGHT, A, B, X, Y];
 const dropped = () => DROP_BUTTONS.some((b) => pressed(b)); // a drop is a new press of any of these (a held button does not drop the next slab)
 
@@ -101,7 +105,7 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 function startGame() {
-  floors = 0; points = 0; run = 0; bestRun = 0; perfects = 0; slices = []; cam = 0; newBest = false;
+  floors = 0; points = 0; run = 0; bestRun = 0; perfects = 0; slices = []; cam = 0; newBest = false; bestAtStart = dget(BEST_SLOT);
   tower = [{ x: CENTRE - BASE_W / 2, w: BASE_W, ox: CENTRE - BASE_W / 2 }];       // the base slab, centred
   rings = []; sparks = []; banner = null;
   slab = null; paused = false; timer = 0; state = 'play';
@@ -135,6 +139,7 @@ function drop() {
   tower.push({ x: nx, w: nw, ox: slab.x }); floors++; points += POINTS_FLOOR;
   if (perfect) shine(floors, nx, nw);
   if (floors % 10 === 0 && floors <= 60) reach(floors / 10);
+  else if (!newBest && bestAtStart > 0 && floors > bestAtStart) beatBest();
   slab = null;
   nextSlab();
   return true;
@@ -251,7 +256,11 @@ function draw() {
   else if (state === 'title') drawTitle();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  if (state === 'over' && cam <= 0 && timer >= 60) { panel(48, 80, 160, 64); ctxt('GAME OVER', 92, RED); ctxt(`${floors} FLOORS`, 108, WHITE); if (timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
+  if (state === 'over' && cam <= 0 && timer >= 60) {
+    panel(40, 60, 176, 104); ctxt('GAME OVER', 70, RED); ctxt(`${floors} FLOORS  ${floors * METRES} M`, 88, WHITE); ctxt(`${points} POINTS`, 102, DIM);
+    ctxt(newBest ? 'NEW BEST!' : `BEST ${dget(BEST_SLOT)}`, 118, newBest ? GOLD : DIM);
+    if (timer % 60 < 40) ctxt('START: CONTINUE', 144, WHITE);
+  }
   if (paused) drawPause();
 }
 
@@ -312,12 +321,14 @@ function skyUpdate() {
 }
 
 /** A landmark is reached: the banner for two seconds and a chime. */
-function reach(k) { banner = { k, t: 0 }; fx(SFX.record); }
+function reach(k) { banner = { k, top: `FLOOR ${k * 10}`, name: LANDMARKS[k], t: 0 }; points += POINTS_LANDMARK; fx(SFX.record); }
+/** Past the best height of the games before: said once. */
+function beatBest() { newBest = true; banner = { k: -1, top: `${floors} FLOORS`, name: 'NEW BEST!', t: 0 }; fx(SFX.record); }
 function drawBanner() {
   if (!banner) return;
   const t = banner.t++, slide = Math.round(40 * (1 - clamp01(t / 12))) + Math.round(40 * clamp01((t - BANNER_FRAMES + 12) / 12));
   if (t >= BANNER_FRAMES) { banner = null; return; }
-  panel(36, 46 - slide, 184, 34); ctxt(`FLOOR ${banner.k * 10}`, 52 - slide, DIM); ctxt(LANDMARKS[banner.k], 64 - slide, GOLD);
+  panel(36, 46 - slide, 184, 34); ctxt(banner.top, 52 - slide, DIM); ctxt(banner.name, 64 - slide, GOLD);
 }
 
 // --- The marble (SPEC 5, 12): a slab is drawn from its floor number each frame, so no picture is stored and any width is cheap. ---
@@ -401,8 +412,10 @@ function drawPlay() {
   for (const p of slices) drawSlice(p);
   if (slab) drawSlab(floors + 1, slab.x, state === 'fall' ? screenY(floors + 1) + slab.fall : screenY(floors + 1), slab.w, slab.x);
   txt(`FLOOR ${floors}`, 8, 6, WHITE);
-  txt(`PERFECT ${run}`, 8, 18, run >= REGROW_FROM ? GOLD : DIM);
+  txt(`POINTS ${points}`, 8, 18, DIM);
+  if (run > 0) txt(`PERFECT ${run}`, 8, 30, run >= REGROW_FROM ? GOLD : WHITE);
   txt(`BEST ${Math.max(dget(BEST_SLOT), floors)}`, 192, 6, DIM);
+  txt(`${floors * METRES} M`, 192, 18, DIM);
   drawBanner();
 }
 

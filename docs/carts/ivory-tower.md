@@ -1,7 +1,7 @@
 # The Ivory Tower: Cart Specification
 
 **Version:** 0.2 (spec agreed in outline)
-**Status:** Steps 1 (the rules), 2 (the marble) and 3 (the sky and the landmarks) built; steps 4 to 8 to come
+**Status:** Steps 1 to 4 (the rules, the marble, the sky and the landmarks, the scoring) built; steps 5 to 8 to come
 **Cart source:** `carts/src/ivory-tower/` → `carts/ivory-tower.nova`
 
 ---
@@ -184,6 +184,14 @@ and a chime (the starter's `record` sound for now). *The end:* after a miss the 
 
 *Results.* The tests pass, including the sky changing smoothly (no step above 1.2 colour levels in 0.1 floor) and the frame time at floor 70 with all the layers. Looked at in screenshots at floors 3, 25, 35, 45, 55 and 65: the balcony and cypresses by the dawn, the columns and domes in the clouds by day, the belfries at sunset, the spires and a lit moon at night.
 The clouds' flat bases and the strip's silhouettes are simple shapes; later passes can add detail. The landmark chime and the banner's sound are placeholders until step 6.
+
+**Step 4: built and results.**
+
+*Built.* The scoring of section 9: 10 a floor, a perfect 10 x the run (the run's multiplier stops at 10, so 100), a landmark 100 (at floors 10 to 60, with its banner). The chime's ladder as logic: `chimeNote(run)` is the note on a ladder of 10 (run 1 is note 0, run 10 note 9, run 11 starts again at 0) and `chimeOctave(run)` is 0 for the first ten and 1 after,
+so step 6 only has to map them to sounds. The best height: the old best is read at the start (`bestAtStart`); the first floor above it says NEW BEST in a banner with a sound, once (a first game has no old best, so no message); the game over saves the best and counts the game (slots 1 and 2). The HUD is the floor, the points, the perfect run (when there is one),
+the best and the height in metres (a floor is 3 m); the game over panel shows the floors and metres, the points and either NEW BEST or the best. `05-score.mjs` tests all of it.
+
+*Results.* The tests pass. The speed curve is left at its first numbers (section 5): the bot's results (step 1) do not say how it feels, and the numbers are set in step 7 with the sweep and by playing.
 
 Each step: build it, run `node tools/check.js ivory-tower` and `node tools/test.js ivory-tower`, write its **Built** and **Results** notes under its number here, commit and push.
 
