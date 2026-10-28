@@ -164,7 +164,7 @@ the overlap and the slice (one or two pieces that fall with gravity 0.25), the p
 (eased, keeps the top slab at y=140), the top 10 (floors, then points; slots 10 to 39) and the best height and games played (slots 1 and 2). The constants are at the top of `code.js` (`SLAB_H`, `PERFECT`, `REGROW`, `SPEED_*`). The sky is the starter's gradient for now; the
 placeholder layers are hidden. `tests/carts/ivory-tower/02-slab.mjs` tests the arithmetic; `bot.mjs` taps with an error that grows as `skill` falls.
 
-*Results.* The tests, `verify`, and `smoke` pass. Slab colours, marble, sky, landmarks, banner and audio are later steps (the sound cues are still the starter's). Points are kept (10 a floor, 10 x the run for a perfect) but the landmark bonus is step 4.
+*Results.* The tests, `verify`, and `smoke` pass. The sweep (6 seeds): a sloppy bot (skill 0.3) reaches about 12 floors in 15 s, a fair one (0.7) about 34 floors (best run of perfects 4) in 30 s, an exact one 73 floors, then it slips when the speed nears its cap (the window gets about one frame wide). A first guess to tune in step 7. Slab colours, marble, sky, landmarks, banner and audio are later steps (the sound cues are still the starter's). Points are kept (10 a floor, 10 x the run for a perfect) but the landmark bonus is step 4.
 
 Each step: build it, run `node tools/check.js ivory-tower` and `node tools/test.js ivory-tower`, write its **Built** and **Results** notes under its number here, commit and push.
 
