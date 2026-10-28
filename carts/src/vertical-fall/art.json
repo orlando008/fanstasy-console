@@ -1,0 +1,481 @@
+{
+ "colors": {
+  "DIM": 115,
+  "GLASS": 250,
+  "GOLD": 117,
+  "PANEL": 114,
+  "RED": 118,
+  "SHADOW": 113,
+  "WHITE": 116
+ },
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "blk0": 8,
+    "blk1": 9,
+    "blk2": 10,
+    "blk3": 11,
+    "gem0": 12,
+    "gem1": 13,
+    "gem2": 14,
+    "glow": 15,
+    "moss0": 6,
+    "moss1": 7,
+    "stone0": 1,
+    "stone1": 2,
+    "stone2": 3,
+    "stone3": 4,
+    "stone4": 5
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "brick0": 1,
+    "brick1": 2,
+    "brick2": 3,
+    "brick3": 4
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "fire0": 9,
+    "fire1": 10,
+    "fire2": 11,
+    "floor0": 6,
+    "floor1": 7,
+    "floor2": 8,
+    "wall0": 1,
+    "wall1": 2,
+    "wall2": 3,
+    "wall3": 4,
+    "wall4": 5
+   }
+  },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "far0": 1,
+    "far1": 2,
+    "far2": 3,
+    "far3": 4
+   }
+  },
+  "bg5": {
+   "base": 80,
+   "colors": {
+    "edge": 5,
+    "red0": 1,
+    "red1": 2,
+    "red2": 3,
+    "red3": 4,
+    "shade": 6
+   }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "body0": 2,
+    "body1": 3,
+    "body2": 4,
+    "boot0": 5,
+    "boot1": 6,
+    "boot2": 7,
+    "edge": 1,
+    "eye": 8
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "core": 1,
+    "glow0": 2,
+    "glow1": 3,
+    "glow2": 4,
+    "smoke0": 5,
+    "smoke1": 6
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "edge": 1,
+    "eye": 6,
+    "pale0": 2,
+    "pale1": 3,
+    "pale2": 4,
+    "pale3": 5,
+    "red0": 7,
+    "red1": 8,
+    "red2": 9
+   }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "edge": 1,
+    "glint": 6,
+    "red0": 2,
+    "red1": 3,
+    "red2": 4,
+    "red3": 5
+   }
+  },
+  "spr4": {
+   "base": 192,
+   "colors": {
+    "edge": 1,
+    "gold0": 5,
+    "gold1": 6,
+    "gold2": 7,
+    "green0": 11,
+    "green1": 12,
+    "grey0": 8,
+    "grey1": 9,
+    "grey2": 10,
+    "red0": 2,
+    "red1": 3,
+    "red2": 4,
+    "white": 13
+   }
+  }
+ },
+ "scenes": {
+  "break": {
+   "h": 2,
+   "mx": 210,
+   "my": 0,
+   "pal": 1,
+   "w": 2
+  },
+  "door": {
+   "h": 2,
+   "mx": 214,
+   "my": 0,
+   "pal": 1,
+   "w": 2
+  },
+  "far": {
+   "h": 8,
+   "mx": 40,
+   "my": 0,
+   "pal": 4,
+   "w": 8
+  },
+  "gemblock": {
+   "h": 2,
+   "mx": 212,
+   "my": 0,
+   "pal": 1,
+   "w": 2
+  },
+  "ledge": {
+   "h": 2,
+   "mx": 208,
+   "my": 0,
+   "pal": 1,
+   "w": 2
+  },
+  "logo": {
+   "h": 8,
+   "mx": 100,
+   "my": 0,
+   "pal": 5,
+   "w": 18
+  },
+  "room": {
+   "h": 14,
+   "mx": 48,
+   "my": 0,
+   "pal": 3,
+   "w": 18
+  },
+  "stone0": {
+   "h": 2,
+   "mx": 200,
+   "my": 0,
+   "pal": 1,
+   "w": 2
+  },
+  "stone1": {
+   "h": 2,
+   "mx": 202,
+   "my": 0,
+   "pal": 1,
+   "w": 2
+  },
+  "stone2": {
+   "h": 2,
+   "mx": 204,
+   "my": 0,
+   "pal": 1,
+   "w": 2
+  },
+  "stone3": {
+   "h": 2,
+   "mx": 206,
+   "my": 0,
+   "pal": 1,
+   "w": 2
+  },
+  "wall": {
+   "h": 16,
+   "mx": 32,
+   "my": 0,
+   "pal": 2,
+   "w": 8
+  }
+ },
+ "sprites": {
+  "air": {
+   "pal": 0,
+   "size": 16,
+   "tile": 452
+  },
+  "apple": {
+   "pal": 4,
+   "size": 16,
+   "tile": 526
+  },
+  "aura": {
+   "pal": 1,
+   "size": 16,
+   "tile": 458
+  },
+  "ball": {
+   "pal": 2,
+   "size": 8,
+   "tile": 471
+  },
+  "bat0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 460
+  },
+  "bat1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 462
+  },
+  "bat2": {
+   "pal": 2,
+   "size": 16,
+   "tile": 480
+  },
+  "biggem": {
+   "pal": 3,
+   "size": 8,
+   "tile": 473
+  },
+  "bigshot": {
+   "pal": 1,
+   "size": 8,
+   "tile": 456
+  },
+  "blob": {
+   "pal": 2,
+   "size": 16,
+   "tile": 514
+  },
+  "blobling": {
+   "pal": 2,
+   "size": 8,
+   "tile": 470
+  },
+  "bounce": {
+   "pal": 4,
+   "size": 16,
+   "tile": 558
+  },
+  "bullet": {
+   "pal": 1,
+   "size": 8,
+   "tile": 454
+  },
+  "burst": {
+   "pal": 4,
+   "size": 16,
+   "tile": 584
+  },
+  "chest": {
+   "pal": 4,
+   "size": 16,
+   "tile": 588
+  },
+  "clip": {
+   "pal": 4,
+   "size": 16,
+   "tile": 546
+  },
+  "drone": {
+   "pal": 4,
+   "size": 16,
+   "tile": 552
+  },
+  "dronesm": {
+   "pal": 4,
+   "size": 8,
+   "tile": 610
+  },
+  "fist": {
+   "pal": 4,
+   "size": 16,
+   "tile": 612
+  },
+  "flash": {
+   "pal": 1,
+   "size": 8,
+   "tile": 455
+  },
+  "fork": {
+   "pal": 4,
+   "size": 16,
+   "tile": 548
+  },
+  "frog0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 494
+  },
+  "frog1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 512
+  },
+  "gem": {
+   "pal": 3,
+   "size": 8,
+   "tile": 472
+  },
+  "gemheart": {
+   "pal": 4,
+   "size": 16,
+   "tile": 556
+  },
+  "ghost0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 522
+  },
+  "ghost1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 524
+  },
+  "heartup": {
+   "pal": 4,
+   "size": 16,
+   "tile": 544
+  },
+  "jelly0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 516
+  },
+  "jelly1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 518
+  },
+  "keeper": {
+   "pal": 4,
+   "size": 16,
+   "tile": 608
+  },
+  "laser": {
+   "pal": 4,
+   "size": 16,
+   "tile": 582
+  },
+  "magnet": {
+   "pal": 4,
+   "size": 16,
+   "tile": 550
+  },
+  "mgun": {
+   "pal": 4,
+   "size": 16,
+   "tile": 578
+  },
+  "pedestal": {
+   "pal": 4,
+   "size": 16,
+   "tile": 590
+  },
+  "puff": {
+   "pal": 1,
+   "size": 8,
+   "tile": 457
+  },
+  "puncher": {
+   "pal": 4,
+   "size": 16,
+   "tile": 586
+  },
+  "run": {
+   "pal": 0,
+   "size": 16,
+   "tile": 450
+  },
+  "shotgun": {
+   "pal": 4,
+   "size": 16,
+   "tile": 580
+  },
+  "skin": {
+   "pal": 4,
+   "size": 16,
+   "tile": 576
+  },
+  "snail": {
+   "pal": 2,
+   "size": 16,
+   "tile": 482
+  },
+  "snailw": {
+   "pal": 2,
+   "size": 16,
+   "tile": 484
+  },
+  "spiky": {
+   "pal": 2,
+   "size": 16,
+   "tile": 486
+  },
+  "spikyw": {
+   "pal": 2,
+   "size": 16,
+   "tile": 488
+  },
+  "stand": {
+   "pal": 0,
+   "size": 16,
+   "tile": 448
+  },
+  "turret": {
+   "pal": 2,
+   "size": 16,
+   "tile": 520
+  },
+  "turtle0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 490
+  },
+  "turtle1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 492
+  },
+  "walljump": {
+   "pal": 4,
+   "size": 16,
+   "tile": 554
+  }
+ },
+ "tiles": {},
+ "used": 521,
+ "version": 1
+}
