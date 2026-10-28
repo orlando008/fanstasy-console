@@ -19,6 +19,51 @@ node tools/devkit/sweep.mjs my-game           # the bot over many seeds (once te
 node tools/release.js my-game                 # when finished: label, .nova.png, Library, README row
 ```
 
+## "I want to start a new game": the kickoff
+
+When the user says this (or anything like it), do not start writing code. Ask the questions below in **one message**, then
+do the steps after them. The point is one short round of questions, and a spec and a working scaffold to react to.
+
+### Ask
+
+Send the list numbered, so the user can answer by number. Put **your proposed default** after each question (from what
+they have said so far), and say that "you choose" is a fine answer to any of them. Skip a question they have already
+answered.
+
+1. **The pitch.** What is the game, in a sentence or two? Is there a game it is like, or a twist on one?
+2. **Name.** The title on the label, and the cart's name (lowercase and dashes: `star-cadet`). Propose both.
+3. **Shelf and players.** Which Library shelf (`src/genres.js`: Arcade, Puzzle, Racing, Strategy)? How many play (1, or
+   up to 4 on one console), and if more than one: together or against each other? Against the computer?
+4. **How a game goes.** Endless for a high score, a set of levels or stages, a season or campaign? How long is one game,
+   and how does it end? Is there a save to come back to?
+5. **The player's hands.** What does the player do with the d-pad, A and B (the buttons a phone's touch controls have)?
+   One button, or many?
+6. **Difficulty and feel.** Who is it for: a relaxed game or a hard one? Difficulty levels? (The difficulty should come
+   from decisions, not from reflexes a person does not have.)
+7. **The look.** The setting and the mood; the view (side-on, top-down, a floor in perspective, a table); a game or a
+   picture whose look they like.
+8. **The sound.** The style of music (chiptune, orchestral, jazz, public domain classics...), and its mood.
+9. **Must-haves and extras.** What would make it not their game if it were missing? What can wait for later?
+
+### Then do
+
+1. **Get the branch ready.** Work on the branch you were given; if its pull request has already merged, restart it from
+   the latest `main` (section 8).
+2. **Read before building**: the rest of this playbook, `docs/SPEC.md` section 8 (the cart-facing API), and the spec and
+   lessons (sections 10 to 12) of the nearest game already built: a rhythm game reads `docs/carts/flow-state.md`, a
+   physics game `docs/carts/star-cadet.md`, and so on.
+3. **Scaffold**: `node tools/new-cart.js <name> "Title"`, with `--kind puzzle` if it is a match-3 game (or close to one).
+4. **Fill in `carts/src/<name>/meta.json`**: the title, a description of two or three sentences for the Library, the
+   genre and the players.
+5. **Write the spec** `docs/carts/<name>.md` from the answers (section 1, step 1): every section of the template, the
+   rules with numbers, and an implementation plan of about 8 steps. Where you chose a default the user did not confirm,
+   list it under **Open questions** so it is easy to change.
+6. **Check the scaffold**: `node tools/verify.js --fast` and `node tools/devkit/smoke.mjs <name>`. Commit and push (the
+   scaffold and the spec together).
+7. **Report back, then wait**: the design in a few lines, the plan's steps, the defaults you chose, and anything the
+   spec found hard to fit (the 64 KB of code, the 8 channels, the 1,024 tiles). Start step 1 when the user says "go
+   ahead", and build one step at a time from there (section 1).
+
 ## Where things live
 
 | Path | What |
@@ -43,7 +88,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
    and Select, the buttons a phone's touch controls have; X, Y, L and R only for extras), screen layout, the rules with
    numbers, scoring, screens and flow, audio, video layers, save slots, asset budget, and a numbered
    **implementation plan** of about 8 steps. Ask the user the few design questions that really change the
-   game (modes, number of levels, features); choose sensible defaults for the rest.
+   game (modes, number of levels, features; the list is in the kickoff above); choose sensible defaults for the rest.
 2. **Build one step at a time.** The user says "go ahead" for each. A typical plan: 1 vertical slice,
    2 the core mechanics, 3 opponents or enemies, 4 content (levels, tracks), 5 the flow (title, menus,
    modes, saves), 6 art, 7 audio, 8 balance, polish, label, PNG cart, Library entry, README.
