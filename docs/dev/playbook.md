@@ -21,29 +21,45 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
 
 ## "I want to start a new game": the kickoff
 
-When the user says this (or anything like it), do not start writing code. Ask the questions below in **one message**, then
-do the steps after them. The point is one short round of questions, and a spec and a working scaffold to react to.
+When the user says this (or anything like it), do not start writing code. Ask the questions below **step by step,
+with options to pick from**, then do the steps after them. The point is a few quick rounds of choices, and then a spec
+and a working scaffold to react to.
 
 ### Ask
 
-Send the list numbered, so the user can answer by number. Put **your proposed default** after each question (from what
-they have said so far), and say that "you choose" is a fine answer to any of them. Skip a question they have already
-answered.
+**Use the multiple-choice question tool** (AskUserQuestion in Claude Code), not a list in a message:
 
-1. **The pitch.** What is the game, in a sentence or two? Is there a game it is like, or a twist on one?
-2. **Name.** The title on the label, and the cart's name (lowercase and dashes: `star-cadet`). Propose both.
-3. **Shelf and players.** Which Library shelf (`src/genres.js`: Arcade, Puzzle, Racing, Strategy)? How many play (1, or
-   up to 4 on one console), and if more than one: together or against each other? Against the computer?
-4. **How a game goes.** Endless for a high score, a set of levels or stages, a season or campaign? How long is one game,
-   and how does it end? Is there a save to come back to?
-5. **The player's hands.** What does the player do with the d-pad, A and B (the buttons a phone's touch controls have)?
-   One button, or many?
-6. **Difficulty and feel.** Who is it for: a relaxed game or a hard one? Difficulty levels? (The difficulty should come
-   from decisions, not from reflexes a person does not have.)
-7. **The look.** The setting and the mood; the view (side-on, top-down, a floor in perspective, a table); a game or a
-   picture whose look they like.
-8. **The sound.** The style of music (chiptune, orchestral, jazz, public domain classics...), and its mood.
-9. **Must-haves and extras.** What would make it not their game if it were missing? What can wait for later?
+- **Up to 4 questions a round, 2 to 4 options each.** Write the options for *this* game, from what the user has said so
+  far, not generic ones. Put the one you would pick first, marked "(Recommended)". The tool adds "Other" for an answer in
+  their own words, so do not add one.
+- **Build each round on the last answers.** The second round's options follow from the first round's choices.
+- **Use multiple choice for lists** (the extras in round 3), and a preview where it helps to compare options (a control
+  scheme, a screen layout).
+- **Skip a question the user has already answered**, and do not ask more than the three rounds below.
+
+**First, the pitch, in plain words.** If the user has not said what the game is, ask in one sentence: what is it, and
+is there a game it is like? This is the one question options cannot cover. Then:
+
+**Round 1: what the game is.**
+1. **Name.** Two or three titles to pick from (the cart's name is the title in lowercase and dashes: `star-cadet`).
+2. **Shelf.** Which Library shelf (`src/genres.js`: Arcade, Puzzle, Racing, Strategy).
+3. **Players.** 1, or up to 4 on one console; if more than one: together or against each other, or against the computer.
+4. **How a game goes.** Endless for a high score, a set of levels or stages, or a season or campaign with a save.
+
+**Round 2: how it plays.**
+1. **Controls.** What the d-pad, A and B do (the buttons a phone's touch controls have); one button, or many.
+2. **Difficulty.** A relaxed game or a hard one, and whether it has difficulty levels. (The difficulty should come from
+   decisions, not from reflexes a person does not have.)
+3. **Length.** How long one game lasts, and how it ends.
+
+**Round 3: how it looks and sounds.**
+1. **The look.** The setting and the mood, and the view (side-on, top-down, a floor in perspective, a table).
+2. **The sound.** The style of music (chiptune, orchestral, jazz, public domain classics...) and its mood.
+3. **Extras** (multiple choice). Features beyond the core game: modes, unlockables, a two-player mode, a level editor...
+   Anything not picked goes under **Open questions** in the spec, for later.
+
+If the question tool is not available, send the same rounds as numbered lists, one round a message, with your
+recommended answer after each question.
 
 ### Then do
 

@@ -4,8 +4,8 @@
   `docs/carts/<name>.md`.
 - **Read `docs/dev/playbook.md` before building or changing a cart.** It has the workflow, the tools, the limits and
   the mistakes that have already cost time.
-- When the user says "I want to start a new game", follow the kickoff in the playbook: ask its questions in one
-  message, then scaffold, write the spec and report back before building.
+- When the user says "I want to start a new game", follow the kickoff in the playbook: ask its questions step by
+  step with the multiple-choice question tool, then scaffold, write the spec and report back before building.
 - Start a new game with `node tools/new-cart.js <name> "Title"` (a working frame, tests, bot, art and audio scripts
   and spec template; `--kind puzzle` for a whole match-3 game to change into yours, see the playbook). Build a cart from `carts/src/<name>/` with `node tools/pack.js carts/src/<name> carts/<name>.nova`.
 - Before you commit a cart change: `node tools/verify.js` (the carts you changed: audio script, packed cart, checks, soak,
