@@ -61,6 +61,16 @@
       "png": "carts/brawl.nova.png"
     },
     {
+      "name": "ivory-tower",
+      "title": "The Ivory Tower",
+      "author": "NOVA-16",
+      "description": "Stack slabs of marble into a tower that climbs from dawn to the stars: one tap to drop, perfect drops grow it back.",
+      "genre": "Arcade",
+      "players": "1",
+      "label": "carts/labels/ivory-tower.png",
+      "png": "carts/ivory-tower.nova.png"
+    },
+    {
       "name": "block-wizard",
       "title": "Block Wizard",
       "author": "NOVA-16",

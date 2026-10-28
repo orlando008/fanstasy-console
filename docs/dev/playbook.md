@@ -517,3 +517,24 @@ What building `star-cadet` taught (its spec is `docs/carts/star-cadet.md`; every
 - **Events make the rules testable without a ball.** Each handler `emit`s what happened (`bump`, `rampL`, `gate`); the lamps and the missions read the events, so a test says "did(p,
   'rampL', 'rampR')" and checks the rule, and a few tests play the real thing. One list of balls (`bs`, with `ball` the first) is all a multiball needs.
 - **Split a game into songs when its layers rise.** Channels cannot be muted from code, so three songs (pulse, plus a lead, plus drums) follow the rank; the cue is one function called each frame.
+
+## 12. A stacking game on this console (The Ivory Tower)
+
+What building `ivory-tower` taught (its spec is `docs/carts/ivory-tower.md`; every point has a test in `tests/carts/ivory-tower/`):
+
+- **Draw what repeats from a number, not from a picture.** A slab is a fill, a lit band, a few slanted veins and a bevel on the overlay, from its floor number and a hash (`hash(floor, k)`): no tiles, any
+  width, five marbles by choosing 8 colour entries. Hang the pattern on where the slab was before it was cut (`ox`), so a cut slab and a slice keep their veins; a test draws the same floor in two places
+  and compares the pixels. About 25 slabs, each a clip, a fill and a few lines, cost about 1 ms a frame.
+- **The overlay is above everything, so scenery goes on the layers and the colours move.** The landmarks are one tall strip on BG0 (256 x 616) scrolled with the camera (`bg y = 352 - cam`), the clouds a repeating field on BG1
+  at half the speed (translucent: `blend({ layers: ['overlay', 'bg1'], half: true })`), the stars and the moon on BG2. The sky is a gradient set in `scanline()` from an array filled in `update()` (only pure maths is allowed
+  in `scanline`), and the palette entries the layers use are set each frame from the same sky (landmarks the horizon's colour and darker, clouds white by day and rosy at sunset, stars fading in): one function of
+  the height changes the whole scene, and a test checks that it has no jump in 0.1 floor.
+- **A camera that cannot zoom flies instead.** The tower is taller than the screen; at the end the camera flies back down it (3 px a frame or 5 %), the sky and the landmarks passing in reverse, and the result shows when it lands.
+- **Constants at the top, a bot that errs the way a thumb does.** The feel of a one-button game is three numbers (the perfect window, the regrow, the speed's step). The bot's error is in *frames* of the slab's travel
+  (so it grows with the speed), its skill sets how many; a sweep of each number on its own and together (a variant of the cart packed to a temporary folder, `IVORY_CART=` for the harness) showed which ones matter:
+  the window and the speed step move the result a lot, the regrow hardly at all for a bot. A test (`08-balance.mjs`) holds the ranges.
+- **A bot needs a new press each time** (the cart drops on a press, not while held): tapping on alternate frames locked onto one parity of the slab's cycle and never dropped. Release the button the frame before.
+- **Layers of music are songs of their own.** Four songs on one chord round and one tune (the piano, then the flute and a pulse, then a choir and a lower bass); the code starts the next from its first bar at a landmark,
+  under the fanfare, which hides the change. The loudness measured as a gentle build (0.037, 0.039, 0.049, 0.051). An effect for every note of a ladder (20 chimes of 34 effects) is cheap: a note is a few hundred bytes of one sample.
+- **Make the title the game's first picture.** A tower of the best's height standing over a courtyard (raised so the menu has room below), a slab sliding over it for ever; the label is that screen (`release.js --wait 2500`);
+  the demo (a player that errs by a few pixels and ends by itself) starts after 20 idle seconds and records nothing.
