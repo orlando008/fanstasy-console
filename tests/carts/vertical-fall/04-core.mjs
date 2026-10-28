@@ -13,11 +13,11 @@ const sumGems = (p) => p.gems.reduce((a, g) => a + g.v, 0);
 // 1. The numbers are the spec's.
 {
   const { p, K } = empty();
-  ok(K.STOMP_RANGE === 6 && K.BOUNCE === 3.6 && K.BOUNCE_HELD === 4.4, 'a stomp: the feet within 6 px of the top; the bounce 3.6, or 4.4 with A held');
+  ok(K.BOUNCE === 3.6 && K.BOUNCE_HELD === 4.4, 'a stomp bounces at 3.6, or 4.4 with A held');
   ok(K.GEMBLOCK_HITS === 3 && K.BREAK_GEM === 4 && K.GEM_LIFE === 480 && K.GEM_BLINK === 120 && K.BIG === 5, 'a gem block takes 3 hits, 1 block in 4 drops a gem, gems last 8 s and blink for 2, a large one is worth 5');
   ok(K.HIGH_AT === 100 && K.DRAIN === 15 && K.DRAIN_HIGH === 6 && K.MAX_AMMO === 20 && K.MAX_HP === 8, 'the gem high at 100, draining 1 every 15 frames (6 when high); ammo up to 20, HP up to 8');
   ok(JSON.stringify(p.COMBO_PAY) === '[[25,4,1,1],[15,3,1,0],[8,2,0,0]]', 'combo payouts: 8+ x2 gems; 15+ x3 and 1 HP; 25+ x4, 1 HP and 1 more ammo');
-  ok(p.KINDS.bat.hp === 1 && p.KINDS.bat.gems === 1 && !p.KINDS.bat.red && K.BAT_SPEED === 1.2 && K.BAT_SEE === 64, 'the bat: 1 HP, 1 gem, stompable, swoops at 1.2 within 64 px');
+  ok(p.KINDS.bat.hp === 1 && p.KINDS.bat.gems === 1 && !p.KINDS.bat.red && K.BAT_SPEED === 0.8 && K.BAT_SEE === 64 && K.BAT_LOSE === 96, 'the bat: 1 HP, 1 gem, stompable, swoops at 0.8 px a frame within 64 px, hovers beyond 96');
   ok(p.KINDS.snail.hp === 2 && p.KINDS.snail.gems === 2 && !p.KINDS.snail.red && K.SNAIL_SPEED === 0.5, 'the snail: 2 HP, 2 gems, stompable, crawls at 0.5');
   ok(K.WAKE_BELOW === 160 && K.WAKE_ABOVE === 48 && K.GONE_ABOVE === 64 && K.MAX_ENEMIES === 24, 'enemies wake 160 px below or 48 above, go 64 px above the screen, 24 at most');
 }
@@ -73,6 +73,21 @@ const sumGems = (p) => p.gems.reduce((a, g) => a + g.v, 0);
   ok(s2.dead && near(P.me.vy, -K.BOUNCE_HELD, 0.01), 'with the button held the bounce is higher, 4.4', `vy ${P.me.vy.toFixed(2)}`);
 }
 
+// 4b. A stomp is generous: feet anywhere on the enemy's top half, falling, stomps it; lower than its middle, it hurts.
+{
+  const try_ = (feetBelowTop) => {
+    const { vm, p, K } = empty(30);
+    for (let c = 1; c < K.CELLS - 1; c++) p.setCell(c, 20, K.STONE); p.restream();
+    const s = p.newEnemy('snail', 4, 19); s.awake = true; s.d = [0, 0]; p.enemies.push(s);
+    const b = p.box(s);
+    place(p, s.x - K.BOX_W / 2, b.t + feetBelowTop - K.BOX_H - 1); p.me.vy = 1; vm.step(0);
+    return { stomped: s.dead, hurt: p.me.hp < K.HP };
+  };
+  const top = try_(4), low = try_(8);
+  ok(top.stomped && !top.hurt, 'falling with the feet 4 px into a snail\'s top half stomps it');
+  ok(!low.stomped && low.hurt, 'with the feet past its middle, it is a hit');
+}
+
 // 5. Touching an enemy any other way hurts, and ends the combo without paying.
 {
   const { vm, p, K } = empty(6);
@@ -108,7 +123,7 @@ const sumGems = (p) => p.gems.reduce((a, g) => a + g.v, 0);
   const y0 = b.y; vm.step(0);
   ok(b.hang && b.y === y0, 'a bat hangs while the faller is far', `${(b.y - p.me.y).toFixed(0)} px away`);
   place(p, 4 * K.CELL + 3, 29 * K.CELL - 20); vm.step(0); const x1 = b.x, y1 = b.y; vm.step(0);
-  ok(!b.hang && near(Math.hypot(b.x - x1, b.y - y1), K.BAT_SPEED, 1e-6), 'within 64 px it flies at the faller at 1.2 px a frame');
+  ok(!b.hang && near(Math.hypot(b.x - x1, b.y - y1), K.BAT_SPEED, 1e-6), 'within 64 px it flies at the faller at 0.8 px a frame');
 }
 
 // 7b. Stone stops a bat (it slides along), so it never comes out of the rock; two bats under the boots are both stomped.
@@ -215,16 +230,17 @@ const sumGems = (p) => p.gems.reduce((a, g) => a + g.v, 0);
   p.wallet -= 20; vm.run(1); ok(p.score === p.best + 37, 'spending gems does not lower it');
 }
 
-// 13. The test layouts put enemies where they fit: bats under stone, crawlers and walkers on top, the rest in the open
-// or, for a turret, against a side wall.
+// 13. The levels put enemies where they fit: bats under stone or a block, snails on stone or a block, turtles and frogs
+// on those or a ledge, the rest in the open or, for a turret, against a side wall.
 {
   const vm = newGame(15), p = vm.probe(), K = p.K; let bats = 0, snails = 0, bad = [];
   for (let n = 1; n <= 12; n++) {
     p.makeLevel(n);
     for (const e of p.enemies) {
       const c = e.c0, r = e.r0, open = p.cellAt(c, r) === K.EMPTY;
-      const fits = e.kind === 'bat' ? open && p.cellAt(c, r - 1) === K.STONE
-        : ['snail', 'spiky', 'turtle', 'frog'].includes(e.kind) ? open && p.cellAt(c, r + 1) === K.STONE
+      const fits = e.kind === 'bat' ? open && [K.STONE, K.BREAK, K.GEMBLOCK].includes(p.cellAt(c, r - 1))
+        : ['snail', 'spiky'].includes(e.kind) ? open && [K.STONE, K.BREAK, K.GEMBLOCK].includes(p.cellAt(c, r + 1))
+        : ['turtle', 'frog'].includes(e.kind) ? open && p.cellAt(c, r + 1) !== K.EMPTY
         : e.kind === 'turret' ? open && (c === 1 || c === K.CELLS - 2)
         : open;
       if (e.kind === 'bat') bats++; if (e.kind === 'snail') snails++;

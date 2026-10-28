@@ -135,14 +135,22 @@ function onFloor(seed = 1, floor = 10) {
   vm.run(40); ok(p.score > rows + 1, 'and the depth goes on counting from the last level', `${p.score} m`);
 }
 
-// 10. The test layouts: a way down on every row, the same for the same seed and level.
+// 10. The layouts: a way down through every level (open cells, ledges and blocks, which can be shot), the same well for
+// the same seed and level.
 {
-  const vm = newGame(8), p = vm.probe(), K = p.K; let blocked = 0, total = 0;
-  for (let n = 1; n <= 12; n++) {
+  const vm = newGame(8), p = vm.probe(), K = p.K; let blocked = [];
+  for (let n = 1; n <= 24; n++) {
     p.makeLevel(n);
-    for (let r = 0; r < p.rows - 1; r++) { let open = 0; for (let c = 1; c < K.CELLS - 1; c++) if (p.cellAt(c, r) !== K.STONE) open++; total++; if (open < 4) blocked++; }
+    const seen = new Set(), todo = [];
+    for (let c = 1; c < K.CELLS - 1; c++) todo.push([c, 0]);
+    while (todo.length) {
+      const [c, r] = todo.pop(), key = r * 16 + c;
+      if (seen.has(key) || c < 1 || c > K.CELLS - 2 || r < 0 || r >= p.rows - 1 || p.cellAt(c, r) === K.STONE) continue;
+      seen.add(key); todo.push([c, r + 1], [c - 1, r], [c + 1, r]);
+    }
+    if (![...seen].some((k) => Math.floor(k / 16) === p.rows - 2)) blocked.push(n);
   }
-  ok(blocked === 0, 'every row of twelve levels leaves at least 4 of the 7 inner cells open', `${blocked} of ${total}`);
+  ok(blocked.length === 0, 'every level of two loops has a way down to its floor', blocked.join(' '));
   p.makeLevel(3); const a = Array.from(p.cells).join(''); p.makeLevel(4); p.makeLevel(3);
   ok(Array.from(p.cells).join('') === a, 'a level\'s layout depends only on the run\'s seed and the level');
 }

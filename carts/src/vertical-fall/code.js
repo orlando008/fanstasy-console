@@ -90,7 +90,7 @@ const solidKind = (k) => k === STONE || k >= BREAK; // what stops the faller and
 const levelRows = (n) => Math.min(140 + 10 * (n - 1), 220);
 
 // Stomps, gems, combos and the gem high (section 5).
-const STOMP_RANGE = 6, BOUNCE = 3.6, BOUNCE_HELD = 4.4, MAX_AMMO = 20, MAX_HP = 8;
+const BOUNCE = 3.6, BOUNCE_HELD = 4.4, MAX_AMMO = 20, MAX_HP = 8;
 const GEMBLOCK_HITS = 3, BREAK_GEM = 4;             // a gem block takes 3 hits; 1 breakable block in 4 drops a small gem
 const GEM_LIFE = 480, GEM_BLINK = 120, MAX_GEMS = 32, GEM_GRAVITY = 0.15, BIG = 5;
 const HIGH_AT = 100, DRAIN = 15, DRAIN_HIGH = 6;    // the gem meter: full at 100; it drains 1 every 15 frames, every 6 when high
@@ -109,7 +109,7 @@ const KINDS = {
   turret: { hp: 4, gems: 5, w: 12, h: 10 },
   ghost: { hp: 6, gems: 6, red: 1, w: 12, h: 12 },
 };
-const BAT_SPEED = 1.2, BAT_SEE = 64, BAT_BACK = 30, BAT_CHASE = 180, SNAIL_SPEED = 0.5, TURTLE_SPEED = 0.6, ENEMY_GRAVITY = 0.2;
+const BAT_SPEED = 0.8, BAT_SEE = 64, BAT_LOSE = 96, BAT_BACK = 30, BAT_CHASE = 60, SNAIL_SPEED = 0.5, TURTLE_SPEED = 0.6, ENEMY_GRAVITY = 0.2;
 const FROG_EVERY = 90, FROG_HOP = 3.2, FROG_RUN = 1.2, FROG_SEE = 128, BLOB_SPEED = 0.4, BLOBLING_SPEED = 0.6;
 const JELLY_EVERY = 90, JELLY_PULSE = 1.2, JELLY_SINK = 0.3, JELLY_DRIFT = 0.2;
 const TURRET_EVERY = 120, BALL_SPEED = 1, MAX_SHOTS = 8, GHOST_SPEED = 0.5, GHOST_FADE = 40;
@@ -118,7 +118,7 @@ const WAKE_BELOW = 160, WAKE_ABOVE = 48, GONE_ABOVE = 64, MAX_ENEMIES = 24, MAX_
 // Areas and loops (section 6): three levels an area, four areas a loop. Each loop is faster and fuller, with more red.
 const AREAS = ['THE SHAFT', 'THE OSSUARY', 'THE CISTERN', 'THE DEEP'];
 const areaOf = (n) => flr((n - 1) / 3) % 4, loopOf = (n) => flr((n - 1) / 12);
-const FILL = [0.5, 0.65, 0.8], FILL_LOOP = 0.1, PACE_LOOP = 0.1, RED_SHARE = 0.2, RED_LOOP = 0.1;
+const FILL = [0.4, 0.5, 0.6], FILL_LOOP = 0.1, PACE_LOOP = 0.1, RED_SHARE = 0.2, RED_LOOP = 0.1;
 let pace = 1; // enemies' speed: 1 in the first loop, 10 % more each loop
 
 // --- The well: a grid of cells, CELLS wide, `rows` deep ---
@@ -141,55 +141,63 @@ const edge = (c) => c <= 0 || c >= CELLS - 1;
 const cellAt = (c, r) => (c < 0 || c >= CELLS || r >= rows ? STONE : r < 0 ? (edge(c) ? STONE : EMPTY) : cells[r * CELLS + c]);
 function setCell(c, r, v) { cells[r * CELLS + c] = v; }
 
-/** The test layout (the chunks of step 4 replace it): the side walls, outcrops from either wall of 1 to 3 cells, ledges
- * of 2 to 4, a pair of stone blocks in the middle, a row of 2 to 4 breakable blocks (1 in 4 of them a gem block), every 4
- * to 7 rows; a quiet top and the floor at the bottom. Every row leaves at least 4 of the 7 inner cells free of stone, so
- * there is always a way down. Places for enemies: on top of stone, under it, in the open and in the side walls; the
- * level's fill decides how many get one, and the area which (spawn()). */
+// --- Chunks (chunks.py, rom/chunks.bin): hand-made pieces of 9 x 12 cells, tagged by area and difficulty. A level is a
+// quiet top, chunks drawn from its area's pool and mirrored at random, and its floor. ---
+
+const CHUNK_H = 12, TOP_ROWS = 4, PLACE = 5, PLACES = ['under', 'top', 'air', 'wall'];
+let CHUNKS = null;
+/** rom/chunks.bin: a count, then for each chunk a byte of tags (areas in bits 0-3, difficulty - 1 in bits 4-5) and its 108
+ * cells, two to a byte. Cell codes 0 to 4 are the cell kinds, 5 to 8 the places for enemies. */
+function loadChunks() {
+  const b = rom('chunks');
+  CHUNKS = [];
+  for (let i = 0, o = 1; i < b[0]; i++, o += 55) {
+    const c = new Uint8Array(CELLS * CHUNK_H);
+    for (let k = 0; k < c.length; k++) c[k] = (b[o + 1 + (k >> 1)] >> (k & 1 ? 0 : 4)) & 15;
+    CHUNKS.push({ areas: b[o] & 15, hard: ((b[o] >> 4) & 3) + 1, c });
+  }
+}
+
+/** Level n from the run's seed: the side walls, TOP_ROWS open rows, chunks of the area's pool up to the level's difficulty
+ * (level 1 of an area 1, level 2 up to 2, level 3 and every later loop up to 3; one of the hardest allowed is twice as
+ * likely, and never the same chunk twice in a row), then open rows to the floor: the last row stone, with a step in each
+ * corner above it. The places in the chunks are filled by FILL and the loop, with spawn()'s kinds. */
 function makeLevel(n) {
   rows = levelRows(n); cells = new Uint8Array(rows * CELLS); enemies = []; shots = []; hits = new Map();
   pace = 1 + PACE_LOOP * loopOf(n);
-  const R = rng(runSeed * 977 + n), ri = (a, b) => a + Math.floor(R() * (b - a + 1)), spots = [];
+  const R = rng(runSeed * 977 + n), a = areaOf(n), hard = Math.min(3, 1 + ((n - 1) % 3) + loopOf(n)), places = [];
+  const pool = CHUNKS.filter((k) => k.areas & (1 << a) && k.hard <= hard), deck = pool.flatMap((k) => (k.hard === hard ? [k, k] : [k]));
   for (let r = 0; r < rows; r++) { setCell(0, r, STONE); setCell(CELLS - 1, r, STONE); }
+  let last = null;
+  for (let r = TOP_ROWS; r + CHUNK_H <= rows - 3; r += CHUNK_H) {
+    let k;
+    do k = deck[flr(R() * deck.length)]; while (k === last && pool.length > 1);
+    last = k;
+    const flip = R() < 0.5;
+    for (let y = 0; y < CHUNK_H; y++) for (let x = 0; x < CELLS; x++) {
+      const v = k.c[y * CELLS + (flip ? CELLS - 1 - x : x)];
+      if (v < PLACE) setCell(x, r + y, v); else places.push([PLACES[v - PLACE], x, r + y]);
+    }
+  }
   for (let c = 0; c < CELLS; c++) setCell(c, rows - 1, STONE);
-  for (let r = 8; r < rows - 8; r += ri(4, 7)) {
-    const k = ri(0, 4);
-    if (k < 2) {
-      const w = ri(1, 3);
-      for (let i = 0; i < w; i++) { const c = k ? CELLS - 2 - i : 1 + i; setCell(c, r, STONE); spots.push([c, r]); }
-      if (R() < 0.5) setCell(k ? CELLS - 2 : 1, r + 1, STONE);
-    } else if (k === 2) {
-      const w = ri(2, 4), c0 = ri(1, CELLS - 1 - w);
-      for (let i = 0; i < w; i++) setCell(c0 + i, r, LEDGE);
-    } else if (k === 3) { const c0 = ri(3, 4); setCell(c0, r, STONE); setCell(c0 + 1, r, STONE); spots.push([c0, r], [c0 + 1, r]); }
-    else { const w = ri(2, 4), c0 = ri(1, CELLS - 1 - w); for (let i = 0; i < w; i++) setCell(c0 + i, r, R() < 0.25 ? GEMBLOCK : BREAK); }
-  }
-  const places = [];
-  for (const [c, r] of spots) { // one place for each stone cell: under it, or on top
-    if (R() < 0.5 && cellAt(c, r + 1) === EMPTY && cellAt(c, r + 2) === EMPTY) places.push(['under', c, r + 1]);
-    else if (cellAt(c, r - 1) === EMPTY) places.push(['top', c, r - 1]);
-  }
-  for (let r = 10; r < rows - 6; r += 6) {
-    const c = ri(2, CELLS - 3);
-    if (cellAt(c, r) === EMPTY && cellAt(c, r + 1) === EMPTY) places.push(['air', c, r]);
-    const w = R() < 0.5 ? 1 : CELLS - 2;
-    if (cellAt(w, r + 3) === EMPTY && cellAt(w, r + 2) === EMPTY && cellAt(w, r + 4) === EMPTY) places.push(['wall', w, r + 3]);
-  }
+  setCell(1, rows - 2, STONE); setCell(CELLS - 2, rows - 2, STONE);
   const fill = Math.min(1, FILL[(n - 1) % 3] + FILL_LOOP * loopOf(n));
   for (const [spot, c, r] of places) {
     if (R() >= fill) continue;
-    const kind = spawn(spot, n, R);
-    if (kind && !enemies.some((e) => e.c0 === c && e.r0 === r)) enemies.push(newEnemy(kind, c, r));
+    const kind = spawn(spot === 'top' && cellAt(c, r + 1) === LEDGE ? 'ledge' : spot, n, R);
+    if (kind) enemies.push(newEnemy(kind, c, r));
   }
   restream();
 }
 
 /** Which enemy a place gets in level n (section 7's table): under stone a bat; on top a snail (a spiked one more often
- * each loop), from the Ossuary on also a turtle or a frog; in the open a blob (Ossuary), a jellyfish (Cistern), a ghost
- * (the Deep); in a side wall a turret (Cistern). An area has the enemies of the areas before it. */
+ * each loop), from the Ossuary on also a turtle or a frog; on a ledge only those two (a snail clings to stone and blocks);
+ * in the open a blob (Ossuary), a jellyfish (Cistern), a ghost (the Deep); in a side wall a turret (Cistern). An area has
+ * the enemies of the areas before it. */
 function spawn(spot, n, R) {
   const a = areaOf(n), pick = (l) => l[flr(R() * l.length)];
   if (spot === 'under') return 'bat';
+  if (spot === 'ledge') return a ? pick(['turtle', 'frog']) : null;
   if (spot === 'wall') return a >= 2 ? 'turret' : null;
   if (spot === 'air') return a ? pick(['blob', 'jelly', 'ghost'].slice(0, a)) : null;
   const k = a ? pick(['snail', 'snail', 'turtle', 'frog']) : 'snail';
@@ -244,7 +252,7 @@ function init() {
     for (let i = 0; i < 256; i++) dset(i, 0);
     dset(VERSION_SLOT, SAVE_VERSION);
   }
-  loadCells();
+  loadCells(); loadChunks();
   // BG0 is the strip of the well, BG1 the back wall; both start at the well's left edge (x 56). Window 0 is the well:
   // outside it the picture is black (the gutters, where the HUD goes), but for the overlay.
   const w = ART.scenes.wall;
@@ -260,8 +268,15 @@ function init() {
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
-function startGame() {
-  runSeed = rndi(1, 999999); level = 1; depthBase = 0; makeLevel(level);
+/** The Daily well's seed: today's date as YYYYMMDD, read once when a daily run starts (the console's API has no date: the
+ * one use of Date in the cart; tests set `today` instead). Everything after is the seeded PRNG. */
+let today = 0, daily = false;
+const todaySeed = () => today || ((d) => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate())(new Date());
+
+/** A run: a random seed, or the day's for the Daily well, so everyone falls down the same well that day. */
+function startGame(day = false) {
+  daily = day;
+  runSeed = day ? todaySeed() : rndi(1, 999999); level = 1; depthBase = 0; makeLevel(level);
   me = newFaller(); bullets = []; shots = []; gems = []; puffs = []; score = 0; best = 0; camY = 0; clearT = 0;
   wallet = collected = combo = meter = kills = bestCombo = 0; high = false; payMsg = null; banner = { text: AREAS[0], t: 150 };
   paused = false; timer = 0; state = 'play';
@@ -534,12 +549,14 @@ function updateShots() {
 
 /** A bat hangs until the faller is within BAT_SEE px, then flies straight at them; stone and blocks stop it (it slides
  * along them), so it never comes out of the rock under the faller's feet. After it hits, it flies away for BAT_BACK frames.
- * After BAT_CHASE frames of chasing it gives up and flies off up the well (through anything), so a bat left above the
- * faller, which cannot be stomped or shot from there, is never a threat for long. */
+ * It chases only while the faller is within BAT_LOSE px (further off it hovers), and after BAT_CHASE frames it gives up and
+ * flies off up the well (through anything): a bat is a danger where it hangs, not one that follows the faller down (from
+ * above it can be neither stomped nor shot). */
 function moveBat(e, tx, ty) {
   const dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy) || 1;
   if (e.hang) { if (d < BAT_SEE) { e.hang = false; e.chase = 0; } else return; }
   if (++e.chase > BAT_CHASE) { e.y -= BAT_SPEED * pace; return; }
+  if (d > BAT_LOSE) return; // out of sight: it hovers where it is
   const k = e.back > 0 && e.back-- ? -BAT_SPEED : BAT_SPEED;
   e.vx = (dx / d) * k; e.vy = (dy / d) * k;
   e.x += e.vx; if (blocked(e)) e.x -= e.vx;
@@ -576,13 +593,14 @@ function box(e) {
   return { l: e.x + ox - w / 2, t: e.y + oy - h / 2, r: e.x + ox + w / 2, b: e.y + oy + h / 2 };
 }
 
-/** The faller meets an enemy: falling (or landing) onto the top of a stompable one, the feet within STOMP_RANGE px of its
- * top, stomps it (and any other stompable one it touches in that frame); any other touch hurts. */
+/** The faller meets an enemy: falling (or landing) onto the top half of a stompable one (the feet above its middle before
+ * this frame's fall), stomps it (and any other stompable one it touches in that frame); any other touch hurts. Downwell is
+ * as generous: a bat that comes up at an angle into a falling faller is stomped, not a hit. */
 function touch(e) {
   const f = me, b = box(e);
   if (f.x + BOX_W <= b.l || f.x >= b.r || f.y + BOX_H <= b.t || f.y >= b.b) return;
   const again = f.stomped === timer; // a second enemy under the boots in the frame of a stomp is stomped too
-  if (!KINDS[e.kind].red && (again || (f.vy >= 0 && f.y + BOX_H - b.t <= STOMP_RANGE + f.vy))) {
+  if (!KINDS[e.kind].red && (again || (f.vy >= 0 && f.y + BOX_H <= (b.t + b.b) / 2 + f.vy))) {
     f.vy = -(held(A) || held(B) ? BOUNCE_HELD : BOUNCE); f.jumping = false; f.ammo = f.maxAmmo; f.stomped = timer;
     if (!again && b.t - BOX_H < f.y) { f.y = b.t - BOX_H; unstick(f); } // onto its top: only ever up
     fx(SFX.stomp); kill(e);
@@ -704,7 +722,7 @@ function updatePause() {
   else if (pressed(A) || pressed(START)) {
     fx(SFX.select);
     if (pauseSel === 0) paused = false;
-    else if (pauseSel === 1) startGame(); // restart
+    else if (pauseSel === 1) startGame(daily); // restart (the same kind of run)
     else toTitle(); // quitting abandons the game: nothing is recorded
   }
 }

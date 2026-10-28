@@ -1,9 +1,16 @@
 // The test helpers for Vertical Fall: boot the cart with its variables exposed.
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { BTN, boot } from '../../../tools/devkit/harness.mjs';
+import { mangle, rename } from '../../../tools/devkit/mangle.mjs';
+import { stripComments } from '../../../tools/devkit/strip.mjs';
 export { BTN };
 export const CART = fileURLToPath(new URL('../../../carts/vertical-fall.nova', import.meta.url));
 
+// The cart is packed with its top-level names shortened (meta.json "mangle"): the source a test appends gets the same renaming.
+const MAP = mangle(stripComments(readFileSync(new URL('../../../carts/src/vertical-fall/code.js', import.meta.url), 'utf8'))).map;
+
+// startAt(n) jumps to the top of level n (a sweep of one area). No comments inside PROBE: rename() reads it as code.
 // Whatever a test needs to read or set is exposed here (the cart's code runs in one scope, so getters see its variables).
 // Add to this list as the game grows.
 const PROBE = `__expose(() => ({
@@ -19,17 +26,14 @@ const PROBE = `__expose(() => ({
   get shots() { return shots; }, set shots(v) { shots = v; }, get pace() { return pace; }, get banner() { return banner; },
   SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
   cellAt, setCell, makeLevel, restream, hurt, levelRows, slotOf, newEnemy, box, takeGem, dropGems, payCombo, hitCell, KINDS, COMBO_PAY, areaOf, loopOf, spawn, AREAS, FILL, rng, fading,
-  startAt: (n) => { level = n - 1; nextLevel(); }, // jump to the top of level n (a sweep of one area)
-  K: { WELL_X, CELLS, CELL, METRE, BOX_W, BOX_H, RUN, GRAVITY, MAX_FALL, JUMP, COYOTE, AMMO, BULLET_SPEED, RATE, LIFT, HP, HURT_SAFE, CAM_Y, CLEAR_WAIT, STRIP, EMPTY, STONE, LEDGE, BREAK, GEMBLOCK,
-    STOMP_RANGE, BOUNCE, BOUNCE_HELD, MAX_AMMO, MAX_HP, GEMBLOCK_HITS, BREAK_GEM, GEM_LIFE, GEM_BLINK, MAX_GEMS, BIG, HIGH_AT, DRAIN, DRAIN_HIGH,
-    BAT_SPEED, BAT_SEE, BAT_BACK, BAT_CHASE, SNAIL_SPEED, TURTLE_SPEED, ENEMY_GRAVITY, FROG_EVERY, FROG_HOP, FROG_RUN, FROG_SEE,
-    BLOB_SPEED, BLOBLING_SPEED, JELLY_EVERY, JELLY_PULSE, JELLY_SINK, JELLY_DRIFT, TURRET_EVERY, BALL_SPEED, MAX_SHOTS, GHOST_SPEED, GHOST_FADE,
-    FILL_LOOP, PACE_LOOP, RED_SHARE, RED_LOOP, WAKE_BELOW, WAKE_ABOVE, GONE_ABOVE, MAX_ENEMIES },
+  startAt: (n) => { level = n - 1; nextLevel(); },
+  get CHUNKS() { return CHUNKS; }, CHUNK_H, TOP_ROWS, startGame, get today() { return today; }, set today(v) { today = v; }, get daily() { return daily; }, get runSeed() { return runSeed; }, todaySeed,
+  K: { WELL_X: WELL_X, CELLS: CELLS, CELL: CELL, METRE: METRE, BOX_W: BOX_W, BOX_H: BOX_H, RUN: RUN, GRAVITY: GRAVITY, MAX_FALL: MAX_FALL, JUMP: JUMP, COYOTE: COYOTE, AMMO: AMMO, BULLET_SPEED: BULLET_SPEED, RATE: RATE, LIFT: LIFT, HP: HP, HURT_SAFE: HURT_SAFE, CAM_Y: CAM_Y, CLEAR_WAIT: CLEAR_WAIT, STRIP: STRIP, EMPTY: EMPTY, STONE: STONE, LEDGE: LEDGE, BREAK: BREAK, GEMBLOCK: GEMBLOCK, BOUNCE: BOUNCE, BOUNCE_HELD: BOUNCE_HELD, MAX_AMMO: MAX_AMMO, MAX_HP: MAX_HP, GEMBLOCK_HITS: GEMBLOCK_HITS, BREAK_GEM: BREAK_GEM, GEM_LIFE: GEM_LIFE, GEM_BLINK: GEM_BLINK, MAX_GEMS: MAX_GEMS, BIG: BIG, HIGH_AT: HIGH_AT, DRAIN: DRAIN, DRAIN_HIGH: DRAIN_HIGH, BAT_SPEED: BAT_SPEED, BAT_SEE: BAT_SEE, BAT_LOSE: BAT_LOSE, BAT_BACK: BAT_BACK, BAT_CHASE: BAT_CHASE, SNAIL_SPEED: SNAIL_SPEED, TURTLE_SPEED: TURTLE_SPEED, ENEMY_GRAVITY: ENEMY_GRAVITY, FROG_EVERY: FROG_EVERY, FROG_HOP: FROG_HOP, FROG_RUN: FROG_RUN, FROG_SEE: FROG_SEE, BLOB_SPEED: BLOB_SPEED, BLOBLING_SPEED: BLOBLING_SPEED, JELLY_EVERY: JELLY_EVERY, JELLY_PULSE: JELLY_PULSE, JELLY_SINK: JELLY_SINK, JELLY_DRIFT: JELLY_DRIFT, TURRET_EVERY: TURRET_EVERY, BALL_SPEED: BALL_SPEED, MAX_SHOTS: MAX_SHOTS, GHOST_SPEED: GHOST_SPEED, GHOST_FADE: GHOST_FADE, FILL_LOOP: FILL_LOOP, PACE_LOOP: PACE_LOOP, RED_SHARE: RED_SHARE, RED_LOOP: RED_LOOP, WAKE_BELOW: WAKE_BELOW, WAKE_ABOVE: WAKE_ABOVE, GONE_ABOVE: GONE_ABOVE, MAX_ENEMIES: MAX_ENEMIES },
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */
 export const newGame = (seed = 1, { title = false, save = null } = {}) =>
-  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + PROBE });
+  boot(CART, { seed, save, extra: rename((title ? '' : 'skipTitle = true;') + PROBE, MAP) });
 export const M = (...names) => names.reduce((m, n) => m | (1 << BTN[n]), 0);
 /** The sfx commands since the last call: [[n, channel], ...]. */
 export const sfxLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'sfx').map((a) => [a[2], a[3]]); vm.audioLog.length = 0; return r; };

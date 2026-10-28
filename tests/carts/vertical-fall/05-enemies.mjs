@@ -138,15 +138,22 @@ for (const kind of ['spiky', 'jelly', 'ghost']) {
   ok(p.me.hp < K.HP, 'then it drifts through the stone between and reaches the faller', `ghost at y ${g.y.toFixed(0)}`);
 }
 
-// 8b. A bat gives up after 3 seconds of chasing and flies off up the well.
+// 8b. A bat gives up after a second of chasing and flies off up the well; it hovers while the faller is out of sight.
 {
   const { vm, p, K } = empty(13, 30);
   const b = add(p, 'bat', 4, 20); b.hang = false; b.chase = 0;
   for (let i = 0; i < K.BAT_CHASE; i++) { place(p, K.CELL, 28 * K.CELL); p.me.inv = 9999; vm.step(0); }
   const y = b.y; vm.step(0);
-  ok(K.BAT_CHASE === 180 && b.y < y && !b.dead, 'after 180 frames of chasing a bat flies off upwards');
+  ok(K.BAT_CHASE === 60 && b.y < y && !b.dead, 'after 60 frames of chasing a bat flies off upwards');
   for (let i = 0; i < 400 && !b.dead; i++) { place(p, K.CELL, 28 * K.CELL); vm.step(0); }
   ok(b.dead, 'and is gone once it is well above the screen');
+}
+{
+  const { vm, p, K } = empty(15, 30);
+  const b = add(p, 'bat', 4, 10); b.hang = false; b.chase = 0;
+  place(p, 4 * K.CELL, 22 * K.CELL); vm.run(1); const x = b.x, y = b.y;
+  for (let i = 0; i < 20; i++) { place(p, 4 * K.CELL, 22 * K.CELL); p.me.inv = 9999; vm.step(0); }
+  ok(b.x === x && b.y === y, 'a bat with the faller more than 96 px away hovers where it is', `${(22 * K.CELL - b.y).toFixed(0)} px away`);
 }
 
 // 9. Areas and loops: which enemies each area brings, faster and more of them each loop.
@@ -164,7 +171,7 @@ for (const kind of ['spiky', 'jelly', 'ghost']) {
     ok(extra.length === 0 && missing.length === 0, `${p.AREAS[a].toLowerCase()} has ${allowed[a].filter((k) => k !== 'blobling').join(', ')}${a ? ' and the enemies before' : ''}, and nothing later`, `${[...got].join(' ')}`);
   }
   const count = (n) => { let t = 0; for (let s = 1; s <= 20; s++) { vm.probe(); p.makeLevel(n); t += p.enemies.length; } return t; };
-  ok(count(3) > count(1) * 1.3, 'within an area each level has more enemies (fill 50, 65, 80 %)', `${count(1)} -> ${count(3)}`);
+  ok(count(3) > count(1) * 1.3, 'within an area each level has more enemies (fill 40, 50, 60 %)', `${count(1)} -> ${count(3)}`);
   p.makeLevel(1); const pace1 = p.pace; p.makeLevel(13); const pace2 = p.pace;
   ok(pace1 === 1 && near(pace2, 1 + K.PACE_LOOP), 'the second loop is 10 % faster', `${pace1} -> ${pace2}`);
   ok(count(13) > count(1) * 1.1, 'and has more enemies (10 points more fill)', `${count(1)} -> ${count(13)}`);

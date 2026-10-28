@@ -1,7 +1,7 @@
 # Vertical Fall: Cart Specification
 
 **Version:** 0.1 (draft: the design agreed with the user at the kickoff)
-**Status:** Steps 1 to 3 built (the vertical slice; blocks, gems, stomps, combos, the gem high; the whole roster of enemies, by area and loop); step 4 is next
+**Status:** Steps 1 to 4 built (the vertical slice; blocks, gems, stomps, combos, the gem high; the whole roster of enemies, by area and loop; levels from hand-made chunks, the Daily well's seed); step 5 is next
 **Cart source:** `carts/src/vertical-fall/` → `carts/vertical-fall.nova`
 
 ---
@@ -109,8 +109,8 @@ and hover). Out of ammo, a press clicks and nothing comes out.
 | Default gunboots | 1 bullet, damage 1, 7 px/frame, 1 ammo, again every 8 frames while held, sets the fall speed to at most 0.3 |
 | A bullet | stops at the first block or enemy it hits; breaks breakable blocks; passes ledges; at most 16 at once |
 
-**Stomping.** Landing on an enemy from above (falling or landing, the faller's feet within 6 px of its top) kills a
-**stompable** enemy outright, bounces the faller up at 3.6 px/frame (4.4 if A is held), refills the ammo and adds 1 to
+**Stomping.** Landing on an enemy from above (falling or landing, with the faller's feet on its top half: above its
+middle before the frame's fall) kills a **stompable** enemy outright, bounces the faller up at 3.6 px/frame (4.4 if A is held), refills the ammo and adds 1 to
 the combo. A stomp only ever lifts the faller onto the enemy's top; a second stompable enemy touched in the same frame is
 stomped too (a stack of bats).
 Landing on a **red** enemy hurts instead. Red always means "do not touch": red enemies, red enemy shots. (Gems are red as
@@ -154,10 +154,21 @@ when the meter reaches 0. A combo's payout goes to the wallet and the score, not
 ## 6. Levels and content
 
 **Levels.** A level is a stretch of well **9 cells wide** and **140 cells deep** (140 m) at level 1, 10 m deeper each
-level up to 220 m. It is built from **chunks**: hand-made blocks of 9 × 12 cells (layouts of stone, blocks, ledges, enemy
-and gem places), chosen and mirrored by the level's seed, with a quiet chunk at the top and the level's **floor** at the
-bottom. Chunks are written as text in a script beside `art.py` (`chunks.py`, made in step 4), which packs them into the cart's ROM
-(`rom/chunks.bin`), so they do not cost code. Aim: about 40 chunks, tagged by area and by how hard they are.
+level up to 220 m. It is built from **chunks**: hand-made pieces of 9 × 12 cells (stone, ledges, breakable and gem blocks,
+and the places where an enemy fits), written as text in `carts/src/vertical-fall/chunks.py`, which checks them and packs
+them into the cart's ROM (`rom/chunks.bin`, 1.9 KB), so they cost no code. There are **34**: 15 for every area, the rest
+for one or a few (roots and outcrops in the Shaft, ledges for walkers in the Ossuary, ledges over water and turrets in the
+Cistern, wide open dark in the Deep), each **easy, medium or hard** (1 to 3), with every area having all three. A level
+is built from the run's seed and its number alone (its own small generator, so the same seed gives the same well, which
+the Daily well needs): **4 open rows** at the top, then chunks from the area's pool, up to the level's difficulty (level 1
+of an area easy only, level 2 up to medium, level 3 and every later loop up to hard; a chunk of the hardest allowed is
+twice as likely; never the same chunk twice in a row), each mirrored half the time; then open rows down to the **floor**:
+a row of stone, with a step of stone in each corner on top of it.
+
+What `chunks.py` checks, each a way a level could be broken: 12 rows of 9; side walls of stone; the top and bottom rows
+open inside (so any two chunks join); a way down from top to bottom through open cells, ledges and blocks (blocks can be
+shot); a bat's place has stone or a block above it, a crawler's stone, a block or a ledge under it, a turret's is beside a
+side wall. A test also checks every level of two loops for a way down to its floor.
 
 **Areas.** Three levels each, then the next; after the fourth, the well **loops** to the first, harder.
 
@@ -171,7 +182,7 @@ bottom. Chunks are written as text in a script beside `art.py` (`chunks.py`, mad
 
 **Enemy places and fill.** A level has places where an enemy fits, of four kinds: **under** stone (a bat), on **top** of
 stone (a crawler or a walker), in the **open** (a floater) and against a side **wall** (a turret). Within an area the
-places are filled 50 %, 65 % and 80 % of the time on its three levels, and **each loop** fills 10 points more (up to
+places are filled 40 %, 50 % and 60 % of the time on its three levels (about 20, 25 and 40 enemies in the Shaft), and **each loop** fills 10 points more (up to
 100 %), makes the enemies 10 % faster, and makes a snail 10 points more likely to be a spiked one (20 % in the first loop,
 up to 60 %). The kind a place gets is drawn from the area's enemies (and those of the areas before it):
 
@@ -179,6 +190,7 @@ up to 60 %). The kind a place gets is drawn from the area's enemies (and those o
 |---|---|---|---|---|
 | Under stone | bat | bat | bat | bat |
 | On top | snail (or spiked) | snail, snail, turtle, frog (one drawn) | the same | the same |
+| On top of a ledge | (none) | turtle or frog (a snail clings only to stone and blocks) | the same | the same |
 | In the open | (none) | blob | blob, jellyfish | blob, jellyfish, ghost |
 | Side wall | (none) | (none) | turret | turret |
 
@@ -221,7 +233,7 @@ Each enemy is **stompable** (white) or **red** (shoot only). HP is in bullets of
 
 | Enemy | From | Moves | HP | Stomp | Gems |
 |---|---|---|---|---|---|
-| Bat | Shaft | hangs from a ceiling; swoops at the faller when within 64 px, at 1.2 px/frame; stone and blocks stop it (it slides along them); after a hit it flies off for 30 frames; after 180 frames of chasing it gives up and flies away up the well | 1 | yes | 1 |
+| Bat | Shaft | hangs from a ceiling; swoops at the faller when within 64 px, at 0.8 px/frame, and only while they are within 96 px (further off it hovers); stone and blocks stop it (it slides along them); after a hit it flies off for 30 frames; after 60 frames of chasing it gives up and flies away up the well | 1 | yes | 1 |
 | Snail | Shaft | crawls round the outline of stone and blocks (floors, walls, ceilings), 0.5 px/frame; falls if its block is shot away | 2 | yes | 2 |
 | Spiked snail | Shaft | the same, with red spikes on its back | 3 | **red** | 3 |
 | Turtle | Ossuary | walks its surface (stone, a block or a ledge) at 0.6 px/frame, turning at a wall or an edge (it never walks off); its shell stops bullets from above (stomp it) | — | yes | 3 |
@@ -255,8 +267,9 @@ one carried and refills the ammo; finding the **same** module again gives +2 max
 gems). The game over shows the level reached, the depth, the gems, the kills and the best combo. The top 10 is ordered by
 score and keeps the level reached.
 
-**The Daily well** is one seed a day: the date (`YYYYMMDD`, read once when the run starts) seeds every level's layout,
-so it is the same well for everyone that day. Play it as often as you like; it has its own best for the day, shown on the
+**The Daily well** is one seed a day: the date (`YYYYMMDD`, read once when the run starts) seeds every level's layout
+and where its enemies are, so it is the same well for everyone that day (what drops from a gem block, and when, still
+differs). RESTART from the pause menu restarts the Daily well. Play it as often as you like; it has its own best for the day, shown on the
 title and the records, and its runs do not enter the top 10. The console's API has no date (SPEC 7.2 asks carts to use
 `t()`), so the cart reads `Date` once for this, and the tests set the day themselves; everything after is the seeded
 PRNG, so the game stays deterministic.
@@ -324,8 +337,8 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
 
 | Asset | Budget |
 |---|---|
-| Code | 34.4 KB now (step 3, packed without comments: `"strip": true`); planned up to about 56 KB of the 64 KB limit (`"mangle"` too if needed); chunks in ROM, not code (`node tools/check.js vertical-fall`) |
-| ROM | `rom/chunks.bin`: about 40 chunks of 9 × 12 cells, about 3 KB |
+| Code | 30.3 KB now (step 4, packed without comments and with short names: `"strip": true` and `"mangle": true`, 45.5 KB of source); planned up to about 56 KB of the 64 KB limit; chunks in ROM, not code (`node tools/check.js vertical-fall`) |
+| ROM | `rom/chunks.bin`: 34 chunks of 9 × 12 cells, 1,871 bytes |
 | Tiles | about 650 of 1,024: four areas' blocks and walls (about 200), the faller (about 60), enemies (about 150), bullets, gems, items, upgrades and the HUD (about 120), the title (about 100) |
 | Sprites | at most about 90 in OAM: the faller 1, enemies 24, enemy shots 8, bullets 16, gems 32, sparks 8; at most 32 a line (a test of a busy screen) |
 | Songs / SFX | 8 songs (all 8), about 25 effects |
@@ -422,6 +435,29 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
    packed (52 %); 169 tiles.
 4. **Content:** `chunks.py` and `rom/chunks.bin`; the seeded level generator; the four areas and the loop; each level's
    floor; the Daily well's seed.
+
+   **Built.** `chunks.py` (34 chunks as text, the checks above, `rom/chunks.bin`; `--check` compares). `code.js`:
+   `loadChunks` reads the ROM (a byte of tags and 54 bytes of cells a chunk), `makeLevel` stacks them as described,
+   turning the chunks' places into enemies by the fill; a place on top of a ledge gets a turtle or a frog. The Daily
+   well's seed (`todaySeed`, `startGame(true)`; the menu and its records are step 5). The build now packs with `"mangle":
+   true` (short top-level names: 34.4 KB became 30.3 KB) and the tests rename what they append to match (`lib.mjs`, as The
+   Franchise does). Tests: `06-levels.mjs` (the ROM is what the script makes, every area has all three difficulties, every
+   band of 12 rows in 16 levels is a chunk of its area no harder than allowed, about half mirrored, never twice in a row,
+   the difficulty by level and loop, the top and the floor, the Daily well the same for two games on one day and not on
+   the next, RESTART keeps it, the fill by level); the old layout tests became a way down through 24 levels; the
+   placement test allows blocks and ledges.
+
+   **Results.** The tests pass. With the chunks the Shaft at first killed every run of the bot: the chunks offer about
+   twice the places the stand-in did, and bats did nearly all the harm. The bot was improved where it played badly
+   (it walked off a shelf beside a bat, stalled against a block a cell up, jumped up into what was above it), but the
+   decisive test was the same sweep with every bat removed: no deaths in the Shaft, half a hit a run. So the bat changed
+   (an enemy that can only be fought from above should not be long above you): 0.8 px/frame (from 1.2), it hovers while
+   the faller is beyond 96 px, gives up after 60 frames; the stomp became generous (the top half, as in Downwell); the fill
+   became 40, 50, 60 % (from 50, 65, 80). The sweep, 8 seeds: from the start, skill 1, 7 runs of 8 come through the Shaft
+   (1.9 hits), skill 0.5, 6 of 8 (1.6 hits); from the start of an area with 4 HP and nothing else, skill 1, the Ossuary 3
+   of 8, the Cistern 2 of 8, the Deep none. The later areas stay for step 8, with step 5's upgrades and shops in. Code 30.3 KB
+   packed (46 %); ROM 1.9 KB.
+
 5. **Items and flow:** the upgrade room and the ten upgrades, the gun modules, side rooms (shop, module, cache) with
    time stopped; the title, game over, top 10, the Daily well's best; saves.
 6. **Art pass:** the four areas' blocks, back walls and far layers; the faller and enemies with their animations; gems,

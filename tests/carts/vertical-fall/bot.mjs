@@ -17,10 +17,10 @@ export const defaults = { frames: 30000, seeds: 6, set: { skill: [0.5, 1] } };
 
 export const newGame = (seed) => boot(seed); // skipTitle: straight into play
 
-let last = 0, lastDepth = 0, stuckAt = -1, hitsTaken = 0, lastHp = 4, problems = [], fired = false, first = 1, levels = 3;
+let lastX = 0, still = 0, last = 0, lastDepth = 0, stuckAt = -1, hitsTaken = 0, lastHp = 4, problems = [], fired = false, first = 1, levels = 3;
 /** opts.start: the level to start on (to sweep one area: --set start=7); opts.levels: how many levels a run is. */
 export function setup(vm, p, opts) {
-  last = 0; lastDepth = 0; stuckAt = -1; hitsTaken = 0; lastHp = 4; problems = []; fired = false;
+  lastX = 0; still = 0; last = 0; lastDepth = 0; stuckAt = -1; hitsTaken = 0; lastHp = 4; problems = []; fired = false;
   first = opts.start ?? 1; levels = opts.levels ?? 3;
   if (first > 1) p.startAt(first);
 }
@@ -65,22 +65,30 @@ export function pad(vm, p, frame, opts) {
   // ammo, the bot keeps away from it).
   // A red one close below and not yet in line is kept at arm's length (a person lines up a shot from a distance).
   const wide = (e) => (e.x > mid ? e.x - 30 : e.x + 30);
-  if (foe && !f.ground) gx = red && (f.ammo === 0 || (foe.y - fy < 36 && Math.abs(foe.x - mid) > 6)) ? wide(foe) : foe.x;
+  // Any enemy nearly level with the faller (not yet room to land on it) is kept at arm's length too.
+  const level_ = foe && foe.y - fy < 20 && Math.abs(foe.x - mid) > 6;
+  if (foe && !f.ground) gx = (red && (f.ammo === 0 || (foe.y - fy < 36 && Math.abs(foe.x - mid) > 6))) || level_ ? wide(foe) : foe.x;
   let m = Math.abs(gx - mid) > 2 ? M(gx > mid ? 'RIGHT' : 'LEFT') : 0;
 
   // An enemy level with the faller and close at the side (it cannot be stomped or shot from there): move away from it,
   // if the bot notices in time.
-  const side = p.enemies.find((e) => e.awake && !e.dead && Math.abs(e.x - mid) < 26 && e.y - fy > -24 && e.y - fy < 10)
+  const homing = (e) => (e.kind === 'bat' && !e.hang) || e.kind === 'blob' || e.kind === 'blobling' || e.kind === 'ghost';
+  const side = p.enemies.find((e) => e.awake && !e.dead && Math.abs(e.x - mid) < (homing(e) && e.y < fy ? 40 : 26) && e.y - fy > (homing(e) ? -56 : -24) && e.y - fy < 10)
     || p.shots.find((s) => Math.abs(s.x + s.vx * 12 - mid) < 20 && Math.abs(s.y + s.vy * 12 - fy) < 20); // where a ball will be
+  // Something homing in from above while the faller stands: step off the shelf to the nearest drop and fall away from it.
+  if (side && f.ground && side.y < fy - 16 && chance(Math.floor(frame / 20), 5, 0.2 + 0.8 * skill)) return M(goal * K.CELL + K.CELL / 2 > mid ? 'RIGHT' : 'LEFT');
   if (side && chance(Math.floor(frame / 20), 5, 0.2 + 0.8 * skill)) {
     let left = side.x > mid;
     if (left && f.x < K.CELL + 2) left = false; else if (!left && f.x + K.BOX_W > (K.CELLS - 1) * K.CELL - 2) left = true; // cornered
     const away = M(left ? 'LEFT' : 'RIGHT');
-    if (f.ground) return away | fire();
+    if (f.ground) return side.y > fy - 20 ? away | fire() : away; // jump only over something level, never up into it
     return away;
   }
 
   if (f.ground) {
+    // Walking into a wall (a block a cell up): jump over it.
+    still = m && Math.abs(f.x - lastX) < 0.01 ? still + 1 : 0; lastX = f.x;
+    if (still > 15) { still = 0; return m | fire(); }
     if (foe && Math.abs(foe.y - fy) < 16 && Math.abs(foe.x - mid) < 40) return M(foe.x > mid ? 'RIGHT' : 'LEFT') | fire(); // jump at it
     if (f.onLedge) return m | (frame % 2 ? M('DOWN') : 0);
     if (bestDrop <= 0 && isSolid(p, p.cellAt(col, row))) return m | fire(); // boxed in by blocks: jump and shoot down
