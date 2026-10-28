@@ -19,6 +19,67 @@ node tools/devkit/sweep.mjs my-game           # the bot over many seeds (once te
 node tools/release.js my-game                 # when finished: label, .nova.png, Library, README row
 ```
 
+## "I want to start a new game": the kickoff
+
+When the user says this (or anything like it), do not start writing code. Ask the questions below **step by step,
+with options to pick from**, then do the steps after them. The point is a few quick rounds of choices, and then a spec
+and a working scaffold to react to.
+
+### Ask
+
+**Use the multiple-choice question tool** (AskUserQuestion in Claude Code), not a list in a message:
+
+- **Up to 4 questions a round, 2 to 4 options each.** Write the options for *this* game, from what the user has said so
+  far, not generic ones. Put the one you would pick first, marked "(Recommended)". The tool adds "Other" for an answer in
+  their own words, so do not add one.
+- **Build each round on the last answers.** The second round's options follow from the first round's choices.
+- **Use multiple choice for lists** (the extras in round 3), and a preview where it helps to compare options (a control
+  scheme, a screen layout).
+- **Skip a question the user has already answered**, and do not ask more than the three rounds below.
+
+**First, the pitch, in plain words.** If the user has not said what the game is, ask in one sentence: what is it, and
+is there a game it is like? This is the one question options cannot cover. Then:
+
+**Round 1: what the game is.**
+1. **Name.** Two or three titles to pick from (the cart's name is the title in lowercase and dashes: `star-cadet`).
+2. **Shelf.** Which Library shelf (`src/genres.js`: Arcade, Puzzle, Racing, Strategy).
+3. **Players.** 1, or up to 4 on one console; if more than one: together or against each other, or against the computer.
+4. **How a game goes.** Endless for a high score, a set of levels or stages, or a season or campaign with a save.
+
+**Round 2: how it plays.**
+1. **Controls.** What the d-pad, A and B do (the buttons a phone's touch controls have); one button, or many.
+2. **Difficulty.** A relaxed game or a hard one, and whether it has difficulty levels. (The difficulty should come from
+   decisions, not from reflexes a person does not have.)
+3. **Length.** How long one game lasts, and how it ends.
+
+**Round 3: how it looks and sounds.**
+1. **The look.** The setting and the mood, and the view (side-on, top-down, a floor in perspective, a table).
+2. **The sound.** The style of music (chiptune, orchestral, jazz, public domain classics...) and its mood.
+3. **Extras** (multiple choice). Features beyond the core game: modes, unlockables, a two-player mode, a level editor...
+   Anything not picked goes under **Open questions** in the spec, for later.
+
+If the question tool is not available, send the same rounds as numbered lists, one round a message, with your
+recommended answer after each question.
+
+### Then do
+
+1. **Get the branch ready.** Work on the branch you were given; if its pull request has already merged, restart it from
+   the latest `main` (section 8).
+2. **Read before building**: the rest of this playbook, `docs/SPEC.md` section 8 (the cart-facing API), and the spec and
+   lessons (sections 10 to 12) of the nearest game already built: a rhythm game reads `docs/carts/flow-state.md`, a
+   physics game `docs/carts/star-cadet.md`, and so on.
+3. **Scaffold**: `node tools/new-cart.js <name> "Title"`, with `--kind puzzle` if it is a match-3 game (or close to one).
+4. **Fill in `carts/src/<name>/meta.json`**: the title, a description of two or three sentences for the Library, the
+   genre and the players.
+5. **Write the spec** `docs/carts/<name>.md` from the answers (section 1, step 1): every section of the template, the
+   rules with numbers, and an implementation plan of about 8 steps. Where you chose a default the user did not confirm,
+   list it under **Open questions** so it is easy to change.
+6. **Check the scaffold**: `node tools/verify.js --fast` and `node tools/devkit/smoke.mjs <name>`. Commit and push (the
+   scaffold and the spec together).
+7. **Report back, then wait**: the design in a few lines, the plan's steps, the defaults you chose, and anything the
+   spec found hard to fit (the 64 KB of code, the 8 channels, the 1,024 tiles). Start step 1 when the user says "go
+   ahead", and build one step at a time from there (section 1).
+
 ## Where things live
 
 | Path | What |
@@ -43,7 +104,7 @@ node tools/release.js my-game                 # when finished: label, .nova.png,
    and Select, the buttons a phone's touch controls have; X, Y, L and R only for extras), screen layout, the rules with
    numbers, scoring, screens and flow, audio, video layers, save slots, asset budget, and a numbered
    **implementation plan** of about 8 steps. Ask the user the few design questions that really change the
-   game (modes, number of levels, features); choose sensible defaults for the rest.
+   game (modes, number of levels, features; the list is in the kickoff above); choose sensible defaults for the rest.
 2. **Build one step at a time.** The user says "go ahead" for each. A typical plan: 1 vertical slice,
    2 the core mechanics, 3 opponents or enemies, 4 content (levels, tracks), 5 the flow (title, menus,
    modes, saves), 6 art, 7 audio, 8 balance, polish, label, PNG cart, Library entry, README.
