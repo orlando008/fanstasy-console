@@ -1,7 +1,7 @@
 # The Ivory Tower: Cart Specification
 
 **Version:** 0.2 (spec agreed in outline)
-**Status:** Steps 1 to 5 (the rules, the marble, the sky and the landmarks, the scoring, the flow) built; steps 6 to 8 to come
+**Status:** Steps 1 to 6 (the rules, the marble, the sky and the landmarks, the scoring, the flow, the audio) built; steps 7 and 8 to come
 **Cart source:** `carts/src/ivory-tower/` → `carts/ivory-tower.nova`
 
 ---
@@ -113,7 +113,7 @@ The number that ranks a run is the **floors**; the points are shown on the game 
 
 ## 11. Audio
 
-A soft, grand score that gains layers as the tower grows, as four songs (a song's channels cannot be muted from code, so a layer is a song of its own, switched at the landmark, with a crossfade of one bar): **0** the title (a slow
+A soft, grand score that gains layers as the tower grows, as four songs (a song's channels cannot be muted from code, so a layer is a song of its own, switched at the landmark: the new song starts from its first bar, under the landmark's fanfare, with no crossfade, so the fanfare covers the change): **0** the title (a slow
 arpeggio on a piano); **1** the courtyard and balcony (floors 0 to 19: the piano and a pad of strings); **2** floors 20 to 39 (adds a flute lead and a light pulse); **3** floors 40 and above (adds a choir and a deeper bass). Effects (channels 6 and 7
 take turns): the slab's landing (a soft low thud, higher with the width), the **perfect chime** (a bell on a rising scale: the perfect run picks the note, a pentatonic ladder of 10 notes that then repeats an octave higher), the slice (a short
 airy swish), the regrow (a soft swell), a landmark (a fanfare of bells and strings), a new best (a sparkle), the miss (a low fall and a muffled thud), the countdown tick, menu move, select and pause. Levels: the lead at most 0.07 RMS and 0.75 of the mix, effects
@@ -140,10 +140,10 @@ indices up to 191; translucent ones from 192 up for the glow and the ring, with 
 
 | Asset | Budget |
 |---|---|
-| Code | about 25 KB of the 64 KB limit after step 3 (`node tools/check.js ivory-tower`) |
+| Code | 29.9 KB of the 64 KB limit after step 6 (`node tools/check.js ivory-tower`) |
 | Tiles | 591 of 1,024 after step 3 (the strip of landmarks, the clouds, the stars and the moon; identical and flipped tiles are shared) |
 | Sprites | none (the sparkles and the ring are overlay shapes, the moon is a scene of BG2) |
-| Songs / SFX | 4 songs, TODO patterns of 64, about 16 effects (the perfect ladder is 10 notes), sample RAM TODO of 32 KB |
+| Songs / SFX | 4 of 8 songs, 16 of 64 patterns, 34 of 64 effects (20 of them the perfect's chimes: the ladder of 10 notes, and again an octave higher), sample RAM 16,096 of 32,768 bytes (11 of 32 samples), 17 of 32 instruments |
 
 ## 15. Implementation plan
 
@@ -200,6 +200,15 @@ the best and the height in metres (a floor is 3 m); the game over panel shows th
 (no game counted, no best, no top 10); any new press, or the end of the run, goes back to the title and the wait starts again. Pause, the game over (the camera's flight, the result, initials, records) are as in step 4. *The records:* the top 10 with floors and points, the best height and the games played. The strip of landmarks has 40 more rows of paving for the title's view. `06-flow.mjs`.
 
 *Results.* The tests pass; the title, the count-in and the records were looked at in screenshots. The demo's player and the chime ticks are placeholders for sound until step 6.
+
+**Step 6: built and results.**
+
+*Built.* Four songs in D major at 90 bpm (`audio.py`), all on one chord round (I V vi iii IV I IV V, twice: 16 bars, 4 patterns, about 43 seconds before it loops) and one tune (a two-part melody in the D major scale): **0** the title: the piano's arpeggio and the strings under it, the bells taking the tune for the second half; **1** (floors 0 to 19) the piano plays the tune over its arpeggio and the strings;
+**2** (floors 20 to 39) the flute takes the tune, and a light pulse comes in (a pulsing bass, a soft kick and hats); **3** (40 and up) the choir takes the strings' place (the pad channels hold one voice at a time) and the bass goes down an octave. The loudness measures as a gentle build (median RMS 0.037, 0.039, 0.049, 0.051). The code switches at floors 20 and 40 (the landmarks of the Colonnade and the Belfry): `songFor(floors)`.
+The effects (34, `SFX` in `code.js`): menu move, select, pause, a miss (a falling low thud), game over (strings sinking), the count-in's tick, a place in the top 10, three thuds by the width of the slab that lands (narrow, middling, wide: higher with the width), the slice's swish, the regrow's swell, the landmark's flourish of bells, the new best's sparkle, and the chimes: a perfect rings
+the note of its run on a pentatonic ladder (D E F# A B across two octaves: 10 notes) and from the 11th starts again an octave higher (`SFX.chime + 10 x chimeOctave(run) + chimeNote(run)`). A landing plays its thud and, if cut, the swish; a perfect plays its chime (and the swell if it grew); effects take turns on channels 7 and 6 so they never cut into the music.
+`07-audio.mjs` tests the table, the cues, the ladder and the switches. *Results.* `loud.mjs --check`: all songs within the limits (the tune alone at most 0.035 RMS and 0.70 of the mix, pierce 0.005 against the limit of 0.012); `clash.py`: no clashes; the effects measure 0.010 to 0.035 RMS (`sfx.mjs`), in the range of 0.01 to 0.05. I cannot hear them: the numbers say they are at a sensible level and the tune is in key, nothing more;
+if a sound is too loud, too thin or too sweet, the instruments' `vol` and the `LADDER` are at the top of `audio.py`.
 
 Each step: build it, run `node tools/check.js ivory-tower` and `node tools/test.js ivory-tower`, write its **Built** and **Results** notes under its number here, commit and push.
 

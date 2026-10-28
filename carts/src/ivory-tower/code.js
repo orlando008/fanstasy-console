@@ -23,8 +23,9 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
 // so they never cut into the music and two can sound at once.
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
-const SONG = { title: 0, play: 1 };
+const SFX = { move: 0, select: 1, pause: 2, miss: 3, over: 4, tick: 5, record: 6, thudNarrow: 7, thudMid: 8, thudWide: 9, slice: 10, regrow: 11, landmark: 12, best: 13, chime: 14 };   // chime: 20 of them, 14 to 33 (the ladder, then an octave up)
+const SONG = { title: 0, floors0: 1, floors20: 2, floors40: 3 };   // the climb's music gains a layer at floors 20 and 40 (a landmark)
+const songFor = (n) => (n >= 40 ? SONG.floors40 : n >= 20 ? SONG.floors20 : SONG.floors0);
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -123,7 +124,7 @@ function startGame(isDemo = false) {
   tower = [{ x: CENTRE - BASE_W / 2, w: BASE_W, ox: CENTRE - BASE_W / 2 }];       // the base slab, centred
   rings = []; sparks = []; banner = null;
   slab = null; paused = false; timer = 0; state = 'play';
-  if (!demo) play(SONG.play);
+  if (!demo) play(SONG.floors0);
 }
 
 /** The next slab: as wide as the top of the tower, from the left side on even floors and the right on odd ones. */
@@ -136,19 +137,20 @@ function nextSlab() {
 function drop() {
   const top = tower[tower.length - 1], sy = screenY(floors + 1);
   const L = Math.max(slab.x, top.x), R = Math.min(slab.x + slab.w, top.x + top.w), ov = R - L;
-  if (ov < MIN_OVERLAP) { slab.fall = 0; slab.vy = 0; state = 'fall'; timer = 0; fx(SFX.hit); return false; }
-  let nx, nw, perfect = false;
+  if (ov < MIN_OVERLAP) { slab.fall = 0; slab.vy = 0; state = 'fall'; timer = 0; fx(SFX.miss); return false; }
+  let nx, nw, perfect = false, grew = false;
   if (Math.abs(slab.x - top.x) <= PERFECT) {              // dead on: the slab takes the place of the one below
     perfect = true; nx = top.x; nw = top.w; run++; perfects++; bestRun = Math.max(bestRun, run);
-    if (run >= REGROW_FROM && nw < BASE_W) { const g = Math.min(REGROW, BASE_W - nw); nx -= g / 2; nw += g; }
+    if (run >= REGROW_FROM && nw < BASE_W) { const g = Math.min(REGROW, BASE_W - nw); nx -= g / 2; nw += g; grew = true; }
     points += POINTS_PERFECT * Math.min(run, PERFECT_CAP);
-    fx(SFX.point);
+    fx(SFX.chime + 10 * chimeOctave(run) + chimeNote(run));
+    if (grew) fx(SFX.regrow);
   } else {                                                // sliced: what overhangs falls away
     nx = L; nw = ov; run = 0;
     const piece = (x, w, side) => slices.push({ k: floors + 1, x, w, ox: slab.x, y: sy, vx: slab.dir * speed() * 0.5, vy: 0, rot: 0, spin: side * (0.03 + 0.02 * hash(floors, 9)) });
     if (slab.x < L) piece(slab.x, L - slab.x, -1);
     if (slab.x + slab.w > R) piece(R, slab.x + slab.w - R, 1);
-    fx(SFX.move);
+    fx(ov >= 64 ? SFX.thudWide : ov >= 32 ? SFX.thudMid : SFX.thudNarrow); fx(SFX.slice);
   }
   tower.push({ x: nx, w: nw, ox: slab.x }); floors++; points += POINTS_FLOOR;
   if (perfect) shine(floors, nx, nw);
@@ -192,7 +194,7 @@ function updatePlay() {
   if (demo && (inputMask & ~prevMask)) { toTitle(); return; }   // any new press ends the demo
   if (!demo && pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   if (state === 'fall') { updateFall(); return; }
-  if (!slab && !demo && floors === 0 && timer < COUNT_IN && timer % 20 === 1) fx(SFX.move);   // the count-in ticks 3, 2, 1
+  if (!slab && !demo && floors === 0 && timer < COUNT_IN && timer % 20 === 1) fx(SFX.tick);   // the count-in ticks 3, 2, 1
   if (!slab && timer >= (demo ? 20 : COUNT_IN)) nextSlab();
   if (slab) {
     slab.x += slab.dir * speed();                           // slides across and turns at the end of its reach
@@ -347,9 +349,9 @@ function skyUpdate() {
 }
 
 /** A landmark is reached: the banner for two seconds and a chime. */
-function reach(k) { banner = { k, top: `FLOOR ${k * 10}`, name: LANDMARKS[k], t: 0 }; points += POINTS_LANDMARK; fx(SFX.record); }
+function reach(k) { banner = { k, top: `FLOOR ${k * 10}`, name: LANDMARKS[k], t: 0 }; points += POINTS_LANDMARK; fx(SFX.landmark); play(songFor(floors)); }
 /** Past the best height of the games before: said once. */
-function beatBest() { newBest = true; banner = { k: -1, top: `${floors} FLOORS`, name: 'NEW BEST!', t: 0 }; fx(SFX.record); }
+function beatBest() { newBest = true; banner = { k: -1, top: `${floors} FLOORS`, name: 'NEW BEST!', t: 0 }; fx(SFX.best); }
 function drawBanner() {
   if (!banner) return;
   const t = banner.t++, slide = Math.round(40 * (1 - clamp01(t / 12))) + Math.round(40 * clamp01((t - BANNER_FRAMES + 12) / 12));

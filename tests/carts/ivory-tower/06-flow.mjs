@@ -18,7 +18,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 {
   const vm = newGame(2, { title: true }), p = vm.probe(); vm.press('A');
   ok(p.state === 'play' && p.slab === null, 'PLAY starts a game, with no slab yet');
-  const ticks = []; for (let i = 0; i < p.K.COUNT_IN + 5; i++) { vm.step(0); ticks.push(...sfxLog(vm).filter(([n]) => n === p.SFX.move)); }
+  const ticks = []; for (let i = 0; i < p.K.COUNT_IN + 5; i++) { vm.step(0); ticks.push(...sfxLog(vm).filter(([n]) => n === p.SFX.tick)); }
   ok(ticks.length === 3, 'the count-in ticks three times (3, 2, 1)', `${ticks.length}`);
   ok(p.slab !== null, 'and then the slab comes');
   vm.press('A'); // a drop may miss; the game goes on or ends, but the count-in never shows again

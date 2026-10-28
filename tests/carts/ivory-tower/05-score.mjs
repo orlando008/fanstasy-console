@@ -26,7 +26,7 @@ const dropAt = (p, dx) => { p.slab = null; p.nextSlab(); p.slab.x = p.tower[p.to
   for (let i = 0; i < 5; i++) dropAt(p, 0);
   vm.run(1); sfxLog(vm); ok(!p.newBest && p.banner === null, 'up to the old best (5 floors) there is no message');
   dropAt(p, 0); vm.run(1);
-  ok(p.newBest && p.banner && p.banner.name === 'NEW BEST!' && sfxLog(vm).some(([n]) => n === p.SFX.record), 'past it: NEW BEST, with a sound');
+  ok(p.newBest && p.banner && p.banner.name === 'NEW BEST!' && sfxLog(vm).some(([n]) => n === p.SFX.best), 'past it: NEW BEST, with a sparkle');
   vm.run(p.BANNER_FRAMES + 2); dropAt(p, 0); ok(p.banner === null, 'and only once');
   p.slab = null; p.nextSlab(); p.slab.x = 1000; p.drop(); vm.run(p.K.FALL_FRAMES + 2);
   ok(p.state === 'over' && vm.m.save[p.BEST_SLOT] === 7 && vm.m.save[p.GAMES_SLOT] === 1, 'the game over saves the new best (7) and counts the game');

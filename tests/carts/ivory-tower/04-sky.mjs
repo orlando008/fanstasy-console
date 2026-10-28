@@ -43,7 +43,7 @@ const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
   ok(p.banner === null, 'no banner before the first landmark');
   vm.run(1); sfxLog(vm); dropAt(0); vm.run(1);
   ok(p.floors === 10 && p.banner && p.banner.k === 1 && p.LANDMARKS[p.banner.k] === 'THE BALCONY', 'floor 10: the banner of the Balcony');
-  ok(sfxLog(vm).some(([n]) => n === p.SFX.record), 'with its chime');
+  ok(sfxLog(vm).some(([n]) => n === p.SFX.landmark), 'with its fanfare');
   vm.run(p.BANNER_FRAMES + 2); ok(p.banner === null, 'the banner goes after two seconds');
   for (let i = 0; i < 40; i++) dropAt(0); vm.run(p.BANNER_FRAMES + 2); for (let i = 0; i < 9; i++) dropAt(0);
   ok(p.floors === 59 && p.banner === null, 'none between landmarks');
