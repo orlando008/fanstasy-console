@@ -1,7 +1,7 @@
 # The Ivory Tower: Cart Specification
 
 **Version:** 0.2 (spec agreed in outline)
-**Status:** Steps 1 (the rules) and 2 (the marble) built; steps 3 to 8 to come
+**Status:** Steps 1 (the rules), 2 (the marble) and 3 (the sky and the landmarks) built; steps 4 to 8 to come
 **Cart source:** `carts/src/ivory-tower/` → `carts/ivory-tower.nova`
 
 ---
@@ -121,7 +121,7 @@ airy swish), the regrow (a soft swell), a landmark (a fanfare of bells and strin
 
 ## 12. Video layers
 
-BG2 (back): the stars and, in the night sky, the moon; BG1: clouds (drifting, parallax), and the landmark's silhouette on the horizon behind the tower (a dome, a spire); BG0 is not used for the tower. The sky is a gradient set line by line in `scanline()`
+BG2 (back): the stars and, in the night sky, the moon (a scene of 256 x 224 that rises from below the screen as the dark comes); BG1: clouds (a field of cumulus 256 x 192 that repeats both ways, scrolled at half the tower's speed and drifting sideways, see-through through `blend`); BG0 (front of the three): the landmarks, one tall strip of 256 x 576 (the whole climb, 72 tile rows) scrolled with the camera, so the tower climbs past them; the tower itself is on the overlay. The sky is a gradient set line by line in `scanline()`
 from the floor, a lerp between the seven skies' top and bottom colours (so no art is stored for it). The slabs, the slices, the sparkles and the perfect ring are drawn on the overlay in colours of its own (the marbles' ramps, from palette 0 and the overlay's
 indices up to 191; translucent ones from 192 up for the glow and the ring, with `blend`). Sprites: the sparkles of a perfect (a few 8 px stars), the moon.
 
@@ -140,9 +140,9 @@ indices up to 191; translucent ones from 192 up for the glow and the ring, with 
 
 | Asset | Budget |
 |---|---|
-| Code | TODO of the 64 KB limit (`node tools/check.js ivory-tower`) |
-| Tiles | TODO of 1,024 (the clouds, the stars and the landmarks' silhouettes: a few dozen) |
-| Sprites | TODO (128 in OAM, 32 per line): a few sparkles and the moon |
+| Code | about 25 KB of the 64 KB limit after step 3 (`node tools/check.js ivory-tower`) |
+| Tiles | 591 of 1,024 after step 3 (the strip of landmarks, the clouds, the stars and the moon; identical and flipped tiles are shared) |
+| Sprites | none (the sparkles and the ring are overlay shapes, the moon is a scene of BG2) |
 | Songs / SFX | 4 songs, TODO patterns of 64, about 16 effects (the perfect ladder is 10 notes), sample RAM TODO of 32 KB |
 
 ## 15. Implementation plan
@@ -150,7 +150,7 @@ indices up to 191; translucent ones from 192 up for the glow and the ring, with 
 1. **The slab and the tower (a vertical slice):** the sliding slab, the drop, the overlap, the slice, the perfect and the regrow, the camera, the miss and the game over; plain rectangles; tests of the rules (the arithmetic of the overlap, perfect
    windows, regrow limits, the speed curve) and a bot that drops with a timing error.
 2. **The marble:** the five marbles drawn on the overlay from the floor's number (base, veins, bevel, gloss), the slab's edge and shadow, the falling slices, the perfect's ring and sparkles; tests that the same floor draws the same slab.
-3. **The sky and the landmarks:** the gradient by height, clouds, stars, the moon, the landmarks' silhouettes and the banner at each; the camera's pull-back at the end.
+3. **The sky and the landmarks:** the gradient by height, clouds, stars, the moon, the landmarks' silhouettes and the banner at each; the camera's flight back down the tower at the end (it could not zoom out: the tower is taller than the screen from floor 25, so the camera flies down it, the sky and the landmarks passing in reverse).
 4. **The rules finished:** the score, the speed curve tuned, the perfect run's ladder, the landmark bonus, the best height.
 5. **The flow:** title over a tower, the count-in, pause, game over, top 10 with initials, records, saves, the attract mode.
 6. **Audio:** the four songs and the effects (the perfect ladder), cues for the landmarks and layers; the levels.
@@ -174,6 +174,16 @@ A slice tumbles: it carries its floor (its marble), turns (a shear, drawn a row 
 `tests/carts/ivory-tower/03-marble.mjs`: the marble of each floor, the colours in CGRAM, the same slab wherever it is drawn, a cut slab keeping its veins, nothing drawn outside a slab, the slice and the ring's life, and the speed of a tall tower with its effects.
 
 *Results.* All the tests pass; a tall tower with its effects draws in about 1 ms a frame (the limit in the test is 8). Looked at in screenshots: the white Carrara base with grey veins, the green, then the black marble with gold veins at floor 20 read well against the sky. Left for later: the plinth is still a grey block; the slabs' shadow on the sky and the glow of a landmark come with the sky in step 3.
+
+**Step 3: built and results.**
+
+*Built.* *The sky:* a gradient set line by line in `scanline()` from the camera's height in floors (`climb()`: the camera's height over 8 px, plus the 4.5 floors the top slab stands above the bottom of the view). Seven skies (`SKIES`: dawn, morning, day, deep blue, sunset, dusk, night), each held for the first five floors of its stretch and blended into the next over the last five, so
+no sky ever jumps; the same call (`skyUpdate()` in `update()`) sets the colours of the landmarks (the horizon's colour, darker the nearer they are), the clouds (white by day, rosy at sunset, dim at night) and the stars (they fade in from floor 48 to 60 and twinkle). *The landmarks* (`art.py`): the Courtyard (a wall of arches, cypresses), the Balcony (a balustrade between two piers with urns),
+the Colonnade (seven columns under a beam), the Dome (two domes on a bank of cloud), the Belfry (two bell towers on corbels, a bell lit in its arch) and the Spire (a needle and three pinnacles), each in its 80 px of the climb; the windows light up as the stars come. *The banner:* each landmark from floor 10 to 60 gets a two-second banner (`FLOOR n` and its name, sliding in and out)
+and a chime (the starter's `record` sound for now). *The end:* after a miss the camera flies down the tower to the courtyard (3 px a frame or 5 % of the height, whichever is more: about 1.5 seconds for 40 floors) before the result shows; A is ignored until it arrives. The plinth is two marble steps. The starter's ground, hills, ship and gem are gone from `art.py`. `tests/carts/ivory-tower/04-sky.mjs`.
+
+*Results.* The tests pass, including the sky changing smoothly (no step above 1.2 colour levels in 0.1 floor) and the frame time at floor 70 with all the layers. Looked at in screenshots at floors 3, 25, 35, 45, 55 and 65: the balcony and cypresses by the dawn, the columns and domes in the clouds by day, the belfries at sunset, the spires and a lit moon at night.
+The clouds' flat bases and the strip's silhouettes are simple shapes; later passes can add detail. The landmark chime and the banner's sound are placeholders until step 6.
 
 Each step: build it, run `node tools/check.js ivory-tower` and `node tools/test.js ivory-tower`, write its **Built** and **Results** notes under its number here, commit and push.
 
