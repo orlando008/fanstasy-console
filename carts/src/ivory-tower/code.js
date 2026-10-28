@@ -44,18 +44,18 @@ function play(song) {
 
 // --- Save slots (SPEC 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
-const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
+const VERSION_SLOT = 0, SAVE_VERSION = 2, BEST_SLOT = 1, GAMES_SLOT = 2, INITIALS_SLOT = 3; // the best height (floors), games played, the last initials
+const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: floors, initials, points (slots 10 to 39)
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)) }; }
-function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); }
+function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { floors: dget(s), initials: unpackInitials(dget(s + 1)), points: dget(s + 2) }; }
+function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.floors); dset(s + 1, packInitials(e.initials)); dset(s + 2, e.points); }
 const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
 
-/** Put a score into the top 10 if it makes it. Returns its row, or -1. */
+/** Put a run into the top 10 if it makes it (more floors, then more points). Returns its row, or -1. */
 function insertTop(e) {
-  if (!e.score) return -1;
-  const list = topTen(), at = list.findIndex((x) => e.score > x.score);
+  if (!e.floors) return -1;
+  const list = topTen(), at = list.findIndex((x) => e.floors > x.floors || (e.floors === x.floors && e.points > x.points));
   if (at < 0) return -1;
   list.splice(at, 0, e);
   for (let i = at; i < TOP_N; i++) writeEntry(i, list[i]);
@@ -78,19 +78,27 @@ const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) ===
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
-let score = 0, lives = 3, px = 120, blocks = [];
-const HOME = { x: 120 };
+// --- The tower and its rules (SPEC 5). Pixels and pixels a frame; the numbers are here, in one place, because only playing can set them. ---
+
+const SLAB_H = 8, BASE_W = 96, CENTRE = 128, REACH = 110; // a slab is 8 px thick; the first is 96 wide; a slab's centre slides over CENTRE +- REACH
+const PERFECT = 3, MIN_OVERLAP = 2, REGROW = 3, REGROW_FROM = 3; // a drop within 3 px is perfect; the third perfect in a row starts to give width back, 3 px each
+const SPEED0 = 1.6, SPEED_STEP = 0.045, SPEED_MAX = 4.8; // the slide's speed at floor 0, how much each floor adds, and its limit
+const BASE_Y = 176, TOP_Y = 140; // the screen y of the base slab's top at the start, and of the top slab's top once the tower is tall
+const COUNT_IN = 60, FALL_FRAMES = 50, GRAVITY = 0.25; // frames before the first slab; a missed slab falls this long before the game is over
+const POINTS_FLOOR = 10, POINTS_PERFECT = 10, PERFECT_CAP = 10;
+
+let floors = 0, tower = [], slab = null, slices = [], run = 0, bestRun = 0, perfects = 0, cam = 0, points = 0, newBest = false;
+const speed = (n = floors) => Math.min(SPEED_MAX, SPEED0 + SPEED_STEP * n);
+const DROP_BUTTONS = [UP, DOWN, LEFT, RIGHT, A, B, X, Y];
+const dropped = () => DROP_BUTTONS.some((b) => pressed(b)); // a drop is a new press of any of these (a held button does not drop the next slab)
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
     for (let i = 0; i < 256; i++) dset(i, 0);
     dset(VERSION_SLOT, SAVE_VERSION);
   }
-  // The background: the ground on layer 0 along the bottom of the screen, the hills behind it on layer 1 (each its
-  // region of Map RAM, placed with a negative scroll and not repeated), the sky a gradient in scanline() below.
-  const f = ART.scenes.field, h = ART.scenes.hills;
-  bg(0, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, x: 0, y: -(224 - f.h * 8), wrap: false, show: true });
-  bg(1, { mx: h.mx, my: h.my, mw: h.w, mh: h.h, x: 0, y: -(224 - f.h * 8 - h.h * 8 + 8), wrap: false, show: true });
+  // The sky is a gradient set in scanline() below; the tower is drawn on the overlay.
+  for (const l of [0, 1, 2]) bg(l, { show: false });                      // the layers are used from step 3 on
   blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (ART.colors.GLASS) are see-through
   if (skipTitle) startGame(); else toTitle();
 }
@@ -98,9 +106,42 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 function startGame() {
-  score = 0; lives = 3; px = HOME.x; blocks = []; paused = false; timer = 0; state = 'play';
+  floors = 0; points = 0; run = 0; bestRun = 0; perfects = 0; slices = []; cam = 0; newBest = false;
+  tower = [{ x: CENTRE - BASE_W / 2, w: BASE_W }];       // the base slab, centred
+  slab = null; paused = false; timer = 0; state = 'play';
   play(SONG.play);
 }
+
+/** The next slab: as wide as the top of the tower, from the left side on even floors and the right on odd ones. */
+function nextSlab() {
+  const w = tower[tower.length - 1].w, left = floors % 2 === 0;
+  slab = { x: (left ? CENTRE - REACH : CENTRE + REACH) - w / 2, w, dir: left ? 1 : -1 };
+}
+
+/** Put the slab down where it is: the overlap with the top of the tower stays (and a perfect keeps the whole), the rest is sliced off; no overlap is a miss. */
+function drop() {
+  const top = tower[tower.length - 1], sy = screenY(floors + 1);
+  const L = Math.max(slab.x, top.x), R = Math.min(slab.x + slab.w, top.x + top.w), ov = R - L;
+  if (ov < MIN_OVERLAP) { slab.fall = 0; slab.vy = 0; state = 'fall'; timer = 0; fx(SFX.hit); return false; }
+  let nx, nw;
+  if (Math.abs(slab.x - top.x) <= PERFECT) {              // dead on: the slab takes the place of the one below
+    nx = top.x; nw = top.w; run++; perfects++; bestRun = Math.max(bestRun, run);
+    if (run >= REGROW_FROM && nw < BASE_W) { const g = Math.min(REGROW, BASE_W - nw); nx -= g / 2; nw += g; }
+    points += POINTS_PERFECT * Math.min(run, PERFECT_CAP);
+    fx(SFX.point);
+  } else {                                                // sliced: what overhangs falls away
+    nx = L; nw = ov; run = 0;
+    if (slab.x < L) slices.push({ x: slab.x, w: L - slab.x, y: sy, vx: slab.dir * speed() * 0.5, vy: 0 });
+    if (slab.x + slab.w > R) slices.push({ x: R, w: slab.x + slab.w - R, y: sy, vx: slab.dir * speed() * 0.5, vy: 0 });
+    fx(SFX.move);
+  }
+  tower.push({ x: nx, w: nw }); floors++; points += POINTS_FLOOR; slab = null;
+  nextSlab();
+  return true;
+}
+
+/** The screen y of the top of floor k (floor 0 is the base slab): the camera scrolls once the tower is tall enough. */
+function screenY(k) { return BASE_Y - (k * SLAB_H - cam); }
 
 // --- Update ---
 
@@ -109,7 +150,7 @@ function update() {
   if (!paused) timer++; // a state's clock: it stands still while paused
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
-  else if (state === 'play') updatePlay();
+  else if (state === 'play' || state === 'fall') updatePlay();
   else if (state === 'over') updateOver();
   else if (state === 'initials') updateInitials();
   else if (state === 'records') updateRecords();
@@ -124,24 +165,39 @@ function updateTitle() {
   }
 }
 
-/** The game itself: replace this. Left and right move; blocks fall; a hit costs a life. */
+/** The game: wait a second, then a slab slides and is dropped with a press; a miss lets the slab fall. */
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (btn(LEFT)) px = Math.max(8, px - 3);
-  if (btn(RIGHT)) px = Math.min(248, px + 3);
-  if (timer % 30 === 0) blocks.push({ x: rndi(8, 248), y: -8 });
-  for (const b of blocks) {
-    b.y += 2 + Math.min(3, score / 40);
-    if (b.y > 196 && b.y < 212 && Math.abs(b.x - px) < 12 && !b.hit) { b.hit = true; lives--; fx(SFX.hit); }
-    if (b.y > 224 && !b.hit && !b.done) { b.done = true; score += 10; fx(SFX.point); }
+  if (state === 'fall') { updateFall(); return; }
+  if (!slab && timer >= COUNT_IN) nextSlab();
+  if (slab) {
+    slab.x += slab.dir * speed();                           // slides across and turns at the end of its reach
+    const c = slab.x + slab.w / 2;
+    if (c > CENTRE + REACH) { slab.x = CENTRE + REACH - slab.w / 2; slab.dir = -1; } else if (c < CENTRE - REACH) { slab.x = CENTRE - REACH - slab.w / 2; slab.dir = 1; }
+    if (dropped()) drop();
   }
-  blocks = blocks.filter((b) => b.y < 232);
-  if (lives <= 0) gameOver();
+  updateSlices();
+  const want = Math.max(0, floors * SLAB_H - (BASE_Y - TOP_Y));
+  cam += (want - cam) * 0.15;                               // the camera follows, eased
+}
+
+/** The slab that missed falls past the tower; then the game is over. */
+function updateFall() {
+  const s = slab; s.vy += GRAVITY; s.x += s.dir * speed() * 0.5; s.fall += s.vy;
+  updateSlices();
+  if (++timer > FALL_FRAMES) gameOver();
+}
+
+function updateSlices() {
+  for (const p of slices) { p.vy += GRAVITY; p.x += p.vx; p.y += p.vy; }
+  slices = slices.filter((p) => p.y < 260);
 }
 
 function gameOver() {
   state = 'over'; timer = 0; play(-1); fx(SFX.over);
-  rank = insertTop({ score, initials: lastInitials() });
+  rank = insertTop({ floors, points, initials: lastInitials() });
+  dset(GAMES_SLOT, dget(GAMES_SLOT) + 1);
+  if (floors > dget(BEST_SLOT)) { dset(BEST_SLOT, floors); newBest = true; }
 }
 
 function updateOver() {
@@ -187,19 +243,23 @@ function updatePause() {
 
 function draw() {
   cls();
-  if (state === 'play' || state === 'over') drawPlay();
+  if (state === 'play' || state === 'fall' || state === 'over') drawPlay();
   else if (state === 'title') drawTitle();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  if (state === 'over') { panel(48, 80, 160, 64); ctxt('GAME OVER', 92, RED); ctxt(`SCORE ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
+  if (state === 'over') { panel(48, 80, 160, 64); ctxt('GAME OVER', 92, RED); ctxt(`${floors} FLOORS`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
   if (paused) drawPause();
 }
 
 function drawPlay() {
-  sprite(ART.sprites.player, px - 8, 196);
-  for (const b of blocks) if (!b.hit) sprite(ART.sprites.gem, b.x - 8, b.y - 2);
-  txt(`SCORE ${score}`, 8, 6, WHITE);
-  txt(`LIVES ${lives}`, 192, 6, lives > 1 ? WHITE : RED);
+  const slabAt = (x, y, w) => { rectfill(Math.round(x), Math.round(y), Math.round(w), SLAB_H, WHITE); rectfill(Math.round(x), Math.round(y) + SLAB_H - 2, Math.round(w), 2, DIM); };
+  rectfill(0, Math.round(screenY(0)) + SLAB_H, 256, 224, PANEL);                // the plinth, and what is under it
+  tower.forEach((t, k) => { const y = screenY(k); if (y > -SLAB_H && y < 224) slabAt(t.x, y, t.w); });
+  for (const p of slices) slabAt(p.x, p.y, p.w);
+  if (slab) slabAt(slab.x, state === 'fall' ? screenY(floors + 1) + slab.fall : screenY(floors + 1), slab.w);
+  txt(`FLOOR ${floors}`, 8, 6, WHITE);
+  txt(`PERFECT ${run}`, 8, 18, run >= REGROW_FROM ? GOLD : DIM);
+  txt(`BEST ${Math.max(dget(BEST_SLOT), floors)}`, 192, 6, DIM);
 }
 
 function drawTitle() {
@@ -214,8 +274,9 @@ function drawRecords() {
     const y = 48 + i * 14, on = i === hl;
     if (on && timer % 40 < 30) rectfill(28, y - 2, 200, 12, PANEL);
     txt(String(i + 1).padStart(2), 40, y, i === 0 ? GOLD : DIM);
-    txt(e.score ? e.initials : '---', 72, y, on ? GOLD : WHITE);
-    txt(e.score ? String(e.score).padStart(8) : '', 128, y, i === 0 ? GOLD : WHITE);
+    txt(e.floors ? e.initials : '---', 72, y, on ? GOLD : WHITE);
+    txt(e.floors ? String(e.floors).padStart(4) : '', 128, y, i === 0 ? GOLD : WHITE);
+    txt(e.floors ? String(e.points).padStart(6) : '', 168, y, DIM);
   });
   if (timer % 60 < 40) ctxt('START: BACK', 192, DIM);
 }
@@ -223,8 +284,8 @@ function drawRecords() {
 function drawInitials() {
   const ini = initials;
   panel(24, 40, 208, 144);
-  ctxt(rank === 0 ? 'NEW HIGH SCORE!' : `TOP 10: #${rank + 1}`, 52, GOLD);
-  ctxt(String(score), 68, WHITE);
+  ctxt(rank === 0 ? 'NEW BEST!' : `TOP 10: #${rank + 1}`, 52, GOLD);
+  ctxt(`${floors} FLOORS`, 68, WHITE);
   ctxt('ENTER YOUR INITIALS', 90, DIM);
   for (let i = 0; i < 3; i++) {
     const on = i === ini.pos, x = 84 + i * 32;

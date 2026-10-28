@@ -1,33 +1,34 @@
 // The bot for tools/devkit/sweep.mjs: a player that plays The Ivory Tower by itself, so balance and stuck states can be
 // checked over many seeds without a person.
 //
-//   node tools/devkit/sweep.mjs ivory-tower --seeds 8 --set skill=0,0.5
+//   node tools/devkit/sweep.mjs ivory-tower --seeds 8 --set skill=0.3,0.7,1
 //
 // The contract is in the header of tools/devkit/sweep.mjs: pad() gives the buttons each frame, finished() says the
 // run is over, result() gives the numbers to summarise (and `problems` for anything that must not happen).
-// Replace this with a bot for the real game: the same logic a rival or a hint would use, reading the cart's variables
-// through the probe in lib.mjs (add what it needs there). `skill` here is the chance (0 to 1) of dodging a block.
+// It taps when the sliding slab is over the place it aims for: the top of the tower plus an error, which is larger the lower `skill` (0 to 1) is.
 import { M, newGame as boot } from './lib.mjs';
 
-export const defaults = { frames: 20000, seeds: 6, set: { skill: [0, 0.5] } };
+export const defaults = { frames: 30000, seeds: 6, set: { skill: [0.3, 0.7, 1] } };
 
 export const newGame = (seed) => boot(seed); // skipTitle: straight into play
 
-let lastFrame = 0;
-export const setup = () => { lastFrame = 0; };
+let rng = 1, aim = null, aimFor = null, frames = 0;
+export const setup = () => { rng = 12345; aim = null; aimFor = null; frames = 0; };
+const rand = () => ((rng = (rng * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+const gauss = () => (rand() + rand() + rand() - 1.5) / 0.5;
 
-/** Dodge the nearest block that is about to land on the player, with probability `skill` (decided once a block gets close). */
-const decided = new WeakMap();
 export function pad(vm, p, frame, opts) {
-  const near = p.blocks.find((b) => b.y > 120 && b.y < 215 && Math.abs(b.x - p.px) < 22 && !b.hit);
-  if (!near) return 0;
-  if (!decided.has(near)) decided.set(near, ((near.x * 7 + frame) % 100) / 100 < (opts.skill ?? 1));
-  if (!decided.get(near)) return 0;
-  return near.x >= p.px ? M('LEFT') : M('RIGHT');
+  frames++;
+  const skill = opts.skill ?? 1;
+  if (!p.slab || p.state !== 'play') return 0;
+  const t = p.tower[p.tower.length - 1];
+  if (aimFor !== p.slab) { aimFor = p.slab; aim = gauss() * (1 - skill) * 14; }   // one error for each slab
+  const reach = p.speed() / 2 + 0.5;
+  return Math.abs(p.slab.x - (t.x + aim)) <= reach && frames % 2 ? M('A') : 0;      // taps on alternate frames: a new press each time
 }
 
-export const finished = (p) => p.state !== 'play';
+export const finished = (p) => !['play', 'fall'].includes(p.state) || frames >= 30000;
 
 export function result(p) {
-  return { score: p.score, lives: p.lives, problems: p.state === 'play' ? ['still playing'] : [] };
+  return { floors: p.floors, points: p.points, bestRun: p.bestRun, perfects: p.perfects, seconds: Math.round(frames / 60), problems: frames >= 30000 ? ['the run never ended'] : [] };
 }

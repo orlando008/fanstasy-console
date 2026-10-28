@@ -1,7 +1,7 @@
 # The Ivory Tower: Cart Specification
 
 **Version:** 0.2 (spec agreed in outline)
-**Status:** Spec written; scaffolded, the game is still the starter's placeholder
+**Status:** Step 1 built (the rules on plain slabs); steps 2 to 8 to come
 **Cart source:** `carts/src/ivory-tower/` → `carts/ivory-tower.nova`
 
 ---
@@ -156,6 +156,15 @@ indices up to 191; translucent ones from 192 up for the glow and the ring, with 
 6. **Audio:** the four songs and the effects (the perfect ladder), cues for the landmarks and layers; the levels.
 7. **Balance:** the bot at several skills (how high does each get, how long is a run), the speed curve and the perfect window tuned, a sweep for stuck states.
 8. **Polish and release:** the label, the PNG cart, the Library (`node tools/release.js ivory-tower`), a README row, the playbook's notes.
+
+**Step 1: built and results.**
+
+*Built.* The rules of section 5 on plain rectangles on the overlay: the count-in (60 frames), the sliding slab (speed `1.6 + 0.045 x floor`, up to 4.8, turning 24 px beyond the screen edge), a drop on a new press of any of the eight buttons,
+the overlap and the slice (one or two pieces that fall with gravity 0.25), the perfect window of 3 px, the regrow from the third perfect (3 px, up to 96), the miss (overlap under 2 px: the slab falls for 50 frames, then game over), the camera
+(eased, keeps the top slab at y=140), the top 10 (floors, then points; slots 10 to 39) and the best height and games played (slots 1 and 2). The constants are at the top of `code.js` (`SLAB_H`, `PERFECT`, `REGROW`, `SPEED_*`). The sky is the starter's gradient for now; the
+placeholder layers are hidden. `tests/carts/ivory-tower/02-slab.mjs` tests the arithmetic; `bot.mjs` taps with an error that grows as `skill` falls.
+
+*Results.* The tests, `verify`, and `smoke` pass. Slab colours, marble, sky, landmarks, banner and audio are later steps (the sound cues are still the starter's). Points are kept (10 a floor, 10 x the run for a perfect) but the landmark bonus is step 4.
 
 Each step: build it, run `node tools/check.js ivory-tower` and `node tools/test.js ivory-tower`, write its **Built** and **Results** notes under its number here, commit and push.
 

@@ -15,32 +15,38 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
 }
 
-// 2. Playing: movement, blocks, a hit costs a life.
+// 2. Playing: a count-in, then a slab slides and any button drops it.
 {
-  const vm = newGame(1), p = vm.probe(), x0 = p.px;
-  vm.run(10, M('LEFT')); ok(p.px < x0, 'LEFT moves the player');
-  vm.run(20, M('RIGHT')); ok(p.px > x0 - 30, 'and RIGHT');
-  const lives = p.lives; sfxLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.lives === lives - 1, 'a block that lands on the player costs a life');
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch >= 6), 'with the hit sound, on an effects channel (6 or 7)');
+  const vm = newGame(1), p = vm.probe();
+  ok(p.state === 'play' && p.slab === null && p.floors === 0 && p.tower.length === 1, 'play starts with the base slab and no slab sliding yet');
+  vm.run(p.K.COUNT_IN + 2);
+  ok(p.slab !== null, 'a slab starts to slide after the count-in');
+}
+for (const b of ['A', 'B', 'X', 'Y', 'UP', 'DOWN', 'LEFT', 'RIGHT']) {
+  const vm = newGame(1), p = vm.probe(); vm.run(p.K.COUNT_IN + 2);
+  const f = p.floors; vm.press(b); vm.run(2);
+  ok(p.floors === f + 1 || p.state === 'fall', `${b} drops the slab`);
 }
 
 // 3. Pause.
 {
-  const vm = newGame(2), p = vm.probe(); vm.run(30);
+  const vm = newGame(2), p = vm.probe(); vm.run(p.K.COUNT_IN + 30);
   vm.press('START'); ok(p.paused, 'START pauses');
-  const y = p.blocks.map((b) => b.y).join(); vm.run(30); ok(p.blocks.map((b) => b.y).join() === y, 'and the game stands still');
+  const x = p.slab.x; vm.run(30); ok(p.slab.x === x, 'and the slab stands still');
   const t = p.timer; vm.press('DOWN'); vm.press('A'); vm.run(2);
-  ok(!p.paused && p.score === 0 && p.timer < t, 'RESTART starts the game again');
+  ok(!p.paused && p.floors === 0 && p.timer < t, 'RESTART starts the game again');
   vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
 }
 
 // 4. Game over, the top 10 and initials.
 {
-  const vm = newGame(3), p = vm.probe(); p.score = 120; p.lives = 1; musicLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.state === 'over' && p.rank === 0, 'the last life ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
+  const vm = newGame(3), p = vm.probe(); musicLog(vm);
+  for (let i = 0; i < 4; i++) { p.slab = null; p.nextSlab(); p.slab.x = p.tower[p.tower.length - 1].x; p.drop(); }
+  vm.run(1);
+  p.slab.x = 1000; vm.press('A'); // far off the tower: a miss
+  ok(p.state === 'fall', 'a miss lets the slab fall');
+  vm.run(p.K.FALL_FRAMES + 5);
+  ok(p.state === 'over' && p.rank === 0, 'and then the game is over, with a rank in the top 10', `state ${p.state} rank ${p.rank}`);
   ok(musicLog(vm).includes(-1), 'the game song stops');
   vm.run(70); vm.press('A');
   ok(p.state === 'initials', 'A asks for initials');
@@ -48,20 +54,21 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('UP'); vm.press('RIGHT'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT'); vm.press('DOWN'); vm.press('START');
   ok(p.state === 'records', 'START saves them and shows the records');
   const e = p.topTen()[0];
-  ok(e.score === 120 && e.initials === 'BC9', 'the score is saved with the initials as typed (UP is the next letter, DOWN from A wraps to 9)', `${e.score} ${e.initials}`);
-  ok(vm.m.save[p.TOP_SLOT] === 120, 'in the save slots');
+  ok(e.floors === 4 && e.initials === 'BC9', 'the floors are saved with the initials as typed (UP is the next letter, DOWN from A wraps to 9)', `${e.floors} ${e.initials}`);
+  ok(vm.m.save[p.TOP_SLOT] === 4 && vm.m.save[p.BEST_SLOT] === 4 && vm.m.save[p.GAMES_SLOT] === 1, 'in the save slots, with the best height and the games played');
 }
 {
   const vm = newGame(4), p = vm.probe();
-  const list = [50, 20, 90, 10, 70, 30, 100, 60, 40, 80].map((s) => p.insertTop({ score: s, initials: 'AAA' }));
-  ok(p.topTen().map((e) => e.score).join() === '100,90,80,70,60,50,40,30,20,10', 'the top 10 is kept best first');
-  ok(p.insertTop({ score: 5, initials: 'ZZZ' }) === -1 && p.insertTop({ score: 0, initials: 'ZZZ' }) === -1, 'a score below the tenth, or nothing, does not get in');
+  [50, 20, 90, 10, 70, 30, 100, 60, 40, 80].map((s) => p.insertTop({ floors: s, points: 0, initials: 'AAA' }));
+  ok(p.topTen().map((e) => e.floors).join() === '100,90,80,70,60,50,40,30,20,10', 'the top 10 is kept best first');
+  ok(p.insertTop({ floors: 5, points: 0, initials: 'ZZZ' }) === -1 && p.insertTop({ floors: 0, points: 0, initials: 'ZZZ' }) === -1, 'a run below the tenth, or nothing, does not get in');
+  ok(p.insertTop({ floors: 10, points: 99, initials: 'ZZZ' }) === 9, 'on equal floors the points rank');
 }
 
 // 5. Frames are quick.
 {
   const vm = newGame(5), times = [];
-  for (let i = 0; i < 600; i++) { vm.step(i % 40 < 20 ? M('LEFT') : M('RIGHT')); times.push(vm.m.stats.cpu); }
+  for (let i = 0; i < 600; i++) { vm.step(i % 40 === 0 ? M('A') : 0); times.push(vm.m.stats.cpu); }
   times.sort((a, b) => a - b); const p99 = times[Math.floor(times.length * 0.99)];
   ok(p99 < 8 * (process.env.CI ? 3 : 1), 'frames are quick', `99th percentile ${p99.toFixed(2)} ms`);
 }

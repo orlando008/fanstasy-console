@@ -8,10 +8,11 @@ export const CART = fileURLToPath(new URL('../../../carts/ivory-tower.nova', imp
 // Add to this list as the game grows.
 const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
-  get score() { return score; }, set score(v) { score = v; }, get lives() { return lives; }, set lives(v) { lives = v; },
-  get blocks() { return blocks; }, get px() { return px; }, get ART() { return ART; }, mget: (x, y) => mget(x, y), get rank() { return rank; }, get initials() { return initials; },
-  get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
-  SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
+  get floors() { return floors; }, get points() { return points; }, get run() { return run; }, set run(v) { run = v; }, get perfects() { return perfects; }, get bestRun() { return bestRun; },
+  get tower() { return tower; }, get slab() { return slab; }, set slab(v) { slab = v; }, get slices() { return slices; }, get cam() { return cam; },
+  get rank() { return rank; }, get initials() { return initials; }, get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
+  speed, nextSlab, screenY, drop, SFX, SONG, TOP_SLOT, ENTRY, BEST_SLOT, GAMES_SLOT, insertTop, topTen, packInitials, unpackInitials,
+  K: { SLAB_H, BASE_W, CENTRE, REACH, PERFECT, MIN_OVERLAP, REGROW, REGROW_FROM, SPEED0, SPEED_STEP, SPEED_MAX, BASE_Y, TOP_Y, COUNT_IN, FALL_FRAMES },
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */
