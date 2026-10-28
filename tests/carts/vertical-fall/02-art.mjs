@@ -1,6 +1,10 @@
 // Vertical Fall: the art made by art.py is in the cart and on the screen: the cells, the strip of the well, the gutters,
 // the faller. Add checks as the art grows (a sprite for each enemy, the number of sprites on a busy line, the tile budget). One PASS/FAIL line for each behaviour.
 import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { cpSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { newGame } from './lib.mjs';
 // The colours by name, from the manifest art.py wrote: entry = the palette's base + the role's index.
 const manifest = JSON.parse(readFileSync(new URL('../../../carts/src/vertical-fall/art.json', import.meta.url), 'utf8'));
@@ -18,14 +22,18 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
   const { sprites, scenes } = p.ART;
   ok(['stand', 'run', 'air', 'bullet', 'flash'].every((n) => sprites[n]), 'art.py made the faller (standing, running, in the air), the bullet and the muzzle flash', Object.keys(sprites).join(', '));
   ok(Object.values(sprites).every((s) => [8, 16, 32].includes(s.size) && s.tile >= 256), 'every sprite has a size of 8, 16 or 32 and sits in the sprite region of the sheet');
-  ok(Object.values(sprites).every((s) => !tileEmpty(vm, s.tile)), 'and its first tile is drawn (not an empty tile)');
+  const drawn = (s) => { const t = s.size / 8; for (let j = 0; j < t; j++) for (let i = 0; i < t; i++) if (!tileEmpty(vm, s.tile + j * 16 + i)) return true; return false; };
+  ok(Object.values(sprites).every(drawn), 'and has something drawn in it');
   ok(tileEmpty(vm, 0), 'tile 0 is empty (the console keeps it so)');
   let holes = 0;
-  for (const n of ['stone0', 'stone1', 'stone2', 'stone3', 'wall']) {
+  for (const n of ['stone0', 'stone1', 'stone2', 'stone3']) {
     const f = scenes[n];
     for (let y = 0; y < f.h; y++) for (let x = 0; x < f.w; x++) if (!p.mget(f.mx + x, f.my + y)) holes++;
   }
-  ok(holes === 0, 'the four stone cells and the back wall have no holes', `${holes} empty cells`);
+  ok(holes === 0, 'the four stone cells have no holes', `${holes} empty cells`);
+  const w = scenes.wall; let open = 0;
+  for (let y = 0; y < w.h; y++) for (let x = 0; x < w.w; x++) if (!p.mget(w.mx + x, w.my + y)) open++;
+  ok(open > 8 && open < w.w * w.h / 3, 'the back wall has an opening (the far layer shows through it)', `${open} open cells of ${w.w * w.h}`);
 }
 
 // 2. On the screen.
@@ -60,5 +68,45 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
     }
   }
   ok(checked > 600 && wrong === 0, 'every cell on the screen is in the strip of Map RAM, at every depth', `${wrong} wrong of ${checked}`);
+}
+// 4. Step 6: each area's colours, a redder second loop, the depths' glow, the layers in the well, a room and the title,
+// and the gem high's aura.
+{
+  const vm = newGame(4), p = vm.probe(); vm.run(2);
+  const stone = color('bg1', 'stone2'), cg = (i) => vm.ppu.cgram[i], looks = [];
+  for (const n of [1, 4, 7, 10]) { p.startAt(n); vm.run(2); looks.push({ stone: cg(stone), sky: p.sky.map((c) => c.join()).join(' ') }); }
+  ok(new Set(looks.map((l) => l.stone)).size === 4, 'each area has its own colour of stone (the same tiles, other colours)', looks.map((l) => l.stone.toString(16)).join(' '));
+  ok(new Set(looks.map((l) => l.sky)).size === 4, 'and its own glow from the depths');
+  const lum = (c) => c[0] + c[1] + c[2];
+  ok(lum(p.sky[0]) > lum(p.sky[2]), 'the glow is a gradient, brighter at the top of the screen than at the bottom', p.sky.map((c) => c.join(',')).join(' > '));
+  p.startAt(13); vm.run(2); const again = cg(stone);
+  ok((again & 31) > (looks[0].stone & 31), 'the second loop\'s Shaft is redder than the first\'s', `${looks[0].stone.toString(16)} -> ${again.toString(16)}`);
+  const L = vm.ppu.layers, S = p.ART.scenes;
+  ok(L[2].show && L[2].mx === S.far.mx && L[2].wrap && L[1].mx === S.wall.mx, 'in the well: the far layer on BG2 behind the back wall on BG1');
+  p.enterRoom(null, 'up'); vm.run(1);
+  ok(L[2].mx === S.room.mx && !L[0].show && !L[1].show, 'in a room: its picture on BG2, the well hidden');
+}
+{
+  const vm = newGame(5, { title: true }), p = vm.probe(); vm.run(3);
+  const L = vm.ppu.layers, S = p.ART.scenes;
+  ok(L[1].mx === S.logo.mx && L[1].show && !L[0].show, 'on the title: the logo on BG1, the well\'s stone hidden');
+  ok(has(vm, color('bg5', 'red2'), 56, 0, 200, 80), 'and the logo is drawn at the top');
+}
+{
+  const vm = newGame(6), p = vm.probe(); vm.run(2);
+  const glow = color('spr1', 'glow2');
+  ok(!has(vm, glow, 0, 0, 256, 224), 'not gem high: no sparks');
+  p.meter = 99; p.takeGem(1, false); vm.run(2);
+  ok(p.high && has(vm, glow, 0, 0, 256, 224), 'gem high: sparks of light round the boots');
+}
+// 5. rom/areas.bin is what art.py makes (verify.js compares art.py's text files, not the ROM it writes).
+{
+  const src = new URL('../../../carts/src/vertical-fall/', import.meta.url).pathname, tmp = mkdtempSync(join(tmpdir(), 'vf-art-'));
+  try {
+    cpSync(src, join(tmp, 'src'), { recursive: true });
+    const r = spawnSync('python3', [join(src, 'art.py'), join(tmp, 'src')], { encoding: 'utf8' });
+    const a = readFileSync(join(src, 'rom', 'areas.bin')), b = readFileSync(join(tmp, 'src', 'rom', 'areas.bin'));
+    ok(r.status === 0 && a.equals(b), 'rom/areas.bin is what art.py makes', r.status ? r.stderr.slice(-200) : `${a.length} bytes`);
+  } finally { rmSync(tmp, { recursive: true, force: true }); }
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

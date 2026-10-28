@@ -1,7 +1,7 @@
 # Vertical Fall: Cart Specification
 
 **Version:** 0.1 (draft: the design agreed with the user at the kickoff)
-**Status:** Steps 1 to 5 built (the vertical slice; blocks, gems, stomps, combos, the gem high; the whole roster of enemies; levels from hand-made chunks; gun modules, upgrades, side rooms, the Daily well); step 6 (art) is next
+**Status:** Steps 1 to 6 built (the vertical slice; blocks, gems, stomps, combos, the gem high; the whole roster of enemies; levels from hand-made chunks; gun modules, upgrades, side rooms, the Daily well; the art pass); step 7 (audio) is next
 **Cart source:** `carts/src/vertical-fall/` → `carts/vertical-fall.nova`
 
 ---
@@ -324,15 +324,20 @@ triangle or a square of 50 % duty, in octave 3 to 4, quiet, and let the bass and
 | Layer | What |
 |---|---|
 | BG0 | The well: stone, blocks and ledges, 16 px cells (2 × 2 tiles), in a strip of Map RAM 18 tiles wide and 64 tall (512 px) that wraps; the rows near the camera are written as it moves |
-| BG1 | The well's back wall, shaded masonry per area, scrolled at half the camera's speed |
-| BG2 | The far dark: a faint shaft of light and shapes, scrolled at a quarter |
-| Sprites | The faller (16 px), enemies (16 px), bullets, gems and sparks (8 px); the gunboots' flash and the gem high glow in palettes 4 to 7 with additive blending |
-| Overlay | The HUD in the gutters; menus and banners on see-through panels |
+| BG1 | The well's back wall (64 × 128, repeating), masonry with an arched opening, at half the camera's speed; on the title, the logo |
+| BG2 | The far layer (64 × 64, repeating) seen through the openings: pillars, a beam and a chain, at a quarter of the camera's speed; in a side room, the room's picture (the well's layers hidden) |
+| Backdrop | The depths' glow: entry 0 set line by line in `scanline()` from the area's three colours, top to bottom |
+| Sprites | The faller (16 px), enemies (16 px), bullets, gems and sparks (8 px); the gem high's sparks round the boots (a flickering sprite, no blending) |
+| Overlay | The HUD in the gutters; menus and banners on see-through panels (GLASS, entry 250, blended half), in the cart's own colours (entries 113 to 118: a shadow, a blue for edges, a blue-grey, a white, a gold, a red) |
 | Window | Window 0 is the well (x 56 to 199): layers and sprites are hidden outside it, so the gutters are dark |
 
 The look is a shaded, SNES-style Downwell: dark and cold, with **red kept for danger and gems**. Ramps of 4 to 6 steps per
-material, each area its own palette (grey-blue, bone, teal, violet-black), receded back walls, a faint gradient in the
-backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art toolkit, `tools/devkit/art/kit.py`).
+material. **Each area has its own colours for the same tiles**: `art.py` writes the stone (5), its accent (2: the colour in
+some of its cracks), the blocks (4), the back wall (4), the far layer (4) and the depths' glow (3) of all four areas into
+`rom/areas.bin`, and `code.js` copies an area's into CGRAM when it begins (the Shaft cold grey-blue with roots, the Ossuary
+bone lit by embers, the Cistern teal with algae and a watery glow, the Deep violet-black); each loop mixes them 15 % more
+towards red (up to three loops' worth). The art is made in code by `carts/src/vertical-fall/art.py` (the art toolkit,
+`tools/devkit/art/kit.py`).
 
 ## 13. Persistence (save slots)
 
@@ -351,8 +356,8 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
 | Asset | Budget |
 |---|---|
 | Code | 41.5 KB now (step 5, packed without comments and with short names: `"strip": true` and `"mangle": true`); planned up to about 56 KB of the 64 KB limit; chunks in ROM, not code (`node tools/check.js vertical-fall`) |
-| ROM | `rom/chunks.bin`: 34 chunks of 9 × 12 cells, 1,871 bytes |
-| Tiles | about 650 of 1,024: four areas' blocks and walls (about 200), the faller (about 60), enemies (about 150), bullets, gems, items, upgrades and the HUD (about 120), the title (about 100) |
+| ROM | `rom/chunks.bin`: 34 chunks of 9 × 12 cells, 1,871 bytes; `rom/areas.bin`: the four areas' colours, 196 bytes |
+| Tiles | 521 of 1,024: background tiles 1 to 447 (352 used: the cells, the back wall with its opening, the far layer, the side room, the logo), sprites from 448 (169 used: the faller, 18 enemy frames, bullets, gems, the rooms' things, 15 icons) |
 | Sprites | at most about 90 in OAM: the faller 1, enemies 24, enemy shots 8, bullets 16, gems 32, sparks 8; at most 32 a line (a test of a busy screen) |
 | Songs / SFX | 8 songs (all 8), about 25 effects |
 
@@ -503,6 +508,25 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
 
 6. **Art pass:** the four areas' blocks, back walls and far layers; the faller and enemies with their animations; gems,
    bullets, the HUD, the title; `snes.mjs` and `colors.mjs --check`.
+
+   **Built.** `art.py`: the four areas' colours (`AREAS`) and `rom/areas.bin`; the stone with the area's accent in its
+   cracks; the back wall with an arched opening and a ring of lit stones; the far layer; the title's logo (`big_text`,
+   two lines, red, outlined, shadowed); the frog redrawn from shapes (a squat body, eyes on top, a folded leg; stretched
+   when it hops); the gem high's sparks; the overlay's own colours; the background region widened to 447 tiles (the side
+   room had taken most of it). `code.js`: `loadAreas` and `areaLook` (at the start of a run and of each level, redder each
+   loop), the depths' glow in `scanline()` from the area's three colours (in place of art.py's gradient table: 1.3 KB less
+   code), BG2's far layer in the well and the room's picture in a room, the logo on the title with the well's stone hidden,
+   the title's menu on a see-through panel. Tests: `02-art.mjs` (each area's stone and glow differ, the glow is a gradient,
+   the second loop is redder, the layers in the well, a room and the title, the logo, the sparks only when gem high, the
+   wall's opening, `rom/areas.bin` is what art.py makes).
+
+   **Results.** The tests pass. `snes.mjs`: 75 of 100, from 63 (shades in backgrounds 5.3, 35 colours on a screen from 25,
+   three background layers, a backdrop of 9 colours). It scores the parallax 0, because it measures only sideways
+   scrolling and this well's layers scroll vertically, at 1, 1/2 and 1/4 of the camera's speed. `colors.mjs --check` at
+   first failed on muddy panels (0.86): the panels' fill (entry 200) was also an entry of sprite palette 4 (192 to 207),
+   which step 5 gave the room's items, so the panels were the items' grey; and the HUD drew with the default palette's
+   brown and grey. The fill moved to entry 250 and the overlay has its own colours: within the limits. (The art kit does
+   not warn when a named colour falls inside a palette's entries.) Code 41.6 KB packed (63 %); ROM 2.1 KB; 521 tiles.
 7. **Audio pass:** the eight songs on the chip voices and the effects; `loud.mjs --check` (the pierce risk of section 11).
 8. **Balance and polish:** the bot with a skill setting over many seeds (`sweep.mjs`: the level reached, where it dies,
    gems per level, prices against the wallet); then the label, the PNG cart and the Library (`node tools/release.js

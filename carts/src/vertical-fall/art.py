@@ -16,25 +16,55 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../
 from kit import *
 
 art = Art()
-art.region('bg', 1, 255)       # background tiles
-art.region('spr', 256, 1023)   # sprites (a 16 px sprite takes four tiles)
+art.region('bg', 1, 447)       # background tiles
+art.region('spr', 448, 1023)   # sprites (a 16 px sprite takes four tiles)
 
 CELLS_X = 200                  # the cell catalogue: Map RAM columns 200 and up, row 0 (code.js reads it with mget)
 WALL_AT = (32, 0)              # the back wall's repeating 64 x 64 picture
 
-# The well is dark: a backdrop going from a dim blue-violet at the top of the screen to near black, cold grey-blue stone
-# with a lit top, and a back wall pushed into the dark. Red is kept for danger and gems (from step 2).
-art.gradient('shaft', ['1e2238', '0e1020', '06060c'], y0=0, y1=223)
-art.color(200, '0c0e1c', 'GLASS')                                           # the panels' fill, seen through
-rock = art.palette(1, {'stone': ramp('5a6a8a', 5), 'moss': ramp('3c5a4a', 2), 'blk': ramp('7a7488', 4), 'gem': ramp('d02838', 3), 'glow': 'e8a848'})
-back = art.palette(2, {'brick': ['0c0e18', '141826', '1c2232', '262c3e']})   # dark, so the stone in front reads
+# The well is dark: the stone in front lit from above, a back wall pushed into the dark with openings in it, and through
+# them a far layer of pillars and chains against a glow from the depths (the backdrop, a gradient code.js sets line by line).
+# Red is kept for danger and gems. Each area has its own colours for the same tiles (AREAS below): the palettes here are
+# the Shaft's, and art.py writes all four into rom/areas.bin, which code.js copies into CGRAM when an area begins.
+AREAS = [  # stone, accent (in the stone's cracks), blocks, back wall (4, dark), far layer (4, darker), the depths' glow (3: top to bottom)
+    ('5a6a8a', '3c5a4a', '7a7488', ['0c0e18', '141826', '1c2232', '262c3e'], ['0a0c16', '10142a', '181e3a', '22284a'], ['1e2238', '0e1020', '06060c']),   # the Shaft: cold grey-blue, roots
+    ('a08c70', 'd8ccb0', '8a7866', ['140e0a', '1e160e', '2a2016', '362a1e'], ['120a08', '1c120c', '2a1a12', '3a2418'], ['3a1c10', '1a0c08', '080404']),   # the Ossuary: bone, ember-lit
+    ('3e7476', '3a9a72', '5e8a8a', ['06141a', '0a1e24', '102830', '18343c'], ['06121c', '0a1c2a', '10283a', '18384c'], ['0e3a48', '06202a', '02080c']),   # the Cistern: teal, algae, water
+    ('4a3a62', '9a58d8', '5a4a72', ['0a0812', '100c1c', '181226', '201832'], ['0c0614', '140a22', '1e1032', '2a1846'], ['2a0e4a', '12061e', '040208']),   # the Deep: violet-black, a glow
+]
+ST, AC, BL, WA, FA, SKY = AREAS[0]
+art.color(250, '101838', 'GLASS')   # the panels' fill, seen through (from 192 up the overlay blends): a deep blue, in sprite palette 7, which no sprite uses
+# The overlay's own colours (BG palette 7's entries, which no tiles use), so the HUD and the panels are not the default
+# palette's brown and grey (colors.mjs calls those mud).
+for i, (h, name) in enumerate((('04040a', 'SHADOW'), ('4a64b0', 'PANEL'), ('8c9ccc', 'DIM'), ('f4f4fc', 'WHITE'), ('f8c840', 'GOLD'), ('f03848', 'RED'))):
+    art.color(113 + i, h, name)
+rock = art.palette(1, {'stone': ramp(ST, 5), 'moss': ramp(AC, 2), 'blk': ramp(BL, 4), 'gem': ramp('d02838', 3), 'glow': 'e8a848'})
+back = art.palette(2, {'brick': WA})                                         # dark, so the stone in front reads
+far = art.palette(4, {'far': FA})
 hero = art.sprite_palette(0, {'edge': '0a0a12', 'body': ramp('c8d0e0', 3), 'boot': ramp('b02838', 3), 'eye': '0a0a12'})
 shot = art.sprite_palette(1, {'core': 'ffffff', 'glow': ramp('f0d890', 3), 'smoke': ramp('9098a8', 2)})
 foe = art.sprite_palette(2, {'edge': '0a0a12', 'pale': ramp('b8bccc', 4), 'eye': 'f0e070', 'red': ramp('d02838', 3)})   # pale: stomp it; red: do not touch
 jewel = art.sprite_palette(3, {'edge': '2a0610', 'red': ramp('e02840', 4), 'glint': 'ffffff'})       # gems: red
 
+def shaped(f, edge, size=16):
+    """A sprite drawn from a function of (x, y) giving a colour or 0, with a 1 px outline in `edge` added round it."""
+    im = Img.make(size, size, f)
+    out = im.crop(0, 0, size, size)
+    for y in range(size):
+        for x in range(size):
+            if not im.px[y][x] and any(0 <= x + dx < size and 0 <= y + dy < size and im.px[y + dy][x + dx] for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                out.px[y][x] = edge
+    return out
+def lit(r, x, y, k=0): return r[min(len(r) - 1, max(0, int((x + y - 12) / -5 + len(r) - 1 + k)))]   # a ramp lit from the top left
+def oval(cx, cy, rx, ry): return lambda x, y: ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1
+
 # --- The cells (BG0) ---
+# Stone, with the area's accent in some of its cracks (roots in the Shaft, bone dust, algae, a violet glow).
 stone = texture('stone', 32, 32, rock.stone, size=11)
+for y in range(32):
+    for x in range(32):
+        if stone.px[y][x] == rock.stone[0] and hsh(x * 31 + y * 17) % 100 < 22:
+            stone.px[y][x] = rock.moss[1] if hsh(x * 7 + y * 3) % 3 == 0 else rock.moss[0]
 for i, (cx, cy) in enumerate(((0, 0), (16, 0), (0, 16), (16, 16))):
     art.scene('stone%d' % i, stone.crop(cx, cy, 16, 16), pal=rock, at=(CELLS_X + i * 2, 0), solid=True)
 
@@ -92,8 +122,36 @@ for tx in (16, 120):
 art.scene('room', room, pal=roomp, at=ROOM_AT, solid=True)
 
 
-# --- The back wall (BG1): dark masonry, receded, repeating ---
-art.scene('wall', texture('brick', 64, 64, back.brick, bw=16, bh=8), pal=back, at=WALL_AT, solid=True)
+# --- The back wall (BG1): dark masonry, receded, repeating every 64 x 128, with an arched opening in it (transparent:
+# the far layer shows through) and a ring of lit stones round the opening ---
+wall = texture('brick', 64, 128, back.brick, bw=16, bh=8)
+for y in range(128):
+    for x in range(64):
+        d = ((x - 32) / 14) ** 2 + ((y - 52) / 22) ** 2 if y < 52 else ((x - 32) / 14) ** 2
+        if 26 <= y < 92 and d < 1: wall.px[y][x] = 0
+        elif 22 <= y < 96 and d < 1.35: wall.px[y][x] = back.brick[3] if (x + y) % 5 else back.brick[2]
+art.scene('wall', wall, pal=back, at=WALL_AT)
+
+# --- The far layer (BG2 in the well, a quarter of the camera's speed): pillars, a beam and a hanging chain, dark against
+# the glow of the depths; transparent between. 64 x 64, repeating ---
+FAR_AT = (40, 0)
+farimg = Img(64, 64)
+for y in range(64):
+    for x in range(64):
+        if 6 <= x < 18: farimg.px[y][x] = far.far[2] if x < 9 else far.far[1] if x < 15 else far.far[0]          # a pillar, lit on the left
+        elif 40 <= y < 46: farimg.px[y][x] = far.far[2] if y == 40 else far.far[1] if y < 44 else far.far[0]    # a beam across
+        elif x in (44, 45) and y < 40 and (y % 6) < 4: farimg.px[y][x] = far.far[1] if x == 44 else far.far[0]  # a chain
+        elif 4 <= x < 20 and y in (46, 47): farimg.px[y][x] = far.far[3]                                        # the pillar's ledge
+art.scene('far', farimg, pal=far, at=FAR_AT)
+
+# --- The title's logo (BG1 on the title): VERTICAL FALL in two lines, red, outlined, with a shadow ---
+logop = art.palette(5, {'red': ramp('e02840', 4), 'edge': '0a0a12', 'shade': '3a0610'})
+LOGO_AT = (100, 0)
+logo = Img(144, 64)
+for k, word in enumerate(('VERTICAL', 'FALL')):
+    t = big_text(word, logop.red, scale=2, outline=logop.edge, shadow=logop.shade)
+    logo.blit(t, (144 - t.w) // 2, 4 + k * 30)
+art.scene('logo', logo, pal=logop, at=LOGO_AT)
 
 # --- The faller: 16 x 16, a pale figure with red gunboots. o edge, 1 2 3 the body's ramp, r R the boots, e the eye ---
 KEY = {'o': hero.edge, '1': hero.body[0], '2': hero.body[1], '3': hero.body[2], 'r': hero.boot[0], 'R': hero.boot[2], 'e': hero.eye}
@@ -186,6 +244,8 @@ art.sprite('bigshot', Img.from_rows([
     '..gggg..',
     '........',
 ], key={'c': shot.core, 'g': shot.glow[2]}), pal=shot, region='spr')
+# The gem high: sparks of light round the boots (drawn flickering, flipped every few frames).
+art.sprite('aura', Img.make(16, 16, lambda x, y: (shot.core if (x * 7 + y * 3) % 11 == 0 else shot.glow[2]) if 9 <= y and abs(((x - 7.5) / 8) ** 2 + ((y - 13) / 5) ** 2 - 1) < 0.25 and (x + y) % 3 else 0), pal=shot, region='spr')
 art.sprite('puff', Img.from_rows([
     '..ss.s..',
     '.sSSsSs.',
@@ -289,12 +349,21 @@ TURTLE_TOP = ['................', '................', '................', '.....
               '.o3333333333o3eo', '.o2222222222o33o', '..oooooooooooooo']
 art.sprite('turtle0', mon(TURTLE_TOP + ['...o22o..o22o...', '...o11o..o11o...', '....oo....oo....', '................']), pal=foe, region='spr')
 art.sprite('turtle1', mon(TURTLE_TOP + ['..o22o....o22o..', '..o11o....o11o..', '...oo......oo...', '................']), pal=foe, region='spr')
-art.sprite('frog0', mon(['................'] * 5 + [
-    '........oo..oo..', '.......o4eoo4eo.', '......o44444444o', '.....o333333333o', '....o3333oooooo.', '...o33333333333o',
-    '..o222222222222o', '.o2222o2222o222o', '.o11oo.o11o.o11o', '..oo....oo...oo.', '................']), pal=foe, region='spr')
-art.sprite('frog1', mon(['................'] * 3 + [
-    '........oo..oo..', '.......o4eoo4eo.', '......o44444444o', '.....o333333333o', '....o3333oooooo.', '...o33333333333o',
-    '..o222222222222o', '.o2222oooooooo..', 'o22o............', 'o1o.............', '.o..............'] + ['................'] * 2), pal=foe, region='spr')
+# The frog, facing right: a squat body, a head with two eyes up on top, a big folded back leg; hopping, it stretches out.
+def frog(x, y, jump):
+    if jump:
+        body, head, leg = oval(8.5, 8, 5.5, 3.2), oval(12, 6.5, 3, 2.6), lambda x, y: abs((y - 9) - (x - 1) * -1.1) < 1.6 and 0 <= x <= 5 and y >= 9
+    else:
+        body, head, leg = oval(7.5, 11.5, 6, 3.4), oval(11.5, 9, 3.2, 2.8), oval(4.5, 12.5, 3.2, 2.6)
+    ey = 5 if not jump else 3
+    if (x, y) in ((11, ey), (14, ey)): return foe.eye
+    if oval(11, ey, 1.6, 1.6)(x, y) or oval(14, ey, 1.6, 1.6)(x, y): return foe.pale[3]
+    if leg(x, y): return lit(foe.pale, x, y, -1)
+    if head(x, y) or body(x, y): return foe.pale[0] if y >= (11 if jump else 14) else lit(foe.pale, x, y)
+    if not jump and y == 15 and x in (2, 3, 11, 12, 13): return foe.pale[1]                       # the feet
+    return 0
+art.sprite('frog0', shaped(lambda x, y: frog(x, y, False), foe.edge), pal=foe, region='spr')
+art.sprite('frog1', shaped(lambda x, y: frog(x, y, True), foe.edge), pal=foe, region='spr')
 art.sprite('blob', mon(['................'] * 2 + [
     '.....oooooo.....', '....o444443o....', '...o44444333o...', '..o4444443333o..', '..o44e44e43332o.', '..o4444444333o..',
     '..o3444443332o..', '...o33333322o...', '....oo2222oo....', '......oooo......'] + ['................'] * 4), pal=foe, region='spr')
@@ -380,3 +449,17 @@ art.sprite('dronesm', Img.from_rows(['.oooooo.', 'o.oooo.o', '.o2222o.', 'o22222
 art.sprite('fist', outlined(lambda x, y: shade(item.gold, x, y) if box(2, 4, 13, 13)(x, y) and not (y == 8 and x % 3 == 0) else 0), pal=item, region='spr')
 
 art.write(sys.argv[1])
+
+# --- rom/areas.bin: each area's colours for the CGRAM entries the well's tiles use (the stone, its accent, the blocks,
+# the back wall, the far layer) and the three colours of the depths' glow. A byte with the number of entries k, their k
+# CGRAM indices, then for each area k + 3 colours in the console's RGB555, two bytes each (low first). ---
+def rgb555(h):
+    r, g, b = (int(h[i:i + 2], 16) >> 3 for i in (0, 2, 4))
+    return r | g << 5 | b << 10
+idx = [16 * pal.sub + i for pal, ix in ((rock, rock.stone), (rock, rock.moss), (rock, rock.blk), (back, back.brick), (far, far.far)) for i in ix]
+data = bytearray([len(idx)]) + bytearray(idx)
+for st, ac, bl, wa, fa, sky in AREAS:
+    cols = list(ramp(st, 5)) + list(ramp(ac, 2)) + list(ramp(bl, 4)) + wa + fa + sky
+    for h in cols: v = rgb555(h); data += bytes([v & 255, v >> 8])
+os.makedirs(os.path.join(sys.argv[1], 'rom'), exist_ok=True)
+open(os.path.join(sys.argv[1], 'rom', 'areas.bin'), 'wb').write(bytes(data))
