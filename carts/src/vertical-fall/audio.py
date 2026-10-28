@@ -29,6 +29,7 @@ a.instrument('CRUNCH', 'noise', 0, 8, 3, 6, 9)
 a.instrument('FANFARE', 'pulse25', 0, 6, 11, 6, 9)
 a.instrument('PEW', 'pulse25', 0, 4, 0, 0, 5)                   # the gunboots: short and quiet, it is heard a lot
 a.instrument('TICK', 'noise-short', 0, 2, 0, 0, 6)
+a.instrument('GLINT', 'pulse12', 0, 5, 0, 0, 4)                 # a gem: tiny and high, it is heard a lot
 
 # --- 0 The title: A minor, 150 bpm ---
 S = a.song(Key('A', MINOR), 6, echo=(5, 4, 5, 9))
@@ -57,5 +58,13 @@ a.effect(1, ['C-6', 'F-5', 'C-5', 'OFF'], 'PEW')                   # 8 a gunboot
 a.effect(1, ['A-2', 'OFF'], 'THUD')                                # 9 land
 a.effect(1, ['C-2', 'OFF'], 'TICK')                                # 10 out of ammo: a click
 a.effect(3, ['C-5', 'E-5', 'G-5', 'C-6', 'OFF'], 'CHIME')          # 11 a level's floor
+a.effect(1, ['G-3', 'C-4', 'G-4', 'OFF'], 'THUD')                  # 12 a stomp
+a.effect(2, ['C-4', 'A-3', 'E-3', 'C-3', 'OFF'], 'CRUNCH')         # 13 an enemy dies
+a.effect(2, ['F-3', 'C-3', 'G-2', 'OFF'], 'CRUNCH')                # 14 a block breaks
+a.effect(1, ['E-6', 'OFF'], 'GLINT')                               # 15 a small gem
+a.effect(1, ['B-5', 'E-6', 'OFF'], 'GLINT')                        # 16 a large gem
+a.effect(2, ['C-5', 'G-5', 'C-6', 'E-6', 'G-6', 'OFF'], 'CHIME')   # 17 gem high
+a.effect(3, ['G-4', 'C-5', 'E-5', 'G-5', 'C-6', 'OFF'], 'FANFARE') # 18 a combo pays
+a.effect(1, ['A-4', 'OFF'], 'TICK')                                # 19 a hit that does not kill (an enemy, a gem block)
 
 a.write(sys.argv[1], songs=2)

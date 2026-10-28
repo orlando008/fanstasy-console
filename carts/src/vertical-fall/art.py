@@ -26,10 +26,12 @@ WALL_AT = (32, 0)              # the back wall's repeating 64 x 64 picture
 # with a lit top, and a back wall pushed into the dark. Red is kept for danger and gems (from step 2).
 art.gradient('shaft', ['1e2238', '0e1020', '06060c'], y0=0, y1=223)
 art.color(200, '0c0e1c', 'GLASS')                                           # the panels' fill, seen through
-rock = art.palette(1, {'stone': ramp('5a6a8a', 5), 'moss': ramp('3c5a4a', 2)})
+rock = art.palette(1, {'stone': ramp('5a6a8a', 5), 'moss': ramp('3c5a4a', 2), 'blk': ramp('7a7488', 4), 'gem': ramp('d02838', 3)})
 back = art.palette(2, {'brick': ['0c0e18', '141826', '1c2232', '262c3e']})   # dark, so the stone in front reads
 hero = art.sprite_palette(0, {'edge': '0a0a12', 'body': ramp('c8d0e0', 3), 'boot': ramp('b02838', 3), 'eye': '0a0a12'})
-shot = art.sprite_palette(1, {'core': 'ffffff', 'glow': ramp('f0d890', 3)})
+shot = art.sprite_palette(1, {'core': 'ffffff', 'glow': ramp('f0d890', 3), 'smoke': ramp('9098a8', 2)})
+foe = art.sprite_palette(2, {'edge': '0a0a12', 'pale': ramp('b8bccc', 4), 'eye': 'f0e070'})        # stompable: pale
+jewel = art.sprite_palette(3, {'edge': '2a0610', 'red': ramp('e02840', 4), 'glint': 'ffffff'})       # gems: red
 
 # --- The cells (BG0) ---
 stone = texture('stone', 32, 32, rock.stone, size=11)
@@ -42,6 +44,26 @@ for x in range(16):
     for y, k in ((0, 4), (1, 3), (2, 2), (3, 1), (4, 0)):
         ledge.px[y][x] = rock.stone[k if (x + y) % 7 else max(0, k - 1)]
 art.scene('ledge', ledge, pal=rock, at=(CELLS_X + 8, 0))
+
+# A breakable block: a bevelled slab, lit from the top left, with a crack; a gem block: darker, with red crystals set in it.
+def block(face, cracks, gems):
+    im = Img(16, 16)
+    for y in range(16):
+        for x in range(16):
+            c = rock.blk[face]
+            if x in (0, 15) or y in (0, 15): c = rock.blk[0]
+            elif x == 1 or y == 1: c = rock.blk[3]
+            elif x == 14 or y == 14: c = rock.blk[max(0, face - 1)]
+            im.px[y][x] = c
+    for x, y in cracks: im.px[y][x] = rock.blk[0]
+    for gx, gy in gems:
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                d = abs(dx) + abs(dy)
+                if d <= 2: im.px[gy + dy][gx + dx] = rock.gem[2] if d == 0 or (dx < 0 and dy < 0) else rock.gem[1] if d == 1 else rock.gem[0]
+    return im
+art.scene('break', block(2, [(5, 2), (6, 3), (6, 4), (7, 5), (8, 5), (9, 6), (9, 7), (10, 8), (4, 10), (5, 11), (5, 12)], []), pal=rock, at=(CELLS_X + 10, 0), solid=True)
+art.scene('gemblock', block(1, [(10, 3), (11, 4)], [(5, 5), (10, 9), (5, 11)]), pal=rock, at=(CELLS_X + 12, 0), solid=True)
 
 # --- The back wall (BG1): dark masonry, receded, repeating ---
 art.scene('wall', texture('brick', 64, 64, back.brick, bw=16, bh=8), pal=back, at=WALL_AT, solid=True)
@@ -125,5 +147,128 @@ art.sprite('flash', Img.from_rows([
     '........',
     '........',
 ], key={'c': shot.core, 'g': shot.glow[2]}), pal=shot, region='spr')
+
+# --- A bigger bullet for the gem high, and a puff of smoke (a kill, a broken block) ---
+art.sprite('bigshot', Img.from_rows([
+    '..gggg..',
+    '.gccccg.',
+    '.gccccg.',
+    '.gccccg.',
+    '.gccccg.',
+    '.gccccg.',
+    '..gggg..',
+    '........',
+], key={'c': shot.core, 'g': shot.glow[2]}), pal=shot, region='spr')
+art.sprite('puff', Img.from_rows([
+    '..ss.s..',
+    '.sSSsSs.',
+    'sSSSSSs.',
+    '.sSSSSs.',
+    'sSSSSs..',
+    '.sSsSs..',
+    '..s.s...',
+    '........',
+], key={'s': shot.smoke[0], 'S': shot.smoke[1]}), pal=shot, region='spr')
+
+# --- The enemies of step 2: the bat (hanging, wings up, wings down) and the snail (on a floor, and on a wall) ---
+FOE = {'o': foe.edge, '1': foe.pale[0], '2': foe.pale[1], '3': foe.pale[2], '4': foe.pale[3], 'e': foe.eye}
+def mon(rows): return Img.from_rows(rows, key=FOE)
+art.sprite('bat0', mon([
+    '.......oo.......',
+    '.......oo.......',
+    '......o33o......',
+    '.....o3443o.....',
+    '....o234432o....',
+    '....o234432o....',
+    '....o223322o....',
+    '....o1e33e1o....',
+    '.....o2332o.....',
+    '.....o1221o.....',
+    '......o11o......',
+    '.......oo.......',
+    '................',
+    '................',
+    '................',
+    '................',
+]), pal=foe, region='spr')
+art.sprite('bat1', mon([
+    '................',
+    'oo............oo',
+    'o3o..........o3o',
+    'o43o...oo...o34o',
+    'o443o.o33o.o344o',
+    '.o443o3443o344o.',
+    '.o4433e33e33442o',
+    '..o22333333322o.',
+    '..o1o.o2332o.o1o',
+    '...o...o22o...o.',
+    '........oo......',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+]), pal=foe, region='spr')
+art.sprite('bat2', mon([
+    '................',
+    '................',
+    '................',
+    '.......oo.......',
+    '......o33o......',
+    '.....o3443o.....',
+    '..ooo3e33e3ooo..',
+    '.o4433333333443o',
+    'o4432o2332o2344o',
+    'o432o.o22o.o234o',
+    'o32o...oo...o23o',
+    'o2o..........o2o',
+    '.o............o.',
+    '................',
+    '................',
+    '................',
+]), pal=foe, region='spr')
+snail = mon([
+    '................',
+    '................',
+    '................',
+    '.....oooo.......',
+    '....o3443o......',
+    '...o344443o.....',
+    '..o34o22o43o....',
+    '..o3o2oo2o3o....',
+    '..o3o2o12o3o..o.',
+    '..o43o222o3o.o3o',
+    '...o433333o.o43o',
+    '...oo33333oo432o',
+    '..o2222222222e2o',
+    '.o1222222222222o',
+    '.o1111111111111o',
+    '..ooooooooooooo.',
+])
+art.sprite('snail', snail, pal=foe, region='spr')
+art.sprite('snailw', snail.rot90(), pal=foe, region='spr')    # on a wall to its left, heading down (fy: up)
+
+# --- Gems (8 x 8): a small one (1) and a large one (5), red, with a white glint ---
+GEM = {'o': jewel.edge, '0': jewel.red[0], '1': jewel.red[1], '2': jewel.red[2], '3': jewel.red[3], 'w': jewel.glint}
+art.sprite('gem', Img.from_rows([
+    '........',
+    '...o....',
+    '..o3o...',
+    '.o3w2o..',
+    '..o10o..',
+    '...o....',
+    '........',
+    '........',
+], key=GEM), pal=jewel, region='spr')
+art.sprite('biggem', Img.from_rows([
+    '..oooo..',
+    '.o33w2o.',
+    'o332221o',
+    'o221110o',
+    '.o2110o.',
+    '..o10o..',
+    '...oo...',
+    '........',
+], key=GEM), pal=jewel, region='spr')
 
 art.write(sys.argv[1])

@@ -9,6 +9,13 @@
   "bg1": {
    "base": 16,
    "colors": {
+    "blk0": 8,
+    "blk1": 9,
+    "blk2": 10,
+    "blk3": 11,
+    "gem0": 12,
+    "gem1": 13,
+    "gem2": 14,
     "moss0": 6,
     "moss1": 7,
     "stone0": 1,
@@ -46,11 +53,49 @@
     "core": 1,
     "glow0": 2,
     "glow1": 3,
-    "glow2": 4
+    "glow2": 4,
+    "smoke0": 5,
+    "smoke1": 6
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "edge": 1,
+    "eye": 6,
+    "pale0": 2,
+    "pale1": 3,
+    "pale2": 4,
+    "pale3": 5
+   }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "edge": 1,
+    "glint": 6,
+    "red0": 2,
+    "red1": 3,
+    "red2": 4,
+    "red3": 5
    }
   }
  },
  "scenes": {
+  "break": {
+   "h": 2,
+   "mx": 210,
+   "my": 0,
+   "pal": 1,
+   "w": 2
+  },
+  "gemblock": {
+   "h": 2,
+   "mx": 212,
+   "my": 0,
+   "pal": 1,
+   "w": 2
+  },
   "ledge": {
    "h": 2,
    "mx": 208,
@@ -100,6 +145,31 @@
    "size": 16,
    "tile": 260
   },
+  "bat0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 266
+  },
+  "bat1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 268
+  },
+  "bat2": {
+   "pal": 2,
+   "size": 16,
+   "tile": 270
+  },
+  "biggem": {
+   "pal": 3,
+   "size": 8,
+   "tile": 279
+  },
+  "bigshot": {
+   "pal": 1,
+   "size": 8,
+   "tile": 264
+  },
   "bullet": {
    "pal": 1,
    "size": 8,
@@ -110,10 +180,30 @@
    "size": 8,
    "tile": 263
   },
+  "gem": {
+   "pal": 3,
+   "size": 8,
+   "tile": 278
+  },
+  "puff": {
+   "pal": 1,
+   "size": 8,
+   "tile": 265
+  },
   "run": {
    "pal": 0,
    "size": 16,
    "tile": 258
+  },
+  "snail": {
+   "pal": 2,
+   "size": 16,
+   "tile": 288
+  },
+  "snailw": {
+   "pal": 2,
+   "size": 16,
+   "tile": 290
   },
   "stand": {
    "pal": 0,
@@ -122,6 +212,6 @@
   }
  },
  "tiles": {},
- "used": 87,
+ "used": 119,
  "version": 1
 }

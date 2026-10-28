@@ -1,7 +1,7 @@
 # Vertical Fall: Cart Specification
 
 **Version:** 0.1 (draft: the design agreed with the user at the kickoff)
-**Status:** Step 1 built (the vertical slice: the well, running, jumping, falling and the gunboots); step 2 is next
+**Status:** Steps 1 and 2 built (the vertical slice; blocks, gems, stomps, combos, the gem high, the bat and the snail); step 3 is next
 **Cart source:** `carts/src/vertical-fall/` → `carts/vertical-fall.nova`
 
 ---
@@ -109,17 +109,20 @@ and hover). Out of ammo, a press clicks and nothing comes out.
 | Default gunboots | 1 bullet, damage 1, 7 px/frame, 1 ammo, again every 8 frames while held, sets the fall speed to at most 0.3 |
 | A bullet | stops at the first block or enemy it hits; breaks breakable blocks; passes ledges; at most 16 at once |
 
-**Stomping.** Landing on an enemy from above (falling, the faller's feet within 6 px of its top) kills a **stompable**
-enemy outright, bounces the faller up at 3.6 px/frame (4.4 if A is held), refills the ammo and adds 1 to the combo.
+**Stomping.** Landing on an enemy from above (falling or landing, the faller's feet within 6 px of its top) kills a
+**stompable** enemy outright, bounces the faller up at 3.6 px/frame (4.4 if A is held), refills the ammo and adds 1 to
+the combo. A stomp only ever lifts the faller onto the enemy's top; a second stompable enemy touched in the same frame is
+stomped too (a stack of bats).
 Landing on a **red** enemy hurts instead. Red always means "do not touch": red enemies, red enemy shots. (Gems are red as
 well, Downwell's one exception: they are small, round and sparkle.)
 
 **Hit points.** 4 at the start, 4 at most (upgrades raise the maximum to 8). A touch of an enemy (other than a stomp) or
 an enemy shot costs 1 HP, throws the faller up at 2.5 px/frame, ends the combo, and gives **90 frames** without harm
-(the faller blinks). At 0 HP the run is over.
+(the faller blinks). At 0 HP the run is over. The faller is never left inside stone: if a stomp or a knock puts the box
+there, it is put back on top of the stone (or under it), the shorter way.
 
-**Combos.** The combo counts kills (stomps and shots) since the faller last touched the ground, a block or a ledge.
-Landing ends it and pays:
+**Combos.** The combo counts kills (stomps and shots) since the faller last touched the ground, a block or a ledge; a kill
+while standing (a bullet still flying after the landing) does not count. Landing ends it and pays (a hit ends it unpaid):
 
 | Combo | Reward |
 |---|---|
@@ -128,12 +131,16 @@ Landing ends it and pays:
 | 25 and more | combo × 4 gems, +1 HP, and +1 to the maximum ammo (up to 20) |
 
 **Gems.** Small gems are worth 1, large ones 5. Enemies drop 1 to 6 by kind (section 7); a breakable block drops a small
-gem 1 time in 4; a **gem block** takes 3 hits and drops 6 to 10. Gems fly out, fall and stay for 8 seconds, blinking
-for the last 2. The **wallet** is what is spent; the **gems collected** (never spent) go into the score.
+gem 1 time in 4; a **gem block** takes 3 hits and drops 6 to 10. A drop of n gems is n ÷ 5 large ones and the rest
+small. Gems fly out (up to 1.5 px/frame sideways, 1 to 3 up), fall (0.15 px/frame², at most 3), bounce off walls, come to
+rest on stone and blocks, and stay for 8 seconds, blinking for the last 2. At most **32 gems** lie in the well at once;
+the worth of any more goes straight to the wallet. The faller takes a gem by touching it (within 9 px across, 11 up and
+down of the middle). The **wallet** is what is spent; the **gems collected** (never spent) go into the score.
 
-**Gem high.** Every gem adds 1 to the gem meter, which drains 1 every 15 frames. At 100 the faller goes **gem high**:
-bullets are bigger (damage +1) and the gunboots glow, while the meter drains 1 every 6 frames; each gem still adds 1. It
-ends when the meter reaches 0.
+**Gem high.** Every gem adds its worth to the gem meter (which holds at most 100); the meter drains 1 every 15 frames.
+At 100 the faller goes **gem high**: bullets are bigger (damage +1; a glow on the gunboots comes with the art, step 6),
+while the meter drains 1 every 6 frames, so a full meter lasts 10 seconds without more gems; each gem still adds. It ends
+when the meter reaches 0. A combo's payout goes to the wallet and the score, not the meter.
 
 **Blocks.**
 
@@ -203,8 +210,8 @@ Each enemy is **stompable** (white) or **red** (shoot only). HP is in bullets of
 
 | Enemy | From | Moves | HP | Stomp | Gems |
 |---|---|---|---|---|---|
-| Bat | Shaft | hangs from a ceiling; swoops at the faller when within 64 px, at 1.2 px/frame | 1 | yes | 1 |
-| Snail | Shaft | crawls round the edges of blocks and walls, 0.5 px/frame | 2 | yes | 2 |
+| Bat | Shaft | hangs from a ceiling; swoops at the faller when within 64 px, at 1.2 px/frame; stone and blocks stop it (it slides along them); after a hit it flies off for 30 frames | 1 | yes | 1 |
+| Snail | Shaft | crawls round the outline of stone and blocks (floors, walls, ceilings), 0.5 px/frame; falls if its block is shot away | 2 | yes | 2 |
 | Spiked snail | Shaft | the same, with red spikes on its back | 3 | **red** | 3 |
 | Turtle | Ossuary | walks a ledge, 0.6 px/frame; its shell stops bullets from above (stomp it) | — | yes | 3 |
 | Frog | Ossuary | hops at the faller from a ledge every 90 frames | 2 | yes | 2 |
@@ -305,7 +312,7 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
 
 | Asset | Budget |
 |---|---|
-| Code | 17.2 KB now (step 1, packed without comments: `"strip": true`); planned up to about 56 KB of the 64 KB limit (`"mangle"` too if needed); chunks in ROM, not code (`node tools/check.js vertical-fall`) |
+| Code | 27.4 KB now (step 2, packed without comments: `"strip": true`); planned up to about 56 KB of the 64 KB limit (`"mangle"` too if needed); chunks in ROM, not code (`node tools/check.js vertical-fall`) |
 | ROM | `rom/chunks.bin`: about 40 chunks of 9 × 12 cells, about 3 KB |
 | Tiles | about 650 of 1,024: four areas' blocks and walls (about 200), the faller (about 60), enemies (about 150), bullets, gems, items, upgrades and the HUD (about 120), the title (about 100) |
 | Sprites | at most about 90 in OAM: the faller 1, enemies 24, enemy shots 8, bullets 16, gems 32, sparks 8; at most 32 a line (a test of a busy screen) |
@@ -346,6 +353,33 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
    to 130 shots in three levels; nothing stuck. Code 17.2 KB packed (22.1 KB of source); 87 tiles.
 2. **Core mechanics:** breakable and gem blocks, ledges (DOWN drops through), gems and the wallet, stomps and the bounce,
    HP, hits and the time without harm, combos and their payouts, the gem high; the bat and the snail to test them on.
+
+   **Built.** `code.js`: two more kinds of cell, BREAK and GEMBLOCK (solid like stone; `hitCell` breaks a breakable block
+   at once and a gem block on its third hit, `breakCell` empties the cell and marks its row of the strip to be written
+   again); bullets now stop at the first enemy (`damage`) or block they reach. Enemies are made with the level
+   (`newEnemy`), wake, act, touch the faller (`touch`: a stomp or a hit), and go; the bat (`moveBat`: hangs, then homes,
+   stopped by stone, flies off after a hit) and the snail (`moveSnail`: a wall follower on the grid of cells, a cell at a
+   time, turning round outer corners and climbing inner ones, falling when its block goes). `kill` drops gems, a puff and
+   counts the combo; gems (`dropGems`, `updateGems`, `takeGem`) fly, fall, rest, blink and go; `payCombo` on landing;
+   the gem meter and the gem high (bigger bullets of damage 2). `unstick` keeps the faller out of stone. The test layout
+   now has rows of breakable blocks (1 in 4 a gem block) and puts a bat under, or a snail on, half the stone it can.
+   The HUD: the wallet and the gem meter on the left (GEM HIGH blinking), the combo on the right, a combo's payout on the
+   left for two seconds. `art.py`: the breakable and gem blocks, the bat (hanging and two wing beats), the snail (on a
+   floor, and turned for a wall), small and large gems, the gem high's bullet, a puff. Effects: stomp, kill, a block
+   breaking, a small and a large gem, gem high, a combo's payout, a hit that does not kill. Tests: `04-core.mjs` (the
+   numbers, blocks, gems, stomps and the held bounce, hits, shooting, the bat, the snail round a block and falling,
+   kills standing, the payouts, the gem high, waking and going, the score, where the layouts put enemies, bats and
+   stone, two bats at once, the bat flying off, the faller out of stone). The bot steers at enemies below, shoots them
+   or stomps them when out of ammo, shoots blocks in its way, and moves away from an enemy at its side.
+
+   **Results.** The tests pass. The bot's hits, traced one by one, found three bugs: a bat flew up through the stone the
+   faller stood on (now stone stops bats); stomping one of two bats on top of each other bounced the faller up into the
+   second, which then counted as a hit (now both are stomped); and a stomp put the faller's box inside a stone outcrop,
+   where the bat beside it hit again every 90 frames until the run ended (a stomp now only lifts, `unstick` pushes the
+   faller out of stone, and a bat flies off after a hit). The sweep over 8 seeds and 3 levels: at skill 1, 7 runs of 8
+   reach level 4 (1.5 hits a run, 27 gems, 30 kills, best combos 2 to 5); at skill 0.5, 6 of 8 die in the first three
+   levels (2.75 hits). Balance is step 8; for now enemies fill half their places on every level. Code 27.4 KB packed (42 %: about 10 KB a step so far, so `"mangle"` and compact data will be needed before the end);
+   119 tiles.
 3. **Enemies:** the whole roster of section 7, the red rule, enemy shots, waking and removing, the caps; spawn by area
    and loop.
 4. **Content:** `chunks.py` and `rom/chunks.bin`; the seeded level generator; the four areas and the loop; each level's

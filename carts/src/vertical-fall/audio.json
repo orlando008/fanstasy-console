@@ -228,6 +228,19 @@
     0
    ],
    "pan": null
+  },
+  {
+   "wave": "pulse12",
+   "a": 0,
+   "d": 5,
+   "s": 0,
+   "r": 0,
+   "vol": 4,
+   "vib": [
+    0,
+    0
+   ],
+   "pan": null
   }
  ],
  "patterns": [
@@ -4715,6 +4728,390 @@
     {
      "n": "OFF"
     },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 1,
+   "rows": [
+    {
+     "n": "G-3",
+     "i": 11
+    },
+    {
+     "n": "C-4",
+     "i": 11
+    },
+    {
+     "n": "G-4",
+     "i": 11
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "C-4",
+     "i": 12
+    },
+    {
+     "n": "A-3",
+     "i": 12
+    },
+    {
+     "n": "E-3",
+     "i": 12
+    },
+    {
+     "n": "C-3",
+     "i": 12
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "F-3",
+     "i": 12
+    },
+    {
+     "n": "C-3",
+     "i": 12
+    },
+    {
+     "n": "G-2",
+     "i": 12
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 1,
+   "rows": [
+    {
+     "n": "E-6",
+     "i": 16
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 1,
+   "rows": [
+    {
+     "n": "B-5",
+     "i": 16
+    },
+    {
+     "n": "E-6",
+     "i": 16
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "C-5",
+     "i": 10
+    },
+    {
+     "n": "G-5",
+     "i": 10
+    },
+    {
+     "n": "C-6",
+     "i": 10
+    },
+    {
+     "n": "E-6",
+     "i": 10
+    },
+    {
+     "n": "G-6",
+     "i": 10
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 3,
+   "rows": [
+    {
+     "n": "G-4",
+     "i": 13
+    },
+    {
+     "n": "C-5",
+     "i": 13
+    },
+    {
+     "n": "E-5",
+     "i": 13
+    },
+    {
+     "n": "G-5",
+     "i": 13
+    },
+    {
+     "n": "C-6",
+     "i": 13
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 1,
+   "rows": [
+    {
+     "n": "A-4",
+     "i": 15
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
     null,
     null,
     null,
