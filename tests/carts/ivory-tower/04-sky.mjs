@@ -18,7 +18,7 @@ const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
   ok(p.SKIES.length === 7 && p.LANDMARKS.length === 7, 'seven skies and seven landmarks');
 }
 {
-  const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3);   // on the title the camera stays where the test puts it
+  const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3); vm.press('SELECT');   // on the records the camera stays where the test puts it (the title has its own sky)
   const px = (x, y) => vm.picture({ layers: [], overlay: false, sprites: false })[y * 256 + x] >>> 0;
   const rgb5 = (c) => [(c & 255) >> 3, ((c >> 8) & 255) >> 3, ((c >> 16) & 255) >> 3];
   const top = rgb5(px(2, 0)), hor = rgb5(px(2, 223));

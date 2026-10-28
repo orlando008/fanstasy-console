@@ -1,7 +1,7 @@
 # The Ivory Tower: Cart Specification
 
 **Version:** 0.2 (spec agreed in outline)
-**Status:** Steps 1 to 4 (the rules, the marble, the sky and the landmarks, the scoring) built; steps 5 to 8 to come
+**Status:** Steps 1 to 5 (the rules, the marble, the sky and the landmarks, the scoring, the flow) built; steps 6 to 8 to come
 **Cart source:** `carts/src/ivory-tower/` → `carts/ivory-tower.nova`
 
 ---
@@ -121,7 +121,7 @@ airy swish), the regrow (a soft swell), a landmark (a fanfare of bells and strin
 
 ## 12. Video layers
 
-BG2 (back): the stars and, in the night sky, the moon (a scene of 256 x 224 that rises from below the screen as the dark comes); BG1: clouds (a field of cumulus 256 x 192 that repeats both ways, scrolled at half the tower's speed and drifting sideways, see-through through `blend`); BG0 (front of the three): the landmarks, one tall strip of 256 x 576 (the whole climb, 72 tile rows) scrolled with the camera, so the tower climbs past them; the tower itself is on the overlay. The sky is a gradient set line by line in `scanline()`
+BG2 (back): the stars and, in the night sky, the moon (a scene of 256 x 224 that rises from below the screen as the dark comes); BG1: clouds (a field of cumulus 256 x 192 that repeats both ways, scrolled at half the tower's speed and drifting sideways, see-through through `blend`); BG0 (front of the three): the landmarks, one tall strip of 256 x 616 (the whole climb, and 40 rows of paving below it for the title's raised view: 77 tile rows) scrolled with the camera, so the tower climbs past them; the tower itself is on the overlay. The sky is a gradient set line by line in `scanline()`
 from the floor, a lerp between the seven skies' top and bottom colours (so no art is stored for it). The slabs, the slices, the sparkles and the perfect ring are drawn on the overlay in colours of its own (the marbles' ramps, from palette 0 and the overlay's
 indices up to 191; translucent ones from 192 up for the glow and the ring, with `blend`). Sprites: the sparkles of a perfect (a few 8 px stars), the moon.
 
@@ -192,6 +192,14 @@ so step 6 only has to map them to sounds. The best height: the old best is read 
 the best and the height in metres (a floor is 3 m); the game over panel shows the floors and metres, the points and either NEW BEST or the best. `05-score.mjs` tests all of it.
 
 *Results.* The tests pass. The speed curve is left at its first numbers (section 5): the bot's results (step 1) do not say how it feels, and the numbers are set in step 7 with the sweep and by playing.
+
+**Step 5: built and results.**
+
+*Built.* The frame of the starter, finished for this game. *The title:* a tower as high as the best height (5 to 9 floors, a little off true like a person's), raised so the menu has room below, a slab sliding over it for ever, the logo in a gold frame, PLAY and RECORDS (SELECT also opens the records), the best in floors and metres; a morning sky with clouds.
+*The count-in:* a second, with a big 3, 2, 1 in blocks and a tick for each (the starter's move sound for now). *The demo:* after 20 seconds without a button on the title the game plays itself (`demoWants`: it aims at the top of the tower with an error of about 9 px and fumbles in a while); it shows DEMO: PRESS ANY BUTTON, keeps the title's music, hides the score and records nothing
+(no game counted, no best, no top 10); any new press, or the end of the run, goes back to the title and the wait starts again. Pause, the game over (the camera's flight, the result, initials, records) are as in step 4. *The records:* the top 10 with floors and points, the best height and the games played. The strip of landmarks has 40 more rows of paving for the title's view. `06-flow.mjs`.
+
+*Results.* The tests pass; the title, the count-in and the records were looked at in screenshots. The demo's player and the chime ticks are placeholders for sound until step 6.
 
 Each step: build it, run `node tools/check.js ivory-tower` and `node tools/test.js ivory-tower`, write its **Built** and **Results** notes under its number here, commit and push.
 

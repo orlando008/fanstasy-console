@@ -27,10 +27,10 @@ cloud = art.palette(2, {'cloud': ['a8b4d8', 'c8d0e8', 'e4e8f4', 'ffffff']})
 night = art.palette(3, {'star0': '8890c0', 'star1': 'c0c8f0', 'star2': 'ffffff', 'moon': ['607098', '8c9cc0', 'c0ccdc', 'e8ecf4', 'ffffff']})
 FAR, MID, NEAR, RIM, LIGHT = sil.far, sil.mid, sil.near, sil.rim, sil.light
 
-# --- The landmarks (layer 0): a tall strip, 256 x 576, the tower's whole climb. Altitude a (px above the base slab's top) is row 528 - a;
+# --- The landmarks (layer 0): a tall strip, 256 x 616, the tower's whole climb. Altitude a (px above the base slab's top) is row 528 - a;
 # the screen scrolls it with the camera (code.js: bg y = 352 - cam). Each landmark has its 80 px of the climb (10 floors), and is drawn in
 # a small picture of its own with the base at its bottom row, then placed. ---
-STRIP_H, TOP = 576, 528
+STRIP_H, TOP = 616, 528     # 40 rows of paving below the base, for the title's raised view
 strip = Img(256, STRIP_H)
 
 def band(a0, h=112):
@@ -44,7 +44,7 @@ def place(img, a0):
 # The ground: the courtyard's paving, below the base slab (the steps are drawn over it).
 strip.rect(0, TOP, 256, STRIP_H - TOP, MID)
 strip.rect(0, TOP, 256, 1, RIM)
-for k in range(1, 6): strip.rect(0, TOP + 3 + k * 8, 256, 1, NEAR)
+for k in range(1, 11): strip.rect(0, TOP + 3 + k * 8, 256, 1, NEAR)
 
 # 0 The Courtyard (altitude 0 to 80): a garden wall with arches, cypresses.
 im, y = band(0)
