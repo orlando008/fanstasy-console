@@ -184,7 +184,7 @@ const sumGems = (p) => p.gems.reduce((a, g) => a + g.v, 0);
   const s = p.newEnemy('snail', 6, 19); s.awake = true; p.enemies.push(s); s.hp = 0; p.bullets.push({ x: s.x, y: s.y - 12, dmg: 1 }); vm.run(3);
   ok(s.dead && p.combo === 0, 'a kill while the faller stands does not start a combo');
   const land = (n, hp = K.HP - 1, max = K.AMMO) => {
-    place(p, 3 * K.CELL, 15 * K.CELL); Object.assign(p.me, { hp, maxAmmo: max }); p.combo = n; const w = p.wallet, c0 = p.collected;
+    place(p, 3 * K.CELL, 15 * K.CELL); Object.assign(p.me, { hp, clip: max }); p.setClip(); p.combo = n; const w = p.wallet, c0 = p.collected;
     sfxLog(vm); let f = 0; while (!p.me.ground && f++ < 120) vm.step(0);
     return { gems: p.wallet - w, scored: p.collected - c0, hp: p.me.hp, ammo: p.me.maxAmmo, sfx: sfxLog(vm).some(([x]) => x === p.SFX.combo) };
   };

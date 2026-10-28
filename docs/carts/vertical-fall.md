@@ -49,7 +49,8 @@ Downwell's scheme: one button, used for everything.
 | A (or B) in the air | Fire the gunboots downwards (held: keep firing, at the module's rate); a jump's own press does not fire, a new press is needed |
 | D-pad DOWN | Drop through a ledge; in a shop, buy the item you stand over |
 | START | Pause (RESUME, RESTART, QUIT TO TITLE) |
-| Menus | UP and DOWN choose, A selects, B goes back; LEFT and RIGHT choose among the three upgrades |
+| In a room | LEFT and RIGHT walk; DOWN buys in a shop; A takes an upgrade; walking back into the door (a new push towards it) leaves |
+| Menus | UP and DOWN choose, A selects, B goes back |
 
 B does what A does, so either thumb works on a phone. X, Y, L, R and SELECT are not used in play.
 
@@ -196,9 +197,16 @@ up to 60 %). The kind a place gets is drawn from the area's enemies (and those o
 
 A new area is announced by a banner with its name (and the loop, from the second on) for two and a half seconds.
 
-**Side rooms.** Openings in the well's wall, 1 to 3 per level. Walking into one stops time (Downwell's time void: the well
-and its enemies freeze) and shows the room:
-- **Shop** (1 level in 2): a shopkeeper and three items on pedestals; stand over one and press DOWN to buy.
+**Side rooms.** Doors in the side walls, 1 to 3 per level (one, then a second 60 % of the time and a third 30 %), each
+where the cell in front of it is open with something to stand on below, at least 20 rows apart. Walking into a door
+stops time (Downwell's time void: the well, its enemies and the gem meter freeze) and shows the room, a warm chamber in
+the well's window, with the faller walking its floor. A new push towards the door leaves (holding the direction you came
+in with does not), and the faller stands in front of it again; a door is used once (it is stone after). What a room holds
+comes from the run's seed, the level and the door, so the Daily well's rooms are the same for everyone. The first door is
+a **shop** on odd levels and a **module room** on even ones; a second is a cache or a module room (half and half); a third
+a cache.
+- **Shop**: a shopkeeper and three items on pedestals, their prices under them (gold if the wallet has enough); stand at
+  one and press DOWN to buy it (each once; without the gems, a low thud and NOT ENOUGH GEMS).
 
   | Item | Price at level 1 | Effect |
   |---|---|---|
@@ -207,12 +215,13 @@ and its enemies freeze) and shows the room:
   | Clip | 100 | +3 maximum ammo (up to 20) |
 
   Prices go up 10 % each level.
-- **Module room**: a gun module on a pedestal; walking into it swaps the gunboots' module (section 8).
-- **Cache**: 15 to 30 gems.
+- **Module room**: one of the five gun modules on a pedestal; walking to it takes it (section 8).
+- **Cache**: 15 to 30 gems, into the wallet and the score as the faller comes in.
 
-**The floor and the upgrade room.** At a level's floor the faller lands, the combo pays out, and a door leads to the
-upgrade room: three upgrades, drawn without repeats from those not yet taken. Walk to one and press A to take it, then
-the floor opens and the next level begins. The upgrades:
+**The floor and the upgrade room.** At a level's floor the faller lands, the combo pays out, and a second later the
+upgrade room opens: three different upgrades on pedestals, drawn from the level's seed. The first three (Apple, Heart Up,
+Bigger Clip) can come again; the others are offered only until taken. Walk to one (its name and what it does show at the
+top) and press A to take it; the next level begins. The upgrades:
 
 | Upgrade | Effect |
 |---|---|
@@ -220,11 +229,11 @@ the floor opens and the next level begins. The upgrades:
 | Heart Up | +1 maximum HP and +1 HP |
 | Bigger Clip | +3 maximum ammo |
 | Knife and Fork | every 4th stomp heals 1 HP |
-| Gem Magnet | gems within 48 px fly to the faller |
-| Drone | a small drone follows and fires a weak shot when you fire |
-| Wall Jump | push off a wall in the air with A (the press jumps instead of firing) |
+| Gem Magnet | gems within 48 px fly to the faller at 2.5 px/frame |
+| Drone | a small drone floats behind the faller and fires a bullet of its own (damage 1, no ammo) with each shot |
+| Wall Jump | in the air against a wall, A jumps off it (4.0 up, 1.6 away) instead of firing |
 | Gem Heart | every 150 gems collected gives +1 HP (up to the maximum) |
-| Bounce Boots | stomps bounce 25 % higher and knock out enemies within 16 px |
+| Bounce Boots | stomps bounce 25 % higher and knock out every stompable enemy within 16 px of the one stomped |
 | Thick Skin | 150 frames without harm after a hit, not 90 |
 
 ## 7. Enemies
@@ -250,21 +259,24 @@ adds 10 %.
 ## 8. Gun modules
 
 The gunboots carry one module at a time; the default is the plain gunboots. A module found in a side room replaces the
-one carried and refills the ammo; finding the **same** module again gives +2 maximum ammo instead.
+one carried and refills the ammo; finding the **same** module again gives +2 maximum ammo instead. The most ammo is the
+clip (8 to start; upgrades, the shop and combos add to it) plus the module's change, from 2 to 20. A shot the ammo left
+cannot pay for only clicks. The HUD names the module carried, shortly (BOOTS, MGUN, SHOT, LASER, BURST, PUNCH).
 
 | Module | Shot | Damage | Ammo | Rate held | Fall speed set to | Max ammo |
 |---|---|---|---|---|---|---|
 | Gunboots (default) | 1 bullet | 1 | 1 | 8 frames | 0.3 | +0 |
-| Machine Gun | 1 bullet, small spread | 1 | 1 | 4 frames | 0.6 | +4 |
+| Machine Gun | 1 bullet, up to 0.08 radians off straight down at random | 1 | 1 | 4 frames | 0.6 | +4 |
 | Shotgun | 5 pellets in a 40° fan, 64 px range | 1 each | 2 | 24 frames | −2.0 (a jump) | −2 |
-| Laser | a beam to the bottom of the screen, through everything | 3 | 3 | 30 frames | −0.5 | −2 |
+| Laser | a beam to the bottom of the screen, through everything: every enemy in it is hit (a turtle's shell does not stop it), every block in it takes a hit | 3 | 3 | 30 frames | −0.5 | −2 |
 | Burst | 3 bullets in a 12° fan | 1 each | 1 | 12 frames | 0.2 | +0 |
-| Puncher | a wide fist 24 px below, breaks enemy shots | 3 | 1 | 14 frames | −0.8 | +2 |
+| Puncher | a fist 24 px wide and 24 deep under the boots: every enemy and block in it is hit, enemy shots in it break | 3 | 1 | 14 frames | −0.8 | +2 |
 
 ## 9. Scoring
 
 **Score = metres fallen + gems collected** (every gem picked up, including those later spent; combo payouts count as
-gems). The game over shows the level reached, the depth, the gems, the kills and the best combo. The top 10 is ordered by
+gems). The game over shows the level reached, the depth, the gems collected, the kills, the best combo and the score
+(and TODAY'S BEST! after a daily run that set it). The top 10 is ordered by
 score and keeps the level reached.
 
 **The Daily well** is one seed a day: the date (`YYYYMMDD`, read once when the run starts) seeds every level's layout
@@ -276,10 +288,11 @@ PRNG, so the game stays deterministic.
 
 ## 10. Screens and flow
 
-1. **Title:** PLAY, DAILY WELL, RECORDS.
+1. **Title:** PLAY, DAILY WELL, RECORDS; under them today's best in the Daily well (or "A NEW WELL EVERY DAY").
 2. **Play**: the levels, with **side rooms** and an **upgrade room** at each floor; **Pause** (START): RESUME, RESTART,
    QUIT TO TITLE.
-3. **Game over**, then **initials** if the score is in the top 10 (not in the Daily well), then the **records**.
+3. **Game over**, then **initials** if the score is in the top 10 (not in the Daily well), then the **records** (the top
+   10, and today's best in the Daily well); after a daily run, straight back to the title.
 
 ## 11. Audio
 
@@ -460,6 +473,22 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
 
 5. **Items and flow:** the upgrade room and the ten upgrades, the gun modules, side rooms (shop, module, cache) with
    time stopped; the title, game over, top 10, the Daily well's best; saves.
+
+   **Built.** `code.js`: `MODULES` (section 8) and `shoot` for each (bullets with a direction and a range, `laser`,
+   `punch`), the clip and `setClip`; `UPGRADES` and their effects where they act (`touch` for the fork and the bounce
+   boots, `updateGems` for the magnet, `addGems` for the gem heart, `hurt` for thick skin, `moveFaller` for the wall jump,
+   `shoot` for the drone); DOOR cells placed by `makeLevel` (drawn from the catalogue, mirrored for the right wall);
+   rooms (`enterRoom`, `updateRoom`, `leaveRoom`, `buy`, `takeModule`, `takeUpgrade`, `drawRoom`): a room is BG2's
+   picture in the well's window while BG0 and BG1 are hidden, the faller and the pedestals sprites, the overlay the
+   names and prices; the upgrade room after each floor; the title's DAILY WELL, the daily best (slots 40 to 42,
+   `dailyBest`), a fuller game over, the records' daily line. `art.py`: the door, the room (144 x 112, a torch either
+   side), the pedestal, the shopkeeper, a chest, the drone, the fist, and an icon for each upgrade and module (drawn from
+   shapes, outlined). Effects: a door, a buy, a take, a cache, not enough gems, the laser, the puncher. Tests:
+   `07-items.mjs` (every module's numbers and shot, every upgrade, the upgrade room's choices, the doors, a side room in
+   and out with the well standing still, the shop and its prices, a module room and the same module again, DAILY WELL
+   and its records); the flow and level tests follow the new menu and the upgrade room. The bot takes an upgrade by
+   preference, buys health when hurt (or a heart), takes modules and walks into doors beside it.
+
 6. **Art pass:** the four areas' blocks, back walls and far layers; the faller and enemies with their animations; gems,
    bullets, the HUD, the title; `snes.mjs` and `colors.mjs --check`.
 7. **Audio pass:** the eight songs on the chip voices and the effects; `loud.mjs --check` (the pierce risk of section 11).

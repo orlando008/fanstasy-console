@@ -66,5 +66,12 @@ a.effect(1, ['B-5', 'E-6', 'OFF'], 'GLINT')                        # 16 a large 
 a.effect(2, ['C-5', 'G-5', 'C-6', 'E-6', 'G-6', 'OFF'], 'CHIME')   # 17 gem high
 a.effect(3, ['G-4', 'C-5', 'E-5', 'G-5', 'C-6', 'OFF'], 'FANFARE') # 18 a combo pays
 a.effect(1, ['A-4', 'OFF'], 'TICK')                                # 19 a hit that does not kill (an enemy, a gem block)
+a.effect(3, ['C-3', 'G-3', 'C-4', 'OFF'], 'CHIME')                 # 20 a door to a side room (in or out)
+a.effect(2, ['E-5', 'A-5', 'C#6', 'OFF'], 'CHIME')                 # 21 a buy
+a.effect(3, ['C-5', 'E-5', 'G-5', 'B-5', 'D-6', 'OFF'], 'FANFARE') # 22 an upgrade or a gun module taken
+a.effect(1, ['E-6', 'G-6', 'E-6', 'B-6', 'OFF'], 'GLINT')          # 23 a cache of gems
+a.effect(2, ['C-3', 'B-2', 'OFF'], 'THUD')                         # 24 not enough gems
+a.effect(1, ['C-7', 'G-6', 'C-6', 'G-5', 'C-5', 'OFF'], 'PEW')     # 25 the laser
+a.effect(1, ['A-2', 'E-2', 'OFF'], 'CRUNCH')                       # 26 the puncher
 
 a.write(sys.argv[1], songs=2)

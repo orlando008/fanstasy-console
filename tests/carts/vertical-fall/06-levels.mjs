@@ -28,7 +28,7 @@ function bands(p, n) {
   const K = p.K, out = [];
   for (let r = p.TOP_ROWS; r + p.CHUNK_H <= p.rows - 3; r += p.CHUNK_H) {
     const cells = [];
-    for (let y = 0; y < p.CHUNK_H; y++) for (let x = 0; x < K.CELLS; x++) cells.push(p.cellAt(x, r + y));
+    for (let y = 0; y < p.CHUNK_H; y++) for (let x = 0; x < K.CELLS; x++) cells.push(p.cellAt(x, r + y) === K.DOOR ? K.STONE : p.cellAt(x, r + y)); // a door is a wall cell made into one
     out.push(cells);
   }
   return out;

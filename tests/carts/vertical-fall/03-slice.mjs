@@ -131,7 +131,10 @@ function onFloor(seed = 1, floor = 10) {
   ok(p.clearT > 0 && sfxLog(vm).some(([n]) => n === p.SFX.clear), 'landing on the floor clears the level, with its sound');
   ok(p.score === rows - 1, 'the depth is the metres fallen (the floor is the level\'s last row)', `${p.score} m`);
   vm.run(K.CLEAR_WAIT + 1);
-  ok(p.level === 2 && p.rows === p.levelRows(2) && p.depthBase === rows && p.me.y < 3 * K.CELL, 'a second later the next level starts, at its top');
+  ok(p.room && p.room.kind === 'up' && p.level === 1, 'a second later the upgrade room opens');
+  let g = 0; while (!p.room.at && g++ < 200) vm.step(M('RIGHT'));
+  vm.press('A');
+  ok(p.level === 2 && p.rows === p.levelRows(2) && p.depthBase === rows && p.me.y < 3 * K.CELL && !p.room, 'taking an upgrade starts the next level, at its top');
   vm.run(40); ok(p.score > rows + 1, 'and the depth goes on counting from the last level', `${p.score} m`);
 }
 

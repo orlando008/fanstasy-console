@@ -26,7 +26,7 @@ WALL_AT = (32, 0)              # the back wall's repeating 64 x 64 picture
 # with a lit top, and a back wall pushed into the dark. Red is kept for danger and gems (from step 2).
 art.gradient('shaft', ['1e2238', '0e1020', '06060c'], y0=0, y1=223)
 art.color(200, '0c0e1c', 'GLASS')                                           # the panels' fill, seen through
-rock = art.palette(1, {'stone': ramp('5a6a8a', 5), 'moss': ramp('3c5a4a', 2), 'blk': ramp('7a7488', 4), 'gem': ramp('d02838', 3)})
+rock = art.palette(1, {'stone': ramp('5a6a8a', 5), 'moss': ramp('3c5a4a', 2), 'blk': ramp('7a7488', 4), 'gem': ramp('d02838', 3), 'glow': 'e8a848'})
 back = art.palette(2, {'brick': ['0c0e18', '141826', '1c2232', '262c3e']})   # dark, so the stone in front reads
 hero = art.sprite_palette(0, {'edge': '0a0a12', 'body': ramp('c8d0e0', 3), 'boot': ramp('b02838', 3), 'eye': '0a0a12'})
 shot = art.sprite_palette(1, {'core': 'ffffff', 'glow': ramp('f0d890', 3), 'smoke': ramp('9098a8', 2)})
@@ -64,6 +64,33 @@ def block(face, cracks, gems):
     return im
 art.scene('break', block(2, [(5, 2), (6, 3), (6, 4), (7, 5), (8, 5), (9, 6), (9, 7), (10, 8), (4, 10), (5, 11), (5, 12)], []), pal=rock, at=(CELLS_X + 10, 0), solid=True)
 art.scene('gemblock', block(1, [(10, 3), (11, 4)], [(5, 5), (10, 9), (5, 11)]), pal=rock, at=(CELLS_X + 12, 0), solid=True)
+
+# A door in the left wall to a side room (flipped for the right wall): an arch cut into the stone, warm light inside.
+door = stone.crop(0, 0, 16, 16)
+for y in range(16):
+    for x in range(16):
+        inside = x >= 5 and y >= 3 and (y >= 7 or (x - 10.5) ** 2 + (y - 7) ** 2 <= 30)
+        rim = x >= 4 and y >= 2 and (y >= 7 or (x - 10.5) ** 2 + (y - 7) ** 2 <= 42)
+        if inside: door.px[y][x] = rock.glow if (x - 11) ** 2 + (y - 11) ** 2 < 10 else rock.stone[0]
+        elif rim: door.px[y][x] = rock.stone[3]
+art.scene('door', door, pal=rock, at=(CELLS_X + 14, 0), solid=True)
+
+# --- A side room (BG2, shown in the well's window while time stands still): a warm chamber, 144 x 112, its floor at the
+# bottom (code.js puts the faller's feet on y 96 of it), a torch either side ---
+ROOM_AT = (48, 0)
+roomp = art.palette(3, {'wall': ramp('6a5848', 5), 'floor': ramp('4a3e34', 3), 'fire': ramp('e07020', 3)})
+room = Img(144, 112)
+room.blit(texture('brick', 144, 96, roomp.wall[:4], bw=16, bh=8), 0, 0)
+room.blit(texture('stone', 144, 16, roomp.floor, size=10), 0, 96)
+for x in range(144): room.px[96][x] = roomp.wall[4]
+for tx in (16, 120):
+    for y in range(36, 52):
+        for x in range(tx, tx + 8):
+            d = abs(x - tx - 3.5) + (y - 36) * 0.4
+            if y >= 44 and abs(x - tx - 3.5) < 1.5: room.px[y][x] = roomp.floor[0]                          # the torch's handle
+            elif y < 44 and abs(x - tx - 3.5) < 4 - (44 - y) * 0.45: room.px[y][x] = roomp.fire[2 if d < 2 else 1 if d < 3.5 else 0]
+art.scene('room', room, pal=roomp, at=ROOM_AT, solid=True)
+
 
 # --- The back wall (BG1): dark masonry, receded, repeating ---
 art.scene('wall', texture('brick', 64, 64, back.brick, bw=16, bh=8), pal=back, at=WALL_AT, solid=True)
@@ -307,5 +334,49 @@ art.sprite('biggem', Img.from_rows([
     '...oo...',
     '........',
 ], key=GEM), pal=jewel, region='spr')
+
+# --- The rooms' things: a pedestal, the shopkeeper, a chest of gems; the drone; the puncher's fist; and an icon for each
+# upgrade and gun module (16 x 16, drawn from shapes and outlined) ---
+item = art.sprite_palette(4, {'edge': '0a0a12', 'red': ramp('d02838', 3), 'gold': ramp('e0b040', 3), 'grey': ramp('a0a8b8', 3),
+                              'green': ramp('50a048', 2), 'white': 'ffffff'})
+def outlined(f):
+    im = Img.make(16, 16, f)
+    out = im.crop(0, 0, 16, 16)
+    for y in range(16):
+        for x in range(16):
+            if not im.px[y][x] and any(0 <= x + dx < 16 and 0 <= y + dy < 16 and im.px[y + dy][x + dx] for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                out.px[y][x] = item.edge
+    return out
+def shade(r, x, y, k=0): return r[min(len(r) - 1, max(0, int((x + y - 12) / -5 + len(r) - 1 + k)))]   # lit from the top left
+def circle(cx, cy, rad): return lambda x, y: (x - cx) ** 2 + (y - cy) ** 2 <= rad * rad
+def box(x0, y0, x1, y1): return lambda x, y: x0 <= x <= x1 and y0 <= y <= y1
+def heart(x, y, s=6.0, cy=8):
+    u, v = (x - 7.5) / s, (cy - y) / s + 0.3
+    return (u * u + v * v - 1) ** 3 - u * u * v ** 3 < 0
+def plus(x, y): return (x in (7, 8) and 4 <= y <= 11) or (y in (7, 8) and 4 <= x <= 11)
+ICONS = {
+    'apple': lambda x, y: item.green[1] if (x, y) in ((9, 2), (10, 2), (9, 3), (8, 4)) else shade(item.red, x, y) if circle(7.5, 9, 5.5)(x, y) else 0,
+    'heartup': lambda x, y: item.white if heart(x, y) and plus(x, y) else shade(item.red, x, y) if heart(x, y) else 0,
+    'clip': lambda x, y: shade(item.gold, x, y) if y < 5 and x in (5, 7, 9) and y >= 2 else shade(item.grey, x, y) if box(4, 5, 10, 14)(x, y) else 0,
+    'fork': lambda x, y: shade(item.grey, x, y) if (x == 5 and 2 <= y <= 13) or (y in (2, 3, 4, 5) and x in (3, 5, 7)) or (y == 6 and 3 <= x <= 7) or (x in (10, 11) and 2 <= y <= 13 and (x == 10 or y < 8)) else 0,
+    'magnet': lambda x, y: (item.grey[2] if y >= 11 else shade(item.red, x, y)) if (box(3, 3, 6, 13)(x, y) or box(9, 3, 12, 13)(x, y) or (box(3, 3, 12, 6)(x, y))) and not box(7, 7, 8, 13)(x, y) else 0,
+    'drone': lambda x, y: item.gold[2] if (x, y) in ((7, 8), (8, 8)) else shade(item.grey, x, y) if circle(7.5, 8.5, 4)(x, y) else item.grey[2] if y == 3 and 3 <= x <= 12 else item.grey[0] if x in (7, 8) and y in (4,) else 0,
+    'walljump': lambda x, y: shade(item.grey, x, y) if x <= 3 else item.white if (x - 4 == 13 - y and 5 <= x <= 12) or (y == 4 and 9 <= x <= 12) or (x == 12 and 4 <= y <= 7) else 0,
+    'gemheart': lambda x, y: (item.white if abs(x - 7.5) + abs(y - 7.5) < 2.6 else shade(item.red, x, y)) if heart(x, y) else 0,
+    'bounce': lambda x, y: shade(item.red, x, y) if box(3, 2, 12, 6)(x, y) else item.grey[2] if y >= 7 and y <= 14 and abs(x - (5 if (y // 2) % 2 else 10)) < 2 + (0 if y % 2 else 3) else 0,
+    'skin': lambda x, y: (shade(item.gold, x, y) if abs(x - 7.5) < 2 or abs(y - 6) < 1.5 else shade(item.grey, x, y)) if (2 <= y <= 13 and abs(x - 7.5) <= 5.5 - max(0, y - 8) * 0.9) else 0,
+    'mgun': lambda x, y: shade(item.gold, x, y) if x in (7, 8) and y % 4 in (0, 1, 2) and 1 <= y <= 14 else 0,
+    'shotgun': lambda x, y: shade(item.gold, x, y) if any(circle(7.5 + dx, 3 + dy, 1.2)(x, y) for dx, dy in ((0, 9), (-4, 8), (4, 8), (-6, 5), (6, 5), (0, 5), (-2, 2), (2, 2))) else 0,
+    'laser': lambda x, y: (item.white if x in (7, 8) else item.red[2] if x in (6, 9) else item.red[0]) if 5 <= x <= 10 and 1 <= y <= 14 else 0,
+    'burst': lambda x, y: shade(item.gold, x, y) if any(abs(x - 7.5 - k * (y - 2) * 0.35) < 1.1 and y % 4 != 3 for k in (-1, 0, 1)) and 2 <= y <= 14 else 0,
+    'puncher': lambda x, y: (item.grey[0] if (y == 6 and 4 <= x <= 11) or (x in (6, 9) and y < 6) else shade(item.grey, x, y)) if box(3, 3, 12, 12)(x, y) and not ((x, y) in ((3, 3), (12, 3), (3, 12), (12, 12))) else 0,
+    'chest': lambda x, y: (item.red[2] if y < 6 and (x + y) % 3 == 0 else shade(item.gold, x, y, -1) if y == 8 or x in (3, 12) else shade(item.gold, x, y)) if box(3, 4, 12, 13)(x, y) else item.red[1] if y == 3 and 5 <= x <= 10 and x % 2 else 0,
+}
+for name, f in ICONS.items(): art.sprite(name, outlined(f), pal=item, region='spr')
+art.sprite('pedestal', outlined(lambda x, y: shade(item.grey, x, y) if box(2, 8, 13, 9)(x, y) or box(4, 10, 11, 15)(x, y) else 0), pal=item, region='spr')
+art.sprite('keeper', outlined(lambda x, y: item.gold[2] if (x, y) in ((6, 6), (9, 6)) else item.edge if circle(7.5, 6.5, 2.6)(x, y) else shade(item.grey, x, y, -1) if circle(7.5, 6, 4.5)(x, y) or (y >= 8 and abs(x - 7.5) <= 2 + (y - 8) * 0.6) else 0), pal=item, region='spr')
+art.sprite('dronesm', Img.from_rows(['.oooooo.', 'o.oooo.o', '.o2222o.', 'o222222o', 'o22yy22o', 'o222222o', '.o2222o.', '..oooo..'],
+                                    key={'o': item.edge, '2': item.grey[1], 'y': item.gold[2]}), pal=item, region='spr')
+art.sprite('fist', outlined(lambda x, y: shade(item.gold, x, y) if box(2, 4, 13, 13)(x, y) and not (y == 8 and x % 3 == 0) else 0), pal=item, region='spr')
 
 art.write(sys.argv[1])

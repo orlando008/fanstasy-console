@@ -21,7 +21,7 @@ let lastX = 0, still = 0, last = 0, lastDepth = 0, stuckAt = -1, hitsTaken = 0, 
 /** opts.start: the level to start on (to sweep one area: --set start=7); opts.levels: how many levels a run is. */
 export function setup(vm, p, opts) {
   lastX = 0; still = 0; last = 0; lastDepth = 0; stuckAt = -1; hitsTaken = 0; lastHp = 4; problems = []; fired = false;
-  first = opts.start ?? 1; levels = opts.levels ?? 3;
+  first = opts.start ?? 1; levels = opts.levels ?? 3; rooms = 0; bought = 0; upgrades = [];
   if (first > 1) p.startAt(first);
 }
 
@@ -37,6 +37,7 @@ export function pad(vm, p, frame, opts) {
   if (f.hp < lastHp) hitsTaken += lastHp - f.hp;
   lastHp = f.hp;
   const depth = p.depthBase + Math.floor((f.y + K.BOX_H) / K.METRE);
+  if (p.room) { last = frame; return inRoom(p, frame); }
   if (depth > lastDepth || p.clearT) { lastDepth = depth; last = frame; }
   else if (frame - last > 1200 && stuckAt < 0) { stuckAt = frame; problems.push(`stuck at level ${p.level}, ${depth} m (frame ${frame})`); }
 
@@ -86,6 +87,9 @@ export function pad(vm, p, frame, opts) {
   }
 
   if (f.ground) {
+    // A door beside the faller's row: in, sometimes (more often with skill, and always when hurt and rich enough to shop).
+    const door = p.doors.find((d) => d.r === Math.floor((f.y + K.BOX_H / 2) / K.CELL) && p.cellAt(d.side, d.r) === K.DOOR);
+    if (door && (chance(door.r, 7, 0.4 + 0.6 * skill) || f.hp < f.maxHp)) return M(door.side ? 'RIGHT' : 'LEFT');
     // Walking into a wall (a block a cell up): jump over it.
     still = m && Math.abs(f.x - lastX) < 0.01 ? still + 1 : 0; lastX = f.x;
     if (still > 15) { still = 0; return m | fire(); }
@@ -106,6 +110,30 @@ export function pad(vm, p, frame, opts) {
 
 export const finished = (p) => p.state !== 'play' || p.level >= first + levels;
 
+// In a room: walk to what is worth having and take it (A for an upgrade, DOWN to buy), then walk out by the door.
+const PREFER = ['heartup', 'skin', 'fork', 'apple', 'clip', 'magnet', 'gemheart', 'drone', 'bounce', 'walljump'];
+let rooms = 0, bought = 0, upgrades = [];
+function inRoom(p, frame) {
+  const rm = p.room, f = p.me, K = p.K, mid = rm.x + K.BOX_W / 2;
+  let want = null;
+  if (rm.kind === 'up') {
+    const rank = (it) => (it.id === 'apple' && f.hp <= 2 ? -1 : PREFER.indexOf(it.id));
+    want = [...rm.items].sort((a, b) => rank(a) - rank(b))[0];
+  } else if (rm.kind === 'shop') {
+    const can = rm.items.filter((it) => !it.gone && it.price <= p.wallet);
+    want = can.find((it) => it.id === 'heal' && f.hp < f.maxHp) || can.find((it) => it.id === 'heart') || null;
+  } else if (rm.kind === 'module') want = rm.items.find((it) => !it.gone) || null;
+  if (rm.t === 1) rooms++;
+  if (rm.d && !rm.away) return 0; // let go of the way in first (a new push towards the door is what leaves)
+  if (want) {
+    if (Math.abs(want.x - mid) > 3) return M(want.x > mid ? 'RIGHT' : 'LEFT');
+    if (rm.kind === 'up') { if (frame % 2) { upgrades.push(want.id); return M('A'); } return 0; }
+    if (rm.kind === 'shop') { if (frame % 2) { bought++; return M('DOWN'); } return 0; }
+    return 0;
+  }
+  return M(rm.d && rm.d.side ? 'RIGHT' : 'LEFT'); // out (the room needs a walk away from the door first: going round does it)
+}
+
 export function result(p) {
-  return { level: p.level, score: p.score, gems: p.collected, kills: p.kills, combo: p.bestCombo, hits: hitsTaken, died: p.state !== 'play' ? 1 : 0, problems };
+  return { level: p.level, score: p.score, gems: p.collected, kills: p.kills, combo: p.bestCombo, hits: hitsTaken, died: p.state !== 'play' ? 1 : 0, rooms, problems };
 }
