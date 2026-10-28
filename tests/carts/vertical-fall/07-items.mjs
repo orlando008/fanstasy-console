@@ -60,15 +60,15 @@ function armed(m, seed = 2) { const r = empty(seed); r.p.me.mod = m; r.p.me.clip
 // 3. The upgrades.
 {
   let { vm, p, K } = empty(3);
-  p.me.hp = 1; p.takeUpgrade('apple'); ok(p.me.hp === 3, 'the apple heals 2 HP');
-  p.takeUpgrade('heartup'); ok(p.me.maxHp === 5 && p.me.hp === 4, 'heart up: +1 most HP and +1 HP');
+  p.me.hp = 1; p.takeUpgrade('apple'); ok(p.me.hp === 2, 'the apple heals 1 HP');
+  p.takeUpgrade('heartup'); ok(p.me.maxHp === 5 && p.me.hp === 3, 'heart up: +1 most HP and +1 HP');
   p.takeUpgrade('clip'); ok(p.me.maxAmmo === 11, 'bigger clip: 3 more ammo');
   ({ vm, p, K } = empty(4)); p.ups = ['fork']; p.me.hp = 1;
-  for (let i = 0; i < 4; i++) {
-    const s = add(p, 'snail', 4, 20, { d: [0, 0] }); place(p, s.x - 5, s.y - 40); p.me.inv = 0;
-    for (let f = 0; f < 40 && !s.dead; f++) vm.step(0);
-  }
-  ok(p.me.hp === 2, 'knife and fork: the 4th stomp heals 1 HP', `HP ${p.me.hp}`);
+  const stomp = (n) => { for (let i = 0; i < n; i++) { const s = add(p, 'snail', 4, 20, { d: [0, 0] }); place(p, s.x - 5, s.y - 40); p.me.inv = 0; for (let f = 0; f < 40 && !s.dead; f++) vm.step(0); } };
+  stomp(9); ok(p.me.hp === 1, 'knife and fork: 9 stomps heal nothing');
+  stomp(1); ok(p.me.hp === 2, 'the 10th heals 1 HP', `HP ${p.me.hp}`);
+  stomp(10); ok(p.me.hp === 2, 'but only once a level');
+  p.startAt(2); stomp(10); ok(p.me.hp === 3, 'and again on the next level', `HP ${p.me.hp}`);
   ({ vm, p, K } = empty(5)); p.ups = ['magnet']; place(p, 4 * K.CELL, 39 * K.CELL - K.BOX_H); vm.run(5);
   p.gems = [{ x: p.me.x + 5 + 40, y: p.me.y + 7, vx: 0, vy: 0, v: 1, t: 0 }]; const w = p.wallet; vm.run(30);
   ok(p.wallet === w + 1, 'the gem magnet pulls in a gem 40 px away');

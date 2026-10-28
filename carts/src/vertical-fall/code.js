@@ -125,11 +125,11 @@ const FOUND = ['mgun', 'shotgun', 'laser', 'burst', 'puncher'], MG_SPREAD = 0.08
 // Upgrades (section 6): one of three at each level's floor; the first two can come again, the rest once.
 const UPGRADES = ['apple', 'clip', 'heartup', 'fork', 'magnet', 'drone', 'walljump', 'gemheart', 'bounce', 'skin'], AGAIN = 2;
 const UP_TEXT = {
-  apple: ['APPLE', '+2 HP'], heartup: ['HEART UP', '+1 MAX HP'], clip: ['BIGGER CLIP', '+3 MAX AMMO'], fork: ['KNIFE AND FORK', 'EVERY 4TH STOMP HEALS'],
+  apple: ['APPLE', '+1 HP'], heartup: ['HEART UP', '+1 MAX HP'], clip: ['BIGGER CLIP', '+3 MAX AMMO'], fork: ['KNIFE AND FORK', '10 STOMPS HEAL 1 HP'],
   magnet: ['GEM MAGNET', 'GEMS FLY TO YOU'], drone: ['DRONE', 'IT FIRES WITH YOU'], walljump: ['WALL JUMP', 'A: JUMP OFF A WALL'],
   gemheart: ['GEM HEART', '+1 HP EVERY 150 GEMS'], bounce: ['BOUNCE BOOTS', 'BIG STOMPS'], skin: ['THICK SKIN', 'LONGER SAFE AFTER A HIT'],
 };
-const FORK_EVERY = 4, MAGNET = 48, MAGNET_PULL = 2.5, GEMHEART = 150, BOUNCE_UP = 1.25, BOUNCE_REACH = 16, SKIN_SAFE = 150;
+const FORK_EVERY = 10, MAGNET = 48, MAGNET_PULL = 2.5, GEMHEART = 150, BOUNCE_UP = 1.25, BOUNCE_REACH = 16, SKIN_SAFE = 150;
 
 // Side rooms (section 6): doors in the side walls; inside, time stands still. A shop's prices go up 10 % a level.
 const ROOM_Y = 56, ROOM_FLOOR = 96, PEDESTALS = [36, 72, 108], CACHE = [15, 30], PRICE_UP = 0.1;
@@ -696,7 +696,7 @@ function touch(e) {
     f.vy = -(held(A) || held(B) ? BOUNCE_HELD : BOUNCE) * (has('bounce') ? BOUNCE_UP : 1); f.jumping = false; f.ammo = f.maxAmmo; f.stomped = timer;
     if (!again && b.t - BOX_H < f.y) { f.y = b.t - BOX_H; unstick(f); } // onto its top: only ever up
     fx(SFX.stomp); kill(e);
-    if (has('fork') && ++f.stomps % FORK_EVERY === 0) f.hp = Math.min(f.maxHp, f.hp + 1);
+    if (has('fork') && ++f.stomps % FORK_EVERY === 0 && f.fed !== level) { f.hp = Math.min(f.maxHp, f.hp + 1); f.fed = level; } // once a level at most
     if (has('bounce')) for (const o of enemies) if (o !== e && o.awake && !o.dead && !KINDS[o.kind].red && Math.hypot(o.x - e.x, o.y - e.y) <= BOUNCE_REACH) kill(o);
   } else if (hurt() && e.kind === 'bat') e.back = BAT_BACK; // a bat that hits flies off for a moment
 }
@@ -848,7 +848,7 @@ function takeModule(it) {
 function takeUpgrade(id) {
   const f = me;
   ups.push(id);
-  if (id === 'apple') f.hp = Math.min(f.maxHp, f.hp + 2);
+  if (id === 'apple') f.hp = Math.min(f.maxHp, f.hp + 1);
   if (id === 'heartup') { f.maxHp = Math.min(MAX_HP, f.maxHp + 1); f.hp = Math.min(f.maxHp, f.hp + 1); }
   if (id === 'clip') { f.clip += 3; setClip(); f.ammo = f.maxAmmo; }
   fx(SFX.take);

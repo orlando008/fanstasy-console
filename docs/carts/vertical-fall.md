@@ -225,10 +225,10 @@ top) and press A to take it; the next level begins. The upgrades:
 
 | Upgrade | Effect |
 |---|---|
-| Apple | +2 HP now (up to the maximum) |
+| Apple | +1 HP now (up to the maximum) |
 | Heart Up | +1 maximum HP and +1 HP |
 | Bigger Clip | +3 maximum ammo |
-| Knife and Fork | every 4th stomp heals 1 HP |
+| Knife and Fork | every 10th stomp heals 1 HP, at most once a level |
 | Gem Magnet | gems within 48 px fly to the faller at 2.5 px/frame |
 | Drone | a small drone floats behind the faller and fires a bullet of its own (damage 1, no ammo) with each shot |
 | Wall Jump | in the air against a wall, A jumps off it (4.0 up, 1.6 away) instead of firing |
