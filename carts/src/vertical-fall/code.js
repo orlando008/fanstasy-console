@@ -122,8 +122,8 @@ const MODULES = {
 };
 const FOUND = ['mgun', 'shotgun', 'laser', 'burst', 'puncher'], MG_SPREAD = 0.08, PUNCH_W = 24, PUNCH_H = 24;
 
-// Upgrades (section 6): one of three at each level's floor; the first three can come again, the rest once.
-const UPGRADES = ['apple', 'heartup', 'clip', 'fork', 'magnet', 'drone', 'walljump', 'gemheart', 'bounce', 'skin'], AGAIN = 3;
+// Upgrades (section 6): one of three at each level's floor; the first two can come again, the rest once.
+const UPGRADES = ['apple', 'clip', 'heartup', 'fork', 'magnet', 'drone', 'walljump', 'gemheart', 'bounce', 'skin'], AGAIN = 2;
 const UP_TEXT = {
   apple: ['APPLE', '+2 HP'], heartup: ['HEART UP', '+1 MAX HP'], clip: ['BIGGER CLIP', '+3 MAX AMMO'], fork: ['KNIFE AND FORK', 'EVERY 4TH STOMP HEALS'],
   magnet: ['GEM MAGNET', 'GEMS FLY TO YOU'], drone: ['DRONE', 'IT FIRES WITH YOU'], walljump: ['WALL JUMP', 'A: JUMP OFF A WALL'],
@@ -133,7 +133,7 @@ const FORK_EVERY = 4, MAGNET = 48, MAGNET_PULL = 2.5, GEMHEART = 150, BOUNCE_UP 
 
 // Side rooms (section 6): doors in the side walls; inside, time stands still. A shop's prices go up 10 % a level.
 const ROOM_Y = 56, ROOM_FLOOR = 96, PEDESTALS = [36, 72, 108], CACHE = [15, 30], PRICE_UP = 0.1;
-const SHOP = [['heal', 'HEAL', 'apple', 40, '+2 HP'], ['heart', 'HEART', 'heartup', 150, '+1 MAX HP'], ['clip', 'CLIP', 'clip', 100, '+3 MAX AMMO']];
+const SHOP = [['heal', 'HEAL', 'apple', 60, '+2 HP'], ['heart', 'HEART', 'heartup', 250, '+1 MAX HP'], ['clip', 'CLIP', 'clip', 120, '+3 MAX AMMO']];
 
 // Areas and loops (section 6): three levels an area, four areas a loop. Each loop is faster and fuller, with more red.
 const AREAS = ['THE SHAFT', 'THE OSSUARY', 'THE CISTERN', 'THE DEEP'];

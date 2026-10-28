@@ -210,17 +210,17 @@ a cache.
 
   | Item | Price at level 1 | Effect |
   |---|---|---|
-  | Heal | 40 | +2 HP (up to the maximum) |
-  | Heart | 150 | +1 maximum HP, +1 HP |
-  | Clip | 100 | +3 maximum ammo (up to 20) |
+  | Heal | 60 | +2 HP (up to the maximum) |
+  | Heart | 250 | +1 maximum HP, +1 HP |
+  | Clip | 120 | +3 maximum ammo (up to 20) |
 
   Prices go up 10 % each level.
 - **Module room**: one of the five gun modules on a pedestal; walking to it takes it (section 8).
 - **Cache**: 15 to 30 gems, into the wallet and the score as the faller comes in.
 
 **The floor and the upgrade room.** At a level's floor the faller lands, the combo pays out, and a second later the
-upgrade room opens: three different upgrades on pedestals, drawn from the level's seed. The first three (Apple, Heart Up,
-Bigger Clip) can come again; the others are offered only until taken. Walk to one (its name and what it does show at the
+upgrade room opens: three different upgrades on pedestals, drawn from the level's seed. The Apple and the Bigger
+Clip can come again; the others (Heart Up too) are offered only until taken. Walk to one (its name and what it does show at the
 top) and press A to take it; the next level begins. The upgrades:
 
 | Upgrade | Effect |

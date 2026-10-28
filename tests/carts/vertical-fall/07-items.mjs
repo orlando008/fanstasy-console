@@ -92,16 +92,16 @@ function armed(m, seed = 2) { const r = empty(seed); r.p.me.mod = m; r.p.me.clip
   const { vm, p, K } = empty(11);
   const seen = new Set(); let distinct = true, again = false;
   for (let i = 0; i < 30; i++) {
-    p.room = null; p.ups = ['fork', 'magnet']; p.enterRoom(null, 'up');
+    p.room = null; p.ups = ['fork', 'heartup']; p.enterRoom(null, 'up');
     const ids = p.room.items.map((it) => it.id);
     if (new Set(ids).size !== 3) distinct = false;
-    if (ids.includes('fork') || ids.includes('magnet')) again = true;
+    if (ids.includes('fork') || ids.includes('heartup')) again = true;
     ids.forEach((x) => seen.add(x));
     p.startGame();
   }
   ok(distinct, 'the upgrade room offers three different upgrades');
-  ok(!again, 'an upgrade taken once (all but the apple, heart up and bigger clip) is not offered again');
-  ok(['apple', 'heartup', 'clip', 'drone', 'skin'].every((u) => seen.has(u)), 'and over many runs every kind comes up', [...seen].join(' '));
+  ok(!again, 'an upgrade taken once (all but the apple and the bigger clip; heart up too) is not offered again');
+  ok(['apple', 'clip', 'magnet', 'drone', 'skin'].every((u) => seen.has(u)), 'and over many runs every kind comes up', [...seen].join(' '));
 }
 
 // 5. Doors: 1 to 3 a level, where the faller can stand in front of them; a shop on odd levels.
@@ -140,16 +140,16 @@ function armed(m, seed = 2) { const r = empty(seed); r.p.me.mod = m; r.p.me.clip
 {
   const { vm, p, K } = empty(14);
   p.enterRoom({ r: 10, side: 0, kind: 'shop' });
-  ok(p.room.items.map((it) => `${it.id} ${it.price}`).join(', ') === 'heal 40, heart 150, clip 100', 'level 1\'s shop: heal 40, heart 150, clip 100');
+  ok(p.room.items.map((it) => `${it.id} ${it.price}`).join(', ') === 'heal 60, heart 250, clip 120', 'level 1\'s shop: heal 60, heart 250, clip 120');
   const go = (x) => { let f = 0; while (Math.abs(p.room.x + 5 - x) > 2 && f++ < 200) vm.step(M(p.room.x + 5 < x ? 'RIGHT' : 'LEFT')); vm.step(0); };
-  p.wallet = 30; go(p.PEDESTALS[0]); sfxLog(vm); vm.press('DOWN');
-  ok(p.wallet === 30 && !p.room.items[0].gone && sfxLog(vm).some(([n]) => n === p.SFX.nope), 'without the gems, DOWN buys nothing (and says so)');
-  p.wallet = 200; p.me.hp = 1; vm.press('DOWN');
-  ok(p.wallet === 160 && p.me.hp === 3 && p.room.items[0].gone, 'with them, DOWN buys: heal is 2 HP for 40');
-  go(p.PEDESTALS[1]); vm.press('DOWN'); ok(p.me.maxHp === 5 && p.wallet === 10, 'a heart: one more most HP, for 150');
+  p.wallet = 50; go(p.PEDESTALS[0]); sfxLog(vm); vm.press('DOWN');
+  ok(p.wallet === 50 && !p.room.items[0].gone && sfxLog(vm).some(([n]) => n === p.SFX.nope), 'without the gems, DOWN buys nothing (and says so)');
+  p.wallet = 310; p.me.hp = 1; vm.press('DOWN');
+  ok(p.wallet === 250 && p.me.hp === 3 && p.room.items[0].gone, 'with them, DOWN buys: heal is 2 HP for 60');
+  go(p.PEDESTALS[1]); vm.press('DOWN'); ok(p.me.maxHp === 5 && p.wallet === 0, 'a heart: one more most HP, for 250');
   p.room = null; for (let i = 0; i < 4; i++) p.startAt(i + 2);
   p.enterRoom({ r: 10, side: 0, kind: 'shop' });
-  ok(p.room.items[0].price === Math.floor(40 * 1.4), 'at level 5 the prices are 40 % higher', `heal ${p.room.items[0].price}`);
+  ok(p.room.items[0].price === Math.floor(60 * 1.4), 'at level 5 the prices are 40 % higher', `heal ${p.room.items[0].price}`);
 }
 
 // 8. A module room: walking to the module takes it; the same module again gives 2 more ammo.
