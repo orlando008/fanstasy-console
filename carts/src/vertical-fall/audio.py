@@ -1,6 +1,6 @@
 # Vertical Fall's audio: carts/src/vertical-fall/audio.json.
 #   python3 carts/src/vertical-fall/audio.py carts/src/vertical-fall/audio.json
-# Two songs (0 the title, 1 the game) and the effects numbered as SFX in code.js. Written with the song
+# Two songs for now (0 the title, 1 the game: the starter's, until the audio pass, step 7) and the effects numbered as SFX in code.js. Written with the song
 # toolkit (tools/devkit/music/kit.py; its header explains the bar() arguments). Rules (playbook section 5):
 # leads are quiet, with no vibrato; songs use channels 0 to 5 and effects 6 and 7 (code.js takes turns); the drums are
 # samples on channel 5. The new sound chip (SPEC 5): sampled instruments from samples.py (a.voice) and an echo per song.
@@ -27,6 +27,8 @@ a.instrument('CHIME', 'pulse50', 0, 6, 5, 6, 9)
 a.instrument('THUD', 'pulse50', 0, 4, 0, 0, 11)
 a.instrument('CRUNCH', 'noise', 0, 8, 3, 6, 9)
 a.instrument('FANFARE', 'pulse25', 0, 6, 11, 6, 9)
+a.instrument('PEW', 'pulse25', 0, 4, 0, 0, 5)                   # the gunboots: short and quiet, it is heard a lot
+a.instrument('TICK', 'noise-short', 0, 2, 0, 0, 6)
 
 # --- 0 The title: A minor, 150 bpm ---
 S = a.song(Key('A', MINOR), 6, echo=(5, 4, 5, 9))
@@ -50,5 +52,10 @@ a.effect(3, ['C-4', 'G-3', 'D-3', 'A-2', 'OFF'], 'CRUNCH')         # 3 a hit (no
 a.effect(6, ['G-4', 'E-4', 'C-4', None, 'D-4', None, 'C-4', 'OFF'], 'FANFARE')   # 4 game over
 a.effect(1, ['C-6', 'G-6', 'OFF'], 'BLIP')                         # 5 a point
 a.effect(4, ['C-5', 'E-5', 'G-5', 'C-6', None, 'G-5', 'C-6', 'OFF'], 'FANFARE')  # 6 a record
+a.effect(1, ['A-4', 'E-5', 'OFF'], 'BLIP')                         # 7 jump
+a.effect(1, ['C-6', 'F-5', 'C-5', 'OFF'], 'PEW')                   # 8 a gunboot shot
+a.effect(1, ['A-2', 'OFF'], 'THUD')                                # 9 land
+a.effect(1, ['C-2', 'OFF'], 'TICK')                                # 10 out of ammo: a click
+a.effect(3, ['C-5', 'E-5', 'G-5', 'C-6', 'OFF'], 'CHIME')          # 11 a level's floor
 
 a.write(sys.argv[1], songs=2)

@@ -1,7 +1,7 @@
 # Vertical Fall: Cart Specification
 
 **Version:** 0.1 (draft: the design agreed with the user at the kickoff)
-**Status:** Scaffolded: the frame of the game (title, play, pause, game over, top 10, sound cues) works; the game is a placeholder. Step 1 is next
+**Status:** Step 1 built (the vertical slice: the well, running, jumping, falling and the gunboots); step 2 is next
 **Cart source:** `carts/src/vertical-fall/` → `carts/vertical-fall.nova`
 
 ---
@@ -94,8 +94,10 @@ cell). The faller's box is 10 × 14 px.
 | Run speed | 1.6 px/frame, reached with 0.3 px/frame² of acceleration; 0.4 px/frame² of friction on the ground, 0.15 in the air |
 | Gravity | 0.22 px/frame² |
 | Fastest fall | 4.5 px/frame |
-| Jump | 4.0 px/frame up; releasing the button while rising halves the speed (a short hop) |
+| Jump | 4.0 px/frame up (about 36 px held, two cells); releasing the button while rising halves the speed (a short hop) |
+| Grace | a press within 4 frames of walking off an edge still jumps (and does not fire) |
 | Ledge | one-way: solid from above, passed through from below; DOWN drops through |
+| Camera | eases a quarter of the way each frame to keep the faller's middle at y 80, 5 px lower for each px/frame of fall (it looks ahead), and never lets the faller out of y 40 to 136 or the view past the level's top or floor |
 
 **Gunboots.** In the air, a new press of A fires; holding it fires again at the module's rate. Each shot costs ammo,
 travels straight down and **lifts** the faller (sets the fall speed to the module's value, so firing is how you slow down
@@ -105,7 +107,7 @@ and hover). Out of ammo, a press clicks and nothing comes out.
 |---|---|
 | Ammo | 8 to start; refilled in full on landing on the ground, a block or a ledge, and on any stomp |
 | Default gunboots | 1 bullet, damage 1, 7 px/frame, 1 ammo, again every 8 frames while held, sets the fall speed to at most 0.3 |
-| A bullet | stops at the first block or enemy it hits; breaks breakable blocks |
+| A bullet | stops at the first block or enemy it hits; breaks breakable blocks; passes ledges; at most 16 at once |
 
 **Stomping.** Landing on an enemy from above (falling, the faller's feet within 6 px of its top) kills a **stompable**
 enemy outright, bounces the faller up at 3.6 px/frame (4.4 if A is held), refills the ammo and adds 1 to the combo.
@@ -303,7 +305,7 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
 
 | Asset | Budget |
 |---|---|
-| Code | 11.8 KB now (the starter); planned up to about 56 KB of the 64 KB limit, with `"strip": true` (and `"mangle"` if needed); chunks in ROM, not code (`node tools/check.js vertical-fall`) |
+| Code | 17.2 KB now (step 1, packed without comments: `"strip": true`); planned up to about 56 KB of the 64 KB limit (`"mangle"` too if needed); chunks in ROM, not code (`node tools/check.js vertical-fall`) |
 | ROM | `rom/chunks.bin`: about 40 chunks of 9 × 12 cells, about 3 KB |
 | Tiles | about 650 of 1,024: four areas' blocks and walls (about 200), the faller (about 60), enemies (about 150), bullets, gems, items, upgrades and the HUD (about 120), the title (about 100) |
 | Sprites | at most about 90 in OAM: the faller 1, enemies 24, enemy shots 8, bullets 16, gems 32, sparks 8; at most 32 a line (a test of a busy screen) |
@@ -315,6 +317,33 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
    gutters; the faller running, jumping and falling with the camera; the default gunboots with ammo and lift; landing
    reloads; a HUD skeleton (HP, ammo, depth). Tests: the numbers of section 5's moving table, the stream, the lift. The bot
    falls to the bottom.
+
+   **Built.** `code.js`: the well is a grid of cells (`cells`, 9 × `rows`, EMPTY, STONE, LEDGE); `makeLevel(n)` makes a test
+   layout from the run's seed and the level with its own small generator (`rng`, mulberry32, so a layout does not depend
+   on play: the Daily well needs that): side walls, outcrops of 1 to 3 cells, ledges of 2 to 4, pairs of blocks in the
+   middle, every 4 to 7 rows, at least 4 of the 7 inner cells open on every row, and the floor. The strip: BG0 shows Map
+   RAM columns 0 to 17, rows 0 to 63, wrapping; `stream()` writes the rows of cells on and near the screen (`slotRow`
+   remembers which level row each of the 32 slots holds), copying each cell's four map entries from the catalogue that
+   `art.py` puts at Map RAM column 200 (four stone cells cut from one seamless 32 × 32 texture, chosen by column and row,
+   and the ledge). BG1 is the back wall at half speed; window 0 is the well and `winmask('screen', { w0: 'out' })` blacks
+   out the gutters. The faller (`me`): running, the jump and the short hop, the grace frames, the gunboots (a new press in
+   the air, then held), the lift, ammo and the click when empty, landing reloads, ledges and DOWN, a hit and its 90
+   frames. A level's floor shows LEVEL n CLEAR and a second later the next level starts at its top; the depth runs on
+   across levels and is the score for now. The HUD: HP boxes on the left, depth and level on the right, the ammo gauge
+   beside the well. `art.py`: the stone and ledge cells, the back wall (a dark ramp picked by hand: `ramp()` made it as
+   bright as the stone), the faller standing, running and in the air (16 px, red boots), the bullet and the muzzle flash.
+   Effects added: jump, shot, land, the empty click, a level's floor. The starter's two songs stay until step 7.
+   `"strip": true` in `meta.json`. Tests: `03-slice.mjs` (section 5's numbers, run, jump, hop, fire, hold, lift, empty,
+   reload, bullets at stone, ledges both ways, the grace, the camera's range, the floor and the next level, the layouts,
+   the hit); `02-art.mjs` (the sprites, the cells, the strip at every depth, the black gutters, the faller and a bullet
+   on screen); `01-flow.mjs` updated (game over from the last hit point; the top 10 keeps the level). The bot steers over
+   the deepest open column, drops through ledges and fires to slow down.
+
+   **Results.** The tests pass. Standing exactly on a cell's top edge read as "in the air" every other frame (the probe
+   used the box's last row of pixels, not the row the feet touch) until `moveY` counted touching as standing; that broke
+   friction, ledges and the grace frames, and the tests caught all three. The bot over 6 seeds at skill 0.5 and 1 clears
+   three levels every time, about 15 seconds a level (820 to 1,030 frames for level 1) with nothing in the way, firing 90
+   to 130 shots in three levels; nothing stuck. Code 17.2 KB packed (22.1 KB of source); 87 tiles.
 2. **Core mechanics:** breakable and gem blocks, ledges (DOWN drops through), gems and the wallet, stomps and the bounce,
    HP, hits and the time without harm, combos and their payouts, the gem high; the bat and the snail to test them on.
 3. **Enemies:** the whole roster of section 7, the red rule, enemy shots, waking and removing, the caps; spawn by area
