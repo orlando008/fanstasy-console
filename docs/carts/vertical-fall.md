@@ -1,7 +1,7 @@
 # Vertical Fall: Cart Specification
 
 **Version:** 0.1 (draft: the design agreed with the user at the kickoff)
-**Status:** Steps 1 to 6 built (the vertical slice; blocks, gems, stomps, combos, the gem high; the whole roster of enemies; levels from hand-made chunks; gun modules, upgrades, side rooms, the Daily well; the art pass); step 7 (audio) is next
+**Status:** Steps 1 to 7 built (the vertical slice; blocks, gems, stomps, combos, the gem high; the whole roster of enemies; levels from hand-made chunks; gun modules, upgrades, side rooms, the Daily well; the art; the audio); step 8 (balance, polish, release) is next
 **Cart source:** `carts/src/vertical-fall/` → `carts/vertical-fall.nova`
 
 ---
@@ -299,25 +299,34 @@ PRNG, so the game stays deterministic.
 On the new sound chip with **chip voices** (pulse, triangle, saw and noise; SPEC 5) and echo, in Downwell's style: a
 gritty bass, quick arpeggios, a restrained lead, dark and driving. Songs use channels 0 to 5; effects take turns on 6 and 7.
 
-| Song | Where | Mood |
-|---|---|---|
-| 0 | Title | slow, ominous, the well's mouth |
-| 1 | The Shaft | driving bass and arpeggios |
-| 2 | The Ossuary | heavier, minor, a march |
-| 3 | The Cistern | dripping, echoing, a long delay |
-| 4 | The Deep | sparse, low, unsettling |
-| 5 | Side rooms (time void, shop) | calm, muffled, slow |
-| 6 | Upgrade room | short and hopeful |
-| 7 | Game over | a sting, played once |
+| Song | Where | Key, tempo | What |
+|---|---|---|---|
+| 0 | Title | A minor, 112 bpm | slow and ominous: a pulse pad and a round triangle bass, then the triangle's tune |
+| 1 | The Shaft | E minor, 150 bpm | driving: the saw bass in eighths and a pulse arpeggio, then the square's tune; a counter-melody at the end |
+| 2 | The Ossuary | D minor, 128 bpm | a heavy march |
+| 3 | The Cistern | C minor, 112 bpm | dripping: arpeggios in a long echo, soft drums, the triangle's tune |
+| 4 | The Deep | B flat minor, 100 bpm | sparse and low: a held bass and a pad that moves to a major chord on the flat second, few notes |
+| 5 | Side rooms (time stands still; the shop) | F major, 90 bpm | calm: a round bass and a slow arpeggio, no tune |
+| 6 | Upgrade room | C major, 128 bpm | short and hopeful |
+| 7 | Game over | A minor | a sting, played once, then silence |
 
-Effects (about 25 of 64): jump, the shot of each module, stomp, enemy hit, enemy dies, block breaks, small gem, large gem,
-gem high, hurt, empty click, land, combo payout, module taken, upgrade taken, buy, side-room door, level clear, menu move,
-select, pause, record.
+The voices are the chip's only (no samples): the leads a 50 % square (the softest pulse) or the triangle, in octave 4,
+volume 5 and 10, no vibrato; the bass a saw (gritty) or a triangle (round); arpeggios a 25 % pulse; pads a 50 % square
+with a slow attack; the drums the noise channel at three pitches (a low thud for the kick, a hiss for the snare, the
+short metallic noise for the hats). Each song has its own echo (the Cistern's longest). The code cues them: the title;
+an area's song when a run starts or a level of a new area begins (and again on leaving a side room); the side rooms' song
+inside a room; the upgrade room's; the game over's sting with the last hit's crunch.
 
-Levels as the playbook (section 5) sets them: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of
-more than 1.5x where it enters (`node tools/devkit/music/loud.mjs carts/vertical-fall.nova --check`). **A risk:** the pierce
-limit (0.012) was set by bright leads, and every pulse lead of the old chip measured 0.014 to 0.027; keep the leads on the
-triangle or a square of 50 % duty, in octave 3 to 4, quiet, and let the bass and the arpeggios carry the drive.
+Effects (27 of 64, on channels 6 and 7 in turn, 0.004 to 0.056 RMS: the small gem's glint the quietest, it is heard
+the most): menu move, select, pause, a hit, the last hit's crunch, **two warning beeps when a hit leaves the last hit
+point**, a record, jump, a shot, land, an empty click, a level's floor, stomp, an enemy dies, a block breaks, a small and
+a large gem, gem high, a combo's payout, a hit that does not kill, a door, a buy, taking an upgrade or a module, a cache,
+not enough gems, the laser, the puncher.
+
+Levels as the playbook (section 5) sets them, measured by `node tools/devkit/music/loud.mjs carts/vertical-fall.nova
+--check` (all within): the songs' medians 0.035 to 0.084 RMS; the leads 0.027 to 0.055 alone and 0.37 to 0.65 of the mix,
+entering with a jump of at most 1.28x; pierce 0.0013 to 0.0056 (the limit is 0.012: the softened square in octave 4 is
+far under what the old chip's pulse leads measured).
 
 ## 12. Video layers
 
@@ -528,6 +537,21 @@ towards red (up to three loops' worth). The art is made in code by `carts/src/ve
    brown and grey. The fill moved to entry 250 and the overlay has its own colours: within the limits. (The art kit does
    not warn when a named colour falls inside a palette's entries.) Code 41.6 KB packed (63 %); ROM 2.1 KB; 521 tiles.
 7. **Audio pass:** the eight songs on the chip voices and the effects; `loud.mjs --check` (the pierce risk of section 11).
+
+   **Built.** `audio.py`: the chip voices and the eight songs of section 11, with `bars()`; `tune_drums` puts the noise
+   drums at their pitches (`bar()` writes every drum on C-4). Effect 4 is now the last hit's crunch and 5 (the starter's
+   unused "point") the last hit point's warning; the fanfare's voice a step quieter, the click's a step louder. `code.js`:
+   `SONG` (title, the four areas, room, up, over) and the cues. Tests: `08-audio.mjs` (eight songs, the sting plays once,
+   chip voices only, no vibrato, `loud.mjs --check`, every cue, the warning, effects only on 6 and 7); the flow test
+   expects the sting.
+
+   **Results.** The tests pass (279 checks). First measure: the Cistern's triangle lead was 0.89 of the mix and entered
+   with a 1.97x jump over its thin arpeggio (a round bass under it and a softer lead fixed it: 0.37, 1.06x); the Shaft's
+   and the Ossuary's square leads were at 0.74 and 0.72 of the mix, near the limit of 0.75 (a cell volume of 12: 0.65 and
+   0.63; a volume of 4 had made them 0.26, inaudible: a cell's volume scales the instrument's). `clash.py` found a held
+   D sharp ringing into an E minor chord (released), an A over a B flat chord (a B flat, then a G); what is left is meant
+   (the title's major seventh, the Deep's flat second). The leads pierce at most 0.0056, so the risk of section 11 did
+   not come to pass. Not heard by a person yet: the songs are rendered to WAV (`render.mjs`) for the user to listen to.
 8. **Balance and polish:** the bot with a skill setting over many seeds (`sweep.mjs`: the level reached, where it dies,
    gems per level, prices against the wallet); then the label, the PNG cart and the Library (`node tools/release.js
    vertical-fall`) and a README row.

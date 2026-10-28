@@ -13,7 +13,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
   sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
+  ok(p.state === 'play' && p.playing === p.SONG.area[0], 'PLAY starts the game, with the Shaft\'s song');
 }
 
 // 2. Playing: the faller moves, and a hit has its sound (the rules themselves are in 03-slice.mjs).
@@ -42,7 +42,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(3), p = vm.probe(); vm.run(2); musicLog(vm);
   p.me.hp = 1; p.score = 120; p.hurt(); vm.run(1);
   ok(p.state === 'over' && p.rank === 0, 'the last hit point ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
-  ok(musicLog(vm).includes(-1), 'the game song stops');
+  ok(musicLog(vm).includes(p.SONG.over), 'the game over\'s sting plays');
   vm.run(70); vm.press('A');
   ok(p.state === 'initials', 'A asks for initials');
   vm.run(25); // START is ignored for a moment, so a press from the game does not skip it

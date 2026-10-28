@@ -22,10 +22,11 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
 // so they never cut into the music and two can sound at once.
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6, jump: 7, shot: 8, land: 9, click: 10, clear: 11,
+const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, low: 5, record: 6, jump: 7, shot: 8, land: 9, click: 10, clear: 11,
   stomp: 12, kill: 13, crack: 14, gem: 15, bigGem: 16, high: 17, combo: 18, ding: 19, door: 20, buy: 21, take: 22, cache: 23,
   nope: 24, laser: 25, punch: 26 };
-const SONG = { title: 0, play: 1 };
+const SONG = { title: 0, area: [1, 2, 3, 4], room: 5, up: 6, over: 7 }; // the areas' songs follow areaOf(); the over's sting plays once
+const areaSong = () => SONG.area[areaOf(level)];
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -331,7 +332,7 @@ function startGame(day = false) {
   room = beam = fist = null; ups = []; newDaily = false;
   paused = false; timer = 0; state = 'play';
   areaLook(1);
-  play(SONG.play);
+  play(areaSong());
 }
 
 function nextLevel() {
@@ -339,7 +340,7 @@ function nextLevel() {
   me.x = (CELLS * CELL - BOX_W) / 2; me.y = CELL; me.vx = me.vy = 0; me.ground = false;
   bullets = []; gems = []; puffs = []; camY = 0; clearT = 0;
   if (areaOf(level) !== areaOf(level - 1)) banner = { text: AREAS[areaOf(level)], t: 150 };
-  areaLook(level);
+  areaLook(level); play(areaSong());
 }
 
 // --- Update ---
@@ -773,6 +774,7 @@ function hurt() {
   const f = me;
   if (f.inv > 0 || state !== 'play') return false;
   f.hp--; f.inv = has('skin') ? SKIN_SAFE : HURT_SAFE; f.vy = -HURT_KNOCK; combo = 0; fx(SFX.hit);
+  if (f.hp === 1) fx(SFX.low); // the last hit point: two warning beeps
   if (f.hp <= 0) gameOver();
   return true;
 }
@@ -802,6 +804,7 @@ function enterRoom(d, kind = d.kind) {
   }
   if (d) { setCell(d.side, d.r, STONE); slotRow[slotOf(d.r)] = -999999; }
   me.vx = me.vy = 0; bullets = []; beam = fist = null; fx(SFX.door);
+  play(kind === 'up' ? SONG.up : SONG.room);
 }
 
 function updateRoom() {
@@ -823,7 +826,7 @@ function leaveRoom() {
   const d = room.d, f = me;
   room = null;
   f.x = (d.side ? CELLS - 2 : 1) * CELL + (CELL - BOX_W) / 2; f.y = (d.r + 1) * CELL - BOX_H; f.vx = f.vy = 0; f.ground = true;
-  fx(SFX.door);
+  fx(SFX.door); play(areaSong());
 }
 
 function buy(it) {
@@ -855,7 +858,7 @@ function takeUpgrade(id) {
 
 const DAILY_SLOT = 40;
 function gameOver() {
-  state = 'over'; timer = 0; play(-1); fx(SFX.over); rank = -1; newDaily = false;
+  state = 'over'; timer = 0; play(SONG.over); fx(SFX.over); rank = -1; newDaily = false;
   if (!daily) rank = insertTop({ score, initials: lastInitials(), level });
   else if (dget(DAILY_SLOT) !== todaySeed() || score > dget(DAILY_SLOT + 1)) {
     newDaily = true; dset(DAILY_SLOT, todaySeed()); dset(DAILY_SLOT + 1, score); dset(DAILY_SLOT + 2, level);
