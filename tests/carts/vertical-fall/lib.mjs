@@ -16,11 +16,15 @@ const PROBE = `__expose(() => ({
   get enemies() { return enemies; }, set enemies(v) { enemies = v; }, get gems() { return gems; }, set gems(v) { gems = v; }, get puffs() { return puffs; },
   get wallet() { return wallet; }, set wallet(v) { wallet = v; }, get collected() { return collected; }, get combo() { return combo; }, set combo(v) { combo = v; },
   get meter() { return meter; }, set meter(v) { meter = v; }, get high() { return high; }, get kills() { return kills; }, get payMsg() { return payMsg; }, get hits() { return hits; }, get bestCombo() { return bestCombo; },
+  get shots() { return shots; }, set shots(v) { shots = v; }, get pace() { return pace; }, get banner() { return banner; },
   SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
-  cellAt, setCell, makeLevel, restream, hurt, levelRows, slotOf, newEnemy, box, takeGem, dropGems, payCombo, hitCell, KINDS, COMBO_PAY,
+  cellAt, setCell, makeLevel, restream, hurt, levelRows, slotOf, newEnemy, box, takeGem, dropGems, payCombo, hitCell, KINDS, COMBO_PAY, areaOf, loopOf, spawn, AREAS, FILL, rng, fading,
+  startAt: (n) => { level = n - 1; nextLevel(); }, // jump to the top of level n (a sweep of one area)
   K: { WELL_X, CELLS, CELL, METRE, BOX_W, BOX_H, RUN, GRAVITY, MAX_FALL, JUMP, COYOTE, AMMO, BULLET_SPEED, RATE, LIFT, HP, HURT_SAFE, CAM_Y, CLEAR_WAIT, STRIP, EMPTY, STONE, LEDGE, BREAK, GEMBLOCK,
     STOMP_RANGE, BOUNCE, BOUNCE_HELD, MAX_AMMO, MAX_HP, GEMBLOCK_HITS, BREAK_GEM, GEM_LIFE, GEM_BLINK, MAX_GEMS, BIG, HIGH_AT, DRAIN, DRAIN_HIGH,
-    BAT_SPEED, BAT_SEE, BAT_BACK, SNAIL_SPEED, WAKE_BELOW, WAKE_ABOVE, GONE_ABOVE, MAX_ENEMIES },
+    BAT_SPEED, BAT_SEE, BAT_BACK, BAT_CHASE, SNAIL_SPEED, TURTLE_SPEED, ENEMY_GRAVITY, FROG_EVERY, FROG_HOP, FROG_RUN, FROG_SEE,
+    BLOB_SPEED, BLOBLING_SPEED, JELLY_EVERY, JELLY_PULSE, JELLY_SINK, JELLY_DRIFT, TURRET_EVERY, BALL_SPEED, MAX_SHOTS, GHOST_SPEED, GHOST_FADE,
+    FILL_LOOP, PACE_LOOP, RED_SHARE, RED_LOOP, WAKE_BELOW, WAKE_ABOVE, GONE_ABOVE, MAX_ENEMIES },
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */
@@ -35,7 +39,7 @@ export const musicLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === '
  * it needs with setCell and newEnemy). */
 export function clearWell(p, r0 = 0) {
   for (let r = r0; r < p.rows - 1; r++) for (let c = 1; c < p.K.CELLS - 1; c++) p.setCell(c, r, p.K.EMPTY);
-  p.enemies = []; p.gems = [];
+  p.enemies = []; p.gems = []; p.shots = [];
   p.restream();
 }
 /** Put the faller at (x, y) in the well, at rest. */

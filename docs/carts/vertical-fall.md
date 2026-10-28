@@ -1,7 +1,7 @@
 # Vertical Fall: Cart Specification
 
 **Version:** 0.1 (draft: the design agreed with the user at the kickoff)
-**Status:** Steps 1 and 2 built (the vertical slice; blocks, gems, stomps, combos, the gem high, the bat and the snail); step 3 is next
+**Status:** Steps 1 to 3 built (the vertical slice; blocks, gems, stomps, combos, the gem high; the whole roster of enemies, by area and loop); step 4 is next
 **Cart source:** `carts/src/vertical-fall/` → `carts/vertical-fall.nova`
 
 ---
@@ -169,9 +169,20 @@ bottom. Chunks are written as text in a script beside `art.py` (`chunks.py`, mad
 | 10 to 12 | The Deep | near black, violet glow, things in the dark | + ghost |
 | 13 and on | the four again (loop 2, 3, ...) | the same, a little redder each loop | all, harder |
 
-**Each loop** raises the number of enemies by 25 %, their speed by 10 % and the share of red ones by 10 points.
-Within an area the number of enemies grows from level to level (the chunks' enemy places are filled 50 %, 65 %, 80 % of the
-time, then 10 points more each loop, up to 100 %).
+**Enemy places and fill.** A level has places where an enemy fits, of four kinds: **under** stone (a bat), on **top** of
+stone (a crawler or a walker), in the **open** (a floater) and against a side **wall** (a turret). Within an area the
+places are filled 50 %, 65 % and 80 % of the time on its three levels, and **each loop** fills 10 points more (up to
+100 %), makes the enemies 10 % faster, and makes a snail 10 points more likely to be a spiked one (20 % in the first loop,
+up to 60 %). The kind a place gets is drawn from the area's enemies (and those of the areas before it):
+
+| Place | The Shaft | The Ossuary | The Cistern | The Deep |
+|---|---|---|---|---|
+| Under stone | bat | bat | bat | bat |
+| On top | snail (or spiked) | snail, snail, turtle, frog (one drawn) | the same | the same |
+| In the open | (none) | blob | blob, jellyfish | blob, jellyfish, ghost |
+| Side wall | (none) | (none) | turret | turret |
+
+A new area is announced by a banner with its name (and the loop, from the second on) for two and a half seconds.
 
 **Side rooms.** Openings in the well's wall, 1 to 3 per level. Walking into one stops time (Downwell's time void: the well
 and its enemies freeze) and shows the room:
@@ -210,18 +221,19 @@ Each enemy is **stompable** (white) or **red** (shoot only). HP is in bullets of
 
 | Enemy | From | Moves | HP | Stomp | Gems |
 |---|---|---|---|---|---|
-| Bat | Shaft | hangs from a ceiling; swoops at the faller when within 64 px, at 1.2 px/frame; stone and blocks stop it (it slides along them); after a hit it flies off for 30 frames | 1 | yes | 1 |
+| Bat | Shaft | hangs from a ceiling; swoops at the faller when within 64 px, at 1.2 px/frame; stone and blocks stop it (it slides along them); after a hit it flies off for 30 frames; after 180 frames of chasing it gives up and flies away up the well | 1 | yes | 1 |
 | Snail | Shaft | crawls round the outline of stone and blocks (floors, walls, ceilings), 0.5 px/frame; falls if its block is shot away | 2 | yes | 2 |
 | Spiked snail | Shaft | the same, with red spikes on its back | 3 | **red** | 3 |
-| Turtle | Ossuary | walks a ledge, 0.6 px/frame; its shell stops bullets from above (stomp it) | — | yes | 3 |
-| Frog | Ossuary | hops at the faller from a ledge every 90 frames | 2 | yes | 2 |
-| Blob | Ossuary | floats, drifting at the faller at 0.4 px/frame; splits into two small ones (1 HP) when killed | 3 | yes | 4 |
-| Jellyfish | Cistern | rises and sinks in slow pulses; red | 3 | **red** | 4 |
-| Turret | Cistern | set in a wall; fires a slow red ball (1 px/frame) at the faller every 120 frames | 4 | yes | 5 |
-| Ghost | Deep | drifts at the faller through blocks at 0.5 px/frame, appears from the wall's dark; red | 6 | **red** | 6 |
+| Turtle | Ossuary | walks its surface (stone, a block or a ledge) at 0.6 px/frame, turning at a wall or an edge (it never walks off); its shell stops bullets from above (stomp it) | — | yes | 3 |
+| Frog | Ossuary | sits; every 90 frames, with the faller within 128 px, hops at them (1.2 px/frame across, 3.2 up, gravity 0.2) | 2 | yes | 2 |
+| Blob | Ossuary | floats, drifting at the faller at 0.4 px/frame (stone stops it); splits into two small ones (1 HP, 1 gem, 0.6 px/frame) when killed | 3 | yes | 4 |
+| Jellyfish | Cistern | pulses up at 1.2 px/frame every 90 frames, sinking at 0.3 between; drifts towards the faller's column at 0.2; red | 3 | **red** | 4 |
+| Turret | Cistern | set in a side wall; while on the screen, fires a red ball at the faller every 120 frames, at 1 px/frame; the ball hurts and stops at stone | 4 | yes | 5 |
+| Ghost | Deep | fades in for 40 frames (harmless, and bullets pass), then drifts at the faller at 0.5 px/frame through stone and blocks; red | 6 | **red** | 6 |
 
 Enemies wake when they come within 160 px below or 48 px above the faller, and are removed 64 px above the top of the
-screen. At most **24 enemies** and **8 enemy shots** at once.
+screen. At most **24 enemies** are awake and **8 enemy shots** fly at once. The speeds above are the first loop's; each loop
+adds 10 %.
 
 ## 8. Gun modules
 
@@ -312,7 +324,7 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
 
 | Asset | Budget |
 |---|---|
-| Code | 27.4 KB now (step 2, packed without comments: `"strip": true`); planned up to about 56 KB of the 64 KB limit (`"mangle"` too if needed); chunks in ROM, not code (`node tools/check.js vertical-fall`) |
+| Code | 34.4 KB now (step 3, packed without comments: `"strip": true`); planned up to about 56 KB of the 64 KB limit (`"mangle"` too if needed); chunks in ROM, not code (`node tools/check.js vertical-fall`) |
 | ROM | `rom/chunks.bin`: about 40 chunks of 9 × 12 cells, about 3 KB |
 | Tiles | about 650 of 1,024: four areas' blocks and walls (about 200), the faller (about 60), enemies (about 150), bullets, gems, items, upgrades and the HUD (about 120), the title (about 100) |
 | Sprites | at most about 90 in OAM: the faller 1, enemies 24, enemy shots 8, bullets 16, gems 32, sparks 8; at most 32 a line (a test of a busy screen) |
@@ -382,6 +394,32 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
    119 tiles.
 3. **Enemies:** the whole roster of section 7, the red rule, enemy shots, waking and removing, the caps; spawn by area
    and loop.
+
+   **Built.** `code.js`: `KINDS` holds every enemy's HP, gems, size and whether it is red or has a shell; each kind moves
+   with a small function (`moveSnail` for both snails, `moveTurtle` and `moveFrog` on `body`, the shared gravity and
+   landing of walkers, `drift` for blobs and ghosts, `moveJelly`, `turret`), and `touch` keeps the red rule. Enemy shots
+   (`shots`, `updateShots`). Places and kinds: `makeLevel` lists the test layout's places (under, top, open, wall),
+   `spawn` draws a kind for the area and loop, and the fill rises by level and loop; `pace` speeds every enemy each loop.
+   A banner names each new area. Bats now give up after 3 seconds of chasing. `art.py`: the spiked snail (and on a wall),
+   the turtle (two steps), the frog (sitting, hopping), the blob and its halves, the jellyfish (two pulses), the turret,
+   its ball, the ghost (two frames); the enemies' palette gained a red ramp. Tests: `05-enemies.mjs` (the table, the red
+   rule for each red kind, the turtle's shell and walk, the frog's hops, the blob's split, the jellyfish's pulses, the
+   turret, its balls and the cap of 8, the ghost's fade, the bat giving up, the areas' kinds, the fill and the pace by
+   level and loop, the share of spiked snails, the banner, the cap of 24, a crowded screen's frame time). The bot shoots
+   red enemies only when in line with nothing between (and keeps its distance otherwise), stomps turtles, moves away from
+   where a ball will be, and does not slow down with a bat behind it; `--set start=7` sweeps one area.
+
+   **Results.** The tests pass; a crowded screen (24 enemies, 4 turrets) runs at 3.6 ms at the 99th percentile with 48
+   sprites. The first sweep found the bot stuck at 260 m, firing for ever at two bats hanging under the stone below it
+   (its bullets hit the stone and each landing reloaded it): the bot now fires only with a clear line. Bats were the
+   commonest hit from above, which the faller can neither stomp nor shoot, hence the 3 seconds of chasing. The test layout
+   had first offered two places for every stone cell (under and on top), twice step 2's enemies; it now offers one. The
+   sweep at skill 1, 6 seeds, three levels from the start of each area with 4 HP and nothing else: the Shaft, 5 of 6
+   through (1.5 hits); the Ossuary, 3 of 6; the Cistern and the Deep, none (all die in the first or second level; the
+   commonest hits are turret balls, bats and blobs from the side). That is harsher than a real run, which reaches the
+   Cistern with six levels of upgrades and combo hit points, but it says the later areas are too hard as they stand;
+   tuning them is step 8, once step 4's chunks set where enemies go and step 5's upgrades and shops are in. Code 34.4 KB
+   packed (52 %); 169 tiles.
 4. **Content:** `chunks.py` and `rom/chunks.bin`; the seeded level generator; the four areas and the loop; each level's
    floor; the Daily well's seed.
 5. **Items and flow:** the upgrade room and the ten upgrades, the gun modules, side rooms (shop, module, cache) with

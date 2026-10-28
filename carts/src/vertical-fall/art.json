@@ -66,7 +66,10 @@
     "pale0": 2,
     "pale1": 3,
     "pale2": 4,
-    "pale3": 5
+    "pale3": 5,
+    "red0": 7,
+    "red1": 8,
+    "red2": 9
    }
   },
   "spr3": {
@@ -145,6 +148,11 @@
    "size": 16,
    "tile": 260
   },
+  "ball": {
+   "pal": 2,
+   "size": 8,
+   "tile": 279
+  },
   "bat0": {
    "pal": 2,
    "size": 16,
@@ -163,12 +171,22 @@
   "biggem": {
    "pal": 3,
    "size": 8,
-   "tile": 279
+   "tile": 281
   },
   "bigshot": {
    "pal": 1,
    "size": 8,
    "tile": 264
+  },
+  "blob": {
+   "pal": 2,
+   "size": 16,
+   "tile": 320
+  },
+  "blobling": {
+   "pal": 2,
+   "size": 8,
+   "tile": 278
   },
   "bullet": {
    "pal": 1,
@@ -180,10 +198,40 @@
    "size": 8,
    "tile": 263
   },
+  "frog0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 300
+  },
+  "frog1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 302
+  },
   "gem": {
    "pal": 3,
    "size": 8,
-   "tile": 278
+   "tile": 280
+  },
+  "ghost0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 328
+  },
+  "ghost1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 330
+  },
+  "jelly0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 322
+  },
+  "jelly1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 324
   },
   "puff": {
    "pal": 1,
@@ -205,13 +253,38 @@
    "size": 16,
    "tile": 290
   },
+  "spiky": {
+   "pal": 2,
+   "size": 16,
+   "tile": 292
+  },
+  "spikyw": {
+   "pal": 2,
+   "size": 16,
+   "tile": 294
+  },
   "stand": {
    "pal": 0,
    "size": 16,
    "tile": 256
+  },
+  "turret": {
+   "pal": 2,
+   "size": 16,
+   "tile": 326
+  },
+  "turtle0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 296
+  },
+  "turtle1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 298
   }
  },
  "tiles": {},
- "used": 119,
+ "used": 169,
  "version": 1
 }

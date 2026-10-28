@@ -8,20 +8,29 @@
 // out; it fires at a block in the way; it fires now and then to slow down. On the ground it jumps at an enemy in its way
 // (to land on it), walks to the nearest gap, and drops through ledges. `skill` (0 to 1) is how often it notices an enemy in
 // time (and an enemy at its side, to move away from) and how often it fires to slow down. A run is `levels` levels (3 by default). It reports the levels reached, the
-// score, gems, kills, hits taken, the best combo and a run that gets stuck (no new depth for 20 seconds).
+// score, gems, kills, hits taken, the best combo and a run that gets stuck (no new depth for 20 seconds). Red enemies it
+// only shoots (out of ammo it keeps away from them); turtles it only stomps; it moves away from enemy shots as from an
+// enemy at its side. --set start=7 sweeps the Cistern (levels 7 to 9).
 import { M, newGame as boot } from './lib.mjs';
 
 export const defaults = { frames: 30000, seeds: 6, set: { skill: [0.5, 1] } };
 
 export const newGame = (seed) => boot(seed); // skipTitle: straight into play
 
-let last = 0, lastDepth = 0, stuckAt = -1, hitsTaken = 0, lastHp = 4, problems = [], fired = false;
-export function setup() { last = 0; lastDepth = 0; stuckAt = -1; hitsTaken = 0; lastHp = 4; problems = []; fired = false; }
+let last = 0, lastDepth = 0, stuckAt = -1, hitsTaken = 0, lastHp = 4, problems = [], fired = false, first = 1, levels = 3;
+/** opts.start: the level to start on (to sweep one area: --set start=7); opts.levels: how many levels a run is. */
+export function setup(vm, p, opts) {
+  last = 0; lastDepth = 0; stuckAt = -1; hitsTaken = 0; lastHp = 4; problems = []; fired = false;
+  first = opts.start ?? 1; levels = opts.levels ?? 3;
+  if (first > 1) p.startAt(first);
+}
 
 /** How far down the well is open below column c from row r (stone and blocks stop it; ledges do not). */
 function drop(p, c, r) { let n = 0; while (n < 40 && !isSolid(p, p.cellAt(c, r + n))) n++; return n; }
 const isSolid = (p, k) => k === p.K.STONE || k >= p.K.BREAK;
 const chance = (frame, k, v) => ((frame * 37 + k * 11) % 100) / 100 < v;
+/** Nothing solid between the faller and an enemy straight below it (a bullet would reach it). */
+function clear(p, x, y0, y1) { const K = p.K; for (let y = y0; y < y1; y += 8) if (isSolid(p, p.cellAt(Math.floor(x / K.CELL), Math.floor(y / K.CELL)))) return false; return true; }
 
 export function pad(vm, p, frame, opts) {
   const K = p.K, f = p.me, skill = opts.skill ?? 1;
@@ -44,6 +53,7 @@ export function pad(vm, p, frame, opts) {
     if (dy > -8 && dy < 110 && Math.abs(dx) < 48 && (!foe || dy < foe.y - fy)) foe = e;
   }
   if (foe && !chance(Math.floor(frame / 30), 3, 0.3 + 0.7 * skill)) foe = null;
+  const red = foe && p.KINDS[foe.kind].red, shell = foe && p.KINDS[foe.kind].shell;
 
   let goal = col, bestDrop = -1;
   for (let c = 1; c < K.CELLS - 1; c++) {
@@ -51,12 +61,17 @@ export function pad(vm, p, frame, opts) {
     if (d > bestDrop) { bestDrop = d; goal = c; }
   }
   let gx = goal * K.CELL + K.CELL / 2;
-  if (foe && !f.ground) gx = foe.x;
+  // At an enemy below: onto it to stomp or over it to shoot; a red one only while there is ammo to shoot it with (out of
+  // ammo, the bot keeps away from it).
+  // A red one close below and not yet in line is kept at arm's length (a person lines up a shot from a distance).
+  const wide = (e) => (e.x > mid ? e.x - 30 : e.x + 30);
+  if (foe && !f.ground) gx = red && (f.ammo === 0 || (foe.y - fy < 36 && Math.abs(foe.x - mid) > 6)) ? wide(foe) : foe.x;
   let m = Math.abs(gx - mid) > 2 ? M(gx > mid ? 'RIGHT' : 'LEFT') : 0;
 
   // An enemy level with the faller and close at the side (it cannot be stomped or shot from there): move away from it,
   // if the bot notices in time.
-  const side = p.enemies.find((e) => e.awake && !e.dead && Math.abs(e.x - mid) < 26 && e.y - fy > -24 && e.y - fy < 10);
+  const side = p.enemies.find((e) => e.awake && !e.dead && Math.abs(e.x - mid) < 26 && e.y - fy > -24 && e.y - fy < 10)
+    || p.shots.find((s) => Math.abs(s.x + s.vx * 12 - mid) < 20 && Math.abs(s.y + s.vy * 12 - fy) < 20); // where a ball will be
   if (side && chance(Math.floor(frame / 20), 5, 0.2 + 0.8 * skill)) {
     let left = side.x > mid;
     if (left && f.x < K.CELL + 2) left = false; else if (!left && f.x + K.BOX_W > (K.CELLS - 1) * K.CELL - 2) left = true; // cornered
@@ -72,15 +87,17 @@ export function pad(vm, p, frame, opts) {
     return m;
   }
   if (f.ammo > 0) {
-    if (foe && Math.abs(foe.x - mid) < 7 && foe.y > fy) return m | fire();                       // an enemy under the boots
+    if (foe && !shell && Math.abs(foe.x - mid) < 7 && foe.y > fy && clear(p, mid, f.y + K.BOX_H, foe.y - 6)) return m | fire(); // an enemy under the boots
+    if (red && foe.y - fy < 40 && f.vy > 0.5) return m | fire();                                  // a red one close below: hover
     if (p.cellAt(col, row + 1) >= K.BREAK || p.cellAt(col, row + 2) >= K.BREAK) return m | fire(); // a block in the way
-    if (f.vy > 3.5 - skill && chance(frame, 1, skill * 0.25)) return m | fire();                  // slow down
+    const above = p.enemies.some((e) => e.awake && !e.dead && !e.hang && e.y < fy - 8 && e.y > fy - 80 && Math.abs(e.x - mid) < 40);
+    if (!above && f.vy > 3.5 - skill && chance(frame, 1, skill * 0.25)) return m | fire();       // slow down (not with a bat behind)
   }
   return m;
 }
 
-export const finished = (p) => p.state !== 'play' || p.level > 3;
+export const finished = (p) => p.state !== 'play' || p.level >= first + levels;
 
 export function result(p) {
-  return { level: p.level, score: p.score, gems: p.collected, kills: p.kills, combo: p.bestCombo, hits: hitsTaken, died: p.state !== 'play' && p.level <= 3 ? 1 : 0, problems };
+  return { level: p.level, score: p.score, gems: p.collected, kills: p.kills, combo: p.bestCombo, hits: hitsTaken, died: p.state !== 'play' ? 1 : 0, problems };
 }

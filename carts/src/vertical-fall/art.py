@@ -30,7 +30,7 @@ rock = art.palette(1, {'stone': ramp('5a6a8a', 5), 'moss': ramp('3c5a4a', 2), 'b
 back = art.palette(2, {'brick': ['0c0e18', '141826', '1c2232', '262c3e']})   # dark, so the stone in front reads
 hero = art.sprite_palette(0, {'edge': '0a0a12', 'body': ramp('c8d0e0', 3), 'boot': ramp('b02838', 3), 'eye': '0a0a12'})
 shot = art.sprite_palette(1, {'core': 'ffffff', 'glow': ramp('f0d890', 3), 'smoke': ramp('9098a8', 2)})
-foe = art.sprite_palette(2, {'edge': '0a0a12', 'pale': ramp('b8bccc', 4), 'eye': 'f0e070'})        # stompable: pale
+foe = art.sprite_palette(2, {'edge': '0a0a12', 'pale': ramp('b8bccc', 4), 'eye': 'f0e070', 'red': ramp('d02838', 3)})   # pale: stomp it; red: do not touch
 jewel = art.sprite_palette(3, {'edge': '2a0610', 'red': ramp('e02840', 4), 'glint': 'ffffff'})       # gems: red
 
 # --- The cells (BG0) ---
@@ -171,7 +171,8 @@ art.sprite('puff', Img.from_rows([
 ], key={'s': shot.smoke[0], 'S': shot.smoke[1]}), pal=shot, region='spr')
 
 # --- The enemies of step 2: the bat (hanging, wings up, wings down) and the snail (on a floor, and on a wall) ---
-FOE = {'o': foe.edge, '1': foe.pale[0], '2': foe.pale[1], '3': foe.pale[2], '4': foe.pale[3], 'e': foe.eye}
+FOE = {'o': foe.edge, '1': foe.pale[0], '2': foe.pale[1], '3': foe.pale[2], '4': foe.pale[3], 'e': foe.eye,
+       'a': foe.red[0], 'b': foe.red[1], 'c': foe.red[2], 'w': foe.pale[3]}
 def mon(rows): return Img.from_rows(rows, key=FOE)
 art.sprite('bat0', mon([
     '.......oo.......',
@@ -247,6 +248,42 @@ snail = mon([
 ])
 art.sprite('snail', snail, pal=foe, region='spr')
 art.sprite('snailw', snail.rot90(), pal=foe, region='spr')    # on a wall to its left, heading down (fy: up)
+
+# --- Step 3's enemies. Red ones (the spiked snail, the jellyfish, the ghost, the turret's ball) cannot be stomped. ---
+spiky = snail.crop(0, 0, 16, 16)
+for x, y, k in [(4, 2, 'c'), (4, 1, 'b'), (6, 1, 'c'), (6, 0, 'b'), (8, 1, 'c'), (8, 0, 'b'), (10, 2, 'c'), (10, 1, 'b'),
+                (1, 6, 'c'), (0, 6, 'b'), (1, 9, 'c'), (0, 9, 'b'), (12, 5, 'c'), (13, 5, 'b')]:
+    spiky.px[y][x] = FOE[k]
+for y in (4, 5): spiky.px[y][6] = spiky.px[y][7] = foe.red[1]
+art.sprite('spiky', spiky, pal=foe, region='spr')
+art.sprite('spikyw', spiky.rot90(), pal=foe, region='spr')
+TURTLE_TOP = ['................', '................', '................', '................',
+              '.....oooooo.....', '....o344443o....', '...o34o44o43o...', '..o344o44o443o..', '..o3oooooooo3ooo',
+              '.o3333333333o3eo', '.o2222222222o33o', '..oooooooooooooo']
+art.sprite('turtle0', mon(TURTLE_TOP + ['...o22o..o22o...', '...o11o..o11o...', '....oo....oo....', '................']), pal=foe, region='spr')
+art.sprite('turtle1', mon(TURTLE_TOP + ['..o22o....o22o..', '..o11o....o11o..', '...oo......oo...', '................']), pal=foe, region='spr')
+art.sprite('frog0', mon(['................'] * 5 + [
+    '........oo..oo..', '.......o4eoo4eo.', '......o44444444o', '.....o333333333o', '....o3333oooooo.', '...o33333333333o',
+    '..o222222222222o', '.o2222o2222o222o', '.o11oo.o11o.o11o', '..oo....oo...oo.', '................']), pal=foe, region='spr')
+art.sprite('frog1', mon(['................'] * 3 + [
+    '........oo..oo..', '.......o4eoo4eo.', '......o44444444o', '.....o333333333o', '....o3333oooooo.', '...o33333333333o',
+    '..o222222222222o', '.o2222oooooooo..', 'o22o............', 'o1o.............', '.o..............'] + ['................'] * 2), pal=foe, region='spr')
+art.sprite('blob', mon(['................'] * 2 + [
+    '.....oooooo.....', '....o444443o....', '...o44444333o...', '..o4444443333o..', '..o44e44e43332o.', '..o4444444333o..',
+    '..o3444443332o..', '...o33333322o...', '....oo2222oo....', '......oooo......'] + ['................'] * 4), pal=foe, region='spr')
+art.sprite('blobling', mon(['..oooo..', '.o4443o.', 'o4e4e43o', 'o444433o', '.o3332o.', '..oooo..', '........', '........']), pal=foe, region='spr')
+JELLY_TOP = ['................', '.....oooooo.....', '....occcccbo....', '...occwcccbbo...', '..occwccccbbao..', '..occcccccbbao..',
+             '..oaobaobaobao..', '...o.o.o.o.o....']
+art.sprite('jelly0', mon(JELLY_TOP + ['...b.b.b.b.b....', '..b.b.b.b.b.....', '..b.b.b.b.b.....', '...b.b.b.b.b....'] + ['................'] * 4), pal=foe, region='spr')
+art.sprite('jelly1', mon(JELLY_TOP + ['...b.b.b.b.b....', '....b.b.b.b.b...', '....b.b.b.b.b...', '...b.b.b.b.b....'] + ['................'] * 4), pal=foe, region='spr')
+art.sprite('turret', mon(['................'] * 3 + [
+    'ooooooo.........', 'o44443oo........', 'o433333oooooooo.', 'o43ee33o4444443o', 'o43ee33o3333332o', 'o433333oooooooo.',
+    'o32222oo........', 'ooooooo.........'] + ['................'] * 5), pal=foe, region='spr')
+art.sprite('ball', mon(['..oooo..', '.occbbo.', 'occwcbao', 'occcbbao', '.obbbao.', '..oooo..', '........', '........']), pal=foe, region='spr')
+GHOST_TOP = ['................', '.....oooooo.....', '....occcccbo....', '...occcccccbo...', '..occwwccwwcbo..', '..occoaccoacbo..',
+             '..occcccccccbo..', '..occcaaaacbbo..', '..occccccccbbo..', '..obcccccbbbao..', '..oabbobbaobao..']
+art.sprite('ghost0', mon(GHOST_TOP + ['..o.o..o.o..o...', '...a....a...a...'] + ['................'] * 3), pal=foe, region='spr')
+art.sprite('ghost1', mon(GHOST_TOP + ['...o.o..o.o..o..', '....a....a...a..'] + ['................'] * 3), pal=foe, region='spr')
 
 # --- Gems (8 x 8): a small one (1) and a large one (5), red, with a white glint ---
 GEM = {'o': jewel.edge, '0': jewel.red[0], '1': jewel.red[1], '2': jewel.red[2], '3': jewel.red[3], 'w': jewel.glint}

@@ -183,6 +183,7 @@ const sumGems = (p) => p.gems.reduce((a, g) => a + g.v, 0);
 // 10. The gem high.
 {
   const { vm, p, K } = empty(12);
+  for (let c = 1; c < K.CELLS - 1; c++) p.setCell(c, 20, K.STONE); p.restream(); // a floor, so the faller stays in this level
   place(p, 4 * K.CELL, 4 * K.CELL); sfxLog(vm);
   p.takeGem(60, false); ok(!p.high && p.meter === 60, '60 gems fill the meter to 60');
   p.takeGem(45, false); vm.step(0); ok(p.high && p.meter === K.HIGH_AT && sfxLog(vm).some(([n]) => n === p.SFX.high), 'at 100 the faller goes gem high, with its sound (the meter stops at 100)');
@@ -214,17 +215,22 @@ const sumGems = (p) => p.gems.reduce((a, g) => a + g.v, 0);
   p.wallet -= 20; vm.run(1); ok(p.score === p.best + 37, 'spending gems does not lower it');
 }
 
-// 13. The test layouts put enemies where they fit: bats under stone, snails on top.
+// 13. The test layouts put enemies where they fit: bats under stone, crawlers and walkers on top, the rest in the open
+// or, for a turret, against a side wall.
 {
-  const vm = newGame(15), p = vm.probe(), K = p.K; let bats = 0, snails = 0, bad = 0;
-  for (let n = 1; n <= 6; n++) {
+  const vm = newGame(15), p = vm.probe(), K = p.K; let bats = 0, snails = 0, bad = [];
+  for (let n = 1; n <= 12; n++) {
     p.makeLevel(n);
     for (const e of p.enemies) {
-      const c = Math.floor(e.x / K.CELL), r = Math.floor(e.y / K.CELL);
-      if (e.kind === 'bat') { bats++; if (p.cellAt(c, r - 1) !== K.STONE || p.cellAt(c, r) !== K.EMPTY) bad++; }
-      else { snails++; if (p.cellAt(c, r + 1) !== K.STONE || p.cellAt(c, r) !== K.EMPTY) bad++; }
+      const c = e.c0, r = e.r0, open = p.cellAt(c, r) === K.EMPTY;
+      const fits = e.kind === 'bat' ? open && p.cellAt(c, r - 1) === K.STONE
+        : ['snail', 'spiky', 'turtle', 'frog'].includes(e.kind) ? open && p.cellAt(c, r + 1) === K.STONE
+        : e.kind === 'turret' ? open && (c === 1 || c === K.CELLS - 2)
+        : open;
+      if (e.kind === 'bat') bats++; if (e.kind === 'snail') snails++;
+      if (!fits) bad.push(`${e.kind} at ${c},${r} (level ${n})`);
     }
   }
-  ok(bats > 10 && snails > 10 && bad === 0, 'six levels have bats hanging under stone and snails on top of it', `${bats} bats, ${snails} snails, ${bad} misplaced`);
+  ok(bats > 10 && snails > 10 && bad.length === 0, 'twelve levels have bats hanging under stone, snails on top of it, and every enemy where it fits', `${bats} bats, ${snails} snails; ${bad.slice(0, 3).join('; ')}`);
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);
