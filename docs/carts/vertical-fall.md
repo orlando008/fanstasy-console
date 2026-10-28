@@ -1,7 +1,7 @@
 # Vertical Fall: Cart Specification
 
-**Version:** 0.1 (draft: the design agreed with the user at the kickoff)
-**Status:** Steps 1 to 7 built (the vertical slice; blocks, gems, stomps, combos, the gem high; the whole roster of enemies; levels from hand-made chunks; gun modules, upgrades, side rooms, the Daily well; the art; the audio); step 8 (balance, polish, release) is next
+**Version:** 1.0
+**Status:** Built: all eight steps; released to the Library (`carts/vertical-fall.nova.png`). Not yet played by a person: the open questions (section 16) and the songs wait on the user
 **Cart source:** `carts/src/vertical-fall/` → `carts/vertical-fall.nova`
 
 ---
@@ -556,6 +556,24 @@ towards red (up to three loops' worth). The art is made in code by `carts/src/ve
    gems per level, prices against the wallet); then the label, the PNG cart and the Library (`node tools/release.js
    vertical-fall`) and a README row.
 
+   **Built.** Balance by the bot over two loops (`--set levels=24`): the healing cut where the sweeps showed it came from
+   (below); `09-balance.mjs` holds the result (three runs at half skill all die in the first loop, after a level or
+   more). The bot reports what it buys. Released: the label (the title, its logo; `release.js --wait 2000`), the PNG
+   cart, the Library's index (the Arcade shelf), the README row. Three gaps in the shared tools found on the way went to
+   `WORKFLOW-WISHLIST.md` (vertical parallax in `snes.mjs`, a named colour inside a palette, ROM generators in
+   `verify.js`).
+
+   **Results.** The first sweep of two loops (8 seeds): at skill 1 every run came through all 24 levels without dying,
+   taking 51 hits and healing about 2 HP a level; at 0.5 the runs reached level 13.75 on average (3 to 25), at 0.2 level
+   8.25 (one reached 23). Not Downwell-hard. Round 1: Heart Up only once, the shop dearer (heal 40 to 60, heart 150 to
+   250, clip 100 to 120): skill 1 still came through in 4 runs of 6 (46 hits). A trace of where the hit points came from
+   (three runs at skill 1): Knife and Fork 100 (every 4th stomp, and the bot stomps hundreds of enemies a loop), the
+   Apple 38 (offered again every level), the shop 7, Gem Heart 5. Round 2: Knife and Fork heals 1 HP every 10th stomp,
+   at most once a level; the Apple 1 HP, not 2. The sweep (6 seeds, two loops): skill 1 dies at level 14.3 on average
+   (10 to 25; 5 of 6 die, in the second loop or late in the first), 18 hits; skill 0.5 at level 5.2 (2 to 7), skill 0.2 at
+   4.7 (3 to 6). A strong player gathers about 55 gems a level, so about one heal a level at most; a weak one rarely
+   affords one. Code 41.8 KB packed (64 %); PNG payload 35 KB (24 %).
+
 Each step: build it, run `node tools/verify.js` and `node tools/devkit/smoke.mjs vertical-fall` (and `sweep.mjs` after
 the rules or the AI change), write its **Built** and **Results** notes under its number here, commit and push.
 
@@ -566,7 +584,10 @@ Defaults chosen at the kickoff that the user has not confirmed, easy to change:
 - **Extras not picked, for later:** unlockable palettes (gems over many runs unlock other colour schemes), a stats and
   records page (deepest level, best combo, total gems, runs, kills), an attract demo on the title.
 - **The Daily well:** any number of tries a day (the default), or one try a day.
-- **Numbers:** every speed, price and reward above is a first guess, to be set by the bot's sweeps in step 8.
+- **Numbers:** set by the bot's sweeps (step 8), which a person has not checked: Downwell-hard as measured (a perfect
+  bot dies in the second loop, an average one in the Ossuary) may feel harder or easier in the hand.
+- **The songs and the sprites:** made in code and measured, not yet heard or seen in play by a person; the faller and
+  most enemies are still the first sprites (the frog was redrawn in step 6).
 - **The upgrade list** (section 6) and the **modules** (section 8): ten and six, in Downwell's spirit, not a copy of its list.
 - **The area names** (The Shaft, The Ossuary, The Cistern, The Deep): the game's own, not Downwell's.
 - **Buying with DOWN** in a shop, so a jump cannot buy by accident.
