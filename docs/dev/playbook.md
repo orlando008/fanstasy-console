@@ -492,3 +492,28 @@ What building `flow-state` taught (its spec is `docs/carts/flow-state.md`; every
 - **No sound for a failure that the screen already shows** (the miss's splash cut into the music's flow), and nothing that needs the player to see the screen to hear a
   beat. Effects are sampled and soft (0.006 to 0.022 RMS against a song's 0.04 to 0.07); a hit's plink has the pitch class of its note (one effect for each).
 
+
+## 11. A pinball game on this console (Star Cadet Pinball)
+
+What building `star-cadet` taught (its spec is `docs/carts/star-cadet.md`; every point has a test in `tests/carts/star-cadet/`):
+
+- **The physics is a few functions in one block, every number a constant, run 4 substeps a frame.** A ball is a circle; walls are segments, bumpers and flippers circles and capsules;
+  one `collide` pushes the ball out and reflects its speed along the normal, minus the surface's own speed for a flipper (that is what throws it). The feel (gravity, the flippers'
+  speed and bounce) was set by measuring what a flip does in the harness: a tip shot has to reach the top of the table, a shot near the pivot must not.
+- **The art is drawn from the physics' numbers.** `art.py` runs the physics block of `code.js` in node and reads back the walls, ramps and bumpers, so the picture cannot drift from where
+  the ball bounces; a test checks that every wall has a rail. Sprites between the layers: a ramp's ribbon is a background layer of high-priority tiles (SPEC 4.8), the ball on the floor a
+  priority 2 sprite (goes under it), the ball on a ramp priority 3 (over it).
+- **A ramp is a scripted ride, not a second layer of physics.** A ball hit fast enough into the mouth follows a line at a fixed speed and touches nothing; at the end it drops out, or
+  flies on to wherever the rules want it (the gate). Too fast a shot flies over the mouth (that is the orbit).
+- **Let the table tell you what is unreachable.** `tests/carts/star-cadet/aim.mjs` plays every flip once (a ball at rest on a flipper at each distance from the pivot, the flipper pressed)
+  and lists what the ball hits; `missions.mjs` plays each mission from its start at several skills. The first run showed that no flip reached a ramp, the gate or an orbit: the
+  mouths had been put where the geometry looked good, not where the shots land. Move the targets to the shots, and give each shot a window (the ramps 10 px of the flipper, an orbit 2).
+- **A ball must not be able to stand still.** A V between a slanted rail and a wall's end, the top of a post, the flat top of a target bank each held a ball for ever (found by a bot
+  in a long game and by a test that puts a ball at rest on a grid of places: `09-traps.mjs`). Slant what a ball can rest on, and end a wall clear of the rail that meets it.
+  Two slingshots facing each other kept a ball bouncing between them for ever when they kicked it at 7, and at 5.5 (a test with a few starting speeds found the second): at 4.5 gravity wins.
+- **A bot that plays like a person finds what a random one cannot.** Cradle the ball on the raised flipper, let it down, flip when it has rolled to the distance that sends it where the
+  game wants; skill is noise on that distance, a late reaction and a chance to miss. A perfect one is deterministic and loops the easiest shot for ever (78 left ramps in six minutes): use
+  0.95 in a sweep, not 1.
+- **Events make the rules testable without a ball.** Each handler `emit`s what happened (`bump`, `rampL`, `gate`); the lamps and the missions read the events, so a test says "did(p,
+  'rampL', 'rampR')" and checks the rule, and a few tests play the real thing. One list of balls (`bs`, with `ball` the first) is all a multiball needs.
+- **Split a game into songs when its layers rise.** Channels cannot be muted from code, so three songs (pulse, plus a lead, plus drums) follow the rank; the cue is one function called each frame.
