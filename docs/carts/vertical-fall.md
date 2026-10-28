@@ -1,7 +1,7 @@
 # Vertical Fall: Cart Specification
 
 **Version:** 0.1 (draft: the design agreed with the user at the kickoff)
-**Status:** Steps 1 to 4 built (the vertical slice; blocks, gems, stomps, combos, the gem high; the whole roster of enemies, by area and loop; levels from hand-made chunks, the Daily well's seed); step 5 is next
+**Status:** Steps 1 to 5 built (the vertical slice; blocks, gems, stomps, combos, the gem high; the whole roster of enemies; levels from hand-made chunks; gun modules, upgrades, side rooms, the Daily well); step 6 (art) is next
 **Cart source:** `carts/src/vertical-fall/` → `carts/vertical-fall.nova`
 
 ---
@@ -350,7 +350,7 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
 
 | Asset | Budget |
 |---|---|
-| Code | 30.3 KB now (step 4, packed without comments and with short names: `"strip": true` and `"mangle": true`, 45.5 KB of source); planned up to about 56 KB of the 64 KB limit; chunks in ROM, not code (`node tools/check.js vertical-fall`) |
+| Code | 41.5 KB now (step 5, packed without comments and with short names: `"strip": true` and `"mangle": true`); planned up to about 56 KB of the 64 KB limit; chunks in ROM, not code (`node tools/check.js vertical-fall`) |
 | ROM | `rom/chunks.bin`: 34 chunks of 9 × 12 cells, 1,871 bytes |
 | Tiles | about 650 of 1,024: four areas' blocks and walls (about 200), the faller (about 60), enemies (about 150), bullets, gems, items, upgrades and the HUD (about 120), the title (about 100) |
 | Sprites | at most about 90 in OAM: the faller 1, enemies 24, enemy shots 8, bullets 16, gems 32, sparks 8; at most 32 a line (a test of a busy screen) |
@@ -488,6 +488,18 @@ backdrop. The art is made in code by `carts/src/vertical-fall/art.py` (the art t
    and out with the well standing still, the shop and its prices, a module room and the same module again, DAILY WELL
    and its records); the flow and level tests follow the new menu and the upgrade room. The bot takes an upgrade by
    preference, buys health when hurt (or a heart), takes modules and walks into doors beside it.
+
+   **Results.** The tests pass (249 checks). Two things the bot found about the rooms: walking into a door holding LEFT,
+   a person is still holding LEFT inside, which at first threw them straight back out; then a rule of "walk away from
+   the door before you can leave" left anyone who turned round at once stuck at the door. Now leaving takes a new push
+   towards the door, nothing more. Drawn first, the pedestals stood in front of the faller (the earlier sprite of a
+   priority is on top), and the area banner showed inside rooms; both fixed. The whole-loop sweep, 8 seeds, 12 levels
+   from the start: at skill 1 every run comes through all four areas (no deaths; 19 hits a run, made good by the shops,
+   upgrades and combos; 18 rooms; about 2,860 points, 580 gems, 280 kills, best combos 7 to 14); at skill 0.5, 5 runs of
+   8 die, on average at level 9.75 (from 3 to the end). The Deep, which killed every bot that started there with 4 HP,
+   is passable with what a run brings to it. The bot's own stalls (walking into a gem block a cell up, jittering against
+   it) were fixed in the bot. Code 41.5 KB packed (63 %); 436 tiles (the background region 225 of 255: the room took
+   144, so step 6 will need to widen it).
 
 6. **Art pass:** the four areas' blocks, back walls and far layers; the faller and enemies with their animations; gems,
    bullets, the HUD, the title; `snes.mjs` and `colors.mjs --check`.
