@@ -135,5 +135,5 @@ function inRoom(p, frame) {
 }
 
 export function result(p) {
-  return { level: p.level, score: p.score, gems: p.collected, kills: p.kills, combo: p.bestCombo, hits: hitsTaken, died: p.state !== 'play' ? 1 : 0, rooms, problems };
+  return { level: p.level, score: p.score, gems: p.collected, kills: p.kills, combo: p.bestCombo, hits: hitsTaken, died: p.state !== 'play' ? 1 : 0, rooms, bought, problems };
 }

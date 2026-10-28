@@ -260,3 +260,15 @@ cart runs there is nothing on screen but the game.
   from a public domain score.
 - [ ] **A licence check for what a cart ships**: a `SOURCES.md` next to imported scores, art or samples is written by hand (`carts/src/flow-state/scores/SOURCES.md`);
   `check.js` could warn when a cart has imported data and no such file.
+
+## Added while building Vertical Fall (October 2026)
+
+- [ ] **Vertical parallax in `snes.mjs`**: it measures a layer's speed from its sideways scroll only (`l.x`), so a game
+  that scrolls down (a well, a tower) scores 0 for parallax however many layers move at different speeds (Vertical Fall's
+  three scroll at 1, 1/2 and 1/4 of the camera). Track `y` as well, ignoring the jump when a wrapped scroll goes round.
+- [ ] **The art kit warns when a named colour lands inside a palette** (`art.color(index, ...)` in `tools/devkit/art/kit.py`):
+  Vertical Fall's panel fill (entry 200) was also an entry of sprite palette 4 (192 to 207), and the items' grey replaced
+  it without a word; `colors.mjs` caught the effect (muddy panels), not the cause.
+- [ ] **`verify.js` checks a cart's ROM generators**: it compares what `art.py` and `audio.py` write as text, but not the
+  ROM blobs a cart's scripts write (Vertical Fall's `rom/chunks.bin` from `chunks.py`, `rom/areas.bin` from `art.py`;
+  Flow State's `rom/charts.bin`); the cart's tests check them for now.
