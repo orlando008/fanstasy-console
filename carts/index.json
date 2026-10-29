@@ -1,6 +1,16 @@
 {
   "carts": [
     {
+      "name": "duel-at-the-stump",
+      "title": "Duel at the Stump",
+      "author": "Lucy",
+      "description": "Hold to charge and release to flip a knife onto a woodland stump, using green power-meter zones to time single and double flips. Two players share the controls and alternate throws, with separate scores and streaks. First playable version.",
+      "genre": "Arcade",
+      "players": "2",
+      "label": "carts/labels/duel-at-the-stump.png",
+      "png": "carts/duel-at-the-stump.nova.png"
+    },
+    {
       "name": "flow-state",
       "title": "Flow State",
       "author": "NOVA-16",
