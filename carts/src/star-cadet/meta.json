@@ -3,5 +3,6 @@
   "author": "NOVA-16",
   "description": "A pinball table that scrolls: nine ranks, missions, one thumb for each flipper and 1 to 4 players.",
   "genre": "Arcade",
-  "players": "1-4"
+  "players": "1-4",
+  "strip": true
 }

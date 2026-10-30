@@ -22,11 +22,19 @@ ok(ppu.layers[0].y === Math.round(p.camY) && ppu.layers[1].y === Math.round(p.ca
   t.press('DOWN'); t.press('A'); t.run(3); ok(t.probe().state === 'records' && !t.ppu.layers[0].show && !t.ppu.layers[1].show && t.ppu.layers[2].show, 'on the records the table is hidden and the stars show');
 }
 
-// 2. The floor is solid: no hole shows the backdrop anywhere on the table.
+// 2. The deck is glass: most of it is open (deep space shows through), with a grid crossing every 32 px, the three arrow inserts and the
+// sockets of the nine rank lamps painted on it.
 {
-  let holes = 0;
-  for (let y = 0; y < K.TABLE_H; y += 8) for (let x = 0; x < K.TABLE_W; x += 8) if (!cell(flo, x, y)) holes++;
-  ok(holes === 0, 'every cell of the floor has a tile', `${holes} holes`);
+  let holes = 0, cells = 0;
+  for (let y = 0; y < K.TABLE_H; y += 8) for (let x = 0; x < K.TABLE_W; x += 8) { cells++; if (!cell(flo, x, y)) holes++; }
+  ok(holes > cells / 2, 'most of the deck is open, so space shows through it', `${holes} of ${cells} cells open`);
+  let crosses = 0, total = 0;
+  for (let y = 0; y < K.TABLE_H; y += 32) for (let x = 0; x < K.TABLE_W; x += 32) { total++; if (cell(flo, x, y)) crosses++; }
+  ok(crosses === total, 'the grid crosses every 32 px', `${crosses} of ${total}`);
+  const arrows = [[15, 450], [161, 450], [88, 240]].filter(([x, y]) => cell(flo, x, y)).length;
+  ok(arrows === 3, 'the arrows of the two lanes and the gate are painted on it', `${arrows} of 3`);
+  const sockets = p.RANK_LAMPS.filter(([x, y]) => cell(flo, x, y)).length;
+  ok(sockets === 9, 'and a socket under each of the nine rank lamps', `${sockets} of 9`);
 }
 
 // 3. The rails are where the walls are: every 3 px along every wall and wire gate there is a tile of the decor.
@@ -85,7 +93,15 @@ ok(ppu.layers[0].y === Math.round(p.camY) && ppu.layers[1].y === Math.round(p.ca
 }
 
 // 6. The panel and the starfield are not under the table; the budget.
-ok(sta.w === 8 && sta.h === 28 && ppu.layers[2].wrap, 'the starfield is 64 x 224 px and wraps, so it can drift');
+ok(sta.w === 16 && sta.h === 32 && ppu.layers[2].wrap, 'deep space is 128 x 256 px and wraps, so it can drift');
+{
+  const t = newGame(1), q = t.probe(), L = (i) => t.ppu.layers[i].y;
+  for (let i = 0; i < 90; i++) { Object.assign(q.ball, { x: 88, y: 200, vx: 0, vy: 0 }); t.run(1); }
+  const a0 = L(0), a2 = L(2);
+  for (let i = 0; i < 90; i++) { Object.assign(q.ball, { x: 88, y: 560, vx: 0, vy: 0 }); t.run(1); }
+  const d0 = L(0) - a0, d2 = L(2) - a2;
+  ok(d0 > 100 && d2 > 0 && d2 < d0 * 0.6, 'deep space scrolls at under half the table\'s speed (parallax)', `table ${d0} px, space ${d2} px`);
+}
 {
   let tiles = new Set(); for (const e of vm.cart.map) if (e) tiles.add(e & 1023);
   ok(tiles.size <= 479, 'the background uses its own region of the sheet (tiles 1 to 479)', `${tiles.size} tiles`);

@@ -9,11 +9,14 @@
 #
 # The table is drawn from the very numbers the ball bounces off: this script runs the physics block of code.js (the walls, the
 # bumpers, the ramps ...) in node and reads them back, so the picture cannot drift from the game. The layers:
-#   BG1  the floor: a repeating deep-blue plate with a grid, 24 x 80 tiles (192 x 640 px), solid
+#   BG1  the deck: a glass playfield, 24 x 80 tiles (192 x 640 px): a dotted holo-grid and the painted inserts (the lane and gate
+#        arrows, whose colours code.js sets each frame, so they light like lamps without a tile swap; the sockets of the rank
+#        lamps), and nothing else, so deep space shows through it
 #   BG0  the decor: rails, posts, the gate's hole, the ramps' ribbons, arrows and the logo, with holes where the floor shows;
 #        the ramps' cells have the high-priority bit, so a ball on the floor (sprite priority 2) goes under a ramp and a ball on
 #        a ramp (sprite priority 3) goes over it
-#   BG2  a starfield behind the panel, 64 x 224 px, repeating
+#   BG2  deep space, 128 x 256 px, repeating: sparse stars, a far galaxy and a small moon, behind the deck and the panel; it scrolls
+#        at under half the camera's speed (parallax), over a nebula that code.js sets line by line in the backdrop (scanline())
 import json, math, os, subprocess, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *
@@ -42,15 +45,23 @@ art.backdrop('0a0c24')
 
 # --- Palettes ---
 art.color(200, '141c3c', 'GLASS')                                          # the panel's fill, seen through (code.js turns blend on)
-floor = art.palette(1, {'deep': ramp('1c2060', 4), 'grid': '3a4a9c', 'spec': '6a7ad0'})
+# The deck's palette. The grid, the plates and the rim (17 to 22) take the rank's light (code.js: applyRankLight); the insert lamps (23 to 28) are
+# set each frame by code.js (lit, blinking or dark), and their names go in the manifest for it.
+floor = art.palette(1, {'grid': ramp('2c3c90', 3), 'plate': ramp('121838', 2), 'rim': '070818',
+                        'lampL': ['5a2a08', 'f0a030'], 'lampR': ['5a2a08', 'f0a030'], 'lampG': ['4a0c30', 'f04aa0'], 'socket': '1e2650'})
+for role in ('lampL0', 'lampL1', 'lampR0', 'lampR1', 'lampG0', 'lampG1'): art.color(floor.base + getattr(floor, role), floor.hexes[role], 'INS_' + role[4:].upper())
+# The LED scoreboard in the panel (overlay colours: BG palette 7 is free)
+art.color(113, '1c0e06', 'LED_OFF'); art.color(114, 'ff9a20', 'LED_ON'); art.color(115, 'ffe0a0', 'LED_HI'); art.color(116, '050302', 'LED_BG')
 deco = art.palette(2, {'edge': '0c0e24', 'steel': ramp('8e9cc0', 4), 'teal': ramp('2a9ab8', 4), 'amber': ramp('d8901c', 3), 'red': 'd04658', 'cyan': '7ee0f0'})
-stars = art.palette(3, {'void': ramp('0e1038', 3), 'star': 'e8f0ff', 'cyan': '7ee0f0', 'gold': 'f0c860', 'dim': '4a5ab0'})
+stars = art.palette(3, {'star': 'e8f0ff', 'cyan': '7ee0f0', 'gold': 'f0c860', 'dim': '4a5ab0', 'faint': '2a3070',
+                        'gal': ramp('a05ab0', 3), 'moon': ramp('5a3048', 4)})
 ballp = art.sprite_palette(0, {'edge': '0c0e24', 'ball': ramp('9aa8d0', 5), 'white': 'ffffff'})
 flipp = art.sprite_palette(1, {'edge': '0c0e24', 'body': ramp('d04658', 4), 'light': 'f8c0a8', 'steel': ramp('8e9cc0', 3)})
 bump = art.sprite_palette(2, {'edge': '0c0e24', 'rest': ramp('c03a5c', 4), 'hot': ramp('f09a3c', 4), 'cap': ramp('8e9cc0', 3), 'white': 'ffffff'})
 parts = art.sprite_palette(3, {'edge': '0c0e24', 'green': ramp('3aa860', 3), 'gold': ramp('f0c040', 3), 'steel': ramp('8e9cc0', 3),
                                'dim': ramp('6a5a30', 2), 'cyan': ramp('5ad0e8', 2)})
 glow = art.sprite_palette(4, {'warm': ramp('f0a040', 3)})                  # palettes 4 to 7 can be translucent: lights add up
+cool = art.sprite_palette(5, {'blue': ramp('3a90e0', 3)})                  # the ball's trail and the gate's swirl, added too
 
 # --- Drawing helpers ---
 def put(img, x, y, c):
@@ -113,22 +124,49 @@ def sphere(img, cx, cy, r, ramp_, spec=None, edge=None, light=(-0.55, -0.7)):
 
 
 # ===================================================================================================================
-# The floor (BG1): a deep-blue plate, 32 x 32 px repeated, a grid line on each plate and a few specks: 16 different tiles
+# The deck (BG1): glass. A dotted grid every 32 px with a small cross where the lines meet, the painted inserts, and holes elsewhere
 # ===================================================================================================================
-plate = Img(32, 32, floor.deep[1])
-for k in range(32):
-    plate.px[0][k] = floor.grid; plate.px[k][0] = floor.grid
-    plate.px[1][k] = floor.deep[2]; plate.px[k][1] = floor.deep[2]
-for k in range(5):
-    x, y = 4 + int(hsh(k * 7 + 3) % 25), 4 + int(hsh(k * 11 + 1) % 25)
-    plate.px[y][x] = floor.spec if k == 0 else floor.deep[3]
-for k in range(40):                                                         # a faint texture so the plate is not flat
-    x, y = int(hsh(k * 5 + 9) % 30) + 1, int(hsh(k * 3 + 4) % 30) + 1
-    if plate.px[y][x] == floor.deep[1]: plate.px[y][x] = floor.deep[0]
 fl = Img(TW, TH)
-for y in range(0, TH, 32):
-    for x in range(0, TW, 32): fl.blit(plate, x, y)
-art.scene('floor', fl, pal=floor, at=(0, 0), solid=True)
+for y in range(TH):
+    for x in range(TW):
+        gx, gy = x % 32, y % 32
+        if gx == 0 and gy == 0: fl.px[y][x] = floor.grid[2]
+        elif (gx == 0 and gy in (1, 31)) or (gy == 0 and gx in (1, 31)): fl.px[y][x] = floor.grid[1]
+        elif (gx == 0 or gy == 0) and (x + y) % 3 == 0: fl.px[y][x] = floor.grid[0]
+
+def chevrons(img, cx, ay, w, n, pitch, body, core, t=4, slope=0.8):
+    """An arrow insert: n chevrons pointing up, apex of the first at (cx, ay), each w px wide and t thick, on a dark plate with a rim.
+    body/core: the lamp's two roles (core is the middle line of each chevron)."""
+    shape = {}
+    for k in range(n):
+        top = ay + k * pitch
+        for y in range(int(top), int(top + w * slope / 2 + t + 1)):
+            for x in range(int(cx - w / 2), int(cx + w / 2) + 1):
+                dx = abs(x + 0.5 - cx)
+                if dx > w / 2: continue
+                v = y + 0.5 - (top + dx * slope)            # how far into the chevron's band
+                if 0 <= v < t: shape[(x, y)] = core if abs(v - t / 2) < 0.8 and dx < w / 2 - 1.5 else body
+    ys = [y for (_, y) in shape]; xs = [x for (x, _) in shape]
+    for y in range(min(ys) - 3, max(ys) + 4):                                 # the plate: a rounded box behind the chevrons
+        for x in range(min(xs) - 3, max(xs) + 4):
+            ex = max(0, min(xs) - 1 - x, x - max(xs) - 1); ey = max(0, min(ys) - 1 - y, y - max(ys) - 1)
+            d = math.hypot(ex, ey)
+            if d <= 2.2: put(img, x, y, floor.rim if d > 1.2 else floor.plate[1] if (x + y) % 2 else floor.plate[0])
+    for (x, y), c in shape.items():
+        put(img, x, y, c)
+        for ddx, ddy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            if (x + ddx, y + ddy) not in shape and img.px[y + ddy][x + ddx] in (floor.plate[0], floor.plate[1]): put(img, x + ddx, y + ddy, floor.rim)
+
+chevrons(fl, 15, 442, 20, 3, 10, floor.lampL[0], floor.lampL[1])          # the left lane: under its ramp's mouth and lamp
+chevrons(fl, 161, 442, 20, 3, 10, floor.lampR[0], floor.lampR[1])         # the right lane
+chevrons(fl, 88, 230, 24, 3, 11, floor.lampG[0], floor.lampG[1])          # the gate, up past the bumpers
+
+# The sockets of the nine rank lamps (code.js: RANK_LAMPS, sprites), a smile under the ringed planet
+for k in range(9):
+    a = math.radians(160 - k * 17.5)
+    lx, ly = round(96 + 52 * math.cos(a)), round(336 + 30 * math.sin(a))
+    disc(fl, lx, ly, 5.6, lambda x, y, d: floor.rim if d > 4.6 else floor.socket)
+art.scene('floor', fl, pal=floor, at=(0, 0))
 
 # ===================================================================================================================
 # The decor (BG0): everything that is drawn on the table but is not a moving part
@@ -242,20 +280,43 @@ art.scene('decor', lo, pal=deco, at=(24, 0))
 art.scene('decor_hi', hi, pal=deco, at=(24, 0), prio=1)
 
 # ===================================================================================================================
-# The panel's starfield (BG2): 64 x 224, repeating both ways, so it can drift
+# Deep space (BG2): 128 x 256, repeating both ways. Most cells are empty (the nebula in the backdrop shows); the stars are a few
+# kinds of tile scattered by a hash, so a big field costs few tiles; a far galaxy and a small moon
 # ===================================================================================================================
-sf = Img(64, 224, stars.void[0])
-for y in range(224):
-    for x in range(64):
-        if hsh(x * 31 + y * 17) % 97 == 0: sf.px[y][x] = stars.dim
-        if (y // 8) % 7 == 3: sf.px[y][x] = stars.void[1] if (x + y) % 3 else stars.void[0]    # faint bands
+SW, SH = 128, 256
+sf = Img(SW, SH)
+kinds = []                                       # the star tiles: one or two specks each, a few bright ones with a cross
 for k in range(14):
-    x, y = int(hsh(k * 19 + 2) % 60) + 2, int(hsh(k * 23 + 7) % 220) + 2
-    c = (stars.star, stars.cyan, stars.gold)[k % 3]
-    sf.px[y][x] = c
-    if k % 4 == 0:
-        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)): put(sf, x + dx, y + dy, stars.dim)
-art.scene('stars', sf, pal=stars, at=(48, 0), solid=True)
+    t = Img(8, 8)
+    x, y = 1 + hsh(k * 13 + 5) % 6, 1 + hsh(k * 7 + 11) % 6
+    if k < 3:
+        t.px[y][x] = stars.star
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)): t.px[y + dy][x + dx] = stars.dim
+    else:
+        t.px[y][x] = (stars.star, stars.cyan, stars.gold, stars.dim, stars.faint, stars.faint)[k % 6]
+        if k % 3 == 0: t.px[(y + 4) % 8][(x + 3) % 8] = stars.faint
+    kinds.append(t)
+for cy in range(SH // 8):
+    for cx in range(SW // 8):
+        h = hsh(cx * 131 + cy * 977 + 3)
+        if h % 100 < 34: sf.blit(kinds[(h >> 8) % len(kinds)], cx * 8, cy * 8)
+# a far spiral galaxy: an ellipse of dust with a bright core
+gx_, gy_ = 30, 60                                # (x 0 to 63 of the field: the table shows it, the panel shows x 64 to 127)
+for y in range(-7, 8):
+    for x in range(-15, 16):
+        u, v = x * 0.9 + y * 0.6, -x * 0.25 + y * 0.9          # tilted
+        d = math.hypot(u / 13, v / 4.5)
+        arm = math.sin(math.atan2(v, u) * 2 + d * 5)
+        if d < 0.35: c = stars.gal[2]
+        elif d < 0.7: c = stars.gal[1] if arm > -0.3 else stars.gal[0]
+        elif d < 1.0 and arm > 0.2 and (x + y) % 2: c = stars.gal[0]
+        else: continue
+        put(sf, gx_ + x, gy_ + y, c)
+put(sf, gx_, gy_, stars.star)
+# a far planet, dim and rusty (nothing grey and round in the background: that is the ball's look), lit from the upper left
+sphere(sf, 40, 186, 12, stars.moon, edge=None)
+for (mx_, my_, r_) in ((36, 190, 2.0), (44, 181, 1.4), (33, 182, 1.1)): disc(sf, mx_, my_, r_, stars.moon[0])
+art.scene('stars', sf, pal=stars, at=(48, 0))
 
 # ===================================================================================================================
 # Sprites
@@ -338,6 +399,58 @@ for name, on in (('lamp', False), ('lamp_on', True)):
 gl = Img(16, 16)
 disc(gl, 8, 8, 7.5, lambda x, y, d: glow.warm[2] if d < 3 else glow.warm[1] if d < 5.5 else glow.warm[0])
 art.sprite('glow', gl, pal=glow, region='spr')
+
+# Light that adds (palettes 4 and 5): a bumper's ring when it is hit (two sizes, as it spreads), sparks (bright, then fading), the ball's
+# trail (three sizes, each smaller and dimmer behind it)
+for name, r0, r1 in (('ring0', 9.5, 13), ('ring1', 12.5, 15.5)):
+    im = Img(32, 32)
+    disc(im, 16, 16, r1, lambda x, y, d, r0=r0, r1=r1: None if d < r0 else glow.warm[2] if abs(d - (r0 + r1) / 2) < 0.9 else glow.warm[1] if abs(d - (r0 + r1) / 2) < 1.6 else glow.warm[0])
+    art.sprite(name, im, pal=glow, region='spr')
+for name, arm, core in (('spark0', 3, 1), ('spark1', 2, 0)):      # a twinkle: a cross with a hot middle, then a smaller one
+    im = Img(8, 8)
+    for k in range(-arm, arm + 1):
+        c = glow.warm[2] if abs(k) <= core else glow.warm[1] if abs(k) < arm else glow.warm[0]
+        put(im, 4 + k, 4, c); put(im, 4, 4 + k, c)
+    if core: put(im, 3, 3, glow.warm[0]); put(im, 5, 5, glow.warm[0]); put(im, 3, 5, glow.warm[0]); put(im, 5, 3, glow.warm[0])
+    art.sprite(name, im, pal=glow, region='spr')
+for k, rr in enumerate((4.6, 3.6, 2.6)):
+    im = Img(16, 16)
+    disc(im, 8, 8, rr, lambda x, y, d, k=k: cool.blue[max(0, 2 - k)] if d < 1.6 else cool.blue[max(0, 1 - k)])
+    art.sprite('trail%d' % k, im, pal=cool, region='spr')
+
+# The nine rank badges for the panel, 16 x 16: a steel disc with the rank's insignia in gold, chevrons for the first three ranks, bars for
+# the next three, stars for the last three (Fleet Admiral's disc is gold)
+def star5(img, cx, cy, r, c):
+    pts = [(cx + (r if i % 2 == 0 else r * 0.45) * math.sin(math.pi * i / 5), cy - (r if i % 2 == 0 else r * 0.45) * math.cos(math.pi * i / 5)) for i in range(10)]
+    for y in range(int(cy - r) - 1, int(cy + r) + 2):
+        for x in range(int(cx - r) - 1, int(cx + r) + 2):
+            px, py, inside = x + 0.5, y + 0.5, False
+            for i in range(10):
+                (x0, y0), (x1, y1) = pts[i], pts[(i + 1) % 10]
+                if (y0 > py) != (y1 > py) and px < x0 + (py - y0) * (x1 - x0) / (y1 - y0): inside = not inside
+            if inside: put(img, x, y, c)
+for k in range(9):
+    im = Img(16, 16)
+    top = k == 8
+    disc(im, 8, 8, 7.5, parts.edge)
+    disc(im, 8, 8, 6.6, lambda x, y, d: (parts.gold[0] if top else parts.steel[0]) if (x - y) > 3 else (parts.gold[1] if top else parts.steel[1]))
+    ink = parts.edge if top else parts.gold[2]
+    n = k % 3 + 1
+    if k < 3:                                    # chevrons, pointing up
+        for j in range(n):
+            y0 = 5 + j * 3 + (3 - n) * 1.5
+            for x in range(4, 12):
+                yy = int(y0 + abs(x + 0.5 - 8) * 0.6)
+                put(im, x, yy, ink); put(im, x, yy + 1, ink)
+    elif k < 6:                                  # bars
+        for j in range(n):
+            y0 = 8 - n * 1.5 + j * 3
+            for x in range(4, 12): put(im, x, int(y0), ink); put(im, x, int(y0) + 1, ink)
+    else:                                        # stars
+        for j in range(n):
+            sx = 8 + (j - (n - 1) / 2) * (4.2 if n == 3 else 5)
+            star5(im, sx, 8.2, 2.8 if n == 3 else 3.4, ink)
+    art.sprite('badge%d' % k, im, pal=parts, region='spr')
 
 # The spinner: 16 x 16, four frames of a blade turning (seen from above: wide, narrowing to an edge and back)
 for k, wd in enumerate((7, 5, 1, 5)):

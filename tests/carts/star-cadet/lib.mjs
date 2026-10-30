@@ -19,12 +19,13 @@ const PROBE = `__expose(() => ({
   get demo() { return demo; }, get idle() { return idle; }, get newBest() { return newBest; }, startDemo, toTitle, rankLabel, rankNo, readEntry, IDLE_DEMO, DEMO_FRAMES, BEST_SLOT: 1, GAMES_SLOT: 2, INITIALS_SLOT: 3, get wantPlayers() { return wantPlayers; },
   K: { BR, SUB, GRAV, VMAX, WALL_E, FLIP_E, FLEN, FR, REST_A, UP_A, LANE_X, LANE_FLOOR, BALL_HOME, DRAIN_Y, TABLE_W, TABLE_H, VIEW_H }, get ART() { return ART; }, mget: (x, y) => mget(x, y), get rank() { return rank; }, get initials() { return initials; },
   get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
+  get sparks() { return sparks; }, get glare() { return glare; }, get warmth() { return warmth; }, needs, RANK_LAMPS, SKY, get viewY() { return viewY; },
   SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
 }));`;
 
-/** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */
-export const newGame = (seed = 1, { title = false, save = null } = {}) =>
-  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + PROBE });
+/** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. extra: more source for the cart. */
+export const newGame = (seed = 1, { title = false, save = null, extra = '' } = {}) =>
+  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + extra + PROBE });
 export const M = (...names) => names.reduce((m, n) => m | (1 << BTN[n]), 0);
 /** The sfx commands since the last call: [[n, channel], ...]. */
 export const sfxLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'sfx').map((a) => [a[2], a[3]]); vm.audioLog.length = 0; return r; };

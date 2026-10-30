@@ -578,6 +578,11 @@ What building `star-cadet` taught (its spec is `docs/carts/star-cadet.md`; every
 - **Events make the rules testable without a ball.** Each handler `emit`s what happened (`bump`, `rampL`, `gate`); the lamps and the missions read the events, so a test says "did(p,
   'rampL', 'rampR')" and checks the rule, and a few tests play the real thing. One list of balls (`bs`, with `ball` the first) is all a multiball needs.
 - **Split a game into songs when its layers rise.** Channels cannot be muted from code, so three songs (pulse, plus a lead, plus drums) follow the rank; the cue is one function called each frame.
+- **A flat table looks flat; depth and light are nearly free** (the polish pass, `10-lights.mjs`). Make the floor glass (a dotted grid and the inserts, open elsewhere), put deep space behind it on BG2 at under half
+  the camera's speed and a nebula in the backdrop set line by line (`scanline()`, dithered on odd lines), and it floats; `snes.mjs` went from 66 to 88. An insert painted in its own palette entries is a
+  lamp with no tile swap and no sprite: set its colours each frame. Sparks, a ring and a comet's tail are sprites in palettes 4 and 5 that add light; start a bumper's sparks at its rim (from the middle
+  they are lost in its own glow), keep nothing grey and round in the background (it reads as a ball), and fade a flash of the whole table by drawing every line, then every other, then every fourth.
+  A test plays the same game with the light show switched off and checks it ends the same.
 
 ## 12. A stacking game on this console (The Ivory Tower)
 

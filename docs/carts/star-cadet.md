@@ -1,7 +1,7 @@
 # Star Cadet Pinball: Cart Specification
 
-**Version:** 1.0
-**Status:** Built (steps 1 to 8), released in the Library
+**Version:** 1.1 (the polish pass: deep space, lit inserts and the light show)
+**Status:** Built (steps 1 to 8 and a polish pass), released in the Library
 **Cart source:** `carts/src/star-cadet/` → `carts/star-cadet.nova`
 
 ---
@@ -107,7 +107,7 @@ To start a mission: light the three **mission lamps** (two standup targets lit, 
 
 ## 6. Levels or content
 
-One table (section 4), nine missions (section 5). The **look**: a space station table: a deep blue playfield with a pale grid and amber inserts (the lamps), chrome rails, a starfield in the panel; the ranks' insignia are small icons on the panel. The rank also sets the table's **light**: from a dim cool blue at Cadet to a warm bright gold at Fleet Admiral (palette tints, as Flow State did for its times of day).
+One table (section 4), nine missions (section 5). The **look**: a glass table floating in deep space: a dotted holo-grid over a nebula and a field of stars that scroll slower than the table (three depths), arrows painted on the deck that light like lamps for the shots that count, chrome rails, nine rank lamps under the ringed planet, an LED scoreboard and the rank's badge on the panel. The rank also sets the table's **light**: from a cool blue nebula and grid at Cadet to a warm gold one at Fleet Admiral (palette tints, as Flow State did for its times of day).
 
 ## 7. Opponents or hazards
 
@@ -163,7 +163,7 @@ the peaks 0.12 to 0.22, the lead's piercing band 0.003 to 0.007 (the limit is 0.
 
 ## 12. Video layers
 
-BG0 the table (a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the starfield of the panel (parallax), the overlay the panel's text and the message area; sprites: the ball (16 px, with a shadow), the two flippers (rotated frames), the bumpers (rest and hit), the slingshots' rubbers, the targets and the drop targets (up and down), the spinner, the plunger, the ball's shadow on a ramp. Lamps are tile swaps in the map (lit and unlit variants of each insert), so a table of fifty lamps costs no sprites. The rank's light is a set of palette tints.
+BG0 the decor (rails, ramps, the gate, the logo; a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the glass deck under it (the same size: a dotted grid, the three arrow inserts and the sockets of the rank lamps; open elsewhere), BG2 deep space (128 x 256, repeating, at 0.45 of the camera's speed, with a slow drift) behind the deck and the panel, and the backdrop a nebula set line by line in `scanline()` (`paintSky`, `SKY`: at 0.3 of the camera's speed, warmer with the rank); the overlay the panel's text, the LED scoreboard and the message area. Sprites: the ball (16 px) and its comet's tail when it is fast, the two flippers (rotated frames), the bumpers (rest and hit) and their ring of light, sparks, the slingshots' rubbers, the targets and the drop targets (up and down), the spinner, the plunger, the lamps (mission, lane, ramp, kickback and the nine ranks) with their glows, the rank's badge on the panel. The arrows on the deck are lamps without tiles or sprites: their colours (CGRAM 23 to 28, `ART.colors.INS_*`) are set each frame (`lightInserts`). The glows, rings, sparks and tails are in sprite palettes 4 and 5, which add their light to what is under them (`blend`); a rank up, a mission and a jackpot flash the table with lines of the glow's colour that thin out as it fades. The rank's light is a set of palette tints.
 
 ## 13. Persistence (save slots)
 
@@ -180,9 +180,9 @@ BG0 the table (a Map RAM scene of 24 x 80 tiles scrolled by the camera), BG1 the
 
 | Asset | Budget |
 |---|---|
-| Code | 52.2 KB of the 64 KB limit after step 8 (80%: the audio, the flow polish and the balance need a few KB more; `strip` and `mangle` in `meta.json` would give back about a fifth) (`node tools/check.js star-cadet`); `"strip": true` and `"mangle": true` in `meta.json` if it nears the limit |
+| Code | 45.8 KB of the 64 KB limit after the polish pass (70%), packed with `"strip": true` in `meta.json` (the source is 60.7 KB with its comments; it was 52.2 KB after step 8); `"mangle": true` would give back more (`node tools/check.js star-cadet`) |
 | Tiles | 848 of 1,024 after step 6: 465 of the 479 for the background (the floor 16, the decor and ramps about 400, the stars about 40: the table's 1,920 map cells share by repeating and flipping) and 383 of the 544 for sprites (136 of them the logo) |
-| Sprites | 45 of the 128 in OAM in play, at most 11 on a line (of 32): the ball, 2 flippers of 3 to 8 pieces, 3 bumpers, 2 slingshots of 8 pieces, 4 standups, 3 drops, the spinner, the plunger and its spring, up to 7 lamps with their glows. Up to 3 balls with the multiball |
+| Sprites | 45 of the 128 in OAM in play after step 8; the polish adds the nine rank lamps (and their glows), a bumper's ring, up to 18 sparks, three lights of a tail a fast ball and the badge: about 80 in a busy multiball (`10-lights.mjs` checks under 110). Up to 3 balls with the multiball |
 | ROM | the table's data if it is larger than a few KB |
 | Songs / SFX | 7 songs, 35 effects: 16 patterns of 64, 18 instruments of 32, 17.3 KB of the 32 KB of sample RAM |
 
@@ -352,7 +352,32 @@ reaction and a chance to miss. What they found, and the changes (the first numbe
   Library label is the title screen. `README.md` has the final row; `docs/dev/playbook.md` has a section 11 on what this game taught.
 - `tests/carts/star-cadet/09-traps.mjs` and the updated `06-missions.mjs` (the lamps by count, a ramp into the gate, a mission on hold, the new goals) are new; 9 test files in all.
 
+### The polish pass: deep space, lit inserts and the light show
+
+The player's note: "it does not look cool enough". The table was a solid dark-blue plate with a grid, the same 32 px square repeated 120 times, and nothing moved but the parts. What changed (art only: nothing touches the ball or the rules):
+
+- **Built:** `art.py`: the floor became a **glass deck** (a dotted grid with a small cross where the lines meet, the three arrow inserts on dark plates, the nine sockets of the rank lamps; open
+  elsewhere); **deep space** behind it (128 x 256 px: specks of 14 kinds of star tile scattered by a hash, so it costs few tiles; a far galaxy and a dim rusty planet, nothing grey and round, which would
+  read as a ball); sprites for a bumper's **ring of light** (two sizes), **sparks** (a twinkle and a smaller one), the ball's **tail** (three sizes) and the nine **rank badges** (chevrons, bars and stars;
+  gold for Fleet Admiral); the LED's colours (CGRAM 113 to 116). `code.js`, a new section, "the light show": `paintSky` and `scanline()` (the **nebula**: deep blue, violet, rose and teal down the
+  table, dithered line by line, at 0.3 of the camera, warming with the rank), BG2 at 0.45 (parallax), `lightInserts` (the **arrows** light for a shot that would do something now: the lanes while a
+  ramp would light the third mission lamp or count for the mission, the gate while it is open; a lit one blinks, and on the title they chase), `lightShow` (sparks from a bumper's rim, a slingshot or
+  a standup target, at most 18; each ball keeps its last three places for the **tail**), the **flash** (`glare`) at a rank up, a mission and a jackpot, the **rank lamps** (`RANK_LAMPS`: the ranks won
+  lit, the one to win blinking), the **LED scoreboard** (`led`: eight seven-segment digits, the unlit segments faint, more digits if a score needs them; the title shows the high score on it) and the
+  rank's badge beside the map, twinkles on the title's logo, a chrome edge on the panel. `applyRankLight` now tints the deck's grid (CGRAM 17 to 22) and the nebula (`warmth`). `"strip": true` in
+  `meta.json` (the code had grown to 92 % of the limit with its comments; 70 % without).
+- **Tests:** `04-art.mjs` (the deck is open, the grid, the arrows and the sockets are on it; deep space scrolls at under half the table's speed) and a new `10-lights.mjs`: the nebula (a colour a
+  line, dark, moving with the camera, warming with the rank, on the screen), the arrows (lit for the shots that count, dark otherwise, blinking, chasing on the title), a bumper's sparks (from its rim,
+  outwards, gone after their time, never more than 18) and ring, the tail (three lights under a fast ball, none on a slow one), the flash and the rank lamps, the LED (eight and nine digits), and that
+  a game of two minutes plays the same with the light show on and off; frames under 8 ms in a multiball.
+- **Results:** `snes.mjs` scores the table 88 of 100 (66 before: the backdrop was one colour, now 21 on a screen; 113 colours on a screen, 48 before); `colors.mjs --check` within its limits; the soak
+  and `smoke.mjs` clean; the frames 3.4 ms at the 99th percentile in a multiball. The bot (`bot.mjs`) scores nothing in a sweep, on `main` as on this branch: it no longer plays (its three balls drain in
+  about half a minute without touching anything), a problem from before this pass, under Open questions. The label is the new title screen.
+
 ## 16. Open questions
+
+- **The bot no longer plays.** `node tools/devkit/sweep.mjs star-cadet` gives a score of 0 at every skill, on `main` too (found in the polish pass, which did not change the rules): something in the
+  bot or what it reads has drifted since step 8. To mend before the next change to the rules or the physics, which the sweep is there to check.
 
 - **How the physics feels.** The numbers of section 5 are the usual ones for a pinball of this size, but only a person can say whether the ball is too floaty or too heavy; step 1 builds a table to play on first, and the numbers are constants in one place.
 - **Ramps.** Settled in step 2: a ramp is a scripted ride (the ball follows a line over the table and touches nothing), not a second layer of physics.
