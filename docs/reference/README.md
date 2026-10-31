@@ -9,6 +9,7 @@ clumps, a character's proportions) shapes every head and figure the kit draws, a
 | `heads-neutral.png` | One head, three-quarters and profile, in five flat tones (base, shadow, deep shadow, light, line) | `templates/heads.json`: `head(style='shaggy')`, neutral |
 | `heads-expressions.png` | The same head angry, hurt and shouting, in both views | `templates/heads.json`: the expressions |
 | `fighter-model-sheet.png` | A 96 px fighter: the model, front, three-quarter, side and back views, a guard and a punch, the palette and proportions | the figure's proportions, outfit and fighting poses (in progress) |
+| `dungeon-crawl-table.webp` | The user's picture of the Dungeon Crawl Pinball table (October 2026): the layout (two curling ramps, the side cubbies with keys, the x3 and x10 slots behind gates at the top, the upper flipper, the lava pit with the levels and the Boss), the colours and the mood | `docs/carts/dungeon-crawl.md`: the table's layout (section 4) and the look (sections 6 and 12) |
 
 `ai-sprite-engine-spec.md` is a specification the user supplied for a text-authored sprite engine (ASCII grids, layered
 parts, polygons; a review loop and a rubric). The art kit has taken its useful ideas rather than building it: strict
