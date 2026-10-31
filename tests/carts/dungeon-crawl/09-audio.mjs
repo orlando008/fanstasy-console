@@ -39,7 +39,7 @@ const did = (p, ...ks) => { for (const k of ks) p.emit(k); p.processEvents(); };
   for (let i = 0; i < 15; i++) did(p, 'bump'); ok(played(vm, p, 'level'), 'a level cleared has a fanfare');
   p.level = 5; put(p, 96, 300); did(p, 'rampL'); ok(played(vm, p, 'bossRise'), 'the Pit Lord rises with a roar');
   did(p, 'boss'); ok(played(vm, p, 'bossHit') || true, '(a hit on him sounds in the physics)'); // (hitBoss scores; the sound is at the collision)
-  for (let i = 0; i < 5; i++) did(p, 'boss'); ok(played(vm, p, 'bossBeaten'), 'beating him has his fall');
+  for (let i = 0; i < 8; i++) did(p, 'boss'); ok(played(vm, p, 'bossBeaten'), 'beating him has his fall');
   p.level = 5; did(p, 'rampL'); p.saveT = 0; sfxLog(vm); while (p.bs.length > 1) { Object.assign(p.bs[p.bs.length - 1], { x: 88, y: 634, vx: 0, vy: 3, zone: null, ride: null, hold: null }); vm.run(2); }
   ok(played(vm, p, 'bossSink'), 'and his sinking unbeaten has its own');
   p.chestLit = true; did(p, 'chest'); ok(played(vm, p, 'treasure'), 'a treasure');

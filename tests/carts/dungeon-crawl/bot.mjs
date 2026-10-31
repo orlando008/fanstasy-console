@@ -17,7 +17,7 @@
 import { M, newGame as boot } from './lib.mjs';
 import { shot, rolled, OFFSETS, ROLL } from './aim.mjs';
 
-export const defaults = { frames: 24000, seeds: 4, set: { skill: [0.5, 0.8, 0.95] } };
+export const defaults = { frames: 36000, seeds: 4, set: { skill: [0.5, 0.8, 0.95] } };
 
 let seed = 1;
 export const newGame = (s, opts = {}) => { seed = s; return boot(s, { quiet: !!opts.quiet }); }; // skipTitle: straight into play (quiet: no drawing, for 06-bot.mjs)
@@ -121,7 +121,7 @@ export function pad(vm, p, frame, opts) {
   return (want[0] ? M('LEFT') : 0) | (want[1] ? M('A') : 0);
 }
 
-const MAX_FRAMES = 8 * 60 * 60; // eight minutes: a game of three balls is over long before, unless the bot is very good
+const MAX_FRAMES = 10 * 60 * 60; // ten minutes: a game of three balls is over long before, unless the bot is very good
 export const finished = (p) => !['play', 'turn', 'bonus'].includes(p.state) || frames >= MAX_FRAMES;
 
 export function result(p) {

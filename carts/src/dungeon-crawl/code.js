@@ -429,16 +429,16 @@ function castSpell(m) {
 
 /** The levels: a name, what the goal counts (an event, through GOAL_OF), its count at depth 1, and the word for the banner. */
 const LEVELS = [
-  { name: 'THE GATEHOUSE', k: 'bump', n: 15, what: 'BUMPERS' },
-  { name: 'THE CRYPT', k: 'ramp', n: 4, what: 'RAMPS' },
-  { name: 'THE ARMOURY', k: 'standupLit', n: 4, what: 'TARGETS' },
+  { name: 'THE GATEHOUSE', k: 'bump', n: 6, what: 'BUMPERS' },
+  { name: 'THE CRYPT', k: 'ramp', n: 2, what: 'RAMPS' },
+  { name: 'THE ARMOURY', k: 'standupLit', n: 3, what: 'TARGETS' },
   { name: 'THE DEEP VAULT', k: 'cubby', n: 2, what: 'CUBBIES' },
 ];
 const GOAL_OF = { bump: 'bump', rampL: 'ramp', rampR: 'ramp', standupLit: 'standupLit', cubbyL: 'cubby', cubbyR: 'cubby' };
 /** A level's count at this depth: half as much again each depth deeper. */
 const goalOf = (lv) => Math.ceil(LEVELS[lv - 1].n * (1 + 0.5 * (depth - 1)));
 const LEVEL_PTS = 100000, JACKPOT = 250000, BOSS_PRIZE = 2000000, TREASURE_PTS = 50000, TREASURE_SAVE = 20 * 60;
-const bossHp = () => 6 + 2 * (depth - 1);
+const bossHp = () => 9 + 2 * (depth - 1);
 const showBanner = (a, b) => { banner = { a, b, t: 150 }; };
 
 /** A level's goal reached: its prize, its plaque in the pit, the chest lit, and the next level (after the fourth, the Boss is lit). */
@@ -446,6 +446,7 @@ function completeLevel() {
   award(LEVEL_PTS * level * depth); ballStats.level++; stats.levels++; chestLit = true; goalN = 0;
   showBanner(`${LEVELS[level - 1].name} CLEARED`, level < 4 ? `DOWN TO LEVEL ${level + 1}` : 'THE PIT LORD AWAITS: A RAMP');
   level++; fx(SFX.level);
+  if (LEVELS[level - 1]?.k === 'standupLit') for (const q of STANDUPS) q.lit = false; // (the Armoury starts with its targets dark: lit before, they would not count)
 }
 
 /** The Boss fight: a ramp shot with the Boss lit. Two more balls come out of the slots' alcoves; 12 seconds of ball save for all three. */

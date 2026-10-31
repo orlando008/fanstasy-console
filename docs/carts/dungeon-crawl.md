@@ -130,15 +130,15 @@ count is the base count x (1 + 0.5 x (depth - 1)), rounded up, so each depth ask
 
 | Level | Name | Goal (depth 1) |
 |---|---|---|
-| 1 | The Gatehouse | 15 pop bumper hits |
-| 2 | The Crypt | 4 ramp shots (either ramp) |
-| 3 | The Armoury | all four standup targets (each counts once, then they start again) |
+| 1 | The Gatehouse | 6 pop bumper hits |
+| 2 | The Crypt | 2 ramp shots (either ramp) |
+| 3 | The Armoury | 3 standup targets lit (the bank goes dark as the level begins; a target counts as it lights, and when all four are lit they start again) |
 | 4 | The Deep Vault | 2 cubby entries (with or without a key) |
 | Boss | The Pit Lord | lit by the fourth level: a **ramp shot starts the fight** |
 
 Completing a level scores 100,000 x the level x the depth, lights its plaque in the pit and lights the treasure. The **Boss fight**
 is a **multiball**: two more balls come out of the slots' alcoves (12 seconds of ball save for all three), the Boss rises from the
-lava, and each hit on it is a **jackpot** of 250,000 x the depth. It takes 6 hits at depth 1, two more at each depth after. When
+lava, and each hit on it is a **jackpot** of 250,000 x the depth. It takes 9 hits at depth 1, two more at each depth after. When
 the last hit lands, the Boss sinks: 2,000,000 x the depth, the depth goes up by one and the level is 1 again. If the multiball ends
 first (one ball left), the Boss sinks unbeaten and stays lit: another ramp shot starts the fight again, from full health.
 
@@ -471,7 +471,7 @@ Defaults chosen in the kickoff that the user did not confirm, and the extras not
 - **A spell lasts 30 seconds**; a second slot during a spell takes the greater multiplier and starts its time again (they do not stack).
 - **The plunger's zones**: the middle zone 0.50 to 0.68 (about 0.18 s of holding) pays 50,000; a full pull is easy and pays 25,000 but
   feeds the upper flipper. The widths are constants, to tune by playing.
-- **The levels' goals and the Boss's health** (section 5), and half as much again each depth; to tune with the bot in step 8.
+- **The levels' goals and the Boss's health** (section 5) were set with the bot in step 8; play may move them (they are `LEVELS` and `bossHp` in `code.js`).
 - **Not picked, for later:** an **attract mode** (the table plays itself on the title), **nudge and tilt** (L and R), difficulty
   settings.
 - **The upper flipper's place** follows the picture (right side, under the x3 slot); step 2 may move it to where its shots reach both

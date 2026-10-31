@@ -70,11 +70,11 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy,
 // 5. The bonus: what the ball did, times the depth, counted on its own screen; a press skips the counting.
 {
   const { vm, p } = game();
-  for (let i = 0; i < 10; i++) did(p, 'bump');
+  for (let i = 0; i < 5; i++) did(p, 'bump'); // (five: the sixth would clear Level 1)
   did(p, 'rampL', 'cubbyL', 'slot3');
   p.depth = 2; const s0 = p.score;
   put(p, 88, 634, 0, 3); vm.run(3);
-  const B = p.BONUS_PTS, base = 10 * B.bump + B.ramp + B.cubby + B.slot;
+  const B = p.BONUS_PTS, base = 5 * B.bump + B.ramp + B.cubby + B.slot;
   ok(p.state === 'bonus' && p.bonusRes.base === base && p.bonusRes.total === base * 2, 'the bonus is 100 a bumper, 5,000 a ramp, 10,000 a cubby, 25,000 a slot, times the depth', `${p.bonusRes.base} x ${p.bonusRes.depth}`);
   ok(p.score - s0 === base * 2, 'and is added to the score (with no spell on it)', `${p.score - s0}`);
   vm.run(20); vm.press('A'); ok(p.timer >= p.BONUS_COUNT, 'a press skips the counting');
