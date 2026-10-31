@@ -6,7 +6,7 @@ let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 
 function play(seed, opts, frames = 30000) {
-  const vm = bot.newGame(seed), p = vm.probe();
+  const vm = bot.newGame(seed, { quiet: true }), p = vm.probe(); // (no drawing: the rules never depend on it, and it is 4 times faster)
   bot.setup(vm, p, opts);
   let f = 0; for (; f < frames && !bot.finished(p); f++) vm.step(bot.pad(vm, p, f, opts));
   return { ...bot.result(p), done: bot.finished(p) };

@@ -120,7 +120,7 @@ const until = (vm, p, f, n = 300) => { for (let i = 0; i < n; i++) { vm.run(1); 
 
 // 10. No place on the table holds a ball still: put down at rest on a grid of places, a ball must be moving (or gone) 4 seconds later.
 {
-  const { vm, p } = game(), traps = []; let tried = 0;
+  const vm = newGame(1, { quiet: true }), p = vm.probe(), traps = []; let tried = 0; vm.run(2);
   for (let y = 20; y < 612; y += 24) for (let x = 8.37; x < 176; x += 14) {
     put(p, x, y); p.balls = 3; let movedAt = -1; tried++;
     for (let f = 0; f < 150; f++) {

@@ -20,7 +20,7 @@ import { shot, rolled, OFFSETS, ROLL } from './aim.mjs';
 export const defaults = { frames: 24000, seeds: 4, set: { skill: [0.5, 0.8, 0.95] } };
 
 let seed = 1;
-export const newGame = (s) => { seed = s; return boot(s); }; // skipTitle: straight into play
+export const newGame = (s, opts = {}) => { seed = s; return boot(s, { quiet: !!opts.quiet }); }; // skipTitle: straight into play (quiet: no drawing, for 06-bot.mjs)
 
 // --- The maps of the shots: for each flipper, where on it (px from the pivot) the ball goes; one with the slots open, one in the Boss fight ---
 // (a ball let down from a cradle on a lower flipper uses the rolling map: where the ball is when the button is pressed)

@@ -11,7 +11,7 @@ export const OFFSETS = { 0: [4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34], 1: [4, 7
 /** The events (in order, first time only) that follow a flip of flipper k from a ball resting at distance r from its pivot. boss: with the
  *  Boss risen from the pit (his target in the way). */
 export function shot(k, r, frames = 200, gates = [true, true], boss = false) {
-  const vm = newGame(1), p = vm.probe(); vm.run(2); p.bossUp = boss;
+  const vm = newGame(1, { quiet: true }), p = vm.probe(); vm.run(2); p.bossUp = boss;
   const f = p.flips[k], K = p.K, a = K.REST_A, s = f.s;
   const d = [s * Math.cos(a), Math.sin(a)], up = [s * Math.sin(a), -Math.cos(a)], lift = K.BR + K.FR + 0.4;
   p.gates = gates.slice();
@@ -31,7 +31,7 @@ export function shot(k, r, frames = 200, gates = [true, true], boss = false) {
  *  button pressed when the ball has rolled to r. The ball keeps rolling while the flipper rises (4 frames), so these differ from shot(). */
 export const ROLL = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 export function rolled(k, r, frames = 200, gates = [true, true], boss = false) {
-  const vm = newGame(1), p = vm.probe(); vm.run(2); p.bossUp = boss; p.gates = gates.slice();
+  const vm = newGame(1, { quiet: true }), p = vm.probe(); vm.run(2); p.bossUp = boss; p.gates = gates.slice();
   const f = p.flips[k], K = p.K, key = f.hand ? M('A') : M('LEFT'), s = f.s;
   const u = K.UP_A, d = [s * Math.cos(u), Math.sin(u)], up = [s * Math.sin(u), -Math.cos(u)], lift = K.BR + K.FR + 0.4;
   Object.assign(p.ball, { x: f.x + d[0] * 8 + up[0] * lift, y: f.y + d[1] * 8 + up[1] * lift, vx: 0, vy: 0 });

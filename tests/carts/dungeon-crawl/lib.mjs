@@ -15,7 +15,7 @@ const PROBE = `__expose(() => ({
   get keys() { return keys; }, set keys(v) { keys = v; }, get cubbyKey() { return cubbyKey; }, set cubbyKey(v) { cubbyKey = v; }, get spell() { return spell; }, set spell(v) { spell = v; },
   get saveT() { return saveT; }, set saveT(v) { saveT = v; }, get saved() { return saved; }, get players() { return players; }, get cur() { return cur; }, get nPlayers() { return nPlayers; }, set nPlayers(v) { nPlayers = v; },
   get depth() { return depth; }, set depth(v) { depth = v; }, get level() { return level; }, set level(v) { level = v; }, get bonusRes() { return bonusRes; }, get ballStats() { return ballStats; },
-  get newDeepest() { return newDeepest; }, titleCam, readEntry, get hl() { return hl; }, get wantPlayers() { return wantPlayers; }, VERSION_SLOT, SAVE_VERSION, setGates, castSpell, processEvents, emit, KEY_PTS, SPELL_TIME, SAVE_FRAMES, BONUS_PTS, BONUS_COUNT, BALLS, DEEPEST_SLOT: 2, GAMES_SLOT: 3, award,
+  get newDeepest() { return newDeepest; }, color: (i) => color(i), titleCam, readEntry, get hl() { return hl; }, get wantPlayers() { return wantPlayers; }, VERSION_SLOT, SAVE_VERSION, setGates, castSpell, processEvents, emit, KEY_PTS, SPELL_TIME, SAVE_FRAMES, BONUS_PTS, BONUS_COUNT, BALLS, DEEPEST_SLOT: 2, GAMES_SLOT: 3, award,
   get gates() { return gates; }, set gates(v) { gates = v; },
   LEVELS, goalOf, bossHp, startBoss, hitBoss, failBoss, completeLevel, openChest, BOSS, LEVEL_PTS, JACKPOT, BOSS_PRIZE, TREASURE_PTS, TREASURE_SAVE,
   get goalN() { return goalN; }, set goalN(v) { goalN = v; }, get boss() { return boss; }, get chestLit() { return chestLit; }, set chestLit(v) { chestLit = v; },
@@ -26,9 +26,11 @@ const PROBE = `__expose(() => ({
   SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
 }));`;
 
-/** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. extra: more source for the cart. */
-export const newGame = (seed = 1, { title = false, save = null, extra = '' } = {}) =>
-  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + extra + PROBE });
+/** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. extra: more source for the cart.
+ *  quiet: true draws nothing (draw() emptied: the game's rules never depend on it), for tests that play thousands of frames and do not
+ *  look at the picture (the aim maps, the traps, the bot's games): about 2 ms a frame faster. */
+export const newGame = (seed = 1, { title = false, save = null, extra = '', quiet = false } = {}) =>
+  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + extra + (quiet ? 'draw = function () {};' : '') + PROBE });
 export const M = (...names) => names.reduce((m, n) => m | (1 << BTN[n]), 0);
 /** The sfx commands since the last call: [[n, channel], ...]. */
 export const sfxLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'sfx').map((a) => [a[2], a[3]]); vm.audioLog.length = 0; return r; };

@@ -220,19 +220,26 @@ most 0.012 (`node tools/devkit/music/loud.mjs carts/dungeon-crawl.nova --check`;
 
 ## 12. Video layers
 
-- **BG2:** the **lava**, seen through the pit (a hole in the floor) and nowhere else, scrolling at half the camera's speed (it lies
-  below the floor: parallax), its colours cycled to make it flow and glow.
-- **BG1:** the **floor**: flagstones (a seamless stone texture of a few repeating tiles, with variants), the pit's rim and steps, the
-  inserts (the arrows, the plaques of the levels, the cubbies' lamps, the chest's lamp) as palette entries that code sets each
-  frame (lit, blinking, dark), the banner with the logo.
-- **BG0:** the **walls and rails**: brick and iron along every wall of the physics (drawn from its numbers, as Star Cadet's art is),
-  the alcoves of the slots and cubbies, the torches' sconces, the ramps' glowing ribbons (high-priority cells: a ball on a ramp is
-  drawn over them, a ball on the floor under).
-- **Sprites:** the ball, the three flippers, the bumpers, the slingshots, the targets, the chest, the gates (portcullises, up and
-  down), the torches' flames (in a palette that adds light), embers from the lava and sparks from the bumpers, the Boss (a big
-  sprite with a rising and a roaring frame), the keys.
-- **Overlay:** the panel (smoked glass over stone), the LED score, the banner, the menus.
-- **The backdrop** (behind the lava): a glow set line by line in `scanline()`, brighter deeper in the pit.
+Made by `carts/src/dungeon-crawl/art.py`, which reads the table's geometry from the physics block of `code.js` (as Star Cadet's does), so the
+picture cannot drift from where the ball bounces.
+
+- **BG2:** the **lava** (32 x 32 px, repeating), seen only through the pit's hole in the floor; it scrolls at half the camera's speed (it
+  lies deeper) and its six colours turn round every 8 frames, so it flows. A window keeps it out from behind the panel.
+- **BG1:** the **floor**: worn cobbled flagstones, the pit's three steps around its hole, the torn red banner with DUNGEON CRAWL PINBALL
+  and the sword, the chevrons of the guided way (two colour entries, `ART.colors.ARROW0/1`, that code sets each frame: chasing while a
+  slot is open, dark otherwise).
+- **BG0:** the **walls**: dark brick outside the playfield, an iron rail along every wall of the physics, the slots' stone alcoves, the
+  cubbies' glowing lips, the upper flipper's plate, the torches' sconces, the dark plunger lane; the two playfield ramps' glowing
+  ribbons and the launch ramps' wires are cells with the high-priority bit (a ball on the floor, priority 2, goes under them; a ball on
+  a ramp, priority 3, over).
+- **Sprites:** the ball; the flippers (five frames from rest to up, two lengths); the rune bumpers (at rest and lit); the slingshots;
+  the targets (amber when lit); the chest (and its glow when lit); the portcullises (down on a shut slot, raised on an open one); a key
+  in each cubby that still has one; the five plaques on the pit's steps (lit for the levels cleared, the one to clear blinking); the
+  Pit Lord (48 px, glaring and roaring), rising out of the lava for his fight; in the palettes that add light, the torches' flames
+  (three frames), their glows and the embers rising from the pit; the plunger; the logo on the title.
+- **Overlay:** the panel (smoked glass over black, an LED scoreboard in red, the keys held), the banner over the table and the menus on
+  solid slabs (the glass over the busy stone was hard to read).
+- **The backdrop:** shows only behind the panel: a low fire's glow set line by line (`scanline()`).
 
 ## 13. Persistence (save slots)
 
@@ -249,9 +256,9 @@ most 0.012 (`node tools/devkit/music/loud.mjs carts/dungeon-crawl.nova --check`;
 
 | Asset | Budget |
 |---|---|
-| Code | The starter is 11.8 KB; Star Cadet's source is 60.7 KB (45.8 KB packed with `"strip": true`). This game is about as big: `"strip": true` from the start, and `"mangle": true` if it nears the limit (`node tools/check.js dungeon-crawl`) |
-| Tiles | about 480 for the background (the floor's stone repeats; the walls and ramps are most of it) and about 500 for sprites (the Boss is the biggest: about 40) of 1,024 |
-| Sprites | about 50 of the 128 in OAM in play, about 90 in the Boss multiball with embers (Star Cadet's busiest is 80); under 32 a line |
+| Code | 41.6 KB of the 64 KB limit after step 6 (63 %), packed with `"strip": true`; `"mangle": true` if it nears the limit (`node tools/check.js dungeon-crawl`) |
+| Tiles | 963 of 1,024 after step 6: 597 of the 599 for the background (the lava 16, the floor about 240, the walls 130, the ramps' high-priority cells about 210) and 366 of the 424 for sprites (the flippers 78 in five frames each, the Pit Lord about 50 in two frames, the logo about 70) |
+| Sprites | about 70 of the 128 in OAM in play (the torches and their glows, the embers, the plaques, the parts), under 110 in a Boss multiball, under 32 a line (`08-art.mjs` checks) |
 | Songs / SFX | 6 songs, about 35 effects, under 24 KB of the 32 KB of sample RAM |
 
 ## 15. Implementation plan
@@ -387,6 +394,21 @@ and **Results** notes under its number here, commit and push.
   four, kept for the next game), a game quit recording nothing, RESTART keeping the players, a whole game's score, games and deepest
   level reaching the next title.
 - **Results:** 195 checks pass. The big lettering of the name comes with the art (step 6).
+
+### Step 6 built: the art
+
+- `carts/src/dungeon-crawl/art.py` (new: the starter's sky and ship are gone) and the drawing in `code.js` (`drawTable`, `lightTable`, `led`):
+  section 12 lists the layers and sprites. Ramp A's path (a ride) was moved up to cross the table at y 262 to 292, above the chest, so its
+  wires do not cover it; the playfield ramps' rides were straightened into vertical runs (a ribbon that leans makes every row of tiles
+  unique: 281 tiles for the ribbons before, about 210 after), and the flippers have five frames, not nine (a swing is 4 frames up, 6
+  down). The menus and the banner are solid slabs (`SLAB`, `RIM`), the floor darker and warmer so the steel ball stands out.
+- `tests/carts/dungeon-crawl/08-art.mjs`: the three layers and the lava's parallax, the floor open only at the pit, a rail on every wall, the
+  ramps' high-priority cells, the ball under a ramp and over it when riding, the flippers' frames, the portcullises, the keys, the
+  plaques, the Pit Lord rising and roaring, the arrows lighting, the lava flowing, the sheet's regions, the sprites in a Boss multiball
+  (under 110, under 32 a line). The long tests (the aim maps, the traps, the bot's games) run **quiet** (`newGame(seed, { quiet: true })`
+  in `lib.mjs`: `draw()` emptied; the rules never depend on it): drawing costs about 2 ms a frame, which made the suites five times
+  slower.
+- **Results:** 219 checks pass; `colors.mjs --check` within its limits; `snes.mjs` 88 of 100; a frame of play 2.4 ms; the smoke test 60 fps.
 
 ## 16. Open questions
 
