@@ -3,7 +3,9 @@
 import { newGame, M, pull } from './lib.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
-const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy, zone: null, ride: null }); };
+const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy, zone: null, ride: null, hold: null }); };
+// The bare physics: the table with its elements taken out (step 2 adds them; 03-table.mjs tests them).
+const BARE = 'BUMPERS.length = 0; SLINGS.length = 0; STANDUPS.length = 0; RAMPS.length = 0; CUBBIES.length = 0; CHEST.x1 = CHEST.x0; CHEST.y0 = CHEST.y1 = -99; kickback = false;';
 
 // 1. Gravity and the speed limit.
 {
@@ -21,9 +23,9 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy,
   ok(p.ball.x >= K.BR - 1e-6, 'and never goes into the wall', `x ${p.ball.x.toFixed(2)}`);
 }
 
-// 3. No tunnelling and no energy from nothing: 48 fast balls from everywhere, the flippers idle.
+// 3. No tunnelling and no energy from nothing: 48 fast balls from everywhere, the flippers idle (and nothing on the table that kicks).
 {
-  const vm = newGame(1), p = vm.probe(), K = p.K; let out = 0, worst = 0;
+  const vm = newGame(1, { extra: BARE }), p = vm.probe(), K = p.K; let out = 0, worst = 0;
   vm.run(2);
   for (let a = 0; a < 48; a++) {
     p.serve(); p.balls = 3; const ang = (a / 48) * Math.PI * 2, sx = 30 + (a * 37) % 120, sy = 150 + (a * 53) % 300;
@@ -59,7 +61,7 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy,
 // 5. A flip throws the ball: from the tip of a lower flipper up the table; the upper flipper up into the top of the table.
 {
   const shot = (k, r) => {
-    const vm = newGame(1), p = vm.probe(), K = p.K; vm.run(2);
+    const vm = newGame(1, { extra: BARE }), p = vm.probe(), K = p.K; vm.run(2);
     const f = p.flips[k], x = f.x + f.s * r * Math.cos(K.REST_A), y = f.y + r * Math.sin(K.REST_A) - K.FR - K.BR - 0.5;
     put(p, x, y); vm.run(1); let top = 999;
     for (let i = 0; i < 90; i++) { vm.run(1, i < 10 ? M(k === 0 ? 'LEFT' : 'A') : 0); top = Math.min(top, p.ball.y); if (p.ball.vy > 0 && i > 20) break; }
@@ -78,7 +80,7 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy,
     pull(vm, n); const power = n / p.PLUNGE_FRAMES; let rode = null, left = false, back = false, end = null, flipper = false;
     for (let i = 0; i < 400; i++) {
       vm.run(1);
-      if (p.ball.ride) rode = p.ball.ride.k;
+      if (p.ball.ride) rode = p.ball.ride.r.k;
       if (p.ball.x < p.K.LANE_X - 2 && !p.ball.ride) left = true;
       if (!left && !rode && i > 30 && p.inLane() && Math.abs(p.ball.vy) < 0.5) { back = true; break; }
       if (rode && !p.ball.ride && !end) end = { x: p.ball.x, y: p.ball.y };

@@ -11,6 +11,8 @@ const PROBE = `__expose(() => ({
   get score() { return score; }, set score(v) { score = v; }, get balls() { return balls; }, set balls(v) { balls = v; },
   get ball() { return ball; }, get bs() { return bs; }, get flips() { return flips; }, get plunge() { return plunge; }, get camY() { return camY; }, get stats() { return stats; }, get msg() { return msg; },
   serve, inLane, flipTip, zoneOf, WALLS, LAUNCH, ZONE_A, ZONE_B, SKILL, PLUNGE_FRAMES, UF,
+  BUMPERS, SLINGS, STANDUPS, CHEST, RAMPS, SLOTS, CUBBIES, KICKBACK, PIT, PTS, HOLD, startGame, SLOT_GATE, GUIDE, guided, CUBBY_R, RAMP_MIN, RAMP_MAX,
+  get gates() { return gates; }, set gates(v) { gates = v; }, get kickback() { return kickback; }, set kickback(v) { kickback = v; }, get bossUp() { return bossUp; }, set bossUp(v) { bossUp = v; },
   K: { BR, SUB, GRAV, VMAX, WALL_E, FLIP_E, FLEN, UFLEN, FR, REST_A, UP_A, LANE_X, LANE_FLOOR, BALL_HOME, DRAIN_Y, TABLE_W, TABLE_H, VIEW_H, RIDE_SPEED },
   get ART() { return ART; }, mget: (x, y) => mget(x, y), get rank() { return rank; }, get initials() { return initials; },
   get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },

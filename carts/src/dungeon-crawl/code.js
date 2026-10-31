@@ -86,8 +86,27 @@ const zoneOf = (p) => (p >= ZONE_B ? 'B' : p >= ZONE_A[0] && p < ZONE_A[1] ? 'A'
 
 const UF = { x: 166, y: 232 }; // the upper flipper's pivot, on the right under the x3 slot
 
+/** The kickouts: a hole the ball drops into, is held in and is thrown out of. The two slots at the top sit in alcoves behind iron gates
+ *  (SLOT_GATE: a wall across the alcove's mouth while the slot is shut); the two cubbies are pockets in the side walls, open towards
+ *  the middle. x, y: the hole; out: where the ball is put and how fast, when it is let go. */
+const HOLE_R = 7, HOLD = 60, NOCAP = 40; // the hole's reach; frames the ball is held; frames after which it can be taken again
+const SLOTS = [ // 0 the x10 MEGA slot (two keys), 1 the x3 slot (a key)
+  { k: 'slot10', x: 60, y: 70, l: 48, r: 72, out: [60, 95, 0.4, 3] },
+  { k: 'slot3', x: 124, y: 70, l: 112, r: 136, out: [124, 95, -0.4, 3] },
+];
+const SLOT_GATE = 88; // the gates' line, across the alcoves' mouths
+const LANE_GATE = [LANE_X, 44, LANE_X, 120]; // a one-way gate over the lane's exit: out of the lane, never back in from the table
+/** The cubbies: a hole in each side wall just above the ramp's mouth, taking a ball that comes up the wall too fast for the ramp (the
+ *  shots from the far flipper's tip; aim.mjs). */
+const CUBBY_R = 8;
+const CUBBIES = [
+  { k: 'cubbyL', x: 9, y: 404, out: [20, 396, 2.5, 1] },
+  { k: 'cubbyR', x: 167, y: 404, out: [156, 396, -2.5, 1] },
+];
+
 /** The walls: segments [x0, y0, x1, y1, r] (r: a post's radius, else 0). The top arch (radius 96), the plunger lane on the right, the
- *  outlanes and inlanes with their guides down to the flippers, the slingshots' backs, the upper flipper's mount on the lane wall. */
+ *  outlanes and inlanes with their guides down to the flippers, the slingshots' backs, the upper flipper's mount on the lane wall, the
+ *  slots' alcoves (a peaked roof, so nothing rests on them, and two sides). */
 const WALLS = (() => {
   const w = [];
   for (let i = 0; i < 16; i++) { // the arch: a half circle of 16 segments
@@ -98,8 +117,9 @@ const WALLS = (() => {
   for (const m of [0, 1]) { // the two sides, the right one mirrored about x = 88
     const X = (x) => (m ? 176 - x : x);
     w.push([X(16), 492, X(16), 540], [X(16), 540, X(48), 588]); // the inlane guide: the outlane outside it, the inlane inside
-    w.push([X(32), 480, X(32), 545], [X(32), 545, X(44), 545], [X(32), 480, X(44), 545]); // the slingshot: its back, its bottom, its face (a plain wall until step 2 makes it kick)
+    w.push([X(32), 480, X(32), 545], [X(32), 545, X(44), 545]); // the back and the bottom of the slingshot (its face kicks: SLINGS)
   }
+  for (const s of SLOTS) w.push([s.l, 56, s.x, 46], [s.x, 46, s.r, 56], [s.l, 56, s.l, SLOT_GATE], [s.r, 56, s.r, SLOT_GATE]);
   w.push([LANE_X, 214, UF.x + 2, UF.y - 1]); // the upper flipper's mount: a slanted plate from the lane wall to its pivot
   return w;
 })();
@@ -111,7 +131,36 @@ const LAUNCH = {
   A: { at: 360, path: [[184, 360], [172, 326], [140, 306], [96, 300], [52, 306], [20, 330], [12, 380], [14, 440], [24, 486]], out: [0, 2] }, // over the table to the left inlane
   B: { at: 140, path: [[184, 140], [182, 112], [172, 102], [162, 116], [164, 170], [170, 206]], out: [-0.6, 1.5] }, // round the top right onto the upper flipper
 };
-for (const k in LAUNCH) { const P = LAUNCH[k].path; LAUNCH[k].len = P.slice(1).reduce((s, q, i) => s + Math.hypot(q[0] - P[i][0], q[1] - P[i][1]), 0); }
+/** The playfield ramps: a ball hit up into a mouth at RAMP_MIN to RAMP_MAX px a frame is carried along (faster flies over the mouth). */
+const RAMP_IN = 14, RAMP_MIN = 3.5, RAMP_MAX = 6.8;
+const RAMPS = [
+  { k: 'rampL', x: 14, y: 430, path: [[14, 430], [11, 330], [13, 200], [30, 124], [64, 104], [98, 110]], out: [1, 1.5] }, // up the left side, out over the bumpers
+  { k: 'rampR', x: 160, y: 430, path: [[160, 430], [165, 330], [166, 260], [170, 206]], out: [-0.6, 1.5] }, // up the right side onto the upper flipper
+];
+/** The guided way: while a slot is open the right ramp carries on into it (the arrows on the floor lead up it), the x10 slot when
+ *  both are open. From the ramp's top (166, 260) round the top of the table and down into the slot's alcove. */
+const GUIDE = [
+  [[166, 260], [166, 140], [146, 108], [100, 100], [70, 104], [60, 92], [60, 70]],
+  [[166, 260], [166, 140], [150, 112], [130, 104], [124, 92], [124, 70]],
+];
+const guided = () => (gates[0] ? 0 : gates[1] ? 1 : -1); // the slot the right ramp leads to, or -1
+const pathLen = (P) => P.slice(1).reduce((s, q, i) => s + Math.hypot(q[0] - P[i][0], q[1] - P[i][1]), 0);
+for (const k in LAUNCH) { LAUNCH[k].k = k; LAUNCH[k].len = pathLen(LAUNCH[k].path); }
+for (const r of RAMPS) r.len = pathLen(r.path);
+const GUIDE_LEN = GUIDE.map((P) => pathLen(RAMPS[1].path.slice(0, -1)) + pathLen(P));
+
+/** The things that kick and the targets. A bumper throws the ball away at BUMP_KICK at least, a slingshot's face at SLING_KICK. */
+const BUMP_R = 11, BUMP_KICK = 6, SLING_KICK = 4.5, COOL = 8, HIT_FLASH = 6, TARGET_R = 2; // radii; frames between hits and of a hit's light
+const BUMPERS = [[72, 150], [116, 150], [94, 186]].map(([x, y]) => ({ x, y, flash: 0, cool: 0 }));
+const SLINGS = [[32, 480, 44, 545], [144, 480, 132, 545]].map(([x0, y0, x1, y1]) => ({ x0, y0, x1, y1, flash: 0, cool: 0 }));
+/** Standup targets: short bars, slanted (nothing rests on them), hit from below. The chest is one more, in the middle. */
+const STANDUPS = [[68, 235, 80, 229], [108, 229, 120, 235], [34, 373, 46, 367], [142, 367, 154, 373]].map(([x0, y0, x1, y1]) => ({ x0, y0, x1, y1, lit: false, flash: 0, cool: 0 }));
+const CHEST = { x0: 87, y0: 302, x1: 101, y1: 298, lit: false, flash: 0, cool: 0 };
+const KICKBACK = { x: 16, y0: 575, y1: 606, v: 13 }; // the left outlane's kickback
+/** The lava pit, and the Boss's target at its middle (there only in the Boss fight: step 4). */
+const PIT = { x: 94, y: 430, r: 34 }, BOSS_R = 12;
+const PTS = { bump: 100, sling: 10, standup: 1000, chest: 0, ramp: 5000, cubby: 10000, slot3: 25000, slot10: 100000 };
+let gates = [false, false], kickback = true, bossUp = false; // the slots' gates (open: true), the kickback lit, the Boss risen
 
 /** Flippers: pivot, side (+1 points right), length, which button (0 the left hand, 1 the right), angle and the last swing (radians a
  *  frame, for the ball). The upper flipper is on the right hand with the lower right one. */
@@ -146,15 +195,27 @@ function kick(b, v) {
 }
 
 let stats = {}, evq = [];
-const resetStats = () => { stats = { launch: 0, rideA: 0, rideB: 0, skill: 0, drain: 0 }; };
+const resetStats = () => { stats = { launch: 0, rideA: 0, rideB: 0, skill: 0, drain: 0, bump: 0, sling: 0, standup: 0, standupSet: 0, chest: 0, ramp: 0, rampL: 0, rampR: 0, cubby: 0, cubbyL: 0, cubbyR: 0, slot: 0, slot3: 0, slot10: 0, kick: 0, boss: 0 }; };
 resetStats();
 const emit = (k) => { evq.push(k); }; // what the ball did this frame, for the rules (steps 3 and 4)
 let msg = '', msgT = 0;
 function say(t) { msg = t; msgT = 150; }
 function award(n) { score += n; }
 
-/** Start a ride along a path (a launch ramp now, the playfield ramps in step 2). */
-const ride = (b, k) => { b.ride = { k, d: 0 }; b.vx = b.vy = 0; };
+/** An element was hit: true once in a while (its cooldown), so a ball touching it for several substeps scores once. */
+function struck(el) { if (el.cool > 0) return false; el.cool = COOL; el.flash = HIT_FLASH; return true; }
+/** Count a shot: its stat, its points, its event. */
+function score1(k, pts = PTS[k]) { stats[k]++; if (pts) award(pts); emit(k); }
+
+/** Start a ride along a path (a launch ramp or a playfield ramp; the right ramp on into a slot when one is open). */
+function ride(b, r) {
+  const g = r === RAMPS[1] ? guided() : -1;
+  b.ride = g < 0 ? { r, d: 0, path: r.path, len: r.len, to: null } : { r, d: 0, path: r.path.slice(0, -1).concat(GUIDE[g]), len: GUIDE_LEN[g], to: SLOTS[g] };
+  b.vx = b.vy = 0;
+}
+/** Take a ball into a kickout's hole (a slot or a cubby): it is held, then thrown out. */
+function capture(b, h) { b.hold = { h, t: HOLD * SUB }; b.vx = b.vy = 0; b.x = h.x; b.y = h.y; b.ride = null; b.zone = null; } // (held in substeps)
+function enterSlot(b, s) { capture(b, s); stats.slot++; score1(s.k); fx(SFX.point); }
 /** Where a ride is, d px along its path. */
 function along(P, d) {
   for (let i = 1; i < P.length; i++) {
@@ -168,20 +229,47 @@ function along(P, d) {
 /** One substep of one ball. */
 function stepBall(b, flips) {
   if (b.ride) { // carried along a ramp, above the table: nothing on it is touched
-    const R = b.ride, r = LAUNCH[R.k];
+    const R = b.ride, r = R.r;
     R.d += RIDE_SPEED / SUB;
-    if (R.d < r.len) { [b.x, b.y] = along(r.path, R.d); return; }
-    [b.x, b.y] = r.path[r.path.length - 1]; [b.vx, b.vy] = r.out; b.ride = null;
-    stats['ride' + R.k]++; emit('ride' + R.k);
-    if (b.skill) { b.skill = false; stats.skill++; award(SKILL[R.k]); emit('skill'); say(`SKILL SHOT ${R.k}`); fx(SFX.point); }
+    if (R.d < R.len) { [b.x, b.y] = along(R.path, R.d); return; }
+    [b.x, b.y] = R.path[R.path.length - 1]; [b.vx, b.vy] = r.out; b.ride = null;
+    if (r.k === 'A' || r.k === 'B') { // a launch ramp
+      stats['ride' + r.k]++; emit('ride' + r.k);
+      if (b.skill) { b.skill = false; stats.skill++; award(SKILL[r.k]); emit('skill'); say(`SKILL SHOT ${r.k}`); fx(SFX.point); }
+      return;
+    }
+    stats.ramp++; score1(r.k, PTS.ramp); fx(SFX.point); // a playfield ramp
+    if (R.to && gates[SLOTS.indexOf(R.to)]) enterSlot(b, R.to); // the guided way ends in the slot
     return;
   }
+  if (b.hold) { // in a hole: held, then thrown out
+    if (--b.hold.t > 0) return;
+    const o = b.hold.h.out; [b.x, b.y, b.vx, b.vy] = o; b.hold = null; b.nocap = NOCAP * SUB;
+    return;
+  }
+  if (b.nocap > 0) b.nocap--;
   b.vy += GRAV / SUB;
   const sp = Math.hypot(b.vx, b.vy);
   if (sp > VMAX) { b.vx *= VMAX / sp; b.vy *= VMAX / sp; }
   b.x += b.vx / SUB; b.y += b.vy / SUB;
-  if (b.zone && b.x > LANE_X && b.vy < 0 && b.y <= LAUNCH[b.zone].at) { const k = b.zone; b.zone = null; ride(b, k); return; } // the pull's ramp takes it
+  if (b.zone && b.x > LANE_X && b.vy < 0 && b.y <= LAUNCH[b.zone].at) { const k = b.zone; b.zone = null; ride(b, LAUNCH[k]); return; } // the pull's ramp takes it
   for (const w of WALLS) collide(b, w[0], w[1], w[2], w[3], w[4] || 0, WALL_E);
+  if (b.vx > 0 && b.x < LANE_X) collide(b, ...LANE_GATE, 0, WALL_E); // the lane's one-way gate
+  SLOTS.forEach((s, i) => { if (!gates[i] && b.vy < 0) collide(b, s.l, SLOT_GATE, s.r, SLOT_GATE, 0, WALL_E); }); // a shut gate stops a ball going up (one inside when it shuts falls out)
+  for (const e of BUMPERS) if (collide(b, e.x, e.y, e.x, e.y, BUMP_R, WALL_E)) { kick(b, BUMP_KICK); if (struck(e)) { score1('bump'); fx(SFX.hit); } }
+  if (bossUp && collide(b, PIT.x, PIT.y, PIT.x, PIT.y, BOSS_R, WALL_E)) { kick(b, BUMP_KICK); stats.boss++; emit('boss'); }
+  for (const e of SLINGS) if (collide(b, e.x0, e.y0, e.x1, e.y1, 0, WALL_E)) { kick(b, SLING_KICK); if (struck(e)) { score1('sling'); fx(SFX.hit); } }
+  for (const e of STANDUPS) if (collide(b, e.x0, e.y0, e.x1, e.y1, TARGET_R, WALL_E) && struck(e)) {
+    score1('standup'); fx(SFX.point);
+    if (!e.lit) { e.lit = true; if (STANDUPS.every((q) => q.lit)) { stats.standupSet++; emit('standupSet'); for (const q of STANDUPS) q.lit = false; } }
+  }
+  if (collide(b, CHEST.x0, CHEST.y0, CHEST.x1, CHEST.y1, TARGET_R, WALL_E) && struck(CHEST)) { score1('chest'); fx(SFX.point); }
+  if (!b.nocap) { // the holes
+    for (const [i, s] of SLOTS.entries()) if (gates[i] && Math.hypot(b.x - s.x, b.y - s.y) < HOLE_R) { enterSlot(b, s); return; }
+    for (const c of CUBBIES) if (b.vy < 0 && Math.hypot(b.x - c.x, b.y - c.y) < CUBBY_R) { capture(b, c); stats.cubby++; score1(c.k, PTS.cubby); fx(SFX.point); return; } // its mouth faces the flippers: a ball coming up
+  }
+  for (const r of RAMPS) if (Math.hypot(b.x - r.x, b.y - r.y) < RAMP_IN && b.vy < -RAMP_MIN && b.vy > -RAMP_MAX) { ride(b, r); fx(SFX.point); return; }
+  if (kickback && b.x < KICKBACK.x && b.y > KICKBACK.y0 && b.y < KICKBACK.y1 && b.vy > 0) { kickback = false; b.vx = 0.5; b.vy = -KICKBACK.v; stats.kick++; emit('kick'); fx(SFX.point); }
   for (const f of flips) {
     const tip = flipTip(f);
     collide(b, f.x, f.y, tip.x, tip.y, FR, FLIP_E, (t) => {
@@ -202,6 +290,7 @@ function stepTable(balls, flips, hold) {
     }
     for (const b of balls) stepBall(b, flips);
   }
+  for (const e of [...BUMPERS, ...SLINGS, ...STANDUPS, CHEST]) { if (e.cool > 0) e.cool--; if (e.flash > 0) e.flash--; }
 }
 
 // --- Input: edge-triggered presses (btnp repeats; menus want one press) ---
@@ -235,10 +324,11 @@ function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; p
 
 function startGame() {
   score = 0; balls = BALLS; flips = makeFlippers(); resetStats(); msgT = 0; paused = false; timer = 0; state = 'play';
+  gates = [false, false]; kickback = true; bossUp = false; for (const e of STANDUPS) e.lit = false;
   serve(); play(SONG.play);
 }
 
-const newBall = (x, y) => ({ x, y, vx: 0, vy: 0, ride: null, zone: null, skill: false });
+const newBall = (x, y) => ({ x, y, vx: 0, vy: 0, ride: null, zone: null, skill: false, hold: null, nocap: 0 });
 /** A ball in the plunger lane; its first launch can be a skill shot. */
 function serve() {
   ball = newBall(BALL_HOME.x, BALL_HOME.y); ball.skill = true; bs = [ball]; plunge = 0;
@@ -354,8 +444,19 @@ function draw() {
 function drawPlay() {
   const cy = Math.round(camY), R = Math.round, sy = (y) => R(y - cy);
   rectfill(0, 0, TABLE_W, 224, SHADOW);
-  for (const k in LAUNCH) { const P = LAUNCH[k].path; for (let i = 1; i < P.length; i++) line(P[i - 1][0], sy(P[i - 1][1]), P[i][0], sy(P[i][1]), k === 'A' ? 9 : RED); }
+  const path = (P, c) => { for (let i = 1; i < P.length; i++) line(R(P[i - 1][0]), sy(P[i - 1][1]), R(P[i][0]), sy(P[i][1]), c); };
+  circ(PIT.x, sy(PIT.y), PIT.r, RED); if (bossUp) circfill(PIT.x, sy(PIT.y), BOSS_R, RED);
+  for (const k in LAUNCH) path(LAUNCH[k].path, k === 'A' ? 9 : RED);
+  for (const r of RAMPS) { path(r.path, 9); circ(r.x, sy(r.y), RAMP_IN, 9); }
   for (const w of WALLS) line(R(w[0]), sy(w[1]), R(w[2]), sy(w[3]), DIM);
+  line(LANE_GATE[0], sy(LANE_GATE[1]), LANE_GATE[2], sy(LANE_GATE[3]), 9);
+  SLOTS.forEach((s, i) => { circfill(s.x, sy(s.y), HOLE_R - 2, gates[i] ? GOLD : 2); if (!gates[i]) for (let x = s.l; x <= s.r; x += 4) line(x, sy(SLOT_GATE) - 3, x, sy(SLOT_GATE) + 1, DIM); });
+  for (const c of CUBBIES) circfill(c.x, sy(c.y), CUBBY_R - 3, GOLD);
+  if (guided() >= 0) path(GUIDE[guided()], GOLD);
+  for (const e of BUMPERS) circfill(e.x, sy(e.y), BUMP_R, e.flash ? GOLD : RED);
+  for (const e of SLINGS) line(e.x0, sy(e.y0), e.x1, sy(e.y1), e.flash ? GOLD : RED);
+  for (const e of [...STANDUPS, CHEST]) for (let k = -1; k <= 1; k++) line(R(e.x0), sy(e.y0) + k, R(e.x1), sy(e.y1) + k, e === CHEST ? GOLD : e.lit ? GREEN : 9);
+  if (kickback) circfill(8, sy(590), 2, GREEN);
   for (const f of flips) { const t = flipTip(f); for (let k = -1; k <= 1; k++) line(R(f.x), sy(f.y) + k, R(t.x), sy(t.y) + k, RED); circfill(R(f.x), sy(f.y), 2, GOLD); }
   for (const b of bs) circfill(R(b.x), sy(b.y), BR - 1, b.ride ? GOLD : WHITE);
   drawPanel();

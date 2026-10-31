@@ -68,27 +68,27 @@ plunger's meter while the ball waits, and a map of the table.
 | Game over | Each player's score and the depth and level reached; then initials for a top 10 score |
 | Records | The top 10 (score, initials, the level reached) and the deepest level ever |
 
-**The table** (world coordinates, x right 0 to 192, y down 0 to 640; the ball is 5 px in radius). The numbers are the first draft
-from the picture; step 2 moves each shot to where the flips actually send the ball (Star Cadet's `aim.mjs` found that its first
-mouths were where the geometry looked good, not where the shots land), and the spec's table is updated then.
+**The table** (world coordinates, x right 0 to 192, y down 0 to 640; the ball is 5 px in radius), as built in step 2: each shot is
+where the flips send the ball (`tests/carts/dungeon-crawl/aim.mjs` plays every flip of the three flippers once and lists what the ball
+hits; the draft's cubbies and x3 slot were where no flip went).
 
 | Feature | Place (draft) | What |
 |---|---|---|
-| Plunger lane | x 176 to 192, from y 612 up to y 110 | The ball waits on its floor; the top arch turns a ball that is not on a ramp into the table. The **meter** is drawn in the panel beside it |
+| Plunger lane | x 176 to 192, from y 612 up to y 120 | The ball waits on its floor; the top arch turns a ball that is not on a launch ramp into the table. A **one-way gate** over the lane's exit (x 176, y 44 to 120) lets the ball out and stops a ball from the table rolling back in. The **meter** is in the panel |
 | Top arch | y 0 to 96 | The table's top, a half circle of radius 96 centred at x 96 |
-| x10 MEGA slot | a hole at (60, 78) behind an **iron gate** in an alcove of the top wall | Closed: the gate is a wall the ball bounces off. Open (two keys): a ball that enters is held 1 s, scores and casts the x10 spell, and is kicked out down the table |
-| x3 slot | a hole at (124, 78), its own alcove and gate | Open with one key or two: the x3 spell |
-| Guided arrows | a path of four arrow inserts from the right inlane up to the x3 slot, and two under the x10 slot | Painted on the floor; lit (chasing) while the slot they lead to is open |
+| x10 MEGA slot | a hole at (60, 70) in an alcove x 48 to 72 with a peaked roof (y 46 to 56), its **iron gate** across the mouth at y 88 | Shut: the gate stops a ball going up (a ball inside when it shuts falls out). Open (two keys): a ball that comes within 7 px of the hole is held 1 s, scores and is thrown out down the table at 3 px a frame. Reached by the **upper flipper** (6 px of it: 22 to 25 from its pivot) and by the guided way |
+| x3 slot | a hole at (124, 70), alcove x 112 to 136, the same gate | Open with a key; reached by the **guided way**: while a slot is open, the right ramp carries the ball on round the top into it (into the x10 slot when both are open) |
+| Guided arrows | up the right ramp and round to the open slot | Painted on the floor; lit (chasing) while a slot is open (step 6) |
 | Pop bumpers | (72, 150), (116, 150), (94, 186) | Three, radius 11, rune-marked; kick at 6 px a frame |
-| Upper flipper | pivot (166, 232), pointing left and down; length 26 (the lower ones are 34) | On the right flipper's button. Its shots reach the two slots and the left ramp |
-| Cubbies | left (18, 300), right (158, 300): a hole 12 px wide in an alcove of the side wall, mouth facing the opposite flipper | A ball that enters is held 1 s; the cubby's key is taken (if it is still there), and the ball is kicked out down the table |
-| Playfield ramps | left: mouth (30, 430) up the left side, over the top of the table, out at (100, 112); right: mouth (150, 430) up the right side, out onto the upper flipper's inlane (170, 214) | A ball hit up into a mouth at 3.5 to 9 px a frame is carried along the ramp (a scripted ride, as in Star Cadet) |
-| Launch ramps | Ramp A: from the lane at y 360 across into the left ramp's path; Ramp B: from the lane's top into the right ramp's path | The plunger's two zones (section 5) send the ball onto them |
-| Standup targets | four triangles: (64, 230), (124, 230), (40, 370), (148, 370) | Light when hit; a level's goal and the treasure |
-| Treasure chest | a standup target in the middle, (94, 300), under the logo's sword | Lit after each level completed: a hit opens it (section 5) |
-| The pit and the Boss | the lava pit in the middle of the lower table, centred (94, 430), radius 34; the Boss rises at its centre | The steps of the pit carry the plaques LEVEL 1 to 4 and BOSS (lamps). The Boss is a target (radius 12) that is only there in the Boss fight; the rest of the time the pit is floor the ball rolls over |
-| Slingshots | as Star Cadet's: faces (32, 480)-(44, 545) and (144, 480)-(132, 545) | Kick at 4.5 px a frame |
-| Inlanes, outlanes | as Star Cadet's, mirrored about x 88 | The left outlane has a **kickback** (once a ball, relit by treasure) |
+| Upper flipper | pivot (166, 232) on a slanted plate from the lane wall, pointing left; length 26 (the lower ones are 34) | On the right flipper's button |
+| Cubbies | holes at (9, 404) and (167, 404) in the side walls, just above the ramps' mouths | A ball **coming up** within 8 px is taken (a ball falling down the wall past it is not), held 1 s and thrown out towards the middle. Reached by the far flipper's tip (25 to 28 px from its pivot): a shot too fast for the ramp's mouth |
+| Playfield ramps | mouths (14, 430) and (160, 430), 14 px across; the left one runs up the left side and out over the bumpers at (98, 110), the right one up the right side onto the upper flipper (170, 206) | A ball hit up into a mouth at 3.5 to 6.8 px a frame is carried along (a scripted ride at 7 px a frame); faster flies over the mouth into the cubby above. Reached by the far flipper, 19 to 22 px from its pivot |
+| Launch ramps | Ramp A leaves the lane at y 360, over the table to the left inlane (24, 486); Ramp B leaves it at y 140, round the top right onto the upper flipper | The plunger's two zones (section 5) |
+| Standup targets | four slanted bars: (68, 235)-(80, 229), (108, 229)-(120, 235), (34, 373)-(46, 367), (142, 367)-(154, 373) | 1,000 a hit; each lights; all four lit is a set (and they start again) |
+| Treasure chest | a slanted bar (87, 302)-(101, 298), in the middle under the logo's sword | Lit after each level completed: a hit opens it (section 5) |
+| The pit and the Boss | the lava pit centred (94, 430), radius 34; the Boss's target (radius 12) at its centre | The steps of the pit carry the plaques LEVEL 1 to 4 and BOSS (lamps). The target is only there in the Boss fight (it kicks like a bumper); the rest of the time the pit is floor the ball rolls over |
+| Slingshots | faces (32, 480)-(44, 545) and (144, 480)-(132, 545) | Kick at 4.5 px a frame; 10 points |
+| Inlanes, outlanes | as Star Cadet's, mirrored about x 88 | The left outlane has a **kickback** (x under 16, y 575 to 606: the ball is thrown back up at 13 px a frame; once a ball, relit by treasure) |
 | Flippers | pivots (48, 588) and (128, 588), length 34 | As Star Cadet's |
 | Drain | below y 632, outside the lane | The ball is lost |
 
@@ -116,7 +116,9 @@ without it).
 
 **Keys and slots.** Each **cubby** holds a key. A ball that enters a cubby with its key takes it (KEY 1 or KEY 2 in the banner);
 a cubby whose key is taken is still a kickout, but empty (and its lamp is dark) until the keys are spent. With **one key** the
-**x3 slot**'s gate opens and the arrows to it light; with **two keys** the **x10 MEGA slot**'s gate opens as well. Entering a slot
+**x3 slot**'s gate opens and the arrows light up the right ramp to it: a right ramp shot carries on into the slot; with **two keys** the
+**x10 MEGA slot**'s gate opens as well, and the arrows (and the right ramp) lead to it instead. The upper flipper can shoot into the
+x10 slot directly. Entering a slot
 casts its **spell** and spends keys: the x3 slot one key (with two keys, one is left, so the x10 slot closes and the x3 stays open),
 the x10 slot both. A spell multiplies every point scored for **30 seconds** (the panel shows it and its time; the table's light
 flares); a slot entered while a spell is on gives the greater of the two multipliers and starts its time again. Keys and an
@@ -298,6 +300,30 @@ and **Results** notes under its number here, commit and push.
   the slots go). The bot found a trap at once: without the slingshots' faces a ball came to rest in the corner behind one; the faces are
   walls now (step 2's `09-traps.mjs`-style test will hold every resting place). A sweep (6 seeds, skill 0.5 and 0.9) finishes cleanly;
   this bot's balls last 14 and 31 seconds on a table with nothing on it yet.
+
+### Step 2 built: the table
+
+- `carts/src/dungeon-crawl/code.js`: the **bumpers**, the **slingshots** (their faces kick now), the four **standup targets** and the
+  **chest**, the two **playfield ramps** (`RAMPS`: a mouth, a speed window, a path), the two **cubbies** and the two **slots** (`CUBBIES`,
+  `SLOTS`: kickouts that take a ball, hold it a second and throw it out; the slots behind gates, `gates`), the **guided way** (`GUIDE`:
+  the right ramp's ride carries on into the open slot), the **kickback**, the **pit** and the Boss's target (`bossUp`, off until step 4),
+  the lane's **one-way gate**; each scores (`PTS`) and emits an event for the rules. Drawn as plain shapes still. A ride is now a path
+  object (launch ramps, playfield ramps and the guided way alike).
+- `tests/carts/dungeon-crawl/aim.mjs` (every flip of the three flippers once, with the gates open: what the ball hits) and `03-table.mjs`
+  (each element hit by a placed ball, the ramps' speed window, the cubbies taking only a ball coming up, the gates shut and open, the
+  guided way with no slot, the x3 and both open, the lane's gate, the kickback once, the pit with and without the Boss, every shot
+  reachable by a flip, and a ball put down at rest on 300 places never staying there). `02-physics.mjs` measures the bare physics with
+  the elements taken out. The bot's choices now depend on the seed (the table has no chance in it, so every seed played the same game).
+- **What the aim map moved.** The draft's cubbies (y 300, behind lips) and x3 slot were where no flip went: the lower flippers' shots up
+  a side all strike the wall at y 410 to 440, faster or slower with the place on the flipper. So the ramps' mouths take the slower ones
+  (19 to 22 px from the far flipper's pivot, up to 6.8 px a frame) and the **cubbies** sit in the wall just above them, for the faster
+  ones (25 to 28 px); the **x3 slot** is reached as in the user's picture, by the arrows up the right ramp (the guided way), and the
+  **x10** by the upper flipper (22 to 25 px) as well. The upper standups moved in from the upper flipper: a ball rolling off its tip
+  jiggled on one for a second.
+- **Traps found:** a ball inside a slot's alcove when its gate shut sat on the gate (the gate now stops only a ball going up), and a ball
+  thrown out of a slot rolled into the top of the plunger lane (the lane's one-way gate).
+- **Results:** 97 checks pass. The bot (8 seeds, skill 0.5 and 0.9) finishes cleanly; its balls last 15 to 34 seconds with a flip that
+  does not aim yet (step 4).
 
 ## 16. Open questions
 

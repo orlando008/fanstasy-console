@@ -11,12 +11,13 @@ import { M, newGame as boot } from './lib.mjs';
 
 export const defaults = { frames: 20000, seeds: 6, set: { skill: [0.5, 0.9] } };
 
-export const newGame = (seed) => boot(seed); // skipTitle: straight into play
+let seed = 1;
+export const newGame = (s) => { seed = s; return boot(s); }; // skipTitle: straight into play (the seed varies the bot: the table has no chance in it)
 
 let pulling = 0, target = 0, launches = 0, flip = [0, 0], lastMove = 0, last = [0, 0], problems = [], ballFrames = 0;
 export const setup = () => { pulling = 0; target = 0; launches = 0; flip = [0, 0]; lastMove = 0; last = [0, 0]; problems = []; ballFrames = 0; };
 
-const chance = (frame, k, v) => ((frame * 37 + k * 11) % 100) / 100 < v;
+const chance = (frame, k, v) => ((frame * 37 + k * 11 + seed * 53) % 100) / 100 < v;
 
 export function pad(vm, p, frame, opts) {
   const skill = opts.skill ?? 0.9, b = p.ball;
@@ -26,7 +27,7 @@ export function pad(vm, p, frame, opts) {
   else if (frame - lastMove > 1200 && !problems.length) problems.push(`the ball stood still at (${b.x.toFixed(0)}, ${b.y.toFixed(0)}) (frame ${frame})`);
   // the plunger: hold to the middle zone (A) or a full pull (B), by turns
   if (p.inLane() && !b.ride && b.vy >= 0) {
-    if (!pulling) { pulling = 1; target = launches % 2 ? 62 : Math.round(p.PLUNGE_FRAMES * (p.ZONE_A[0] + p.ZONE_A[1]) / 2); }
+    if (!pulling) { pulling = 1; target = (launches + seed) % 2 ? 62 : Math.round(p.PLUNGE_FRAMES * (p.ZONE_A[0] + p.ZONE_A[1]) / 2) + ((seed * 7 + launches) % 5) - 2; }
     if (pulling <= target) { pulling++; return M('A'); }
     pulling = 0; launches++; return 0;
   }
