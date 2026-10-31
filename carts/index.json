@@ -11,6 +11,16 @@
       "png": "carts/duel-at-the-stump.nova.png"
     },
     {
+      "name": "dungeon-crawl",
+      "title": "Dungeon Crawl Pinball",
+      "author": "NOVA-16",
+      "description": "Descend a dungeon on a torchlit pinball table: take the keys from the side cubbies to open the x3 and x10 slots, clear four levels and beat the Pit Lord in a multiball. The plunger's pull picks your ramp; 1 to 4 players.",
+      "genre": "Arcade",
+      "players": "1-4",
+      "label": "carts/labels/dungeon-crawl.png",
+      "png": "carts/dungeon-crawl.nova.png"
+    },
+    {
       "name": "flow-state",
       "title": "Flow State",
       "author": "NOVA-16",
