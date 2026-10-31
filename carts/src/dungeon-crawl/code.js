@@ -39,8 +39,12 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
 // so they never cut into the music and two can sound at once.
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
-const SONG = { title: 0, play: 1 };
+// The effects (audio.py, in this order). The three bumpers are three notes of a D minor chord, bump + their number.
+const SFX = { move: 0, select: 1, pause: 2, flipUp: 3, flipDown: 4, bump: 5, sling: 8, target: 9, targetSet: 10, ramp: 11, cubby: 12, key: 13, gate: 14,
+  slot: 15, spell3: 16, spell10: 17, pull: 18, launch: 19, skill: 20, level: 21, bossRise: 22, bossHit: 23, bossBeaten: 24, bossSink: 25, treasure: 26,
+  extra: 27, save: 28, drain: 29, tick: 30, record: 31, gong: 32, kick: 33, over: 34 };
+// The songs: the title; the descent, heavier from Level 3 (levels 1 and 2, then 3, 4 and the Boss lit); the Boss's fight; a spell.
+const SONG = { title: 0, play: 1, deep: 2, boss: 3, spell: 4 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -231,7 +235,7 @@ function ride(b, r) {
 }
 /** Take a ball into a kickout's hole (a slot or a cubby): it is held, then thrown out. */
 function capture(b, h) { b.hold = { h, t: HOLD * SUB }; b.vx = b.vy = 0; b.x = h.x; b.y = h.y; b.ride = null; b.zone = null; } // (held in substeps)
-function enterSlot(b, s) { capture(b, s); stats.slot++; score1(s.k); fx(SFX.point); }
+function enterSlot(b, s) { capture(b, s); stats.slot++; score1(s.k); fx(SFX.slot); }
 /** Where a ride is, d px along its path. */
 function along(P, d) {
   for (let i = 1; i < P.length; i++) {
@@ -251,10 +255,10 @@ function stepBall(b, flips) {
     [b.x, b.y] = R.path[R.path.length - 1]; [b.vx, b.vy] = r.out; b.ride = null;
     if (r.k === 'A' || r.k === 'B') { // a launch ramp
       stats['ride' + r.k]++; emit('ride' + r.k);
-      if (b.skill) { b.skill = false; stats.skill++; award(SKILL[r.k]); emit('skill'); say(`SKILL SHOT ${r.k}`); fx(SFX.point); }
+      if (b.skill) { b.skill = false; stats.skill++; award(SKILL[r.k]); emit('skill'); say(`SKILL SHOT ${r.k}`); fx(SFX.skill); }
       return;
     }
-    stats.ramp++; score1(r.k, PTS.ramp); fx(SFX.point); // a playfield ramp
+    stats.ramp++; score1(r.k, PTS.ramp); // a playfield ramp (its whoosh was at the mouth)
     if (R.to && gates[SLOTS.indexOf(R.to)]) enterSlot(b, R.to); // the guided way ends in the slot
     return;
   }
@@ -272,21 +276,21 @@ function stepBall(b, flips) {
   for (const w of WALLS) collide(b, w[0], w[1], w[2], w[3], w[4] || 0, WALL_E);
   if (b.vx > 0 && b.x < LANE_X) collide(b, ...LANE_GATE, 0, WALL_E); // the lane's one-way gate
   SLOTS.forEach((s, i) => { if (!gates[i] && b.vy < 0) collide(b, s.l, SLOT_GATE, s.r, SLOT_GATE, 0, WALL_E); }); // a shut gate stops a ball going up (one inside when it shuts falls out)
-  for (const e of BUMPERS) if (collide(b, e.x, e.y, e.x, e.y, BUMP_R, WALL_E)) { kick(b, BUMP_KICK); if (struck(e)) { score1('bump'); fx(SFX.hit); } }
-  if (collide(b, GONG.x, GONG.y, GONG.x, GONG.y, GONG.r, WALL_E)) { kick(b, GONG_KICK); if (struck(GONG)) { score1('gong'); fx(SFX.record); } }
-  if (bossUp && collide(b, PIT.x, PIT.y, PIT.x, PIT.y, BOSS_R, WALL_E)) { kick(b, BUMP_KICK); if (struck(BOSS)) { stats.boss++; emit('boss'); fx(SFX.hit); } }
-  for (const e of SLINGS) if (collide(b, e.x0, e.y0, e.x1, e.y1, 0, WALL_E)) { kick(b, SLING_KICK); if (struck(e)) { score1('sling'); fx(SFX.hit); } }
+  for (const e of BUMPERS) if (collide(b, e.x, e.y, e.x, e.y, BUMP_R, WALL_E)) { kick(b, BUMP_KICK); if (struck(e)) { score1('bump'); fx(SFX.bump + BUMPERS.indexOf(e)); } }
+  if (collide(b, GONG.x, GONG.y, GONG.x, GONG.y, GONG.r, WALL_E)) { kick(b, GONG_KICK); if (struck(GONG)) { score1('gong'); fx(SFX.gong); } }
+  if (bossUp && collide(b, PIT.x, PIT.y, PIT.x, PIT.y, BOSS_R, WALL_E)) { kick(b, BUMP_KICK); if (struck(BOSS)) { stats.boss++; emit('boss'); fx(SFX.bossHit); } }
+  for (const e of SLINGS) if (collide(b, e.x0, e.y0, e.x1, e.y1, 0, WALL_E)) { kick(b, SLING_KICK); if (struck(e)) { score1('sling'); fx(SFX.sling); } }
   for (const e of STANDUPS) if (collide(b, e.x0, e.y0, e.x1, e.y1, TARGET_R, WALL_E) && struck(e)) {
-    score1('standup'); fx(SFX.point);
-    if (!e.lit) { e.lit = true; stats.standupLit++; emit('standupLit'); if (STANDUPS.every((q) => q.lit)) { stats.standupSet++; emit('standupSet'); for (const q of STANDUPS) q.lit = false; } }
+    score1('standup'); fx(SFX.target);
+    if (!e.lit) { e.lit = true; stats.standupLit++; emit('standupLit'); if (STANDUPS.every((q) => q.lit)) { stats.standupSet++; emit('standupSet'); fx(SFX.targetSet); for (const q of STANDUPS) q.lit = false; } }
   }
-  if (collide(b, CHEST.x0, CHEST.y0, CHEST.x1, CHEST.y1, TARGET_R, WALL_E) && struck(CHEST)) { score1('chest'); fx(SFX.point); }
+  if (collide(b, CHEST.x0, CHEST.y0, CHEST.x1, CHEST.y1, TARGET_R, WALL_E) && struck(CHEST)) { score1('chest'); if (!chestLit) fx(SFX.target); } // (a lit chest's treasure has a sound of its own)
   if (!b.nocap) { // the holes
     for (const [i, s] of SLOTS.entries()) if (gates[i] && Math.hypot(b.x - s.x, b.y - s.y) < HOLE_R) { enterSlot(b, s); return; }
-    for (const c of CUBBIES) if (b.vy < 0 && Math.hypot(b.x - c.x, b.y - c.y) < CUBBY_R) { capture(b, c); stats.cubby++; score1(c.k, PTS.cubby); fx(SFX.point); return; } // its mouth faces the flippers: a ball coming up
+    for (const c of CUBBIES) if (b.vy < 0 && Math.hypot(b.x - c.x, b.y - c.y) < CUBBY_R) { capture(b, c); stats.cubby++; score1(c.k, PTS.cubby); fx(SFX.cubby); return; } // its mouth faces the flippers: a ball coming up
   }
-  for (const r of RAMPS) if (Math.hypot(b.x - r.x, b.y - r.y) < RAMP_IN && b.vy < -RAMP_MIN && b.vy > -RAMP_MAX) { ride(b, r); fx(SFX.point); return; }
-  KICKBACKS.forEach((k, i) => { if (kickback[i] && b.x > k.x0 && b.x < k.x1 && b.y > KICK_Y[0] && b.y < KICK_Y[1] && b.vy > 0) { kickback[i] = false; b.vx = k.vx; b.vy = -KICK_V; stats.kick++; emit('kick'); fx(SFX.point); } });
+  for (const r of RAMPS) if (Math.hypot(b.x - r.x, b.y - r.y) < RAMP_IN && b.vy < -RAMP_MIN && b.vy > -RAMP_MAX) { ride(b, r); fx(SFX.ramp); return; }
+  KICKBACKS.forEach((k, i) => { if (kickback[i] && b.x > k.x0 && b.x < k.x1 && b.y > KICK_Y[0] && b.y < KICK_Y[1] && b.vy > 0) { kickback[i] = false; b.vx = k.vx; b.vy = -KICK_V; stats.kick++; emit('kick'); fx(SFX.kick); } });
   for (const f of flips) {
     const tip = flipTip(f);
     collide(b, f.x, f.y, tip.x, tip.y, FR, FLIP_E, (t) => {
@@ -322,7 +326,7 @@ const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) ===
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
-let score = 0, balls = BALLS, ball = null, bs = [], flips = [], plunge = 0, camY = 0, held = [false, false];
+let score = 0, balls = BALLS, ball = null, bs = [], flips = [], plunge = 0, camY = 0, held = [false, false], heldPrev = [false, false];
 let nPlayers = 1, wantPlayers = 1, cur = 0, players = [], keys = 0, cubbyKey = [true, true], spell = null, depth = 1, level = 1, saveT = 0, saved = false;
 let ballStats = {}, bonusRes = null, initQueue = [], firstRank = -1, newDeepest = 0;
 let lavaBase = [], bossRise = 0; // the lava's colours as art.py made them; how far the Boss has risen (0 to 1)
@@ -378,8 +382,12 @@ function startGame(n = nPlayers) {
   flips = makeFlippers(); resetStats(); msgT = 0; paused = false; timer = 0; bossUp = false; boss = null; banner = null;
   loadPlayer(0); beginBall();
   state = n > 1 ? 'turn' : 'play';
-  play(SONG.play);
+  playSong();
 }
+
+/** The music follows the game: the Boss's fight, a spell, or the descent (heavier from Level 3). Called each frame; a song is only started
+ *  when it changes. */
+function playSong() { play(boss ? SONG.boss : spell ? SONG.spell : level >= 3 ? SONG.deep : SONG.play); }
 
 /** A new ball for the player whose turn it is: what belongs to one ball starts again (keys, a spell, the descent go on). */
 function beginBall() {
@@ -400,7 +408,7 @@ function processEvents() {
     else if (k === 'cubbyL' || k === 'cubbyR') {
       ballStats.cubby++;
       const i = k === 'cubbyL' ? 0 : 1;
-      if (cubbyKey[i]) { cubbyKey[i] = false; keys++; award(KEY_PTS); setGates(); say(keys > 1 ? 'KEY 2 X10 OPEN' : 'KEY 1 X3 OPEN'); fx(SFX.record); }
+      if (cubbyKey[i]) { cubbyKey[i] = false; keys++; award(KEY_PTS); setGates(); say(keys > 1 ? 'KEY 2 X10 OPEN' : 'KEY 1 X3 OPEN'); fx(SFX.key); fx(SFX.gate); }
     } else if (k === 'slot3' || k === 'slot10') { ballStats.slot++; castSpell(k === 'slot10' ? 10 : 3); }
     else if (k === 'launch' && !saved && saveT === 0) saveT = SAVE_FRAMES; // the ball save starts with the launch
   }
@@ -414,7 +422,7 @@ function castSpell(m) {
   if (keys === 0) cubbyKey = [true, true];
   setGates();
   spell = { m: Math.max(m, spell ? spell.m : 0), t: SPELL_TIME };
-  say(m === 10 ? 'X10 MEGA SPELL' : 'X3 SPELL'); fx(SFX.record);
+  say(m === 10 ? 'X10 MEGA SPELL' : 'X3 SPELL'); fx(m === 10 ? SFX.spell10 : SFX.spell3);
 }
 
 // --- The descent (SPEC 5): four levels, each with a goal, then the Boss; beating it is the next depth ---
@@ -437,7 +445,7 @@ const showBanner = (a, b) => { banner = { a, b, t: 150 }; };
 function completeLevel() {
   award(LEVEL_PTS * level * depth); ballStats.level++; stats.levels++; chestLit = true; goalN = 0;
   showBanner(`${LEVELS[level - 1].name} CLEARED`, level < 4 ? `DOWN TO LEVEL ${level + 1}` : 'THE PIT LORD AWAITS: A RAMP');
-  level++; fx(SFX.record);
+  level++; fx(SFX.level);
 }
 
 /** The Boss fight: a ramp shot with the Boss lit. Two more balls come out of the slots' alcoves; 12 seconds of ball save for all three. */
@@ -445,7 +453,7 @@ function startBoss() {
   boss = { hp: bossHp(), max: bossHp() }; bossUp = true; stats.bossStart++;
   saveT = SAVE_FRAMES; saved = false;
   for (let i = 0; i < 2; i++) { const s = SLOTS[i], b = newBall(s.x, s.y); b.hold = { h: s, t: (HOLD + 40 * i) * SUB }; bs.push(b); }
-  showBanner('THE PIT LORD RISES', 'HIT HIM WITH EVERY BALL'); fx(SFX.over);
+  showBanner('THE PIT LORD RISES', 'HIT HIM WITH EVERY BALL'); fx(SFX.bossRise);
 }
 /** A hit on the Boss: a jackpot; the last one beats him: the prize, and one depth deeper. */
 function hitBoss() {
@@ -453,10 +461,10 @@ function hitBoss() {
   if (boss.hp > 0) { say('JACKPOT'); return; }
   award(BOSS_PRIZE * depth); stats.bossBeaten++;
   showBanner('THE PIT LORD FALLS', `DESCEND TO DEPTH ${depth + 1}`);
-  depth++; level = 1; goalN = 0; treasureN = 0; boss = null; bossUp = false; fx(SFX.record);
+  depth++; level = 1; goalN = 0; treasureN = 0; boss = null; bossUp = false; fx(SFX.bossBeaten);
 }
 /** The multiball is over (one ball left) with the Boss standing: he sinks, still lit, for another ramp shot. */
-function failBoss() { boss = null; bossUp = false; showBanner('THE PIT LORD SINKS', 'A RAMP TO FIGHT AGAIN'); }
+function failBoss() { boss = null; bossUp = false; showBanner('THE PIT LORD SINKS', 'A RAMP TO FIGHT AGAIN'); fx(SFX.bossSink); }
 
 /** The lit chest: 50,000 and the next treasure: a ball save, both kickbacks relit, an extra ball (the third of each depth), round and round. */
 function openChest() {
@@ -465,7 +473,7 @@ function openChest() {
   if (t === 0) { saveT = TREASURE_SAVE; saved = false; say('TREASURE BALL SAVE'); }
   else if (t === 1) { kickback = [true, true]; say('TREASURE KICKBACKS'); }
   else { extraBalls++; say('TREASURE EXTRA BALL'); }
-  fx(SFX.record);
+  fx(t === 2 ? SFX.extra : SFX.treasure);
 }
 
 const newBall = (x, y) => ({ x, y, vx: 0, vy: 0, ride: null, zone: null, skill: false, hold: null, nocap: 0 });
@@ -478,8 +486,8 @@ function serve() {
 const inLane = () => !!ball && ball.x > LANE_X && ball.y > LANE_FLOOR - 40; // (no ball on the title)
 /** The ball is lost: a saved ball goes back to the plunger; otherwise its bonus is counted, and then the next ball. */
 function drain() {
-  if (saveT > 0 && !saved) { saved = true; saveT = 0; say('BALL SAVED'); fx(SFX.record); serve(); ball.skill = false; return; }
-  stats.drain++; fx(SFX.hit);
+  if (saveT > 0 && !saved) { saved = true; saveT = 0; say('BALL SAVED'); fx(SFX.save); serve(); ball.skill = false; return; }
+  stats.drain++; fx(SFX.drain);
   const B = BONUS_PTS, base = ballStats.bump * B.bump + ballStats.ramp * B.ramp + ballStats.cubby * B.cubby + ballStats.slot * B.slot + ballStats.level * B.level;
   bonusRes = { base, depth, total: base * depth };
   score += bonusRes.total; // (the bonus is not multiplied by a spell)
@@ -490,7 +498,7 @@ const BONUS_COUNT = 90, BONUS_HOLD = 45; // frames the bonus counts up, and wait
 const bonusShown = () => Math.ceil(bonusRes.total * Math.min(1, timer / BONUS_COUNT));
 function updateBonus() {
   const done = timer >= BONUS_COUNT;
-  if (!done && timer % 6 === 0 && bonusRes.total) fx(SFX.move);
+  if (!done && timer % 6 === 0 && bonusRes.total) fx(SFX.tick);
   if (pressed(A) || pressed(START)) { // a press skips the counting; another goes on
     if (!done && timer > 10) timer = BONUS_COUNT; else if (done && timer > BONUS_COUNT + 10) afterBall();
   } else if (timer > BONUS_COUNT + BONUS_HOLD) afterBall();
@@ -548,13 +556,20 @@ function updatePlay() {
   held = [PAD_LEFT.some((k) => btn(k)), PAD_RIGHT.some((k) => btn(k))];
   // The plunger: either hand held while the ball waits pulls it; let go, and the pull launches the ball and picks its way
   const waiting = bs.length === 1 && inLane() && !ball.ride && ball.vy >= 0 && ball.y >= BALL_HOME.y - 1;
-  if (waiting && (held[0] || held[1])) plunge = Math.min(PLUNGE_FRAMES, Math.round(plunge * PLUNGE_FRAMES) + 1) / PLUNGE_FRAMES; // whole frames, so 30 held is 0.5 exactly
+  if (waiting && (held[0] || held[1])) {
+    const was = plunge;
+    plunge = Math.min(PLUNGE_FRAMES, Math.round(plunge * PLUNGE_FRAMES) + 1) / PLUNGE_FRAMES; // whole frames, so 30 held is 0.5 exactly
+    if ([ZONE_A[0], ZONE_A[1], ZONE_B].some((z) => was < z && plunge >= z)) fx(SFX.pull); // a ratchet's click at each zone's edge
+  }
   else if (waiting && plunge > 0.04) {
     ball.vy = -(4 + 10 * plunge); ball.zone = zoneOf(plunge);
     if (plunge >= ZONE_A[0]) { stats.launch++; emit('launch'); if (!ball.zone) ball.skill = false; } // between the zones: round the arch, no skill shot (a weak pull falls back: pull again)
-    plunge = 0; fx(SFX.point);
+    plunge = 0; fx(SFX.launch);
   } else if (!waiting) plunge = 0;
+  if (!waiting) [0, 1].forEach((h) => { if (held[h] && !heldPrev[h]) fx(SFX.flipUp); else if (!held[h] && heldPrev[h]) fx(SFX.flipDown); });
+  heldPrev = waiting ? [false, false] : held;
   stepTable(bs, flips, waiting ? [false, false] : held);
+  playSong();
   if (ball.x > LANE_X && !ball.ride && ball.y >= BALL_HOME.y - 2 && Math.abs(ball.vy) < 4) { ball.y = BALL_HOME.y; ball.vy = 0; } // the plunger's spring soaks up a ball that falls back onto it
   processEvents();
   if (!waiting) { // the clocks of the spell and the ball save stand still while the ball waits at the plunger
@@ -572,7 +587,7 @@ function updatePlay() {
     if (!(b.y > DRAIN_Y && b.x < LANE_X)) continue;
     if (bs.length === 1) { drain(); break; }
     if (saveT > 0) { const s = SLOTS[0]; Object.assign(b, { x: s.x, y: s.y, vx: 0, vy: 0, hold: { h: s, t: HOLD * SUB } }); say('BALL SAVED'); continue; }
-    bs.splice(bs.indexOf(b), 1); ball = bs[0]; fx(SFX.hit);
+    bs.splice(bs.indexOf(b), 1); ball = bs[0]; fx(SFX.drain);
     if (bs.length === 1 && boss) failBoss();
   }
 }

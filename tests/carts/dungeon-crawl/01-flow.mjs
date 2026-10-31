@@ -22,7 +22,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(1), p = vm.probe(); vm.run(5);
   ok(p.state === 'play' && p.inLane() && p.balls === 3, 'a game starts with three balls and the first one waiting at the plunger');
   sfxLog(vm); vm.run(30, M('A')); vm.run(1);
-  ok(p.stats.launch === 1 && sfxLog(vm).some(([n, ch]) => n === p.SFX.point && ch >= 6), 'a pull and a release launch it, with a sound on an effects channel (6 or 7)');
+  ok(p.stats.launch === 1 && sfxLog(vm).some(([n, ch]) => n === p.SFX.launch && ch >= 6), 'a pull and a release launch it, with a sound on an effects channel (6 or 7)');
 }
 
 // 3. Pause.

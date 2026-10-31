@@ -198,26 +198,42 @@ One mode: the game (1 to 4 players). No attract mode (Open questions).
 
 ## 11. Audio
 
-Dark orchestral on the new sound chip (sampled strings, choir, brass, bass, the kit's drums and the tom; a hall's echo). Songs use
+Dark orchestral on the new sound chip (sampled strings, choir, a soft horn, bass, a celesta, the kit's drums; a hall's echo per song),
+in D minor on one motif: D, F, A, then falling to the A below (the way down). `carts/src/dungeon-crawl/audio.py` writes it. Songs use
 channels 0 to 5; effects take turns on 6 and 7. A song's channels cannot be muted from code, so the music that grows heavier is
-several songs, and `playSong()` picks one each frame (it restarts only when the song changes):
+several songs, and `playSong()` picks one each frame (`play()` restarts only when the song changes):
 
-| Song | When | What (draft) |
+| Song | When | What |
 |---|---|---|
-| 0 | The title | D minor, slow: low strings and a choir, a tolling bell, the brass motif once |
-| 1 | Levels 1 and 2 | D minor, 100 bpm: low strings in a pulse, a slow drum, the motif on a soft horn |
-| 2 | Levels 3 and 4 | the same, heavier: the choir comes in, the drums double |
-| 3 | The Boss | the battle: faster (140 bpm), brass and choir, heavy drums, the motif in full |
-| 4 | A spell (x3 or x10) | the level's song with a brighter top line (the spell is a reward) |
-| 5 | Game over | a short descending phrase, played once |
+| 0 | The title | slow (speed 10, a long hall's echo): the choir and low strings, a tolling bell, the motif once on the horn |
+| 1 | Levels 1 and 2 | 100 bpm (speed 9): low strings and a pulse of bass, a slow dirge on the drums, the motif and its answer on the horn |
+| 2 | Levels 3 and 4 (of each depth) | the same, heavier: the choir comes in, a strings' counter-melody, the drums doubled |
+| 3 | The Boss | the battle: 150 bpm (speed 6), the chords i, VII, VI, V; the motif driven by the brass over heavy drums, with a fill |
+| 4 | A spell (x3 or x10) | the descent's song with bells ringing in arpeggios over it (the spell is a reward) |
 
-Effects (about 35, sampled and soft): the flippers' thunk, three bumpers a chord apart, a slingshot, a target, a ramp's whoosh, a
-cubby's clank, a **key's jingle**, a **gate grinding open**, a slot's thud and the spell's chord (x3 and a bigger one for x10), the
-plunger's pull (a ratchet tick each zone) and launch, a skill shot, a level completed, the Boss rising (a low roar), a Boss hit, the
-Boss beaten, a treasure, an extra ball, a ball saved, a drain, the bonus ticks, the menus.
+The game over is not a song: the music stops (`play(-1)`) and a falling phrase plays as an effect.
+
+Effects (35, numbered as `SFX` in `code.js`; sampled and soft like the music):
+
+| Effect | What plays it |
+|---|---|
+| move, select, pause | the menus |
+| flipUp, flipDown | a flipper raised (a tom's thunk) and lowered (softer) |
+| bump (three: 5, 6, 7) | each bumper its own marimba note, a chord apart |
+| sling, target, targetSet | a slingshot; a target or the unlit chest; a set of targets completed |
+| ramp | a ball entering a ramp's mouth (a strings' whoosh) |
+| cubby, key, gate | a cubby's clank; with its key: a key's jingle and a gate grinding open |
+| slot, spell3, spell10 | a slot's thud; the x3 spell's chord, the x10 MEGA spell's bigger one |
+| pull, launch, skill | the plunger's ratchet (a click into the middle zone, out of it and into the full pull), the launch, a skill shot |
+| level | a level's goal reached (a fanfare) |
+| bossRise, bossHit, bossBeaten, bossSink | the Pit Lord rising (a low roar), hit, beaten, sinking unbeaten |
+| treasure, extra | a treasure; the third, an extra ball |
+| save, drain, tick | a ball saved; a ball lost (also a multiball's ball); the bonus counting |
+| gong, kick, over | the gong; a kickback; the game over's falling phrase |
 
 Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x where it enters, the pierce at
-most 0.012 (`node tools/devkit/music/loud.mjs carts/dungeon-crawl.nova --check`; playbook section 5).
+most 0.012 (`node tools/devkit/music/loud.mjs carts/dungeon-crawl.nova --check`; playbook section 5); the effects 0.01 to 0.06 RMS each
+(`node tools/devkit/music/sfx.mjs carts/dungeon-crawl.nova 6`); no clashes (`python3 tools/devkit/music/clash.py carts/src/dungeon-crawl/audio.json`).
 
 ## 12. Video layers
 
@@ -258,10 +274,10 @@ picture cannot drift from where the ball bounces.
 
 | Asset | Budget |
 |---|---|
-| Code | 41.6 KB of the 64 KB limit after step 6 (63 %), packed with `"strip": true`; `"mangle": true` if it nears the limit (`node tools/check.js dungeon-crawl`) |
+| Code | 43.5 KB of the 64 KB limit after step 7 (66 %), packed with `"strip": true`; `"mangle": true` if it nears the limit (`node tools/check.js dungeon-crawl`) |
 | Tiles | 963 of 1,024 after step 6: 597 of the 599 for the background (the lava 16, the floor about 240, the walls 130, the ramps' high-priority cells about 210) and 366 of the 424 for sprites (the flippers 78 in five frames each, the Pit Lord about 50 in two frames, the logo about 70) |
 | Sprites | about 70 of the 128 in OAM in play (the torches and their glows, the embers, the plaques, the parts), under 110 in a Boss multiball, under 32 a line (`08-art.mjs` checks) |
-| Songs / SFX | 6 songs, about 35 effects, under 24 KB of the 32 KB of sample RAM |
+| Songs / SFX | 5 songs and 35 effects in 22,464 bytes of the 32 KB of sample RAM (69 %) |
 
 ## 15. Implementation plan
 
@@ -281,7 +297,7 @@ picture cannot drift from where the ball bounces.
 5. **The flow.** Title, players, pause, bonus, game over, initials, records (the deepest level), the saves.
 6. **Art.** Stone, brick and iron, the lava pit and its parallax, torches, the gates, the ramps, the Boss, the panel with the LED, the
    lamps and the light show (embers, sparks, the spells' flare); the budget.
-7. **Audio.** The six songs and the effects; the levels.
+7. **Audio.** The five songs and the effects; the levels.
 8. **Balance and release.** The bot at several skills (a ball should last a minute or two; an average bot should reach Level 3 or 4
    of depth 1, a good one the Boss), the polish, the label, the PNG cart, the Library (`node tools/release.js dungeon-crawl`) and a
    README row.
@@ -427,6 +443,23 @@ and **Results** notes under its number here, commit and push.
   Measured with the bot (skill 0.95): the balls last 42 to 107 seconds (about 40 before), and the goals come about as often as before
   (bumpers 15 a minute when aimed at, ramps 2, targets 5, cubbies 2.3). `06-bot.mjs` plays three games and wants two to clear a level
   (one short game can be unlucky).
+
+### Step 7 built: the audio
+
+- `carts/src/dungeon-crawl/audio.py` (rewritten: the starter's songs are gone): five songs and 35 effects, section 11 lists them. The
+  music is D minor on one motif, its notes chord tones (`clash.py` found the first draft's E against F and B flat). The effects are the
+  music's own sampled voices (a tom for the thunks and drains, a marimba for the bumpers, a celesta for keys and prizes, strings for the
+  ramps' whoosh, brass and an orchestra hit for the fanfares and the Pit Lord, a crash over a tom's thud for the gong).
+- `code.js`: the `SFX` and `SONG` tables; `playSong()` each frame of play (the Boss's battle over a spell's bells over the descent's
+  song, the heavier one from Level 3); the flippers sound on a press and a release, not while held; the plunger's ratchet clicks as
+  the pull crosses into the middle zone, out of it and into the full pull; the game over stops the music and plays its falling phrase.
+- `tests/carts/dungeon-crawl/09-audio.mjs`: the five songs and an effect with notes for each name; each table effect played by a real
+  ball (a flipper up and down, each bumper its own note, the gong, a ramp, a cubby with its key and the gate, a kickback); the rules'
+  effects (the spells, a level, the Pit Lord rising, beaten and sinking, a treasure, an extra ball, a save, a drain, the bonus ticks);
+  the plunger's three clicks, the launch and a skill shot; the music by state, and not restarted every frame.
+- **Results:** 260 checks pass in 9 files (34 of them the audio's; `01-flow.mjs` named the starter's `SFX.point`, now the launch); `loud.mjs --check` within its limits (the leads 0.032 to 0.034 RMS, 0.51 to 0.67 of the mix, the
+  pierce at most 0.003); the effects 0.009 to 0.043 RMS at first, the gong raised from 0.009 to 0.020 (a lower ring over a mallet's
+  thud); no clashes; 22,464 bytes of sample RAM; the code 43.5 KB of 64 (66 %); the smoke test 60 fps.
 
 ## 16. Open questions
 
