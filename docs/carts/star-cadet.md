@@ -147,10 +147,11 @@ An extra ball at 500,000; a replay is not given.
 ## 11. Audio
 
 Seven songs, since a song's channels cannot be muted from code, so the layers that rise with the rank are songs of their own, which `playSong()` picks each frame (the music
-restarts only when the song changes): **0** the title (A minor, 150 bpm, a pad and an arpeggio, then a soft horn over drums; it also plays in the attract mode); **1** the table
-for a Cadet, an Ensign and a Pilot (E minor, 128 bpm: only the bass and an arpeggio, a pulse); **2** the same with the flute lead, from a Lieutenant; **3** with the drums as well,
-from a Commander on; **4** a mission (A minor, 150 bpm, quicker, a soft horn and drums); **5** the Admiral's multiball (D minor, 180 bpm, heavy drums); **6** the last mission (E minor,
-180 bpm, a march, with strings and a counter-melody). Sampled voices (`audio.py`): flute, soft horn, bass, strings, plucked arpeggio, the kit's drums, with a room's echo.
+restarts only when the song changes): **0** the title (A minor, 150 bpm, a pad and an arpeggio, then a soft horn over drums; it also plays in the attract mode); **1** the table,
+"Deep Field", for a Cadet, an Ensign and a Pilot (E minor, 112 bpm, in a hall's echo: a choir pad, a deep bass pulsing in a dotted rhythm, and a celesta repeating one figure over the
+changing chords, the stars turning; sixteen bars, the first phrase climbing from E minor and lifting at its end through G sharp major, a chord from outside the key, onto B, the second
+coming home); **2** the same with its flute theme, from a Lieutenant; **3** with a slow half-time beat as well (a kick, the snare on 3, hats between), from a Commander on; **4** a mission (A minor, 150 bpm, quicker, a soft horn and drums); **5** the Admiral's multiball (D minor, 180 bpm, heavy drums); **6** the last mission (E minor,
+180 bpm, a march, with strings and a counter-melody). Sampled voices (`audio.py`): flute, soft horn, bass, strings, choir, celesta, plucked arpeggio, the kit's drums, with a room's echo (a hall's for the table).
 
 Effects (35; channels 6 and 7 take turns; the numbers are the `SFX` table in `code.js`): the menus' move, select and pause (0 to 2); a flipper up (a low thunk) and down (softer) (3, 4);
 the three bumpers, a chord apart: C, E and G (5 to 7); a slingshot (8); a standup target (9), a drop target (10), the cleared bank (11); a lane's tick (12) and the three lanes' chime
@@ -159,7 +160,8 @@ the three bumpers, a chord apart: C, E and G (5 to 7); a slingshot (8); a standu
 record (29); game over (30); a mission lamp (31); an orbit (32); the kickback (33); a jackpot (34). All sampled (tom, marimba, celesta, strings, soft horn, orchestra hit), soft like the music.
 
 Levels (measured by `loud.mjs --check` and `sfx.mjs`, both clean): the songs' median 0.04 to 0.06, the lead alone 0.03 to 0.035 (0.56 to 0.70 of the mix; the limits are 0.07 and 0.75),
-the peaks 0.12 to 0.22, the lead's piercing band 0.003 to 0.007 (the limit is 0.012); the effects 0.010 to 0.041 RMS (the quietest, a tick, 0.010; the loudest, a tilt, 0.041).
+the peaks 0.12 to 0.22, the lead's piercing band 0.003 to 0.007 (the limit is 0.012); "Deep Field" (after the polish pass): the median 0.042 (the atmosphere alone) and 0.051, the flute
+0.033 RMS and 0.63 of the mix, its pierce 0.0027, the half-time beat alone 0.009 (sparse hits), no clashes (`clash.py`); the effects 0.010 to 0.041 RMS (the quietest, a tick, 0.010; the loudest, a tilt, 0.041).
 
 ## 12. Video layers
 
@@ -370,6 +372,9 @@ The player's note: "it does not look cool enough". The table was a solid dark-bl
   line, dark, moving with the camera, warming with the rank, on the screen), the arrows (lit for the shots that count, dark otherwise, blinking, chasing on the title), a bumper's sparks (from its rim,
   outwards, gone after their time, never more than 18) and ring, the tail (three lights under a fast ball, none on a slow one), the flash and the rank lamps, the LED (eight and nine digits), and that
   a game of two minutes plays the same with the light show on and off; frames under 8 ms in a multiball.
+- **The music** (asked for after the art: "kind of generic and not space atmospheric"): the table's song, in its three layers, was replaced by "Deep Field" (section 11): slower, a choir
+  and a celesta ostinato in a hall's echo over a deep pulse, a flute theme that soars, a chromatic lift to G sharp major at the end of each first phrase, a half-time beat for the top layer. The
+  layers, the cues and the other six songs are as they were. Levels within `loud.mjs --check`, no clashes; the WAVs from `render.mjs` were sent to the user to judge, since I cannot listen.
 - **Results:** `snes.mjs` scores the table 88 of 100 (66 before: the backdrop was one colour, now 21 on a screen; 113 colours on a screen, 48 before); `colors.mjs --check` within its limits; the soak
   and `smoke.mjs` clean; the frames 3.4 ms at the 99th percentile in a multiball. The bot (`bot.mjs`) scores nothing in a sweep, on `main` as on this branch: it no longer plays (its three balls drain in
   about half a minute without touching anything), a problem from before this pass, under Open questions. The label is the new title screen.
