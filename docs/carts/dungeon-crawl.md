@@ -232,7 +232,8 @@ picture cannot drift from where the ball bounces.
   cubbies' glowing lips, the upper flipper's plate, the torches' sconces, the dark plunger lane; the two playfield ramps' glowing
   ribbons and the launch ramps' wires are cells with the high-priority bit (a ball on the floor, priority 2, goes under them; a ball on
   a ramp, priority 3, over).
-- **Sprites:** the ball; the flippers (five frames from rest to up, two lengths); the rune bumpers (at rest and lit); the slingshots;
+- **Sprites:** the ball, **icy blue** with a halo of blue light under it (the one cold colour on the table: the user found a grey ball not
+  legible enough against the stone); the flippers (five frames from rest to up, two lengths); the rune bumpers (at rest and lit); the slingshots;
   the targets (amber when lit); the chest (and its glow when lit); the portcullises (down on a shut slot, raised on an open one); a key
   in each cubby that still has one; the five plaques on the pit's steps (lit for the levels cleared, the one to clear blinking); the
   Pit Lord (48 px, glaring and roaring), rising out of the lava for his fight; in the palettes that add light, the torches' flames
@@ -409,6 +410,11 @@ and **Results** notes under its number here, commit and push.
   in `lib.mjs`: `draw()` emptied; the rules never depend on it): drawing costs about 2 ms a frame, which made the suites five times
   slower.
 - **Results:** 219 checks pass; `colors.mjs --check` within its limits; `snes.mjs` 88 of 100; a frame of play 2.4 ms; the smoke test 60 fps.
+
+- **After the user's review** (the preview of the PR): "the ball is not legible enough", a steel-grey ball on grey stone. It is icy blue now
+  (the complement of the table's reds and oranges, and no other colour on the table is blue), with a dark navy outline, a white shine
+  and a halo of blue light (a sprite in an adding palette, under it). `08-art.mjs` checks the ball's colours are blue, that nothing on the
+  background layers is, and the halo.
 
 ## 16. Open questions
 

@@ -1,6 +1,8 @@
 // Dungeon Crawl Pinball, step 6: the art. It is drawn from the physics' own numbers (art.py runs the physics block of code.js), so these
 // checks are that the picture and the ball agree, that the layers and sprites follow the game, and that the budgets hold.
+import { readFileSync } from 'node:fs';
 import { newGame, M } from './lib.mjs';
+const manifest = JSON.parse(readFileSync(new URL('../../../carts/src/dungeon-crawl/art.json', import.meta.url), 'utf8'));
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy, zone: null, ride: null, hold: null, nocap: 0 }); };
@@ -85,6 +87,18 @@ const cell = (sc, x, y) => p.mget(sc.mx + Math.floor(x / 8), sc.my + Math.floor(
   const seen = new Set(); q.keys = 1; q.setGates(); for (let i = 0; i < 40; i++) { t.run(1); seen.add(lum(q.color(C.ARROW1))); }
   ok([...seen].some((v) => v > dark + 20), 'with a slot open the arrows of the guided way light (and blink)', [...seen].join(' '));
   const l0 = q.color(C.LAVA0).join(); t.run(9); ok(q.color(C.LAVA0).join() !== l0, 'the lava\'s colours turn round, so it flows');
+}
+
+// 6b. The ball is legible: icy blue, the one cold colour on a table of reds, oranges and greys, with a halo of blue light under it.
+{
+  const t = newGame(1), q = t.probe(); t.run(3);
+  const base = 128 + 16 * A.sprites.ball.pal, rgb = [1, 2, 3, 4, 5, 6, 7, 8].map((k) => q.color(base + k));
+  const blue = rgb.filter(([r, g, b]) => b > r + 6 && b >= g).length;
+  ok(blue >= 4, 'the ball\'s colours are blue (the user: a grey ball was not legible enough)', rgb.map((c) => c.join('/')).join(' '));
+  let warm = 0; // (the colours the layers' palettes define, from art.py's manifest)
+  for (const pal of ['bg1', 'bg2', 'bg3']) for (const k of Object.values(manifest.palettes[pal].colors)) { const [r, , b] = q.color(manifest.palettes[pal].base + k); if (b > r + 6) warm++; }
+  ok(warm === 0, 'and nothing on the table\'s layers is blue', `${warm} blue entries`);
+  hold(t, q, 96, 300, 5); ok(tiles(t, A.sprites.halo) === 1 && tiles(t, A.sprites.ball) === 1, 'the ball has its halo');
 }
 
 // 7. The budgets: the sheet's regions and the sprites in a busy multiball.

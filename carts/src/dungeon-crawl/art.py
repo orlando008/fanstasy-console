@@ -17,7 +17,7 @@
 #   BG0  the walls: dark brick outside the playfield, iron rails along every wall of the physics, the slots' alcoves, the upper
 #        flipper's plate, the torches' sconces, the lane; the playfield ramps' glowing ribbons have the high-priority bit (a ball on the
 #        floor goes under them, a ball on a ramp over), and the launch ramps are wire ramps (two thin rails, high priority too)
-#   Sprites: the ball, the flippers, the bumpers, the slingshots, the targets, the chest, the portcullises, the keys, the plaques, the
+#   Sprites: the ball (icy blue, with a halo of blue light), the flippers, the bumpers, the slingshots, the targets, the chest, the portcullises, the keys, the plaques, the
 #        torches' flames and the embers (in a palette that adds light), the Pit Lord, the plunger, the logo
 import json, math, os, subprocess, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
@@ -56,12 +56,13 @@ art.color(floor.base + floor.arrow[0], floor.hexes['arrow0'], 'ARROW0'); art.col
 deco = art.palette(2, {'edge': '080606', 'iron': ramp('5c5a64', 4), 'brick': ramp('3c2c28', 4), 'glow': ramp('c03a08', 4), 'gold': ramp('e0a030', 2)})
 lava = art.palette(3, {'lava': ramp('b02008', 6)})
 for i in range(6): art.color(lava.base + lava.lava[i], lava.hexes['lava%d' % i], 'LAVA%d' % i)
-steel = art.sprite_palette(0, {'edge': '060404', 'ball': ramp('a0a4b4', 5), 'white': 'ffffff', 'iron': ramp('4c4a54', 3)})
+# The ball is icy blue, the one cold colour on a table of reds, oranges and greys (the user: a grey ball was not legible enough)
+steel = art.sprite_palette(0, {'edge': '040818', 'ball': ramp('4a9cf0', 5), 'white': 'ffffff', 'iron': ramp('4c4a54', 3)})
 red = art.sprite_palette(1, {'edge': '080404', 'red': ramp('c02820', 4), 'hot': ramp('ff8a28', 3), 'iron': ramp('5c5a64', 3), 'gold': ramp('e0a030', 2)})
 fiend = art.sprite_palette(2, {'edge': '060202', 'skin': ramp('7c1810', 4), 'bone': ramp('b4a490', 3), 'eye': ramp('ffb020', 2), 'wood': ramp('5c3418', 3)})
 parts = art.sprite_palette(3, {'edge': '060404', 'gold': ramp('e0a030', 3), 'stone': ramp('6a6260', 3), 'iron': ramp('4c4a54', 3), 'amber': ramp('ff7a18', 2), 'dark': '2a1a14'})
 fire = art.sprite_palette(4, {'warm': ramp('e05010', 3)})                  # palettes 4 to 7 add their light (code.js: blend)
-gleam = art.sprite_palette(5, {'gold': ramp('c08020', 3)})
+halo = art.sprite_palette(5, {'cold': ramp('1c4cb0', 3)})                # the ball's halo: blue light added under it
 
 # --- Drawing helpers ---
 def put(img, x, y, c):
@@ -277,6 +278,9 @@ art.scene('decor_hi', hiS, pal=deco, at=(24, 0), prio=1, region='bg')
 # ===================================================================================================================
 b = Img(16, 16); sphere(b, 8, 8, 5, steel.ball, spec=steel.white, edge=steel.edge)
 art.sprite('ball', b, pal=steel, region='spr')
+im = Img(16, 16)                                                             # the halo: a soft ring of blue light round the ball
+disc(im, 8, 8, 7.6, lambda x, y, d: None if d < 4.6 else halo.cold[1] if d < 6 else halo.cold[0])
+art.sprite('halo', im, pal=halo, region='spr')
 
 # the pop bumpers: an iron rim, a red cap with a rune, at rest and lit
 R = G['BUMP_R']
