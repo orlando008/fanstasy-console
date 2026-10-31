@@ -1,4 +1,4 @@
-// Dungeon Crawl Pinball: the frame (title, play, pause, game over, initials, records, saves) and its sound cues.
+// Dungeon Crawl Pinball: the frame (title, play, pause, game over, initials, records, saves) and its sound cues, around the table.
 // One PASS/FAIL line for each behaviour, written as a sentence. Add a file for each step of the build (02-..., 03-...).
 import { newGame, M, sfxLog, musicLog } from './lib.mjs';
 let fails = 0;
@@ -15,32 +15,30 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
 }
 
-// 2. Playing: movement, blocks, a hit costs a life.
+// 2. Playing: the table is the game (02-physics.mjs has the rest).
 {
-  const vm = newGame(1), p = vm.probe(), x0 = p.px;
-  vm.run(10, M('LEFT')); ok(p.px < x0, 'LEFT moves the player');
-  vm.run(20, M('RIGHT')); ok(p.px > x0 - 30, 'and RIGHT');
-  const lives = p.lives; sfxLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.lives === lives - 1, 'a block that lands on the player costs a life');
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch >= 6), 'with the hit sound, on an effects channel (6 or 7)');
+  const vm = newGame(1), p = vm.probe(); vm.run(5);
+  ok(p.state === 'play' && p.inLane() && p.balls === 3, 'a game starts with three balls and the first one waiting at the plunger');
+  sfxLog(vm); vm.run(30, M('A')); vm.run(1);
+  ok(p.stats.launch === 1 && sfxLog(vm).some(([n, ch]) => n === p.SFX.point && ch >= 6), 'a pull and a release launch it, with a sound on an effects channel (6 or 7)');
 }
 
 // 3. Pause.
 {
-  const vm = newGame(2), p = vm.probe(); vm.run(30);
+  const vm = newGame(2), p = vm.probe(); vm.run(5); vm.run(40, M('A')); vm.run(20);
   vm.press('START'); ok(p.paused, 'START pauses');
-  const y = p.blocks.map((b) => b.y).join(); vm.run(30); ok(p.blocks.map((b) => b.y).join() === y, 'and the game stands still');
-  const t = p.timer; vm.press('DOWN'); vm.press('A'); vm.run(2);
-  ok(!p.paused && p.score === 0 && p.timer < t, 'RESTART starts the game again');
+  const y = p.ball.y; vm.run(30); ok(p.ball.y === y, 'and the ball stands still');
+  vm.press('START'); vm.run(2); ok(!p.paused, 'START again resumes');
+  vm.press('START'); const t = p.timer; vm.press('DOWN'); vm.press('A'); vm.run(2);
+  ok(!p.paused && p.score === 0 && p.timer < t && p.inLane(), 'RESTART starts the game again');
   vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
 }
 
 // 4. Game over, the top 10 and initials.
 {
-  const vm = newGame(3), p = vm.probe(); p.score = 120; p.lives = 1; musicLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.state === 'over' && p.rank === 0, 'the last life ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
+  const vm = newGame(3), p = vm.probe(); vm.run(2); p.score = 120; p.balls = 1; musicLog(vm);
+  Object.assign(p.ball, { x: 88, y: 620, vx: 0, vy: 3 }); vm.run(10);
+  ok(p.state === 'over' && p.rank === 0, 'the last ball drained ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
   ok(musicLog(vm).includes(-1), 'the game song stops');
   vm.run(70); vm.press('A');
   ok(p.state === 'initials', 'A asks for initials');
@@ -61,7 +59,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 // 5. Frames are quick.
 {
   const vm = newGame(5), times = [];
-  for (let i = 0; i < 600; i++) { vm.step(i % 40 < 20 ? M('LEFT') : M('RIGHT')); times.push(vm.m.stats.cpu); }
+  for (let i = 0; i < 600; i++) { vm.step(i % 40 < 20 ? M('LEFT') : M('A')); times.push(vm.m.stats.cpu); }
   times.sort((a, b) => a - b); const p99 = times[Math.floor(times.length * 0.99)];
   ok(p99 < 8 * (process.env.CI ? 3 : 1), 'frames are quick', `99th percentile ${p99.toFixed(2)} ms`);
 }

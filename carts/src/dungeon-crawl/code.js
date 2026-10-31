@@ -1,7 +1,6 @@
-// Dungeon Crawl Pinball
-// Scaffolded by tools/new-cart.js. A tiny working game (dodge the falling blocks) around everything every cart
-// needs: a title, play, pause, game over, a saved top 10 with initials, a records screen, sound and music cues,
-// a skipTitle hook and save slots. Replace the play part, keep the frame. See docs/dev/playbook.md.
+// Dungeon Crawl Pinball: a dungeon table that scrolls. Take the keys from the cubbies to open the slots at the top, clear four levels
+// and beat the Boss in a multiball, deeper and deeper. The spec is docs/carts/dungeon-crawl.md; the physics is Star Cadet Pinball's
+// (docs/carts/star-cadet.md), brought over and given an upper flipper and a plunger whose pull picks a ramp.
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
@@ -47,6 +46,7 @@ function play(song) {
 const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
 const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const BALLS = 3;
 
 function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)) }; }
 function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); }
@@ -66,6 +66,144 @@ const packInitials = (str) => (str.charCodeAt(0) << 16) | (str.charCodeAt(1) << 
 const unpackInitials = (v) => (v ? String.fromCharCode((v >> 16) & 255, (v >> 8) & 255, v & 255) : '---');
 const lastInitials = () => (dget(INITIALS_SLOT) ? unpackInitials(dget(INITIALS_SLOT)) : 'AAA');
 
+// --- The table and its physics (SPEC 4, 5). World pixels: x 0 to 192 across, y 0 to 640 down; the ball is 5 px in radius. ---
+// Every number is here, in one place (art.py will read the walls from this block, as Star Cadet's does).
+
+const TABLE_W = 192, TABLE_H = 640, VIEW_H = 224;
+const BR = 5, SUB = 4; // ball radius; substeps a frame (a substep moves the ball at most 3.5 px, under its radius)
+const GRAV = 0.12, VMAX = 14; // px per frame squared; px per frame
+const WALL_E = 0.45, FLIP_E = 0.7, REST_CUT = 0.3; // bounce of a wall and of a flipper; below this normal speed a hit does not bounce
+const FLEN = 34, UFLEN = 26, FR = 4; // the lower flippers' length, the upper one's, their radius
+const REST_A = 30 * Math.PI / 180, UP_A = -28 * Math.PI / 180; // a flipper's angle (down is positive), at rest and held up
+const W_UP = (REST_A - UP_A) / 4, W_DOWN = (REST_A - UP_A) / 6; // radians a frame: up in 4 frames, down in 6
+const LANE_X = 176, LANE_FLOOR = 612, BALL_HOME = { x: 184, y: LANE_FLOOR - BR };
+const DRAIN_Y = 632;
+
+/** The plunger: held PLUNGE_FRAMES is a full pull; the launch speed is 4 + 10 x the pull. The pull picks the ball's way (SPEC 5): the
+ *  middle zone onto Ramp A, a full pull onto Ramp B; under the middle zone the ball falls back, between the zones it goes round the arch. */
+const PLUNGE_FRAMES = 60, ZONE_A = [0.5, 0.68], ZONE_B = 0.95, SKILL = { A: 50000, B: 25000 };
+const zoneOf = (p) => (p >= ZONE_B ? 'B' : p >= ZONE_A[0] && p < ZONE_A[1] ? 'A' : null);
+
+const UF = { x: 166, y: 232 }; // the upper flipper's pivot, on the right under the x3 slot
+
+/** The walls: segments [x0, y0, x1, y1, r] (r: a post's radius, else 0). The top arch (radius 96), the plunger lane on the right, the
+ *  outlanes and inlanes with their guides down to the flippers, the slingshots' backs, the upper flipper's mount on the lane wall. */
+const WALLS = (() => {
+  const w = [];
+  for (let i = 0; i < 16; i++) { // the arch: a half circle of 16 segments
+    const a0 = Math.PI + (Math.PI * i) / 16, a1 = Math.PI + (Math.PI * (i + 1)) / 16;
+    w.push([96 + 96 * Math.cos(a0), 96 + 96 * Math.sin(a0), 96 + 96 * Math.cos(a1), 96 + 96 * Math.sin(a1)]);
+  }
+  w.push([0, 96, 0, TABLE_H], [TABLE_W, 96, TABLE_W, LANE_FLOOR], [LANE_X, 120, LANE_X, LANE_FLOOR], [LANE_X, LANE_FLOOR, TABLE_W, LANE_FLOOR]);
+  for (const m of [0, 1]) { // the two sides, the right one mirrored about x = 88
+    const X = (x) => (m ? 176 - x : x);
+    w.push([X(16), 492, X(16), 540], [X(16), 540, X(48), 588]); // the inlane guide: the outlane outside it, the inlane inside
+    w.push([X(32), 480, X(32), 545], [X(32), 545, X(44), 545], [X(32), 480, X(44), 545]); // the slingshot: its back, its bottom, its face (a plain wall until step 2 makes it kick)
+  }
+  w.push([LANE_X, 214, UF.x + 2, UF.y - 1]); // the upper flipper's mount: a slanted plate from the lane wall to its pivot
+  return w;
+})();
+
+/** The two launch ramps: where the ball leaves the lane (going up, past y `at`), the path it is carried along (a scripted ride over the
+ *  table: it touches nothing), and its speed when it is let go at the end. */
+const RIDE_SPEED = 7; // px a frame along a ride
+const LAUNCH = {
+  A: { at: 360, path: [[184, 360], [172, 326], [140, 306], [96, 300], [52, 306], [20, 330], [12, 380], [14, 440], [24, 486]], out: [0, 2] }, // over the table to the left inlane
+  B: { at: 140, path: [[184, 140], [182, 112], [172, 102], [162, 116], [164, 170], [170, 206]], out: [-0.6, 1.5] }, // round the top right onto the upper flipper
+};
+for (const k in LAUNCH) { const P = LAUNCH[k].path; LAUNCH[k].len = P.slice(1).reduce((s, q, i) => s + Math.hypot(q[0] - P[i][0], q[1] - P[i][1]), 0); }
+
+/** Flippers: pivot, side (+1 points right), length, which button (0 the left hand, 1 the right), angle and the last swing (radians a
+ *  frame, for the ball). The upper flipper is on the right hand with the lower right one. */
+const makeFlippers = () => [
+  { x: 48, y: 588, s: 1, len: FLEN, hand: 0, a: REST_A, w: 0 },
+  { x: 128, y: 588, s: -1, len: FLEN, hand: 1, a: REST_A, w: 0 },
+  { x: UF.x, y: UF.y, s: -1, len: UFLEN, hand: 1, a: REST_A, w: 0 },
+];
+const flipTip = (f) => ({ x: f.x + f.s * f.len * Math.cos(f.a), y: f.y + f.len * Math.sin(f.a) });
+
+let CN = [0, -1]; // the normal of the last collision
+/** Push the ball out of a capsule (or a segment, r 0) and bounce it. vsAt(t): the surface's velocity at the contact. */
+function collide(b, x0, y0, x1, y1, r, e, vsAt) {
+  const dx = x1 - x0, dy = y1 - y0, len2 = dx * dx + dy * dy;
+  const t = len2 ? clamp(((b.x - x0) * dx + (b.y - y0) * dy) / len2, 0, 1) : 0;
+  const cx = x0 + dx * t, cy = y0 + dy * t, ox = b.x - cx, oy = b.y - cy, d2 = ox * ox + oy * oy, reach = BR + r;
+  if (d2 >= reach * reach) return false;
+  const d = Math.sqrt(d2), nx = d ? ox / d : 0, ny = d ? oy / d : -1;
+  b.x = cx + nx * reach; b.y = cy + ny * reach; CN = [nx, ny];
+  const vs = vsAt ? vsAt(t) : [0, 0];
+  const vn = (b.vx - vs[0]) * nx + (b.vy - vs[1]) * ny;
+  if (vn < 0) {
+    const k = -(1 + (vn > -REST_CUT ? 0 : e)) * vn;
+    b.vx += k * nx; b.vy += k * ny;
+  }
+  return true;
+}
+/** Make the ball leave the last thing it hit at least this fast. */
+function kick(b, v) {
+  const vn = b.vx * CN[0] + b.vy * CN[1];
+  if (vn < v) { b.vx += (v - vn) * CN[0]; b.vy += (v - vn) * CN[1]; }
+}
+
+let stats = {}, evq = [];
+const resetStats = () => { stats = { launch: 0, rideA: 0, rideB: 0, skill: 0, drain: 0 }; };
+resetStats();
+const emit = (k) => { evq.push(k); }; // what the ball did this frame, for the rules (steps 3 and 4)
+let msg = '', msgT = 0;
+function say(t) { msg = t; msgT = 150; }
+function award(n) { score += n; }
+
+/** Start a ride along a path (a launch ramp now, the playfield ramps in step 2). */
+const ride = (b, k) => { b.ride = { k, d: 0 }; b.vx = b.vy = 0; };
+/** Where a ride is, d px along its path. */
+function along(P, d) {
+  for (let i = 1; i < P.length; i++) {
+    const L = Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]);
+    if (d <= L) { const t = d / L; return [P[i - 1][0] + (P[i][0] - P[i - 1][0]) * t, P[i - 1][1] + (P[i][1] - P[i - 1][1]) * t]; }
+    d -= L;
+  }
+  return P[P.length - 1];
+}
+
+/** One substep of one ball. */
+function stepBall(b, flips) {
+  if (b.ride) { // carried along a ramp, above the table: nothing on it is touched
+    const R = b.ride, r = LAUNCH[R.k];
+    R.d += RIDE_SPEED / SUB;
+    if (R.d < r.len) { [b.x, b.y] = along(r.path, R.d); return; }
+    [b.x, b.y] = r.path[r.path.length - 1]; [b.vx, b.vy] = r.out; b.ride = null;
+    stats['ride' + R.k]++; emit('ride' + R.k);
+    if (b.skill) { b.skill = false; stats.skill++; award(SKILL[R.k]); emit('skill'); say(`SKILL SHOT ${R.k}`); fx(SFX.point); }
+    return;
+  }
+  b.vy += GRAV / SUB;
+  const sp = Math.hypot(b.vx, b.vy);
+  if (sp > VMAX) { b.vx *= VMAX / sp; b.vy *= VMAX / sp; }
+  b.x += b.vx / SUB; b.y += b.vy / SUB;
+  if (b.zone && b.x > LANE_X && b.vy < 0 && b.y <= LAUNCH[b.zone].at) { const k = b.zone; b.zone = null; ride(b, k); return; } // the pull's ramp takes it
+  for (const w of WALLS) collide(b, w[0], w[1], w[2], w[3], w[4] || 0, WALL_E);
+  for (const f of flips) {
+    const tip = flipTip(f);
+    collide(b, f.x, f.y, tip.x, tip.y, FR, FLIP_E, (t) => {
+      const r = t * f.len; // the contact's speed: its distance from the pivot times the turn
+      return [-f.s * Math.sin(f.a) * r * f.w, Math.cos(f.a) * r * f.w];
+    });
+  }
+  if (b.x < LANE_X) b.zone = null; // out of the lane (round the arch): the pull's ramp is no longer in play
+}
+
+/** One frame of the table: the flippers swing and every ball moves, in SUB substeps. hold: the hands [left, right]. */
+function stepTable(balls, flips, hold) {
+  for (let i = 0; i < SUB; i++) {
+    for (const f of flips) {
+      const a0 = f.a;
+      f.a = hold[f.hand] ? Math.max(UP_A, f.a - W_UP / SUB) : Math.min(REST_A, f.a + W_DOWN / SUB);
+      f.w = (f.a - a0) * SUB;
+    }
+    for (const b of balls) stepBall(b, flips);
+  }
+}
+
 // --- Input: edge-triggered presses (btnp repeats; menus want one press) ---
 
 let inputMask = 0, prevMask = 0;
@@ -78,19 +216,17 @@ const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) ===
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
-let score = 0, lives = 3, px = 120, blocks = [];
-const HOME = { x: 120 };
+let score = 0, balls = BALLS, ball = null, bs = [], flips = [], plunge = 0, camY = 0, held = [false, false];
+const PAD_LEFT = [UP, DOWN, LEFT, RIGHT], PAD_RIGHT = [A, B, X, Y]; // the left hand's flipper and the right hand's flippers
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
     for (let i = 0; i < 256; i++) dset(i, 0);
     dset(VERSION_SLOT, SAVE_VERSION);
   }
-  // The background: the ground on layer 0 along the bottom of the screen, the hills behind it on layer 1 (each its
-  // region of Map RAM, placed with a negative scroll and not repeated), the sky a gradient in scanline() below.
-  const f = ART.scenes.field, h = ART.scenes.hills;
-  bg(0, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, x: 0, y: -(224 - f.h * 8), wrap: false, show: true });
-  bg(1, { mx: h.mx, my: h.my, mw: h.w, mh: h.h, x: 0, y: -(224 - f.h * 8 - h.h * 8 + 8), wrap: false, show: true });
+  // Step 1 draws the table as plain shapes on the overlay; the art (step 6) puts it on the background layers.
+  bg(0, { show: false }); bg(1, { show: false }); bg(2, { show: false });
+  flips = makeFlippers();
   blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (ART.colors.GLASS) are see-through
   if (skipTitle) startGame(); else toTitle();
 }
@@ -98,8 +234,21 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 function startGame() {
-  score = 0; lives = 3; px = HOME.x; blocks = []; paused = false; timer = 0; state = 'play';
-  play(SONG.play);
+  score = 0; balls = BALLS; flips = makeFlippers(); resetStats(); msgT = 0; paused = false; timer = 0; state = 'play';
+  serve(); play(SONG.play);
+}
+
+const newBall = (x, y) => ({ x, y, vx: 0, vy: 0, ride: null, zone: null, skill: false });
+/** A ball in the plunger lane; its first launch can be a skill shot. */
+function serve() {
+  ball = newBall(BALL_HOME.x, BALL_HOME.y); ball.skill = true; bs = [ball]; plunge = 0;
+  camY = clamp(ball.y - 150, 0, TABLE_H - VIEW_H);
+}
+const inLane = () => ball.x > LANE_X && ball.y > LANE_FLOOR - 40;
+/** The ball is lost: the next ball, or the game is over. */
+function drain() {
+  stats.drain++; fx(SFX.hit);
+  if (--balls <= 0) gameOver(); else serve();
 }
 
 // --- Update ---
@@ -124,19 +273,25 @@ function updateTitle() {
   }
 }
 
-/** The game itself: replace this. Left and right move; blocks fall; a hit costs a life. */
+/** The game: the flippers, the plunger and the ball. */
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (btn(LEFT)) px = Math.max(8, px - 3);
-  if (btn(RIGHT)) px = Math.min(248, px + 3);
-  if (timer % 30 === 0) blocks.push({ x: rndi(8, 248), y: -8 });
-  for (const b of blocks) {
-    b.y += 2 + Math.min(3, score / 40);
-    if (b.y > 196 && b.y < 212 && Math.abs(b.x - px) < 12 && !b.hit) { b.hit = true; lives--; fx(SFX.hit); }
-    if (b.y > 224 && !b.hit && !b.done) { b.done = true; score += 10; fx(SFX.point); }
-  }
-  blocks = blocks.filter((b) => b.y < 232);
-  if (lives <= 0) gameOver();
+  held = [PAD_LEFT.some((k) => btn(k)), PAD_RIGHT.some((k) => btn(k))];
+  // The plunger: either hand held while the ball waits pulls it; let go, and the pull launches the ball and picks its way
+  const waiting = inLane() && !ball.ride && ball.vy >= 0 && ball.y >= BALL_HOME.y - 1;
+  if (waiting && (held[0] || held[1])) plunge = Math.min(PLUNGE_FRAMES, Math.round(plunge * PLUNGE_FRAMES) + 1) / PLUNGE_FRAMES; // whole frames, so 30 held is 0.5 exactly
+  else if (waiting && plunge > 0.04) {
+    ball.vy = -(4 + 10 * plunge); ball.zone = zoneOf(plunge);
+    if (plunge >= ZONE_A[0]) { stats.launch++; emit('launch'); if (!ball.zone) ball.skill = false; } // between the zones: round the arch, no skill shot (a weak pull falls back: pull again)
+    plunge = 0; fx(SFX.point);
+  } else if (!waiting) plunge = 0;
+  stepTable(bs, flips, waiting ? [false, false] : held);
+  if (ball.x > LANE_X && !ball.ride && ball.y >= BALL_HOME.y - 2 && Math.abs(ball.vy) < 4) { ball.y = BALL_HOME.y; ball.vy = 0; } // the plunger's spring soaks up a ball that falls back onto it
+  evq.length = 0; // (the rules read the events from step 3)
+  if (msgT > 0) msgT--;
+  const want = clamp(Math.max(...bs.map((b) => b.y)) - 150, 0, TABLE_H - VIEW_H); // the camera follows the lowest ball
+  camY += (want - camY) * 0.12;
+  if (ball.y > DRAIN_Y && ball.x < LANE_X) drain();
 }
 
 function gameOver() {
@@ -195,15 +350,33 @@ function draw() {
   if (paused) drawPause();
 }
 
+/** Step 1's picture: the table in plain lines on the overlay (the art comes in step 6), the panel on the right. */
 function drawPlay() {
-  sprite(ART.sprites.player, px - 8, 196);
-  for (const b of blocks) if (!b.hit) sprite(ART.sprites.gem, b.x - 8, b.y - 2);
-  txt(`SCORE ${score}`, 8, 6, WHITE);
-  txt(`LIVES ${lives}`, 192, 6, lives > 1 ? WHITE : RED);
+  const cy = Math.round(camY), R = Math.round, sy = (y) => R(y - cy);
+  rectfill(0, 0, TABLE_W, 224, SHADOW);
+  for (const k in LAUNCH) { const P = LAUNCH[k].path; for (let i = 1; i < P.length; i++) line(P[i - 1][0], sy(P[i - 1][1]), P[i][0], sy(P[i][1]), k === 'A' ? 9 : RED); }
+  for (const w of WALLS) line(R(w[0]), sy(w[1]), R(w[2]), sy(w[3]), DIM);
+  for (const f of flips) { const t = flipTip(f); for (let k = -1; k <= 1; k++) line(R(f.x), sy(f.y) + k, R(t.x), sy(t.y) + k, RED); circfill(R(f.x), sy(f.y), 2, GOLD); }
+  for (const b of bs) circfill(R(b.x), sy(b.y), BR - 1, b.ride ? GOLD : WHITE);
+  drawPanel();
+}
+
+/** The panel: the score, the ball, the plunger's meter (its two zones marked) and the last message. */
+function drawPanel() {
+  rectfill(TABLE_W, 0, 256 - TABLE_W, 224, ART.colors.GLASS); line(TABLE_W, 0, TABLE_W, 223, PANEL);
+  txt('SCORE', 196, 4, GOLD); txt(String(score), 252 - String(score).length * 8, 14, WHITE);
+  txt(`BALL ${BALLS + 1 - balls}`, 196, 28, balls > 1 ? DIM : RED);
+  if (msgT > 0 && (msgT > 30 || msgT % 8 < 5)) msg.split(' ').forEach((w, i) => txt(w, 196, 44 + i * 9, GOLD));
+  // the plunger's meter: a bar from the bottom up, the middle zone and the full zone marked
+  const mx = 238, my0 = 210, mh = 90, Y = (p) => Math.round(my0 - p * mh);
+  rect(mx - 1, Y(1) - 1, 10, mh + 2, PANEL);
+  rectfill(mx, Y(ZONE_A[1]), 8, Y(ZONE_A[0]) - Y(ZONE_A[1]), 9); rectfill(mx, Y(1), 8, Y(ZONE_B) - Y(1) + 1, RED);
+  if (inLane() && plunge > 0) { const z = zoneOf(plunge); rectfill(mx + 2, Y(plunge), 4, Y(0) - Y(plunge), z ? WHITE : DIM); txt(z ? `RAMP ${z}` : 'PULL', 196, 196, z ? WHITE : DIM); }
+  txt('PULL', 200, Y(1) - 2, DIM);
 }
 
 function drawTitle() {
-  ctxt('DUNGEON CRAWL PINBALL', 50, GOLD);
+  ctxt('DUNGEON CRAWL PINBALL', 50, RED);
   ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
 }
 
@@ -244,5 +417,3 @@ function panel(x, y, w, h) { rectfill(x, y, w, h, ART.colors.GLASS); rect(x, y, 
 function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }
 const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
 
-/** Each line of the screen: the sky's colour for that line (the SNES did its skies this way, with HDMA). */
-function scanline(y) { gradientLine(ART.gradients.sky, y); }

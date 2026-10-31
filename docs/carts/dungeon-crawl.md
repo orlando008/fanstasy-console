@@ -103,13 +103,13 @@ Released, the ball is launched at 4 + 10 x power px a frame, and the power picks
 
 | Power | The ball | Skill shot |
 |---|---|---|
-| under 0.20 | falls back to the plunger (no launch: pull again) | |
-| 0.20 to 0.50 | up the lane and round the arch into the top of the table | |
+| under 0.50 | rises part way up the lane and falls back onto the plunger, whose spring soaks it up (no launch: pull again; the skill shot still counts) | |
 | **0.50 to 0.68: the middle zone** | onto **Ramp A**: across into the left ramp's path and out to the left flipper's inlane, a controlled ball | 50,000 |
 | 0.68 to 0.95 | round the arch into the table | |
 | **0.95 and over: a full pull** | onto **Ramp B**: up the right ramp's path to the **upper flipper**, for a shot at the slots | 25,000 |
 
-The middle zone is about 11 frames of holding (0.18 s): the harder skill, so it pays more; a full pull is easy to make and its
+(A ball needs a pull of about 0.69 to reach the arch, so under the middle zone it falls back.) The pull is counted in whole frames of
+holding (30 frames is 0.50 exactly). The middle zone is about 11 frames of holding (0.18 s): the harder skill, so it pays more; a full pull is easy to make and its
 reward is the place it leaves the ball. The meter shows the needle and the two zones, the middle one amber and the full one red, and
 a zone that is reached lights. The skill shot counts only for the first launch of a ball (a ball saved and served again launches
 without it).
@@ -277,6 +277,27 @@ most 0.012 (`node tools/devkit/music/loud.mjs carts/dungeon-crawl.nova --check`;
 
 Each step: build it, run `node tools/verify.js dungeon-crawl` (and `node tools/devkit/smoke.mjs dungeon-crawl`), write its **Built**
 and **Results** notes under its number here, commit and push.
+
+### Step 1 built: the ball, the flippers and the plunger
+
+- `carts/src/dungeon-crawl/code.js`: the starter's placeholder game is gone; the frame (title, pause, game over, initials, records) is
+  kept. The **physics block** (Star Cadet's: `collide`, `kick`, 4 substeps, every number a constant) with the table's outline (`WALLS`:
+  the arch, the lane, the sides, the inlane guides and the slingshots, whose faces are plain walls until step 2), **three flippers**
+  (`makeFlippers`: each has its length and its hand; the **upper flipper**, 26 long, pivot (166, 232) on a plate from the lane wall, is
+  on the right hand with the lower right one), the **plunger** (held: the pull in whole frames, up to 60; released: 4 + 10 x the pull
+  px a frame, and `zoneOf` picks the way), the **two launch ramps** (`LAUNCH`: where a ball in that zone leaves the lane, the path
+  it rides at 7 px a frame, the speed it is let go at; Ramp A over the table to the left inlane, Ramp B round the top right onto the
+  upper flipper), the **skill shot** (once a ball; a weak pull that falls back keeps it), the drain, three balls, the camera. Drawn
+  as plain lines on the overlay; the panel has the score, the ball, a message and the **plunger's meter** with its two zones.
+- `tests/carts/dungeon-crawl/02-physics.mjs` (gravity, the speed limit, a wall's bounce, 48 fast balls that never leave the table or gain
+  energy, each hand's flippers, the throw from a tip and from near a pivot, the upper flipper's throw, every band of the plunger and
+  where it leaves the ball, the skill shots, a fall-back pulled again, the drain, the balls, the camera); `01-flow.mjs` follows the
+  table; the starter's art test is gone until the art (step 6); `bot.mjs` pulls to a zone (the middle one and a full pull by turns) and
+  flips when a ball comes down near a flipper.
+- **Results:** 55 checks pass. A flip from a lower tip reaches the top of the table; the upper flipper throws a ball up into the top (where
+  the slots go). The bot found a trap at once: without the slingshots' faces a ball came to rest in the corner behind one; the faces are
+  walls now (step 2's `09-traps.mjs`-style test will hold every resting place). A sweep (6 seeds, skill 0.5 and 0.9) finishes cleanly;
+  this bot's balls last 14 and 31 seconds on a table with nothing on it yet.
 
 ## 16. Open questions
 
