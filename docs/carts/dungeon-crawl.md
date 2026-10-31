@@ -1,7 +1,7 @@
 # Dungeon Crawl Pinball: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Scaffolded and specified: the frame of the game (title, play, pause, game over, top 10, records, sound cues) works; the game is the starter's placeholder until step 1
+**Version:** 1.0
+**Status:** Built (steps 1 to 8), released in the Library
 **Cart source:** `carts/src/dungeon-crawl/` → `carts/dungeon-crawl.nova`
 
 ---
@@ -72,7 +72,7 @@ plunger's meter while the ball waits, and a map of the table.
 where the flips send the ball (`tests/carts/dungeon-crawl/aim.mjs` plays every flip of the three flippers once and lists what the ball
 hits; the draft's cubbies and x3 slot were where no flip went).
 
-| Feature | Place (draft) | What |
+| Feature | Place | What |
 |---|---|---|
 | Plunger lane | x 176 to 192, from y 612 up to y 120 | The ball waits on its floor; the top arch turns a ball that is not on a launch ramp into the table. A **one-way gate** over the lane's exit (x 176, y 44 to 120) lets the ball out and stops a ball from the table rolling back in. The **meter** is in the panel |
 | Top arch | y 0 to 96 | The table's top, a half circle of radius 96 centred at x 96 |
@@ -460,6 +460,23 @@ and **Results** notes under its number here, commit and push.
 - **Results:** 260 checks pass in 9 files (34 of them the audio's; `01-flow.mjs` named the starter's `SFX.point`, now the launch); `loud.mjs --check` within its limits (the leads 0.032 to 0.034 RMS, 0.51 to 0.67 of the mix, the
   pierce at most 0.003); the effects 0.009 to 0.043 RMS at first, the gong raised from 0.009 to 0.020 (a lower ring over a mallet's
   thud); no clashes; 22,464 bytes of sample RAM; the code 43.5 KB of 64 (66 %); the smoke test 60 fps.
+
+### Step 8 built: the balance and the release
+
+- **The balance, measured with the bot** (`sweep.mjs`, 8 seeds at skill 0.5, 0.8 and 0.95, and each level timed on its own). Before: the four
+  levels took the bot about 5.5 minutes of play (Level 1's 15 bumpers alone 100 s: bumpers come about 8 a minute), three balls last 2.5 to 4,
+  so even the good bot cleared 1.5 levels a game and never saw the Pit Lord; and when it got to him he fell in 25 seconds every time.
+  - The goals at depth 1 are now **6 bumpers, 2 ramps, 3 targets, 2 cubbies** (half as much again each depth, as before).
+  - **The Armoury's targets go dark as it begins.** In whole games Level 3 was the wall (60 to 110 s, often never cleared) though it took
+    30 s on its own: the targets lit in Levels 1 and 2 stayed lit, and a lit target does not count.
+  - **The Pit Lord takes 9 hits** (6 before; two more each depth). At 8 the bot still beat him in about 30 s; at 10 the weaker bots seldom
+    did; at 9 the good bot wins on its first try most times, and the others often need a second fight.
+  - The sweep's game and the bot's limit are 10 minutes (a good game was cut off at 8).
+- **Results** (8 seeds each): skill 0.5 clears 1.4 levels and its balls last 36 s; skill **0.8 clears 2.1 levels (it reaches Level 3) and its
+  balls last 63 s**; skill **0.95 clears 4.75 levels, fights the Pit Lord once a game and beats him in half its games, its balls lasting 104 s**,
+  its best game descending to depth 3. `06-bot.mjs` holds this: of three games at 0.95, two reach Level 3 and one the Pit Lord.
+- **The release:** the label is the title (`node tools/release.js dungeon-crawl`), the `.nova.png` holds 77 KB of its 147 (53 %), the
+  Library entry is on the Arcade shelf (1 to 4 players), and the README has its row. 262 checks in 9 files pass; the smoke test 60 fps.
 
 ## 16. Open questions
 
