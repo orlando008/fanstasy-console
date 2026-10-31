@@ -6,9 +6,9 @@
 # from samples.py (a.voice) and an echo per song.
 #
 # The music follows the game (SPEC 11): the title (0); the table in three layers that rise with the rank, one song each since a
-# song's channels cannot be muted from code: only the pulse of bass and arpeggio for a Cadet to a Pilot (1), the flute lead
-# comes in for a Lieutenant (2), the drums for a Commander and above (3); a mission is faster (4), the Admiral's multiball
-# faster and heavier (5), the last mission has the horn over a march (6).
+# song's channels cannot be muted from code: "Deep Field", drifting in space, for a Cadet to a Pilot (1: a choir, a deep pulse of
+# bass and a celesta ringing in a hall), its flute theme comes in for a Lieutenant (2), a slow half-time beat for a Commander and
+# above (3); a mission is faster (4), the Admiral's multiball faster and heavier (5), the last mission has the horn over a march (6).
 # After a change: node tools/devkit/music/loud.mjs carts/star-cadet.nova --check (levels; the lead alone must stay at most
 # 0.07 RMS and 0.75 of the mix) and python3 tools/devkit/music/clash.py on the json; the effects: node tools/devkit/music/sfx.mjs
 # carts/star-cadet.nova 6 (0.01 to 0.06 each).
@@ -29,6 +29,11 @@ a.voice('ARP', 'pluck', 13, 0.25)
 a.instrument('KICK', 'sample', 0, 0, 15, 0, 12, sample=0, echo=2)
 a.instrument('SNARE', 'sample', 0, 0, 15, 0, 10, sample=1, echo=5)
 a.voice('SOFTHORN', 'brass', 6, -0.15, a=6)
+# --- The table's voices (Deep Field): a choir pad, a celesta that rings in the echo, a deep bass, the flute with a long tail ---
+a.voice('CHOIR', 'choir', 5, 0.0)
+a.voice('STAR', 'celesta', 6, 0.3, echo=11)
+a.voice('DEEP', 'bass', 12, 0.0)
+a.voice('SPACELEAD', 'flute', 4, -0.2, echo=9)
 # --- The voices of the effects: soft and sampled like the music, never louder than 0.05 on their own ---
 a.voice('TOM', 'tom', 11, 0.0)                    # the flippers' thunk, the gate, the drain
 a.voice('TOMQ', 'tom', 8, 0.0)
@@ -47,14 +52,22 @@ bars(S, 16, CH, None, drums='soft', bass='long', upper='pad', counter='1 3 5 8 5
 bars(S, 16, CH, ['A3 - C4 - E4 - A4 -', 'A4 - G4 - F4 - C4 -', 'E4 - G4 - C5 - G4 -', 'D4 - G4 - B4 - G4 -'], li='SOFTHORN', drums='drive', bass='1 - - - 5 - - -', upper='arp1')
 S.finish()
 
-# --- 1 to 3 The table, E minor, 128 bpm: the pulse; then the flute lead; then the drums ---
-CH = ['1', '6', '3', '7']
-LEAD_A = ['E4 - G4 - B4 - G4 -', 'E4 - G4 - C5 - G4 -', 'D4 - G4 - B4 - G4 -', 'D4 - F#4 - A4 - F#4 -']
-LEAD_B = ['B4 - G4 - E4 - G4 -', 'C5 - G4 - E4 - G4 -', 'B4 - D5 - B4 - G4 -', 'A4 - F#4 - D4 - F#4 .']
-for lead, drums in ((None, 'none'), ('LEAD', 'none'), ('LEAD', 'soft')):
-    S = a.song(Key('E', MINOR), 7, echo=(5, 4, 5, 9))
-    bars(S, 16, CH, LEAD_A if lead else None, li='LEAD', drums=drums, bass='1 - 5 - 1 - 5 -', upper='arp')
-    bars(S, 16, CH, LEAD_B if lead else None, li='LEAD', drums=drums, bass='1 - 5 - 1 - 5 -', upper='arp1')
+# --- 1 to 3 The table: "Deep Field", E minor, 112 bpm, half time, in a hall's echo ---
+# Sixteen bars: a phrase that climbs from E minor and turns, at its end, through G sharp major (a chord from outside the key, the
+# lift of a film's starfield) onto B; then an answer that comes home. The celesta repeats one figure over the changing chords (an
+# ostinato: the stars turning), the bass pulses in a dotted rhythm under a held choir. The layers: no lead (1), the flute (2), the beat (3).
+DRUMS[16]['space'] = ('K.......S.....K.', '..h.h.h...h.h.ho')     # half time: a kick, the snare on 3, hats between, an open hat to breathe
+CH = ['1', '6', '3', '7', '1', '6', 'G#', '5+',
+      '6', '3', '7', '1', '6', '3', '5+', '5+']
+THEME = ['E4 - - - B4 - - -', 'G4 - - - - - E4 -', 'D5 - - - B4 - - -', 'A4 - - - - - F#4 -',
+         'E4 - - - B4 - E5 -', 'D5 - - - C5 - G4 -', 'G#4 - - - C5 - D#5 -', 'D#5 - - - - - B4 .',
+         'G4 - E4 - G4 - C5 -', 'B4 - - - D5 - - -', 'A4 - F#4 - A4 - D5 -', 'B4 - - - - - - .',
+         'E5 - C5 - G4 - E4 -', 'D5 - - - B4 - G4 -', 'F#4 - - - B4 - D#5 -', 'B4 - - - - - - .']
+STARS = "1 5 8 3' 5' 3' 8 5"
+for lead, drums in ((None, 'none'), ('SPACELEAD', 'none'), ('SPACELEAD', 'space')):
+    S = a.song(Key('E', MINOR), 8, echo=(12, 8, 9, 7))
+    bars(S, 16, CH, THEME if lead else None, li=lead or 'SPACELEAD', drums=drums, bass='1 - - 1 - - 1 -', bi='DEEP',
+         upper='pad', pi='CHOIR', counter=STARS, ci='STAR', cbase=60)
     S.finish()
 
 # --- 4 A mission: A minor, 150 bpm, the pulse quickens ---
