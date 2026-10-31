@@ -325,6 +325,26 @@ and **Results** notes under its number here, commit and push.
 - **Results:** 97 checks pass. The bot (8 seeds, skill 0.5 and 0.9) finishes cleanly; its balls last 15 to 34 seconds with a flip that
   does not aim yet (step 4).
 
+### Step 3 built: the rules
+
+- `carts/src/dungeon-crawl/code.js`, a section "the rules": **players** (`makePlayer`, `loadPlayer`, `savePlayer`: each keeps their score,
+  balls, keys, the cubbies' keys, a spell, the depth and level, the lit targets), **keys** (a cubby with its key: +15,000 on its 10,000,
+  KEY 1 or KEY 2; `setGates`: one key opens the x3 slot, two the x10), **spells** (`castSpell`: the x3 slot spends a key, the x10 both; x3
+  or x10 on every point for 30 seconds, the greater kept and its time restarted by a second slot; when the keys are all spent the
+  cubbies have theirs again), `award` multiplying by the spell, the **ball save** (12 seconds from the launch, once a ball; a saved ball
+  launches with no skill shot), the clocks of the spell and the save standing still while the ball waits at the plunger, the **bonus**
+  (`BONUS_PTS` times the depth, on its own screen, not under a spell), the turn's splash, the **players screen** (1 to 4), the game
+  over (each player's depth, level and score; the games played and the deepest level saved; initials for each top 10 score, best
+  first; the records show the level reached). The panel shows the player, the score, the ball, the depth and level, the two keys, the
+  spell and its seconds, SAVE, the message, every player's score and the meter.
+- `tests/carts/dungeon-crawl/04-rules.mjs`: the keys and the gates, the slots' spells and keys, the spell on the score, a second spell, its
+  fading after 30 seconds and standing still at the plunger, the ball save (once; not after 12 seconds), the bonus and its screen, two
+  players' turns keeping their own keys, spells and depths, the game over, the deepest level and the initials in order. The earlier
+  files follow the new flow (PLAY asks for the players; a drained ball counts its bonus first: `drainNow` in `lib.mjs`). The bot plays
+  on through the bonuses and turns and reports the cubbies, ramps and slots.
+- **Results:** 138 checks pass. A sweep (8 seeds, skill 0.5 and 0.9) finishes cleanly; this bot, which does not aim yet, takes 1 to 6 keys
+  a game, casts 0 to 2 spells, and scores 155,000 to 2,000,000 (the top one an x10 spell); its balls last 23 to 55 seconds.
+
 ## 16. Open questions
 
 Defaults chosen in the kickoff that the user did not confirm, and the extras not picked:

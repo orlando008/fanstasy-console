@@ -1,6 +1,6 @@
 // Dungeon Crawl Pinball: the frame (title, play, pause, game over, initials, records, saves) and its sound cues, around the table.
 // One PASS/FAIL line for each behaviour, written as a sentence. Add a file for each step of the build (02-..., 03-...).
-import { newGame, M, sfxLog, musicLog } from './lib.mjs';
+import { newGame, M, sfxLog, musicLog, drainNow } from './lib.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 
@@ -12,7 +12,9 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
   sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
+  ok(p.state === 'players', 'PLAY asks how many players');
+  vm.run(12); vm.press('A');
+  ok(p.state === 'play' && p.playing === p.SONG.play, 'and A starts the game, with the game song');
 }
 
 // 2. Playing: the table is the game (02-physics.mjs has the rest).
@@ -37,10 +39,11 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 // 4. Game over, the top 10 and initials.
 {
   const vm = newGame(3), p = vm.probe(); vm.run(2); p.score = 120; p.balls = 1; musicLog(vm);
-  Object.assign(p.ball, { x: 88, y: 620, vx: 0, vy: 3 }); vm.run(10);
-  ok(p.state === 'over' && p.rank === 0, 'the last ball drained ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
+  drainNow(vm, p);
+  ok(p.state === 'over', 'the last ball drained (after its bonus) ends the game');
   ok(musicLog(vm).includes(-1), 'the game song stops');
   vm.run(70); vm.press('A');
+  ok(p.rank === 0, 'a score in the top 10 gets a rank', `rank ${p.rank}`);
   ok(p.state === 'initials', 'A asks for initials');
   vm.run(25); // START is ignored for a moment, so a press from the game does not skip it
   vm.press('UP'); vm.press('RIGHT'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT'); vm.press('DOWN'); vm.press('START');

@@ -42,8 +42,9 @@ export function pad(vm, p, frame, opts) {
   return m;
 }
 
-export const finished = (p) => p.state !== 'play';
+export const finished = (p) => !['play', 'turn', 'bonus'].includes(p.state); // (the bonus and the turn's splash go on by themselves)
 
 export function result(p) {
-  return { score: p.score, launches, rideA: p.stats.rideA, rideB: p.stats.rideB, skill: p.stats.skill, ballSeconds: Math.round(ballFrames / 60 / Math.max(1, p.stats.drain)), problems };
+  return { score: p.players.reduce((s, q, i) => s + (i === p.cur ? p.score : q.score), 0), launches, rideA: p.stats.rideA, rideB: p.stats.rideB, skill: p.stats.skill,
+    cubby: p.stats.cubby, slot3: p.stats.slot3, slot10: p.stats.slot10, ramp: p.stats.ramp, ballSeconds: Math.round(ballFrames / 60 / Math.max(1, p.stats.drain)), problems };
 }

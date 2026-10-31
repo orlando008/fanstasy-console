@@ -43,13 +43,13 @@ function play(song) {
 
 // --- Save slots (SPEC 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
-const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
+const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1, DEEPEST_SLOT = 2, GAMES_SLOT = 3; // (the deepest level: depth x 10 + level)
+const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, the level reached (slots 10 to 39)
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const BALLS = 3;
 
-function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)) }; }
-function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); }
+function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)), lv: dget(s + 2) }; }
+function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); dset(s + 2, e.lv || 0); }
 const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
 
 /** Put a score into the top 10 if it makes it. Returns its row, or -1. */
@@ -200,7 +200,7 @@ resetStats();
 const emit = (k) => { evq.push(k); }; // what the ball did this frame, for the rules (steps 3 and 4)
 let msg = '', msgT = 0;
 function say(t) { msg = t; msgT = 150; }
-function award(n) { score += n; }
+function award(n) { score += n * (spell ? spell.m : 1); } // every point, times the spell's multiplier while one is on
 
 /** An element was hit: true once in a while (its cooldown), so a ball touching it for several substeps scores once. */
 function struck(el) { if (el.cool > 0) return false; el.cool = COOL; el.flash = HIT_FLASH; return true; }
@@ -306,6 +306,8 @@ let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let score = 0, balls = BALLS, ball = null, bs = [], flips = [], plunge = 0, camY = 0, held = [false, false];
+let nPlayers = 1, wantPlayers = 1, cur = 0, players = [], keys = 0, cubbyKey = [true, true], spell = null, depth = 1, level = 1, saveT = 0, saved = false;
+let ballStats = {}, bonusRes = null, initQueue = [], firstRank = -1, newDeepest = 0;
 const PAD_LEFT = [UP, DOWN, LEFT, RIGHT], PAD_RIGHT = [A, B, X, Y]; // the left hand's flipper and the right hand's flippers
 
 function init() {
@@ -320,25 +322,112 @@ function init() {
   if (skipTitle) startGame(); else toTitle();
 }
 
-function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
+function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; nPlayers = wantPlayers; play(SONG.title); }
 
-function startGame() {
-  score = 0; balls = BALLS; flips = makeFlippers(); resetStats(); msgT = 0; paused = false; timer = 0; state = 'play';
-  gates = [false, false]; kickback = true; bossUp = false; for (const e of STANDUPS) e.lit = false;
-  serve(); play(SONG.play);
+// --- The rules (SPEC 5): players, keys, slots and spells, the ball save, the bonus ---
+
+const KEY_PTS = 15000, SPELL_TIME = 30 * 60, SAVE_FRAMES = 12 * 60; // a key (on top of the cubby's 10,000); a spell's frames; the ball save's
+const BONUS_PTS = { bump: 100, ramp: 5000, cubby: 10000, slot: 25000, level: 50000 }; // the end-of-ball bonus, each, times the depth
+
+/** What each player keeps while the others play (the rest of the table is the ball's and starts again). */
+const makePlayer = () => ({ score: 0, balls: BALLS, keys: 0, cubbyKey: [true, true], spell: null, depth: 1, level: 1, stand: [false, false, false, false] });
+function loadPlayer(i) {
+  const q = players[i]; cur = i;
+  score = q.score; balls = q.balls; keys = q.keys; cubbyKey = q.cubbyKey.slice(); spell = q.spell && { ...q.spell }; depth = q.depth; level = q.level;
+  STANDUPS.forEach((e, k) => { e.lit = q.stand[k]; });
+  setGates();
+}
+function savePlayer() {
+  Object.assign(players[cur], { score, balls, keys, cubbyKey: cubbyKey.slice(), spell: spell && { ...spell }, depth, level, stand: STANDUPS.map((e) => e.lit) });
+}
+/** The gates follow the keys: the x3 slot opens with a key, the x10 slot with two. */
+function setGates() { gates = [keys >= 2, keys >= 1]; }
+
+function startGame(n = nPlayers) {
+  nPlayers = n; players = Array.from({ length: n }, makePlayer);
+  flips = makeFlippers(); resetStats(); msgT = 0; paused = false; timer = 0; bossUp = false;
+  loadPlayer(0); beginBall();
+  state = n > 1 ? 'turn' : 'play';
+  play(SONG.play);
+}
+
+/** A new ball for the player whose turn it is: what belongs to one ball starts again (keys, a spell, the descent go on). */
+function beginBall() {
+  saveT = 0; saved = false; kickback = true; evq = []; bonusRes = null; msgT = 0;
+  ballStats = { bump: 0, ramp: 0, cubby: 0, slot: 0, level: 0 };
+  serve();
+}
+
+/** What the ball did this frame, in order: the keys, the slots and their spells, the counts for the bonus. */
+function processEvents() {
+  for (const k of evq) {
+    if (k === 'bump') ballStats.bump++;
+    else if (k === 'rampL' || k === 'rampR') ballStats.ramp++;
+    else if (k === 'cubbyL' || k === 'cubbyR') {
+      ballStats.cubby++;
+      const i = k === 'cubbyL' ? 0 : 1;
+      if (cubbyKey[i]) { cubbyKey[i] = false; keys++; award(KEY_PTS); setGates(); say(keys > 1 ? 'KEY 2 X10 OPEN' : 'KEY 1 X3 OPEN'); fx(SFX.record); }
+    } else if (k === 'slot3' || k === 'slot10') { ballStats.slot++; castSpell(k === 'slot10' ? 10 : 3); }
+    else if (k === 'launch' && !saved && saveT === 0) saveT = SAVE_FRAMES; // the ball save starts with the launch
+  }
+  evq.length = 0;
+}
+
+/** A slot entered: its keys are spent (one for the x3, both for the x10) and its spell cast: every point times m for 30 seconds. A
+ *  spell already on keeps the greater multiplier, and its time starts again. When the keys are all spent the cubbies have theirs again. */
+function castSpell(m) {
+  keys = Math.max(0, keys - (m === 10 ? 2 : 1));
+  if (keys === 0) cubbyKey = [true, true];
+  setGates();
+  spell = { m: Math.max(m, spell ? spell.m : 0), t: SPELL_TIME };
+  say(m === 10 ? 'X10 MEGA SPELL' : 'X3 SPELL'); fx(SFX.record);
 }
 
 const newBall = (x, y) => ({ x, y, vx: 0, vy: 0, ride: null, zone: null, skill: false, hold: null, nocap: 0 });
+
 /** A ball in the plunger lane; its first launch can be a skill shot. */
 function serve() {
   ball = newBall(BALL_HOME.x, BALL_HOME.y); ball.skill = true; bs = [ball]; plunge = 0;
   camY = clamp(ball.y - 150, 0, TABLE_H - VIEW_H);
 }
 const inLane = () => ball.x > LANE_X && ball.y > LANE_FLOOR - 40;
-/** The ball is lost: the next ball, or the game is over. */
+/** The ball is lost: a saved ball goes back to the plunger; otherwise its bonus is counted, and then the next ball. */
 function drain() {
+  if (saveT > 0 && !saved) { saved = true; saveT = 0; say('BALL SAVED'); fx(SFX.record); serve(); ball.skill = false; return; }
   stats.drain++; fx(SFX.hit);
-  if (--balls <= 0) gameOver(); else serve();
+  const B = BONUS_PTS, base = ballStats.bump * B.bump + ballStats.ramp * B.ramp + ballStats.cubby * B.cubby + ballStats.slot * B.slot + ballStats.level * B.level;
+  bonusRes = { base, depth, total: base * depth };
+  score += bonusRes.total; // (the bonus is not multiplied by a spell)
+  state = 'bonus'; timer = 0;
+}
+
+const BONUS_COUNT = 90, BONUS_HOLD = 45; // frames the bonus counts up, and waits when done
+const bonusShown = () => Math.ceil(bonusRes.total * Math.min(1, timer / BONUS_COUNT));
+function updateBonus() {
+  const done = timer >= BONUS_COUNT;
+  if (!done && timer % 6 === 0 && bonusRes.total) fx(SFX.move);
+  if (pressed(A) || pressed(START)) { // a press skips the counting; another goes on
+    if (!done && timer > 10) timer = BONUS_COUNT; else if (done && timer > BONUS_COUNT + 10) afterBall();
+  } else if (timer > BONUS_COUNT + BONUS_HOLD) afterBall();
+}
+
+/** After a ball's bonus: the next player with a ball left, or the game is over. */
+function afterBall() {
+  balls--; savePlayer();
+  for (let i = 1; i <= nPlayers; i++) {
+    const j = (cur + i) % nPlayers;
+    if (players[j].balls > 0) { loadPlayer(j); beginBall(); timer = 0; state = nPlayers > 1 ? 'turn' : 'play'; return; }
+  }
+  gameOver();
+}
+/** Whose ball it is (more than one player): a splash, then play. */
+function updateTurn() { if (timer > 90 || (timer > 15 && (pressed(A) || pressed(START)))) { state = 'play'; timer = 0; } }
+/** How many players: LEFT and RIGHT (or UP and DOWN) choose one to four, A starts, B goes back. */
+function updatePlayers() {
+  if (pressed(LEFT) || pressed(DOWN)) { nPlayers = Math.max(1, nPlayers - 1); fx(SFX.move); }
+  if (pressed(RIGHT) || pressed(UP)) { nPlayers = Math.min(4, nPlayers + 1); fx(SFX.move); }
+  if (pressed(B)) { fx(SFX.move); toTitle(); }
+  else if ((pressed(A) || pressed(START)) && timer > 10) { fx(SFX.select); wantPlayers = nPlayers; startGame(); }
 }
 
 // --- Update ---
@@ -349,6 +438,9 @@ function update() {
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'play') updatePlay();
+  else if (state === 'players') updatePlayers();
+  else if (state === 'turn') updateTurn();
+  else if (state === 'bonus') updateBonus();
   else if (state === 'over') updateOver();
   else if (state === 'initials') updateInitials();
   else if (state === 'records') updateRecords();
@@ -359,7 +451,7 @@ function updateTitle() {
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) startGame(); else { state = 'records'; hl = -1; timer = 0; }
+    if (titleSel === 0) { state = 'players'; timer = 0; } else { state = 'records'; hl = -1; timer = 0; }
   }
 }
 
@@ -377,23 +469,43 @@ function updatePlay() {
   } else if (!waiting) plunge = 0;
   stepTable(bs, flips, waiting ? [false, false] : held);
   if (ball.x > LANE_X && !ball.ride && ball.y >= BALL_HOME.y - 2 && Math.abs(ball.vy) < 4) { ball.y = BALL_HOME.y; ball.vy = 0; } // the plunger's spring soaks up a ball that falls back onto it
-  evq.length = 0; // (the rules read the events from step 3)
+  processEvents();
+  if (!waiting) { // the clocks of the spell and the ball save stand still while the ball waits at the plunger
+    if (spell && --spell.t <= 0) { spell = null; say('SPELL FADES'); }
+    if (saveT > 0) saveT--;
+  }
   if (msgT > 0) msgT--;
   const want = clamp(Math.max(...bs.map((b) => b.y)) - 150, 0, TABLE_H - VIEW_H); // the camera follows the lowest ball
   camY += (want - camY) * 0.12;
   if (ball.y > DRAIN_Y && ball.x < LANE_X) drain();
 }
 
+const levelNo = (q) => q.depth * 10 + q.level; // the level reached, for the records: depth x 10 + level
 function gameOver() {
   state = 'over'; timer = 0; play(-1); fx(SFX.over);
-  rank = insertTop({ score, initials: lastInitials() });
+  dset(GAMES_SLOT, dget(GAMES_SLOT) + 1);
+  const deepest = Math.max(...players.map(levelNo));
+  newDeepest = deepest > dget(DEEPEST_SLOT) ? deepest : 0;
+  if (newDeepest) dset(DEEPEST_SLOT, newDeepest);
+  initQueue = players.map((q, i) => i).sort((a, b) => players[b].score - players[a].score); firstRank = -1;
+}
+
+/** The next score that makes the top 10 asks for initials (best score first); true if there was one. */
+function nextInitials() {
+  while (initQueue.length) {
+    const i = initQueue.shift(), r = insertTop({ score: players[i].score, initials: lastInitials(), lv: levelNo(players[i]) });
+    if (r < 0) continue;
+    rank = r; if (firstRank < 0) firstRank = r;
+    state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0, who: i }; fx(SFX.record);
+    return true;
+  }
+  return false;
 }
 
 function updateOver() {
   if (timer < 60 || !(pressed(A) || pressed(START))) return;
   fx(SFX.select);
-  if (rank >= 0) { state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0 }; fx(SFX.record); }
-  else toTitle();
+  if (!nextInitials()) toTitle();
 }
 
 /** UP/DOWN pick a letter, LEFT/RIGHT (or A and B) move, START saves (as does A on the last letter). */
@@ -409,7 +521,7 @@ function updateInitials() {
   const v = packInitials(ini.chars.join(''));
   dset(INITIALS_SLOT, v); dset(TOP_SLOT + rank * ENTRY + 1, v);
   fx(SFX.select);
-  state = 'records'; hl = rank; timer = 0;
+  if (!nextInitials()) { state = 'records'; hl = firstRank; timer = 0; }
 }
 
 function updateRecords() {
@@ -432,11 +544,15 @@ function updatePause() {
 
 function draw() {
   cls();
-  if (state === 'play' || state === 'over') drawPlay();
+  const inPlay = state === 'play' || state === 'over' || state === 'turn' || state === 'bonus';
+  if (inPlay) drawPlay();
   else if (state === 'title') drawTitle();
+  else if (state === 'players') { drawTitle(); drawPlayers(); }
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  if (state === 'over') { panel(48, 80, 160, 64); ctxt('GAME OVER', 92, RED); ctxt(`SCORE ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
+  if (state === 'turn') drawTurn();
+  else if (state === 'bonus') drawBonus();
+  else if (state === 'over') drawOver();
   if (paused) drawPause();
 }
 
@@ -462,19 +578,64 @@ function drawPlay() {
   drawPanel();
 }
 
-/** The panel: the score, the ball, the plunger's meter (its two zones marked) and the last message. */
+/** Short scores for the list of players: 12345, 151K, 1.2M. */
+const short = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e5 ? Math.floor(n / 1000) + 'K' : String(n));
+
+/** The panel: the player and the score, the ball, the depth and level, the keys, the spell and its time, the ball save, the last
+ *  message, every player's score, and the plunger's meter (its two zones marked). */
 function drawPanel() {
   rectfill(TABLE_W, 0, 256 - TABLE_W, 224, ART.colors.GLASS); line(TABLE_W, 0, TABLE_W, 223, PANEL);
-  txt('SCORE', 196, 4, GOLD); txt(String(score), 252 - String(score).length * 8, 14, WHITE);
-  txt(`BALL ${BALLS + 1 - balls}`, 196, 28, balls > 1 ? DIM : RED);
-  if (msgT > 0 && (msgT > 30 || msgT % 8 < 5)) msg.split(' ').forEach((w, i) => txt(w, 196, 44 + i * 9, GOLD));
+  txt(nPlayers > 1 ? `P${cur + 1}` : 'SCORE', 196, 4, GOLD); txt(String(score), 252 - String(score).length * 8, 14, WHITE);
+  txt(`BALL ${Math.min(BALLS, BALLS + 1 - balls)}`, 196, 26, balls > 1 ? DIM : RED);
+  txt(`D${depth} L${level}`, 196, 36, RED);
+  for (let i = 0; i < 2; i++) { const x = 198 + i * 14, c = i < keys ? GOLD : SHADOW; circ(x + 2, 52, 2, c); line(x + 4, 52, x + 10, 52, c); line(x + 9, 53, x + 9, 54, c); } // the keys held
+  if (spell) txt(`X${spell.m} ${Math.ceil(spell.t / 60)}`, 196, 60, spell.t > 300 || clock % 20 < 12 ? GOLD : RED);
+  if (saveT > 0 && clock % 40 < 28) txt('SAVE', 196, 70, GREEN);
+  if (msgT > 0 && (msgT > 30 || msgT % 8 < 5)) msg.split(' ').forEach((w, i) => txt(w, 196, 82 + i * 9, GOLD));
+  if (nPlayers > 1) players.forEach((q, i) => { const v = short(i === cur ? score : q.score); txt(`${i + 1} ${v}`, 196, 104 + i * 9, i === cur ? WHITE : DIM); });
   // the plunger's meter: a bar from the bottom up, the middle zone and the full zone marked
-  const mx = 238, my0 = 210, mh = 90, Y = (p) => Math.round(my0 - p * mh);
+  const mx = 238, my0 = 212, mh = 56, Y = (p) => Math.round(my0 - p * mh);
   rect(mx - 1, Y(1) - 1, 10, mh + 2, PANEL);
   rectfill(mx, Y(ZONE_A[1]), 8, Y(ZONE_A[0]) - Y(ZONE_A[1]), 9); rectfill(mx, Y(1), 8, Y(ZONE_B) - Y(1) + 1, RED);
   if (inLane() && plunge > 0) { const z = zoneOf(plunge); rectfill(mx + 2, Y(plunge), 4, Y(0) - Y(plunge), z ? WHITE : DIM); txt(z ? `RAMP ${z}` : 'PULL', 196, 196, z ? WHITE : DIM); }
   txt('PULL', 200, Y(1) - 2, DIM);
 }
+
+function drawTurn() {
+  panel(24, 76, 144, 56);
+  ctab(`PLAYER ${cur + 1}`, 88, GOLD); ctab(`BALL ${BALLS + 1 - balls}`, 102, WHITE);
+  if (timer % 60 < 40) ctab('PULL TO LAUNCH', 118, DIM);
+}
+
+function drawBonus() {
+  const r = bonusRes, v = bonusShown();
+  panel(16, 64, 160, 88);
+  ctab('BALL BONUS', 72, GOLD); ctab(`${r.base}`, 90, WHITE); ctab(`X DEPTH ${r.depth}`, 102, RED);
+  ctab(String(v), 120, v >= r.total ? GOLD : WHITE);
+  if (timer >= BONUS_COUNT && timer % 60 < 40) ctab('A: CONTINUE', 138, DIM);
+}
+
+function drawOver() {
+  const best = Math.max(...players.map((q) => q.score));
+  panel(8, 56, 240, 44 + players.length * 14 + (newDeepest ? 14 : 0) + 16);
+  ctxt('GAME OVER', 64, RED);
+  players.forEach((q, i) => {
+    const y = 84 + i * 14, top = nPlayers > 1 && q.score === best;
+    txt(nPlayers > 1 ? `P${i + 1}` : '', 20, y, top ? GOLD : DIM);
+    txt(`D${q.depth} L${q.level}`, 48, y, RED); txt(String(q.score), 236 - String(q.score).length * 8, y, top ? GOLD : WHITE);
+  });
+  if (newDeepest) ctxt(`DEEPEST YET: D${Math.floor(newDeepest / 10)} L${newDeepest % 10}`, 84 + players.length * 14, GOLD);
+  if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 84 + players.length * 14 + (newDeepest ? 14 : 0) + 4, DIM);
+}
+
+function drawPlayers() {
+  panel(50, 140, 156, 70);
+  ctxt('HOW MANY PLAYERS?', 148, GOLD);
+  for (let i = 1; i <= 4; i++) { const x = 72 + (i - 1) * 32, on = i === nPlayers; if (on) rect(x - 4, 162, 24, 20, GOLD); txt(String(i), x + 4, 168, on ? WHITE : DIM); }
+  ctxt('A: START   B: BACK', 194, DIM);
+}
+
+const ctab = (s, y, c) => txt(s, 96 - s.length * 4, y, c); // centred on the table, not the screen
 
 function drawTitle() {
   ctxt('DUNGEON CRAWL PINBALL', 50, RED);
@@ -489,8 +650,11 @@ function drawRecords() {
     if (on && timer % 40 < 30) rectfill(28, y - 2, 200, 12, PANEL);
     txt(String(i + 1).padStart(2), 40, y, i === 0 ? GOLD : DIM);
     txt(e.score ? e.initials : '---', 72, y, on ? GOLD : WHITE);
-    txt(e.score ? String(e.score).padStart(8) : '', 128, y, i === 0 ? GOLD : WHITE);
+    txt(e.score ? String(e.score).padStart(8) : '', 112, y, i === 0 ? GOLD : WHITE);
+    if (e.score && e.lv) txt(`D${Math.floor(e.lv / 10)}L${e.lv % 10}`, 184, y, RED);
   });
+  const d = dget(DEEPEST_SLOT);
+  if (d) ctxt(`DEEPEST D${Math.floor(d / 10)} L${d % 10}   GAMES ${dget(GAMES_SLOT)}`, 180, DIM);
   if (timer % 60 < 40) ctxt('START: BACK', 192, DIM);
 }
 
@@ -498,7 +662,7 @@ function drawInitials() {
   const ini = initials;
   panel(24, 40, 208, 144);
   ctxt(rank === 0 ? 'NEW HIGH SCORE!' : `TOP 10: #${rank + 1}`, 52, GOLD);
-  ctxt(String(score), 68, WHITE);
+  ctxt((nPlayers > 1 ? `PLAYER ${ini.who + 1}: ` : '') + String(players[ini.who].score), 68, WHITE);
   ctxt('ENTER YOUR INITIALS', 90, DIM);
   for (let i = 0; i < 3; i++) {
     const on = i === ini.pos, x = 84 + i * 32;

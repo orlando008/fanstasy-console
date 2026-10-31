@@ -52,8 +52,9 @@ const until = (vm, p, f, n = 300) => { for (let i = 0; i < n; i++) { vm.run(1); 
 // 5. The cubbies: a ball coming up into one is held a second, scores 10,000 and is thrown out towards the middle; one falling past is not taken.
 {
   const { vm, p } = game(), c = p.CUBBIES[1];
+  p.cubbyKey = [true, false]; // (its key already taken: step 3's 04-rules.mjs has the keys)
   put(p, c.x, c.y + 10, 0, -4); vm.run(3);
-  ok(p.ball.hold && p.stats.cubbyR === 1 && p.score === p.PTS.cubby, 'a ball coming up into the right cubby is taken and scores 10,000');
+  ok(p.ball.hold && p.stats.cubbyR === 1 && p.score === p.PTS.cubby, 'a ball coming up into the right cubby is taken and scores 10,000', `${p.score}`);
   const t = until(vm, p, () => !p.ball.hold, 200);
   ok(Math.abs(t - p.HOLD) <= 2 && p.ball.vx < 0, 'it is held a second and thrown out towards the middle', `${t} frames, vx ${p.ball.vx.toFixed(1)}`);
   vm.run(30); ok(p.stats.cubbyR === 1, 'and is not taken again at once');

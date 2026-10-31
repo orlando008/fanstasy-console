@@ -1,6 +1,6 @@
 // Dungeon Crawl Pinball, step 1: the ball, the walls, the three flippers (the upper one on the right hand), the plunger with its two
 // launch ramps, the drain. One PASS/FAIL line for each behaviour, written as a sentence; the numbers are the spec's (section 5).
-import { newGame, M, pull } from './lib.mjs';
+import { newGame, M, pull, drainNow } from './lib.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy, zone: null, ride: null, hold: null }); };
@@ -53,7 +53,7 @@ const BARE = 'BUMPERS.length = 0; SLINGS.length = 0; STANDUPS.length = 0; RAMPS.
   vm.run(4, M('A')); ok(Math.abs(p.flips[1].a - K.UP_A) < 1e-9 && Math.abs(p.flips[2].a - K.UP_A) < 1e-9, 'a flipper is fully up in 4 frames');
   vm.run(6); ok(Math.abs(p.flips[1].a - K.REST_A) < 1e-9, 'and down again in 6');
   ok(p.flips[2].len === K.UFLEN && K.UFLEN < K.FLEN, 'the upper flipper is shorter than the lower ones', `${K.UFLEN} / ${K.FLEN}`);
-  vm.run(1); put(p, 20, 636); vm.run(1); // (a drain; the next ball waits in the lane)
+  drainNow(vm, p); // (the next ball waits in the lane)
   p.flips.forEach((f) => { f.a = K.REST_A; }); vm.run(3, M('LEFT', 'A'));
   ok(p.inLane() && p.flips.every((f) => !up(f)), 'while the ball waits at the plunger the hands pull the plunger instead of flipping');
 }
@@ -116,9 +116,9 @@ const BARE = 'BUMPERS.length = 0; SLINGS.length = 0; STANDUPS.length = 0; RAMPS.
   ok(Math.abs(p.camY - (K.TABLE_H - K.VIEW_H)) < 1, 'the camera shows the bottom of the table while the ball waits', `${p.camY.toFixed(0)}`);
   for (let i = 0; i < 60; i++) { put(p, 96, 100); vm.run(1); }
   ok(p.camY < 60, 'and follows the ball up the table', `${p.camY.toFixed(0)}`);
-  put(p, 88, 634, 0, 3); vm.run(2);
-  ok(p.balls === 2 && p.inLane(), 'a ball that drains between the flippers is lost; the next waits at the plunger');
-  put(p, 88, 634, 0, 3); vm.run(2); put(p, 88, 634, 0, 3); vm.run(2);
+  drainNow(vm, p);
+  ok(p.balls === 2 && p.inLane() && p.state === 'play', 'a ball that drains between the flippers is lost (after its bonus); the next waits at the plunger');
+  drainNow(vm, p); drainNow(vm, p);
   ok(p.state === 'over', 'the third ball lost ends the game');
 }
 
