@@ -132,7 +132,7 @@ const LAUNCH = {
   B: { at: 140, path: [[184, 140], [182, 112], [172, 102], [162, 116], [164, 170], [170, 206]], out: [-0.6, 1.5] }, // round the top right onto the upper flipper
 };
 /** The playfield ramps: a ball hit up into a mouth at RAMP_MIN to RAMP_MAX px a frame is carried along (faster flies over the mouth). */
-const RAMP_IN = 14, RAMP_MIN = 3.5, RAMP_MAX = 6.8;
+const RAMP_IN = 14, RAMP_MIN = 3.5, RAMP_MAX = 9;
 const RAMPS = [
   { k: 'rampL', x: 14, y: 430, path: [[14, 430], [11, 330], [13, 200], [30, 124], [64, 104], [98, 110]], out: [1, 1.5] }, // up the left side, out over the bumpers
   { k: 'rampR', x: 160, y: 430, path: [[160, 430], [165, 330], [166, 260], [170, 206]], out: [-0.6, 1.5] }, // up the right side onto the upper flipper
@@ -151,14 +151,14 @@ const GUIDE_LEN = GUIDE.map((P) => pathLen(RAMPS[1].path.slice(0, -1)) + pathLen
 
 /** The things that kick and the targets. A bumper throws the ball away at BUMP_KICK at least, a slingshot's face at SLING_KICK. */
 const BUMP_R = 11, BUMP_KICK = 6, SLING_KICK = 4.5, COOL = 8, HIT_FLASH = 6, TARGET_R = 2; // radii; frames between hits and of a hit's light
-const BUMPERS = [[72, 150], [116, 150], [94, 186]].map(([x, y]) => ({ x, y, flash: 0, cool: 0 }));
+const BUMPERS = [[77, 148], [111, 148], [94, 178]].map(([x, y]) => ({ x, y, flash: 0, cool: 0 }));
 const SLINGS = [[32, 480, 44, 545], [144, 480, 132, 545]].map(([x0, y0, x1, y1]) => ({ x0, y0, x1, y1, flash: 0, cool: 0 }));
 /** Standup targets: short bars, slanted (nothing rests on them), hit from below. The chest is one more, in the middle. */
 const STANDUPS = [[68, 235, 80, 229], [108, 229, 120, 235], [34, 373, 46, 367], [142, 367, 154, 373]].map(([x0, y0, x1, y1]) => ({ x0, y0, x1, y1, lit: false, flash: 0, cool: 0 }));
 const CHEST = { x0: 87, y0: 302, x1: 101, y1: 298, lit: false, flash: 0, cool: 0 };
 const KICKBACK = { x: 16, y0: 575, y1: 606, v: 13 }; // the left outlane's kickback
 /** The lava pit, and the Boss's target at its middle (there only in the Boss fight: step 4). */
-const PIT = { x: 94, y: 430, r: 34 }, BOSS_R = 12;
+const PIT = { x: 94, y: 430, r: 34 }, BOSS_R = 12, BOSS = { flash: 0, cool: 0 }; // (BOSS: its light and cooldown when hit)
 const PTS = { bump: 100, sling: 10, standup: 1000, chest: 0, ramp: 5000, cubby: 10000, slot3: 25000, slot10: 100000 };
 let gates = [false, false], kickback = true, bossUp = false; // the slots' gates (open: true), the kickback lit, the Boss risen
 
@@ -195,7 +195,7 @@ function kick(b, v) {
 }
 
 let stats = {}, evq = [];
-const resetStats = () => { stats = { launch: 0, rideA: 0, rideB: 0, skill: 0, drain: 0, bump: 0, sling: 0, standup: 0, standupSet: 0, chest: 0, ramp: 0, rampL: 0, rampR: 0, cubby: 0, cubbyL: 0, cubbyR: 0, slot: 0, slot3: 0, slot10: 0, kick: 0, boss: 0 }; };
+const resetStats = () => { stats = { launch: 0, rideA: 0, rideB: 0, skill: 0, drain: 0, bump: 0, sling: 0, standup: 0, standupLit: 0, standupSet: 0, levels: 0, bossStart: 0, bossBeaten: 0, treasure: 0, chest: 0, ramp: 0, rampL: 0, rampR: 0, cubby: 0, cubbyL: 0, cubbyR: 0, slot: 0, slot3: 0, slot10: 0, kick: 0, boss: 0 }; };
 resetStats();
 const emit = (k) => { evq.push(k); }; // what the ball did this frame, for the rules (steps 3 and 4)
 let msg = '', msgT = 0;
@@ -257,11 +257,11 @@ function stepBall(b, flips) {
   if (b.vx > 0 && b.x < LANE_X) collide(b, ...LANE_GATE, 0, WALL_E); // the lane's one-way gate
   SLOTS.forEach((s, i) => { if (!gates[i] && b.vy < 0) collide(b, s.l, SLOT_GATE, s.r, SLOT_GATE, 0, WALL_E); }); // a shut gate stops a ball going up (one inside when it shuts falls out)
   for (const e of BUMPERS) if (collide(b, e.x, e.y, e.x, e.y, BUMP_R, WALL_E)) { kick(b, BUMP_KICK); if (struck(e)) { score1('bump'); fx(SFX.hit); } }
-  if (bossUp && collide(b, PIT.x, PIT.y, PIT.x, PIT.y, BOSS_R, WALL_E)) { kick(b, BUMP_KICK); stats.boss++; emit('boss'); }
+  if (bossUp && collide(b, PIT.x, PIT.y, PIT.x, PIT.y, BOSS_R, WALL_E)) { kick(b, BUMP_KICK); if (struck(BOSS)) { stats.boss++; emit('boss'); fx(SFX.hit); } }
   for (const e of SLINGS) if (collide(b, e.x0, e.y0, e.x1, e.y1, 0, WALL_E)) { kick(b, SLING_KICK); if (struck(e)) { score1('sling'); fx(SFX.hit); } }
   for (const e of STANDUPS) if (collide(b, e.x0, e.y0, e.x1, e.y1, TARGET_R, WALL_E) && struck(e)) {
     score1('standup'); fx(SFX.point);
-    if (!e.lit) { e.lit = true; if (STANDUPS.every((q) => q.lit)) { stats.standupSet++; emit('standupSet'); for (const q of STANDUPS) q.lit = false; } }
+    if (!e.lit) { e.lit = true; stats.standupLit++; emit('standupLit'); if (STANDUPS.every((q) => q.lit)) { stats.standupSet++; emit('standupSet'); for (const q of STANDUPS) q.lit = false; } }
   }
   if (collide(b, CHEST.x0, CHEST.y0, CHEST.x1, CHEST.y1, TARGET_R, WALL_E) && struck(CHEST)) { score1('chest'); fx(SFX.point); }
   if (!b.nocap) { // the holes
@@ -290,7 +290,7 @@ function stepTable(balls, flips, hold) {
     }
     for (const b of balls) stepBall(b, flips);
   }
-  for (const e of [...BUMPERS, ...SLINGS, ...STANDUPS, CHEST]) { if (e.cool > 0) e.cool--; if (e.flash > 0) e.flash--; }
+  for (const e of [...BUMPERS, ...SLINGS, ...STANDUPS, CHEST, BOSS]) { if (e.cool > 0) e.cool--; if (e.flash > 0) e.flash--; }
 }
 
 // --- Input: edge-triggered presses (btnp repeats; menus want one press) ---
@@ -308,6 +308,7 @@ let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let score = 0, balls = BALLS, ball = null, bs = [], flips = [], plunge = 0, camY = 0, held = [false, false];
 let nPlayers = 1, wantPlayers = 1, cur = 0, players = [], keys = 0, cubbyKey = [true, true], spell = null, depth = 1, level = 1, saveT = 0, saved = false;
 let ballStats = {}, bonusRes = null, initQueue = [], firstRank = -1, newDeepest = 0;
+let goalN = 0, boss = null, chestLit = false, treasureN = 0, extraBalls = 0, banner = null; // the level's count, the Boss fight, the treasure, a message over the table
 const PAD_LEFT = [UP, DOWN, LEFT, RIGHT], PAD_RIGHT = [A, B, X, Y]; // the left hand's flipper and the right hand's flippers
 
 function init() {
@@ -330,22 +331,23 @@ const KEY_PTS = 15000, SPELL_TIME = 30 * 60, SAVE_FRAMES = 12 * 60; // a key (on
 const BONUS_PTS = { bump: 100, ramp: 5000, cubby: 10000, slot: 25000, level: 50000 }; // the end-of-ball bonus, each, times the depth
 
 /** What each player keeps while the others play (the rest of the table is the ball's and starts again). */
-const makePlayer = () => ({ score: 0, balls: BALLS, keys: 0, cubbyKey: [true, true], spell: null, depth: 1, level: 1, stand: [false, false, false, false] });
+const makePlayer = () => ({ score: 0, balls: BALLS, keys: 0, cubbyKey: [true, true], spell: null, depth: 1, level: 1, stand: [false, false, false, false], goalN: 0, chestLit: false, treasureN: 0, extra: 0 });
 function loadPlayer(i) {
   const q = players[i]; cur = i;
   score = q.score; balls = q.balls; keys = q.keys; cubbyKey = q.cubbyKey.slice(); spell = q.spell && { ...q.spell }; depth = q.depth; level = q.level;
+  goalN = q.goalN; chestLit = q.chestLit; treasureN = q.treasureN; extraBalls = q.extra;
   STANDUPS.forEach((e, k) => { e.lit = q.stand[k]; });
   setGates();
 }
 function savePlayer() {
-  Object.assign(players[cur], { score, balls, keys, cubbyKey: cubbyKey.slice(), spell: spell && { ...spell }, depth, level, stand: STANDUPS.map((e) => e.lit) });
+  Object.assign(players[cur], { score, balls, keys, cubbyKey: cubbyKey.slice(), spell: spell && { ...spell }, depth, level, stand: STANDUPS.map((e) => e.lit), goalN, chestLit, treasureN, extra: extraBalls });
 }
 /** The gates follow the keys: the x3 slot opens with a key, the x10 slot with two. */
 function setGates() { gates = [keys >= 2, keys >= 1]; }
 
 function startGame(n = nPlayers) {
   nPlayers = n; players = Array.from({ length: n }, makePlayer);
-  flips = makeFlippers(); resetStats(); msgT = 0; paused = false; timer = 0; bossUp = false;
+  flips = makeFlippers(); resetStats(); msgT = 0; paused = false; timer = 0; bossUp = false; boss = null; banner = null;
   loadPlayer(0); beginBall();
   state = n > 1 ? 'turn' : 'play';
   play(SONG.play);
@@ -353,7 +355,7 @@ function startGame(n = nPlayers) {
 
 /** A new ball for the player whose turn it is: what belongs to one ball starts again (keys, a spell, the descent go on). */
 function beginBall() {
-  saveT = 0; saved = false; kickback = true; evq = []; bonusRes = null; msgT = 0;
+  saveT = 0; saved = false; kickback = true; evq = []; bonusRes = null; msgT = 0; bossUp = false; boss = null;
   ballStats = { bump: 0, ramp: 0, cubby: 0, slot: 0, level: 0 };
   serve();
 }
@@ -361,8 +363,12 @@ function beginBall() {
 /** What the ball did this frame, in order: the keys, the slots and their spells, the counts for the bonus. */
 function processEvents() {
   for (const k of evq) {
+    const g = GOAL_OF[k]; // what the level's goal counts
+    if (g && level <= 4 && LEVELS[level - 1].k === g && ++goalN >= goalOf(level)) completeLevel();
+    if (k === 'boss' && boss) hitBoss();
+    if (k === 'chest' && chestLit) openChest();
     if (k === 'bump') ballStats.bump++;
-    else if (k === 'rampL' || k === 'rampR') ballStats.ramp++;
+    else if (k === 'rampL' || k === 'rampR') { ballStats.ramp++; if (level === 5 && !boss) startBoss(); }
     else if (k === 'cubbyL' || k === 'cubbyR') {
       ballStats.cubby++;
       const i = k === 'cubbyL' ? 0 : 1;
@@ -381,6 +387,57 @@ function castSpell(m) {
   setGates();
   spell = { m: Math.max(m, spell ? spell.m : 0), t: SPELL_TIME };
   say(m === 10 ? 'X10 MEGA SPELL' : 'X3 SPELL'); fx(SFX.record);
+}
+
+// --- The descent (SPEC 5): four levels, each with a goal, then the Boss; beating it is the next depth ---
+
+/** The levels: a name, what the goal counts (an event, through GOAL_OF), its count at depth 1, and the word for the banner. */
+const LEVELS = [
+  { name: 'THE GATEHOUSE', k: 'bump', n: 15, what: 'BUMPERS' },
+  { name: 'THE CRYPT', k: 'ramp', n: 4, what: 'RAMPS' },
+  { name: 'THE ARMOURY', k: 'standupLit', n: 4, what: 'TARGETS' },
+  { name: 'THE DEEP VAULT', k: 'cubby', n: 2, what: 'CUBBIES' },
+];
+const GOAL_OF = { bump: 'bump', rampL: 'ramp', rampR: 'ramp', standupLit: 'standupLit', cubbyL: 'cubby', cubbyR: 'cubby' };
+/** A level's count at this depth: half as much again each depth deeper. */
+const goalOf = (lv) => Math.ceil(LEVELS[lv - 1].n * (1 + 0.5 * (depth - 1)));
+const LEVEL_PTS = 100000, JACKPOT = 250000, BOSS_PRIZE = 2000000, TREASURE_PTS = 50000, TREASURE_SAVE = 20 * 60;
+const bossHp = () => 6 + 2 * (depth - 1);
+const showBanner = (a, b) => { banner = { a, b, t: 150 }; };
+
+/** A level's goal reached: its prize, its plaque in the pit, the chest lit, and the next level (after the fourth, the Boss is lit). */
+function completeLevel() {
+  award(LEVEL_PTS * level * depth); ballStats.level++; stats.levels++; chestLit = true; goalN = 0;
+  showBanner(`${LEVELS[level - 1].name} CLEARED`, level < 4 ? `DOWN TO LEVEL ${level + 1}` : 'THE PIT LORD AWAITS: A RAMP');
+  level++; fx(SFX.record);
+}
+
+/** The Boss fight: a ramp shot with the Boss lit. Two more balls come out of the slots' alcoves; 12 seconds of ball save for all three. */
+function startBoss() {
+  boss = { hp: bossHp(), max: bossHp() }; bossUp = true; stats.bossStart++;
+  saveT = SAVE_FRAMES; saved = false;
+  for (let i = 0; i < 2; i++) { const s = SLOTS[i], b = newBall(s.x, s.y); b.hold = { h: s, t: (HOLD + 40 * i) * SUB }; bs.push(b); }
+  showBanner('THE PIT LORD RISES', 'HIT HIM WITH EVERY BALL'); fx(SFX.over);
+}
+/** A hit on the Boss: a jackpot; the last one beats him: the prize, and one depth deeper. */
+function hitBoss() {
+  award(JACKPOT * depth); boss.hp--;
+  if (boss.hp > 0) { say('JACKPOT'); return; }
+  award(BOSS_PRIZE * depth); stats.bossBeaten++;
+  showBanner('THE PIT LORD FALLS', `DESCEND TO DEPTH ${depth + 1}`);
+  depth++; level = 1; goalN = 0; treasureN = 0; boss = null; bossUp = false; fx(SFX.record);
+}
+/** The multiball is over (one ball left) with the Boss standing: he sinks, still lit, for another ramp shot. */
+function failBoss() { boss = null; bossUp = false; showBanner('THE PIT LORD SINKS', 'A RAMP TO FIGHT AGAIN'); }
+
+/** The lit chest: 50,000 and the next treasure: a ball save, the kickback relit, an extra ball (the third of each depth), round and round. */
+function openChest() {
+  chestLit = false; award(TREASURE_PTS); stats.treasure++;
+  const t = treasureN++ % 3;
+  if (t === 0) { saveT = TREASURE_SAVE; saved = false; say('TREASURE BALL SAVE'); }
+  else if (t === 1) { kickback = true; say('TREASURE KICKBACK'); }
+  else { extraBalls++; say('TREASURE EXTRA BALL'); }
+  fx(SFX.record);
 }
 
 const newBall = (x, y) => ({ x, y, vx: 0, vy: 0, ride: null, zone: null, skill: false, hold: null, nocap: 0 });
@@ -411,8 +468,9 @@ function updateBonus() {
   } else if (timer > BONUS_COUNT + BONUS_HOLD) afterBall();
 }
 
-/** After a ball's bonus: the next player with a ball left, or the game is over. */
+/** After a ball's bonus: an extra ball plays the same player again; otherwise the next player with a ball left, or the game is over. */
 function afterBall() {
+  if (extraBalls > 0) { extraBalls--; beginBall(); say('SHOOT AGAIN'); state = 'play'; return; }
   balls--; savePlayer();
   for (let i = 1; i <= nPlayers; i++) {
     const j = (cur + i) % nPlayers;
@@ -460,7 +518,7 @@ function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
   held = [PAD_LEFT.some((k) => btn(k)), PAD_RIGHT.some((k) => btn(k))];
   // The plunger: either hand held while the ball waits pulls it; let go, and the pull launches the ball and picks its way
-  const waiting = inLane() && !ball.ride && ball.vy >= 0 && ball.y >= BALL_HOME.y - 1;
+  const waiting = bs.length === 1 && inLane() && !ball.ride && ball.vy >= 0 && ball.y >= BALL_HOME.y - 1;
   if (waiting && (held[0] || held[1])) plunge = Math.min(PLUNGE_FRAMES, Math.round(plunge * PLUNGE_FRAMES) + 1) / PLUNGE_FRAMES; // whole frames, so 30 held is 0.5 exactly
   else if (waiting && plunge > 0.04) {
     ball.vy = -(4 + 10 * plunge); ball.zone = zoneOf(plunge);
@@ -477,7 +535,14 @@ function updatePlay() {
   if (msgT > 0) msgT--;
   const want = clamp(Math.max(...bs.map((b) => b.y)) - 150, 0, TABLE_H - VIEW_H); // the camera follows the lowest ball
   camY += (want - camY) * 0.12;
-  if (ball.y > DRAIN_Y && ball.x < LANE_X) drain();
+  if (banner && banner.t > 0) banner.t--;
+  for (const b of bs.slice()) { // a ball lost: in a multiball it is saved back into play from the top while the save lasts, else gone
+    if (!(b.y > DRAIN_Y && b.x < LANE_X)) continue;
+    if (bs.length === 1) { drain(); break; }
+    if (saveT > 0) { const s = SLOTS[0]; Object.assign(b, { x: s.x, y: s.y, vx: 0, vy: 0, hold: { h: s, t: HOLD * SUB } }); say('BALL SAVED'); continue; }
+    bs.splice(bs.indexOf(b), 1); ball = bs[0]; fx(SFX.hit);
+    if (bs.length === 1 && boss) failBoss();
+  }
 }
 
 const levelNo = (q) => q.depth * 10 + q.level; // the level reached, for the records: depth x 10 + level
@@ -561,7 +626,8 @@ function drawPlay() {
   const cy = Math.round(camY), R = Math.round, sy = (y) => R(y - cy);
   rectfill(0, 0, TABLE_W, 224, SHADOW);
   const path = (P, c) => { for (let i = 1; i < P.length; i++) line(R(P[i - 1][0]), sy(P[i - 1][1]), R(P[i][0]), sy(P[i][1]), c); };
-  circ(PIT.x, sy(PIT.y), PIT.r, RED); if (bossUp) circfill(PIT.x, sy(PIT.y), BOSS_R, RED);
+  circ(PIT.x, sy(PIT.y), PIT.r, RED); if (bossUp) circfill(PIT.x, sy(PIT.y), BOSS_R, BOSS.flash ? GOLD : RED);
+  for (let i = 0; i < 5; i++) circfill(PIT.x - 24 + i * 12, sy(PIT.y + PIT.r + 8), 2, i + 1 < level ? GOLD : i + 1 === level && clock % 30 < 18 ? RED : SHADOW + 1); // the plaques: levels cleared, the one to clear
   for (const k in LAUNCH) path(LAUNCH[k].path, k === 'A' ? 9 : RED);
   for (const r of RAMPS) { path(r.path, 9); circ(r.x, sy(r.y), RAMP_IN, 9); }
   for (const w of WALLS) line(R(w[0]), sy(w[1]), R(w[2]), sy(w[3]), DIM);
@@ -571,11 +637,22 @@ function drawPlay() {
   if (guided() >= 0) path(GUIDE[guided()], GOLD);
   for (const e of BUMPERS) circfill(e.x, sy(e.y), BUMP_R, e.flash ? GOLD : RED);
   for (const e of SLINGS) line(e.x0, sy(e.y0), e.x1, sy(e.y1), e.flash ? GOLD : RED);
-  for (const e of [...STANDUPS, CHEST]) for (let k = -1; k <= 1; k++) line(R(e.x0), sy(e.y0) + k, R(e.x1), sy(e.y1) + k, e === CHEST ? GOLD : e.lit ? GREEN : 9);
+  for (const e of [...STANDUPS, CHEST]) for (let k = -1; k <= 1; k++) line(R(e.x0), sy(e.y0) + k, R(e.x1), sy(e.y1) + k, e === CHEST ? (chestLit && clock % 30 < 20 ? GOLD : DIM) : e.lit ? GREEN : 9);
   if (kickback) circfill(8, sy(590), 2, GREEN);
   for (const f of flips) { const t = flipTip(f); for (let k = -1; k <= 1; k++) line(R(f.x), sy(f.y) + k, R(t.x), sy(t.y) + k, RED); circfill(R(f.x), sy(f.y), 2, GOLD); }
   for (const b of bs) circfill(R(b.x), sy(b.y), BR - 1, b.ride ? GOLD : WHITE);
+  drawBanner();
   drawPanel();
+}
+
+/** Over the top of the table: the level and its goal (or the Boss and his health), or the last announcement. */
+function drawBanner() {
+  rectfill(0, 0, TABLE_W, 12, ART.colors.GLASS);
+  if (banner && banner.t > 0) { rectfill(0, 12, TABLE_W, 11, ART.colors.GLASS); ctab(banner.a, 2, GOLD); ctab(banner.b, 13, WHITE); return; }
+  if (boss) { ctab(`PIT LORD ${'*'.repeat(boss.hp)}`, 2, clock % 20 < 14 ? RED : GOLD); return; }
+  if (level === 5) { ctab('BOSS LIT: SHOOT A RAMP', 2, clock % 40 < 28 ? RED : GOLD); return; }
+  const L = LEVELS[level - 1];
+  ctab(`${L.what} ${goalN}/${goalOf(level)}`, 2, WHITE);
 }
 
 /** Short scores for the list of players: 12345, 151K, 1.2M. */

@@ -79,10 +79,10 @@ hits; the draft's cubbies and x3 slot were where no flip went).
 | x10 MEGA slot | a hole at (60, 70) in an alcove x 48 to 72 with a peaked roof (y 46 to 56), its **iron gate** across the mouth at y 88 | Shut: the gate stops a ball going up (a ball inside when it shuts falls out). Open (two keys): a ball that comes within 7 px of the hole is held 1 s, scores and is thrown out down the table at 3 px a frame. Reached by the **upper flipper** (6 px of it: 22 to 25 from its pivot) and by the guided way |
 | x3 slot | a hole at (124, 70), alcove x 112 to 136, the same gate | Open with a key; reached by the **guided way**: while a slot is open, the right ramp carries the ball on round the top into it (into the x10 slot when both are open) |
 | Guided arrows | up the right ramp and round to the open slot | Painted on the floor; lit (chasing) while a slot is open (step 6) |
-| Pop bumpers | (72, 150), (116, 150), (94, 186) | Three, radius 11, rune-marked; kick at 6 px a frame |
+| Pop bumpers | (77, 148), (111, 148), (94, 178) | Three, radius 11, rune-marked; kick at 6 px a frame. Close together (13 to 14 px between them), so a ball that gets in rattles round (step 4: wider apart, a ball went through after one hit) |
 | Upper flipper | pivot (166, 232) on a slanted plate from the lane wall, pointing left; length 26 (the lower ones are 34) | On the right flipper's button |
-| Cubbies | holes at (9, 404) and (167, 404) in the side walls, just above the ramps' mouths | A ball **coming up** within 8 px is taken (a ball falling down the wall past it is not), held 1 s and thrown out towards the middle. Reached by the far flipper's tip (25 to 28 px from its pivot): a shot too fast for the ramp's mouth |
-| Playfield ramps | mouths (14, 430) and (160, 430), 14 px across; the left one runs up the left side and out over the bumpers at (98, 110), the right one up the right side onto the upper flipper (170, 206) | A ball hit up into a mouth at 3.5 to 6.8 px a frame is carried along (a scripted ride at 7 px a frame); faster flies over the mouth into the cubby above. Reached by the far flipper, 19 to 22 px from its pivot |
+| Cubbies | holes at (9, 404) and (167, 404) in the side walls, just above the ramps' mouths | A ball **coming up** within 8 px is taken (a ball falling down the wall past it is not), held 1 s and thrown out towards the middle. Reached by a shot too fast for the ramp's mouth: in play, a ball let down from a cradle and flipped near the pivot (6 to 8 px rolling), or at 13 px from rest |
+| Playfield ramps | mouths (14, 430) and (160, 430), 14 px across; the left one runs up the left side and out over the bumpers at (98, 110), the right one up the right side onto the upper flipper (170, 206) | A ball hit up into a mouth at 3.5 to 9 px a frame is carried along (a scripted ride at 7 px a frame); faster flies over the mouth into the cubby above. Reached by the far flipper, 19 to 28 px from its pivot from rest, or a rolling ball flipped at 13 to 15 px |
 | Launch ramps | Ramp A leaves the lane at y 360, over the table to the left inlane (24, 486); Ramp B leaves it at y 140, round the top right onto the upper flipper | The plunger's two zones (section 5) |
 | Standup targets | four slanted bars: (68, 235)-(80, 229), (108, 229)-(120, 235), (34, 373)-(46, 367), (142, 367)-(154, 373) | 1,000 a hit; each lights; all four lit is a set (and they start again) |
 | Treasure chest | a slanted bar (87, 302)-(101, 298), in the middle under the logo's sword | Lit after each level completed: a hit opens it (section 5) |
@@ -344,6 +344,36 @@ and **Results** notes under its number here, commit and push.
   on through the bonuses and turns and reports the cubbies, ramps and slots.
 - **Results:** 138 checks pass. A sweep (8 seeds, skill 0.5 and 0.9) finishes cleanly; this bot, which does not aim yet, takes 1 to 6 keys
   a game, casts 0 to 2 spells, and scores 155,000 to 2,000,000 (the top one an x10 spell); its balls last 23 to 55 seconds.
+
+### Step 4 built: the descent
+
+- `carts/src/dungeon-crawl/code.js`, a section "the descent": the four **levels** (`LEVELS`: what each goal counts, through `GOAL_OF`, and
+  its count, half as much again each depth: `goalOf`), a level **cleared** (100,000 x the level x the depth, its plaque in the pit, the
+  chest lit, the banner), the **Boss** lit after the fourth and started by a ramp (`startBoss`: two more balls out of the slots' alcoves,
+  12 seconds of save for all three, the Boss's target up), a **hit** a jackpot (`hitBoss`: 250,000 x the depth; 6 hits at depth 1, two
+  more each depth), **beaten** (2,000,000 x the depth, one depth deeper, Level 1 again), or **sinking** when the multiball is down to
+  one ball (still lit: a ramp fights again), the **treasure** (`openChest`: 50,000 and a ball save of 20 s, the kickback, an extra
+  ball, in turn), an extra ball (SHOOT AGAIN). Lighting a target is an event of its own (`standupLit`: the Armoury counts targets lit,
+  not hits); the Boss has a cooldown like a bumper; a multiball's lost balls are saved back into play from the top while the save lasts.
+  The banner over the table shows the goal and its count (RAMPS 2/4), the Boss's health, BOSS LIT, or the last announcement; the pit
+  shows the five plaques.
+- `tests/carts/dungeon-crawl/05-descent.mjs` (the goals and their counts at depths 1 to 3, a level cleared, the Boss lit, started, his
+  multiball and its save, sinking and fought again, the jackpots, beaten into depth 2, the treasure's order, an extra ball, the
+  descent kept from ball to ball) and `06-bot.mjs`: **the bot's games are a test now** (two whole games at skill 0.95 finish cleanly
+  and get down a level, take a key and score; with the Boss lit it fights and beats him), so it cannot stop playing unnoticed.
+- **The bot aims.** As Star Cadet's: it cradles a ball on a raised flipper (any of the three), lets it down and flips at the place that
+  sends the ball where it wants: the Boss in his fight, a ramp when he is lit, the level's goal, an open slot while no spell is on,
+  a cubby with its key, the lit chest. `--set level=5` starts it with the Boss lit.
+- **What the bot found.** (1) The aim map flips a ball at rest, but a person (and the bot) flips a ball **rolling** down the flipper from a
+  cradle, which leaves faster: with the ramps taking only shots up to 6.8 px a frame, rolling shots all went into the cubbies (ramps
+  0.1 a minute, cubbies 6.8). `aim.mjs` has a rolling map now (`rolled`: the button pressed when the ball has rolled to r), the bot uses
+  it after a cradle, and the ramps take shots up to 9 px a frame: measured per level with the bot aiming at the goal, at 8 the ramps
+  were 0.4 a minute and the cubbies 5.6, at 10 the ramps 2.8 and the cubbies 0.4, at **9** the ramps 3.1 and the cubbies 2.0.
+  (2) The bumpers were too far apart: a ball went through after one hit (2.6 hits a minute when aimed at); closer, 11.7.
+- **Results:** 178 checks pass. A sweep (4 seeds): at skill 0.5 and 0.8 the bot's balls last about 37 seconds and it takes 2 or 3 keys a
+  game and scores 0.1 to 2.5 million; at 0.95 about 39 seconds, clearing Level 1 in every game. With the Boss lit it fights and beats
+  him every time (at 0.8 and 0.95), 4 to 37 million. So the levels ask for more than a ball's life gives, and the Boss may be easy: step 8
+  balances both (the counts and his health are constants: `LEVELS`, `bossHp`).
 
 ## 16. Open questions
 

@@ -1,7 +1,7 @@
 // Dungeon Crawl Pinball, step 2: the table's elements, each hit with a ball placed and aimed at it; the guided way up the right ramp into
 // an open slot; every shot reachable by a flip (aim.mjs); and no place on the table that holds a ball still. One PASS/FAIL line each.
 import { newGame } from './lib.mjs';
-import { shot } from './aim.mjs';
+import { shot, rolled, ROLL } from './aim.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 const game = (extra) => { const vm = newGame(1, { extra }), p = vm.probe(); vm.run(2); return { vm, p }; };
@@ -33,7 +33,7 @@ const until = (vm, p, f, n = 300) => { for (let i = 0; i < n; i++) { vm.run(1); 
   ok(p.stats.chest === 1, 'the chest is a target too (its treasure comes in step 4)');
 }
 
-// 4. The playfield ramps: a ball up into a mouth at 3.5 to 6.8 px a frame rides; faster flies over it, into the cubby above.
+// 4. The playfield ramps: a ball up into a mouth at 3.5 to 9 px a frame rides; faster flies over it, into the cubby above.
 {
   for (const [k, side] of [[0, 'left'], [1, 'right']]) {
     const { vm, p } = game(), r = p.RAMPS[k];
@@ -44,7 +44,7 @@ const until = (vm, p, f, n = 300) => { for (let i = 0; i < n; i++) { vm.run(1); 
     ok(p.stats[r.k] === 1 && p.score === p.PTS.ramp && Math.hypot(p.ball.x - end[0], p.ball.y - end[1]) < 4, `and comes out at its end, scoring 5,000`, `(${p.ball.x.toFixed(0)}, ${p.ball.y.toFixed(0)}) ${p.score}`);
   }
   const { vm, p } = game(), r = p.RAMPS[0];
-  put(p, r.x - 3, r.y + 16, 0, -8.5); vm.run(20);
+  put(p, r.x - 3, r.y + 16, 0, -10.5); vm.run(20);
   ok(!p.stats.rampL && p.stats.cubbyL === 1, 'a ball too fast for the left ramp flies over its mouth and into the left cubby', JSON.stringify({ ramp: p.stats.rampL, cubby: p.stats.cubbyL }));
   put(p, r.x, r.y + 16, 0, -2); vm.run(20); ok(p.stats.rampL === 0, 'and one too slow does not get on');
 }
@@ -105,11 +105,13 @@ const until = (vm, p, f, n = 300) => { for (let i = 0; i < n; i++) { vm.run(1); 
   ok(h.p.stats.boss >= 1 && h.p.ball.vy < 0, 'with the Boss up, a ball hitting it is thrown back');
 }
 
-// 9. Every shot can be made with a flip (aim.mjs): the two ramps, the two cubbies, the x10 slot by the upper flipper, the targets.
+// 9. Every shot can be made with a flip (aim.mjs: a ball at rest, or rolling down a flipper after a cradle): the two ramps, the two
+// cubbies, the x10 slot, the targets.
 {
   const all = [], add = (k, r) => all.push(...shot(k, r).events);
   for (const r of [10, 13, 19, 22, 25, 28]) { add(0, r); add(1, r); }
-  for (const r of [16, 22]) add(2, r);
+  for (const r of [7, 10, 13, 16, 19, 22, 25]) add(2, r);
+  for (const r of ROLL) for (const k of [0, 1]) all.push(...rolled(k, r).events);
   for (const want of ['rampL', 'rampR', 'cubbyL', 'cubbyR', 'slot10', 'standup', 'chest', 'bump'])
     ok(all.includes(want), `a flip reaches ${want}`);
   const lower = (k) => [16, 19, 22, 25, 28].filter((r) => { const e = shot(k, r).events; return e.includes(k ? 'rampL' : 'rampR'); }).length;
