@@ -76,6 +76,7 @@ hits; the draft's cubbies and x3 slot were where no flip went).
 |---|---|---|
 | Plunger lane | x 176 to 192, from y 612 up to y 120 | The ball waits on its floor; the top arch turns a ball that is not on a launch ramp into the table. A **one-way gate** over the lane's exit (x 176, y 44 to 120) lets the ball out and stops a ball from the table rolling back in. The **meter** is in the panel |
 | Top arch | y 0 to 96 | The table's top, a half circle of radius 96 centred at x 96 |
+| The gong | (92, 34), radius 7, hanging on a chain between the slots' alcoves | A hit rings it (2,500) and throws the ball back down at 4 px a frame; it hangs below the arch, so a ball going round the top from the plunger passes over it (the user asked for something to hit up there) |
 | x10 MEGA slot | a hole at (60, 70) in an alcove x 48 to 72 with a peaked roof (y 46 to 56), its **iron gate** across the mouth at y 88 | Shut: the gate stops a ball going up (a ball inside when it shuts falls out). Open (two keys): a ball that comes within 7 px of the hole is held 1 s, scores and is thrown out down the table at 3 px a frame. Reached by the **upper flipper** (6 px of it: 22 to 25 from its pivot) and by the guided way |
 | x3 slot | a hole at (124, 70), alcove x 112 to 136, the same gate | Open with a key; reached by the **guided way**: while a slot is open, the right ramp carries the ball on round the top into it (into the x10 slot when both are open) |
 | Guided arrows | up the right ramp and round to the open slot | Painted on the floor; lit (chasing) while a slot is open (step 6) |
@@ -88,14 +89,14 @@ hits; the draft's cubbies and x3 slot were where no flip went).
 | Treasure chest | a slanted bar (87, 302)-(101, 298), in the middle under the logo's sword | Lit after each level completed: a hit opens it (section 5) |
 | The pit and the Boss | the lava pit centred (94, 430), radius 34; the Boss's target (radius 12) at its centre | The steps of the pit carry the plaques LEVEL 1 to 4 and BOSS (lamps). The target is only there in the Boss fight (it kicks like a bumper); the rest of the time the pit is floor the ball rolls over |
 | Slingshots | faces (32, 480)-(44, 545) and (144, 480)-(132, 545) | Kick at 4.5 px a frame; 10 points |
-| Inlanes, outlanes | as Star Cadet's, mirrored about x 88 | The left outlane has a **kickback** (x under 16, y 575 to 606: the ball is thrown back up at 13 px a frame; once a ball, relit by treasure) |
+| Inlanes, outlanes | as Star Cadet's, mirrored about x 88 | Each outlane is a dark **chute** and has a **kickback** (x under 16 and 160 to 176, y 575 to 606: the ball is thrown back up at 13 px a frame; once a ball each, both relit by treasure; the right one at the user's request) |
 | Flippers | pivots (48, 588) and (128, 588), length 34 | As Star Cadet's |
-| Drain | below y 632, outside the lane | The ball is lost |
+| Drain | below y 632, outside the lane | The ball is lost, into a **spiked pit** (drawn from y 606 down) |
 
 ## 5. The rules
 
 **Time and physics.** As Star Cadet's (its spec section 5), which the user has played: 60 frames a second, 4 substeps a frame,
-gravity 0.12 px a frame squared, the most speed 14, walls keep 0.45 of the normal speed, bumpers kick at 6, slingshots at 4.5,
+gravity 0.12 px a frame squared, the most speed **12** (14 was too fast to follow: the user; at 11 a launch no longer makes the arch), walls keep 0.45 of the normal speed, bumpers kick at 6, slingshots at 4.5,
 flippers up in 4 frames and down in 6 with a bounce of 0.7. The upper flipper is the same but 26 long.
 
 **The plunger and the two launch ramps.** Held, the plunger is pulled: power = frames held / 60, up to 1 (it stays full while held).
@@ -415,6 +416,17 @@ and **Results** notes under its number here, commit and push.
   (the complement of the table's reds and oranges, and no other colour on the table is blue), with a dark navy outline, a white shine
   and a halo of blue light (a sprite in an adding palette, under it). `08-art.mjs` checks the ball's colours are blue, that nothing on the
   background layers is, and the halo.
+
+- **After the user's review of the table** (notes on the full board's picture): the **right outlane's kickback** (a saver like the left;
+  `KICKBACKS`, both lit each ball, both relit by the treasure); the most speed **14 to 12 px a frame** ("too fast to really register",
+  and a table taller than the screen), with the **camera** following faster (a fifth of the way a frame, not an eighth) and looking 8
+  frames of the ball's speed ahead; a **gong** at the top between the slots (2,500 a hit); the left ramp's top a **smooth curve** (a
+  Bezier's points, not three bends); the outlanes drawn as dark **chutes**; the drain a **spiked pit**. Seen on the board: the cubbies'
+  keys and a ball held in one were under the ramps' ribbons and the upper flipper under the right ramp's end: they are drawn over them
+  now (priority 3). The sheet is nearly full: 1,011 of 1,023 tiles (the background 633 in 1 to 639, the sprites 378 in 640 to 1,023).
+  Measured with the bot (skill 0.95): the balls last 42 to 107 seconds (about 40 before), and the goals come about as often as before
+  (bumpers 15 a minute when aimed at, ramps 2, targets 5, cubbies 2.3). `06-bot.mjs` plays three games and wants two to clear a level
+  (one short game can be unlucky).
 
 ## 16. Open questions
 

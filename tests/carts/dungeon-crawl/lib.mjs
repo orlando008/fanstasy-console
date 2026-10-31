@@ -11,7 +11,7 @@ const PROBE = `__expose(() => ({
   get score() { return score; }, set score(v) { score = v; }, get balls() { return balls; }, set balls(v) { balls = v; },
   get ball() { return ball; }, get bs() { return bs; }, get flips() { return flips; }, get plunge() { return plunge; }, get camY() { return camY; }, get stats() { return stats; }, get msg() { return msg; },
   serve, inLane, flipTip, zoneOf, WALLS, LAUNCH, ZONE_A, ZONE_B, SKILL, PLUNGE_FRAMES, UF,
-  BUMPERS, SLINGS, STANDUPS, CHEST, RAMPS, SLOTS, CUBBIES, KICKBACK, PIT, PTS, HOLD, startGame, SLOT_GATE, GUIDE, guided, CUBBY_R, RAMP_MIN, RAMP_MAX,
+  GONG, BUMPERS, SLINGS, STANDUPS, CHEST, RAMPS, SLOTS, CUBBIES, KICKBACKS, PIT, PTS, HOLD, startGame, SLOT_GATE, GUIDE, guided, CUBBY_R, RAMP_MIN, RAMP_MAX,
   get keys() { return keys; }, set keys(v) { keys = v; }, get cubbyKey() { return cubbyKey; }, set cubbyKey(v) { cubbyKey = v; }, get spell() { return spell; }, set spell(v) { spell = v; },
   get saveT() { return saveT; }, set saveT(v) { saveT = v; }, get saved() { return saved; }, get players() { return players; }, get cur() { return cur; }, get nPlayers() { return nPlayers; }, set nPlayers(v) { nPlayers = v; },
   get depth() { return depth; }, set depth(v) { depth = v; }, get level() { return level; }, set level(v) { level = v; }, get bonusRes() { return bonusRes; }, get ballStats() { return ballStats; },

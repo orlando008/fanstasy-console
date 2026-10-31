@@ -72,7 +72,7 @@ const put = (b, x, y, vx = 0, vy = 0) => { Object.assign(b, { x, y, vx, vy, zone
   did(p, 'chest'); ok(p.stats.treasure === 0, 'the chest is dark at first: a hit opens nothing');
   p.chestLit = true; const s0 = p.score; did(p, 'chest');
   ok(p.stats.treasure === 1 && p.saveT === p.TREASURE_SAVE && !p.chestLit && p.score - s0 === p.TREASURE_PTS, 'the first treasure is 50,000 and a ball save of 20 seconds; the chest goes dark');
-  p.kickback = false; p.chestLit = true; did(p, 'chest'); ok(p.kickback, 'the second relights the kickback');
+  p.kickback = [false, false]; p.chestLit = true; did(p, 'chest'); ok(p.kickback.join() === 'true,true', 'the second relights both kickbacks');
   p.chestLit = true; did(p, 'chest'); ok(p.extraBalls === 1, 'the third is an extra ball');
   p.chestLit = true; did(p, 'chest'); ok(p.saveT === p.TREASURE_SAVE && p.extraBalls === 1, 'and then round again');
 }

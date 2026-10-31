@@ -5,7 +5,7 @@ let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy, zone: null, ride: null, hold: null }); };
 // The bare physics: the table with its elements taken out (step 2 adds them; 03-table.mjs tests them).
-const BARE = 'BUMPERS.length = 0; SLINGS.length = 0; STANDUPS.length = 0; RAMPS.length = 0; CUBBIES.length = 0; CHEST.x1 = CHEST.x0; CHEST.y0 = CHEST.y1 = -99; kickback = false;';
+const BARE = 'BUMPERS.length = 0; SLINGS.length = 0; STANDUPS.length = 0; RAMPS.length = 0; CUBBIES.length = 0; CHEST.x1 = CHEST.x0; CHEST.y0 = CHEST.y1 = -99; kickback = [false, false];';
 
 // 1. Gravity and the speed limit.
 {

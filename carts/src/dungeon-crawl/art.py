@@ -32,7 +32,7 @@ def geometry():
     js = open(os.path.join(HERE, 'code.js'), encoding='utf8').read()
     a, b = js.index('// --- The table and its physics'), js.index('// --- Input')
     prog = ('const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));let score=0,spell=null;const SFX={};function fx(){};' + js[a:b] +
-            ';console.log(JSON.stringify({WALLS,LAUNCH,RAMPS,SLOTS,CUBBIES,BUMPERS,SLINGS,STANDUPS,CHEST,PIT,KICKBACK,LANE_GATE,SLOT_GATE,GUIDE,'
+            ';console.log(JSON.stringify({GONG,WALLS,LAUNCH,RAMPS,SLOTS,CUBBIES,BUMPERS,SLINGS,STANDUPS,CHEST,PIT,KICKBACKS,LANE_GATE,SLOT_GATE,GUIDE,'
             'TABLE_W,TABLE_H,LANE_X,LANE_FLOOR,UF,BR,FLEN,UFLEN,FR,REST_A,UP_A,BUMP_R,BOSS_R,HOLE_R,CUBBY_R}))')
     return json.loads(subprocess.run(['node', '-e', prog], check=True, capture_output=True, text=True).stdout)
 
@@ -41,8 +41,8 @@ G = geometry()
 TW, TH = G['TABLE_W'], G['TABLE_H']
 
 art = Art()
-art.region('bg', 1, 599)       # background tiles: the floor, the walls, the lava (597 used)
-art.region('spr', 600, 1023)   # sprites
+art.region('bg', 1, 639)       # background tiles: the floor, the walls, the lava (633 used: the sheet is nearly full, 1,011 of 1,023)
+art.region('spr', 640, 1023)   # sprites
 art.backdrop('000000')
 art.gradient('glow', ['000000', '0c0201', '2a0804', '4a1006'], y0=0, y1=223)    # behind the panel (the backdrop shows only there): a low fire's glow, line by line
 
@@ -202,6 +202,23 @@ for (cx, cy) in ((148, 380), (148, 352), (148, 324), (150, 296)):
     chevron(fl, cx, cy, 0, -1, floor.arrow[1])
 for (cx, cy) in ((60, 104), (124, 104)):
     chevron(fl, cx, cy, 0, -1, floor.arrow[1], w=5)
+# the outlanes are chutes (the user asked): a dark sunken channel between two iron-grey runners, down to the pit
+for (x0, x1, y0, y1) in ((1, 15, 470, TH), (161, 175, 470, TH)):
+    for y in range(y0, y1):
+        for x in range(x0, x1 + 1):
+            c = floor.soot if (x - x0) % 7 not in (0, 6) else floor.stone[2]          # two runners, the channel between them
+            if c == floor.soot and y % 8 == 0: c = floor.mortar                        # the joints of its plates
+            fl.px[y][x] = c
+# the drain is a spiked pit (the user asked): black below the flippers, rows of iron spikes with red tips
+for y in range(606, TH):
+    for x in range(0, 176):
+        fl.px[y][x] = floor.soot
+for row, (base, h, off) in enumerate(((626, 12, 0), (640, 13, 4))):
+    for x in range(0, 176):
+        k = (x + off) % 8
+        tip = base - h + abs(k - 3.5) * (h / 3.5)                                   # a spike every 8 px: a triangle
+        for y in range(int(tip), min(base, TH)):
+            if 606 <= y < TH: fl.px[y][x] = floor.red[1] if y < tip + 2 else floor.stone[3] if k < 4 else floor.stone[1]
 art.scene('floor', fl, pal=floor, at=(0, 0), region='bg')
 
 # ===================================================================================================================
@@ -225,6 +242,8 @@ for s in G['SLOTS']:                                                         # t
     disc(decor, s['x'], s['y'], G['HOLE_R'] - 1, lambda x, y, d: deco.edge if d < G['HOLE_R'] - 2.4 else deco.glow[1])
 for c in G['CUBBIES']:                                                       # the cubbies: a dark hole with a glowing lip in the wall
     disc(decor, c['x'], c['y'], G['CUBBY_R'] - 1, lambda x, y, d: deco.edge if d < G['CUBBY_R'] - 2.6 else deco.glow[2])
+g_ = G['GONG']                                                               # the gong's chain, from below the arch's ball path
+for yy in range(14, int(g_['y'] - g_['r']), 3): disc(decor, g_['x'], yy + 1, 1.1, deco.iron[2] if yy % 6 else deco.iron[1])
 rail(decor, *G['LANE_GATE'], w=0.8)                                          # the lane's one-way gate: a thin wire
 rail(decor, G['LANE_X'], 214, G['UF']['x'] + 2, G['UF']['y'] - 1, w=2.5)     # the upper flipper's plate
 for (tx, ty) in ((5, 160), (171, 160), (5, 250), (171, 250), (5, 350), (171, 350)):   # the torches' sconces (the flames are sprites)
@@ -292,6 +311,13 @@ for name, ramp_, rune in (('bump', red.red, red.hot[0]), ('bump_hit', red.hot, r
     for k in range(5):                                                       # a five-pointed rune
         a0, a1 = math.radians(-90 + k * 144), math.radians(-90 + (k + 1) * 144)
         capsule(im, 16 + 5 * math.cos(a0), 16 + 5 * math.sin(a0), 16 + 5 * math.cos(a1), 16 + 5 * math.sin(a1), 0.5, rune)
+    art.sprite(name, im, pal=red, region='spr')
+
+# the gong: a bronze disc on its rim, a boss in the middle, and the same struck (brighter, gold)
+for name, hot in (('gong', False), ('gong_hit', True)):
+    im = Img(16, 16); R_ = G['GONG']['r']
+    disc(im, 8, 8, R_ + 0.6, red.edge)
+    disc(im, 8, 8, R_ - 0.3, lambda x, y, d: (red.hot[2] if hot else red.gold[1]) if d < 2 else (red.hot[1] if hot else red.gold[0]) if d < R_ - 2 else (red.gold[1] if hot else red.iron[2]) if (x - y) < 0 else red.iron[0])
     art.sprite(name, im, pal=red, region='spr')
 
 # the flippers: five frames from rest to up (a swing lasts 4 frames up and 6 down: five are enough), two lengths (the lower ones and the

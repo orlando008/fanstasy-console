@@ -104,8 +104,8 @@ const cell = (sc, x, y) => p.mget(sc.mx + Math.floor(x / 8), sc.my + Math.floor(
 // 7. The budgets: the sheet's regions and the sprites in a busy multiball.
 {
   let bgTiles = new Set(); for (const e of vm.cart.map) if (e) bgTiles.add(e & 1023);
-  ok(Math.max(...bgTiles) <= 599, 'the background uses its own region of the sheet (tiles 1 to 599)', `${bgTiles.size} tiles, the highest ${Math.max(...bgTiles)}`);
-  ok(Math.min(...Object.values(A.sprites).map((s) => s.tile)) >= 600, 'and the sprites the rest');
+  ok(Math.max(...bgTiles) <= 639, 'the background uses its own region of the sheet (tiles 1 to 639)', `${bgTiles.size} tiles, the highest ${Math.max(...bgTiles)}`);
+  ok(Math.min(...Object.values(A.sprites).map((s) => s.tile)) >= 640, 'and the sprites the rest');
   const t = newGame(2), q = t.probe(); t.run(3); q.level = 5; put(q, 96, 300); q.emit('rampL'); q.processEvents(); q.keys = 2; q.setGates();
   let most = 0, line = 0;
   for (let i = 0; i < 300; i++) {

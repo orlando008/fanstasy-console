@@ -79,7 +79,7 @@ const put = (p, x, y, vx = 0, vy = 0) => { Object.assign(p.ball, { x, y, vx, vy,
   ok(p.score - s0 === base * 2, 'and is added to the score (with no spell on it)', `${p.score - s0}`);
   vm.run(20); vm.press('A'); ok(p.timer >= p.BONUS_COUNT, 'a press skips the counting');
   vm.run(15); vm.press('A'); vm.run(2); ok(p.state === 'play' && p.balls === 2, 'another goes on to the next ball');
-  ok(p.ballStats.bump === 0 && p.kickback, 'which starts its counts again, with the kickback lit');
+  ok(p.ballStats.bump === 0 && p.kickback.join() === 'true,true', 'which starts its counts again, with both kickbacks lit');
 }
 
 // 6. Players take turns: each keeps their score, keys, spell and depth; the turn's splash says whose ball it is.

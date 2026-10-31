@@ -17,6 +17,15 @@ const until = (vm, p, f, n = 300) => { for (let i = 0; i < n; i++) { vm.run(1); 
   ok(B.flash > 0, 'the bumper lights');
 }
 
+// 1b. The gong at the top: a hit rings it (2,500) and throws the ball back down; a ball going round the arch from the plunger passes over it.
+{
+  const { vm, p } = game(), G = p.GONG;
+  put(p, G.x, G.y + 18, 0, -5); until(vm, p, () => p.stats.gong > 0, 20);
+  ok(p.stats.gong === 1 && p.score === p.PTS.gong && p.ball.vy > 0, 'a ball hitting the gong rings it for 2,500 and is thrown back down', `${p.score} vy ${p.ball.vy.toFixed(1)}`);
+  const g = game(); g.vm.run(48, 0); g.vm.run(55, 1 << 4); g.vm.run(160);
+  ok(g.p.stats.gong === 0 && g.p.stats.launch === 1, 'a launch round the arch passes over the gong');
+}
+
 // 2. Slingshots: their faces kick at 4.5 and score 10.
 {
   const { vm, p } = game(), S = p.SLINGS[0];
@@ -88,17 +97,19 @@ const until = (vm, p, f, n = 300) => { for (let i = 0; i < n; i++) { vm.run(1); 
   const { vm, p } = game();
   Object.assign(p.ball, { x: 150, y: 105, vx: 4, vy: 0 }); vm.run(40);
   ok(p.ball.x < p.K.LANE_X, 'a ball rolling right across the top of the table does not go into the plunger lane', `x ${p.ball.x.toFixed(0)}`);
-  const g = game(); g.vm.run(48, 0); g.vm.run(55, 1 << 4); g.vm.run(60);
+  const g = game(); g.vm.run(48, 0); g.vm.run(55, 1 << 4); g.vm.run(120);
   ok(g.p.ball.x < g.p.K.LANE_X && g.p.stats.launch === 1, 'and a ball launched between the zones still goes round the arch into the table');
 }
 
-// 8. The kickback (left outlane) and the Boss's target.
+// 8. The kickbacks (both outlanes) and the Boss's target.
 {
-  const { vm, p } = game();
-  put(p, 8, 560, 0, 3); until(vm, p, () => p.stats.kick > 0, 30);
-  ok(p.stats.kick === 1 && p.ball.vy < -10 && !p.kickback, 'a ball down the left outlane is kicked back up the table, once', `vy ${p.ball.vy.toFixed(1)}`);
-  vm.run(240); put(p, 8, 560, 0, 3); vm.run(30);
-  ok(p.balls === 2 || p.stats.drain === 1, 'the second goes down the drain');
+  for (const [i, x, side] of [[0, 8, 'left'], [1, 168, 'right']]) {
+    const { vm, p } = game();
+    put(p, x, 560, 0, 3); until(vm, p, () => p.stats.kick > 0, 30);
+    ok(p.stats.kick === 1 && p.ball.vy < -10 && !p.kickback[i] && p.kickback[1 - i], `a ball down the ${side} outlane is kicked back up the table, once (the other stays lit)`, `vy ${p.ball.vy.toFixed(1)}`);
+    vm.run(240); put(p, x, 560, 0, 3); vm.run(30);
+    ok(p.balls === 2 || p.stats.drain === 1, 'the second goes down the drain');
+  }
   const g = game(); put(g.p, g.p.PIT.x, g.p.PIT.y - 30, 0, 3); g.vm.run(25);
   ok(g.p.ball.y > g.p.PIT.y + 10 && g.p.stats.boss === 0, 'without the Boss the pit is floor: a ball rolls over it');
   const h = game(); h.p.bossUp = true; put(h.p, h.p.PIT.x + 1, h.p.PIT.y - 30, 0, 3); h.vm.run(25);
