@@ -15,7 +15,7 @@ const PROBE = `__expose(() => ({
   get keys() { return keys; }, set keys(v) { keys = v; }, get cubbyKey() { return cubbyKey; }, set cubbyKey(v) { cubbyKey = v; }, get spell() { return spell; }, set spell(v) { spell = v; },
   get saveT() { return saveT; }, set saveT(v) { saveT = v; }, get saved() { return saved; }, get players() { return players; }, get cur() { return cur; }, get nPlayers() { return nPlayers; }, set nPlayers(v) { nPlayers = v; },
   get depth() { return depth; }, set depth(v) { depth = v; }, get level() { return level; }, set level(v) { level = v; }, get bonusRes() { return bonusRes; }, get ballStats() { return ballStats; },
-  get newDeepest() { return newDeepest; }, setGates, castSpell, processEvents, emit, KEY_PTS, SPELL_TIME, SAVE_FRAMES, BONUS_PTS, BONUS_COUNT, BALLS, DEEPEST_SLOT: 2, GAMES_SLOT: 3, award,
+  get newDeepest() { return newDeepest; }, titleCam, readEntry, get hl() { return hl; }, get wantPlayers() { return wantPlayers; }, VERSION_SLOT, SAVE_VERSION, setGates, castSpell, processEvents, emit, KEY_PTS, SPELL_TIME, SAVE_FRAMES, BONUS_PTS, BONUS_COUNT, BALLS, DEEPEST_SLOT: 2, GAMES_SLOT: 3, award,
   get gates() { return gates; }, set gates(v) { gates = v; },
   LEVELS, goalOf, bossHp, startBoss, hitBoss, failBoss, completeLevel, openChest, BOSS, LEVEL_PTS, JACKPOT, BOSS_PRIZE, TREASURE_PTS, TREASURE_SAVE,
   get goalN() { return goalN; }, set goalN(v) { goalN = v; }, get boss() { return boss; }, get chestLit() { return chestLit; }, set chestLit(v) { chestLit = v; },

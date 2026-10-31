@@ -323,7 +323,10 @@ function init() {
   if (skipTitle) startGame(); else toTitle();
 }
 
-function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; nPlayers = wantPlayers; play(SONG.title); }
+function toTitle() {
+  state = 'title'; timer = 0; titleSel = 0; paused = false; nPlayers = wantPlayers; play(SONG.title);
+  bs = []; flips = makeFlippers(); gates = [false, false]; level = 1; depth = 1; keys = 0; boss = null; bossUp = false; chestLit = false; banner = null; spell = null; // the table at rest, behind the title
+}
 
 // --- The rules (SPEC 5): players, keys, slots and spells, the ball save, the bonus ---
 
@@ -507,6 +510,7 @@ function update() {
 
 function updateTitle() {
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
+  if (pressed(SELECT)) { fx(SFX.select); state = 'records'; hl = -1; timer = 0; return; } // SELECT: straight to the records
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
     if (titleSel === 0) { state = 'players'; timer = 0; } else { state = 'records'; hl = -1; timer = 0; }
@@ -611,8 +615,7 @@ function draw() {
   cls();
   const inPlay = state === 'play' || state === 'over' || state === 'turn' || state === 'bonus';
   if (inPlay) drawPlay();
-  else if (state === 'title') drawTitle();
-  else if (state === 'players') { drawTitle(); drawPlayers(); }
+  else if (state === 'title' || state === 'players') { drawTable(titleCam()); drawMenuPanel(); if (state === 'title') drawTitle(); else drawPlayers(); }
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
   if (state === 'turn') drawTurn();
@@ -621,9 +624,15 @@ function draw() {
   if (paused) drawPause();
 }
 
-/** Step 1's picture: the table in plain lines on the overlay (the art comes in step 6), the panel on the right. */
-function drawPlay() {
-  const cy = Math.round(camY), R = Math.round, sy = (y) => R(y - cy);
+/** The play screen: the table where the camera is, the banner over it, the panel on the right. */
+function drawPlay() { drawTable(Math.round(camY)); drawBanner(); drawPanel(); }
+
+/** On the title the table drifts slowly from top to bottom and back. */
+const titleCam = () => Math.round((TABLE_H - VIEW_H) / 2 * (1 - Math.cos(clock / 420)));
+
+/** The table, its top at cy: plain lines on the overlay for now (the art comes in step 6). */
+function drawTable(cy) {
+  const R = Math.round, sy = (y) => R(y - cy);
   rectfill(0, 0, TABLE_W, 224, SHADOW);
   const path = (P, c) => { for (let i = 1; i < P.length; i++) line(R(P[i - 1][0]), sy(P[i - 1][1]), R(P[i][0]), sy(P[i][1]), c); };
   circ(PIT.x, sy(PIT.y), PIT.r, RED); if (bossUp) circfill(PIT.x, sy(PIT.y), BOSS_R, BOSS.flash ? GOLD : RED);
@@ -641,8 +650,15 @@ function drawPlay() {
   if (kickback) circfill(8, sy(590), 2, GREEN);
   for (const f of flips) { const t = flipTip(f); for (let k = -1; k <= 1; k++) line(R(f.x), sy(f.y) + k, R(t.x), sy(t.y) + k, RED); circfill(R(f.x), sy(f.y), 2, GOLD); }
   for (const b of bs) circfill(R(b.x), sy(b.y), BR - 1, b.ride ? GOLD : WHITE);
-  drawBanner();
-  drawPanel();
+}
+
+/** The panel of the title and the players screen: the best score, the deepest level ever reached, the games played. */
+function drawMenuPanel() {
+  rectfill(TABLE_W, 0, 256 - TABLE_W, 224, ART.colors.GLASS); line(TABLE_W, 0, TABLE_W, 223, PANEL);
+  const top = readEntry(0), d = dget(DEEPEST_SLOT);
+  txt('HIGH', 196, 6, GOLD); txt(top.score ? short(top.score) : '-', 196, 18, WHITE);
+  txt('DEEPEST', 196, 40, GOLD); txt(d ? `D${Math.floor(d / 10)} L${d % 10}` : '-', 196, 52, RED);
+  txt('GAMES', 196, 74, GOLD); txt(String(dget(GAMES_SLOT)), 196, 86, WHITE);
 }
 
 /** Over the top of the table: the level and its goal (or the Boss and his health), or the last announcement. */
@@ -706,17 +722,21 @@ function drawOver() {
 }
 
 function drawPlayers() {
-  panel(50, 140, 156, 70);
-  ctxt('HOW MANY PLAYERS?', 148, GOLD);
-  for (let i = 1; i <= 4; i++) { const x = 72 + (i - 1) * 32, on = i === nPlayers; if (on) rect(x - 4, 162, 24, 20, GOLD); txt(String(i), x + 4, 168, on ? WHITE : DIM); }
-  ctxt('A: START   B: BACK', 194, DIM);
+  panel(10, 96, 172, 82);
+  ctab('HOW MANY PLAYERS?', 104, GOLD);
+  for (let i = 1; i <= 4; i++) { const x = 30 + (i - 1) * 36, on = i === nPlayers; if (on) rect(x - 4, 120, 24, 22, GOLD); txt(String(i), x + 4, 127, on ? WHITE : DIM); }
+  ctab('LEFT / RIGHT', 150, DIM); ctab('A: START  B: BACK', 162, DIM);
 }
 
 const ctab = (s, y, c) => txt(s, 96 - s.length * 4, y, c); // centred on the table, not the screen
 
+/** The title over the drifting table: the name (big lettering comes with the art), the menu, the hint. */
 function drawTitle() {
-  ctxt('DUNGEON CRAWL PINBALL', 50, RED);
-  ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
+  panel(16, 30, 160, 58);
+  ctab('DUNGEON', 38, RED); ctab('CRAWL', 52, RED); ctab('PINBALL', 66, GOLD);
+  panel(40, 110, 112, 42);
+  ['PLAY', 'RECORDS'].forEach((t, i) => ctab(`${i === titleSel ? '> ' : '  '}${t}`, 118 + i * 16, i === titleSel ? WHITE : DIM));
+  if (timer % 80 < 56) ctab('1 TO 4 PLAYERS', 176, DIM);
 }
 
 function drawRecords() {

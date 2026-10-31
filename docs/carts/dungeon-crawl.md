@@ -60,7 +60,7 @@ plunger's meter while the ball waits, and a map of the table.
 
 | Screen | What |
 |---|---|
-| Title | The logo over the table (scrolling slowly), PLAY, RECORDS; the panel shows the high score and the deepest level reached |
+| Title | The name over the table (drifting slowly from top to bottom and back), PLAY, RECORDS (SELECT goes straight to the records); the panel shows the high score, the deepest level ever reached and the games played |
 | Players | 1 to 4 (LEFT and RIGHT), A to start |
 | Play | The table, the panel, a banner at the top of the table for the level's goal, a key, a slot, the Boss |
 | Bonus | After each ball: the bonus counted up |
@@ -374,6 +374,19 @@ and **Results** notes under its number here, commit and push.
   game and scores 0.1 to 2.5 million; at 0.95 about 39 seconds, clearing Level 1 in every game. With the Boss lit it fights and beats
   him every time (at 0.8 and 0.95), 4 to 37 million. So the levels ask for more than a ball's life gives, and the Boss may be easy: step 8
   balances both (the counts and his health are constants: `LEVELS`, `bossHp`).
+
+### Step 5 built: the flow
+
+- `carts/src/dungeon-crawl/code.js`: the table's drawing is `drawTable(cy)`, used by play and by the **title**, where the table drifts slowly
+  from top to bottom and back (`titleCam`) behind the name and the menu; the title's panel (`drawMenuPanel`) shows the high score, the
+  deepest level ever reached and the games played, and the players screen sits over the same table. SELECT on the title opens the
+  records. `toTitle` puts the table at rest (no ball, the gates shut, level 1). The rest of the flow came with step 3 (the players
+  screen, the turn's splash, the bonus, the game over, the initials for each top 10 score, the records with the level reached, the
+  saves of the deepest level and the games played).
+- `tests/carts/dungeon-crawl/07-flow.mjs`: the title's drifting table and the save read back, SELECT and B, the players screen (back, one to
+  four, kept for the next game), a game quit recording nothing, RESTART keeping the players, a whole game's score, games and deepest
+  level reaching the next title.
+- **Results:** 195 checks pass. The big lettering of the name comes with the art (step 6).
 
 ## 16. Open questions
 
