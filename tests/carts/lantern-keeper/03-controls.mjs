@@ -78,10 +78,11 @@ const mirror = (p) => p.pieces.findIndex((q) => q.k === 'mirror');
 }
 {
   const { vm, p } = room1(); p.loadRoom(p.ROOMS.findIndex((t) => / DARK$/.test(t.split('\n')[0]))); vm.run(2);
-  const X = 16 + (14 - p.room.w) * 8, Y = 24 + (12 - p.room.h) * 8, px = (x, y) => vm.out32[(Y + y * 16 + 8) * 256 + X + x * 16 + 8] >>> 0;
-  const back = vm.out32[4 * 256 + 4] >>> 0; // (the backdrop, in the corner of the screen)
-  ok(p.room.dark && px(7, 1) === back, 'in a dark room a cell far from the light and the cursor is not drawn');
-  ok(px(3, 4) !== back, 'a cell the beam crosses is');
-  p.cx = 6; p.cy = 1; vm.run(1); ok(px(7, 1) !== back, 'and the cursor\'s hand lamp shows the cells around it');
+  // (what the room's floor layer holds at a cell: the solid dark stamp where it cannot be seen)
+  const cell = (x, y) => p.mget(p.ROOM_BG1 + p.ox() / 8 + 2 * x, p.oy() / 8 + 2 * y), dark = p.mget(p.STAMP.mx + 12, p.STAMP.my + 8);
+  const lit = [...p.light.lit].findIndex((v, i) => v === 2 && !p.room.wall[i]);
+  ok(p.room.dark && cell(7, 1) === dark, 'in a dark room a cell far from the light and the cursor is dark (the dark stamp)');
+  ok(cell(lit % p.room.w, Math.floor(lit / p.room.w)) !== dark, 'a cell the beam crosses is drawn');
+  p.cx = 6; p.cy = 1; vm.press('RIGHT'); vm.run(1); ok(cell(7, 1) !== dark, 'and the cursor\'s hand lamp shows the cells around it');
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

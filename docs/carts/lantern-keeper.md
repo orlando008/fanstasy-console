@@ -1,7 +1,7 @@
 # Lantern Keeper: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 4 built (the rules, the solver and bot, the forty rooms, the screens and saves; plain shapes); steps 5 to 8 to come
+**Status:** Steps 1 to 5 built (the rules, the solver and bot, the forty rooms, the screens and saves, the art); steps 6 to 8 to come
 **Cart source:** `carts/src/lantern-keeper/` → `carts/lantern-keeper.nova`
 
 ---
@@ -201,15 +201,22 @@ carts/lantern-keeper.nova --check`; playbook section 5); effects 0.01 to 0.06.
 
 ## 12. Video layers
 
-| Layer | Contents |
-|---|---|
-| BG0 | The room's walls, pillars and the windows' frames; the title's lighthouse and the map's cut-away |
-| BG1 | The floor: stone flags (floor 1), polished slate with glass inlay (2), iron grating over gears (3), worn brass and stone (4); lit and unlit versions of each |
-| BG2 | The sea at night and the storm's sky, seen through the windows: slow waves, rain, lightning flashing the palette |
-| Sprites | The pieces (16 x 16, about 25 kinds and turns, in a few palettes), the cursor, the held piece; glows (palettes 4 to 7, added) on lit lenses and lanterns; dust motes drifting in the beams |
-| Overlay | The beams (added), the coloured glass, the bar, the menus, the story's pages |
+| Layer | In a room | On the title and the story | On the floor map |
+|---|---|---|---|
+| BG0 | The walls: stone blocks, and windows in the outer wall (every third along it) open onto the sea below | off | off |
+| BG1 | The floor, each floor of the lighthouse its own (stone flags; slate with glass inlay; an iron grating over brass gears; stone edged in brass), its cells in the light in palette 2; under a wall, its shadow; outside the room, the tower's dark stone | The lighthouse on its rock, the sea | The lighthouse cut open: four bands of brick, ten window frames each |
+| BG2 | The sea at night, 64 x 32 px repeating, drifting (seen only through the windows) | The stars and the moon | The stars |
+| Backdrop | near black | the night sky, a colour a line (`scanline()`) | the same |
+| Sprites | The pieces (16 px; their other turns are flips), a bolt on a bolted piece, the cursor | | the cursor |
+| Overlay | The beams (added as light), the coloured glass of lenses, filters and lanterns, the bar | The windows of the rooms solved, the great lamp's beam once it is lit, the menu, the story | The windows' states, the names |
 
-The art is made in code by `carts/src/lantern-keeper/art.py` (the art toolkit, `tools/devkit/art/kit.py`).
+The rooms are built from **stamps**: 16 px cells art.py draws once into Map RAM (columns 0 to 13, rows 100 to 109); `buildRoom()`
+copies them into the room's layers (Map RAM columns 96 and 128) as a room loads, and `paintRoom()` rewrites the floor's palette bits
+(palette 2 where the light is, 1 elsewhere) and, in a dark room, puts the solid dark stamp where a cell cannot be seen, after each
+move (and each step of the cursor in a dark room). Each floor's colours (floor dark, floor lit, walls: 3 palettes of 15) are in
+`rom/themes.bin`; `loadTheme()` copies a floor's into CGRAM. The overlay's solid colours (BG palette 0) are the night's: indigo
+panels, brass edges, blue-grey dim text. The art is made in code by `carts/src/lantern-keeper/art.py` (the art toolkit,
+`tools/devkit/art/kit.py`).
 
 ## 13. Persistence (save slots)
 
@@ -227,8 +234,8 @@ The stars, the rooms lit and the floors open all follow from slots 10 to 49 and 
 
 | Asset | Budget |
 |---|---|
-| Code | about 35 KB of the 64 KB (`node tools/check.js lantern-keeper`); the rooms in a ROM blob, not in the code: 6.8 KB of the 128 KB ROM for forty |
-| Tiles | about 700 of the 1,024: the four floors' tiles, lit and unlit, about 250; the walls and windows about 120; the sea and sky about 60; the pieces about 130; the title's lighthouse and the map about 150 |
+| Code | 27.7 KB of the 64 KB after step 5 (`node tools/check.js lantern-keeper`); the rooms (6.8 KB) and the floors' colours (360 bytes) in the ROM |
+| Tiles | 690 of the 1,024 after step 5: the background 629 of 767 (the title's lighthouse, rock and sea are most of it; the four floors' stamps, the walls, the sea and the map the rest), the sprites 61 of 256 |
 | Sprites | at most about 40 of the 128 in a room (the pieces, the cursor, the glows and the motes), under 32 a line |
 | Songs / SFX | 6 songs in the 64 patterns; about 20 effects; under 24 KB of the 32 KB of sample RAM |
 
@@ -362,6 +369,28 @@ Each step: build it, run `node tools/verify.js lantern-keeper` (and `node tools/
   room menu's FLOOR MAP, the page only once); the last room (the ending and its song, the title remembering it); a save (rooms lit,
   stars, moves against par, the next room, the map's UP and DOWN, the records). `01-flow.mjs` follows the new way in.
 - **Results:** 183 checks pass; the code 23.9 KB (37 %); the smoke test 60 fps.
+
+### Step 5 built: the art
+
+- `carts/src/lantern-keeper/art.py` (rewritten: the starter's ship and hills are gone) and the drawing in `code.js` (`setScreen`,
+  `loadTheme`, `stamp`, `buildRoom`, `paintRoom`, `drawPiece`, `drawGlass`, `drawTower`, `drawMap`): section 12 has the layers. Each
+  floor's floor is drawn once as eight stamps (four cells and four with a wall's shadow), the walls as three (two blocks and a window),
+  and the colours swap with the floor, so four floors cost one set of indices. The pieces: a brass lantern with its glass on the side
+  it faces, mirrors and splitters silvered (half-silvered: every other pixel) with a wooden back, iron when fixed, a crystal prism
+  showing its three colours at the back, a brass lens mount and filter frame (their coloured glass is the overlay's), an obsidian
+  shadow lens whose red eye opens when light reaches it, an iron grille for a shut door, a brass bolt, gold cursor brackets.
+- **Found while looking:** the dark rooms showed the sea where they should be dark (an empty floor cell lets BG2 through: a solid
+  dark stamp now); the fourth floor's rooms showed the sea instead of their floor (`hash >> 3` of a hash over 2^31 is negative, so
+  the stamp's column was -1 to -3: `>>>`); the gears were too bright in the dark; the story's lines and the title's count ran into
+  the lighthouse; and the panels were the console's default brown and grey, which `colors.mjs --check` calls mud (the user's
+  complaint on another game): indigo, brass and blue-grey now.
+- `09-art.mjs`: the sheet and the themes' ROM; the layers of the three screens and the sea's drift; every room of the forty built
+  (a wall stamp on every wall, its floor's stamp on every floor cell or the dark one: this would have caught the hash); a window
+  showing the sea; the light's cells in palette 2 and the rest in 1; a floor's colours loaded; every piece a sprite, a '\\' mirror the
+  '/' flipped; the busiest room quick; the title's windows lit by the rooms solved; the map's three kinds of window.
+  `03-controls.mjs` checks the dark room by its stamps now.
+- **Results:** 199 checks pass; 690 tiles; `colors.mjs --check` within its limits; `snes.mjs` 75 of 100 (no parallax yet, and one
+  backdrop colour in the rooms); the code 27.7 KB (42 %); the smoke test 60 fps.
 
 ## 16. Open questions
 
