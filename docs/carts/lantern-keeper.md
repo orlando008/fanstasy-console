@@ -1,7 +1,7 @@
 # Lantern Keeper: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 1 built (a room playable with mirrors, plain shapes); steps 2 to 8 to come
+**Status:** Steps 1 and 2 built (every piece and rule, the solver and the bot; ten small rooms, plain shapes); steps 3 to 8 to come
 **Cart source:** `carts/src/lantern-keeper/` → `carts/lantern-keeper.nova`
 
 ---
@@ -114,8 +114,8 @@ cursor (the keeper's hand lamp); the rest of the room is black until the light f
 ## 6. Levels or content
 
 Forty rooms, ten to a floor. Each new idea gets a room that teaches it alone (one piece, one answer), then rooms that combine it
-with what came before. A room's data is a few lines of text, a character a cell, in a text file in the cart's folder (`rooms.txt`, step 2),
-packed into a ROM blob; the same file feeds the solver.
+with what came before. A room's data is a few lines of text, a character a cell, in `carts/src/lantern-keeper/rooms.txt`, copied into
+the ROM blob `rooms` by `node carts/src/lantern-keeper/rooms.mjs`; the same file feeds the solver.
 
 | Floor | Name | Ideas | Rooms' par |
 |---|---|---|---|
@@ -124,7 +124,7 @@ packed into a ROM blob; the same file feeds the solver.
 | 3 | The Clockwork | prisms, doors opened by lenses, a lens that must be lit by two beams at once | 3 to 6 |
 | 4 | The Lamp Gallery | dark rooms, shadow lenses, everything at once; room 40 is the lamp room, the great lamp the last lens | 4 to 8 |
 
-**The solver** (`solver.mjs` in the cart's tests, step 2) runs the cart's own light code (a block of pure functions in `code.js`,
+**The solver** (`tests/carts/lantern-keeper/solver.mjs`) runs the cart's own light code (a block of pure functions in `code.js`,
 as the pinball's physics block is shared with its art). It searches for the fewest pieces to change: a piece only matters where a
 beam reaches it, so it places the lifted pieces only on cells the light reaches, as it traces. It proves every room solvable at its
 par, that no room is solved as it starts, and reports how many answers a room has (a room with many answers at par is too easy for
@@ -267,6 +267,36 @@ Each step: build it, run `node tools/verify.js lantern-keeper` (and `node tools/
   one or two free pieces) and plays it with the cursor, A and B; `sweep.mjs lantern-keeper --set room=1,2` runs it.
 - **Results:** 69 checks pass; the code 13.4 KB (20 %); a frame 1.1 ms at the 99th percentile; the smoke test 60 fps; the bot
   solves both rooms at par (7 and 22 presses).
+
+### Step 2 built: every piece and rule, the solver and the bot
+
+- **The LIGHT block** has every piece of section 5: splitters (the beam on through and reflected, both with the full colour),
+  coloured lanterns, filters (the colours in both), prisms (from the back: red left, green on, blue right; from a side, stopped),
+  lenses lit by exactly their colour, shadow lenses, doors (as a wall while shut) and `settle` (all shut, then open those whose
+  lenses are all lit, until nothing changes, at most 8 passes). `litCells` is the light on the floor (2 under a beam, 1 beside it).
+  A trace also lists the empty floor cells it reaches in the order it reaches them (`order`, for the solver).
+- **The rooms** are in `carts/src/lantern-keeper/rooms.txt`: a header (`ROOM <name> PAR <n>`, `DARK`), the map a character a cell
+  with shorthands for the common pieces (`^ > v <` white lanterns, `/ \` free mirrors, `o` a white lens, `x` a shadow lens, `=` a
+  window), and a legend line for each other letter (`A: lantern E red`, `D: door key1`, `B: mirror \ bolted`). `rooms.mjs` copies it
+  into `rom/rooms.bin` (1.2 KB for ten rooms) and checks every par with the solver; `code.js` reads it with `rom('rooms')`. Ten small
+  rooms, one for each idea, stand in until step 3.
+- **The solver** (`tests/carts/lantern-keeper/solver.mjs`, a script too: each room's par, an answer and how many answers): the
+  fewest pieces to change, smallest sets first. For a set, it guesses the doors, turns the bolted pieces, places a lifted lantern
+  anywhere, takes the other pieces off the board and follows the light: the first undecided empty cell the light reaches is left
+  empty or given a lifted piece in a turn; when none is left, the rest are parked in the dark, and the room is checked with the doors
+  settled for real. A ring of moves (two pieces swapping places) costs one move more. The answers are counted at par, a parked
+  piece's place not counting as another answer.
+- **The bot** plays the solver's answer through the buttons, in an order where no piece is dropped where another still stands.
+- **Drawing** (plain shapes until step 5): a splitter dotted, a prism a triangle pointing the way the light goes on, a filter a pane
+  of its colour, a lens filled with its colour (bright when lit), a shadow lens black (a red ring when lit), a door bars (gone when
+  open), a bolt in a corner of a bolted piece. A dark room draws only the cells in or beside the light and those around the cursor.
+- `05-pieces.mjs` (the legend, splitters, mixing, filters, prisms from the back and the side, shadow lenses, doors shut, opened,
+  shut by a lens behind them, the settling ending, the light on the floor), `06-solver.mjs` (the ROM copy in step with
+  `rooms.txt`; every room's par the solver's, none solved as it begins, the answer solving it with only free pieces moved and bolted
+  ones turned; the solver against trying every place and turn of one or two pieces; rings; a room that cannot be solved), and
+  `03-controls.mjs` now checks a bolted piece and the dark room on the screen.
+- **Results:** 115 checks pass; the solver solves the ten rooms in 12 ms; the bot solves all ten at par through the buttons; the code
+  17.3 KB (26 %); the smoke test 60 fps.
 
 ## 16. Open questions
 

@@ -69,4 +69,19 @@ const mirror = (p) => p.pieces.findIndex((q) => q.k === 'mirror');
   p.cx = p.pieces[b].x; p.cy = p.pieces[b].y; vm.press('A'); go(vm, 'RIGHT', 3); go(vm, 'UP', 3); vm.press('A'); vm.run(1);
   ok(p.state === 'solved' && p.moves() === 2 && p.room.par === 2, 'the second room in two moves, its par (one of them a turn on the way)', `${p.moves()} moves`);
 }
+// 6. Bolted pieces turn but do not move; a dark room shows only what the light and the hand lamp reach.
+{
+  const { vm, p } = room1(); p.loadRoom(p.ROOMS.findIndex((t) => t.startsWith('ROOM THE BOLT'))); sfxLog(vm);
+  const bi = p.pieces.findIndex((q) => q.mode === 'bolted'); p.cx = p.pieces[bi].x; p.cy = p.pieces[bi].y;
+  vm.press('A'); ok(p.held < 0 && did(vm, p, 'no'), 'a bolted piece cannot be picked up');
+  vm.press('B'); vm.run(1); ok(p.moves() === 1 && p.state === 'solved', 'but it turns: the room solved in one move, its par');
+}
+{
+  const { vm, p } = room1(); p.loadRoom(p.ROOMS.findIndex((t) => / DARK$/.test(t.split('\n')[0]))); vm.run(2);
+  const X = 16 + (14 - p.room.w) * 8, Y = 24 + (12 - p.room.h) * 8, px = (x, y) => vm.out32[(Y + y * 16 + 8) * 256 + X + x * 16 + 8] >>> 0;
+  const back = vm.out32[4 * 256 + 4] >>> 0; // (the backdrop, in the corner of the screen)
+  ok(p.room.dark && px(7, 1) === back, 'in a dark room a cell far from the light and the cursor is not drawn');
+  ok(px(3, 4) !== back, 'a cell the beam crosses is');
+  p.cx = 6; p.cy = 1; vm.run(1); ok(px(7, 1) !== back, 'and the cursor\'s hand lamp shows the cells around it');
+}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

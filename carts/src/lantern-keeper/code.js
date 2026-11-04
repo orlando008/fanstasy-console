@@ -51,44 +51,69 @@ const VERSION_SLOT = 0, SAVE_VERSION = 1;
 const DX = [0, 1, 0, -1]; // the four ways a beam goes: north, east, south, west (one const a line: light.mjs exports them by name)
 const DY = [-1, 0, 1, 0];
 const WHITE_LIGHT = 7; // colours are sets of primaries: red 1, green 2, blue 4
-/** How a mirror turns a beam going in direction d: '/' (turn 0) and '\' (turn 1). */
+const COLOURS = { red: 1, green: 2, blue: 4, yellow: 3, magenta: 5, cyan: 6, white: 7 };
+/** How a mirror (or a splitter's reflection) turns a beam going in direction d: '/' (turn 0) and '\' (turn 1). */
 const MIRROR = [[1, 0, 3, 2], [3, 2, 1, 0]];
 /** The turns each kind of piece has (how many different ways it can face). */
-const TURNS = { lantern: 4, mirror: 2, lens: 1 };
+const TURNS = { lantern: 4, mirror: 2, splitter: 2, prism: 4, filter: 1, lens: 1, shadow: 1, door: 1 };
+/** A kind's mode when the room does not say. */
+const MODE = { lantern: 'fixed', mirror: 'free', splitter: 'free', prism: 'free', filter: 'fixed', lens: 'fixed', shadow: 'fixed', door: 'fixed' };
 const MAX_RUNS = 512; // beams in all, a trace's limit
+const MAX_SETTLE = 8; // passes for the doors to settle
 
 /**
- * Parse a room from its text: the map, a character a cell. '#' a wall, '.' floor, ' ' outside the room;
- * '^' '>' 'v' '<' a white lantern facing that way (fixed); '/' and '\' a free mirror; 'o' a white lens (fixed).
- * Returns { name, par, w, h, wall (1 a wall, 2 outside), pieces: [{ k, x, y, r, c, mode }] }.
+ * Parse a room from its text (SPEC 6). The first line: ROOM <name> PAR <n>, and DARK for a dark room. Then the map, a character a
+ * cell: '#' a wall, '=' a window (a wall with the sea beyond), ' ' outside the room, '.' floor; shorthands: '^' '>' 'v' '<' a white
+ * lantern facing that way, '/' and '\' a free mirror, 'o' a white lens, 'x' a shadow lens. Any other letter is a piece the legend
+ * defines, one line each after the map: "A: lantern E red" (a kind, then any of: N E S W or / \ for its turn, a colour, free / bolted /
+ * fixed, key1 to key9 to link a door and its lens). Returns { name, par, dark, w, h, wall (1 a wall, 2 outside, 3 a window), pieces }.
  */
 function parseRoom(text) {
-  const lines = text.split('\n').filter((l) => l.trim().length);
-  const head = /^ROOM\s+(.*?)\s+PAR\s+(\d+)$/.exec(lines[0].trim());
-  const map = lines.slice(1), h = map.length, w = Math.max(...map.map((l) => l.length));
+  const lines = text.split('\n').filter((l) => l.trim().length && !l.startsWith('//'));
+  const head = /^ROOM\s+(.*?)\s+PAR\s+(\d+)(\s+DARK)?\s*$/.exec(lines[0].trim());
+  const map = lines.slice(1).filter((l) => !/^[A-Za-z]:/.test(l)), legend = {};
+  for (const l of lines.slice(1)) {
+    const m = /^([A-Za-z]):\s*(.*)$/.exec(l); if (!m) continue;
+    const t = m[2].trim().split(/\s+/), d = { k: t[0], r: 0, c: 0, mode: MODE[t[0]], key: 0 };
+    for (const w of t.slice(1)) {
+      if ('NESW'.includes(w) && w.length === 1) d.r = 'NESW'.indexOf(w);
+      else if (w === '/' || w === '\\') d.r = w === '/' ? 0 : 1;
+      else if (COLOURS[w]) d.c = COLOURS[w];
+      else if (w === 'free' || w === 'bolted' || w === 'fixed') d.mode = w;
+      else if (/^key\d$/.test(w)) d.key = +w[3];
+    }
+    if ((d.k === 'lantern' || d.k === 'lens') && !d.c) d.c = WHITE_LIGHT;
+    legend[m[1]] = d;
+  }
+  const h = map.length, w = Math.max(...map.map((l) => l.length));
   const wall = new Uint8Array(w * h), pieces = [];
+  const put = (d, x, y) => pieces.push({ k: d.k, x, y, r: d.r, c: d.c, mode: d.mode, key: d.key || 0 });
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const ch = map[y][x] || ' ', i = y * w + x;
     if (ch === '#') wall[i] = 1;
+    else if (ch === '=') wall[i] = 3;
     else if (ch === ' ') wall[i] = 2;
-    else if ('^>v<'.includes(ch)) pieces.push({ k: 'lantern', x, y, r: '^>v<'.indexOf(ch), c: WHITE_LIGHT, mode: 'fixed' });
-    else if (ch === '/' || ch === '\\') pieces.push({ k: 'mirror', x, y, r: ch === '/' ? 0 : 1, c: 0, mode: 'free' });
-    else if (ch === 'o') pieces.push({ k: 'lens', x, y, r: 0, c: WHITE_LIGHT, mode: 'fixed' });
+    else if ('^>v<'.includes(ch)) put({ k: 'lantern', r: '^>v<'.indexOf(ch), c: WHITE_LIGHT, mode: 'fixed' }, x, y);
+    else if (ch === '/' || ch === '\\') put({ k: 'mirror', r: ch === '/' ? 0 : 1, c: 0, mode: 'free' }, x, y);
+    else if (ch === 'o') put({ k: 'lens', r: 0, c: WHITE_LIGHT, mode: 'fixed' }, x, y);
+    else if (ch === 'x') put({ k: 'shadow', r: 0, c: 0, mode: 'fixed' }, x, y);
+    else if (legend[ch]) put(legend[ch], x, y);
   }
-  return { name: head ? head[1] : '?', par: head ? +head[2] : 0, w, h, wall, pieces };
+  return { name: head ? head[1] : '?', par: head ? +head[2] : 0, dark: !!(head && head[3]), w, h, wall, pieces };
 }
 
 /**
- * Trace the light. `pieces` (the room's, or a copy with other places and turns); `skip` a piece left out (the one held).
- * Returns { half, got, runs }: half[(y * w + x) * 4 + d] the colours on the half of cell (x, y) towards d (for drawing and
- * the light on the floor); got[i] the colours reaching piece i (a lens); runs the beams traced.
+ * Trace the light, with the doors whose key bits are in `open` open (bit k for key k). `skip` is a piece left out (the one held);
+ * a piece with x < 0 is off the board (the solver's). Returns { half, got, runs, order }: half[(y * w + x) * 4 + d] the colours on
+ * the half of cell (x, y) towards d (for drawing and the light on the floor); got[i] the colours reaching piece i (a lens);
+ * order the empty floor cells the light crosses, in the order it first reaches them (the solver's).
  */
-function trace(room, pieces, skip = -1) {
+function trace(room, pieces, skip = -1, open = 0) {
   const { w, h, wall } = room, at = new Int16Array(w * h).fill(-1);
-  pieces.forEach((q, i) => { if (i !== skip) at[q.y * w + q.x] = i; });
+  pieces.forEach((q, i) => { if (i !== skip && q.x >= 0) at[q.y * w + q.x] = i; });
   const half = new Uint8Array(w * h * 4), got = new Uint8Array(pieces.length), seen = new Uint8Array(w * h * 4);
-  const queue = [];
-  pieces.forEach((q, i) => { if (i !== skip && q.k === 'lantern') queue.push([q.x, q.y, q.r, q.c]); });
+  const reached = new Uint8Array(w * h), order = [], queue = [];
+  pieces.forEach((q, i) => { if (i !== skip && q.x >= 0 && q.k === 'lantern') queue.push([q.x, q.y, q.r, q.c]); });
   let runs = 0;
   while (queue.length && runs < MAX_RUNS) {
     let [x, y, d, c] = queue.shift(); runs++;
@@ -96,46 +121,63 @@ function trace(room, pieces, skip = -1) {
       const s = (y * w + x) * 4 + d;
       if ((seen[s] & c) === c) break; // this way, with this colour, already traced (a loop)
       seen[s] |= c; half[s] |= c;
-      const nx = x + DX[d], ny = y + DY[d];
-      if (nx < 0 || ny < 0 || nx >= w || ny >= h || wall[ny * w + nx]) break; // stopped at the wall's face
-      const back = (d + 2) & 3, n = ny * w + nx; half[n * 4 + back] |= c;
-      const i = at[n];
-      if (i < 0) { x = nx; y = ny; continue; } // empty floor: on through the cell
-      const q = pieces[i];
-      if (q.k === 'mirror') { x = nx; y = ny; d = MIRROR[q.r][d]; continue; }
-      if (q.k === 'lens') got[i] |= c;
+      const nx = x + DX[d], ny = y + DY[d], n = ny * w + nx;
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h || wall[n]) break; // stopped at the wall's face
+      const i = at[n], q = i >= 0 ? pieces[i] : null;
+      if (q && q.k === 'door' && !(open & (1 << q.key))) break; // a closed door: as a wall
+      half[n * 4 + ((d + 2) & 3)] |= c;
+      x = nx; y = ny;
+      if (!q) { if (!reached[n]) { reached[n] = 1; order.push(n); } continue; } // empty floor: on through the cell
+      const k = q.k;
+      if (k === 'door') continue; // (open)
+      if (k === 'mirror') { d = MIRROR[q.r][d]; continue; }
+      if (k === 'splitter') { queue.push([x, y, MIRROR[q.r][d], c]); continue; } // reflected, and on through
+      if (k === 'filter') { c &= q.c; if (!c) break; continue; }
+      if (k === 'prism') { // from its back: red to the left, green on, blue to the right
+        if (d === q.r) for (const [bit, e] of [[1, (d + 3) & 3], [2, d], [4, (d + 1) & 3]]) if (c & bit) queue.push([x, y, e, bit]);
+        break;
+      }
+      if (k === 'lens' || k === 'shadow') got[i] |= c;
       break; // a lens takes the light; a lantern blocks it
     }
   }
-  return { half, got, runs };
+  return { half, got, runs, order };
 }
 
-/** Is every lens lit (the colours reaching it exactly its own)? */
-function lensesLit(pieces, got) { return pieces.every((q, i) => q.k !== 'lens' || got[i] === q.c); }
-const solvedBy = (room, pieces) => lensesLit(pieces, trace(room, pieces).got);
+/** The doors' keys that a trace opens: a key whose lenses are all lit. */
+function opened(pieces, got) {
+  let keys = 0, lit = 0, dark = 0;
+  pieces.forEach((q, i) => { if (q.key && q.k === 'door') keys |= 1 << q.key; if (q.key && q.k === 'lens') { if (got[i] === q.c) lit |= 1 << q.key; else dark |= 1 << q.key; } });
+  return keys & lit & ~dark;
+}
+/** Trace with the doors settled: all shut, then open those whose lens is lit, and again until nothing changes (SPEC 5). */
+function settle(room, pieces, skip = -1) {
+  let open = 0, t = null;
+  for (let pass = 0; pass < MAX_SETTLE; pass++) {
+    t = trace(room, pieces, skip, open);
+    const next = opened(pieces, t.got);
+    if (next === open) break;
+    open = next;
+  }
+  t.open = open; return t;
+}
+
+/** Is every lens lit (the colours reaching it exactly its own) and every shadow lens dark? */
+function lensesLit(pieces, got) { return pieces.every((q, i) => (q.k === 'lens' ? got[i] === q.c : q.k === 'shadow' ? !got[i] : true)); }
+const solvedBy = (room, pieces) => lensesLit(pieces, settle(room, pieces).got);
+/** The light on the floor: 2 where a beam crosses a cell, 1 next to one, 0 dark. */
+function litCells(room, half) {
+  const { w, h } = room, out = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) if (half[i * 4] | half[i * 4 + 1] | half[i * 4 + 2] | half[i * 4 + 3]) {
+    out[i] = 2; const x = i % w, y = (i / w) | 0;
+    for (let d = 0; d < 4; d++) { const nx = x + DX[d], ny = y + DY[d]; if (nx >= 0 && ny >= 0 && nx < w && ny < h && !out[ny * w + nx]) out[ny * w + nx] = 1; }
+  }
+  return out;
+}
 // --- END LIGHT ---
 
-// The rooms of step 1 (rooms.txt and its ROM blob come in step 2).
-const ROOMS = [
-String.raw`ROOM FIRST LIGHT PAR 1
-#########
-#.......#
-#....o..#
-#.......#
-#>......#
-#.......#
-#./.....#
-#########`,
-String.raw`ROOM TWO TURNS PAR 2
-##########
-#....#..o#
-#....#...#
-#........#
-#........#
-#^.\.....#
-#..../...#
-##########`,
-];
+/** The rooms: rooms.txt (written by hand, checked by the solver), copied into the ROM by rooms.mjs. One string a room. */
+const ROOMS = (() => { const b = rom('rooms'); let s = ''; for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return s.split(/\n(?=ROOM )/).filter((r) => r.startsWith('ROOM ')); })();
 
 // --- Input: edge-triggered presses (btnp repeats; menus want one press) ---
 
@@ -192,7 +234,7 @@ const snap = () => pieces.map((q) => [q.x, q.y, q.r]);
 const restore = (sn) => sn.forEach(([x, y, r], i) => Object.assign(pieces[i], { x, y, r }));
 const same = (a, b) => a.every((v, i) => v[0] === b[i][0] && v[1] === b[i][1] && v[2] === b[i][2]);
 const moves = () => pos;
-function relight() { light = trace(room, pieces, held); }
+function relight() { light = settle(room, pieces, held); light.lit = litCells(room, light.half); }
 const pieceAt = (x, y) => pieces.findIndex((q, i) => i !== held && q.x === x && q.y === y);
 
 /**
@@ -304,12 +346,16 @@ function draw() {
 }
 
 function drawPlay() {
-  const X = ox(), Y = oy(), { w, h } = room;
+  const X = ox(), Y = oy(), { w, h } = room, lit = light.lit;
+  /** In a dark room a cell shows only when light is on it or next to it, or it is next to the cursor (the keeper's hand lamp). */
+  const seen = (x, y) => !room.dark || lit[y * w + x] || (Math.abs(x - cx) <= 1 && Math.abs(y - cy) <= 1);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (!seen(x, y)) continue;
     const v = room.wall[y * w + x], px = X + x * CELL, py = Y + y * CELL;
-    if (v === 1) { rectfill(px, py, CELL, CELL, 3); rect(px, py, CELL, CELL, 1); } else if (v === 0) { rectfill(px, py, CELL, CELL, 1); rect(px, py, CELL, CELL, 2); }
+    if (v === 1 || v === 3) { rectfill(px, py, CELL, CELL, 3); rect(px, py, CELL, CELL, 1); if (v === 3) rectfill(px + 4, py + 4, 8, 8, 5); }
+    else if (v === 0) { rectfill(px, py, CELL, CELL, lit[y * w + x] ? 2 : 1); rect(px, py, CELL, CELL, 2); }
   }
-  pieces.forEach((q, i) => { if (i !== held) drawPiece(q, X + q.x * CELL, Y + q.y * CELL, light.got[i]); });
+  pieces.forEach((q, i) => { if (i !== held && seen(q.x, q.y)) drawPiece(q, X + q.x * CELL, Y + q.y * CELL, light.got[i]); });
   drawBeams(X, Y);
   const blink = clock % 40 < 28;
   if (held >= 0) drawPiece(pieces[held], X + cx * CELL, Y + cy * CELL - 3, 0);
@@ -334,19 +380,39 @@ function drawBeams(X, Y) {
   }
 }
 
-/** A piece in plain shapes: a lantern a brass box with its glass on the side it faces; a mirror a silver line; a lens a ring. */
+/**
+ * A piece in plain shapes (the art comes in step 5): a lantern a brass box with its glass on the side it faces; a mirror a silver
+ * line; a splitter a dotted one; a prism a triangle pointing the way light goes through it; a filter a pane of its colour; a lens a
+ * ring, filled with its colour (bright when lit); a shadow lens a black one; a door bars (gone when open). A bolted piece has a bolt
+ * in its corner, a fixed one a dark frame.
+ */
 function drawPiece(q, px, py, got) {
-  if (q.k === 'lantern') {
+  const k = q.k, mx = px + 8, my = py + 8;
+  if (k === 'lantern') {
     rectfill(px + 3, py + 3, 10, 10, 9); rect(px + 3, py + 3, 10, 10, 4);
-    const gx = px + 7 + DX[q.r] * 5, gy = py + 7 + DY[q.r] * 5; rectfill(gx, gy, 2, 2, GOLD);
-  } else if (q.k === 'mirror') {
-    if (q.r === 0) { line(px + 2, py + 13, px + 13, py + 2, 12); line(px + 3, py + 13, px + 13, py + 3, WHITE); }
-    else { line(px + 2, py + 2, px + 13, py + 13, 12); line(px + 3, py + 2, px + 13, py + 12, WHITE); }
-    if (q.mode === 'free') pset(px + 1, py + 1, DIM);
-  } else if (q.k === 'lens') {
-    const lit = got === q.c;
-    circfill(px + 8, py + 8, 5, lit ? 200 + q.c : 1); circ(px + 8, py + 8, 6, lit ? GOLD : DIM);
+    rectfill(mx - 1 + DX[q.r] * 5, my - 1 + DY[q.r] * 5, 2, 2, 200 + q.c);
+  } else if (k === 'mirror' || k === 'splitter') {
+    const pts = q.r === 0 ? [px + 2, py + 13, px + 13, py + 2] : [px + 2, py + 2, px + 13, py + 13];
+    if (k === 'mirror') { line(...pts, 12); line(pts[0] + 1, pts[1], pts[2], pts[3] + (q.r ? -1 : 1), WHITE); }
+    else for (let i = 0; i <= 11; i += 2) pset(pts[0] + i, q.r ? pts[1] + i : pts[1] - i, CYAN);
+  } else if (k === 'prism') {
+    const fx = DX[q.r], fy = DY[q.r]; // the tip points the way light goes on through it
+    const tip = [mx + fx * 6, my + fy * 6], b1 = [mx - fx * 5 - fy * 6, my - fy * 5 + fx * 6], b2 = [mx - fx * 5 + fy * 6, my - fy * 5 - fx * 6];
+    line(...tip, ...b1, CYAN); line(...b1, ...b2, CYAN); line(...b2, ...tip, CYAN);
+  } else if (k === 'filter') {
+    rectfill(px + 3, py + 3, 10, 10, 192 + q.c); rect(px + 3, py + 3, 10, 10, 200 + q.c);
+  } else if (k === 'lens') {
+    const on = got === q.c;
+    circfill(mx, my, 5, on ? 200 + q.c : 192 + q.c); circ(mx, my, 6, on ? GOLD : DIM);
+    if (q.key) pset(mx, my, SHADOW);
+  } else if (k === 'shadow') {
+    circfill(mx, my, 5, SHADOW); circ(mx, my, 6, got ? RED : 2);
+  } else if (k === 'door') {
+    if (!(light.open & (1 << q.key))) for (let i = 2; i < 16; i += 4) rectfill(px + i, py + 1, 2, 14, 4);
+    else rect(px + 1, py + 1, 14, 14, 2);
   }
+  if (q.mode === 'bolted') rectfill(px + 1, py + 1, 2, 2, GOLD);
+  if (q.mode === 'fixed' && (k === 'mirror' || k === 'splitter' || k === 'prism')) rect(px, py, CELL, CELL, SHADOW);
 }
 
 function drawTitle() {

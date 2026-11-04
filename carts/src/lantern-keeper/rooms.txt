@@ -1,0 +1,112 @@
+// Lantern Keeper's rooms (SPEC 6). One room: a line "ROOM <name> PAR <n>" (and DARK for a dark room), the map a character a cell,
+// then the legend for its letters. The map: '#' wall, '=' window, ' ' outside, '.' floor; '^ > v <' a white lantern facing that
+// way, '/' '\' a free mirror, 'o' a white lens, 'x' a shadow lens. A legend line: "A: lantern E red" (the kind: lantern, mirror,
+// splitter, prism, filter, lens, shadow, door; then any of N E S W or / \, a colour, free bolted fixed, key1 to key9).
+// node carts/src/lantern-keeper/rooms.mjs copies this into rom/rooms.bin (without these comments) and checks every room with the
+// solver: its par must be the written one. Step 2: one small room for each idea; the forty come in step 3.
+
+ROOM FIRST LIGHT PAR 1
+#########
+#.......#
+#....o..#
+#.......#
+#>......#
+#.......#
+#./.....#
+#########
+
+ROOM TWO TURNS PAR 2
+##########
+#....#..o#
+#....#...#
+#........#
+#........#
+#^.\.....#
+#..../...#
+##########
+
+ROOM THE HALF MIRROR PAR 1
+#########
+#....o..#
+#.......#
+#>.....o#
+#.......#
+#.S.....#
+#########
+S: splitter /
+
+ROOM RED GLASS PAR 1
+#########
+#>.....R#
+#.......#
+#..F....#
+#########
+R: lens red
+F: filter red free
+
+ROOM TWO LIGHTS PAR 1
+##########
+#........#
+#R....M..#
+#........#
+#........#
+#B.......#
+#./......#
+##########
+R: lantern E red
+B: lantern E blue
+M: lens magenta
+
+ROOM THE PRISM PAR 1
+###########
+#....r....#
+#.........#
+#>.......g#
+#.........#
+#....b....#
+#..P......#
+###########
+r: lens red
+g: lens green
+b: lens blue
+P: prism E
+
+ROOM THE SHUTTER PAR 1
+##########
+#...a....#
+#........#
+#>...D..o#
+#........#
+#.s......#
+##########
+a: lens key1
+D: door key1
+s: splitter /
+
+ROOM THE BLACK LENS PAR 2
+##########
+#........#
+#>...x...#
+#.......o#
+#./\.....#
+##########
+
+ROOM THE BOLT PAR 1
+#######
+#.....#
+#..o..#
+#.....#
+#>.B..#
+#.....#
+#######
+B: mirror \ bolted
+
+ROOM IN THE DARK PAR 1 DARK
+#########
+#.......#
+#....o..#
+#.......#
+#>......#
+#.......#
+#./.....#
+#########

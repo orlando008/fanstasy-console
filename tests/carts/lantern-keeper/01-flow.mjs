@@ -1,5 +1,6 @@
 // Lantern Keeper: the frame (title, a room, the room menu, solved) and its sound cues. One PASS/FAIL line for each behaviour.
 import { newGame, M, sfxLog } from './lib.mjs';
+import { solve } from './solver.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 
@@ -34,7 +35,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.solved && ch >= 6), 'with its sound, on an effects channel (6 or 7)');
   vm.press('A'); ok(p.state === 'solved', 'A is ignored for a moment (a press from the room does not skip the result)');
   vm.run(30); vm.press('A'); ok(p.state === 'play' && p.roomNo === 1 && p.moves() === 0, 'then A opens the next room');
-  p.loadRoom(p.ROOMS.length - 1); const q = p.pieces; q[2].x = 1; q[2].y = 3; q[2].r = 0; q[3].x = 8; q[3].y = 3; p.relight(); vm.run(40); vm.press('A');
+  p.loadRoom(p.ROOMS.length - 1); for (const a of solve(p.room).answer) Object.assign(p.pieces[a.i], { x: a.x, y: a.y, r: a.r }); p.relight(); vm.run(40); vm.press('A');
   ok(p.state === 'title', 'after the last room, the title (until the floors, step 4)');
 }
 
