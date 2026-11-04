@@ -104,15 +104,19 @@ function parseRoom(text) {
 
 /**
  * Trace the light, with the doors whose key bits are in `open` open (bit k for key k). `skip` is a piece left out (the one held);
- * a piece with x < 0 is off the board (the solver's). Returns { half, got, runs, order }: half[(y * w + x) * 4 + d] the colours on
- * the half of cell (x, y) towards d (for drawing and the light on the floor); got[i] the colours reaching piece i (a lens);
- * order the empty floor cells the light crosses, in the order it first reaches them (the solver's).
+ * a piece with x < 0 is off the board (the solver's). Returns { half, got, runs, order, hits }: half[(y * w + x) * 4 + d] the colours
+ * on the half of cell (x, y) towards d (for drawing and the light on the floor); got[i] the colours reaching piece i (a lens); order
+ * the cells the light reaches (empty, or with a piece; not walls or shut doors), in the order it first reaches them, and hits [lens,
+ * colour, how many cells of order had been reached then] (both for the solver: light that reached a lens through cells all decided cannot be taken back).
  */
-function trace(room, pieces, skip = -1, open = 0) {
-  const { w, h, wall } = room, at = new Int16Array(w * h).fill(-1);
+function trace(room, pieces, skip = -1, open = 0, buf = null) {
+  const { w, h, wall } = room, size = w * h;
+  // (buf: arrays to use again, the solver's, which traces a room a million times; the result is then that buffer's, until the next trace)
+  const at = buf ? buf.at.fill(-1) : new Int16Array(size).fill(-1);
   pieces.forEach((q, i) => { if (i !== skip && q.x >= 0) at[q.y * w + q.x] = i; });
-  const half = new Uint8Array(w * h * 4), got = new Uint8Array(pieces.length), seen = new Uint8Array(w * h * 4);
-  const reached = new Uint8Array(w * h), order = [], queue = [];
+  const half = buf ? buf.half.fill(0) : new Uint8Array(size * 4), got = buf ? buf.got.fill(0) : new Uint8Array(pieces.length);
+  const seen = buf ? buf.seen.fill(0) : new Uint8Array(size * 4), reached = buf ? buf.reached.fill(0) : new Uint8Array(size);
+  const order = [], queue = [], hits = [];
   pieces.forEach((q, i) => { if (i !== skip && q.x >= 0 && q.k === 'lantern') queue.push([q.x, q.y, q.r, q.c]); });
   let runs = 0;
   while (queue.length && runs < MAX_RUNS) {
@@ -127,7 +131,8 @@ function trace(room, pieces, skip = -1, open = 0) {
       if (q && q.k === 'door' && !(open & (1 << q.key))) break; // a closed door: as a wall
       half[n * 4 + ((d + 2) & 3)] |= c;
       x = nx; y = ny;
-      if (!q) { if (!reached[n]) { reached[n] = 1; order.push(n); } continue; } // empty floor: on through the cell
+      if (!reached[n]) { reached[n] = 1; order.push(n); }
+      if (!q) continue; // empty floor: on through the cell
       const k = q.k;
       if (k === 'door') continue; // (open)
       if (k === 'mirror') { d = MIRROR[q.r][d]; continue; }
@@ -137,11 +142,11 @@ function trace(room, pieces, skip = -1, open = 0) {
         if (d === q.r) for (const [bit, e] of [[1, (d + 3) & 3], [2, d], [4, (d + 1) & 3]]) if (c & bit) queue.push([x, y, e, bit]);
         break;
       }
-      if (k === 'lens' || k === 'shadow') got[i] |= c;
+      if (k === 'lens' || k === 'shadow') { got[i] |= c; hits.push(i, c, order.length); }
       break; // a lens takes the light; a lantern blocks it
     }
   }
-  return { half, got, runs, order };
+  return { half, got, runs, order, hits };
 }
 
 /** The doors' keys that a trace opens: a key whose lenses are all lit. */
@@ -361,7 +366,7 @@ function drawPlay() {
   if (held >= 0) drawPiece(pieces[held], X + cx * CELL, Y + cy * CELL - 3, 0);
   if (state === 'play') rect(X + cx * CELL - 1, Y + cy * CELL - 1, CELL + 2, CELL + 2, blink ? GOLD : DIM);
   txt(`${roomNo + 1} ${room.name}`, 8, 6, WHITE);
-  const m = `MOVES ${moves()}  PAR ${room.par}`; txt(m, 248 - m.length * 8, 6, moves() <= room.par ? WHITE : DIM);
+  const m = `MOVES ${moves()}/${room.par}`; txt(m, 248 - m.length * 8, 6, moves() <= room.par ? WHITE : DIM); // (moves / par: room for the longest name)
 }
 
 /** The beams: each half cell a beam crosses, a line in its colours from the cell's middle to its edge; the middle in all of them. */

@@ -1,7 +1,7 @@
 # Lantern Keeper: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 and 2 built (every piece and rule, the solver and the bot; ten small rooms, plain shapes); steps 3 to 8 to come
+**Status:** Steps 1 to 3 built (every piece and rule, the solver, the bot, the forty rooms; plain shapes); steps 4 to 8 to come
 **Cart source:** `carts/src/lantern-keeper/` → `carts/lantern-keeper.nova`
 
 ---
@@ -117,19 +117,31 @@ Forty rooms, ten to a floor. Each new idea gets a room that teaches it alone (on
 with what came before. A room's data is a few lines of text, a character a cell, in `carts/src/lantern-keeper/rooms.txt`, copied into
 the ROM blob `rooms` by `node carts/src/lantern-keeper/rooms.mjs`; the same file feeds the solver.
 
-| Floor | Name | Ideas | Rooms' par |
+| Floor | Name | Ideas | The rooms (par) |
 |---|---|---|---|
-| 1 | The Stair | white lanterns, mirrors, walls, bolted and fixed pieces, two lenses | 1 to 4 |
-| 2 | The Glass Room | splitters, coloured lanterns, filters, lenses that need an exact colour, two beams mixing | 2 to 5 |
-| 3 | The Clockwork | prisms, doors opened by lenses, a lens that must be lit by two beams at once | 3 to 6 |
-| 4 | The Lamp Gallery | dark rooms, shadow lenses, everything at once; room 40 is the lamp room, the great lamp the last lens | 4 to 8 |
+| 1 | The Stair | white lanterns, mirrors, walls, bolted and fixed pieces, two lenses | First Light (1), Two Turns (2), **The Bolt** (1), The Landing (2), The Oil Store (2), Twin Lamps (3), The Newel (3), The Winding (3), The Keeper's Room (3), The Top Step (4) |
+| 2 | The Glass Room | splitters, coloured lanterns, filters, lenses that need an exact colour, two beams mixing | **The Half Mirror** (1), Two Ways (2), **Red and Blue** (2), **Red Glass** (1), **Two Lights** (1), Stained Glass (3), The Panes (3), Purple Hour (4), The Glassworks (4), The Chandelier (4) |
+| 3 | The Clockwork | prisms, doors opened by lenses, a lens lit by two beams at once | **The Prism** (1), The Rainbow (3), **The Shutter** (1), The Escapement (3), Two at Once (2), The Gear Train (4), The Pendulum (4), The Chime (4), The Mainspring (4), The Striking Hour (4) |
+| 4 | The Lamp Gallery | dark rooms, shadow lenses, everything at once; room 40 is the lamp room, the great lamp the last lens | **In the Dark** (2), **The Black Lens** (2), The Blind Stair (3), Eyes in the Dark (3), Fog (4), The Watch Room (4), The Storm Glass (4, dark), The Lens Gallery (4), The Last Door (3, dark), The Great Lamp (6) |
+
+The rooms in bold teach an idea alone (par 1 or 2); the rest combine it with what came before. Each floor's last five rooms
+average a higher par than the floor below's (3.2, 3.6, 4.0, 4.2), and its last five a higher par than its first five.
+The teaching rooms and The Great Lamp are written by hand; the others were chosen from the room designer's output
+(`carts/src/lantern-keeper/design.mjs`): it builds a room backwards from its answer (lanterns by the walls, pieces where the light
+already is, lenses where beams end, or on a dark cell with two mirrors of their own bringing a beam to it, or where two colours
+are routed in for a mixed lens), scatters the pieces, and keeps a room whose par is in range with few answers. Each of the forty
+has one to four answers at its par (most have one).
 
 **The solver** (`tests/carts/lantern-keeper/solver.mjs`) runs the cart's own light code (a block of pure functions in `code.js`,
-as the pinball's physics block is shared with its art). It searches for the fewest pieces to change: a piece only matters where a
-beam reaches it, so it places the lifted pieces only on cells the light reaches, as it traces. It proves every room solvable at its
-par, that no room is solved as it starts, and reports how many answers a room has (a room with many answers at par is too easy for
-its place). **The bot** (`tests/carts/lantern-keeper/bot.mjs`) plays the solver's answer through the real controls (the cursor,
-A, B), so `node tools/devkit/sweep.mjs lantern-keeper --set room=1,2,...` plays every room the way a person does.
+as the pinball's physics block is shared with its art). It follows the light: the first thing the light reaches that is not
+decided yet is a choice. An empty cell: leave it, or put a piece there (one already lifted, or "one like it" from a reserve, which
+is matched at the end to a piece of that kind the light never reached). A piece that can change: keep it, lift it (a move), turn it
+(bolted), or, if one like it was put down from the reserve, it was that one. A budget of moves rises from 1 until an answer is
+found. Light that has reached a lens through decided cells only cannot be taken back, so a wrong colour there ends that line; so
+does a lens short of a colour that no undecided light carries. It proves every room solvable at its par, that no room is solved as
+it starts, and counts the answers at par (identical pieces swapped are the same answer). **The bot**
+(`tests/carts/lantern-keeper/bot.mjs`) plays the solver's answer through the real controls (the cursor, A, B), so
+`node tools/devkit/sweep.mjs lantern-keeper --set room=1,2,...` plays every room the way a person does.
 
 ## 7. Opponents or hazards
 
@@ -215,7 +227,7 @@ The stars, the rooms lit and the floors open all follow from slots 10 to 49 and 
 
 | Asset | Budget |
 |---|---|
-| Code | about 35 KB of the 64 KB (`node tools/check.js lantern-keeper`); the rooms in a ROM blob, not in the code |
+| Code | about 35 KB of the 64 KB (`node tools/check.js lantern-keeper`); the rooms in a ROM blob, not in the code: 6.8 KB of the 128 KB ROM for forty |
 | Tiles | about 700 of the 1,024: the four floors' tiles, lit and unlit, about 250; the walls and windows about 120; the sea and sky about 60; the pieces about 130; the title's lighthouse and the map about 150 |
 | Sprites | at most about 40 of the 128 in a room (the pieces, the cursor, the glows and the motes), under 32 a line |
 | Songs / SFX | 6 songs in the 64 patterns; about 20 effects; under 24 KB of the 32 KB of sample RAM |
@@ -298,6 +310,35 @@ Each step: build it, run `node tools/verify.js lantern-keeper` (and `node tools/
 - **Results:** 115 checks pass; the solver solves the ten rooms in 12 ms; the bot solves all ten at par through the buttons; the code
   17.3 KB (26 %); the smoke test 60 fps.
 
+### Step 3 built: the forty rooms
+
+- **The room designer** (`carts/src/lantern-keeper/design.mjs`, a tool: `node carts/src/lantern-keeper/design.mjs <recipe>`) and its
+  recipes (size, pillars, lanterns' colours, the pieces on the answer's path, lenses plain, routed or mixed, doors, shadow lenses,
+  decoys, the par wanted). Random lenses at beams' ends gave low pars (an open room has a shortcut), so lenses are also **routed**:
+  on a dark cell, a beam brought to it by two mirrors of its own; and a **mixed** lens gets two beams of different colours routed
+  in. About 9,000 candidates over 30 recipes; the forty were picked by script (the floor's ideas, the par, the fewest answers,
+  then the most search) and checked as stored (solved within 150,000 steps, its answers counted within 600,000).
+- **The solver**, rewritten twice on the way. Trying every set of pieces to change, then each set's placements, was too slow above
+  par 4; one search with a budget of moves follows the light and decides each cell and piece as the light reaches it. Shuffling a
+  room's pieces then gave different pars (4 or 5): taking a piece "not reached yet" by name skipped answers where an identical piece
+  was the one to take, and where the cell it left was reached later. The **reserve** (put down "one like it", matched at the end) and
+  "this piece was the one from the reserve" make it exact; every room now gives the same par in every order of its pieces. Two cuts
+  (nothing left to change: check it at once; a lens short of a colour no undecided light carries) and buffers used again by the
+  trace (`trace(..., buf)`, the game passes none) took The Great Lamp from giving up after 3 million steps to 8.5 s.
+- **The hand-made rooms:** the teaching rooms (First Light, Two Turns, The Bolt; The Half Mirror, Red and Blue, Red Glass, Two
+  Lights; The Prism, The Shutter, Two at Once; In the Dark, The Black Lens) and **The Great Lamp**: red, green and blue lanterns in
+  three corners, the great lamp (a white lens) in the middle needing all three; a bolted splitter to turn so red both reaches the
+  lamp and lights the key of the door on green's way in, the mirror in red's way being the one blue needs, two bolted mirrors to
+  turn and two mirrors for green: par 6, two answers. Red Glass was redesigned (it had five answers: the glass anywhere on a row):
+  a fixed splitter sends white to a white lens and down to a red lens, so the glass must go after the split, on the red lens's way.
+- `07-rooms.mjs`: forty rooms; every idea first met alone in a room of par 2 or less; each floor uses only its ideas and those
+  below, and all its own; every par within its floor's range; each floor's last five above its first five, and above the last five of
+  the floor below; no room past its floor's first three with more than 4 answers. The bar's counter is `MOVES 3/4` now (the longest
+  room name and its number take 160 px).
+- **Results:** 155 checks pass (the solver tests take about 30 s, one of them shuffling seven rooms' pieces, the room checks 55 s, the bot's forty rooms 30 s); the bot solves
+  all forty at par through the buttons; the pars by floor 1-4 (floor 1), 1-4, 1-4 and 2-6; the rooms 6.8 KB of ROM; the code 17.5 KB;
+  the smoke test 60 fps.
+
 ## 16. Open questions
 
 Defaults chosen in the kickoff that the user did not confirm, and the extras not picked:
@@ -312,4 +353,6 @@ Defaults chosen in the kickoff that the user did not confirm, and the extras not
 - **The colour marks** (triangle, square, circle) for players who cannot tell the colours apart.
 - **The story's words**, the lighthouse's name (Greywater Light) and the floors' names are drafts.
 - **The pieces of music** are drafts; the arrangements are excerpts that loop.
+- **The rooms' pars** top out at 4 before the last room (the designer seldom made a par-5 room the solver could also count quickly);
+  the curve is in the ideas as much as the pars: the fourth floor's rooms combine dark, shadow lenses, mixing and doors.
 - **Not picked, for later:** a room editor (with the solver to check a room can be solved), a time-trial mode, hints.

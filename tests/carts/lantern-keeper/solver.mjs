@@ -3,16 +3,15 @@
 //
 //   node tests/carts/lantern-keeper/solver.mjs [room numbers...]      the par, an answer and the count of answers of each room
 //
-// A move is one piece changed (moved, turned, or both), so the par is the fewest pieces to change. The search:
-// 1. Choose the pieces to change (the "lifted" set), fewest first: 0, 1, 2 ... of the pieces that can change (free, or bolted with
-//    more than one turn).
-// 2. Guess which doors end up open (each door's key, open or shut), and turn each lifted bolted piece to each of its other turns.
-//    A lifted lantern (a light of its own) is tried in every empty cell and turn.
-// 3. Take the other lifted pieces off the board and trace the light. The first empty cell the light reaches that has not been
-//    decided is a choice: leave it empty, or put one of the lifted pieces there in one of its turns. Trace again and go on. A piece
-//    only matters where light reaches it, so this finds every answer: a piece no beam reaches is "parked" anywhere dark.
-// 4. When no undecided lit cell is left, park the rest in dark cells and check the room with the doors settled for real (and that
-//    they settled as guessed).
+// A move is one piece changed (moved, turned, or both), so the par is the fewest pieces to change. The search follows the light: it
+// traces the room and takes the first thing the light reaches that is not decided yet, in the order the light reaches it:
+// - an empty cell: leave it empty, or put a piece there (in any turn): one already lifted, or one not reached yet (lifting it is a move);
+// - a piece that can change: keep it, or lift it off the board (a move: it can be put down later, or parked), or, bolted, turn it;
+// then traces again. A piece only matters where light reaches it, so this finds every answer; pieces lifted and never put down are
+// "parked" in the dark. The budget of moves goes up from 1 until an answer is found. Doors: each door's key is guessed open or shut
+// first, and an answer is checked with the doors settled for real (and as guessed). Lanterns that can change are decided first (any
+// empty cell and turn). Light that has reached a lens through decided cells only cannot be taken back, so a lens with a colour it
+// must not have (or a shadow lens with any) ends that line of the search.
 // A move that drops a piece where another lifted piece now stands has to wait for that one; a ring of them costs a move more (one
 // piece set down somewhere first), so the par counts it.
 import { L } from './light.mjs';
@@ -36,105 +35,141 @@ export function rings(room, ans) {
 }
 
 /**
- * Solve a room (parsed). opts: count (count the answers at par, up to `cap`), maxK (the most pieces to change). Returns { par,
- * answer: [{ i, x, y, r }] (the pieces to change: where each goes and its turn), answers (at par, when counted), nodes } or
- * { par: -1 } when it cannot be solved.
+ * Solve a room (parsed). opts: count (count the answers at par, up to `cap`), maxK (the most moves), maxNodes (give up after). Returns
+ * { par, answer: [{ i, x, y, r }] (the pieces to change: where each goes and its turn), answers (at par, when counted), nodes }, or
+ * { par: -1 } when it cannot be solved (-2: it gave up after maxNodes).
  */
-export function solve(room, { count = false, cap = 200, maxK = 8 } = {}) {
-  const base = room.pieces, P = base.map((q) => ({ ...q })), n = P.length, { w, h, wall } = room;
-  const movable = P.map((q, i) => (changeable(q) ? i : -1)).filter((i) => i >= 0);
-  const keys = [...new Set(P.filter((q) => q.k === 'door').map((q) => q.key))];
+export function solve(room, { count = false, cap = 200, maxK = 8, maxNodes = Infinity } = {}) {
+  const base = room.pieces, n = base.length, { w, h, wall } = room;
+  if (L.solvedBy(room, base)) return { par: 0, answer: [], answers: 1, nodes: 1 };
+  const can = base.map(changeable);
+  // P: the room's pieces, then "reserve" pieces: a copy of each free piece the light may never reach, to be put down as "one like it",
+  // matched at the end to a piece of that kind the light never reached (so taking it changes nothing where it was)
+  const P = base.map((q) => ({ ...q })), reserveOf = [];
+  base.forEach((q, i) => { if (can[i] && q.mode === 'free' && q.k !== 'lantern') { P.push({ ...q, x: -1, y: -1, reserve: true }); reserveOf.push(i); } });
+  const N = P.length;
+  const keys = [...new Set(base.filter((q) => q.k === 'door').map((q) => q.key))];
   const guesses = []; for (let m = 0; m < 1 << keys.length; m++) guesses.push(keys.reduce((o, k, j) => (m & (1 << j) ? o | (1 << k) : o), 0));
-  let best = null, bestCost = Infinity, answers = 0, nodes = 0;
+  // a piece's state: 0 not decided (where it began), 1 kept, 2 lifted (off the board), 3 put down / turned (changed), 4 it was the
+  // reserve piece put down earlier (off the board where it began); a reserve piece: 0 unused, 3 down. match[r]: the piece a reserve piece is.
+  const st = new Uint8Array(N), decided = new Uint8Array(w * h), match = new Int16Array(N).fill(-1);
+  let best = null, bestCost = Infinity, answers = 0, nodes = 0, budget = 0;
   const seenAns = new Set();
-  const decided = new Uint8Array(w * h);
-  const occupied = (x, y) => P.some((q) => q.x === x && q.y === y);
-  const floor = (x, y) => !wall[y * w + x];
+  const cellOf = new Int16Array(w * h).fill(-1);
+  const sync = () => { cellOf.fill(-1); P.forEach((q, i) => { if (q.x >= 0) cellOf[q.y * w + q.x] = i; }); };
+  const lit = (t, c) => t.half[c * 4] | t.half[c * 4 + 1] | t.half[c * 4 + 2] | t.half[c * 4 + 3];
+  const buf = { at: new Int16Array(w * h), half: new Uint8Array(w * h * 4), got: new Uint8Array(N), seen: new Uint8Array(w * h * 4), reached: new Uint8Array(w * h) };
 
-  /** Every lifted piece placed (or parked): check it, and keep it if it is the best so far. */
-  function finish(lifted, parkList, open) {
-    // park: each piece still off the board goes to a dark, empty, undecided cell (the light does not reach it, so it changes nothing)
-    const t0 = L.trace(room, P, -1, 0), spots = [];
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const i = y * w + x;
-      if (!floor(x, y) || decided[i] || occupied(x, y) || t0.half[i * 4] | t0.half[i * 4 + 1] | t0.half[i * 4 + 2] | t0.half[i * 4 + 3]) continue;
-      if (base.some((q) => q.x === x && q.y === y)) continue; // (not where another piece began: no rings for a parked one)
-      spots.push([x, y]);
+  function finish(open) {
+    const lifted = []; for (let i = 0; i < n; i++) if (st[i] === 2) lifted.push(i);
+    const t = L.trace(room, P, -1, open);
+    // park the lifted pieces never put down: dark, empty, undecided cells where no piece began
+    const spots = [];
+    if (lifted.length) for (let c = 0; c < w * h; c++) {
+      if (wall[c] || decided[c] || cellOf[c] >= 0 || lit(t, c) || base.some((q) => q.y * w + q.x === c)) continue;
+      spots.push(c);
     }
-    if (spots.length < parkList.length) return;
-    parkList.forEach((j, k) => { P[j].x = spots[k][0]; P[j].y = spots[k][1]; });
-    const s = L.settle(room, P);
-    if (L.lensesLit(P, s.got) && s.open === open) { // (solved, with the doors as guessed)
-      const ans = lifted.map((i) => ({ i, x: P[i].x, y: P[i].y, r: P[i].r }));
-      if (ans.every((a) => { const q = base[a.i]; return q.x !== a.x || q.y !== a.y || q.r !== a.r; })) {
-        const cost = ans.length + rings(room, ans);
-        const key = ans.filter((a) => !parkList.includes(a.i)).map((a) => `${a.i}:${a.x},${a.y},${a.r}`).sort().join(' ');
-        if (cost < bestCost) { bestCost = cost; best = ans; answers = 0; seenAns.clear(); }
-        if (cost === bestCost && !seenAns.has(key)) { seenAns.add(key); answers++; }
-      }
+    if (spots.length < lifted.length) return;
+    // the reserve pieces put down: each matched to a piece like it, not decided, that the light does not reach
+    const Q = base.map((q) => ({ ...q })), taken = new Set(), moved = [];
+    for (let r = n; r < N; r++) {
+      if (st[r] !== 3) continue;
+      const g = P[r], j = match[r] >= 0 ? match[r] : base.findIndex((q, i) => !taken.has(i) && st[i] === 0 && can[i] && sig(q) === sig(g) && !lit(t, q.y * w + q.x));
+      if (j < 0) return;
+      taken.add(j); Object.assign(Q[j], { x: g.x, y: g.y, r: g.r }); moved.push(j);
     }
-    parkList.forEach((j) => { P[j].x = -1; });
+    for (let i = 0; i < n; i++) if (st[i] === 3) Object.assign(Q[i], { x: P[i].x, y: P[i].y, r: P[i].r });
+    lifted.forEach((i, k) => { Q[i].x = spots[k] % w; Q[i].y = (spots[k] / w) | 0; });
+    const s = L.settle(room, Q);
+    if (!L.lensesLit(Q, s.got) || s.open !== open) return;
+    const ans = []; for (let i = 0; i < n; i++) if ((st[i] >= 2 && st[i] !== 4) || taken.has(i)) ans.push({ i, x: Q[i].x, y: Q[i].y, r: Q[i].r });
+    if (!ans.every((a) => { const q = base[a.i]; return q.x !== a.x || q.y !== a.y || q.r !== a.r; })) return;
+    const total = ans.length + rings(room, ans);
+    const key = ans.filter((a) => !lifted.includes(a.i)).map((a) => `${sig(base[a.i])}:${a.x},${a.y},${a.r}`).sort().join(' '); // (two identical pieces swapped are the same answer)
+    if (total < bestCost) { bestCost = total; best = ans; answers = 0; seenAns.clear(); }
+    if (total === bestCost && !seenAns.has(key)) { seenAns.add(key); answers++; }
   }
 
-  /** Step 3: the first undecided empty cell the light reaches: leave it, or put a lifted piece there. */
-  function dfs(lifted, remaining, open) {
-    if (!count && best && bestCost <= lifted.length) return;
-    if (count && answers >= cap) return;
+  function dfs(open, cost) {
+    if (nodes > maxNodes || (count && answers >= cap) || (!count && best)) return;
     nodes++;
-    if (!remaining.length) { finish(lifted, [], open); return; }
-    const t = L.trace(room, P, -1, open);
-    let c = -1; for (const cell of t.order) if (!decided[cell]) { c = cell; break; }
-    if (c < 0) { finish(lifted, remaining, open); return; }
-    const x = c % w, y = (c / w) | 0;
-    decided[c] = 1;
-    dfs(lifted, remaining, open); // left empty
-    const tried = new Set();
-    for (const j of remaining) {
-      const q = P[j], s = sig(q); if (tried.has(s)) continue; tried.add(s);
-      for (let r = 0; r < L.TURNS[q.k]; r++) {
-        if (base[j].x === x && base[j].y === y && base[j].r === r) continue; // (that is not a change)
-        q.x = x; q.y = y; q.r = r;
-        dfs(lifted, remaining.filter((u) => u !== j), open);
-        q.x = -1;
+    let pending = false; for (let i = 0; i < n; i++) if (st[i] === 2) { pending = true; break; }
+    sync();
+    if (cost === budget && !pending) { finish(open); return; } // (nothing left to change: check it as it stands)
+    const t = L.trace(room, P, -1, open, buf); // (its arrays are used again by the next trace: read them before going deeper)
+    let at = t.order.length, c = -1;
+    for (let k = 0; k < t.order.length; k++) {
+      const cell = t.order[k], i = cellOf[cell];
+      if (i < 0 ? !decided[cell] : can[i] && i < n && st[i] === 0) { at = k; c = cell; break; }
+    }
+    for (let k = 0; k < t.hits.length; k += 3) { // light for good on a lens: a wrong colour ends this line
+      if (t.hits[k + 2] > at) continue;
+      const q = P[t.hits[k]]; if (q.k === 'shadow' || (t.hits[k + 1] & ~q.c)) return;
+    }
+    if (c < 0) { finish(open); return; }
+    // a lens short of a colour that no light still to be decided carries can never get it
+    let later = 0;
+    for (let k = at; k < t.order.length; k++) later |= lit(t, t.order[k]);
+    for (let j = 0; j < n; j++) { const q = P[j]; if (q.k === 'lens' && (q.c & ~t.got[j] & ~later)) return; }
+    const i = cellOf[c], x = c % w, y = (c / w) | 0;
+    if (i >= 0) { // a piece that can change: keep it, lift it, or turn it (bolted)
+      const q = P[i];
+      st[i] = 1; dfs(open, cost); st[i] = 0;
+      if (q.mode === 'free' && q.k !== 'lantern') { // it may be the piece "like it" already put down from the reserve: then it is not here
+        let r = n; while (r < N && !(st[r] === 3 && match[r] < 0 && sig(P[r]) === sig(q))) r++;
+        if (r < N) { match[r] = i; st[i] = 4; q.x = -1; dfs(open, cost); q.x = base[i].x; q.y = base[i].y; st[i] = 0; match[r] = -1; }
       }
+      if (cost < budget) {
+        if (q.mode === 'free') { st[i] = 2; q.x = -1; dfs(open, cost + 1); q.x = base[i].x; q.y = base[i].y; q.r = base[i].r; st[i] = 0; }
+        else for (let r = 0; r < L.TURNS[q.k]; r++) if (r !== base[i].r) { q.r = r; st[i] = 3; dfs(open, cost + 1); }
+        q.r = base[i].r; st[i] = 0;
+      }
+      return;
+    }
+    // an empty cell: leave it, or put a piece there: one lifted already (no cost), or one from the reserve (a move)
+    decided[c] = 1;
+    dfs(open, cost);
+    const tried = new Set();
+    for (let j = 0; j < N; j++) {
+      const q = P[j];
+      if (j < n ? !(can[j] && q.mode === 'free' && q.k !== 'lantern' && st[j] === 2) : st[j] !== 0) continue;
+      const extra = j < n ? 0 : 1;
+      if (cost + extra > budget) continue;
+      const sg = `${sig(q)}/${extra}`; if (tried.has(sg)) continue; tried.add(sg); // (pieces alike, from the same place, are the same choice)
+      for (let r = 0; r < L.TURNS[q.k]; r++) {
+        if (j < n && base[j].x === x && base[j].y === y && base[j].r === r) continue;
+        q.x = x; q.y = y; q.r = r; const was = st[j]; st[j] = 3;
+        dfs(open, cost + extra);
+        st[j] = was;
+      }
+      q.x = -1;
     }
     decided[c] = 0;
   }
 
-  /** Step 2: the bolted pieces' turns and the lanterns' places, then the rest by the light. */
-  function choose(lifted, open, rest, k) {
-    if (k === rest.length) {
-      const free = lifted.filter((i) => P[i].mode === 'free' && P[i].k !== 'lantern');
-      free.forEach((i) => { P[i].x = -1; });
-      dfs(lifted, free, open);
-      free.forEach((i) => { P[i].x = base[i].x; P[i].y = base[i].y; P[i].r = base[i].r; });
-      return;
+  /** Lanterns that can change: every place and turn, first (they make light of their own). */
+  const lanterns = base.map((q, i) => (can[i] && q.k === 'lantern' ? i : -1)).filter((i) => i >= 0);
+  function lanternsThen(k, open, cost) {
+    if (k === lanterns.length) { dfs(open, cost); return; }
+    const i = lanterns[k], q = P[i];
+    st[i] = 1; lanternsThen(k + 1, open, cost);
+    if (cost < budget) {
+      const cells = q.mode === 'free' ? [] : [[q.x, q.y]];
+      if (q.mode === 'free') for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) if (!wall[yy * w + xx] && !P.some((o, j) => j !== i && o.x === xx && o.y === yy)) cells.push([xx, yy]);
+      for (const [xx, yy] of cells) for (let r = 0; r < 4; r++) {
+        if (xx === base[i].x && yy === base[i].y && r === base[i].r) continue;
+        q.x = xx; q.y = yy; q.r = r; st[i] = 3; lanternsThen(k + 1, open, cost + 1);
+      }
+      q.x = base[i].x; q.y = base[i].y; q.r = base[i].r;
     }
-    const i = rest[k], q = P[i];
-    if (q.mode === 'bolted') {
-      for (let r = 0; r < L.TURNS[q.k]; r++) if (r !== base[i].r) { q.r = r; choose(lifted, open, rest, k + 1); }
-      q.r = base[i].r; return;
-    }
-    // a free lantern: any empty floor cell, any turn
-    q.x = -1;
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      if (!floor(x, y) || occupied(x, y)) continue;
-      for (let r = 0; r < 4; r++) { if (x === base[i].x && y === base[i].y && r === base[i].r) continue; q.x = x; q.y = y; q.r = r; choose(lifted, open, rest, k + 1); q.x = -1; }
-    }
-    q.x = base[i].x; q.y = base[i].y; q.r = base[i].r;
+    st[i] = 0;
   }
 
-  if (L.solvedBy(room, P)) return { par: 0, answer: [], answers: 1, nodes: 1 };
-  const subsets = (k, from, cur, out) => { if (cur.length === k) { out.push([...cur]); return; } for (let a = from; a < movable.length; a++) { cur.push(movable[a]); subsets(k, a + 1, cur, out); cur.pop(); } };
-  for (let k = 1; k <= Math.min(maxK, movable.length) && k <= bestCost; k++) {
-    const sets = []; subsets(k, 0, [], sets);
-    for (const lifted of sets) {
-      const rest = lifted.filter((i) => P[i].mode === 'bolted' || P[i].k === 'lantern');
-      for (const open of guesses) choose(lifted, open, rest, 0);
-    }
-    if (best && !count) break;
-    if (best && bestCost <= k) break;
+  for (budget = 1; budget <= maxK && budget <= bestCost && nodes <= maxNodes; budget++) {
+    for (const open of guesses) lanternsThen(0, open, 0);
+    if (best && bestCost <= budget) break;
   }
+  if (!best && nodes > maxNodes) return { par: -2, nodes };
   return best ? { par: bestCost, answer: best, answers: count ? answers : undefined, nodes } : { par: -1, nodes };
 }
 
