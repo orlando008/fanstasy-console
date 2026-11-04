@@ -386,8 +386,8 @@ Each step: build it, run `node tools/verify.js lantern-keeper` (and `node tools/
   complaint on another game): indigo, brass and blue-grey now.
 - `09-art.mjs`: the sheet and the themes' ROM; the layers of the three screens and the sea's drift; every room of the forty built
   (a wall stamp on every wall, its floor's stamp on every floor cell or the dark one: this would have caught the hash); a window
-  showing the sea; the light's cells in palette 2 and the rest in 1; a floor's colours loaded; every piece a sprite, a '\\' mirror the
-  '/' flipped; the busiest room quick; the title's windows lit by the rooms solved; the map's three kinds of window.
+  showing the sea; the light's cells in palette 2 and the rest in 1; a floor's colours loaded; every piece a sprite, a `\` mirror the
+  `/` flipped; the busiest room quick; the title's windows lit by the rooms solved; the map's three kinds of window.
   `03-controls.mjs` checks the dark room by its stamps now.
 - **Results:** 199 checks pass; 690 tiles; `colors.mjs --check` within its limits; `snes.mjs` 75 of 100 (no parallax yet, and one
   backdrop colour in the rooms); the code 27.7 KB (42 %); the smoke test 60 fps.
