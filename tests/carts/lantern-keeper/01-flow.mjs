@@ -12,7 +12,9 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
   sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.roomNo === 0 && p.playing === p.SONG.play, 'PLAY opens the first room, with the game song');
+  ok(p.state === 'story', 'PLAY the first time shows the story\'s first page');
+  vm.run(35); vm.press('A'); ok(p.state === 'map' && p.mapSel === 0, 'then the floor map, on the first room');
+  vm.run(15); vm.press('A'); ok(p.state === 'play' && p.roomNo === 0 && p.playing === p.SONG.floors[0], 'A opens it, with the first floor\'s song');
 }
 
 // 2. The room menu: RESUME, RESTART ROOM, QUIT TO TITLE.
@@ -36,7 +38,8 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('A'); ok(p.state === 'solved', 'A is ignored for a moment (a press from the room does not skip the result)');
   vm.run(30); vm.press('A'); ok(p.state === 'play' && p.roomNo === 1 && p.moves() === 0, 'then A opens the next room');
   p.loadRoom(p.ROOMS.length - 1); for (const a of solve(p.room).answer) Object.assign(p.pieces[a.i], { x: a.x, y: a.y, r: a.r }); p.relight(); vm.run(40); vm.press('A');
-  ok(p.state === 'title', 'after the last room, the title (until the floors, step 4)');
+  ok(p.state === 'story' && p.page === 4, 'after the last room, the ending');
+  vm.run(35); vm.press('A'); ok(p.state === 'title', 'and then the title');
 }
 
 // 4. Frames are quick: a room with its light traced every frame of moving.

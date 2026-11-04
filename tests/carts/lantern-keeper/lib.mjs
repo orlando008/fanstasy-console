@@ -11,7 +11,8 @@ const PROBE = `__expose(() => ({
   get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; }, get ART() { return ART; },
   get roomNo() { return roomNo; }, get room() { return room; }, get pieces() { return pieces; }, get light() { return light; },
   get cx() { return cx; }, set cx(v) { cx = v; }, get cy() { return cy; }, set cy(v) { cy = v; }, get held() { return held; },
-  get hist() { return hist; }, get pos() { return pos; }, moves, loadRoom, relight, pieceAt, ROOMS, SFX, SONG, TURNS,
+  get hist() { return hist; }, get pos() { return pos; }, set pos(v) { pos = v; }, moves, loadRoom, relight, pieceAt, ROOMS, SFX, SONG, TURNS,
+  get mapSel() { return mapSel; }, get page() { return page; }, get solvedSel() { return solvedSel; }, toMap, best, solved, opened, starred, nextRoom, storySeen, BEST_SLOT, STORY_SLOT, LAST_SLOT,
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */

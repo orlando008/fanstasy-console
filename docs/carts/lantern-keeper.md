@@ -1,7 +1,7 @@
 # Lantern Keeper: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 3 built (every piece and rule, the solver, the bot, the forty rooms; plain shapes); steps 4 to 8 to come
+**Status:** Steps 1 to 4 built (the rules, the solver and bot, the forty rooms, the screens and saves; plain shapes); steps 5 to 8 to come
 **Cart source:** `carts/src/lantern-keeper/` → `carts/lantern-keeper.nova`
 
 ---
@@ -338,6 +338,30 @@ Each step: build it, run `node tools/verify.js lantern-keeper` (and `node tools/
 - **Results:** 155 checks pass (the solver tests take about 30 s, one of them shuffling seven rooms' pieces, the room checks 55 s, the bot's forty rooms 30 s); the bot solves
   all forty at par through the buttons; the pars by floor 1-4 (floor 1), 1-4, 1-4 and 2-6; the rooms 6.8 KB of ROM; the code 17.5 KB;
   the smoke test 60 fps.
+
+### Step 4 built: the flow
+
+- `code.js`: the screens of section 10. **The title** (PLAY, RECORDS) with the lighthouse: a window for each room, lit when it is
+  solved (gold with its star), and once the ending has been seen the great lamp at the top with its beam turning. **PLAY** shows the
+  story's first page the first time, then **the floor map**: four bands, floor 1 at the bottom, ten windows each (shuttered until
+  open, dark, lit, lit with a star); LEFT and RIGHT along a floor, UP and DOWN between floors, only to open rooms (a "no" sound
+  otherwise); A plays the room, B goes back to the title; the room's name, its best and par below. **The room menu** has FLOOR MAP
+  now (RESUME, RESTART ROOM, FLOOR MAP, QUIT TO TITLE). **Solved**: the moves, the par, the star, "a new best" when it beats the
+  saved one, and NEXT ROOM (UP THE STAIR after a floor's last room, THE LAMP after the fortieth), REPLAY, FLOOR MAP; the choices
+  wait half a second. After a floor's last room, its **page of the story** the first time (then the next floor's map); after the
+  fortieth, **the ending**, then the title. **Records**: rooms lit, stars, the moves of the solved rooms against their par, each
+  floor's stars. The five pages are section 10's drafts.
+- **The saves** (section 13): slot 1 the room last played, slot 2 the pages seen (bit 4 the ending), slots 10 to 49 each room's
+  fewest moves; a room opens when the one before it is solved, and the stars, rooms lit and floors reached follow from those.
+- **The songs' cues**: `SONG.title` on the title and the story's pages, `SONG.floors[f]` on a floor's map and rooms, `SONG.ending`
+  with the ending (the songs themselves come with the audio, step 6). The light block's door function is `openedDoors` now (a room
+  is `opened`).
+- `08-progress.mjs`: a new game (one room open, the first page once, the map's cursor kept to open rooms, B, PLAY again straight to
+  the map); solving (the moves saved, no star over par, REPLAY, the star at par and the fewer moves kept, NEXT ROOM, FLOOR MAP, a
+  worse solve not spoiling the best, each room opening the next); a floor's last room (its page, the next floor's map and song, the
+  room menu's FLOOR MAP, the page only once); the last room (the ending and its song, the title remembering it); a save (rooms lit,
+  stars, moves against par, the next room, the map's UP and DOWN, the records). `01-flow.mjs` follows the new way in.
+- **Results:** 183 checks pass; the code 23.9 KB (37 %); the smoke test 60 fps.
 
 ## 16. Open questions
 

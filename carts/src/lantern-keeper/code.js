@@ -29,7 +29,7 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // so they never cut into the music and two can sound at once.
 
 const SFX = { move: 0, select: 1, pause: 2, pick: 3, no: 4, drop: 5, solved: 6, turn: 0, undo: 1 }; // (the starter's effects, until step 6)
-const SONG = { title: 0, play: 1 };
+const SONG = { title: 0, floors: [1, 2, 3, 4], ending: 5 }; // (the title and the story, each floor's, the ending; the songs come in step 6)
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -43,7 +43,18 @@ function play(song) {
 
 // --- Save slots (SPEC 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1;
+const VERSION_SLOT = 0, SAVE_VERSION = 1, LAST_SLOT = 1, STORY_SLOT = 2, BEST_SLOT = 10; // (SPEC 13)
+const FLOOR_ROOMS = 10, FLOOR_NAMES = ['THE STAIR', 'THE GLASS ROOM', 'THE CLOCKWORK', 'THE LAMP GALLERY'];
+/** The fewest moves room n was solved in (0: not yet), and the rest that follows from it. */
+const best = (n) => dget(BEST_SLOT + n);
+const solved = (n) => best(n) > 0;
+const opened = (n) => n === 0 || solved(n - 1); // (each room opens the next: SPEC 16, no help)
+const starred = (n) => solved(n) && best(n) <= parRoom(n);
+const parRoom = (n) => +/PAR (\d+)/.exec(ROOMS[n])[1];
+const nameRoom = (n) => /^ROOM (.*?) PAR/.exec(ROOMS[n])[1];
+const nextRoom = () => { let n = 0; while (n < ROOMS.length - 1 && solved(n)) n++; return n; }; // the first room not solved (the last, when all are)
+const storySeen = (k) => (dget(STORY_SLOT) >> k) & 1;
+const ENDED = 4; // the story's last page: the ending
 
 // --- LIGHT: the rules of the light (SPEC 5), pure functions of a room and its pieces. Nothing here draws, plays or reads the pad:
 // tests/carts/lantern-keeper/light.mjs cuts this block out and runs it in node for the solver. ---
@@ -150,7 +161,7 @@ function trace(room, pieces, skip = -1, open = 0, buf = null) {
 }
 
 /** The doors' keys that a trace opens: a key whose lenses are all lit. */
-function opened(pieces, got) {
+function openedDoors(pieces, got) {
   let keys = 0, lit = 0, dark = 0;
   pieces.forEach((q, i) => { if (q.key && q.k === 'door') keys |= 1 << q.key; if (q.key && q.k === 'lens') { if (got[i] === q.c) lit |= 1 << q.key; else dark |= 1 << q.key; } });
   return keys & lit & ~dark;
@@ -160,7 +171,7 @@ function settle(room, pieces, skip = -1) {
   let open = 0, t = null;
   for (let pass = 0; pass < MAX_SETTLE; pass++) {
     t = trace(room, pieces, skip, open);
-    const next = opened(pieces, t.got);
+    const next = openedDoors(pieces, t.got);
     if (next === open) break;
     open = next;
   }
@@ -204,7 +215,7 @@ function dpad() {
 
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
-let titleSel = 0, pauseSel = 0;
+let titleSel = 0, pauseSel = 0, solvedSel = 0, mapSel = 0, page = 0, afterPage = null, wasBest = 0;
 let roomNo = 0, room = null, pieces = [], cx = 0, cy = 0, held = -1, light = null;
 let hist = [], pos = 0, lastPiece = -1; // the moves: hist[k] the places and turns after move k (hist[0] as the room began)
 
@@ -226,7 +237,17 @@ function init() {
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
-function startGame() { loadRoom(0); play(SONG.play); }
+/** The tests' way in: straight into the first room. */
+function startGame() { loadRoom(0); }
+
+/** PLAY: the story's first page the first time, then the floor map. */
+function startPlay() { if (!storySeen(0)) showPage(0, () => toMap(nextRoom())); else toMap(nextRoom()); }
+
+/** The floor map, the cursor on room n. */
+function toMap(n) { state = 'map'; timer = 0; paused = false; mapSel = n; play(SONG.floors[Math.floor(n / FLOOR_ROOMS)]); }
+
+/** A page of the story (it is marked seen), then `then`. */
+function showPage(k, then) { state = 'story'; timer = 0; page = k; afterPage = then; dset(STORY_SLOT, dget(STORY_SLOT) | (1 << k)); play(k === ENDED ? SONG.ending : SONG.title); }
 
 /** Start room n as it begins: its pieces, the cursor on the first free piece, no moves. */
 function loadRoom(n) {
@@ -234,6 +255,7 @@ function loadRoom(n) {
   const first = pieces.find((q) => q.mode === 'free') || { x: 1, y: 1 };
   cx = first.x; cy = first.y; held = -1; hist = [snap()]; pos = 0; lastPiece = -1;
   state = 'play'; timer = 0; paused = false; relight();
+  dset(LAST_SLOT, n + 1); play(SONG.floors[Math.floor(n / FLOOR_ROOMS)]);
 }
 const snap = () => pieces.map((q) => [q.x, q.y, q.r]);
 const restore = (sn) => sn.forEach(([x, y, r], i) => Object.assign(pieces[i], { x, y, r }));
@@ -262,6 +284,8 @@ function update() {
   else if (state === 'title') updateTitle();
   else if (state === 'play') updatePlay();
   else if (state === 'solved') updateSolved();
+  else if (state === 'map') updateMap();
+  else if (state === 'story') updateStory();
   else if (state === 'records') updateRecords();
   prevMask = inputMask;
 }
@@ -270,7 +294,7 @@ function updateTitle() {
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) startGame(); else { state = 'records'; timer = 0; }
+    if (titleSel === 0) startPlay(); else { state = 'records'; timer = 0; }
   }
 }
 
@@ -297,7 +321,7 @@ function updatePlay() {
   }
   if (pressed(SELECT) || pressed(L)) undo();
   if (pressed(R)) redo();
-  if (held < 0 && lensesLit(pieces, light.got)) { state = 'solved'; timer = 0; fx(SFX.solved); }
+  if (held < 0 && lensesLit(pieces, light.got)) roomSolved();
 }
 
 /** Undo a move. With a piece held, the first undo only puts it back where it came from. */
@@ -311,26 +335,63 @@ function redo() {
   pos++; restore(hist[pos]); lastPiece = -1; relight(); fx(SFX.undo);
 }
 
-/** The room is solved: A goes on to the next room (after the last, the title, until the floors come in step 4). */
+/** Every lens lit: the room's best moves saved (the fewest), and the panel: NEXT ROOM, REPLAY, FLOOR MAP. */
+function roomSolved() {
+  state = 'solved'; timer = 0; solvedSel = 0; fx(SFX.solved);
+  wasBest = best(roomNo);
+  if (!wasBest || moves() < wasBest) dset(BEST_SLOT + roomNo, moves());
+}
+const SOLVED_ITEMS = () => [roomNo === ROOMS.length - 1 ? 'THE LAMP' : (roomNo + 1) % FLOOR_ROOMS ? 'NEXT ROOM' : 'UP THE STAIR', 'REPLAY', 'FLOOR MAP'];
 function updateSolved() {
-  if (timer < 30 || !(pressed(A) || pressed(START))) return;
+  if (timer < 30) return;
+  if (pressed(UP)) { solvedSel = (solvedSel + 2) % 3; fx(SFX.move); }
+  if (pressed(DOWN)) { solvedSel = (solvedSel + 1) % 3; fx(SFX.move); }
+  if (!(pressed(A) || pressed(START))) return;
   fx(SFX.select);
-  if (roomNo + 1 < ROOMS.length) loadRoom(roomNo + 1); else toTitle();
+  if (solvedSel === 1) { loadRoom(roomNo); return; }
+  if (solvedSel === 2) { toMap(roomNo); return; }
+  goOn();
+}
+/** On from a solved room: the next room; after a floor's last, its page of the story the first time and the next floor's map; after the last, the ending. */
+function goOn() {
+  const n = roomNo + 1, k = Math.floor(roomNo / FLOOR_ROOMS) + 1; // (pages 1 to 3 after floors 1 to 3; page 4 the ending)
+  if (n === ROOMS.length) { showPage(ENDED, toTitle); return; }
+  if (n % FLOOR_ROOMS === 0 && !storySeen(k)) { showPage(k, () => toMap(n)); return; }
+  loadRoom(n);
+}
+
+/** The floor map: LEFT and RIGHT along a floor, UP and DOWN between floors (to the rooms that are open); A plays, B goes back. */
+function updateMap() {
+  const f = Math.floor(mapSel / FLOOR_ROOMS), r = mapSel % FLOOR_ROOMS;
+  let to = -1;
+  if (pressed(LEFT) && r > 0) to = mapSel - 1;
+  if (pressed(RIGHT) && r < FLOOR_ROOMS - 1) to = mapSel + 1;
+  if (pressed(UP) && f < 3) to = mapSel + FLOOR_ROOMS;
+  if (pressed(DOWN) && f > 0) to = mapSel - FLOOR_ROOMS;
+  if (to >= 0) { if (opened(to)) { mapSel = to; fx(SFX.move); play(SONG.floors[Math.floor(to / FLOOR_ROOMS)]); } else fx(SFX.no); }
+  if ((pressed(A) || pressed(START)) && timer > 10) { fx(SFX.select); loadRoom(mapSel); }
+  else if (pressed(B)) { fx(SFX.select); toTitle(); }
+}
+
+/** A page of the story: any button goes on (after a moment, so a press from before does not skip it). */
+function updateStory() {
+  if (timer > 30 && (pressed(A) || pressed(B) || pressed(START))) { fx(SFX.select); afterPage(); }
 }
 
 function updateRecords() {
   if ((pressed(START) || pressed(A) || pressed(B)) && timer > 20) { fx(SFX.select); toTitle(); }
 }
 
-const PAUSE_ITEMS = ['RESUME', 'RESTART ROOM', 'QUIT TO TITLE'];
+const PAUSE_ITEMS = ['RESUME', 'RESTART ROOM', 'FLOOR MAP', 'QUIT TO TITLE'];
 function updatePause() {
-  if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
-  if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
+  if (pressed(UP)) { pauseSel = (pauseSel + 3) % 4; fx(SFX.move); }
+  if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 4; fx(SFX.move); }
   if (pressed(B) || (pressed(START) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
   else if (pressed(A) || pressed(START)) {
     fx(SFX.select);
     if (pauseSel === 0) paused = false;
     else if (pauseSel === 1) loadRoom(roomNo); // the room as it began, the moves cleared
+    else if (pauseSel === 2) toMap(roomNo);
     else toTitle();
   }
 }
@@ -345,6 +406,8 @@ function draw() {
   cls();
   if (state === 'play' || state === 'solved') drawPlay();
   else if (state === 'title') drawTitle();
+  else if (state === 'map') drawMap();
+  else if (state === 'story') drawStory();
   else if (state === 'records') drawRecords();
   if (state === 'solved') drawSolved();
   if (paused) drawPause();
@@ -420,29 +483,95 @@ function drawPiece(q, px, py, got) {
   if (q.mode === 'fixed' && (k === 'mirror' || k === 'splitter' || k === 'prism')) rect(px, py, CELL, CELL, SHADOW);
 }
 
+/** The lighthouse in plain shapes (the art comes in step 5): a tower whose windows are the rooms, lit when solved, and, once the
+ * ending has been seen, the great lamp at the top with its beam turning. x, y: the tower's foot; k: the windows' size. */
+function drawTower(x, y, sc) {
+  const w = 7 * sc, hgt = 44 * sc;
+  rectfill(x - w, y - hgt, w * 2, hgt, 4); rect(x - w, y - hgt, w * 2, hgt, 1);
+  for (let n = 0; n < ROOMS.length; n++) { // 4 floors of 10 windows: 5 a row, 2 rows a floor, floor 1 at the bottom
+    const f = Math.floor(n / FLOOR_ROOMS), i = n % FLOOR_ROOMS, wx = x - w + sc + (i % 5) * 2.6 * sc, wy = y - (f * 11 + 3 + Math.floor(i / 5) * 4) * sc;
+    rectfill(wx, wy, 1.6 * sc, 2.4 * sc, starred(n) ? GOLD : solved(n) ? 9 : 1);
+  }
+  rectfill(x - w * 0.8, y - hgt - 6 * sc, w * 1.6, 6 * sc, 1); // the lamp room
+  if (storySeen(ENDED)) {
+    circfill(x, y - hgt - 3 * sc, 2 * sc, 207);
+    const a = clock / 60, len = 120, ex = x + Math.cos(a) * len, ey = y - hgt - 3 * sc + Math.sin(a) * len * 0.25;
+    for (let k = -1; k <= 1; k++) line(x, y - hgt - 3 * sc + k, ex, ey + k * 3, 199);
+  } else rectfill(x - sc, y - hgt - 4 * sc, 2 * sc, 2 * sc, 2);
+}
+
 function drawTitle() {
-  ctxt('LANTERN KEEPER', 50, GOLD);
-  ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
+  drawTower(196, 212, 3);
+  txt('LANTERN', 24, 40, GOLD); txt('KEEPER', 32, 54, GOLD);
+  ['PLAY', 'RECORDS'].forEach((t, i) => txt(`${i === titleSel ? '> ' : '  '}${t}`, 32, 100 + i * 14, i === titleSel ? WHITE : DIM));
+  let lit = 0; for (let n = 0; n < ROOMS.length; n++) if (solved(n)) lit++;
+  if (lit) txt(`${lit} OF ${ROOMS.length} ROOMS LIT`, 24, 196, DIM);
+}
+
+/** The floor map: the lighthouse cut open, four floors of ten rooms (floor 1 at the bottom), a window each. */
+function drawMap() {
+  const sf = Math.floor(mapSel / FLOOR_ROOMS);
+  for (let f = 0; f < 4; f++) {
+    const y = 160 - f * 40, reached = opened(f * FLOOR_ROOMS);
+    rectfill(16, y, 224, 34, reached ? 2 : 1); rect(16, y, 224, 34, f === sf ? GOLD : 3);
+    txt(`${f + 1} ${FLOOR_NAMES[f]}`, 22, y + 3, reached ? WHITE : 3);
+    for (let i = 0; i < FLOOR_ROOMS; i++) {
+      const n = f * FLOOR_ROOMS + i, wx = 22 + i * 21, wy = y + 14;
+      rectfill(wx, wy, 15, 15, !opened(n) ? 3 : solved(n) ? 9 : SHADOW); // shuttered, lit, open and dark
+      if (!opened(n)) for (let k = 2; k < 15; k += 4) line(wx, wy + k, wx + 14, wy + k, 1);
+      if (starred(n)) { pset(wx + 7, wy + 4, WHITE); rectfill(wx + 5, wy + 6, 5, 3, WHITE); pset(wx + 5, wy + 10, WHITE); pset(wx + 9, wy + 10, WHITE); }
+      if (n === mapSel) rect(wx - 2, wy - 2, 19, 19, clock % 40 < 28 ? GOLD : DIM);
+    }
+  }
+  const n = mapSel;
+  txt(`${n + 1} ${nameRoom(n)}`, 16, 6, WHITE);
+  txt(solved(n) ? `BEST ${best(n)}  PAR ${parRoom(n)}${starred(n) ? '  STAR' : ''}` : `PAR ${parRoom(n)}`, 16, 206, solved(n) ? GOLD : DIM);
+  txt('B: TITLE', 184, 206, DIM);
+}
+
+/** The story (SPEC 10): a page after the start, after each of floors 1 to 3, and the ending. */
+const STORY = [
+  ['THE STORM CAME UP AT DUSK,', 'AND THE GREAT LAMP OF', 'GREYWATER LIGHT WENT OUT.', '', 'SHIPS ARE OUT THERE', 'IN THE DARK.', '', 'CARRY THE LIGHT UP,', 'ROOM BY ROOM, TO THE LAMP.'],
+  ['THE STAIR IS LIT.', '', 'THE OLD KEEPER\'S MIRRORS', 'STILL TURN TRUE.'],
+  ['THE GLASS ROOM RINGS', 'WITH COLOUR.', '', 'ABOVE IT, THE CLOCKWORK', 'WAITS.'],
+  ['THE GEARS TURN.', '', 'ONLY THE LAMP GALLERY', 'IS LEFT, DARK AS THE SEA.'],
+  ['THE GREAT LAMP BURNS.', '', 'ITS BEAM SWEEPS THE WATER,', 'AND ONE BY ONE THE SHIPS', 'TURN FOR HOME.', '', 'DAWN COMES UP', 'OVER GREYWATER.'],
+];
+function drawStory() {
+  if (page === ENDED) drawTower(200, 214, 2);
+  const lines = STORY[page], y0 = 100 - lines.length * 6;
+  lines.forEach((l, i) => txt(l, 24, y0 + i * 12, i === 0 ? GOLD : WHITE));
+  if (timer > 30 && timer % 60 < 40) txt('A: ON', 24, 200, DIM);
 }
 
 function drawRecords() {
   panel(24, 16, 208, 192);
   ctxt('RECORDS', 24, GOLD);
-  ctxt('THE ROOMS LIT AND THE STARS', 60, DIM); ctxt('COME WITH THE FLOORS (STEP 4)', 74, DIM);
+  let lit = 0, stars = 0, mv = 0, par = 0;
+  for (let n = 0; n < ROOMS.length; n++) if (solved(n)) { lit++; mv += best(n); par += parRoom(n); if (starred(n)) stars++; }
+  txt(`ROOMS LIT   ${lit} OF ${ROOMS.length}`, 40, 52, WHITE);
+  txt(`STARS       ${stars} OF ${ROOMS.length}`, 40, 66, WHITE);
+  txt(`MOVES       ${mv} (PAR ${par})`, 40, 80, lit ? WHITE : DIM);
+  FLOOR_NAMES.forEach((f, k) => {
+    let s = 0; for (let n = k * FLOOR_ROOMS; n < (k + 1) * FLOOR_ROOMS; n++) if (starred(n)) s++;
+    txt(f, 40, 108 + k * 14, opened(k * FLOOR_ROOMS) ? WHITE : DIM); txt(`${s}/10`, 176, 108 + k * 14, s === 10 ? GOLD : DIM);
+  });
   if (timer % 60 < 40) ctxt('START: BACK', 192, DIM);
 }
 
 function drawSolved() {
-  panel(40, 170, 176, 48); // (at the bottom, so the lit room shows)
-  ctxt('THE ROOM IS LIT', 176, GOLD);
-  ctxt(`${moves()} MOVES   PAR ${room.par}`, 190, WHITE);
-  if (timer > 30 && timer % 60 < 40) ctxt(roomNo + 1 < ROOMS.length ? 'A: NEXT ROOM' : 'A: TO THE TITLE', 204, DIM);
+  panel(40, 138, 176, 82); // (at the bottom, so the lit room shows)
+  const star = moves() <= room.par;
+  ctxt('THE ROOM IS LIT', 143, GOLD);
+  ctxt(`${moves()} MOVES  PAR ${room.par}${star ? '  STAR' : ''}`, 155, star ? GOLD : WHITE);
+  if (wasBest && moves() < wasBest) ctxt(`A NEW BEST (WAS ${wasBest})`, 167, WHITE);
+  SOLVED_ITEMS().forEach((t, i) => txt(`${i === solvedSel ? '>' : ' '} ${t}`, 80, 182 + i * 11, timer < 30 ? 1 : i === solvedSel ? WHITE : DIM));
 }
 
 function drawPause() {
-  panel(56, 80, 144, 64);
-  ctxt('PAUSED', 88, GOLD);
-  PAUSE_ITEMS.forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 72, 104 + i * 10, i === pauseSel ? WHITE : DIM));
+  panel(56, 72, 144, 76);
+  ctxt('PAUSED', 80, GOLD);
+  PAUSE_ITEMS.forEach((t, i) => txt(`${i === pauseSel ? '>' : ' '} ${t}`, 72, 96 + i * 11, i === pauseSel ? WHITE : DIM));
 }
 
 function panel(x, y, w, h) { rectfill(x, y, w, h, SHADOW); rect(x, y, w, h, PANEL); }
