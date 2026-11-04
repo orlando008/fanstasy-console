@@ -121,6 +121,16 @@
       "png": "carts/ice-breakers.nova.png"
     },
     {
+      "name": "lantern-keeper",
+      "title": "Lantern Keeper",
+      "author": "NOVA-16",
+      "description": "The great lamp of Greywater Light has gone out in a storm. Move and turn mirrors, splitters, prisms and coloured glass to carry the beam to every lens, through forty rooms on four floors up to the lamp. Each room has a par to beat for its star.",
+      "genre": "Puzzle",
+      "players": "1",
+      "label": "carts/labels/lantern-keeper.png",
+      "png": "carts/lantern-keeper.nova.png"
+    },
+    {
       "name": "tricksy-towerz",
       "title": "Tricksy Towerz",
       "author": "NOVA-16",

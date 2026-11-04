@@ -35,16 +35,6 @@ ROOM THE BOLT PAR 1
 #######
 B: mirror \ bolted
 
-ROOM THE LANDING PAR 2
-#########
-#.......#
-#...\...#
-#...\...#
-#..\#..<#
-#.......#
-#....#.o#
-#########
-
 ROOM THE OIL STORE PAR 2
 #########
 #....../#
@@ -55,28 +45,15 @@ ROOM THE OIL STORE PAR 2
 #.o^....#
 #########
 
-ROOM TWIN LAMPS PAR 3
-##########
-#o...v...#
-#...../..#
-##.../#/.#
-#....A...#
-#.....#..#
-#........#
-#o^......#
-##########
-A: mirror \ bolted
-
-ROOM THE NEWEL PAR 3
-##########
-#...v..o.#
-#........#
-#..\..<#.#
-#....\.#.#
-#...#\...#
-#./......#
-#o\..\...#
-##########
+ROOM THE LANDING PAR 2
+#########
+#.......#
+#...\...#
+#...\...#
+#..\#..<#
+#.......#
+#....#.o#
+#########
 
 ROOM THE WINDING PAR 3
 ##########
@@ -90,6 +67,18 @@ ROOM THE WINDING PAR 3
 ##########
 A: mirror / bolted
 
+ROOM TWIN LAMPS PAR 3
+##########
+#o...v...#
+#...../..#
+##.../#/.#
+#....A...#
+#.....#..#
+#........#
+#o^......#
+##########
+A: mirror \ bolted
+
 ROOM THE KEEPER'S ROOM PAR 3
 ##########
 #.....v..#
@@ -101,19 +90,27 @@ ROOM THE KEEPER'S ROOM PAR 3
 #/..o.#..#
 ##########
 
-ROOM THE TOP STEP PAR 4
-###########
-#..#v.o...#
-##....A...#
-#\/o..B..##
-#\\.......#
-#./....../#
-#..#>.....#
-#.........#
-#..o.^../.#
-###########
-A: mirror \ bolted
-B: mirror \ fixed
+ROOM THE STAIRHEAD PAR 3
+##########
+#......v.#
+#...#.^..#
+#././.#..#
+#../.....#
+#o..\....#
+#...o.\\.#
+#.......##
+##########
+
+ROOM THE NEWEL PAR 3
+##########
+#...v..o.#
+#........#
+#..\..<#.#
+#....\.#.#
+#...#\...#
+#./......#
+#o\..\...#
+##########
 
 ROOM THE HALF MIRROR PAR 1
 #########
@@ -272,6 +269,31 @@ g: lens green
 b: lens blue
 P: prism E
 
+ROOM TWO AT ONCE PAR 2
+###########
+#.......Y.#
+#.........#
+#>...P....#
+#.........#
+#.\.....\.#
+#....b....#
+###########
+P: prism E fixed
+Y: lens yellow
+b: lens blue
+
+ROOM THE SHUTTER PAR 1
+##########
+#...a....#
+#........#
+#>...D..o#
+#........#
+#.s......#
+##########
+a: lens key1
+D: door key1
+s: splitter /
+
 ROOM THE RAINBOW PAR 3
 ###########
 #AB....C..#
@@ -289,18 +311,6 @@ C: prism N
 D: lens blue
 E: lens green
 
-ROOM THE SHUTTER PAR 1
-##########
-#...a....#
-#........#
-#>...D..o#
-#........#
-#.s......#
-##########
-a: lens key1
-D: door key1
-s: splitter /
-
 ROOM THE ESCAPEMENT PAR 3
 ###########
 #A....#..##
@@ -316,18 +326,21 @@ B: door key1
 C: mirror \ bolted
 D: lens white key1
 
-ROOM TWO AT ONCE PAR 2
-###########
-#.......Y.#
-#.........#
-#>...P....#
-#.........#
-#.\.....\.#
-#....b....#
-###########
-P: prism E fixed
-Y: lens yellow
-b: lens blue
+ROOM THE MAINSPRING PAR 4
+############
+#/./.......#
+#..../..#>o#
+#.....\....#
+#..........#
+#.....#.\..#
+#....A.....#
+#o...B.....#
+#.#........#
+#>......C..#
+############
+A: lens white key1
+B: door key1
+C: splitter \ bolted
 
 ROOM THE GEAR TRAIN PAR 4
 ############
@@ -376,22 +389,6 @@ A: lens blue
 B: lens yellow
 C: prism E fixed
 
-ROOM THE MAINSPRING PAR 4
-############
-#/./.......#
-#..../..#>o#
-#.....\....#
-#..........#
-#.....#.\..#
-#....A.....#
-#o...B.....#
-#.#........#
-#>......C..#
-############
-A: lens white key1
-B: door key1
-C: splitter \ bolted
-
 ROOM THE STRIKING HOUR PAR 4
 ############
 #..v/......#
@@ -426,6 +423,18 @@ ROOM THE BLACK LENS PAR 2
 #./\.....#
 ##########
 
+ROOM EYES IN THE DARK PAR 3
+###########
+#x........#
+#A.^......#
+#.x#......#
+#...../...#
+#.x.......#
+#o#\......#
+##....\/..#
+###########
+A: mirror \ bolted
+
 ROOM THE BLIND STAIR PAR 3 DARK
 ###########
 #...../A..#
@@ -439,30 +448,18 @@ ROOM THE BLIND STAIR PAR 3 DARK
 ###########
 A: mirror \ fixed
 
-ROOM EYES IN THE DARK PAR 3
-###########
-#x........#
-#A.^......#
-#.x#......#
-#...../...#
-#.x.......#
-#o#\......#
-##....\/..#
-###########
-A: mirror \ bolted
-
-ROOM FOG PAR 4 DARK
+ROOM THE LENS GALLERY PAR 4
 ############
-#....\.v...#
-#.#/.......#
-#./.#...^..#
-#.......#.<#
-#...\\...\.#
-#.#....A\..#
-#./.o...o..#
-#.o........#
+#.#\......v#
+#....../x.A#
+#.....o...o#
+#.....\...##
+#..\...#...#
+#.x.......x#
+#.........\#
+#..^...o...#
 ############
-A: mirror \ bolted
+A: splitter \ bolted
 
 ROOM THE WATCH ROOM PAR 4
 ############
@@ -494,32 +491,32 @@ D: mirror \ fixed
 E: lantern E green
 F: lens yellow
 
-ROOM THE LENS GALLERY PAR 4
+ROOM FOG PAR 4 DARK
 ############
-#.#\......v#
-#....../x.A#
-#.....o...o#
-#.....\...##
-#..\...#...#
-#.x.......x#
-#.........\#
-#..^...o...#
+#....\.v...#
+#.#/.......#
+#./.#...^..#
+#.......#.<#
+#...\\...\.#
+#.#....A\..#
+#./.o...o..#
+#.o........#
 ############
-A: splitter \ bolted
+A: mirror \ bolted
 
-ROOM THE LAST DOOR PAR 3 DARK
+ROOM THE TOP STEP PAR 4 DARK
 ###########
-#.......#.#
-#.......v.#
-#.......\.#
-#......AB.#
-##..\.....#
-#C.....\..#
-#..o#./...#
+#..#v.o...#
+##....A...#
+#\/o..B..##
+#\\.......#
+#./....../#
+#..#>.....#
+#.........#
+#..o.^../.#
 ###########
-A: door key1
-B: splitter \ bolted
-C: lens white key1
+A: mirror \ bolted
+B: mirror \ fixed
 
 ROOM THE GREAT LAMP PAR 6
 #############

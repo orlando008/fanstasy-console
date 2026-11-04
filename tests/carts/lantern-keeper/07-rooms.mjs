@@ -53,6 +53,15 @@ ok(rooms.length === 40, 'forty rooms', `${rooms.length}`);
   const ends = halves.map(([, b]) => b); // (each floor begins with rooms that teach, so its last five say how hard it is)
   ok(ends.every((v, f) => !f || v > ends[f - 1]), 'and each floor ends harder than the one below', ends.map((v) => v.toFixed(1)).join(' '));
 }
+// 3b. Past its teaching rooms (the last room that brings a new idea), a floor's pars never drop (step 8 sorted them).
+{
+  const met = new Set(), lastNew = [0, 0, 0, 0];
+  rooms.forEach((r, k) => { const fresh = [...ideas(r)].filter((i) => !met.has(i)); if (fresh.length) lastNew[Math.floor(k / 10)] = k; ideas(r).forEach((i) => met.add(i)); });
+  const drops = [];
+  for (let f = 0; f < 4; f++) for (let k = lastNew[f] + 2; k < f * 10 + 10; k++) if (rooms[k].par < rooms[k - 1].par) drops.push(`room ${k + 1}`);
+  ok(!drops.length, 'past its teaching rooms, each floor\'s pars never drop', drops.join(', '));
+}
+
 // 4. Not too many answers: a room past its floor's first three has at most 4 at par.
 {
   const t0 = Date.now(), counts = rooms.map((r) => solve(r, { count: true, cap: 50 }).answers);

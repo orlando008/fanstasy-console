@@ -1,7 +1,7 @@
 # Lantern Keeper: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Steps 1 to 7 built (the rules, the solver and bot, the forty rooms, the screens and saves, the art, the audio, the polish); step 8 to come
+**Version:** 1.0
+**Status:** Built (steps 1 to 8), released in the Library
 **Cart source:** `carts/src/lantern-keeper/` → `carts/lantern-keeper.nova`
 
 ---
@@ -119,13 +119,14 @@ the ROM blob `rooms` by `node carts/src/lantern-keeper/rooms.mjs`; the same file
 
 | Floor | Name | Ideas | The rooms (par) |
 |---|---|---|---|
-| 1 | The Stair | white lanterns, mirrors, walls, bolted and fixed pieces, two lenses | First Light (1), Two Turns (2), **The Bolt** (1), The Landing (2), The Oil Store (2), Twin Lamps (3), The Newel (3), The Winding (3), The Keeper's Room (3), The Top Step (4) |
+| 1 | The Stair | white lanterns, mirrors, walls, bolted and fixed pieces, two lenses | First Light (1), Two Turns (2), **The Bolt** (1), The Oil Store (2), The Landing (2), The Winding (3), Twin Lamps (3), The Keeper's Room (3), The Stairhead (3), The Newel (3) |
 | 2 | The Glass Room | splitters, coloured lanterns, filters, lenses that need an exact colour, two beams mixing | **The Half Mirror** (1), Two Ways (2), **Red and Blue** (2), **Red Glass** (1), **Two Lights** (1), Stained Glass (3), The Panes (3), Purple Hour (4), The Glassworks (4), The Chandelier (4) |
-| 3 | The Clockwork | prisms, doors opened by lenses, a lens lit by two beams at once | **The Prism** (1), The Rainbow (3), **The Shutter** (1), The Escapement (3), Two at Once (2), The Gear Train (4), The Pendulum (4), The Chime (4), The Mainspring (4), The Striking Hour (4) |
-| 4 | The Lamp Gallery | dark rooms, shadow lenses, everything at once; room 40 is the lamp room, the great lamp the last lens | **In the Dark** (2), **The Black Lens** (2), The Blind Stair (3), Eyes in the Dark (3), Fog (4), The Watch Room (4), The Storm Glass (4, dark), The Lens Gallery (4), The Last Door (3, dark), The Great Lamp (6) |
+| 3 | The Clockwork | prisms, doors opened by lenses, a lens lit by two beams at once | **The Prism** (1), **Two at Once** (2), **The Shutter** (1), The Rainbow (3), The Escapement (3), The Mainspring (4), The Gear Train (4), The Pendulum (4), The Chime (4), The Striking Hour (4) |
+| 4 | The Lamp Gallery | dark rooms, shadow lenses, everything at once; room 40 is the lamp room, the great lamp the last lens | **In the Dark** (2), **The Black Lens** (2), Eyes in the Dark (3), The Blind Stair (3, dark), The Lens Gallery (4), The Watch Room (4), The Storm Glass (4, dark), Fog (4, dark), The Top Step (4, dark), The Great Lamp (6) |
 
 The rooms in bold teach an idea alone (par 1 or 2); the rest combine it with what came before. Each floor's last five rooms
-average a higher par than the floor below's (3.2, 3.6, 4.0, 4.2), and its last five a higher par than its first five.
+average a higher par than the floor below's (3.0, 3.6, 4.0, 4.4), its last five a higher par than its first five, and past its
+teaching rooms a floor's pars never drop (step 8 sorted each floor's rooms by how hard they measure).
 The teaching rooms and The Great Lamp are written by hand; the others were chosen from the room designer's output
 (`carts/src/lantern-keeper/design.mjs`): it builds a room backwards from its answer (lanterns by the walls, pieces where the light
 already is, lenses where beams end, or on a dark cell with two mirrors of their own bringing a beam to it, or where two colours
@@ -447,6 +448,24 @@ Each step: build it, run `node tools/verify.js lantern-keeper` (and `node tools/
   press twice where a page is still writing (`pageOn`), and read pixels after the iris.
 - **Results:** 242 checks pass; `colors.mjs --check` within the limits (muddy panels 0.01); `snes.mjs` 88 of 100 (75 before); the code
   33.7 KB (51 %); the smoke test 60 fps. A clip of a room solved and the title in the storm was made for the user.
+
+### Step 8 built: the balance and the release
+
+- **The curve, measured:** for each room its par, the pieces that can change (decoys add to the thinking), its lenses, its answers at
+  par (fewer is harder) and the solver's search, made into one score (`par + 0.35 x decoys + 0.4 x (lenses - 1) + 0.45 x log10(search)
+  - 0.25 x (answers - 1)`, half a point more in the dark). It showed each floor's rooms not quite in order (The Mainspring at 6.8
+  between rooms of 7.6), Floor 1 ending in a spike (The Top Step, 8.8 after a 6.3: eight pieces and three lenses, harder than most of
+  floor 2) and Fog (9.3) in the middle of floor 4.
+- **The changes:** each floor's rooms after its teaching rooms sorted by the score (keeping every idea after the room that teaches it);
+  The Top Step moved to floor 4 as a dark room, the last before The Great Lamp (its name fits), and The Last Door (a mild par-3 door room)
+  gave it its place; floor 1's new end before The Newel is **The Stairhead**, from the designer's unused rooms (par 3, one answer, a
+  score of 6.1); Two at Once (a teaching room for a lens lit by two beams) moved to just after The Prism. Now each floor's scores rise
+  past its teaching rooms (floor 1: 5.6 to 6.3; floor 2: 5.9 to 7.9; floor 3: 6.0 to 7.6; floor 4: 4.8 to 9.3, then the lamp), and
+  `07-rooms.mjs` checks the pars never drop past a floor's teaching rooms.
+- **The release:** the label is the title (the lettering, the lighthouse in the rain; `node tools/release.js lantern-keeper`), the
+  `.nova.png` holds 56 KB of its 147 (38 %), the Library entry is on the Puzzle shelf (1 player), and the README has its row.
+- **Results:** 243 checks pass; the solver's pars agree in every order of the pieces; the bot solves all forty at par through the
+  buttons; `colors.mjs --check` within its limits; `snes.mjs` 88 of 100; the code 33.7 KB; the smoke test 60 fps.
 
 ## 16. Open questions
 
