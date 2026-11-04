@@ -1,6 +1,8 @@
 // Lantern Keeper: the frame (title, a room, the room menu, solved) and its sound cues. One PASS/FAIL line for each behaviour.
 import { newGame, M, sfxLog } from './lib.mjs';
 import { solve } from './solver.mjs';
+const pageOn = (vm, p) => { vm.run(13); const pg = p.page; vm.press('A'); vm.run(1); if (p.state === 'story' && p.page === pg) vm.press('A'); }; // (the first press may only finish writing the page)
+
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 
@@ -13,7 +15,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
   sfxLog(vm); vm.press('A');
   ok(p.state === 'story', 'PLAY the first time shows the story\'s first page');
-  vm.run(35); vm.press('A'); ok(p.state === 'map' && p.mapSel === 0, 'then the floor map, on the first room');
+  pageOn(vm, p); ok(p.state === 'map' && p.mapSel === 0, 'then the floor map, on the first room');
   vm.run(15); vm.press('A'); ok(p.state === 'play' && p.roomNo === 0 && p.playing === p.SONG.floors[0], 'A opens it, with the first floor\'s song');
 }
 
@@ -39,7 +41,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.run(30); vm.press('A'); ok(p.state === 'play' && p.roomNo === 1 && p.moves() === 0, 'then A opens the next room');
   p.loadRoom(p.ROOMS.length - 1); for (const a of solve(p.room).answer) Object.assign(p.pieces[a.i], { x: a.x, y: a.y, r: a.r }); p.relight(); vm.run(40); vm.press('A');
   ok(p.state === 'story' && p.page === 4, 'after the last room, the ending');
-  vm.run(35); vm.press('A'); ok(p.state === 'title', 'and then the title');
+  pageOn(vm, p); ok(p.state === 'title', 'and then the title');
 }
 
 // 4. Frames are quick: a room with its light traced every frame of moving.

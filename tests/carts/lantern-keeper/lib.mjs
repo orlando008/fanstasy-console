@@ -13,6 +13,7 @@ const PROBE = `__expose(() => ({
   get cx() { return cx; }, set cx(v) { cx = v; }, get cy() { return cy; }, set cy(v) { cy = v; }, get held() { return held; },
   get hist() { return hist; }, get pos() { return pos; }, set pos(v) { pos = v; }, moves, loadRoom, relight, pieceAt, ROOMS, SFX, SONG, TURNS,
   mget: (x, y) => mget(x, y), get screen() { return screen; }, ROOM_BG0, ROOM_BG1, STAMP, TOWER, CUT, towerWindow, ox, oy, color: (i) => color(i), get clock() { return clock; },
+  get flares() { return flares; }, get gx() { return gx; }, FADE, FLARE, FLOOD, STORY, storyLength, rom: (n) => rom(n),
   get mapSel() { return mapSel; }, get page() { return page; }, get solvedSel() { return solvedSel; }, toMap, best, solved, opened, starred, nextRoom, storySeen, BEST_SLOT, STORY_SLOT, LAST_SLOT,
 }));`;
 

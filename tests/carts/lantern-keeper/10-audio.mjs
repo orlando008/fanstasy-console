@@ -5,6 +5,8 @@
 import { readFileSync } from 'node:fs';
 import { newGame, M, sfxLog, musicLog } from './lib.mjs';
 import { solve } from './solver.mjs';
+const pageOn = (vm, p) => { vm.run(13); const pg = p.page; vm.press('A'); vm.run(1); if (p.state === 'story' && p.page === pg) vm.press('A'); }; // (the first press may only finish writing the page)
+
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 const played = (vm, p, name, extra = 0) => sfxLog(vm).some(([n, ch]) => n === p.SFX[name] + extra && ch >= 6);
@@ -57,7 +59,7 @@ const fresh = (save, title = false) => { const vm = newGame(1, { title, save }),
   vm.run(12); vm.press('RIGHT'); vm.press('UP'); p.loadRoom(9); vm.run(1); sfxLog(vm);
   for (const a of solve(p.room).answer) Object.assign(p.pieces[a.i], { x: a.x, y: a.y, r: a.r }); p.relight(); vm.run(31); sfxLog(vm); vm.press('A');
   ok(p.state === 'story' && sfxLog(vm).some(([n]) => n === p.SFX.stair), 'a floor done: the stair opens (a swell), then its page');
-  vm.run(31); vm.press('A'); ok(played(vm, p, 'page') && p.playing === p.SONG.floors[1], 'the page turns, and the second floor\'s song (the Prelude)');
+  sfxLog(vm); pageOn(vm, p); ok(sfxLog(vm).some(([n]) => n === p.SFX.page) && p.state === 'map' && p.playing === p.SONG.floors[1], 'the page turns, and the second floor\'s song (the Prelude)');
   for (const [n, s] of [[20, 2], [30, 3]]) { p.loadRoom(n); vm.run(1); ok(p.playing === p.SONG.floors[s], `a room of floor ${s + 1} plays its floor's song`); }
   const t = fresh(null, false); let thunder = false; for (let i = 0; i < 4000 && !thunder; i++) { t.vm.run(1); thunder = sfxLog(t.vm).some(([n]) => n === t.p.SFX.thunder); }
   ok(thunder, 'the storm: thunder now and then');

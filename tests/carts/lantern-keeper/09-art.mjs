@@ -24,7 +24,7 @@ const stampAt = (sc, sr) => p.mget(p.STAMP.mx + sc * 2, p.STAMP.my + sr * 2);
   ok(p.screen === 'room' && L(0).show && L(1).show && L(2).show && L(0).mx === p.ROOM_BG0 && L(1).mx === p.ROOM_BG1 && L(2).wrap, 'a room: the walls, the floor, and the sea repeating below');
   const sx = L(2).x; vm.run(16); ok(L(2).x !== sx || L(2).y !== L(2).y, 'the sea drifts');
   const t = newGame(1, { title: true }), q = t.probe(); t.run(2);
-  ok(q.screen === 'sky' && !t.ppu.layers[0].show && t.ppu.layers[1].mx === manifest.scenes.title.mx && t.ppu.layers[2].mx === manifest.scenes.stars.mx, 'the title: the lighthouse on its rock, the stars behind it');
+  ok(q.screen === 'sky' && t.ppu.layers[0].show && t.ppu.layers[0].mx === manifest.scenes.logo.mx && t.ppu.layers[1].mx === manifest.scenes.title.mx && t.ppu.layers[2].mx === manifest.scenes.stars.mx, 'the title: its lettering, the lighthouse on its rock, the stars behind it');
   q.toMap(0); t.run(2); ok(q.screen === 'cut' && t.ppu.layers[1].mx === manifest.scenes.cutaway.mx, 'the floor map: the lighthouse cut open');
 }
 
@@ -47,7 +47,7 @@ const stampAt = (sc, sr) => p.mget(p.STAMP.mx + sc * 2, p.STAMP.my + sr * 2);
 
 // 4. Windows, the light on the floor, the floors' colours.
 {
-  p.loadRoom(1); vm.run(1); const { w, h, wall } = p.room, win = stampAt(2, 4);
+  p.loadRoom(1); vm.run(20); const { w, h, wall } = p.room, win = stampAt(2, 4); // (after the fade-in)
   let wx = -1, wy = -1; for (let y = 0; y < h && wx < 0; y++) for (let x = 0; x < w; x++) if (wall[y * w + x] && at(p.ROOM_BG0, x, y) === win) { wx = x; wy = y; break; }
   const px = vm.out32[(p.oy() + wy * 16 + 7) * 256 + p.ox() + wx * 16 + 5] >>> 0;
   const seaRGB = Object.values(manifest.palettes.bg4.colors).map((k) => { const [r, g, b] = p.color(manifest.palettes.bg4.base + k); return ((r << 3 | r >> 2) | (g << 3 | g >> 2) << 8 | (b << 3 | b >> 2) << 16 | 0xff000000) >>> 0; });
@@ -77,10 +77,10 @@ const stampAt = (sc, sr) => p.mget(p.STAMP.mx + sc * 2, p.STAMP.my + sr * 2);
 // 6. The title's windows and the map's shutters.
 {
   const save = new Array(256).fill(0); save[0] = 1; save[2] = 1; save[10] = 1; save[11] = 9; // (room 1 at par: a star; room 2 over par)
-  const t = newGame(1, { title: true, save }), q = t.probe(); t.run(2);
+  const t = newGame(1, { title: true, save }), q = t.probe(); t.run(20);
   const pix = (x, y) => t.out32[y * 256 + x] >>> 0, [x1, y1] = q.towerWindow(0), [x3, y3] = q.towerWindow(2);
   ok(pix(x1 + 1, y1 + 3) !== pix(x3 + 1, y3 + 3), 'the title: a room solved is a lit window, one not solved is dark');
-  q.toMap(1); t.run(2);
+  q.toMap(1); t.run(20);
   const wx = (i) => q.CUT.x + 6 + i * q.CUT.win, wy = q.CUT.y0 + 14;
   ok(pix(wx(3) + 7, wy + 1) !== pix(wx(1) + 7, wy + 1) && pix(wx(3) + 7, wy + 1) !== pix(wx(2) + 7, wy + 1), 'the map: a window lit, one open and dark, one shuttered, all different');
 }

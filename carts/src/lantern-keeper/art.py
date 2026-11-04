@@ -33,32 +33,33 @@ STAMP = {'mx': 0, 'my': 100}                 # the stamp library in Map RAM (til
 
 # ---------------------------------------------------------------- palettes
 # The floors' colours: floor dark (BG palette 1), floor lit (2), walls (3), one set each floor. The roles' order fixes the indices:
-# f0..f5 the floor's ramp, acc0..acc2 its accent (moss, glass, brass), shade (the shadow a wall casts), gap (the joints).
+# f0..f5 the floor's ramp (a gradient between two ends, dark for the dark floor and light for the lit one: ramp() spreads every ramp from
+# near black to near white, and the lit floor's middle shades came out hardly lighter than the dark's), acc0..acc2 its accent (moss, glass, brass), shade (the shadow a wall casts), gap (the joints).
 THEMES = [
     # 1 the Stair: grey-violet stone flags, moss in the joints
-    {'dark': {'f': ramp('4a4658', 6), 'acc': ramp('4a5a3a', 3), 'shade': '161320', 'gap': '0e0c14'},
-     'lit': {'f': ramp('a89a86', 6), 'acc': ramp('8a9a5a', 3), 'shade': '4a3e36', 'gap': '2a221c'},
+    {'dark': {'f': gradient('15131c', '6e6880', 6), 'acc': ramp('4a5a3a', 3), 'shade': '161320', 'gap': '0e0c14'},
+     'lit': {'f': gradient('483c32', 'bca888', 6), 'acc': ramp('8a9a5a', 3), 'shade': '4a3e36', 'gap': '2a221c'},
      'wall': {'w': ramp('5c5668', 6), 'frame': ramp('6a4a30', 3), 'mortar': '18141e'}},
     # 2 the Glass Room: blue slate, glass inlay that catches the light
-    {'dark': {'f': ramp('34404e', 6), 'acc': ramp('2a6a7a', 3), 'shade': '10141c', 'gap': '0a0c12'},
-     'lit': {'f': ramp('8494a8', 6), 'acc': ramp('8ae8f0', 3), 'shade': '343c4a', 'gap': '1c2028'},
+    {'dark': {'f': gradient('0e1218', '566474', 6), 'acc': ramp('2a6a7a', 3), 'shade': '10141c', 'gap': '0a0c12'},
+     'lit': {'f': gradient('3a4654', 'a4b6c6', 6), 'acc': ramp('8ae8f0', 3), 'shade': '343c4a', 'gap': '1c2028'},
      'wall': {'w': ramp('46525e', 6), 'frame': ramp('8aa4b4', 3), 'mortar': '12161c'}},
     # 3 the Clockwork: an iron grating, brass gears below
-    {'dark': {'f': ramp('44403c', 6), 'acc': ramp('3c3220', 3), 'shade': '141210', 'gap': '0a0908'},
-     'lit': {'f': ramp('9c9080', 6), 'acc': ramp('e0b860', 3), 'shade': '3c342a', 'gap': '1e1a14'},
+    {'dark': {'f': gradient('121010', '646058', 6), 'acc': ramp('3c3220', 3), 'shade': '141210', 'gap': '0a0908'},
+     'lit': {'f': gradient('443a2e', 'bcaa8c', 6), 'acc': ramp('e0b860', 3), 'shade': '3c342a', 'gap': '1e1a14'},
      'wall': {'w': ramp('544c46', 6), 'frame': ramp('8a6a34', 3), 'mortar': '141210'}},
     # 4 the Lamp Gallery: worn stone edged in brass
-    {'dark': {'f': ramp('4c4034', 6), 'acc': ramp('6a5a2c', 3), 'shade': '161008', 'gap': '0c0806'},
-     'lit': {'f': ramp('c0a07a', 6), 'acc': ramp('f0d07a', 3), 'shade': '4a3a28', 'gap': '2a2014'},
+    {'dark': {'f': gradient('140e0a', '6e5e4c', 6), 'acc': ramp('6a5a2c', 3), 'shade': '161008', 'gap': '0c0806'},
+     'lit': {'f': gradient('503c2a', 'c8a676', 6), 'acc': ramp('f0d07a', 3), 'shade': '4a3a28', 'gap': '2a2014'},
      'wall': {'w': ramp('6a5848', 6), 'frame': ramp('b08a48', 3), 'mortar': '1a120c'}},
 ]
 floor_dark = art.palette(1, THEMES[0]['dark'])
 floor_lit = art.palette(2, THEMES[0]['lit'])
 wall = art.palette(3, THEMES[0]['wall'])
 sea = art.palette(4, {'sea': ramp('1a3048', 5), 'foam': ramp('8ab4c8', 2)})
-void = art.palette(5, {'v': ramp('16141e', 3)})
+void = art.palette(5, {'v': ramp('16141e', 3), 'gold': ramp('e8b040', 5), 'ink': '0a0812', 'ember': ramp('a03c18', 2)})   # (and the title's lettering)
 tower = art.palette(6, {'stone': ramp('c8c0b4', 5), 'band': ramp('8a2a2a', 3), 'rock': ramp('3a3640', 4), 'brass': ramp('8a6a30', 2), 'win': '120e14'})
-night = art.palette(7, {'sea': ramp('16263a', 4), 'foam': ramp('7a9cb4', 2), 'star': ramp('8a8aa0', 2), 'moon': 'e8e4d0'})
+night = art.palette(7, {'sea': ramp('16263a', 4), 'foam': ramp('7a9cb4', 2), 'star': ramp('8a8aa0', 2)})
 art.gradient('sky', ['05060e', '0c1026', '1a2242', '2a2e4a'], y0=0, y1=223)        # the title's and the story's night sky
 
 
@@ -253,13 +254,10 @@ for n in range(40):
     for yy in range(y, y + 5):
         for xx in range(x, x + 3): title.px[yy][xx] = T.win
 art.scene('title', title, pal=tower, at=(0, 32))
-# the stars and the moon (BG2, behind the tower)
+# the stars (BG2, behind the tower)
 sky = Img(256, 224)
 stars(sky, list(N.star), density=0.006, y0=0, y1=160, seed=7)
-for y in range(20, 36):
-    for x in range(40, 56):
-        d = math.hypot(x - 47.5, y - 27.5)
-        if d < 7.5: sky.px[y][x] = N.moon if math.hypot(x - 50, y - 25) > 5 else 0
+# (no moon: a storm; the stars drift slowly behind the tower, code.js, and would carry a moon under the story's words)
 art.scene('stars', sky, pal=night, at=(32, 32))
 
 # ---------------------------------------------------------------- the floor map: the lighthouse cut open (256 x 224)
@@ -271,7 +269,7 @@ for f in range(4):
             u, v = x - CUT['x'], y - y0
             edge = u < 3 or u > 256 - 2 * CUT['x'] - 4 or v < 2 or v > CUT['h'] - 3
             brick = (v % 8 == 0) or ((u + (8 if (v // 8) % 2 else 0)) % 16 == 0)
-            cut.px[y][x] = T.stone[0] if edge else T.rock[1] if brick else T.rock[2] if (u * 7 + v * 3) % 11 else T.rock[3]
+            cut.px[y][x] = T.brass[1] if edge else T.win if brick else T.band[0] if (u * 7 + v * 3) % 11 else T.band[1]   # (red brick, as the tower's bands, edged in brass)
     for i in range(10):                                        # the windows' frames (code.js fills them in)
         wx, wy = CUT['x'] + 6 + i * CUT['win'], y0 + 14
         for k in range(-1, 16):
@@ -285,12 +283,23 @@ for f in range(3):
     for k in range(4): cut.px[y0 - 1 - k][224 + k * 2] = T.stone[2]
 art.scene('cutaway', cut, pal=tower, at=(64, 32))
 
+# ---------------------------------------------------------------- the title's lettering (BG0, over the night sky): gold, bevelled, a dark edge
+G = void
+logo = Img(136, 48)
+l1 = big_text('LANTERN', list(G.gold), scale=2, outline=G.ink, shadow=G.ink)
+l2 = big_text('KEEPER', list(G.gold), scale=2, outline=G.ink, shadow=G.ink)
+logo.blit(l1, 0, 0); logo.blit(l2, 18, 22)
+for x in range(4, 130):                                           # an ember-red rule under it, brightest in the middle
+    if (x * 7) % 5: logo.px[45][x] = G.ember[1 if 40 < x < 96 else 0]
+art.scene('logo', logo, pal=void, at=(160, 0))
+
 # ---------------------------------------------------------------- the pieces (sprites, 16 x 16)
 brass = art.sprite_palette(0, {'edge': '120c08', 'brass': ramp('a07a3a', 5), 'glass': ramp('c8d8e0', 2), 'soot': '2a2018'})
 silver = art.sprite_palette(1, {'edge': '0c0c14', 'face': ramp('a8b8cc', 5), 'back': ramp('5a3a24', 3), 'shine': 'ffffff'})
 iron = art.sprite_palette(2, {'edge': '080808', 'face': ramp('6a6670', 5), 'back': ramp('3a3434', 3), 'shine': 'b0aab8'})
 crystal = art.sprite_palette(3, {'edge': '0c1018', 'cry': ramp('7ab0d0', 5), 'red': 'e05050', 'green': '50d070', 'blue': '5070f0'})
-obs = art.sprite_palette(5, {'edge': '060408', 'stone': ramp('2c2034', 4), 'eye': ramp('c02020', 2), 'gold': ramp('a07a3a', 2)})
+obs = art.sprite_palette(7, {   # (palette 7: 208 to 223 are the overlay's light colours, code.js)
+    'edge': '060408', 'stone': ramp('2c2034', 4), 'eye': ramp('c02020', 2), 'gold': ramp('a07a3a', 2)})
 cursor_pal = art.sprite_palette(6, {'gold': ramp('f0c040', 3), 'dim': '6a5a3a'})
 B, S2, C, O = brass, silver, crystal, obs
 

@@ -1,7 +1,7 @@
 # Lantern Keeper: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 6 built (the rules, the solver and bot, the forty rooms, the screens and saves, the art, the audio); steps 7 and 8 to come
+**Status:** Steps 1 to 7 built (the rules, the solver and bot, the forty rooms, the screens and saves, the art, the audio, the polish); step 8 to come
 **Cart source:** `carts/src/lantern-keeper/` → `carts/lantern-keeper.nova`
 
 ---
@@ -236,7 +236,7 @@ The stars, the rooms lit and the floors open all follow from slots 10 to 49 and 
 
 | Asset | Budget |
 |---|---|
-| Code | 27.7 KB of the 64 KB after step 5 (`node tools/check.js lantern-keeper`); the rooms (6.8 KB) and the floors' colours (360 bytes) in the ROM |
+| Code | 33.7 KB of the 64 KB after step 7 (`node tools/check.js lantern-keeper`); the rooms (6.8 KB) and the floors' colours (360 bytes) in the ROM |
 | Tiles | 690 of the 1,024 after step 5: the background 629 of 767 (the title's lighthouse, rock and sea are most of it; the four floors' stamps, the walls, the sea and the map the rest), the sprites 61 of 256 |
 | Sprites | at most about 40 of the 128 in a room (the pieces, the cursor, the glows and the motes), under 32 a line |
 | Songs / SFX | 6 songs in 20 of the 64 patterns; 22 effects; 10.7 KB of the 32 KB of sample RAM |
@@ -416,6 +416,37 @@ Each step: build it, run `node tools/verify.js lantern-keeper` (and `node tools/
   songs by screen and floor, the thunder.
 - **Results:** 226 checks pass; `loud.mjs --check` within the limits; 10.7 KB of sample RAM; the code 29.1 KB (45 %); the smoke test
   60 fps. A sampler of the six songs (25 s each) was rendered for the user to listen to.
+
+### Step 7 built: the polish ("make it beautiful")
+
+- **The light** (`drawBeams`, `drawMotes`, `drawGlass`): a beam is three layers of added light, a haze 5 px wide (overlay colours 209
+  to 215), a glow 3 px (193 to 199) and a core (201 to 207), with a brighter pixel running along it; where three or more beams meet, a
+  knot of sparks. Dust drifts in the light (two motes a lit cell, glinting now and then). A lens that lights **flares**: a cross of
+  light shrinking and a ring opening to 13 px (30 frames); a lit lens has a halo, and a lens reached by the wrong colour shows a dim
+  hint of what reaches it. A lantern's glass glows. The floor's lamplight **flickers** (palette 2, two slow waves, a step or two).
+- **A room solved fills with light** from its lenses outwards, a cell every three frames (`flooded`), under the panel.
+- **The floors' light** was too faint: `ramp()` spreads a ramp from near black to near white whatever its colour, so the lit floor's
+  middle shades were hardly lighter than the dark's (1.08 times on floor 2). The floors' ramps are gradients between two ends now, the
+  dark low and the lit high (1.9 to 2.3 times); a first, brighter try washed the white beams out on the stone, so the lit floors were
+  brought down a fifth.
+- **Screens open as an iris of light** (window 0, a circle set line by line in `scanline()`, growing over 16 frames from the room's
+  middle, or from the lighthouse's lamp on the night screens). A fade to black came first; `colors.mjs --check` counted its dim frames
+  as mud (0.45), and an iris is more of the game's own: light reaching into the dark (0.01 now).
+- **Feel:** the cursor glides to its cell; a piece held floats, bobbing, its shadow on the floor; the story's pages write themselves out
+  (a press shows the rest, the next turns the page).
+- **The night screens:** the title's lettering, gold and bevelled (BG0, `big_text`), on the title only; rain, slanting, added as faint
+  light (white in a lightning flash); the stars drift slowly behind the tower (parallax; the moon went: a storm, and it drifted under
+  the story's words); a solved room's window on the tower has a warm glow round it. The floor map is the lighthouse's red brick, edged
+  and shuttered in brass (its grey-brown brick was mud).
+- **The colour marks** under every coloured lens and filter and on coloured lanterns: red a triangle, green a bar, blue a dot, a mixed
+  colour's side by side (white has none).
+- The shadow lens's sprites moved to sprite palette 7, so CGRAM 208 to 223 are the overlay's added light (haze, spark, mote, rain, ember).
+- `11-polish.mjs`: the iris (the middle shows first, then the corners), the cursor's glide, a lens's flare and its end, a solved room
+  every floor cell lit, the story writing out and a press finishing the page, the lettering on the title only, every floor's lit middle
+  shades well over half again as bright as the dark, a red lens's mark and none on a white one. The suites that turn the story's pages
+  press twice where a page is still writing (`pageOn`), and read pixels after the iris.
+- **Results:** 242 checks pass; `colors.mjs --check` within the limits (muddy panels 0.01); `snes.mjs` 88 of 100 (75 before); the code
+  33.7 KB (51 %); the smoke test 60 fps. A clip of a room solved and the title in the storm was made for the user.
 
 ## 16. Open questions
 

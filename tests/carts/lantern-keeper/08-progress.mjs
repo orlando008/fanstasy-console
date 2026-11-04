@@ -16,14 +16,16 @@ function win(vm, p, moves = p.room.par) {
 /** A save in which rooms 0 to n - 1 are solved at par (and the story's pages up to `pages` seen). */
 function saveWith(p, n, pages = 1) { const s = new Array(256).fill(0); s[0] = 1; s[p.STORY_SLOT] = pages; for (let k = 0; k < n; k++) s[p.BEST_SLOT + k] = +/PAR (\d+)/.exec(p.ROOMS[k])[1]; return s; }
 const fresh = (save) => { const vm = newGame(1, { title: true, save }), p = vm.probe(); vm.run(3); return { vm, p }; };
-const onward = (vm) => { vm.run(31); vm.press('A'); }; // (the panel and the pages wait a moment before a press counts)
+const onward = (vm) => { vm.run(31); vm.press('A'); }; // (the panel waits a moment before a press counts)
+const pageOn = (vm, p) => { vm.run(13); const pg = p.page; vm.press('A'); vm.run(1); if (p.state === 'story' && p.page === pg) vm.press('A'); }; // (the first press may only finish writing the page)
+
 
 // 1. A new game: one room open; the story's first page once; the map.
 {
   const { vm, p } = fresh();
   ok(p.opened(0) && !p.opened(1) && p.nextRoom() === 0, 'a new game: only the first room is open');
   vm.press('A'); ok(p.state === 'story' && p.page === 0, 'PLAY the first time: the story\'s first page');
-  onward(vm); ok(p.state === 'map' && p.mapSel === 0, 'then the floor map, on the first room');
+  pageOn(vm, p); ok(p.state === 'map' && p.mapSel === 0, 'then the floor map, on the first room');
   sfxLog(vm); vm.press('RIGHT'); ok(p.mapSel === 0 && sfxLog(vm).some(([n]) => n === p.SFX.no), 'the cursor cannot go to a room not open yet');
   vm.press('UP'); ok(p.mapSel === 0, 'nor up to a floor not reached');
   vm.press('B'); ok(p.state === 'title', 'B goes back to the title');
@@ -52,7 +54,7 @@ const onward = (vm) => { vm.run(31); vm.press('A'); }; // (the panel and the pag
   q.loadRoom(9); musicLog(v2); win(v2, q);
   v2.run(31); v2.press('A');
   ok(q.state === 'story' && q.page === 1, 'the tenth room solved: on to the story\'s page for the floor');
-  onward(v2); ok(q.state === 'map' && q.mapSel === 10 && q.playing === q.SONG.floors[1], 'then the second floor\'s map, on its first room, with its song');
+  pageOn(v2, q); ok(q.state === 'map' && q.mapSel === 10 && q.playing === q.SONG.floors[1], 'then the second floor\'s map, on its first room, with its song');
   v2.run(12); v2.press('A'); v2.press('START'); v2.press('DOWN'); v2.press('DOWN'); v2.press('A');
   ok(q.state === 'map' && q.mapSel === 10, 'the room menu\'s FLOOR MAP goes back to the map');
   q.loadRoom(9); win(v2, q); v2.run(31); v2.press('A');
@@ -65,7 +67,7 @@ const onward = (vm) => { vm.run(31); vm.press('A'); }; // (the panel and the pag
   const v2 = newGame(1, { title: true, save: saveWith(p, 39, 15) }), q = v2.probe(); v2.run(3);
   q.loadRoom(39); musicLog(v2); win(v2, q); v2.run(31); v2.press('A');
   ok(q.state === 'story' && q.page === 4 && q.playing === q.SONG.ending, 'the fortieth room solved: the ending, with its song');
-  onward(v2); ok(q.state === 'title' && q.storySeen(4), 'then the title, the ending remembered (the great lamp turns there)');
+  pageOn(v2, q); ok(q.state === 'title' && q.storySeen(4), 'then the title, the ending remembered (the great lamp turns there)');
 }
 
 // 5. The records and the save.

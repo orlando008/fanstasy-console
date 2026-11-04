@@ -66,6 +66,14 @@
   "bg5": {
    "base": 80,
    "colors": {
+    "ember0": 10,
+    "ember1": 11,
+    "gold0": 4,
+    "gold1": 5,
+    "gold2": 6,
+    "gold3": 7,
+    "gold4": 8,
+    "ink": 9,
     "v0": 1,
     "v1": 2,
     "v2": 3
@@ -96,7 +104,6 @@
    "colors": {
     "foam0": 5,
     "foam1": 6,
-    "moon": 9,
     "sea0": 1,
     "sea1": 2,
     "sea2": 3,
@@ -163,8 +170,17 @@
     "red": 7
    }
   },
-  "spr5": {
-   "base": 208,
+  "spr6": {
+   "base": 224,
+   "colors": {
+    "dim": 4,
+    "gold0": 1,
+    "gold1": 2,
+    "gold2": 3
+   }
+  },
+  "spr7": {
+   "base": 240,
    "colors": {
     "edge": 1,
     "eye0": 6,
@@ -175,15 +191,6 @@
     "stone1": 3,
     "stone2": 4,
     "stone3": 5
-   }
-  },
-  "spr6": {
-   "base": 224,
-   "colors": {
-    "dim": 4,
-    "gold0": 1,
-    "gold1": 2,
-    "gold2": 3
    }
   }
  },
@@ -225,6 +232,13 @@
    "my": 106,
    "pal": 1,
    "w": 16
+  },
+  "logo": {
+   "h": 6,
+   "mx": 160,
+   "my": 0,
+   "pal": 5,
+   "w": 17
   },
   "outside": {
    "h": 2,
@@ -324,12 +338,12 @@
    "tile": 780
   },
   "shadow": {
-   "pal": 5,
+   "pal": 7,
    "size": 16,
    "tile": 804
   },
   "shadow_lit": {
-   "pal": 5,
+   "pal": 7,
    "size": 16,
    "tile": 806
   },
@@ -345,6 +359,6 @@
   }
  },
  "tiles": {},
- "used": 690,
+ "used": 750,
  "version": 1
 }
