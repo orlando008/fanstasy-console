@@ -1,0 +1,542 @@
+// Lantern Keeper's rooms (SPEC 6). One room: a line "ROOM <name> PAR <n>" (and DARK for a dark room), the map a character a cell,
+// then the legend for its letters. The map: '#' wall, '=' window, ' ' outside, '.' floor; '^ > v <' a white lantern facing that
+// way, '/' '\' a free mirror, 'o' a white lens, 'x' a shadow lens. A legend line: "A: lantern E red" (the kind: lantern, mirror,
+// splitter, prism, filter, lens, shadow, door; then any of N E S W or / \, a colour, free bolted fixed, key1 to key9).
+// node carts/src/lantern-keeper/rooms.mjs copies this into rom/rooms.bin (without these comments) and checks every room with the
+// solver: its par must be the written one. Step 2: one small room for each idea; the forty come in step 3.
+
+ROOM FIRST LIGHT PAR 1
+#########
+#.......#
+#....o..#
+#.......#
+#>......#
+#.......#
+#./.....#
+#########
+
+ROOM TWO TURNS PAR 2
+##########
+#....#..o#
+#....#...#
+#........#
+#........#
+#^.\.....#
+#..../...#
+##########
+
+ROOM THE BOLT PAR 1
+#######
+#.....#
+#..o..#
+#.....#
+#>.B..#
+#.....#
+#######
+B: mirror \ bolted
+
+ROOM THE OIL STORE PAR 2
+#########
+#....../#
+#...#...#
+#.......#
+#./#\...#
+#.......#
+#.o^....#
+#########
+
+ROOM THE LANDING PAR 2
+#########
+#.......#
+#...\...#
+#...\...#
+#..\#..<#
+#.......#
+#....#.o#
+#########
+
+ROOM THE WINDING PAR 3
+##########
+#........#
+#/#o.....#
+#........#
+##.../#..#
+#.......<#
+#.....\Ao#
+#....^...#
+##########
+A: mirror / bolted
+
+ROOM TWIN LAMPS PAR 3
+##########
+#o...v...#
+#...../..#
+##.../#/.#
+#....A...#
+#.....#..#
+#........#
+#o^......#
+##########
+A: mirror \ bolted
+
+ROOM THE KEEPER'S ROOM PAR 3
+##########
+#.....v..#
+#....^/..#
+#....#...#
+#//......#
+#../../..#
+##.....o.#
+#/..o.#..#
+##########
+
+ROOM THE STAIRHEAD PAR 3
+##########
+#......v.#
+#...#.^..#
+#././.#..#
+#../.....#
+#o..\....#
+#...o.\\.#
+#.......##
+##########
+
+ROOM THE NEWEL PAR 3
+##########
+#...v..o.#
+#........#
+#..\..<#.#
+#....\.#.#
+#...#\...#
+#./......#
+#o\..\...#
+##########
+
+ROOM THE HALF MIRROR PAR 1
+#########
+#....o..#
+#.......#
+#>.....o#
+#.......#
+#.S.....#
+#########
+S: splitter /
+
+ROOM TWO WAYS PAR 2
+##########
+#.#...v..#
+#..\.\..o#
+#...A....#
+#........#
+#......#.#
+#......#.#
+#o....\..#
+##########
+A: splitter /
+
+ROOM RED AND BLUE PAR 2
+##########
+#R.......#
+#........#
+#..b.....#
+#.....r..#
+#.......\#
+#B.....\.#
+##########
+R: lantern E red
+B: lantern E blue
+r: lens red
+b: lens blue
+
+ROOM RED GLASS PAR 1
+#########
+#>..S..o#
+#.......#
+#...R...#
+#.......#
+#.F.....#
+#########
+S: splitter \ fixed
+R: lens red
+F: filter red free
+
+ROOM TWO LIGHTS PAR 1
+##########
+#........#
+#R....M..#
+#........#
+#........#
+#B.......#
+#./......#
+##########
+R: lantern E red
+B: lantern E blue
+M: lens magenta
+
+ROOM STAINED GLASS PAR 3
+##########
+##.o....A#
+#....\...#
+#\#...B#.#
+#......\.#
+#........#
+#......C.#
+#...^....#
+##########
+A: lens magenta
+B: splitter \
+C: filter magenta free
+
+ROOM THE PANES PAR 3
+###########
+#...\.....#
+#..A.B....#
+#..#......#
+#\C......##
+#.........#
+#......./D#
+#../\....E#
+#.#.....\.#
+###########
+A: lens blue
+B: lens magenta
+C: splitter /
+D: lantern W red
+E: lantern W blue
+
+ROOM PURPLE HOUR PAR 4
+###########
+#./..A..BC#
+#\#...../.#
+#\D.......#
+#......\/.#
+#...E.....#
+#F......./#
+##..#.....#
+###########
+A: lens cyan
+B: lantern S red
+C: lens red
+D: lantern S green
+E: mirror / fixed
+F: lantern E blue
+
+ROOM THE GLASSWORKS PAR 4
+###########
+#.......\A#
+#.........#
+#/.B.....##
+#.........#
+#C...\.#..#
+#.....\..D#
+#.\.E#..//#
+#.........#
+###########
+A: lantern S blue
+B: lens magenta
+C: lantern E red
+D: lens red
+E: splitter /
+
+ROOM THE CHANDELIER PAR 4
+###########
+#../.A....#
+#./\.....\#
+##......./#
+#.........#
+#../#BC..\#
+#...\.....#
+#D.E.#..F.#
+###########
+A: lantern S blue
+B: lantern E red
+C: mirror \ fixed
+D: lens cyan
+E: lantern N green
+F: lens red
+
+ROOM THE PRISM PAR 1
+###########
+#....r....#
+#.........#
+#>.......g#
+#.........#
+#....b....#
+#..P......#
+###########
+r: lens red
+g: lens green
+b: lens blue
+P: prism E
+
+ROOM TWO AT ONCE PAR 2
+###########
+#.......Y.#
+#.........#
+#>...P....#
+#.........#
+#.\.....\.#
+#....b....#
+###########
+P: prism E fixed
+Y: lens yellow
+b: lens blue
+
+ROOM THE SHUTTER PAR 1
+##########
+#...a....#
+#........#
+#>...D..o#
+#........#
+#.s......#
+##########
+a: lens key1
+D: door key1
+s: splitter /
+
+ROOM THE RAINBOW PAR 3
+###########
+#AB....C..#
+#....\.\..#
+#.........#
+#.....D##.#
+#.........#
+#.......#.#
+#../......#
+#.E..^....#
+###########
+A: lens red
+B: mirror / fixed
+C: prism N
+D: lens blue
+E: lens green
+
+ROOM THE ESCAPEMENT PAR 3
+###########
+#A....#..##
+#.........#
+#oB.\....\#
+#.........#
+#......#..#
+#.C.......#
+#.D^..../.#
+###########
+A: splitter \
+B: door key1
+C: mirror \ bolted
+D: lens white key1
+
+ROOM THE MAINSPRING PAR 4
+############
+#/./.......#
+#..../..#>o#
+#.....\....#
+#..........#
+#.....#.\..#
+#....A.....#
+#o...B.....#
+#.#........#
+#>......C..#
+############
+A: lens white key1
+B: door key1
+C: splitter \ bolted
+
+ROOM THE GEAR TRAIN PAR 4
+############
+#A.........#
+#..#.......#
+#./.....\..#
+#...B.//...#
+#..#>...#..#
+#C.........#
+#.../.D....#
+#/.........#
+############
+A: lens cyan
+B: prism N
+C: mirror \ fixed
+D: lens red
+
+ROOM THE PENDULUM PAR 4
+############
+#/v....o...#
+#.......A.\#
+#./........#
+#..........#
+#.....B....#
+#........#.#
+#>...#\....#
+#.C........#
+#.o.#\.....#
+############
+A: door key1
+B: lens white key1
+C: splitter / bolted
+
+ROOM THE CHIME PAR 4
+############
+#..#.\\....#
+#/...A.....#
+#........B.#
+#.....#../.#
+#......\...#
+#...../....#
+#>.....C...#
+#.../......#
+############
+A: lens blue
+B: lens yellow
+C: prism E fixed
+
+ROOM THE STRIKING HOUR PAR 4
+############
+#..v/......#
+#.....#....#
+#.//#/....##
+#..........#
+#..........#
+#.A\...B/..#
+#........C.#
+#.......D..#
+############
+A: mirror \ fixed
+B: lens cyan
+C: prism N
+D: lens red
+
+ROOM IN THE DARK PAR 2 DARK
+#########
+#.......#
+#>.#....#
+#......##
+#.\..\.#
+#.......#
+#o......#
+#########
+
+ROOM THE BLACK LENS PAR 2
+##########
+#........#
+#>...x...#
+#.......o#
+#./\.....#
+##########
+
+ROOM EYES IN THE DARK PAR 3
+###########
+#x........#
+#A.^......#
+#.x#......#
+#...../...#
+#.x.......#
+#o#\......#
+##....\/..#
+###########
+A: mirror \ bolted
+
+ROOM THE BLIND STAIR PAR 3 DARK
+###########
+#...../A..#
+#.........#
+#.........#
+#.#.....#.#
+#o.....\..#
+#/..#.....#
+#.\....../#
+#....o.^.<#
+###########
+A: mirror \ fixed
+
+ROOM THE LENS GALLERY PAR 4
+############
+#.#\......v#
+#....../x.A#
+#.....o...o#
+#.....\...##
+#..\...#...#
+#.x.......x#
+#.........\#
+#..^...o...#
+############
+A: splitter \ bolted
+
+ROOM THE WATCH ROOM PAR 4
+############
+#>..A.../..#
+#.#...#....#
+#o........x#
+#x\....\...#
+#......#...#
+#.....x\.\.#
+#.o........#
+#...^....o.#
+############
+A: splitter / bolted
+
+ROOM THE STORM GLASS PAR 4 DARK
+###########
+#A....\..\#
+##B.#...#\#
+#CD.......#
+#./.......#
+#E\./\....#
+#.....F\..#
+#.........#
+###########
+A: lens blue
+B: lantern E blue
+C: lantern E red
+D: mirror \ fixed
+E: lantern E green
+F: lens yellow
+
+ROOM FOG PAR 4 DARK
+############
+#....\.v...#
+#.#/.......#
+#./.#...^..#
+#.......#.<#
+#...\\...\.#
+#.#....A\..#
+#./.o...o..#
+#.o........#
+############
+A: mirror \ bolted
+
+ROOM THE TOP STEP PAR 4 DARK
+###########
+#..#v.o...#
+##....A...#
+#\/o..B..##
+#\\.......#
+#./....../#
+#..#>.....#
+#.........#
+#..o.^../.#
+###########
+A: mirror \ bolted
+B: mirror \ fixed
+
+ROOM THE GREAT LAMP PAR 6
+#############
+#R....S./..a#
+#...........#
+#...........#
+#x.........x#
+#.....OD....#
+#.#...#...#.#
+#Y..b......c#
+#...........#
+#B.\......\G#
+#############
+R: lantern E red
+G: lantern N green
+B: lantern N blue
+O: lens white
+a: lens red key1
+D: door key1
+Y: mirror / fixed
+b: mirror \ bolted
+c: mirror / bolted
+S: splitter / bolted
