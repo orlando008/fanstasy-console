@@ -1,7 +1,7 @@
 # Lantern Keeper: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 5 built (the rules, the solver and bot, the forty rooms, the screens and saves, the art); steps 6 to 8 to come
+**Status:** Steps 1 to 6 built (the rules, the solver and bot, the forty rooms, the screens and saves, the art, the audio); steps 7 and 8 to come
 **Cart source:** `carts/src/lantern-keeper/` → `carts/lantern-keeper.nova`
 
 ---
@@ -179,25 +179,27 @@ records screen shows the rooms lit (of 40), the stars (of 40), and the moves of 
 
 ## 11. Audio
 
-Calm public domain classics, arranged for the sound chip's sampled instruments (electric piano, celesta, strings, flute, choir,
-bass) with a hall's echo; songs on channels 0 to 5, effects taking turns on 6 and 7. The notes come from public domain scores
-(Mutopia's engravings, as Flow State's did: `carts/src/flow-state/import_score.py`), not from memory, and each source and its
-licence is recorded.
+Calm public domain classics in their own notes, arranged for the sound chip's sampled instruments with a hall's echo; songs on
+channels 0 to 5, effects taking turns on 6 and 7. The notes are read from **Mutopia's engravings** (public domain or Creative
+Commons; `carts/src/lantern-keeper/scores/SOURCES.md` has each file) by `scores.py`, which keeps an excerpt's pitches and rhythms on a
+grid and deals a piano part out to voices (the tune, its inner voice, the bass, the chords); `audio.py` makes the songs from that text.
 
-| Song | When | Piece (draft) |
-|---|---|---|
-| 0 | The title and the story | Debussy, *Clair de lune* (1905): moonlight on the sea |
-| 1 | Floor 1, The Stair | Satie, *Gymnopédie No. 1* (1888) |
-| 2 | Floor 2, The Glass Room | Bach, *Prelude in C major*, BWV 846: the glass, in celesta arpeggios |
-| 3 | Floor 3, The Clockwork | Satie, *Gnossienne No. 1* (1890) |
-| 4 | Floor 4, The Lamp Gallery | Chopin, *Prelude in E minor*, Op. 28 No. 4: the dark before the end |
-| 5 | The ending | Grieg, *Morning Mood* from *Peer Gynt*: dawn |
+| Song | When | Piece | Arranged for |
+|---|---|---|---|
+| 0 | The title and the story | Debussy, *Clair de lune* (bars 1 to 21), an octave down | electric piano over soft strings |
+| 1 | Floor 1, The Stair | Satie, *Gymnopédie No. 1* (bars 1 to 39) | the piano alone, a soft string pad holding the harmony |
+| 2 | Floor 2, The Glass Room | Bach, *Prelude in C major*, BWV 846 (bars 1 to 16) | celesta: the glass ringing, strings under it |
+| 3 | Floor 3, The Clockwork | Satie, *Gnossienne No. 1* (bars 1 to 16) | a flute over plucked chords, ticking |
+| 4 | Floor 4, The Lamp Gallery | Chopin, *Prelude in E minor*, Op. 28 No. 4 (all of it) | piano over strings |
+| 5 | The ending | Grieg, *Hjemkomst* (Homecoming; the first 192 quavers) | strings and a choir |
 
-Each is an excerpt that loops (the 64 patterns are shared by all six: about ten each). Effects (soft, sampled): the cursor's tick,
-pick up, drop, turn, the "no" thud, undo and redo, a lens lighting (a chime whose pitch is its colour's), a door opening, the room
-solved (a rising chord), a star, the floor's stair opening, the menus; thunder with the lightning (quiet). Levels: the lead alone at
-most 0.07 RMS and 0.75 of the mix, the pierce at most 0.012, no jump where it enters (`node tools/devkit/music/loud.mjs
-carts/lantern-keeper.nova --check`; playbook section 5); effects 0.01 to 0.06.
+Each loops; a piece shorter than a whole number of patterns is filled out with its own opening accompaniment, so the loop runs on (the
+six take 20 of the 64 patterns). Effects (soft, sampled): the cursor's tick, a piece picked up and put down (wood), turned (a
+click), the "no" thud, undo and redo, **a lens lighting: a chime whose pitch is its colour's** (red C6, green D6, yellow E6, blue
+G6, magenta A6, cyan C7, white E7), a door opening (a grind), the room solved (a rising chord of strings) and its star (bells), a
+floor done (the stair opening: a swell), a page of the story turning, thunder (the storm: now and then lightning lifts the sea's and the
+night's colours, and thunder follows). Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, the pierce at most 0.012, no
+surge (`node tools/devkit/music/loud.mjs carts/lantern-keeper.nova --check`; playbook section 5); effects 0.01 to 0.03.
 
 ## 12. Video layers
 
@@ -237,7 +239,7 @@ The stars, the rooms lit and the floors open all follow from slots 10 to 49 and 
 | Code | 27.7 KB of the 64 KB after step 5 (`node tools/check.js lantern-keeper`); the rooms (6.8 KB) and the floors' colours (360 bytes) in the ROM |
 | Tiles | 690 of the 1,024 after step 5: the background 629 of 767 (the title's lighthouse, rock and sea are most of it; the four floors' stamps, the walls, the sea and the map the rest), the sprites 61 of 256 |
 | Sprites | at most about 40 of the 128 in a room (the pieces, the cursor, the glows and the motes), under 32 a line |
-| Songs / SFX | 6 songs in the 64 patterns; about 20 effects; under 24 KB of the 32 KB of sample RAM |
+| Songs / SFX | 6 songs in 20 of the 64 patterns; 22 effects; 10.7 KB of the 32 KB of sample RAM |
 
 ## 15. Implementation plan
 
@@ -392,6 +394,29 @@ Each step: build it, run `node tools/verify.js lantern-keeper` (and `node tools/
 - **Results:** 199 checks pass; 690 tiles; `colors.mjs --check` within its limits; `snes.mjs` 75 of 100 (no parallax yet, and one
   backdrop colour in the rooms); the code 27.7 KB (42 %); the smoke test 60 fps.
 
+### Step 6 built: the audio
+
+- **The scores:** the six files are Mutopia's LilyPond engravings, found in `marmooo/classical-midi-db` (a partial clone listed its
+  37,000 files without downloading them; Mutopia's own site is not reachable from here). `carts/src/lantern-keeper/scores.py` turns
+  each into note text (`scores/*.txt`, with `SOURCES.md`); the MIDI files are not kept. Dealing a piano part out to voices took two
+  rules found by measuring: the Gymnopedie's right hand holds both its tune and its second-beat chords (a group of three notes is the
+  chord, the rest the tune), and its left hand's bass is only what is below G3 (the chords' lowest note had gone to the bass, and four
+  piano notes struck at once made a surge of 3.5x).
+- `audio.py` (rewritten): the six songs and 22 effects (section 11). **Levels**, measured and fixed: Clair de lune an octave down (its
+  tune high on the electric piano pierced at 0.017, now 0.005), the tunes' share of the mix brought under 0.75 (0.89 and 0.92 at first)
+  by quieter tunes and louder accompaniment, and the sparse Gymnopedie given a soft string pad holding the harmony between its notes (its
+  median was so low that each note was a surge); now every song is within the limits: the leads 0.49 to 0.71 of the mix, the pierce at
+  most 0.0067, the surge at most 2.01.
+- `code.js`: the SFX table; a lens that has just lit chimes its colour's note and a door that has just opened grinds (`relight`, not as a
+  room loads); redo has its own sound; the star rings after the solved chord at par; the stair opens before a floor's page; a page
+  turns; **the storm**: every 15 to 45 seconds lightning lifts the sea's and the night's palettes (and the sky's lines) for six frames,
+  and thunder follows half a second to a second and a half later.
+- `10-audio.mjs`: six looping songs, every effect with notes, the sources recorded; the room's effects through the buttons; three rooms
+  solved through the buttons (each lens's chime in its colour, a door's grind, the chord and the star); the floor done, the page, the
+  songs by screen and floor, the thunder.
+- **Results:** 226 checks pass; `loud.mjs --check` within the limits; 10.7 KB of sample RAM; the code 29.1 KB (45 %); the smoke test
+  60 fps. A sampler of the six songs (25 s each) was rendered for the user to listen to.
+
 ## 16. Open questions
 
 Defaults chosen in the kickoff that the user did not confirm, and the extras not picked:
@@ -405,7 +430,8 @@ Defaults chosen in the kickoff that the user did not confirm, and the extras not
 - **Prisms split by direction**: red left, green straight, blue right.
 - **The colour marks** (triangle, square, circle) for players who cannot tell the colours apart.
 - **The story's words**, the lighthouse's name (Greywater Light) and the floors' names are drafts.
-- **The pieces of music** are drafts; the arrangements are excerpts that loop.
+- **The ending's music** is Grieg's *Hjemkomst* (Homecoming), not *Morning Mood*: Mutopia has no engraving of *Morning Mood*, and
+  a homecoming suits the ships turning for home. The arrangements are excerpts that loop.
 - **The rooms' pars** top out at 4 before the last room (the designer seldom made a par-5 room the solver could also count quickly);
   the curve is in the ideas as much as the pars: the fourth floor's rooms combine dark, shadow lenses, mixing and doors.
 - **Not picked, for later:** a room editor (with the solver to check a room can be solved), a time-trial mode, hints.

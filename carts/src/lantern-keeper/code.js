@@ -28,7 +28,7 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
 // so they never cut into the music and two can sound at once.
 
-const SFX = { move: 0, select: 1, pause: 2, pick: 3, no: 4, drop: 5, solved: 6, turn: 0, undo: 1 }; // (the starter's effects, until step 6)
+const SFX = { move: 0, select: 1, pause: 2, pick: 3, drop: 4, turn: 5, no: 6, undo: 7, redo: 8, lens: 9, door: 16, solved: 17, star: 18, stair: 19, page: 20, thunder: 21 }; // (lens: 9 + its colour - 1)
 const SONG = { title: 0, floors: [1, 2, 3, 4], ending: 5 }; // (the title and the story, each floor's, the ending; the songs come in step 6)
 const SFX_CH = [7, 6];
 let fxNext = 0;
@@ -327,14 +327,22 @@ function loadRoom(n) {
   roomNo = n; room = parseRoom(ROOMS[n]); pieces = room.pieces.map((q) => ({ ...q }));
   const first = pieces.find((q) => q.mode === 'free') || { x: 1, y: 1 };
   cx = first.x; cy = first.y; held = -1; hist = [snap()]; pos = 0; lastPiece = -1;
-  state = 'play'; timer = 0; paused = false; screen = ''; setScreen('room'); relight(); buildRoom();
+  state = 'play'; timer = 0; paused = false; screen = ''; setScreen('room'); light = null; relight(true); buildRoom();
   dset(LAST_SLOT, n + 1); play(SONG.floors[Math.floor(n / FLOOR_ROOMS)]);
 }
 const snap = () => pieces.map((q) => [q.x, q.y, q.r]);
 const restore = (sn) => sn.forEach(([x, y, r], i) => Object.assign(pieces[i], { x, y, r }));
 const same = (a, b) => a.every((v, i) => v[0] === b[i][0] && v[1] === b[i][1] && v[2] === b[i][2]);
 const moves = () => pos;
-function relight() { light = settle(room, pieces, held); light.lit = litCells(room, light.half); if (screen === 'room') paintRoom(); }
+/** Trace the light again. After a move (not as a room loads), a lens that has just lit chimes (its colour's note) and a door that has just opened grinds. */
+function relight(quiet = false) {
+  const was = light, before = was ? pieces.map((q, i) => q.k === 'lens' && was.got[i] === q.c) : [];
+  light = settle(room, pieces, held); light.lit = litCells(room, light.half); if (screen === 'room') paintRoom();
+  if (quiet || !was) return;
+  const now = pieces.findIndex((q, i) => q.k === 'lens' && light.got[i] === q.c && !before[i]);
+  if (now >= 0) fx(SFX.lens + pieces[now].c - 1);
+  if (light.open & ~was.open) fx(SFX.door);
+}
 const pieceAt = (x, y) => pieces.findIndex((q, i) => i !== held && q.x === x && q.y === y);
 
 /**
@@ -350,8 +358,19 @@ function changed(i) {
 
 // --- Update ---
 
+// --- The storm: now and then lightning brightens the sea and the night (palettes 4 and 7, and the sky), and thunder follows ---
+let flash = 0, thunderIn = 0, nextBolt = 900;
+const LIGHTNING = 6; // frames a flash lasts
+function storm() {
+  if (--nextBolt <= 0 && !paused) { flash = LIGHTNING; thunderIn = 40 + rndi(0, 50); nextBolt = 1200 + rndi(0, 1800); }
+  if (thunderIn > 0 && --thunderIn === 0) fx(SFX.thunder);
+  if (flash > 0) flash--;
+}
+/** A colour lifted towards white by the flash (k of 31). */
+const lift = (c, k) => c + (((31 - c) * k) >> 5);
+
 function update() {
-  inputMask = readPad(); clock++;
+  inputMask = readPad(); clock++; storm();
   if (!paused) timer++; // a state's clock: it stands still while paused
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
@@ -405,7 +424,7 @@ function undo() {
 }
 function redo() {
   if (held >= 0 || pos >= hist.length - 1) { fx(SFX.no); return; }
-  pos++; restore(hist[pos]); lastPiece = -1; relight(); fx(SFX.undo);
+  pos++; restore(hist[pos]); lastPiece = -1; relight(); fx(SFX.redo);
 }
 
 /** Every lens lit: the room's best moves saved (the fewest), and the panel: NEXT ROOM, REPLAY, FLOOR MAP. */
@@ -416,6 +435,7 @@ function roomSolved() {
 }
 const SOLVED_ITEMS = () => [roomNo === ROOMS.length - 1 ? 'THE LAMP' : (roomNo + 1) % FLOOR_ROOMS ? 'NEXT ROOM' : 'UP THE STAIR', 'REPLAY', 'FLOOR MAP'];
 function updateSolved() {
+  if (timer === 24 && moves() <= room.par) fx(SFX.star); // (after the chord: the star)
   if (timer < 30) return;
   if (pressed(UP)) { solvedSel = (solvedSel + 2) % 3; fx(SFX.move); }
   if (pressed(DOWN)) { solvedSel = (solvedSel + 1) % 3; fx(SFX.move); }
@@ -429,7 +449,7 @@ function updateSolved() {
 function goOn() {
   const n = roomNo + 1, k = Math.floor(roomNo / FLOOR_ROOMS) + 1; // (pages 1 to 3 after floors 1 to 3; page 4 the ending)
   if (n === ROOMS.length) { showPage(ENDED, toTitle); return; }
-  if (n % FLOOR_ROOMS === 0 && !storySeen(k)) { showPage(k, () => toMap(n)); return; }
+  if (n % FLOOR_ROOMS === 0 && !storySeen(k)) { fx(SFX.stair); showPage(k, () => toMap(n)); return; }
   loadRoom(n);
 }
 
@@ -448,7 +468,7 @@ function updateMap() {
 
 /** A page of the story: any button goes on (after a moment, so a press from before does not skip it). */
 function updateStory() {
-  if (timer > 30 && (pressed(A) || pressed(B) || pressed(START))) { fx(SFX.select); afterPage(); }
+  if (timer > 30 && (pressed(A) || pressed(B) || pressed(START))) { fx(SFX.page); afterPage(); }
 }
 
 function updateRecords() {
@@ -477,6 +497,11 @@ const ox = () => 16 + (14 - room.w) * 8, oy = () => 24 + (12 - room.h) * 8;
 
 function draw() {
   cls();
+  if (flash || flashWas) { // the lightning: the sea's and the night's palettes lifted while it lasts (restored from the cart's palette after)
+    const k = flash ? (flash > LIGHTNING / 2 ? 22 : 12) : 0;
+    for (const base of [64, 112]) for (let i = 1; i < 16; i++) { const v = PALETTE0[base + i]; color(base + i, lift(v & 31, k), lift((v >> 5) & 31, k), lift(v >> 10, k)); }
+    flashWas = flash;
+  }
   setScreen(state === 'play' || state === 'solved' ? 'room' : state === 'map' ? 'cut' : 'sky');
   if (screen === 'room') bgscroll(2, (clock >> 3) % 64, (clock >> 4) % 32); // (the sea below drifts)
   if (state === 'play' || state === 'solved') drawPlay();
@@ -638,5 +663,13 @@ function panel(x, y, w, h) { rectfill(x, y, w, h, SHADOW); rect(x, y, w, h, PANE
 function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }
 const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
 
-/** Each line of the screen: the night sky's colour for that line on the title, the story and the map (the SNES did skies this way). */
-function scanline(y) { if (screen !== 'room') gradientLine(ART.gradients.sky, y); }
+/** Each line of the screen: the night sky's colour for that line on the title, the story and the map (the SNES did skies this way), lit
+ * by the lightning when it flashes. */
+function scanline(y) {
+  if (screen === 'room') return;
+  gradientLine(ART.gradients.sky, y);
+  if (flash) { const [r, g, b] = color(0), k = flash > LIGHTNING / 2 ? 14 : 6; color(0, lift(r, k), lift(g, k), lift(b, k)); }
+}
+let flashWas = 0;
+/** The cart's own colours, as packed (the lightning lifts some and puts them back). */
+const PALETTE0 = (() => { const out = []; for (let i = 0; i < 128; i++) { const [r, g, b] = color(i); out.push(r | (g << 5) | (b << 10)); } return out; })();
