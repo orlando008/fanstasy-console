@@ -1,7 +1,6 @@
-// Lantern Keeper
-// Scaffolded by tools/new-cart.js. A tiny working game (dodge the falling blocks) around everything every cart
-// needs: a title, play, pause, game over, a saved top 10 with initials, a records screen, sound and music cues,
-// a skipTitle hook and save slots. Replace the play part, keep the frame. See docs/dev/playbook.md.
+// Lantern Keeper (docs/carts/lantern-keeper.md). Carry a lighthouse's light up forty rooms: move and turn the pieces in a
+// room so the beams reach every lens. The light is a block of pure functions (LIGHT, below) that the tests' solver runs in node
+// too, so the solver and the game cannot disagree about where the light goes.
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
@@ -29,7 +28,7 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
 // so they never cut into the music and two can sound at once.
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
+const SFX = { move: 0, select: 1, pause: 2, pick: 3, no: 4, drop: 5, solved: 6, turn: 0, undo: 1 }; // (the starter's effects, until step 6)
 const SONG = { title: 0, play: 1 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
@@ -44,27 +43,99 @@ function play(song) {
 
 // --- Save slots (SPEC 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
-const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const VERSION_SLOT = 0, SAVE_VERSION = 1;
 
-function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)) }; }
-function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); }
-const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
+// --- LIGHT: the rules of the light (SPEC 5), pure functions of a room and its pieces. Nothing here draws, plays or reads the pad:
+// tests/carts/lantern-keeper/light.mjs cuts this block out and runs it in node for the solver. ---
 
-/** Put a score into the top 10 if it makes it. Returns its row, or -1. */
-function insertTop(e) {
-  if (!e.score) return -1;
-  const list = topTen(), at = list.findIndex((x) => e.score > x.score);
-  if (at < 0) return -1;
-  list.splice(at, 0, e);
-  for (let i = at; i < TOP_N; i++) writeEntry(i, list[i]);
-  return at;
+const DX = [0, 1, 0, -1]; // the four ways a beam goes: north, east, south, west (one const a line: light.mjs exports them by name)
+const DY = [-1, 0, 1, 0];
+const WHITE_LIGHT = 7; // colours are sets of primaries: red 1, green 2, blue 4
+/** How a mirror turns a beam going in direction d: '/' (turn 0) and '\' (turn 1). */
+const MIRROR = [[1, 0, 3, 2], [3, 2, 1, 0]];
+/** The turns each kind of piece has (how many different ways it can face). */
+const TURNS = { lantern: 4, mirror: 2, lens: 1 };
+const MAX_RUNS = 512; // beams in all, a trace's limit
+
+/**
+ * Parse a room from its text: the map, a character a cell. '#' a wall, '.' floor, ' ' outside the room;
+ * '^' '>' 'v' '<' a white lantern facing that way (fixed); '/' and '\' a free mirror; 'o' a white lens (fixed).
+ * Returns { name, par, w, h, wall (1 a wall, 2 outside), pieces: [{ k, x, y, r, c, mode }] }.
+ */
+function parseRoom(text) {
+  const lines = text.split('\n').filter((l) => l.trim().length);
+  const head = /^ROOM\s+(.*?)\s+PAR\s+(\d+)$/.exec(lines[0].trim());
+  const map = lines.slice(1), h = map.length, w = Math.max(...map.map((l) => l.length));
+  const wall = new Uint8Array(w * h), pieces = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const ch = map[y][x] || ' ', i = y * w + x;
+    if (ch === '#') wall[i] = 1;
+    else if (ch === ' ') wall[i] = 2;
+    else if ('^>v<'.includes(ch)) pieces.push({ k: 'lantern', x, y, r: '^>v<'.indexOf(ch), c: WHITE_LIGHT, mode: 'fixed' });
+    else if (ch === '/' || ch === '\\') pieces.push({ k: 'mirror', x, y, r: ch === '/' ? 0 : 1, c: 0, mode: 'free' });
+    else if (ch === 'o') pieces.push({ k: 'lens', x, y, r: 0, c: WHITE_LIGHT, mode: 'fixed' });
+  }
+  return { name: head ? head[1] : '?', par: head ? +head[2] : 0, w, h, wall, pieces };
 }
-/** Three characters, 8 bits each. */
-const packInitials = (str) => (str.charCodeAt(0) << 16) | (str.charCodeAt(1) << 8) | str.charCodeAt(2);
-const unpackInitials = (v) => (v ? String.fromCharCode((v >> 16) & 255, (v >> 8) & 255, v & 255) : '---');
-const lastInitials = () => (dget(INITIALS_SLOT) ? unpackInitials(dget(INITIALS_SLOT)) : 'AAA');
+
+/**
+ * Trace the light. `pieces` (the room's, or a copy with other places and turns); `skip` a piece left out (the one held).
+ * Returns { half, got, runs }: half[(y * w + x) * 4 + d] the colours on the half of cell (x, y) towards d (for drawing and
+ * the light on the floor); got[i] the colours reaching piece i (a lens); runs the beams traced.
+ */
+function trace(room, pieces, skip = -1) {
+  const { w, h, wall } = room, at = new Int16Array(w * h).fill(-1);
+  pieces.forEach((q, i) => { if (i !== skip) at[q.y * w + q.x] = i; });
+  const half = new Uint8Array(w * h * 4), got = new Uint8Array(pieces.length), seen = new Uint8Array(w * h * 4);
+  const queue = [];
+  pieces.forEach((q, i) => { if (i !== skip && q.k === 'lantern') queue.push([q.x, q.y, q.r, q.c]); });
+  let runs = 0;
+  while (queue.length && runs < MAX_RUNS) {
+    let [x, y, d, c] = queue.shift(); runs++;
+    for (;;) { // the beam leaves cell (x, y) going d
+      const s = (y * w + x) * 4 + d;
+      if ((seen[s] & c) === c) break; // this way, with this colour, already traced (a loop)
+      seen[s] |= c; half[s] |= c;
+      const nx = x + DX[d], ny = y + DY[d];
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h || wall[ny * w + nx]) break; // stopped at the wall's face
+      const back = (d + 2) & 3, n = ny * w + nx; half[n * 4 + back] |= c;
+      const i = at[n];
+      if (i < 0) { x = nx; y = ny; continue; } // empty floor: on through the cell
+      const q = pieces[i];
+      if (q.k === 'mirror') { x = nx; y = ny; d = MIRROR[q.r][d]; continue; }
+      if (q.k === 'lens') got[i] |= c;
+      break; // a lens takes the light; a lantern blocks it
+    }
+  }
+  return { half, got, runs };
+}
+
+/** Is every lens lit (the colours reaching it exactly its own)? */
+function lensesLit(pieces, got) { return pieces.every((q, i) => q.k !== 'lens' || got[i] === q.c); }
+const solvedBy = (room, pieces) => lensesLit(pieces, trace(room, pieces).got);
+// --- END LIGHT ---
+
+// The rooms of step 1 (rooms.txt and its ROM blob come in step 2).
+const ROOMS = [
+String.raw`ROOM FIRST LIGHT PAR 1
+#########
+#.......#
+#....o..#
+#.......#
+#>......#
+#.......#
+#./.....#
+#########`,
+String.raw`ROOM TWO TURNS PAR 2
+##########
+#....#..o#
+#....#...#
+#........#
+#........#
+#^.\.....#
+#..../...#
+##########`,
+];
 
 // --- Input: edge-triggered presses (btnp repeats; menus want one press) ---
 
@@ -72,34 +143,67 @@ let inputMask = 0, prevMask = 0;
 const BUTTONS = [UP, DOWN, LEFT, RIGHT, A, B, X, Y, L, R, START, SELECT];
 function readPad() { let m = 0; for (const b of BUTTONS) if (btn(b)) m |= 1 << b; return m; }
 const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) === 0;
+const REPEAT_WAIT = 12, REPEAT_EVERY = 4; // a held D-pad direction moves the cursor again after 12 frames, then every 4
+let heldFor = 0;
+/** The D-pad for the cursor: a press moves once; held, it repeats. Returns the direction (0 to 3) or -1. */
+function dpad() {
+  const dirs = [UP, RIGHT, DOWN, LEFT], d = dirs.findIndex((b) => btn(b));
+  if (d < 0) { heldFor = 0; return -1; }
+  const fresh = pressed(dirs[d]); heldFor = fresh ? 0 : heldFor + 1;
+  return fresh || (heldFor >= REPEAT_WAIT && (heldFor - REPEAT_WAIT) % REPEAT_EVERY === 0) ? d : -1;
+}
 
 // --- State ---
 
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
-let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
-let score = 0, lives = 3, px = 120, blocks = [];
-const HOME = { x: 120 };
+let titleSel = 0, pauseSel = 0;
+let roomNo = 0, room = null, pieces = [], cx = 0, cy = 0, held = -1, light = null;
+let hist = [], pos = 0, lastPiece = -1; // the moves: hist[k] the places and turns after move k (hist[0] as the room began)
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
     for (let i = 0; i < 256; i++) dset(i, 0);
     dset(VERSION_SLOT, SAVE_VERSION);
   }
-  // The background: the ground on layer 0 along the bottom of the screen, the hills behind it on layer 1 (each its
-  // region of Map RAM, placed with a negative scroll and not repeated), the sky a gradient in scanline() below.
-  const f = ART.scenes.field, h = ART.scenes.hills;
-  bg(0, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, x: 0, y: -(224 - f.h * 8), wrap: false, show: true });
-  bg(1, { mx: h.mx, my: h.my, mw: h.w, mh: h.h, x: 0, y: -(224 - f.h * 8 - h.h * 8 + 8), wrap: false, show: true });
-  blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (ART.colors.GLASS) are see-through
+  for (let i = 0; i < 3; i++) bg(i, { show: false }); // (the art comes in step 5: plain shapes on the overlay until then)
+  color(0, 2, 2, 4); // the backdrop: night
+  blend({ layers: ['overlay'], op: 'add' }); // the beams (overlay colours 192 and up) add their light
+  for (let c = 1; c <= 7; c++) { // the beams' colours: a glow (192 + c) and a core (200 + c)
+    const v = (bit, on, off) => (c & bit ? on : off);
+    color(192 + c, v(1, 12, 0), v(2, 12, 0), v(4, 14, 0));
+    color(200 + c, v(1, 31, 10), v(2, 31, 10), v(4, 31, 10));
+  }
   if (skipTitle) startGame(); else toTitle();
 }
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
-function startGame() {
-  score = 0; lives = 3; px = HOME.x; blocks = []; paused = false; timer = 0; state = 'play';
-  play(SONG.play);
+function startGame() { loadRoom(0); play(SONG.play); }
+
+/** Start room n as it begins: its pieces, the cursor on the first free piece, no moves. */
+function loadRoom(n) {
+  roomNo = n; room = parseRoom(ROOMS[n]); pieces = room.pieces.map((q) => ({ ...q }));
+  const first = pieces.find((q) => q.mode === 'free') || { x: 1, y: 1 };
+  cx = first.x; cy = first.y; held = -1; hist = [snap()]; pos = 0; lastPiece = -1;
+  state = 'play'; timer = 0; paused = false; relight();
+}
+const snap = () => pieces.map((q) => [q.x, q.y, q.r]);
+const restore = (sn) => sn.forEach(([x, y, r], i) => Object.assign(pieces[i], { x, y, r }));
+const same = (a, b) => a.every((v, i) => v[0] === b[i][0] && v[1] === b[i][1] && v[2] === b[i][2]);
+const moves = () => pos;
+function relight() { light = trace(room, pieces, held); }
+const pieceAt = (x, y) => pieces.findIndex((q, i) => i !== held && q.x === x && q.y === y);
+
+/**
+ * A change to piece i has been made: it is a move, or part of the last one when that was this piece too (turning a piece
+ * again, or picking it up, turning it and dropping it). A change that puts things back as they were before the move undoes it.
+ */
+function changed(i) {
+  const now = snap();
+  if (lastPiece === i && pos > 0) { hist[pos] = now; if (same(now, hist[pos - 1])) { pos--; hist.length = pos + 1; lastPiece = -1; } }
+  else if (!same(now, hist[pos])) { hist.length = pos + 1; hist.push(now); pos++; lastPiece = i; }
+  relight();
 }
 
 // --- Update ---
@@ -110,8 +214,7 @@ function update() {
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'play') updatePlay();
-  else if (state === 'over') updateOver();
-  else if (state === 'initials') updateInitials();
+  else if (state === 'solved') updateSolved();
   else if (state === 'records') updateRecords();
   prevMask = inputMask;
 }
@@ -120,57 +223,59 @@ function updateTitle() {
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) startGame(); else { state = 'records'; hl = -1; timer = 0; }
+    if (titleSel === 0) startGame(); else { state = 'records'; timer = 0; }
   }
 }
 
-/** The game itself: replace this. Left and right move; blocks fall; a hit costs a life. */
+/** A room: the cursor, picking up and dropping, turning, undo and redo (SPEC 3). */
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (btn(LEFT)) px = Math.max(8, px - 3);
-  if (btn(RIGHT)) px = Math.min(248, px + 3);
-  if (timer % 30 === 0) blocks.push({ x: rndi(8, 248), y: -8 });
-  for (const b of blocks) {
-    b.y += 2 + Math.min(3, score / 40);
-    if (b.y > 196 && b.y < 212 && Math.abs(b.x - px) < 12 && !b.hit) { b.hit = true; lives--; fx(SFX.hit); }
-    if (b.y > 224 && !b.hit && !b.done) { b.done = true; score += 10; fx(SFX.point); }
+  const d = dpad();
+  if (d >= 0) {
+    const nx = cx + DX[d], ny = cy + DY[d];
+    if (nx >= 0 && ny >= 0 && nx < room.w && ny < room.h && room.wall[ny * room.w + nx] !== 2) { cx = nx; cy = ny; fx(SFX.move); }
   }
-  blocks = blocks.filter((b) => b.y < 232);
-  if (lives <= 0) gameOver();
+  if (pressed(A)) {
+    if (held < 0) {
+      const i = pieceAt(cx, cy);
+      if (i >= 0 && pieces[i].mode === 'free') { held = i; relight(); fx(SFX.pick); } else fx(SFX.no);
+    } else if (!room.wall[cy * room.w + cx] && pieceAt(cx, cy) < 0) {
+      const i = held; held = -1; pieces[i].x = cx; pieces[i].y = cy; changed(i); fx(SFX.drop);
+    } else fx(SFX.no);
+  }
+  const turn = pressed(B) ? 1 : pressed(Y) ? -1 : 0;
+  if (turn) {
+    const i = held >= 0 ? held : pieceAt(cx, cy), q = pieces[i];
+    if (q && q.mode !== 'fixed' && TURNS[q.k] > 1) { q.r = (q.r + turn + TURNS[q.k]) % TURNS[q.k]; changed(i); fx(SFX.turn); } else fx(SFX.no);
+  }
+  if (pressed(SELECT) || pressed(L)) undo();
+  if (pressed(R)) redo();
+  if (held < 0 && lensesLit(pieces, light.got)) { state = 'solved'; timer = 0; fx(SFX.solved); }
 }
 
-function gameOver() {
-  state = 'over'; timer = 0; play(-1); fx(SFX.over);
-  rank = insertTop({ score, initials: lastInitials() });
+/** Undo a move. With a piece held, the first undo only puts it back where it came from. */
+function undo() {
+  if (held >= 0) { held = -1; relight(); fx(SFX.undo); return; }
+  if (pos === 0) { relight(); fx(SFX.no); return; }
+  pos--; restore(hist[pos]); lastPiece = -1; relight(); fx(SFX.undo);
+}
+function redo() {
+  if (held >= 0 || pos >= hist.length - 1) { fx(SFX.no); return; }
+  pos++; restore(hist[pos]); lastPiece = -1; relight(); fx(SFX.undo);
 }
 
-function updateOver() {
-  if (timer < 60 || !(pressed(A) || pressed(START))) return;
+/** The room is solved: A goes on to the next room (after the last, the title, until the floors come in step 4). */
+function updateSolved() {
+  if (timer < 30 || !(pressed(A) || pressed(START))) return;
   fx(SFX.select);
-  if (rank >= 0) { state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0 }; fx(SFX.record); }
-  else toTitle();
-}
-
-/** UP/DOWN pick a letter, LEFT/RIGHT (or A and B) move, START saves (as does A on the last letter). */
-function updateInitials() {
-  const ini = initials, k = LETTERS.indexOf(ini.chars[ini.pos]);
-  if (pressed(UP)) { ini.chars[ini.pos] = LETTERS[(k + 1) % LETTERS.length]; fx(SFX.move); }
-  if (pressed(DOWN)) { ini.chars[ini.pos] = LETTERS[(k + LETTERS.length - 1) % LETTERS.length]; fx(SFX.move); }
-  if (pressed(LEFT) || pressed(B)) ini.pos = Math.max(0, ini.pos - 1);
-  if (pressed(RIGHT)) ini.pos = Math.min(2, ini.pos + 1);
-  const done = pressed(START) || (pressed(A) && ini.pos === 2);
-  if (pressed(A) && ini.pos < 2) ini.pos++;
-  if (!done || timer < 20) return;
-  const v = packInitials(ini.chars.join(''));
-  dset(INITIALS_SLOT, v); dset(TOP_SLOT + rank * ENTRY + 1, v);
-  fx(SFX.select);
-  state = 'records'; hl = rank; timer = 0;
+  if (roomNo + 1 < ROOMS.length) loadRoom(roomNo + 1); else toTitle();
 }
 
 function updateRecords() {
   if ((pressed(START) || pressed(A) || pressed(B)) && timer > 20) { fx(SFX.select); toTitle(); }
 }
 
+const PAUSE_ITEMS = ['RESUME', 'RESTART ROOM', 'QUIT TO TITLE'];
 function updatePause() {
   if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
   if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
@@ -178,28 +283,70 @@ function updatePause() {
   else if (pressed(A) || pressed(START)) {
     fx(SFX.select);
     if (pauseSel === 0) paused = false;
-    else if (pauseSel === 1) startGame(); // restart
-    else toTitle(); // quitting abandons the game: nothing is recorded
+    else if (pauseSel === 1) loadRoom(roomNo); // the room as it began, the moves cleared
+    else toTitle();
   }
 }
 
-// --- Draw ---
+// --- Draw (plain shapes until the art, step 5) ---
+
+const CELL = 16;
+/** The room's top left on the screen: a grid of at most 14 x 12 cells at (16, 24), a smaller room centred in it. */
+const ox = () => 16 + (14 - room.w) * 8, oy = () => 24 + (12 - room.h) * 8;
 
 function draw() {
   cls();
-  if (state === 'play' || state === 'over') drawPlay();
+  if (state === 'play' || state === 'solved') drawPlay();
   else if (state === 'title') drawTitle();
-  else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  if (state === 'over') { panel(48, 80, 160, 64); ctxt('GAME OVER', 92, RED); ctxt(`SCORE ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
+  if (state === 'solved') drawSolved();
   if (paused) drawPause();
 }
 
 function drawPlay() {
-  sprite(ART.sprites.player, px - 8, 196);
-  for (const b of blocks) if (!b.hit) sprite(ART.sprites.gem, b.x - 8, b.y - 2);
-  txt(`SCORE ${score}`, 8, 6, WHITE);
-  txt(`LIVES ${lives}`, 192, 6, lives > 1 ? WHITE : RED);
+  const X = ox(), Y = oy(), { w, h } = room;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const v = room.wall[y * w + x], px = X + x * CELL, py = Y + y * CELL;
+    if (v === 1) { rectfill(px, py, CELL, CELL, 3); rect(px, py, CELL, CELL, 1); } else if (v === 0) { rectfill(px, py, CELL, CELL, 1); rect(px, py, CELL, CELL, 2); }
+  }
+  pieces.forEach((q, i) => { if (i !== held) drawPiece(q, X + q.x * CELL, Y + q.y * CELL, light.got[i]); });
+  drawBeams(X, Y);
+  const blink = clock % 40 < 28;
+  if (held >= 0) drawPiece(pieces[held], X + cx * CELL, Y + cy * CELL - 3, 0);
+  if (state === 'play') rect(X + cx * CELL - 1, Y + cy * CELL - 1, CELL + 2, CELL + 2, blink ? GOLD : DIM);
+  txt(`${roomNo + 1} ${room.name}`, 8, 6, WHITE);
+  const m = `MOVES ${moves()}  PAR ${room.par}`; txt(m, 248 - m.length * 8, 6, moves() <= room.par ? WHITE : DIM);
+}
+
+/** The beams: each half cell a beam crosses, a line in its colours from the cell's middle to its edge; the middle in all of them. */
+function drawBeams(X, Y) {
+  const { w, h } = room, H = light.half;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const k = (y * w + x) * 4, mx = X + x * CELL + 8, my = Y + y * CELL + 8;
+    let all = 0;
+    for (let d = 0; d < 4; d++) {
+      const c = H[k + d]; if (!c) continue; all |= c;
+      const ex = mx + DX[d] * 8, ey = my + DY[d] * 8;
+      if (DX[d]) { rectfill(Math.min(mx, ex), my - 1, 9, 3, 192 + c); line(mx, my, ex, ey, 200 + c); }
+      else { rectfill(mx - 1, Math.min(my, ey), 3, 9, 192 + c); line(mx, my, ex, ey, 200 + c); }
+    }
+    if (all) rectfill(mx - 1, my - 1, 3, 3, 200 + all);
+  }
+}
+
+/** A piece in plain shapes: a lantern a brass box with its glass on the side it faces; a mirror a silver line; a lens a ring. */
+function drawPiece(q, px, py, got) {
+  if (q.k === 'lantern') {
+    rectfill(px + 3, py + 3, 10, 10, 9); rect(px + 3, py + 3, 10, 10, 4);
+    const gx = px + 7 + DX[q.r] * 5, gy = py + 7 + DY[q.r] * 5; rectfill(gx, gy, 2, 2, GOLD);
+  } else if (q.k === 'mirror') {
+    if (q.r === 0) { line(px + 2, py + 13, px + 13, py + 2, 12); line(px + 3, py + 13, px + 13, py + 3, WHITE); }
+    else { line(px + 2, py + 2, px + 13, py + 13, 12); line(px + 3, py + 2, px + 13, py + 12, WHITE); }
+    if (q.mode === 'free') pset(px + 1, py + 1, DIM);
+  } else if (q.k === 'lens') {
+    const lit = got === q.c;
+    circfill(px + 8, py + 8, 5, lit ? 200 + q.c : 1); circ(px + 8, py + 8, 6, lit ? GOLD : DIM);
+  }
 }
 
 function drawTitle() {
@@ -209,40 +356,24 @@ function drawTitle() {
 
 function drawRecords() {
   panel(24, 16, 208, 192);
-  ctxt('TOP 10', 24, GOLD);
-  topTen().forEach((e, i) => {
-    const y = 48 + i * 14, on = i === hl;
-    if (on && timer % 40 < 30) rectfill(28, y - 2, 200, 12, PANEL);
-    txt(String(i + 1).padStart(2), 40, y, i === 0 ? GOLD : DIM);
-    txt(e.score ? e.initials : '---', 72, y, on ? GOLD : WHITE);
-    txt(e.score ? String(e.score).padStart(8) : '', 128, y, i === 0 ? GOLD : WHITE);
-  });
+  ctxt('RECORDS', 24, GOLD);
+  ctxt('THE ROOMS LIT AND THE STARS', 60, DIM); ctxt('COME WITH THE FLOORS (STEP 4)', 74, DIM);
   if (timer % 60 < 40) ctxt('START: BACK', 192, DIM);
 }
 
-function drawInitials() {
-  const ini = initials;
-  panel(24, 40, 208, 144);
-  ctxt(rank === 0 ? 'NEW HIGH SCORE!' : `TOP 10: #${rank + 1}`, 52, GOLD);
-  ctxt(String(score), 68, WHITE);
-  ctxt('ENTER YOUR INITIALS', 90, DIM);
-  for (let i = 0; i < 3; i++) {
-    const on = i === ini.pos, x = 84 + i * 32;
-    rect(x - 2, 106, 28, 20, on ? GOLD : PANEL);
-    txt(ini.chars[i], x + 10, 112, on ? GOLD : WHITE);
-  }
-  if (timer % 60 < 40) ctxt('START: SAVE', 160, WHITE);
+function drawSolved() {
+  panel(40, 170, 176, 48); // (at the bottom, so the lit room shows)
+  ctxt('THE ROOM IS LIT', 176, GOLD);
+  ctxt(`${moves()} MOVES   PAR ${room.par}`, 190, WHITE);
+  if (timer > 30 && timer % 60 < 40) ctxt(roomNo + 1 < ROOMS.length ? 'A: NEXT ROOM' : 'A: TO THE TITLE', 204, DIM);
 }
 
 function drawPause() {
-  panel(64, 80, 128, 64);
+  panel(56, 80, 144, 64);
   ctxt('PAUSED', 88, GOLD);
-  ['RESUME', 'RESTART', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
+  PAUSE_ITEMS.forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 72, 104 + i * 10, i === pauseSel ? WHITE : DIM));
 }
 
-function panel(x, y, w, h) { rectfill(x, y, w, h, ART.colors.GLASS); rect(x, y, w, h, PANEL); }
+function panel(x, y, w, h) { rectfill(x, y, w, h, SHADOW); rect(x, y, w, h, PANEL); }
 function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }
 const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
-
-/** Each line of the screen: the sky's colour for that line (the SNES did its skies this way, with HDMA). */
-function scanline(y) { gradientLine(ART.gradients.sky, y); }

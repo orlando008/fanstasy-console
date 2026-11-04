@@ -8,10 +8,10 @@ export const CART = fileURLToPath(new URL('../../../carts/lantern-keeper.nova', 
 // Add to this list as the game grows.
 const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
-  get score() { return score; }, set score(v) { score = v; }, get lives() { return lives; }, set lives(v) { lives = v; },
-  get blocks() { return blocks; }, get px() { return px; }, get ART() { return ART; }, mget: (x, y) => mget(x, y), get rank() { return rank; }, get initials() { return initials; },
-  get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
-  SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
+  get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; }, get ART() { return ART; },
+  get roomNo() { return roomNo; }, get room() { return room; }, get pieces() { return pieces; }, get light() { return light; },
+  get cx() { return cx; }, set cx(v) { cx = v; }, get cy() { return cy; }, set cy(v) { cy = v; }, get held() { return held; },
+  get hist() { return hist; }, get pos() { return pos; }, moves, loadRoom, relight, pieceAt, ROOMS, SFX, SONG, TURNS,
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */

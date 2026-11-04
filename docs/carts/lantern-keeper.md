@@ -1,7 +1,7 @@
 # Lantern Keeper: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Scaffolded and specified: the frame of the game (title, play, pause, sound cues) works; the game is the starter's placeholder until step 1
+**Status:** Step 1 built (a room playable with mirrors, plain shapes); steps 2 to 8 to come
 **Cart source:** `carts/src/lantern-keeper/` → `carts/lantern-keeper.nova`
 
 ---
@@ -243,6 +243,30 @@ The stars, the rooms lit and the floors open all follow from slots 10 to 49 and 
 
 Each step: build it, run `node tools/verify.js lantern-keeper` (and `node tools/devkit/smoke.mjs lantern-keeper`), write its
 **Built** and **Results** notes under its number here, commit and push.
+
+### Step 1 built: the vertical slice
+
+- `carts/src/lantern-keeper/code.js`: the starter's game is gone. **The LIGHT block** (`parseRoom`, `trace`, `lensesLit`,
+  `solvedBy`: pure functions, no console calls) holds the rules of section 5 for lanterns, mirrors, lenses and walls. A trace follows
+  every beam from cell to cell, marks the colours on each **half cell** it crosses (what the drawing and, later, the light on the
+  floor read), adds the colours reaching each lens, and stops a loop by remembering each cell, direction and colour traced. **The
+  room**: two rooms written in the code for now (`ROOMS`, a character a cell: `#` wall, `.` floor, `^ > v <` a white lantern,
+  `/ \` a free mirror, `o` a white lens; the first line its name and par). **The controls** of section 3: the cursor (a press a
+  cell, held: again after 12 frames, then every 4), A to pick up and drop, B and Y to turn, SELECT or L to undo, R to redo, START for
+  the room menu (RESUME, RESTART ROOM, QUIT TO TITLE). **The moves**: `hist` holds the places and turns after each move; a change to
+  the same piece as the last move is part of it, and one that puts things back as they were before it undoes it. A room solved
+  shows its moves and par, and A goes on to the next. Plain shapes on the overlay; the beams in colours 192 to 207, added
+  (`blend`): a glow and a core.
+- `tests/carts/lantern-keeper/light.mjs` cuts the LIGHT block out of `code.js` and runs it in node (for the tests now and the solver
+  in step 2). `01-flow.mjs` (the title, the room menu, a room solved and the next), `02-light.mjs` (a straight beam, the wall's
+  face, both mirrors from all four sides, a lens lit by exactly its colour, a lantern blocking, a loop ending, a held piece left
+  out, no room solved as it begins), `03-controls.mjs` (the cursor and its repeat, picking up and dropping where it can and cannot,
+  turning, what a move is, undo and redo, both rooms solved with the buttons at par), `04-bot.mjs` (the bot solves every room
+  through the buttons, at par). The starter's art test is gone until the art (step 5).
+- `tests/carts/lantern-keeper/bot.mjs`: finds the answer that changes the fewest pieces (for now by trying every place and turn of
+  one or two free pieces) and plays it with the cursor, A and B; `sweep.mjs lantern-keeper --set room=1,2` runs it.
+- **Results:** 69 checks pass; the code 13.4 KB (20 %); a frame 1.1 ms at the 99th percentile; the smoke test 60 fps; the bot
+  solves both rooms at par (7 and 22 presses).
 
 ## 16. Open questions
 
