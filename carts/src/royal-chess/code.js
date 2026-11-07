@@ -3,7 +3,7 @@
 // special move, legality by check, making and unmaking moves, perft (tested against the published counts), and a board
 // to play on with the cursor; step 2, the end of a game (checkmate, stalemate, the draws), promotion's choice, the
 // result, the menu's draw offer and resignation, and two pads; step 3, the computer (spec 7); step 4, the menus and the
-// saves (spec 10, 13).
+// saves (spec 10, 13); step 5, the side panel and the highlights (spec 4).
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
@@ -384,7 +384,8 @@ function thinkNow(P, L) { const g = think(P, L); let r; do r = g.next(); while (
 // The board on the screen (spec 3, 4).
 // ===================================================================================================================
 
-const SQ = 24, BX = 16, BY = 8;   // a square's size, and the board's top left on the screen
+const SQ = 24, BX = 14, BY = 11, FRAME_W = 10;   // a square's size, the board's top left on the screen, and its frame (with the coordinates)
+const PX = 220, PW = 34;   // the side panel: its left edge and width (4 small pieces a row)
 const screenX = (s) => BX + (s & 7) * SQ, screenY = (s) => BY + (7 - (s >> 4)) * SQ;
 
 let skipTitle = false;
@@ -634,12 +635,12 @@ function drawPiece(p, x, y) {
 
 function drawBoard() {
   const C = ART.colors;
-  rectfill(BX - 6, BY - 6, 8 * SQ + 12, 8 * SQ + 12, C.FRAME);
+  rectfill(BX - FRAME_W, BY - FRAME_W, 8 * SQ + 2 * FRAME_W, 8 * SQ + 2 * FRAME_W, C.FRAME);
   for (let s = 0; s < 128; s++) {
     if (s & 0x88) continue;
     const x = screenX(s), y = screenY(s);
-    rectfill(x, y, SQ, SQ, ((s >> 4) + (s & 7)) % 2 ? C.LIGHT : C.DARK);
-    if (lastMove && (s === mFrom(lastMove) || s === mTo(lastMove))) rect(x + 1, y + 1, SQ - 2, SQ - 2, C.LAST);
+    const last = lastMove && (s === mFrom(lastMove) || s === mTo(lastMove));   // the last move's two squares, tinted
+    rectfill(x, y, SQ, SQ, last ? C.LAST : ((s >> 4) + (s & 7)) % 2 ? C.LIGHT : C.DARK);
   }
   if (inCheck(pos)) { const k = pos.kings[pos.side]; rectfill(screenX(k), screenY(k), SQ, SQ, C.CHECK); }
   for (let s = 0; s < 128; s++) if (!(s & 0x88) && pos.b[s] && s !== liftedSq) drawPiece(pos.b[s], screenX(s), screenY(s));
@@ -647,16 +648,51 @@ function drawBoard() {
     const x = screenX(mTo(m)) + 12, y = screenY(mTo(m)) + 12;
     if (pos.b[mTo(m)] || mFlags(m) & F_EP) circ(x, y, 10, C.MOVE); else circfill(x, y, 3, C.MOVE);
   }
-  for (let f = 0; f < 8; f++) print('abcdefgh'[f], BX + f * SQ + 10, BY + 8 * SQ + 1, DIM);
-  for (let r = 0; r < 8; r++) print(String(r + 1), BX - 6, BY + (7 - r) * SQ + 9, DIM);
+  for (let f = 0; f < 8; f++) print('abcdefgh'[f], BX + f * SQ + 9, BY + 8 * SQ + 1, ART.colors.IVORY);   // the coordinates, on the frame
+  for (let r = 0; r < 8; r++) print(String(r + 1), BX - FRAME_W + 1, BY + (7 - r) * SQ + 8, ART.colors.IVORY);
   const cx = BX + cur.f * SQ, cy = BY + (7 - cur.r) * SQ;
   rect(cx, cy, SQ, SQ, C.CURSOR); rect(cx + 1, cy + 1, SQ - 2, SQ - 2, C.CURSOR);
   if (liftedSq >= 0) drawPiece(pos.b[liftedSq], cx, cy - 3);   // the piece held, raised over the cursor
   const status = state === 'over' ? (result.winner < 0 ? 'DRAWN' : result.winner ? 'BLACK WINS' : 'WHITE WINS')
     : noticeT ? notice : cpuToMove() ? `${LEVELS[cpu.level].name} IS THINKING${'...'.slice(0, (flr(clock / 15) % 3) + 1)}`
     : `${pos.side ? 'BLACK' : 'WHITE'} TO MOVE${inCheck(pos) ? ': CHECK!' : ''}`;
-  txt(status, 16, 212, noticeT || inCheck(pos) ? GOLD : WHITE);
-  if (pad2) txt(`P${padOf(pos.side) + 1}`, 228, 212, DIM);
+  txt(status, 4, 215, noticeT || inCheck(pos) ? GOLD : WHITE);
+  drawPanel();
+}
+
+/** The pieces each side has taken, from the game's moves (so a promoted piece taken counts as what it was). */
+function captured() {
+  const out = [[], []];   // out[side]: the pieces that side has taken
+  for (const [, cap] of pos.undo) if (cap) out[sideOf(cap) ^ 1].push(cap);
+  return out.map((l) => l.sort((a, b) => VALUE[typeOf(b)] - VALUE[typeOf(a)]));
+}
+const POINTS = [0, 1, 3, 3, 5, 9, 0];
+/** The material on the board in points (pawn 1, knight and bishop 3, rook 5, queen 9): White's less Black's. */
+function material() {
+  let m = 0;
+  for (let s = 0; s < 128; s++) { if (s & 0x88) continue; const p = pos.b[s]; if (p) m += (p & BLACK ? -1 : 1) * POINTS[typeOf(p)]; }
+  return m;
+}
+/** Who plays a side: the computer, the person, a pad, or just the colour. */
+const nameOf = (side) => (cpu ? (side === cpu.side ? 'CPU' : 'YOU') : pad2 ? `P${padOf(side) + 1}` : side ? 'BLACK' : 'WHITE');
+
+/** The side panel (spec 4): Black at the top, White at the bottom, each with its name, the pieces it has taken (small,
+ * in rows of four) and its lead in material; a marker beside whoever is to move. */
+function drawPanel() {
+  const caps = captured(), lead = material();
+  rectfill(PX - 4, 0, PW + 6, 107, ART.colors.FRAME); rectfill(PX - 4, 109, PW + 6, 107, ART.colors.FRAME);   // two wooden trays
+  for (const side of [BLACK_SIDE, WHITE_SIDE]) {
+    const top = side === BLACK_SIDE, nameY = top ? 4 : 200, toMove = state !== 'over' && pos.side === side;
+    if (toMove) rectfill(PX - 2, nameY - 2, PW + 2, 11, ART.colors.CURSOR);
+    print(nameOf(side), PX, nameY, toMove ? SHADOW : WHITE);
+    caps[side].forEach((p, i) => {   // what this side has taken: the other side's pieces, by their letters in their colour (the art pass draws them)
+      const x = PX + (i % 4) * 9, y = top ? 18 + flr(i / 4) * 10 : 188 - flr(i / 4) * 10;
+      print(' PNBRQK'[typeOf(p)], x, y, p & BLACK ? ART.colors.EBONY : ART.colors.IVORY);
+    });
+    const ahead = side === WHITE_SIDE ? lead : -lead;
+    if (ahead > 0) print(`+${ahead}`, PX, top ? 60 : 146, GREEN);
+  }
+  if (cpuToMove()) print('...'.slice(0, (flr(clock / 15) % 3) + 1), PX + 26, cpu.side ? 4 : 200, SHADOW);
 }
 
 /** The promotion's choice, beside the square: the four pieces, one lit. */

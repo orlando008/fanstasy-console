@@ -1,7 +1,7 @@
 # Royal Chess: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 4 of 8 built (section 15): every rule of chess, two players, the computer at three levels, the menus and a game saved move by move. Step 5 (the side panel and the highlights) is next.
+**Status:** Steps 1 to 5 of 8 built (section 15): every rule of chess, two players, the computer at three levels, the menus and saves, and the side panel. Step 6 (the art) is next.
 **Cart source:** `carts/src/royal-chess/` → `carts/royal-chess.nova`
 
 ---
@@ -53,14 +53,21 @@ to light up, and the pieces each side has taken sit beside the board with who is
 
 256 × 224.
 
-- **The board:** 8 × 8 squares of 24 px, 192 × 192 px, at (16, 8). Files `a` to `h` are below it and ranks `1` to `8`
-  to its left, in small letters on the frame.
-- **The side panel,** at x 212 to 252: Black's captures at the top (the pieces White has lost are Black's gains, and the
-  other way round), White's at the bottom, each as small 8 px pieces in rows, with the material lead (`+3`) beside the
-  side that is ahead. Between them, whose move it is, and the computer's `THINKING` while it thinks.
-- **The status line,** at y 212: `WHITE TO MOVE`, `BLACK TO MOVE`, `CHECK!`, and the result at the end.
-- **Highlights on the board:** the last move's two squares (a soft tint), the king in check (red), the cursor (a gold
-  frame), the piece held's legal squares (a dot on an empty square, a ring on a capture).
+- **The board:** 8 × 8 squares of 24 px, 192 × 192 px, at (14, 11), in a frame 10 px wide. The files `a` to `h` are on
+  the frame below it and the ranks `1` to `8` on the frame to its left.
+- **The side panel,** at x 220 to 254, in two wooden trays, Black's at the top and White's at the bottom. Each tray has:
+  - who plays that side (`YOU` and `CPU` against the computer; `P1` and `P2` with two pads; else `WHITE` and `BLACK`),
+    lit in gold while it is that side's move;
+  - the pieces that side has taken, in rows of four, the most valuable first, each in its own colour;
+  - its lead in material (`+2`, in points: pawn 1, knight and bishop 3, rook 5, queen 9) if it is ahead.
+  The pieces taken come from the game's moves, so a promoted queen that is taken counts as a queen.
+- **The status line,** at y 215: `WHITE TO MOVE`, `BLACK TO MOVE`, `... : CHECK!`, `CASUAL IS THINKING...`, a notice
+  (`DRAW DECLINED`), and the result at the end.
+- **Highlights on the board:**
+  - the last move's two squares, tinted;
+  - the king in check, red;
+  - the cursor, a gold frame;
+  - the piece held's legal squares, a dot on an empty square and a ring on a capture.
 
 ## 5. The rules
 
@@ -328,6 +335,23 @@ position a test sets up).
      - `node tools/devkit/smoke.mjs royal-chess` runs in the real console with no errors.
 5. **The side panel and the highlights:** the captured pieces and the material lead, the status line, the last move,
    the check, the coordinates.
+   - **Built:**
+     - **The panel** (`drawPanel`): `captured` reads the pieces taken from the game's moves, `material` gives the lead,
+       and `nameOf` says who plays each side.
+     - **The last move** is now a tint.
+     - **The frame** is wider, so the coordinates sit on it, and the status line moved below it.
+     - **Captured pieces** are letters until the art pass. Small discs with letters on them could not be read at 8 px.
+   - **Results:**
+     - `node tools/verify.js royal-chess` passes, with 163 test checks. The new file is `09-panel.mjs`, with 10 checks:
+       - the pieces taken and their order;
+       - the lead;
+       - a promoted queen taken counted as a queen;
+       - the names for each mode;
+       - whose move is marked;
+       - the last move's tint;
+       - the board, the frame and the panel inside the screen;
+       - the files on the frame.
+     - `node tools/devkit/smoke.mjs royal-chess` runs in the real console with no errors.
 6. **The art:** the palace study (section 12).
 7. **The audio:** the two songs from their sources and the effects (11), measured with `loud.mjs`.
 8. **Balance, polish and release:** the levels tuned with the bot, then the label, the PNG cart and the Library
