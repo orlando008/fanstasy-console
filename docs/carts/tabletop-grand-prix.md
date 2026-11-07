@@ -1,7 +1,7 @@
 # Tabletop Grand Prix: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 1 of 8 built (section 15): one car drives on a test table, with the physics, the surfaces, walls, holes and the camera. Step 2 (four cars and the knock-out) is next.
+**Status:** Steps 1 and 2 of 8 built (section 15): four cars race on a test table in knock-out rounds to five points, with the physics, the surfaces, walls, holes, a jump and the camera on the leader. Step 3 (the computer drivers) is next.
 **Cart source:** `carts/src/tabletop-grand-prix/` → `carts/tabletop-grand-prix.nova`
 
 ---
@@ -122,10 +122,13 @@ surface under the car's centre is read from the track's grid of 8 px cells (6):
   across between two parts of the track that lie close together on the table.
 - **Out:** a car is **out of the round** when its centre leaves the camera's view by more than 4 px, or when it falls.
   An out car disappears with a pop, its HUD pip greys, and the banner names it.
-- **The round ends** when one car is left; that car scores 1 point. If a round lasts `ROUND_MAX` = 1,800 frames (30 s)
-  with more than one car still in, the leader scores and the round ends.
+- **The round ends** when one car is left; that car scores 1 point. If every car still in would go out on the same
+  frame, the one furthest along stays in and scores. If a round lasts `ROUND_MAX` = 1,800 frames (30 s) with more than
+  one car still in, the leader scores and the round ends.
 - **The next round** starts at the waypoint nearest the round's winner, with all four cars on a 2 × 2 grid behind it,
-  facing along the track. The winner takes pole, and the others line up in the order they went out (the last out goes
+  facing along the track: 10 px to each side of the centreline, the second row two waypoints (32 px) behind the first.
+  The grid is moved back along the track until the road is clear of ramps and holes from 3 waypoints behind it to 8
+  ahead, so a car starting from a standstill never rolls into a gap it cannot jump. The winner takes pole, and the others line up in the order they went out (the last out goes
   second). A short count: `READY` for 60 frames, then `GO!` for 30, with the cars held until GO.
 - **The race** ends when a car reaches **5 points** (`WIN_POINTS`). Places are decided by points; a tie goes to the car
   that lasted longer in the last round. A race is at most 17 rounds (each round gives one point), and is usually 8 to 12.
@@ -135,6 +138,12 @@ surface under the car's centre is read from the track's grid of 8 px cells (6):
 The camera looks at a point 40 px ahead of the leader along its heading. It moves 12 % of the way there each frame, and
 at most 4 px a frame, so a car slightly faster than the camera can get ahead of it and stay in view. The camera is kept
 inside the track's map. At the start of a round it cuts straight to the grid.
+
+**The squeeze.** Cars that drive equally well keep the same gaps for ever, so a round could run to its time limit. From
+`SQUEEZE_T` = 480 frames (8 s) into a round, the camera looks further ahead, 6 px more each second, up to `LOOK_MAX` =
+112 px. This pushes the leader towards the back of the screen, and the cars behind it drop off. The look is held to 112 px
+across and 90 px down, so the leader always stays at least 16 px inside the screen. A car alone (in some tests) is never
+squeezed.
 
 ### 5.6 Things that move
 
@@ -344,6 +353,52 @@ The art is made in code by `carts/src/tabletop-grand-prix/art.py` (the art toolk
 2. **Four cars and the knock-out:** progress and the leader, the camera on the leader, out off the screen and by falling,
    rounds, points, the grid at each restart, and the race's end (5.4, 5.5). Collisions between cars and with walls, ramps
    and jumps (5.3). Pads for P1 to P4, and the pause of the person who paused.
+   - **Built:**
+     - **The round:** a phase for each part: `ready` (the count, the cars held), `go` (racing) and `board` (scored, the
+       points board).
+       - `checkOut` puts out the cars off the screen, and the last car in scores (`scoreRound`).
+       - `lastRank` keeps the order the cars lasted in. It sets the next grid (`newRound`) and breaks ties for the
+         race's places (`finishRace`).
+       - The result panel lists the places, and for now A goes back to the title (step 5 adds the cups).
+     - **Cars:** cars bump into each other (`collide`), and cars on a ramp jump; in the air they fly in a straight line,
+       raised up to 6 px, and touch nothing.
+       - Falls now put a car out.
+       - Each seat is a person or a computer driver. For now a pad joins by pressing a button in the race (the lobby is
+         step 5).
+       - Only the person who paused moves the pause menu.
+       - The computer drivers are step 2's simple driver: it steers for a waypoint three ahead and brakes for a sharp
+         turn.
+     - **The camera** follows the leader, and squeezes late in a round (5.5).
+     - **The test table** has a gap across its bottom straight, with a book ramp before it.
+     - **The HUD:** each car's colour, name and five point pips. Banners show the round, GO!, who is out and who
+       scores.
+     - **Art and sound:** the four cars are four sprite palettes (red, blue, yellow, green). Six placeholder effects
+       were added: out, the count, GO, a point, a race won, a jump and a crash.
+   - **Results:**
+     - `node tools/verify.js tabletop-grand-prix` passes, with 102 test checks. The new file is `04-race.mjs`, with 42
+       checks:
+       - the grid and the count;
+       - the leader and the camera;
+       - out by the screen and by falling;
+       - scoring, the next grid and its order;
+       - the time limit, and two cars going out at once;
+       - the squeeze;
+       - first to five, and the places with their tie-break;
+       - a car shoved from behind (1.5 forward and 0.4 left behind, from 2.0);
+       - the jump (36 frames at full speed, clearing the gap, and falling in below 1.5);
+       - a car in the air passing over another;
+       - pads 2 to 4 joining, driving and pausing;
+       - a whole race.
+     - **Whole races.** The bot drives P1 against three copies of the same simple driver. A race takes about 4
+       minutes at full skill (8 rounds) and 1.7 minutes when it slips (6 rounds, P1 out first every time).
+       - At full skill, 2 of the 8 rounds still run to the 30 s limit and the rest take 19 to 28 s: longer than the
+         10 to 20 s the design wants.
+       - Equal drivers keep equal gaps, and the squeeze is what ends most rounds.
+       - The drivers' levels and characters (step 3) are meant to spread the cars. The rounds are measured again
+         there, and in step 8.
+     - The game has no randomness yet, so every seed plays the same race. Step 3's line errors add some.
+     - `node tools/devkit/smoke.mjs tabletop-grand-prix` runs in the real console with no errors, at 60 fps.
+     - The code is 26.7 KB of the 64 KB, without stripping.
 3. **Computer drivers:** the racing line, the three levels and the four characters (7). The bot for the tests, and
    `sweep.mjs` over many seeds: no car stuck, every round ends, and the levels place where they should.
 4. **The eight tracks** (6), with their hazards and the things that move (5.6). Each is driven by the bot at every level:
@@ -365,6 +420,8 @@ Defaults I chose that you did not confirm, each easy to change:
 
 - **The cup points** are 10, 6, 3 and 1 for first to fourth place.
 - **A round runs at most 30 s.** If more than one car is still in by then, the leader scores.
+- **The squeeze** (5.5, added in step 2): from 8 s into a round, the camera pushes the leader towards the back of the
+  screen, so the cars behind it drop off. Without it, cars of equal skill would never split.
 - **The grid after a round:** the winner takes pole, and the others line up in the order they went out.
 - **A fall puts a car out of the round**, the same as leaving the screen. The alternative is to put it back on the track
   after a second, which would usually leave it off the screen and out anyway.

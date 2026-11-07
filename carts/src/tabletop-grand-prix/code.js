@@ -1,6 +1,7 @@
 // Tabletop Grand Prix: toy cars racing across the furniture, seen from above (docs/carts/tabletop-grand-prix.md).
-// Step 1 of the plan: one car on a test table. The physics (spec 5.1, 5.2), the track's grid of surfaces built into
-// Map RAM from its data (spec 6), falls and walls, and the camera (5.5). The frame (title, pause) is the starter's.
+// Built so far (the spec's plan, section 15): step 1, the physics (5.1, 5.2) and the track's grid of surfaces built into
+// Map RAM from its data (6); step 2, four cars and the knock-out: collisions, ramps and falls (5.3), rounds, points and
+// the race (5.4), and the camera on the leader (5.5).
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
@@ -21,7 +22,7 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 
 // --- Sound (SPEC 5). Songs use channels 0 to 5; effects take turns on 6 and 7, so they never cut into the music. ---
 
-const SFX = { move: 0, select: 1, pause: 2, bump: 3, fall: 4, land: 5 };
+const SFX = { move: 0, select: 1, pause: 2, bump: 3, fall: 4, land: 5, out: 6, tick: 7, go: 8, point: 9, win: 10, jump: 11, crash: 12 };
 const SONG = { title: 0, race: 1 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
@@ -76,7 +77,8 @@ const TRACKS = [
   { name: 'TEST TABLE', w: 128, h: 96, width: 48, table: [16, 16, 992, 736],
     pts: [200, 130, 820, 130, 900, 190, 900, 330, 820, 400, 620, 400, 560, 460, 620, 540, 860, 560, 900, 620, 840, 680, 200, 680, 130, 620, 130, 200],
     prims: [[S_ROUGH, 'c', 500, 130, 22], [S_SLICK, 'c', 900, 260, 30], [S_STICKY, 'r', 300, 655, 60, 50],
-      [S_WALL, 'r', 400, 250, 120, 80], [S_HOLE, 'c', 700, 290, 36]] },
+      [S_WALL, 'r', 400, 250, 120, 80], [S_HOLE, 'c', 700, 290, 36],
+      [S_HOLE, 'r', 584, 650, 24, 60], [S_RAMP, 'r', 608, 656, 16, 48]] },   // a gap across the bottom straight, a ramp before it
 ];
 const SPACING = 16;           // px between the centreline's waypoints after smoothing
 
@@ -152,26 +154,36 @@ function hitsWall(x, y) {
   return false;
 }
 
-// --- Cars ---
+
+// --- Cars (spec 5.3, 5.4) ---
+
+const WIN_POINTS = 5, ROUND_MAX = 1800, READY_T = 60, GO_T = 30, BOARD_T = 120, OUT_MARGIN = 4;
+const JUMP_MIN = 1.5, LIFT = 6, CAR_DAMP = 0.8;
+const CPU_NAMES = ['ZIP', 'DOT', 'MAX', 'BEA'], SEAT_COL = [RED, 8, GOLD, GREEN];   // HUD colours: red, blue, yellow, green
+
+let seats = [];   // P1 to P4: { human, name }. One car a seat; a seat no person has is a computer driver's.
+
+function newSeats() { seats = [0, 1, 2, 3].map((i) => ({ human: i === 0, name: i === 0 ? 'P1' : CPU_NAMES[i] })); }
 
 /** A car on waypoint k of the track, facing along it. */
 function newCar(seat, k) {
-  const c = { seat, x: 0, y: 0, a: 0, vx: 0, vy: 0, st: 0, fall: 0, wp: k, lap: 0, sliding: false, surf: S_ROAD };
+  const c = { seat, x: 0, y: 0, a: 0, vx: 0, vy: 0, st: 0, fall: 0, air: 0, airT: 0, wp: k, lap: 0, sliding: false, surf: S_ROAD, out: false, points: 0 };
   placeAt(c, k, 0, 0);
   return c;
 }
 
-/** Put a car on waypoint k, `back` px behind it and `side` px to its left or right, facing along the track, stopped. */
+/** Put a car on waypoint k, `back` px behind it and `side` px to one side, facing along the track, stopped. */
 function placeAt(c, k, back, side) {
   const n = track.n, k1 = (k + 1) % n, dx = track.wx[k1] - track.wx[k], dy = track.wy[k1] - track.wy[k], L = Math.hypot(dx, dy) || 1;
   const ux = dx / L, uy = dy / L;
   c.x = track.wx[k] - ux * back - uy * side; c.y = track.wy[k] - uy * back + ux * side;
-  c.a = Math.atan2(uy, ux); c.vx = c.vy = 0; c.st = 0; c.fall = 0; c.wp = k;
+  c.a = Math.atan2(uy, ux); c.vx = c.vy = 0; c.st = 0; c.fall = 0; c.air = 0; c.wp = k; c.surf = surfAt(c.x, c.y);
 }
 
 /** One frame of a car, from its controls: steer -1, 0 or 1; gas and brake true or false (spec 5.1 to 5.3). */
 function drive(c, steer, gas, brake) {
-  if (c.fall) { if (--c.fall === 0) respawn(c); return; }
+  if (c.fall) { if (--c.fall === 0) knockOut(c); return; }
+  if (c.air) { c.air--; moveCar(c); if (!c.air) land(c); follow(c); return; }   // in the air: a straight line, no control
   // The steering builds over STEER_RAMP frames to its full value (the pad is digital).
   c.st = steer ? clamp(c.st + steer / STEER_RAMP, -1, 1) : c.st - sgn(c.st) * Math.min(Math.abs(c.st), 1 / STEER_RAMP);
   const S = SURF[c.surf];
@@ -188,19 +200,42 @@ function drive(c, steer, gas, brake) {
   c.sliding = !gas && Math.abs(c.st) > 0.3 && f > 1;
   side *= Math.max(S.keep, c.sliding ? SLIDE_KEEP : 0);
   c.vx = f * ca - side * sa; c.vy = f * sa + side * ca;
-  // Move, one axis at a time, bouncing off walls.
-  if (hitsWall(c.x + c.vx, c.y)) { c.vx *= -BOUNCE; c.vy *= SCRAPE; bump(c); } else c.x += c.vx;
-  if (hitsWall(c.x, c.y + c.vy)) { c.vy *= -BOUNCE; c.vx *= SCRAPE; bump(c); } else c.y += c.vy;
+  moveCar(c);
   c.surf = surfAt(c.x, c.y);
-  if (c.surf === S_HOLE) { c.fall = FALL_T; fx(SFX.fall); }
+  if (c.surf === S_RAMP && f >= JUMP_MIN) { c.air = c.airT = flr(16 + 10 * f); fx(SFX.jump); }   // launched: 31 to 36 frames
+  else if (c.surf === S_HOLE) startFall(c);
   follow(c);
 }
 
-let lastBump = -99;
-function bump(c) { if (clock - lastBump > 8) { fx(SFX.bump); lastBump = clock; } }
+/** Move, one axis at a time, bouncing off walls (spec 5.3). */
+function moveCar(c) {
+  if (hitsWall(c.x + c.vx, c.y)) { c.vx *= -BOUNCE; c.vy *= SCRAPE; bump(); } else c.x += c.vx;
+  if (hitsWall(c.x, c.y + c.vy)) { c.vy *= -BOUNCE; c.vx *= SCRAPE; bump(); } else c.y += c.vy;
+}
+function land(c) { c.surf = surfAt(c.x, c.y); if (c.surf === S_HOLE) startFall(c); else fx(SFX.land); }
+function startFall(c) { c.fall = FALL_T; c.vx = c.vy = 0; fx(SFX.fall); }
 
-/** Step 1: a fallen car comes back on its waypoint (from step 2 it is out of the round instead). */
-function respawn(c) { placeAt(c, c.wp, 0, 0); c.surf = surfAt(c.x, c.y); fx(SFX.land); }
+let lastBump = -99;
+function bump(crash) { if (clock - lastBump > 8) { fx(crash ? SFX.crash : SFX.bump); lastBump = clock; } }
+
+/** Cars that touch are pushed apart and swap their speeds along the line between them, damped (spec 5.3). Cars in the
+ * air, falling or out touch nothing. */
+function collide() {
+  const live = cars.filter((c) => !c.out && !c.fall && !c.air);
+  for (let i = 0; i < live.length; i++) for (let j = i + 1; j < live.length; j++) {
+    const a = live[i], b = live[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+    if (d >= 2 * R_CAR) continue;
+    const nx = d ? dx / d : 1, ny = d ? dy / d : 0, o = (2 * R_CAR - d) / 2;
+    shove(a, -nx * o, -ny * o); shove(b, nx * o, ny * o);
+    const an = a.vx * nx + a.vy * ny, bn = b.vx * nx + b.vy * ny;
+    if (an - bn > 0) {   // closing: swap the parts along the line
+      a.vx += (bn * CAR_DAMP - an) * nx; a.vy += (bn * CAR_DAMP - an) * ny;
+      b.vx += (an * CAR_DAMP - bn) * nx; b.vy += (an * CAR_DAMP - bn) * ny;
+      bump(true);
+    }
+  }
+}
+function shove(c, dx, dy) { if (!hitsWall(c.x + dx, c.y + dy)) { c.x += dx; c.y += dy; } }
 
 /** Keep a car's waypoint up to date: move it on (or back) along the centreline as the car passes, counting laps. A car
  * only moves one waypoint at a time, so it cannot jump to a part of the track that lies close by on the table. */
@@ -221,13 +256,40 @@ function progress(c) {
   const t = clamp(((c.x - track.wx[k]) * dx + (c.y - track.wy[k]) * dy) / (dx * dx + dy * dy), 0, 1);
   return c.lap * n + k + t;
 }
+/** The car furthest along of those still in the round (and not falling). */
+function leader() {
+  let best = null;
+  for (const c of cars) if (!c.out && !c.fall && (!best || progress(c) > progress(best))) best = c;
+  return best;
+}
 
-// --- The camera (spec 5.5): it looks 40 px ahead of the car it follows, moving 12 % of the way a frame, at most 4 px ---
+/** A computer driver's controls: [steer, gas, brake]. Step 2's simple driver steers for a waypoint 3 ahead and brakes
+ * for a sharp turn; step 3 gives the drivers their levels, their racing line and their characters (spec 7). */
+function aiControls(c) {
+  const k = (c.wp + 3) % track.n;
+  const d = Math.atan2(Math.sin(Math.atan2(track.wy[k] - c.y, track.wx[k] - c.x) - c.a), Math.cos(Math.atan2(track.wy[k] - c.y, track.wx[k] - c.x) - c.a));
+  const sharp = Math.abs(d) > 0.7 && Math.hypot(c.vx, c.vy) > 1.2;
+  return [d > 0.06 ? 1 : d < -0.06 ? -1 : 0, !sharp, sharp];
+}
+function controls(c) {
+  const p = c.seat;
+  if (!seats[p].human) return aiControls(c);
+  return [(held(RIGHT, p) ? 1 : 0) - (held(LEFT, p) ? 1 : 0), held(A, p), held(B, p)];
+}
+
+// --- The camera (spec 5.5): it looks 40 px ahead of the leader, moving 12 % of the way a frame, at most 4 px ---
 
 const LOOK = 40, CAM_K = 0.12, CAM_MAX = 4, HUD_H = 12;
+// The squeeze: from SQUEEZE_T frames into a round the camera looks further ahead, SQUEEZE_RATE px a frame more, up to
+// LOOK_MAX, so the leader drifts towards the back of the screen and the cars behind it drop off (a pack of equal cars
+// would otherwise never split). The look is held to SQUEEZE_X and SQUEEZE_Y px across and down, so the leader stays at
+// least 16 px inside the screen.
+const SQUEEZE_T = 480, SQUEEZE_RATE = 6 / 60, LOOK_MAX = 112, SQUEEZE_X = 112, SQUEEZE_Y = 90;
 let cam = { x: 0, y: 0 };
+const lookAhead = () => (phase === 'go' && cars.length > 1 ? Math.min(LOOK_MAX, LOOK + Math.max(0, rtime - SQUEEZE_T) * SQUEEZE_RATE) : LOOK);
 function camTarget(c) {
-  const tx = c.x + Math.cos(c.a) * LOOK - 128, ty = c.y + Math.sin(c.a) * LOOK - (HUD_H + (224 - HUD_H) / 2);
+  const look = lookAhead(), tx = c.x + clamp(Math.cos(c.a) * look, -SQUEEZE_X, SQUEEZE_X) - 128;
+  const ty = c.y + clamp(Math.sin(c.a) * look, -SQUEEZE_Y, SQUEEZE_Y) - (HUD_H + (224 - HUD_H) / 2);
   return [clamp(tx, 0, track.w * 8 - 256), clamp(ty, -HUD_H, track.h * 8 - 224)];
 }
 function moveCam(c, cut) {
@@ -236,13 +298,16 @@ function moveCam(c, cut) {
   cam.x += clamp((tx - cam.x) * CAM_K, -CAM_MAX, CAM_MAX);
   cam.y += clamp((ty - cam.y) * CAM_K, -CAM_MAX, CAM_MAX);
 }
+const offScreen = (c) => { const x = c.x - cam.x, y = c.y - cam.y; return x < -OUT_MARGIN || x > 256 + OUT_MARGIN || y < -OUT_MARGIN || y > 224 + OUT_MARGIN; };
 
 // --- State ---
 
 let skipTitle = false; // tests set this to land straight in a race
-let state = 'title', paused = false, timer = 0, clock = 0;
+let state = 'title', paused = false, pausePad = 0, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0;
 let cars = [];
+let round = 0, phase = 'ready', rtime = 0;     // the round, and its phase: 'ready' (the count), 'go' (racing), 'board' (scored)
+let outOrder = [], lastRank = [], places = [], banner = '', bannerT = 0;
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
@@ -254,17 +319,36 @@ function init() {
   bg(1, { mx: 0, my: 0, mw: 128, mh: 96, wrap: false, show: true });          // the table and the track
   bg(2, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, wrap: true, show: true });   // the floor far below, repeated
   blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (ART.colors.GLASS) are see-through
+  newSeats();
   if (skipTitle) startRace(0); else toTitle();
 }
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
+/** A race on track i: four cars on the grid at the start line, no points (the seats stay as they are). */
 function startRace(i) {
   buildTrack(i);
-  cars = [newCar(0, 0)];
-  moveCam(cars[0], true);
+  cars = seats.map((_, s) => newCar(s, 0));
+  round = 0; lastRank = cars.slice(); newRound(null);
   paused = false; timer = 0; state = 'race';
   play(SONG.race);
+}
+
+/** The next round: every car back on a 2 x 2 grid at the waypoint of the last round's winner (the start line for the
+ * first), the winner on pole and the rest in the order they lasted (spec 5.4). */
+function newRound(winner) {
+  round++; phase = 'ready'; rtime = 0; outOrder = []; bannerT = 0;
+  const n = track.n;
+  let k = winner ? winner.wp : 0, lap = winner ? winner.lap : 0;
+  // Not in front of a jump or a hole: back along the track until the road is clear from 3 waypoints behind to 8 ahead.
+  const clear = (k) => { for (let d = -3; d <= 8; d++) { const q = (k + d + n) % n, s = surfAt(track.wx[q], track.wy[q]); if (s === S_RAMP || s === S_HOLE) return false; } return true; };
+  for (let i = 0; i < n && !clear(k); i++) { if (--k < 0) { k += n; lap--; } }
+  lastRank.forEach((c, j) => {
+    const kk = k - (j >> 1) * 2;     // the second row two waypoints (32 px) behind the first
+    c.out = false; c.points = c.points || 0; c.lap = kk < 0 ? lap - 1 : lap;
+    placeAt(c, (kk + n) % n, 0, j & 1 ? 10 : -10);
+  });
+  moveCam(lastRank[0], true);
 }
 
 // --- Update ---
@@ -272,9 +356,11 @@ function startRace(i) {
 function update() {
   readPads(); clock++;
   if (!paused) timer++; // a state's clock: it stands still while paused
+  if (bannerT) bannerT--;
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'race') updateRace();
+  else if (state === 'result') updateResult();
 }
 
 function updateTitle() {
@@ -283,66 +369,157 @@ function updateTitle() {
 }
 
 function updateRace() {
-  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  for (const c of cars) {
-    const p = c.seat;
-    drive(c, (held(RIGHT, p) ? 1 : 0) - (held(LEFT, p) ? 1 : 0), held(A, p), held(B, p));
+  for (let p = 0; p < 4; p++) if (seats[p].human && pressed(START, p)) { paused = true; pausePad = p; pauseSel = 0; fx(SFX.pause); return; }
+  // Step 2: a pad that presses a button takes its seat from the computer (step 5 does this in the lobby).
+  for (let p = 1; p < 4; p++) if (!seats[p].human && masks[p] && !prevMasks[p]) { seats[p].human = true; seats[p].name = `P${p + 1}`; }
+  rtime++;
+  if (phase === 'ready') {
+    if (rtime >= READY_T) { phase = 'go'; rtime = 0; fx(SFX.go); } else if (rtime % 20 === 0) fx(SFX.tick);
+    return;
   }
-  moveCam(cars[0], false);
+  if (phase === 'board') { if (rtime >= BOARD_T) endBoard(); return; }
+  for (const c of cars) if (!c.out) drive(c, ...controls(c));
+  collide();
+  const L = leader();
+  if (L) moveCam(L, false);
+  checkOut();
+  if (phase === 'go' && rtime >= ROUND_MAX) scoreRound(leader());
+}
+
+/** Cars that have left the screen are out; the last car in scores (spec 5.4). If every car left would go out at once,
+ * the one furthest along stays in. */
+function checkOut() {
+  if (phase !== 'go') return;
+  const alive = cars.filter((c) => !c.out && !c.fall), gone = alive.filter(offScreen);
+  if (gone.length && gone.length === alive.length) gone.splice(gone.indexOf(gone.reduce((a, b) => (progress(b) > progress(a) ? b : a))), 1);
+  gone.forEach(knockOut);
+  const left = cars.filter((c) => !c.out && !c.fall);
+  if (cars.length < 2) return;   // (a car alone, as some tests drive, never scores)
+  if (left.length === 1) scoreRound(left[0]);
+  else if (!left.length) { const falling = cars.filter((c) => !c.out); if (falling.length) scoreRound(falling.reduce((a, b) => (progress(b) > progress(a) ? b : a))); }
+}
+
+function knockOut(c) {
+  if (c.out) return;
+  c.out = true; c.fall = 0; outOrder.push(c); fx(SFX.out); say(`${seats[c.seat].name} OUT`);
+}
+
+/** A round won: a point, and the order the cars lasted in (the next grid, and the race's tie-break). */
+function scoreRound(w) {
+  if (phase === 'board') return;
+  w.points++; phase = 'board'; rtime = 0; fx(SFX.point); say(`${seats[w.seat].name} SCORES`);
+  const still = cars.filter((c) => c !== w && !outOrder.includes(c)).sort((a, b) => progress(b) - progress(a));
+  lastRank = [w, ...still, ...outOrder.slice().reverse()];
+}
+
+function endBoard() {
+  if (cars.some((c) => c.points >= WIN_POINTS)) finishRace();
+  else newRound(lastRank[0]);
+}
+
+/** The race's places: by points, a tie to the car that lasted longer in the last round. */
+function finishRace() {
+  places = cars.slice().sort((a, b) => b.points - a.points || lastRank.indexOf(a) - lastRank.indexOf(b));
+  state = 'result'; timer = 0; fx(SFX.win);
+}
+
+function updateResult() {
+  if (timer > 60 && (pressed(A) || pressed(START))) { fx(SFX.select); toTitle(); }   // step 5: the cup's next race
 }
 
 function updatePause() {
-  if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
-  if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
-  if (pressed(B) || (pressed(START) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
-  else if (pressed(A) || pressed(START)) {
+  const p = pausePad;
+  if (pressed(UP, p)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
+  if (pressed(DOWN, p)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
+  if (pressed(B, p) || (pressed(START, p) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
+  else if (pressed(A, p) || pressed(START, p)) {
     fx(SFX.select);
     if (pauseSel === 0) paused = false;
-    else if (pauseSel === 1) startRace(track.i); // restart
+    else if (pauseSel === 1) startRace(track.i); // restart: the same cars and track, the points reset
     else toTitle();
   }
 }
+
+function say(s) { banner = s; bannerT = 60; }
 
 // --- Draw ---
 
 function draw() {
   cls();
-  if (state === 'race') drawRace();
+  if (state === 'race' || state === 'result') drawRace();
   else if (state === 'title') drawTitle();
+  if (state === 'result') drawResult();
   if (paused) drawPause();
 }
 
-/** The car's sprite for its heading: 16 directions from 5 drawings (0 to 90 degrees), the rest flipped. */
+/** A car's sprite for its heading: 16 directions from 5 drawings (0 to 90 degrees), the rest flipped; raised in a jump. */
 function drawCar(c) {
-  if (c.fall && (c.fall & 2)) return;   // a falling car blinks out of sight (the art pass, step 6, shrinks it)
+  if (c.out || (c.fall && (c.fall & 2))) return;   // a falling car blinks out of sight (the art pass, step 6, shrinks it)
   const d = ((Math.round(c.a / (Math.PI / 8)) % 16) + 16) % 16;
   let f = d, fxx = false, fyy = false;
   if (d > 4 && d <= 8) { f = 8 - d; fxx = true; }
   else if (d > 8 && d <= 12) { f = d - 8; fxx = fyy = true; }
   else if (d > 12) { f = 16 - d; fyy = true; }
-  sprite(ART.sprites['car' + f], flr(c.x - cam.x) - 8, flr(c.y - cam.y) - 8, { fx: fxx, fy: fyy });
+  const lift = c.air ? flr(LIFT * Math.sin(Math.PI * (1 - c.air / c.airT))) : 0;
+  sprite(ART.sprites['car' + f], flr(c.x - cam.x) - 8, flr(c.y - cam.y) - 8 - lift, { fx: fxx, fy: fyy, pal: c.seat });
 }
 
 function drawRace() {
   bgscroll(1, flr(cam.x), flr(cam.y));
   bgscroll(2, flr(cam.x / 2), flr(cam.y / 2));
-  for (const c of cars) drawCar(c);
-  const c = cars[0];
+  for (const c of cars) if (c.air) drawCar(c);      // cars in the air first, so they are drawn over the others
+  for (const c of cars) if (!c.air) drawCar(c);
+  // The HUD: a strip of four, each car's colour, name and points.
   rectfill(0, 0, 256, HUD_H, ART.colors.GLASS);
-  txt(track.name, 4, 2, GOLD);
-  txt(`LAP ${Math.max(0, c.lap) + 1}`, 120, 2, WHITE);
-  txt(`${SURF[c.surf].name}`, 200, 2, c.sliding ? CYAN : DIM);
+  cars.forEach((c, i) => {
+    const x = i * 64 + 2;
+    rectfill(x, 3, 6, 6, SEAT_COL[i]);
+    txt(seats[i].name, x + 9, 2, c.out ? DIM : WHITE);
+    for (let j = 0; j < WIN_POINTS; j++) (j < c.points ? rectfill : rect)(x + 36 + j * 5, 4, 4, 4, j < c.points ? GOLD : DIM);
+  });
+  if (state !== 'race') return;
+  if (phase === 'ready') { panel(88, 84, 80, 34); ctxt(`ROUND ${round}`, 90, GOLD); ctxt(rtime < 40 ? 'READY' : 'SET', 104, WHITE); }
+  else if (phase === 'go' && rtime < GO_T) ctxt('GO!', 96, GREEN);
+  if (bannerT && phase !== 'ready') ctxt(banner, 120, phase === 'board' ? GOLD : WHITE);
+  if (phase === 'board' && rtime >= 40) drawBoard();
+}
+
+/** Between rounds: each car's points, the new one lighting up. */
+function drawBoard() {
+  panel(48, 56, 160, 64);
+  cars.forEach((c, i) => {
+    const y = 62 + i * 14, isNew = c === lastRank[0];
+    rectfill(56, y + 1, 6, 6, SEAT_COL[i]);
+    txt(seats[i].name, 68, y, WHITE);
+    for (let j = 0; j < WIN_POINTS; j++) {
+      const lit = j < c.points - (isNew && rtime % 16 < 8 && j === c.points - 1 ? 1 : 0);
+      (lit ? rectfill : rect)(112 + j * 16, y, 10, 8, lit ? GOLD : DIM);
+    }
+  });
+}
+
+function drawResult() {
+  panel(40, 50, 176, 110);
+  ctxt(`${seats[places[0].seat].name} WINS!`, 58, GOLD);
+  places.forEach((c, i) => {
+    const y = 80 + i * 14;
+    txt(['1ST', '2ND', '3RD', '4TH'][i], 56, y, i ? WHITE : GOLD);
+    rectfill(90, y + 1, 6, 6, SEAT_COL[c.seat]);
+    txt(seats[c.seat].name, 102, y, WHITE);
+    txt(`${c.points} PTS`, 150, y, DIM);
+  });
+  if (timer > 60 && timer % 60 < 40) ctxt('A: CONTINUE', 146, DIM);
 }
 
 function drawTitle() {
   ctxt('TABLETOP GRAND PRIX', 50, GOLD);
   ['CUP', 'QUICK RACE'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
-  ctxt('STEP 1: A TEST TABLE', 180, DIM);
+  ctxt('STEP 2: FOUR CARS, KNOCK-OUT', 180, DIM);
 }
 
 function drawPause() {
   panel(64, 80, 128, 64);
-  ctxt('PAUSED', 88, GOLD);
+  ctxt(`PAUSED (${seats[pausePad].name})`, 88, GOLD);
   ['RESUME', 'RESTART RACE', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
 }
 

@@ -1,6 +1,6 @@
 // Tabletop Grand Prix, step 1: the driving (spec 5.1, 5.2), the track's grid in Map RAM (6), walls and falls (5.3),
 // progress along the centreline (5.4) and the camera (5.5). One PASS/FAIL line for each behaviour.
-import { newGame, M, sfxLog, steerPad } from './lib.mjs';
+import { newGame, M, sfxLog, steerPad, solo } from './lib.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 const speed = (c) => Math.hypot(c.vx, c.vy);
@@ -11,7 +11,7 @@ const LAB = `TRACKS.push({ name: 'LAB', w: 128, h: 96, width: 48, table: [16, 16
   pts: [100, 60, 900, 60, 960, 380, 900, 700, 100, 700, 50, 380],
   prims: [[S_ROUGH, 'r', 100, 140, 320, 120], [S_SLICK, 'r', 520, 140, 360, 120], [S_STICKY, 'r', 100, 300, 320, 120],
     [S_WALL, 'r', 600, 320, 40, 120], [S_HOLE, 'r', 160, 480, 80, 80], [S_ROAD, 'r', 300, 460, 600, 140]] });`;
-const lab = (seed = 1) => { const vm = newGame(seed, { extra: LAB }), p = vm.probe(); vm.run(1); p.startRace(p.TRACKS.length - 1); vm.run(1); return [vm, p]; };
+const lab = (seed = 1) => { const vm = newGame(seed, { extra: LAB }), p = vm.probe(); vm.run(1); p.startRace(p.TRACKS.length - 1); solo(p); vm.run(1); return [vm, p]; };
 /** Put the car at (x, y) heading `a`, moving `v` along it. */
 const put = (p, x, y, a = 0, v = 0) => { const c = p.cars[0]; Object.assign(c, { x, y, a, vx: Math.cos(a) * v, vy: Math.sin(a) * v, st: 0, fall: 0, surf: p.surfAt(x, y) }); return c; };
 
@@ -21,8 +21,9 @@ const put = (p, x, y, a = 0, v = 0) => { const c = p.cars[0]; Object.assign(c, {
   const t = p.track, gaps = [];
   for (let k = 0; k < t.n; k++) gaps.push(Math.hypot(t.wx[(k + 1) % t.n] - t.wx[k], t.wy[(k + 1) % t.n] - t.wy[k]));
   ok(Math.min(...gaps) > 8 && Math.max(...gaps) < 20, 'the centreline is smoothed into waypoints about 16 px apart', `${Math.min(...gaps).toFixed(1)} to ${Math.max(...gaps).toFixed(1)} px`);
-  const bad = [...Array(t.n).keys()].filter((k) => [p.S_OFF, p.S_HOLE, p.S_WALL].includes(p.surfAt(t.wx[k], t.wy[k])));
-  ok(bad.length === 0, 'the road runs along the whole centreline (no waypoint off it, in a hole or a wall)', bad.join(','));
+  const at = (k) => p.surfAt(t.wx[(k + t.n) % t.n], t.wy[(k + t.n) % t.n]);
+  const bad = [...Array(t.n).keys()].filter((k) => [p.S_OFF, p.S_WALL].includes(at(k)) || (at(k) === p.S_HOLE && ![1, 2, 3].some((d) => at(k - d) === p.S_RAMP)));
+  ok(bad.length === 0, 'the road runs along the whole centreline (no waypoint off it or in a wall, and a hole only just after a ramp)', bad.join(','));
   const cell = (s) => { const i = p.grid.indexOf(s); return [i % t.w, Math.floor(i / t.w)]; };
   const [rx, ry] = cell(p.S_ROAD), [hx, hy] = cell(p.S_HOLE), [wx, wy] = cell(p.S_WALL);
   ok((p.mget(rx, ry) & 1023) === p.ART.tiles.road && ((p.mget(rx, ry) >> 10) & 7) === 1, 'a road cell is drawn with the road tile in Map RAM, in palette 1');
@@ -95,12 +96,12 @@ const put = (p, x, y, a = 0, v = 0) => { const c = p.cars[0]; Object.assign(c, {
   ok(c.fall > 0, 'a car that drives into a hole falls');
   ok(sfxLog(vm).some(([s]) => s === p.SFX.fall), 'with its sound');
   vm.run(p.FALL_T);
-  ok(c.fall === 0 && p.surfAt(c.x, c.y) !== p.S_HOLE && speed(c) === 0, 'and (for now, step 1) comes back on the track, stopped', p.SURF[p.surfAt(c.x, c.y)].name);
+  ok(c.fall === 0 && c.out, `and after ${p.FALL_T} frames it is out of the round`);
 }
 
 // 7. A lap of the test table, driven by the bot's steering: progress, laps and the camera.
 {
-  const vm = newGame(3), p = vm.probe(); vm.run(2);
+  const vm = newGame(3), p = vm.probe(); solo(p); vm.run(2);
   const c = p.cars[0]; let worst = 0, off = 0, back = 0, last = p.progress(c), falls = 0, frames = 0;
   let cx = p.cam.x, cy = p.cam.y;
   while (c.lap < 1 && frames < 4000) {
@@ -114,13 +115,13 @@ const put = (p, x, y, a = 0, v = 0) => { const c = p.cars[0]; Object.assign(c, {
   ok(c.lap === 1, 'driving round the track counts a lap', `${frames} frames`);
   ok(frames < 2200, 'a lap of the test table takes under 37 s', `${(frames / 60).toFixed(1)} s`);
   ok(back === 0, 'and progress only goes forward while the car does');
-  ok(falls === 0, 'the line along the centreline never falls into the hole');
+  ok(falls === 0, 'the line along the centreline never falls (it jumps the gap at full speed)');
   ok(worst <= p.CAM_MAX + 1e-9, `the camera moves at most ${p.CAM_MAX} px a frame`, worst.toFixed(2));
   ok(off === 0, 'and keeps the car on the screen, below the HUD strip, all the way round', `${off} frames off`);
   const [tx, ty] = p.camTarget(c);
   ok(tx >= 0 && ty >= -p.HUD_H && tx <= p.track.w * 8 - 256 && ty <= p.track.h * 8 - 224, 'it never looks past the edge of the map');
   // Reversing away from the start line takes progress back.
-  const vm2 = newGame(4), p2 = vm2.probe(); vm2.run(2); const c2 = p2.cars[0];
+  const vm2 = newGame(4), p2 = vm2.probe(); solo(p2); vm2.run(2); const c2 = p2.cars[0];
   vm2.run(200, M('B'));
   ok(p2.progress(c2) < 0 && c2.lap === -1, 'reversing back over the start line takes the lap away', `${p2.progress(c2).toFixed(2)}, lap ${c2.lap}`);
 }

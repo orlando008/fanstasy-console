@@ -49,5 +49,12 @@ a.effect(2, ['E-5', 'B-5', 'OFF'], 'CHIME')                        # 2 pause
 a.effect(2, ['C-4', 'G-3', 'OFF'], 'CRUNCH')                       # 3 a bump against a wall
 a.effect(3, ['C-6', 'A-5', 'F-5', 'D-5', 'B-4', 'G-4', 'OFF'], 'BLIP')   # 4 a fall: a falling whistle
 a.effect(1, ['C-5', 'G-5', 'OFF'], 'BLIP')                         # 5 back on the track
+a.effect(2, ['G-5', 'C-5', 'G-4', 'OFF'], 'CRUNCH')                # 6 a car out (a pop)
+a.effect(2, ['C-5', 'OFF'], 'BLIP')                                # 7 the count: a tick
+a.effect(3, ['C-6', None, 'OFF'], 'CHIME')                         # 8 GO!
+a.effect(3, ['C-5', 'E-5', 'G-5', 'OFF'], 'CHIME')                 # 9 a round won
+a.effect(4, ['C-5', 'E-5', 'G-5', 'C-6', None, 'G-5', 'C-6', 'OFF'], 'FANFARE')  # 10 a race won
+a.effect(1, ['C-5', 'E-5', 'G-5', 'C-6', 'OFF'], 'BLIP')           # 11 a jump
+a.effect(2, ['D-4', 'A-3', 'OFF'], 'CRUNCH')                       # 12 a bump against a car
 
 a.write(sys.argv[1], songs=2)

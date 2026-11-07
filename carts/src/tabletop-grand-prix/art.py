@@ -7,8 +7,9 @@
 #   node tools/devkit/shots.mjs carts/tabletop-grand-prix.nova out/ --at 60,300 --extra "skipTitle = true;"   the game
 # (pack first: node tools/pack.js carts/src/tabletop-grand-prix carts/tabletop-grand-prix.nova). Pixel values are palette indices; 0 is transparent.
 #
-# Step 1 of the plan (the spec's section 15): plain tiles, one for each surface of the track grid (spec 5.2), the floor
-# below the table, and the car in five directions (the other eleven of its sixteen are flips). The art pass is step 6.
+# Steps 1 and 2 of the plan (the spec's section 15): plain tiles, one for each surface of the track grid (spec 5.2), the
+# floor below the table, and the car in five directions (the other eleven of its sixteen are flips), in four sprite
+# palettes (one a car). The art pass is step 6.
 import math, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *
@@ -41,6 +42,8 @@ art.scene('floor', Img.make(64, 64, lambda x, y: flo.tile[0] if x % 32 == 0 or y
 
 # --- The car: 16 x 16, pointing right at 0 degrees, then 22.5, 45, 67.5 and 90 (down the screen) ---
 car = art.sprite_palette(0, {'edge': '141018', 'body': ramp('d04040', 3), 'glass': '9ad0f0', 'tyre': '302830'})
+for k, body in ((1, '4070d8'), (2, 'e8c030'), (3, '40a848')):   # the other three cars: the same roles in other colours
+    art.sprite_palette(k, {'edge': '141018', 'body': ramp(body, 3), 'glass': '9ad0f0', 'tyre': '302830'})
 def car_at(deg):
     t = math.radians(deg); c, s = math.cos(t), math.sin(t)
     def px(x, y):

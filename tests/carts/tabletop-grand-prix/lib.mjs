@@ -9,7 +9,11 @@ const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
   get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; }, get ART() { return ART; }, mget: (x, y) => mget(x, y),
   get cars() { return cars; }, get cam() { return cam; }, get track() { return track; }, get grid() { return grid; },
-  surfAt, progress, placeAt, buildTrack, startRace, camTarget,
+  get seats() { return seats; }, get round() { return round; }, get phase() { return phase; }, set phase(v) { phase = v; },
+  get rtime() { return rtime; }, set rtime(v) { rtime = v; }, get outOrder() { return outOrder; }, get lastRank() { return lastRank; },
+  get places() { return places; }, get banner() { return banner; }, get bannerT() { return bannerT; }, get pausePad() { return pausePad; },
+  surfAt, progress, placeAt, buildTrack, startRace, camTarget, moveCam, leader, knockOut, scoreRound, newRound, offScreen, aiControls,
+  SQUEEZE_T, SQUEEZE_RATE, LOOK_MAX, SQUEEZE_X, SQUEEZE_Y, lookAhead, WIN_POINTS, ROUND_MAX, READY_T, GO_T, BOARD_T, OUT_MARGIN, JUMP_MIN, LIFT, CAR_DAMP, CPU_NAMES,
   SFX, SONG, SURF, TRACKS, S_OFF, S_ROAD, S_ROUGH, S_SLICK, S_STICKY, S_RAMP, S_HOLE, S_WALL,
   TOP, ACC, BRAKE, REV, ROLL, TURN, STEER_RAMP, R_CAR, SLIDE_KEEP, BOUNCE, FALL_T, LOOK, CAM_K, CAM_MAX, HUD_H,
 }));`;
@@ -34,3 +38,6 @@ export function steerPad(p, c, ahead = 3) {
   if (Math.abs(d) > 0.7 && speed > 1.2) m |= M('B'); else m |= M('A');
   return m;
 }
+
+/** Just the first car, racing: the others taken away and the count skipped (for tests of the driving on its own). */
+export function solo(p) { p.cars.splice(1); p.phase = 'go'; p.rtime = 0; }

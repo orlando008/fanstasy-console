@@ -41,6 +41,39 @@
     "glass": 5,
     "tyre": 6
    }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "body0": 2,
+    "body1": 3,
+    "body2": 4,
+    "edge": 1,
+    "glass": 5,
+    "tyre": 6
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "body0": 2,
+    "body1": 3,
+    "body2": 4,
+    "edge": 1,
+    "glass": 5,
+    "tyre": 6
+   }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "body0": 2,
+    "body1": 3,
+    "body2": 4,
+    "edge": 1,
+    "glass": 5,
+    "tyre": 6
+   }
   }
  },
  "scenes": {
