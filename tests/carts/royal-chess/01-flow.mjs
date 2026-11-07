@@ -7,6 +7,8 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(12);
   ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
   sfxLog(vm); vm.press('A');
+  ok(p.state === 'setup', 'PLAY THE COMPUTER asks for the level and colour');
+  vm.run(12); vm.press('A');
   ok(p.state === 'game' && p.playing === p.SONG.game, 'A starts a game, with the game\'s song');
   ok(p.toFen(p.pos) === p.START_FEN, 'from the start position');
   ok(sfxLog(vm).every(([, ch]) => ch === 6 || ch === 7), 'effects play on channels 6 and 7');

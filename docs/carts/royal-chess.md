@@ -1,7 +1,7 @@
 # Royal Chess: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 3 of 8 built (section 15): every rule of chess, two players, and the computer at three levels. Step 4 (the menus and saves) is next.
+**Status:** Steps 1 to 4 of 8 built (section 15): every rule of chess, two players, the computer at three levels, the menus and a game saved move by move. Step 5 (the side panel and the highlights) is next.
 **Cart source:** `carts/src/royal-chess/` → `carts/royal-chess.nova`
 
 ---
@@ -133,9 +133,11 @@ None: a game is won, lost or drawn. (Records against each level were not chosen 
 
 ## 10. Screens and flow
 
-1. **Title:** the name over the board, with the pieces set up. CONTINUE (only when a game is saved), PLAY THE COMPUTER,
-   TWO PLAYERS. UP and DOWN choose, A or START.
-2. **Level and colour** (against the computer): two rows, LEFT and RIGHT change each, A starts, B goes back.
+1. **Title:** the name over the board, with the pieces set up (the art pass). CONTINUE (only when a game is saved, with
+   a line saying whose and which move), PLAY THE COMPUTER, TWO PLAYERS. UP and DOWN choose, A or START.
+2. **Level and colour** (against the computer): two rows, LEVEL and YOU PLAY. UP and DOWN choose the row, LEFT and
+   RIGHT change it, a line says what the level is like, A starts, B goes back. The choices are remembered. With the
+   person Black, the computer moves first and the cursor starts on Black's side.
 3. **The game,** with the menu on START (3).
 4. **The result:** a panel over the board: who won and how. A: NEW GAME (the same mode, level and colour; colours swap
    for two players), B: the title. The final position stays on the board behind it.
@@ -177,13 +179,17 @@ The art is made in code by `carts/src/royal-chess/art.py` (the art toolkit, `too
 | Slots | Contents |
 |---|---|
 | 0 | Format version |
-| 1 | The game in progress: bit 0 a game is saved; bits 1 and 2 the mode (computer, two players); bits 3 and 4 the level; bit 5 the person's colour |
+| 1 | The game in progress: bit 0 a game is saved; bit 1 two players (else the computer); bits 3 and 4 the level; bit 5 the person's colour (0 White, 1 Black) |
 | 2 | The number of half-moves saved |
-| 3 | The last level and colour chosen |
+| 3 | The last level (bits 0 and 1) and colour (bits 2 and 3: White, Black, Random) chosen; bit 4 set once chosen |
 | 10–255 | The moves, two to a slot (each 16 bits: from-square 6, to-square 6, promotion 2), up to 492 half-moves |
 
-The game is replayed from the moves when it is continued, which also rebuilds its history for the repetition rule. A
-game longer than 492 half-moves stops being saved (the board says so), and is finished as normal.
+The game is saved after every move (format version 3). It is replayed from the moves when it is continued, which also
+rebuilds its history for the repetition rule; a save that does not replay (no such move) is dropped, and a fresh game
+starts. A move is its from-square and to-square as 0 to 63 and its promotion (knight to queen as 0 to 3). A finished
+game is not saved, and NEW GAME starts the save again; QUIT TO TITLE keeps it. A game longer than 492 half-moves stops
+being saved (the status line says so), and is finished as normal. Only a game from the start position is saved (not a
+position a test sets up).
 
 ## 14. Asset budget
 
@@ -298,6 +304,28 @@ game longer than 492 half-moves stops being saved (the board says so), and is fi
      - `node tools/devkit/smoke.mjs royal-chess` runs in the real console with no errors.
      - The code is 33.1 KB of the 64 KB, without stripping.
 4. **The flow:** the title, the level and colour, CONTINUE, the saves (a game saved, left and continued, the same).
+   - **Built:**
+     - **The title** offers CONTINUE first when a game is saved (`titleItems`).
+     - **The level and colour screen** (`updateSetup`) leads to `startCpuGame`, which picks a random colour fresh each
+       game.
+     - **The saves:**
+       - `saveMove` after every move.
+       - `continueGame` replays the moves.
+       - `finish` clears the save, and NEW GAME starts it again.
+     - **After a result,** A starts a new game with the same mode, level and colour.
+   - **Results:**
+     - `node tools/verify.js royal-chess` passes, with 153 test checks. The new file is `08-flow.mjs`, with 25 checks:
+       - the title with and without a save;
+       - the level and colour screen, its defaults, remembered the next time;
+       - RANDOM giving both colours over 8 games;
+       - the computer playing White and moving first;
+       - saved move by move;
+       - CONTINUE restoring the position, the last move, the opponent, the level and the history;
+       - two players saved;
+       - checkmate clearing the save, and NEW GAME starting afresh;
+       - a broken save dropped, and a test's position never saved.
+     - A soak of 20,000 frames of random play reaches the title, the setup, games and results, with no error.
+     - `node tools/devkit/smoke.mjs royal-chess` runs in the real console with no errors.
 5. **The side panel and the highlights:** the captured pieces and the material lead, the status line, the last move,
    the check, the coordinates.
 6. **The art:** the palace study (section 12).

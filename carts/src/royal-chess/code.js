@@ -2,7 +2,8 @@
 // Built so far (the spec's plan, section 15): step 1, the position on a 0x88 board, FEN, the move generator with every
 // special move, legality by check, making and unmaking moves, perft (tested against the published counts), and a board
 // to play on with the cursor; step 2, the end of a game (checkmate, stalemate, the draws), promotion's choice, the
-// result, the menu's draw offer and resignation, and two pads; step 3, the computer (spec 7).
+// result, the menu's draw offer and resignation, and two pads; step 3, the computer (spec 7); step 4, the menus and the
+// saves (spec 10, 13).
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
@@ -31,7 +32,10 @@ function play(song) { if (song === playing) return; playing = song; music(song);
 
 // --- Save slots (spec 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 2;
+const VERSION_SLOT = 0, SAVE_VERSION = 3;
+// The game in progress (slot 1: bit 0 a game is saved, bit 1 two players, bits 3 and 4 the level, bit 5 the person's
+// colour), its number of half-moves (2), the last level and colour chosen (3), and the moves from slot 10, two to a slot.
+const GAME_SLOT = 1, PLIES_SLOT = 2, CHOICE_SLOT = 3, MOVES_SLOT = 10, MAX_SAVED = (256 - MOVES_SLOT) * 2;
 
 // --- Input: each pad's buttons this frame and last, for presses that do not repeat (btnp does) ---
 
@@ -401,14 +405,59 @@ const PROMOS = [QUEEN, ROOK, BISHOP, KNIGHT];
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { for (let i = 0; i < 256; i++) dset(i, 0); dset(VERSION_SLOT, SAVE_VERSION); }
+  const ch = dget(CHOICE_SLOT);
+  setupLevel = ch & 1 << 4 ? ch & 3 : 1; setupColour = ch & 1 << 4 ? (ch >> 2) & 3 : 0;
   if (skipTitle) newGame(); else toTitle();
 }
 
+// --- The saves (spec 13): a move is 16 bits (from and to as 0 to 63, and the promotion), two to a slot ---
+
+const sq64 = (s) => (s >> 4) * 8 + (s & 7), sq88 = (i) => (i >> 3) * 16 + (i & 7);
+const packMove = (m) => sq64(mFrom(m)) | (sq64(mTo(m)) << 6) | ((mPromo(m) ? mPromo(m) - 1 : 0) << 12);
+const hasSave = () => (dget(GAME_SLOT) & 1) !== 0;
+let saving = false;   // this game is saved after each move (a game from the start position, not one a test set up)
+
+function saveMove() {
+  if (!saving) return;
+  const n = pos.undo.length;
+  if (n > MAX_SAVED) { if (n === MAX_SAVED + 1) say('TOO LONG TO SAVE NOW'); return; }
+  const slot = MOVES_SLOT + ((n - 1) >> 1), v = packMove(lastMove);
+  dset(slot, (n - 1) & 1 ? (dget(slot) & 0xffff) | (v << 16) : v);
+  dset(PLIES_SLOT, n);
+  dset(GAME_SLOT, 1 | (cpu ? 0 : 2) | ((cpu ? cpu.level : 0) << 3) | ((cpu ? cpu.side ^ 1 : 0) << 5));
+}
+const clearSave = () => dset(GAME_SLOT, 0);
+
+/** CONTINUE: the saved game, replayed from the start (which rebuilds its history for the repetition rule). */
+function continueGame() {
+  const g = dget(GAME_SLOT), n = dget(PLIES_SLOT);
+  cpu = g & 2 ? null : { level: (g >> 3) & 3, side: ((g >> 5) & 1) ^ 1 };
+  newGame();
+  for (let i = 0; i < n; i++) {
+    const v = (dget(MOVES_SLOT + (i >> 1)) >> (i & 1 ? 16 : 0)) & 0xffff, from = sq88(v & 63), to = sq88((v >> 6) & 63), pr = (v >> 12) & 3;
+    const m = legalMoves(pos).find((x) => mFrom(x) === from && mTo(x) === to && (!mPromo(x) || mPromo(x) === pr + 1));
+    if (!m) { clearSave(); newGame(); return; }   // a save that does not replay: start afresh
+    make(pos, m, true); lastMove = m;
+  }
+  cur = { f: 4, r: cpu && cpu.side === WHITE_SIDE ? 6 : 1 };
+}
+
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
+const titleItems = () => [...(hasSave() ? ['CONTINUE'] : []), 'PLAY THE COMPUTER', 'TWO PLAYERS'];
+let setupLevel = 1, setupColour = 0, setupRow = 0;   // the level and colour screen: BEGINNER .. STEADY; WHITE, BLACK, RANDOM
+const COLOURS = ['WHITE', 'BLACK', 'RANDOM'];
+
+/** A new game against the computer at the level and colour chosen (RANDOM picks one each game). */
+function startCpuGame() {
+  const mine = setupColour === 2 ? rndi(0, 1) : setupColour;
+  cpu = { level: setupLevel, side: mine ^ 1 };
+  newGame();
+}
 
 function newGame(fen = START_FEN) {
-  thinking = null; thought = null;
-  pos = fromFen(fen); cur = { f: 4, r: pos.side ? 6 : 1 }; liftedSq = -1; liftMoves = []; lastMove = 0; result = null; promo = null;
+  thinking = null; thought = null; saving = fen === START_FEN;
+  if (saving) { clearSave(); dset(PLIES_SLOT, 0); }
+  pos = fromFen(fen); cur = { f: 4, r: (cpu ? cpu.side === WHITE_SIDE : pos.side) ? 6 : 1 }; liftedSq = -1; liftMoves = []; lastMove = 0; result = null; promo = null;
   state = 'game'; timer = 0; paused = false; play(SONG.game);
 }
 
@@ -423,12 +472,29 @@ function update() {
   else if (state === 'title') updateTitle();
   else if (state === 'game') updateGame();
   else if (state === 'over') updateOver();
+  else if (state === 'setup') updateSetup();
 }
 
 function updateTitle() {
-  if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
-  // Step 3: PLAY THE COMPUTER is White against CASUAL (step 4 brings the level and colour).
-  if (timer > 10 && (pressed(A) || pressed(START))) { fx(SFX.select); cpu = titleSel ? null : { side: BLACK_SIDE, level: 1 }; newGame(); }
+  const items = titleItems(), n = items.length;
+  if (pressed(UP)) { titleSel = (titleSel + n - 1) % n; fx(SFX.move); }
+  if (pressed(DOWN)) { titleSel = (titleSel + 1) % n; fx(SFX.move); }
+  if (timer < 10 || !(pressed(A) || pressed(START))) return;
+  fx(SFX.select);
+  const item = items[titleSel];
+  if (item === 'CONTINUE') continueGame();
+  else if (item === 'TWO PLAYERS') { cpu = null; newGame(); }
+  else { state = 'setup'; timer = 0; setupRow = 0; }
+}
+
+/** The level and colour (spec 10): UP and DOWN the row, LEFT and RIGHT its value, A starts, B goes back. */
+function updateSetup() {
+  if (pressed(UP) || pressed(DOWN)) { setupRow ^= 1; fx(SFX.move); }
+  const d = (pressed(RIGHT) ? 1 : 0) - (pressed(LEFT) ? 1 : 0);
+  if (d && setupRow === 0) { setupLevel = (setupLevel + d + 3) % 3; fx(SFX.move); }
+  if (d && setupRow === 1) { setupColour = (setupColour + d + 3) % 3; fx(SFX.move); }
+  if (pressed(B)) { fx(SFX.pause); toTitle(); return; }
+  if (timer > 10 && (pressed(A) || pressed(START))) { fx(SFX.select); dset(CHOICE_SLOT, setupLevel | (setupColour << 2) | (1 << 4)); startCpuGame(); }
 }
 
 /** The pad of a side: with two pads, White's is `whitePad` and Black's the other; with one, pad 1 plays both. */
@@ -491,6 +557,7 @@ function updatePromo(p) {
 function playMove(m) {
   make(pos, m, true);
   lastMove = m; liftedSq = -1; liftMoves = []; promo = null;
+  saveMove();
   const end = gameResult(pos);
   if (end) { finish(end); return; }
   fx(inCheck(pos) ? SFX.check : mPromo(m) ? SFX.promote : mFlags(m) & F_CASTLE ? SFX.castle : mFlags(m) & F_CAPTURE ? SFX.capture : SFX.place);
@@ -498,14 +565,14 @@ function playMove(m) {
 
 /** The game is over: the result panel over the final position (spec 10). */
 function finish(end) {
-  result = end; state = 'over'; timer = 0; paused = false;
+  result = end; state = 'over'; timer = 0; paused = false; clearSave();   // a finished game is not saved
   fx(end.winner < 0 ? SFX.draw : SFX.mate);
 }
 
 /** After the game: A a new game (two players with two pads swap colours), B the title. */
 function updateOver() {
   if (timer < 30) return;
-  if (pressed(A)) { fx(SFX.select); if (pad2) whitePad ^= 1; newGame(); }
+  if (pressed(A)) { fx(SFX.select); if (pad2) whitePad ^= 1; if (cpu) startCpuGame(); else newGame(); }   // the same mode, level and colour
   else if (pressed(B)) { fx(SFX.select); toTitle(); }
 }
 
@@ -539,7 +606,7 @@ function updatePause() {
     if (item === 'RESUME') paused = false;
     else if (item === 'OFFER DRAW') menu = 'offer';
     else if (item === 'RESIGN') menu = 'resign';
-    else if (item === 'NEW GAME') newGame();
+    else if (item === 'NEW GAME') { if (cpu) startCpuGame(); else newGame(); }
     else toTitle();
   }
 }
@@ -551,6 +618,7 @@ function draw() {
   cls();
   if (state === 'game' || state === 'over') drawBoard();
   else if (state === 'title') drawTitle();
+  else if (state === 'setup') drawSetup();
   if (state === 'over') drawResult();
   if (promo) drawPromo();
   if (paused) drawPause();
@@ -613,8 +681,19 @@ function drawResult() {
 
 function drawTitle() {
   ctxt('ROYAL CHESS', 60, GOLD);
-  ['PLAY THE COMPUTER', 'TWO PLAYERS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 72, 110 + i * 14, i === titleSel ? WHITE : DIM));
-  ctxt('STEP 3: THE COMPUTER (CASUAL, YOU WHITE)', 190, DIM);
+  titleItems().forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 72, 104 + i * 14, i === titleSel ? WHITE : DIM));
+  if (hasSave()) { const g = dget(GAME_SLOT); ctxt(`SAVED: ${g & 2 ? 'TWO PLAYERS' : LEVELS[(g >> 3) & 3].name}, MOVE ${(dget(PLIES_SLOT) >> 1) + 1}`, 170, DIM); }
+}
+
+function drawSetup() {
+  ctxt('PLAY THE COMPUTER', 50, GOLD);
+  panel(40, 76, 176, 60);
+  [['LEVEL', LEVELS[setupLevel].name], ['YOU PLAY', COLOURS[setupColour]]].forEach(([k, v], i) => {
+    const y = 88 + i * 22, on = i === setupRow;
+    txt(k, 52, y, on ? WHITE : DIM); txt(on ? `< ${v} >` : `  ${v}`, 124, y, on ? GOLD : WHITE);
+  });
+  ctxt(['MAKES MISTAKES ON PURPOSE', 'A RELAXED GAME', 'THINKS FOUR MOVES AHEAD'][setupLevel], 150, DIM);
+  ctxt('A: PLAY   B: BACK', 190, DIM);
 }
 
 function drawPause() {
