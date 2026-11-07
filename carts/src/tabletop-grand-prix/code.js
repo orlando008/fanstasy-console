@@ -1,7 +1,7 @@
 // Tabletop Grand Prix: toy cars racing across the furniture, seen from above (docs/carts/tabletop-grand-prix.md).
 // Built so far (the spec's plan, section 15): step 1, the physics (5.1, 5.2) and the track's grid of surfaces built into
 // Map RAM from its data (6); step 2, four cars and the knock-out: collisions, ramps and falls (5.3), rounds, points and
-// the race (5.4), and the camera on the leader (5.5).
+// the race (5.4), and the camera on the leader (5.5); step 3, the computer drivers (7).
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
@@ -133,6 +133,28 @@ function buildTrack(i) {
     const s = cx < W && cy < H ? grid[cy * W + cx] : S_HOLE, t = SURF[s].tile;
     mset(cx, cy, t ? tile(ART.tiles[t], 1) : 0);
   }
+  racingLine();
+}
+
+/** The computer drivers' line (spec 7), for each waypoint: `bend`, how far the track turns over the 8 waypoints around
+ * it (radians, + to the right), its radius `rad` in px, and the line `lx`, `ly`: towards the inside of a bend, by up to
+ * the road's half width less 10 px, smoothed so it eases in and out of the apex. */
+function racingLine() {
+  const t = track, n = t.n, W = (k) => (k % n + n) % n, dir = (k) => Math.atan2(t.wy[W(k + 1)] - t.wy[W(k)], t.wx[W(k + 1)] - t.wx[W(k)]);
+  const turn = (k) => Math.atan2(Math.sin(dir(k) - dir(k - 1)), Math.cos(dir(k) - dir(k - 1)));
+  t.bend = []; t.rad = []; t.lx = []; t.ly = [];
+  const off = [];
+  for (let k = 0; k < n; k++) {
+    let b = 0; for (let d = -4; d < 4; d++) b += turn(k + d);
+    t.bend.push(b); t.rad.push(Math.abs(b) > 0.01 ? (8 * SPACING) / Math.abs(b) : 9999);
+    off.push(sgn(b) * Math.min(t.width / 2 - 10, Math.abs(b) * 24));
+  }
+  for (let k = 0; k < n; k++) {
+    let o = 0; for (let d = -3; d <= 3; d++) o += off[W(k + d)];
+    o /= 7;
+    const a = dir(k), ox = -Math.sin(a) * o, oy = Math.cos(a) * o;   // to the right of the direction of travel
+    t.lx.push(t.wx[k] + ox); t.ly.push(t.wy[k] + oy);
+  }
 }
 
 /** Distance from (x, y) to the segment from (ax, ay) to (bx, by). */
@@ -159,11 +181,37 @@ function hitsWall(x, y) {
 
 const WIN_POINTS = 5, ROUND_MAX = 1800, READY_T = 60, GO_T = 30, BOARD_T = 120, OUT_MARGIN = 4;
 const JUMP_MIN = 1.5, LIFT = 6, CAR_DAMP = 0.8;
-const CPU_NAMES = ['ZIP', 'DOT', 'MAX', 'BEA'], SEAT_COL = [RED, 8, GOLD, GREEN];   // HUD colours: red, blue, yellow, green
+const SEAT_COL = [RED, 8, GOLD, GREEN];   // HUD colours: red, blue, yellow, green
 
-let seats = [];   // P1 to P4: { human, name }. One car a seat; a seat no person has is a computer driver's.
+// The computer drivers (spec 7). A level: the share of the top speed it drives at (`throttle`), how fast it takes a bend
+// against the speed its radius allows (`corner`), how far it strays from its line (`err`, px), and how late it reacts
+// (`react`, frames: it re-steers every react / 4 frames, and sees a bend to brake for react x speed px late).
+const LEVELS = [
+  { name: 'EASY', throttle: 0.86, corner: 0.80, err: 8, react: 18 },
+  { name: 'NORMAL', throttle: 0.94, corner: 0.90, err: 5, react: 10 },
+  { name: 'HARD', throttle: 1.00, corner: 1.00, err: 2, react: 4 },
+];
+// A character changes its level a little: ZIP takes risks (bends faster), DOT is careful (slower, and slows for slick
+// ground), MAX barges (does not steer round other cars, and leans on the one beside him), BEA keeps the line.
+const CHARS = [
+  { name: 'ZIP', throttle: 1, corner: 1.12, err: 1, slick: 1.6, avoid: true, lean: 0 },
+  { name: 'DOT', throttle: 0.98, corner: 0.9, err: 1, slick: 1.0, avoid: true, lean: 0 },
+  { name: 'MAX', throttle: 1, corner: 1, err: 1, slick: 1.3, avoid: false, lean: 6 },
+  { name: 'BEA', throttle: 1, corner: 1, err: 0.5, slick: 1.3, avoid: true, lean: 0 },
+];
+let level = 1;    // the computer drivers' level for the race (step 5 lets the player choose it)
 
-function newSeats() { seats = [0, 1, 2, 3].map((i) => ({ human: i === 0, name: i === 0 ? 'P1' : CPU_NAMES[i] })); }
+let seats = [];   // P1 to P4: { human, name, ch }. One car a seat; a seat no person has is a computer driver's (ch: its character).
+
+function newSeats() { seats = [0, 1, 2, 3].map((i) => ({ human: i === 0, name: `P${i + 1}`, ch: -1 })); }
+
+/** Give the computer drivers three different characters of the four, at random, and their names. */
+function castDrivers() {
+  const order = [0, 1, 2, 3];
+  for (let i = 3; i > 0; i--) { const j = rndi(0, i); [order[i], order[j]] = [order[j], order[i]]; }
+  let k = 0;
+  for (const s of seats) if (!s.human) { s.ch = order[k++]; s.name = CHARS[s.ch].name; } else s.ch = -1;
+}
 
 /** A car on waypoint k of the track, facing along it. */
 function newCar(seat, k) {
@@ -263,13 +311,48 @@ function leader() {
   return best;
 }
 
-/** A computer driver's controls: [steer, gas, brake]. Step 2's simple driver steers for a waypoint 3 ahead and brakes
- * for a sharp turn; step 3 gives the drivers their levels, their racing line and their characters (spec 7). */
-function aiControls(c) {
-  const k = (c.wp + 3) % track.n;
-  const d = Math.atan2(Math.sin(Math.atan2(track.wy[k] - c.y, track.wx[k] - c.x) - c.a), Math.cos(Math.atan2(track.wy[k] - c.y, track.wx[k] - c.x) - c.a));
-  const sharp = Math.abs(d) > 0.7 && Math.hypot(c.vx, c.vy) > 1.2;
-  return [d > 0.06 ? 1 : d < -0.06 ? -1 : 0, !sharp, sharp];
+const AI_SAFE = 0.9;      // a bend's speed: TURN x its radius (the speed at which the car's turn just follows it), x this
+const STUCK_T = 45, BACK_T = 30;   // a driver that makes no headway for this long reverses out for BACK_T frames
+const AVOID_D = 64, AVOID_SIDE = 20;   // a car up to AVOID_D px ahead and in the way: aim AVOID_SIDE px to the side of it
+
+/** A computer driver's controls: [steer, gas, brake] (spec 7). It drives the same physics as a person, with a level `L`
+ * and a character `ch`. The bot of the tests calls it for P1's seat with a level of its own. */
+function aiControls(c, L = LEVELS[level], ch = CHARS[Math.max(0, seats[c.seat].ch)]) {
+  const ai = c.ai || (c.ai = { err: 0, errTo: 0, errT: 0, steer: 0, stuck: 0, back: 0 });
+  const t = track, n = t.n, v = Math.hypot(c.vx, c.vy), f = c.vx * Math.cos(c.a) + c.vy * Math.sin(c.a);
+  // Stuck against something: back out, steering the other way.
+  if (ai.back) { ai.back--; return [-ai.steer, false, true]; }
+  ai.stuck = f < 0.25 ? ai.stuck + 1 : 0;
+  if (ai.stuck > STUCK_T) { ai.stuck = 0; ai.back = BACK_T; return [0, false, true]; }
+  // Its error: a sideways offset from the line that drifts to a new value now and then.
+  if (--ai.errT <= 0) { ai.errTo = (rnd(2) - 1) * L.err * ch.err; ai.errT = rndi(60, 120); }
+  ai.err += clamp(ai.errTo - ai.err, -0.2, 0.2);
+  // The point it steers for: on the line, 3 waypoints ahead and more at speed, moved by the error and round a car ahead.
+  const k = (c.wp + 3 + flr(v)) % n, k1 = (k + 1) % n, ux = t.wx[k1] - t.wx[k], uy = t.wy[k1] - t.wy[k], ul = Math.hypot(ux, uy) || 1;
+  const rx = -uy / ul, ry = ux / ul;   // to the right
+  let side = ai.err;
+  for (const o of cars) {
+    if (o === c || o.out || o.fall) continue;
+    const dx = o.x - c.x, dy = o.y - c.y, along = dx * Math.cos(c.a) + dy * Math.sin(c.a), across = -dx * Math.sin(c.a) + dy * Math.cos(c.a);
+    if (ch.avoid && along > 0 && along < AVOID_D && Math.abs(across) < 16) side += across > 0 ? -AVOID_SIDE : AVOID_SIDE;   // round a car ahead
+    if (ch.lean && Math.abs(along) < 10 && Math.abs(across) < 18) side += sgn(across) * ch.lean;    // MAX leans on the one beside him
+  }
+  const tx = t.lx[k] + rx * side, ty = t.ly[k] + ry * side;
+  if (flr(clock + c.seat) % Math.max(1, flr(L.react / 4)) === 0) {
+    const d = Math.atan2(Math.sin(Math.atan2(ty - c.y, tx - c.x) - c.a), Math.cos(Math.atan2(ty - c.y, tx - c.x) - c.a));
+    ai.steer = d > 0.05 ? 1 : d < -0.05 ? -1 : 0;
+  }
+  // Its speed: the top speed at its level, less for each bend (and slick patch in a bend) in braking distance ahead.
+  let target = TOP * L.throttle * ch.throttle;
+  const late = flr((v * L.react) / SPACING);
+  for (let j = 1 + late; j <= 12; j++) {
+    const q = (c.wp + j) % n;
+    let safe = TURN * t.rad[q] * AI_SAFE * L.corner * ch.corner;
+    if (Math.abs(t.bend[q]) > 0.5 && surfAt(t.wx[q], t.wy[q]) === S_SLICK) safe = Math.min(safe, ch.slick * L.corner);
+    const dist = (j - late) * SPACING;
+    target = Math.min(target, Math.sqrt(safe * safe + 2 * BRAKE * dist));
+  }
+  return [ai.steer, f < target - 0.02, f > target + 0.15];
 }
 function controls(c) {
   const p = c.seat;
@@ -328,6 +411,7 @@ function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; p
 /** A race on track i: four cars on the grid at the start line, no points (the seats stay as they are). */
 function startRace(i) {
   buildTrack(i);
+  castDrivers();
   cars = seats.map((_, s) => newCar(s, 0));
   round = 0; lastRank = cars.slice(); newRound(null);
   paused = false; timer = 0; state = 'race';
@@ -371,7 +455,7 @@ function updateTitle() {
 function updateRace() {
   for (let p = 0; p < 4; p++) if (seats[p].human && pressed(START, p)) { paused = true; pausePad = p; pauseSel = 0; fx(SFX.pause); return; }
   // Step 2: a pad that presses a button takes its seat from the computer (step 5 does this in the lobby).
-  for (let p = 1; p < 4; p++) if (!seats[p].human && masks[p] && !prevMasks[p]) { seats[p].human = true; seats[p].name = `P${p + 1}`; }
+  for (let p = 1; p < 4; p++) if (!seats[p].human && masks[p] && !prevMasks[p]) { seats[p].human = true; seats[p].name = `P${p + 1}`; seats[p].ch = -1; }
   rtime++;
   if (phase === 'ready') {
     if (rtime >= READY_T) { phase = 'go'; rtime = 0; fx(SFX.go); } else if (rtime % 20 === 0) fx(SFX.tick);
@@ -514,7 +598,7 @@ function drawResult() {
 function drawTitle() {
   ctxt('TABLETOP GRAND PRIX', 50, GOLD);
   ['CUP', 'QUICK RACE'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
-  ctxt('STEP 2: FOUR CARS, KNOCK-OUT', 180, DIM);
+  ctxt(`STEP 3: COMPUTER DRIVERS (${LEVELS[level].name})`, 180, DIM);
 }
 
 function drawPause() {

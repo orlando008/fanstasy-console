@@ -13,7 +13,8 @@ const PROBE = `__expose(() => ({
   get rtime() { return rtime; }, set rtime(v) { rtime = v; }, get outOrder() { return outOrder; }, get lastRank() { return lastRank; },
   get places() { return places; }, get banner() { return banner; }, get bannerT() { return bannerT; }, get pausePad() { return pausePad; },
   surfAt, progress, placeAt, buildTrack, startRace, camTarget, moveCam, leader, knockOut, scoreRound, newRound, offScreen, aiControls,
-  SQUEEZE_T, SQUEEZE_RATE, LOOK_MAX, SQUEEZE_X, SQUEEZE_Y, lookAhead, WIN_POINTS, ROUND_MAX, READY_T, GO_T, BOARD_T, OUT_MARGIN, JUMP_MIN, LIFT, CAR_DAMP, CPU_NAMES,
+  SQUEEZE_T, SQUEEZE_RATE, LOOK_MAX, SQUEEZE_X, SQUEEZE_Y, lookAhead, WIN_POINTS, ROUND_MAX, READY_T, GO_T, BOARD_T, OUT_MARGIN, JUMP_MIN, LIFT, CAR_DAMP, LEVELS, CHARS, AI_SAFE, STUCK_T, BACK_T, castDrivers,
+  get level() { return level; }, set level(v) { level = v; },
   SFX, SONG, SURF, TRACKS, S_OFF, S_ROAD, S_ROUGH, S_SLICK, S_STICKY, S_RAMP, S_HOLE, S_WALL,
   TOP, ACC, BRAKE, REV, ROLL, TURN, STEER_RAMP, R_CAR, SLIDE_KEEP, BOUNCE, FALL_T, LOOK, CAM_K, CAM_MAX, HUD_H,
 }));`;

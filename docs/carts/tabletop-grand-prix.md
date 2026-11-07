@@ -181,10 +181,26 @@ more slick ground and more things that roll.
 
 ## 7. Computer drivers
 
-A computer car drives the same physics as a person, with a pad of its own that the AI presses (LEFT, RIGHT, A, B). It
-never goes faster than a person's car could. It follows the **racing line**: it steers toward a point `LOOK` waypoints
-ahead, eases off for a sharp corner ahead (by the turn between the coming waypoints), brakes for a slick patch it is
-about to meet in a corner, and steers around a roller in its way.
+A computer car drives the same physics as a person, through the same controls (steer, gas, brake), and never goes
+faster than a person's car could. All its numbers are constants in `code.js` (`aiControls`).
+
+- **The line.** When a track is built, each waypoint gets its `bend` (how far the track turns over the 8 waypoints around
+  it) and the bend's radius. The drivers' line (`lx`, `ly`) moves towards the inside of each bend, by up to the road's half
+  width less 10 px, smoothed over 7 waypoints so it eases in and out of the apex.
+- **Steering.** A driver steers for the point on the line `3 + speed` waypoints ahead of its own. That point is moved
+  sideways by its error, and by 20 px to the side of a car in the way (one up to 64 px ahead, and less than 16 px to the
+  side).
+- **Speed.** A driver's top speed is `TOP` × its level's throttle × its character's. It slows for any bend in the next 12
+  waypoints that it could not follow at its speed. A bend's safe speed is `TURN` × its radius × 0.9 × the level's corner
+  factor × the character's: the speed at which the car's turn just follows it. A slick patch in a bend has a lower safe
+  speed. The driver brakes so as to arrive at each bend's safe speed (BRAKE per frame), and lets off the gas within
+  0.02 of its target.
+- **Error.** A sideways offset from the line, up to the level's error × the character's. Every 60 to 120 frames it drifts
+  to a new random value, at 0.2 px a frame.
+- **Reaction.** A driver re-steers only every reaction ÷ 4 frames, and sees a bend to brake for reaction × speed px
+  late.
+- **Unsticking.** A driver that makes no headway (under 0.25 forward) for 45 frames backs out for 30 frames, steering
+  the other way.
 
 | Level | Throttle on the straights | Corner speed | Line error | Reaction |
 |---|---|---|---|---|
@@ -192,10 +208,23 @@ about to meet in a corner, and steers around a roller in its way.
 | NORMAL | 0.94 | 0.90 | up to 5 px | 10 frames |
 | HARD | 1.00 | 1.00 | up to 2 px | 4 frames |
 
-Difficulty comes from the cars and the tracks, not from extra speed. Each computer driver has a name, a colour of its own
-and a small character: `ZIP` takes risks, `DOT` is careful, `MAX` barges into others, `BEA` keeps the line. A colour a
-person has taken is given to no one else. The bot of the tests (`tests/carts/tabletop-grand-prix/bot.mjs`) drives a
-person's seat with the same code, with a skill option.
+Difficulty comes from the cars and the tracks, not from extra speed. The level is the same for the three computer
+drivers in a race (`level`; chosen on the choose screen from step 5, NORMAL until then).
+
+**Characters.** Each race, the computer drivers are three of four characters, drawn at random, each named after itself.
+None is faster than a person's car:
+
+| Character | Throttle | Bends | Error | Slick bend speed | Other cars |
+|---|---|---|---|---|---|
+| `ZIP` takes risks | 1 | 1.12 | 1 | 1.6 | steers round them |
+| `DOT` is careful | 0.98 | 0.9 | 1 | 1.0 | steers round them |
+| `MAX` barges | 1 | 1 | 1 | 1.3 | does not steer round them, and leans 6 px on a car beside him |
+| `BEA` keeps the line | 1 | 1 | 0.5 | 1.3 | steers round them |
+
+Each driver has a colour of its own, and a colour a person has taken is given to no one else (step 5).
+
+The bot of the tests (`tests/carts/tabletop-grand-prix/bot.mjs`) drives P1's seat with the same code (`aiControls`). Its
+level is set by `skill`, from EASY's numbers (0) to HARD's (1), with a character that keeps to the line.
 
 ## 8. Modes
 
