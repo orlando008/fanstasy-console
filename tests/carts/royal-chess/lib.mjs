@@ -5,19 +5,30 @@ export { BTN };
 export const CART = fileURLToPath(new URL('../../../carts/royal-chess.nova', import.meta.url));
 
 // Whatever a test needs to read or set is exposed here (the cart's code runs in one scope, so getters see its variables).
-// Add to this list as the game grows.
 const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; },
-  get score() { return score; }, set score(v) { score = v; }, get lives() { return lives; }, set lives(v) { lives = v; },
-  get blocks() { return blocks; }, get px() { return px; }, get ART() { return ART; }, mget: (x, y) => mget(x, y), get rank() { return rank; }, get initials() { return initials; },
-  get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; },
-  SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
+  get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; }, get ART() { return ART; },
+  get pos() { return pos; }, set pos(v) { pos = v; }, get cur() { return cur; }, get liftedSq() { return liftedSq; }, get liftMoves() { return liftMoves; },
+  get lastMove() { return lastMove; },
+  rnd: (n) => rnd(n), fromFen, toFen, posKey, attacked, inCheck, pseudoMoves, legalMoves, make, unmake, perft, newGame, playMove,
+  mFrom, mTo, mPromo, mFlags, mk, sqName, sqOf, screenX, screenY,
+  SFX, SONG, START_FEN, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, BLACK, F_CAPTURE, F_DOUBLE, F_EP, F_CASTLE, SQ, BX, BY,
 }));`;
 
-/** A new game. title: true to start on the title (otherwise straight into play). save: a save to start from. */
-export const newGame = (seed = 1, { title = false, save = null } = {}) =>
-  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + PROBE });
+/** A new game. title: true to start on the title (otherwise straight into a game). */
+export const newGame = (seed = 1, { title = false, save = null, extra = '' } = {}) =>
+  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + extra + PROBE });
 export const M = (...names) => names.reduce((m, n) => m | (1 << BTN[n]), 0);
-/** The sfx commands since the last call: [[n, channel], ...]. */
 export const sfxLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'sfx').map((a) => [a[2], a[3]]); vm.audioLog.length = 0; return r; };
 export const musicLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'music').map((a) => a[2]); vm.audioLog.length = 0; return r; };
+/** A move by its squares ('e2e4', 'e7e8q'), from the legal moves of the position. */
+export function moveOf(p, P, uci) {
+  const from = p.sqOf(uci.slice(0, 2)), to = p.sqOf(uci.slice(2, 4)), pr = uci[4] ? 'nbrq'.indexOf(uci[4]) + 2 : 0;
+  return p.legalMoves(P).find((m) => p.mFrom(m) === from && p.mTo(m) === to && p.mPromo(m) === pr);
+}
+/** Move the cursor to a square by pressing the d-pad, as a player would. */
+export function cursorTo(vm, p, name) {
+  const f = name.charCodeAt(0) - 97, r = name.charCodeAt(1) - 49;
+  while (p.cur.f !== f) vm.press(p.cur.f < f ? 'RIGHT' : 'LEFT');
+  while (p.cur.r !== r) vm.press(p.cur.r < r ? 'UP' : 'DOWN');
+}

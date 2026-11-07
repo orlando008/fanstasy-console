@@ -1,6 +1,6 @@
 # Royal Chess's audio: carts/src/royal-chess/audio.json.
 #   python3 carts/src/royal-chess/audio.py carts/src/royal-chess/audio.json
-# Two songs (0 the title, 1 the game) and the effects numbered as SFX in code.js. Written with the song
+# Two songs for now (0 the title, 1 the game; the audio pass is step 7) and the effects numbered as SFX in code.js. Written with the song
 # toolkit (tools/devkit/music/kit.py; its header explains the bar() arguments). Rules (playbook section 5):
 # leads are quiet, with no vibrato; songs use channels 0 to 5 and effects 6 and 7 (code.js takes turns); the drums are
 # samples on channel 5. The new sound chip (SPEC 5): sampled instruments from samples.py (a.voice) and an echo per song.
@@ -42,13 +42,13 @@ bars(S, 16, CH, ['C4 - E4 - G4 - E4 -', 'D4 - G4 - B4 - G4 -', 'E4 - A4 - C5 - A
 bars(S, 16, CH, ['G4 - E4 - C4 - E4 -', 'B4 - G4 - D4 - G4 -', 'A4 - C5 - E5 - C5 -', 'A4 - F4 - C4 - F4 .'], li='SOFTHORN', drums='basic', bass='1 - 5 - 1 - 5 -', upper='arp1')
 S.finish()
 
-# --- Effects: the order is the SFX table in code.js ---
-a.effect(1, ['E-6', 'OFF'], 'BLIP')                                # 0 menu move
+# --- Effects: the order is the SFX table in code.js (placeholders until the audio pass, step 7) ---
+a.effect(1, ['E-6', 'OFF'], 'BLIP')                                # 0 the cursor
 a.effect(2, ['C-6', 'G-6', 'OFF'], 'CHIME')                        # 1 select
 a.effect(2, ['E-5', 'B-5', 'OFF'], 'CHIME')                        # 2 pause
-a.effect(3, ['C-4', 'G-3', 'D-3', 'A-2', 'OFF'], 'CRUNCH')         # 3 a hit (noise)
-a.effect(6, ['G-4', 'E-4', 'C-4', None, 'D-4', None, 'C-4', 'OFF'], 'FANFARE')   # 4 game over
-a.effect(1, ['C-6', 'G-6', 'OFF'], 'BLIP')                         # 5 a point
-a.effect(4, ['C-5', 'E-5', 'G-5', 'C-6', None, 'G-5', 'C-6', 'OFF'], 'FANFARE')  # 6 a record
+a.effect(1, ['G-5', 'OFF'], 'BLIP')                                # 3 a piece picked up
+a.effect(1, ['C-4', 'OFF'], 'THUD')                                # 4 put down
+a.effect(2, ['G-3', 'C-3', 'OFF'], 'THUD')                         # 5 a capture
+a.effect(2, ['C-3', 'OFF'], 'CRUNCH')                              # 6 not a legal move
 
 a.write(sys.argv[1], songs=2)

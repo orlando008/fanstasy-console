@@ -4284,23 +4284,11 @@
    ]
   },
   {
-   "speed": 3,
+   "speed": 1,
    "rows": [
     {
-     "n": "C-4",
-     "i": 12
-    },
-    {
-     "n": "G-3",
-     "i": 12
-    },
-    {
-     "n": "D-3",
-     "i": 12
-    },
-    {
-     "n": "A-2",
-     "i": 12
+     "n": "G-5",
+     "i": 9
     },
     {
      "n": "OFF"
@@ -4311,57 +4299,6 @@
     null,
     null,
     null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null
-   ]
-  },
-  {
-   "speed": 6,
-   "rows": [
-    {
-     "n": "G-4",
-     "i": 13
-    },
-    {
-     "n": "E-4",
-     "i": 13
-    },
-    {
-     "n": "C-4",
-     "i": 13
-    },
-    null,
-    {
-     "n": "D-4",
-     "i": 13
-    },
-    null,
-    {
-     "n": "C-4",
-     "i": 13
-    },
-    {
-     "n": "OFF"
-    },
     null,
     null,
     null,
@@ -4392,12 +4329,54 @@
    "speed": 1,
    "rows": [
     {
-     "n": "C-6",
-     "i": 9
+     "n": "C-4",
+     "i": 11
     },
     {
-     "n": "G-6",
-     "i": 9
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "G-3",
+     "i": 11
+    },
+    {
+     "n": "C-3",
+     "i": 11
     },
     {
      "n": "OFF"
@@ -4434,36 +4413,21 @@
    ]
   },
   {
-   "speed": 4,
+   "speed": 2,
    "rows": [
     {
-     "n": "C-5",
-     "i": 13
-    },
-    {
-     "n": "E-5",
-     "i": 13
-    },
-    {
-     "n": "G-5",
-     "i": 13
-    },
-    {
-     "n": "C-6",
-     "i": 13
-    },
-    null,
-    {
-     "n": "G-5",
-     "i": 13
-    },
-    {
-     "n": "C-6",
-     "i": 13
+     "n": "C-3",
+     "i": 12
     },
     {
      "n": "OFF"
     },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
     null,
     null,
     null,

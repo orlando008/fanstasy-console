@@ -1,33 +1,33 @@
-// The bot for tools/devkit/sweep.mjs: a player that plays Royal Chess by itself, so balance and stuck states can be
-// checked over many seeds without a person.
+// The bot for tools/devkit/sweep.mjs: whole games of chess, so the rules can be checked over many seeds without a
+// person: every game must end by the rules or reach the length limit, and no move may leave the mover's king attacked.
 //
-//   node tools/devkit/sweep.mjs royal-chess --seeds 8 --set skill=0,0.5
+//   node tools/devkit/sweep.mjs royal-chess
 //
-// The contract is in the header of tools/devkit/sweep.mjs: pad() gives the buttons each frame, finished() says the
-// run is over, result() gives the numbers to summarise (and `problems` for anything that must not happen).
-// Replace this with a bot for the real game: the same logic a rival or a hint would use, reading the cart's variables
-// through the probe in lib.mjs (add what it needs there). `skill` here is the chance (0 to 1) of dodging a block.
-import { M, newGame as boot } from './lib.mjs';
+// The contract is in the header of tools/devkit/sweep.mjs. Step 1: both sides play a random legal move (the seed picks
+// them with the cart's own random numbers), straight into the game (playMove), every other frame. From step 3 the computer's own engine plays.
+import { newGame as boot } from './lib.mjs';
 
-export const defaults = { frames: 20000, seeds: 6, set: { skill: [0, 0.5] } };
+export const defaults = { frames: 2000, seeds: 8, set: {} };
+export const newGame = (seed) => boot(seed);
 
-export const newGame = (seed) => boot(seed); // skipTitle: straight into play
+const LIMIT = 400;   // half-moves
+let plies = 0, bad = 0;
+export const setup = () => { plies = 0; bad = 0; };
 
-let lastFrame = 0;
-export const setup = () => { lastFrame = 0; };
-
-/** Dodge the nearest block that is about to land on the player, with probability `skill` (decided once a block gets close). */
-const decided = new WeakMap();
-export function pad(vm, p, frame, opts) {
-  const near = p.blocks.find((b) => b.y > 120 && b.y < 215 && Math.abs(b.x - p.px) < 22 && !b.hit);
-  if (!near) return 0;
-  if (!decided.has(near)) decided.set(near, ((near.x * 7 + frame) % 100) / 100 < (opts.skill ?? 1));
-  if (!decided.get(near)) return 0;
-  return near.x >= p.px ? M('LEFT') : M('RIGHT');
+export function pad(vm, p, frame) {
+  if (frame % 2 || p.state !== 'game' || plies >= LIMIT) return 0;
+  const moves = p.legalMoves(p.pos);
+  if (!moves.length) return 0;
+  const side = p.pos.side;
+  p.playMove(moves[Math.floor(p.rnd(moves.length))]);   // the cart's random numbers, seeded by the run
+  if (p.inCheck(p.pos, side)) bad++;
+  plies++;
+  return 0;
 }
 
-export const finished = (p) => p.state !== 'play';
+export const finished = (p) => plies >= LIMIT || (p.state === 'game' && !p.legalMoves(p.pos).length);
 
 export function result(p) {
-  return { score: p.score, lives: p.lives, problems: p.state === 'play' ? ['still playing'] : [] };
+  const stuck = !p.legalMoves(p.pos).length;
+  return { plies, mate: stuck && p.inCheck(p.pos) ? 1 : 0, stalemate: stuck && !p.inCheck(p.pos) ? 1 : 0, problems: bad ? [`${bad} moves left the king in check`] : [] };
 }

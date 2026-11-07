@@ -1,7 +1,7 @@
 # Royal Chess: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Scaffolded and specified. The frame works (title, play, pause, game over, sound cues), but the game itself is still the starter's placeholder. Step 1 of the plan (section 15) is next.
+**Status:** Step 1 of 8 built (section 15): every move of chess, proven against the published perft counts, on a board two people can play on with one pad. Step 2 (the end of a game) is next.
 **Cart source:** `carts/src/royal-chess/` → `carts/royal-chess.nova`
 
 ---
@@ -195,6 +195,34 @@ game longer than 492 half-moves stops being saved (the board says so), and is fi
    positions after each depth from six standard positions must match the published counts exactly (the start position:
    20, 400, 8,902, 197,281; and Kiwipete, positions 3 to 6 of the Chess Programming Wiki). A plain board with the cursor,
    picking up, the legal squares, putting down, two players on one pad.
+   - **Built:**
+     - **The position:** `fromFen` and `toFen`; `attacked` and `inCheck`; `pseudoMoves` (every piece, the two-square
+       advance, en passant, the four promotions, castling with its conditions); `make` and `unmake` (with an undo
+       stack, and with `track` the position's key for the repetition rule); `legalMoves`; `perft`.
+     - **A move** is one number: the from-square, the to-square, the promotion, and flags for a capture, a double step,
+       en passant and castling.
+     - **The board:** drawn on the overlay in named colours (`art.py`: no tiles yet).
+       - The pieces are discs with their letters until the art pass.
+       - Shown: the last move, the king in check, and the legal squares (a dot, or a ring for a capture).
+       - The cursor wraps round the edges. A picks up a piece (or changes it, or puts it back), A on a lit square
+         moves, and B cancels.
+     - **For now,** one pad plays both sides, and a pawn reaching the last rank becomes a queen (step 2 adds the choice
+       and pad 2).
+     - **The bot** plays random legal games for `sweep.mjs`.
+   - **Results:**
+     - `node tools/verify.js royal-chess` passes, with 73 test checks:
+       - `03-perft.mjs`: the perft counts from all six standard positions match the published numbers exactly. That
+         is the start position to depth 4 (197,281); Kiwipete and positions 4 to 6 to depth 3; and position 3 to
+         depth 4. After each count, the position is exactly as it was.
+       - `04-rules.mjs`: each rule by name: FEN both ways, castling and its conditions and rights, en passant (only at
+         once, and not when it uncovers a check), promotion to any piece, pins, check, and the repetition key.
+       - `05-board.mjs`: the cursor; picking up, the legal squares, the thud, putting back and changing the piece
+         held; moving; turns; castling, en passant and promotion by hand; the screen; the menu; frame times (2.4 ms
+         at the 99th percentile).
+     - `node tools/devkit/sweep.mjs royal-chess --seeds 12`: 12 random games of up to 400 half-moves (one ended in
+       checkmate). No move ever left the mover's king in check.
+     - `node tools/devkit/smoke.mjs royal-chess` runs in the real console with no errors.
+     - The code is 17.3 KB of the 64 KB.
 2. **The rules of the game's end:** check, checkmate, stalemate, the three draws, promotion's choice, the result panel,
    the menu (offer a draw, resign, new game), two pads. Tests for each.
 3. **The computer:** the search and the evaluation, the three levels, time-sliced. Tests: it takes a free queen, it finds
