@@ -1,7 +1,7 @@
 # Tabletop Grand Prix: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Scaffolded and specified. The frame works (title, play, pause, game over, records, sound cues), but the game itself is still the starter's placeholder. Step 1 of the plan (section 15) is next.
+**Status:** Step 1 of 8 built (section 15): one car drives on a test table, with the physics, the surfaces, walls, holes and the camera. Step 2 (four cars and the knock-out) is next.
 **Cart source:** `carts/src/tabletop-grand-prix/` → `carts/tabletop-grand-prix.nova`
 
 ---
@@ -146,8 +146,9 @@ inside the track's map. At the start of a round it cuts straight to the grid.
 
 Each track is a loop drawn on its table:
 
-- **A centreline:** about 30 to 60 waypoints, in px. It gives progress, the leader, the racing line of the computer
-  drivers, and the grid at each restart.
+- **A centreline:** a dozen or so control points in px, smoothed into a closed curve (Catmull-Rom) and cut into waypoints
+  evenly spaced about 16 px apart (`SPACING`; the test table has 199). It gives progress, the leader, the racing line of
+  the computer drivers, and the grid at each restart.
 - **A width:** the road is 40 to 56 px wide.
 - **A short list of primitives:** rectangles and circles of a surface, props, ramps, holes and rollers.
 
@@ -313,6 +314,33 @@ The art is made in code by `carts/src/tabletop-grand-prix/art.py` (the art toolk
 1. **Vertical slice:** one car on a test table, driven with the physics of 5.1 and 5.2 (turning, gas, brake, the slide),
    the surfaces off the grid (track, off track, slick, a hole), the camera following it, and the track built in Map RAM
    from its data (6). The art is placeholder tiles.
+   - **Built:**
+     - **Driving:** `drive(c, steer, gas, brake)` with every constant of 5.1 and 5.2 at the top of `code.js`. The velocity
+       is split along the heading and across it, the grip takes away the sideways part, and walls are hit one axis at a
+       time (bounce 0.5, scrape 0.8). Each pad is read on its own (`held(b, p)`, `pressed(b, p)`), ready for four cars.
+     - **The track:** `TRACKS` holds the test table (`TEST TABLE`). `buildTrack` smooths its centreline into waypoints,
+       paints the grid of surfaces (the table, then the road within `width / 2` of each segment, then the primitives in
+       order), and writes Map RAM from it. A hole has no tile, so the floor on BG2 (at half the camera's speed) shows
+       through.
+     - **Progress:** `follow` moves a car's waypoint on or back one at a time, counting laps, and `progress` gives laps,
+       waypoints and the fraction between them. The camera (`moveCam`, 5.5) follows the car.
+     - **Falls:** a car on a hole falls for `FALL_T` frames. For now it comes back on its waypoint; from step 2 it is out
+       of the round instead.
+     - **Art and sound:** `art.py` makes one plain tile per surface, the kitchen floor, and the car in 5 directions
+       (flipped for all 16). The effects are placeholders.
+   - **Results:**
+     - `node tools/verify.js tabletop-grand-prix` passes, with 60 test checks:
+       - `01-flow.mjs`: the title, the pause and its menu, and frame times (99th percentile about 1.7 ms).
+       - `02-art.mjs`: the tiles, and the car in all 16 directions.
+       - `03-drive.mjs`: the numbers of 5.1 and 5.2 on a laboratory track with a patch of each surface (top speed in 45
+         frames, rolling, brakes, reverse at 0.7, the steering ramp and turn rate, the slide, each surface's top speed
+         and grip), walls, holes, and a lap with the camera.
+     - A lap of the test table, steered at a waypoint 3 ahead, takes 27 s. The camera moves at most 2.7 px a frame and
+       keeps the car on the screen all the way round.
+     - `node tools/devkit/sweep.mjs tabletop-grand-prix`: 8 runs of three laps, at skill 0.7 and 1, with no car stuck and
+       no fall.
+     - `node tools/devkit/smoke.mjs tabletop-grand-prix` runs in the real console with no errors, at 60 fps.
+     - The code is 16.7 KB of the 64 KB, without stripping.
 2. **Four cars and the knock-out:** progress and the leader, the camera on the leader, out off the screen and by falling,
    rounds, points, the grid at each restart, and the race's end (5.4, 5.5). Collisions between cars and with walls, ramps
    and jumps (5.3). Pads for P1 to P4, and the pause of the person who paused.

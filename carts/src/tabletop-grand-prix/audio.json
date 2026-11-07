@@ -4284,7 +4284,7 @@
    ]
   },
   {
-   "speed": 3,
+   "speed": 2,
    "rows": [
     {
      "n": "C-4",
@@ -4295,16 +4295,10 @@
      "i": 12
     },
     {
-     "n": "D-3",
-     "i": 12
-    },
-    {
-     "n": "A-2",
-     "i": 12
-    },
-    {
      "n": "OFF"
     },
+    null,
+    null,
     null,
     null,
     null,
@@ -4335,33 +4329,36 @@
    ]
   },
   {
-   "speed": 6,
+   "speed": 3,
    "rows": [
     {
+     "n": "C-6",
+     "i": 9
+    },
+    {
+     "n": "A-5",
+     "i": 9
+    },
+    {
+     "n": "F-5",
+     "i": 9
+    },
+    {
+     "n": "D-5",
+     "i": 9
+    },
+    {
+     "n": "B-4",
+     "i": 9
+    },
+    {
      "n": "G-4",
-     "i": 13
-    },
-    {
-     "n": "E-4",
-     "i": 13
-    },
-    {
-     "n": "C-4",
-     "i": 13
-    },
-    null,
-    {
-     "n": "D-4",
-     "i": 13
-    },
-    null,
-    {
-     "n": "C-4",
-     "i": 13
+     "i": 9
     },
     {
      "n": "OFF"
     },
+    null,
     null,
     null,
     null,
@@ -4392,78 +4389,21 @@
    "speed": 1,
    "rows": [
     {
-     "n": "C-6",
-     "i": 9
-    },
-    {
-     "n": "G-6",
-     "i": 9
-    },
-    {
-     "n": "OFF"
-    },
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null
-   ]
-  },
-  {
-   "speed": 4,
-   "rows": [
-    {
      "n": "C-5",
-     "i": 13
-    },
-    {
-     "n": "E-5",
-     "i": 13
+     "i": 9
     },
     {
      "n": "G-5",
-     "i": 13
-    },
-    {
-     "n": "C-6",
-     "i": 13
-    },
-    null,
-    {
-     "n": "G-5",
-     "i": 13
-    },
-    {
-     "n": "C-6",
-     "i": 13
+     "i": 9
     },
     {
      "n": "OFF"
     },
+    null,
+    null,
+    null,
+    null,
+    null,
     null,
     null,
     null,
