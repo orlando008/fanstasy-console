@@ -1,7 +1,7 @@
 # Tabletop Grand Prix: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Steps 1 to 7 of 8 built (section 15): the whole game plays with its art and its music (the lobby, two cups of four tracks and Quick Race, standings, a podium, the Workshop unlock and saves). Step 8 (balance and release) is next.
+**Version:** 1.0
+**Status:** Complete. All 8 steps of the plan (section 15) are built, and the cart is released as `carts/tabletop-grand-prix.nova.png`, on the Library's Racing shelf.
 **Cart source:** `carts/src/tabletop-grand-prix/` → `carts/tabletop-grand-prix.nova`
 
 ---
@@ -140,7 +140,7 @@ at most 4 px a frame, so a car slightly faster than the camera can get ahead of 
 inside the track's map. At the start of a round it cuts straight to the grid.
 
 **The squeeze.** Cars that drive equally well keep the same gaps for ever, so a round could run to its time limit. From
-`SQUEEZE_T` = 480 frames (8 s) into a round, the camera looks further ahead, 6 px more each second, up to `LOOK_MAX` =
+`SQUEEZE_T` = 360 frames (6 s) into a round, the camera looks further ahead, 8 px more each second, up to `LOOK_MAX` =
 112 px. This pushes the leader towards the back of the screen, and the cars behind it drop off. The look is held to 112 px
 across and 90 px down, so the leader always stays at least 16 px inside the screen. A car alone (in some tests) is never
 squeezed.
@@ -699,6 +699,45 @@ The budget: 274 of the 1,024 tiles (BG tiles 1 to 383, sprites from 384).
      - `node tools/devkit/smoke.mjs tabletop-grand-prix` runs in the real console with no errors.
 8. **Balance and release:** the levels and tracks tuned with the bot, polish, then the label, the PNG cart and the Library
    entry (`node tools/release.js tabletop-grand-prix`), and a README row.
+   - **Built:**
+     - **Placemat Loop:** its road is 48 px (it was 56) and its corners' crumbs are bigger. It had the longest rounds
+       (19.5 s) and the most out of time (8 of 33). Now 17.3 s and 5 of 32, with NORMAL drivers.
+     - **The squeeze** starts at 6 s (it was 8) and grows 8 px a second (it was 6), to split packs of equal drivers
+       sooner.
+     - **`09-balance.mjs`** holds the ranges, with 8 checks:
+       - on Cereal Spill and Toolbox Circuit against NORMAL drivers, races finish in under 6 minutes, rounds average 8
+         to 22 s, and at most a quarter run out of time;
+       - a driver as good as HARD wins every race against EASY drivers on Placemat Loop, and fewer against HARD
+         ones.
+     - **The release:** `node tools/release.js tabletop-grand-prix --wait 3500` made the label (the title, the logo over
+       the race), the PNG cart and the Library entry. The cart has a README row.
+   - **Results:**
+     - **The sweep before the squeeze change:** 72 races, every track at every level, 3 seeds each, with the bot at
+       skill 0.75 (`node tools/devkit/sweep.mjs tabletop-grand-prix --seeds 3 --set
+       track=0,1,2,3,4,5,6,7,level=0,1,2,skill=0.75`). Every race finished, and no car got stuck.
+
+       | Level | Average round, by track | Rounds out of time | Race | P1 wins |
+       |---|---|---|---|---|
+       | EASY | 7.7 to 11.7 s | none | about 1 min | nearly all |
+       | NORMAL | 14.3 to 18.7 s | about 1 in 10 | 2 to 3.6 min | about 1 in 4 |
+       | HARD | 15.3 to 20 s | about 1 in 4 | 3 to 3.7 min | almost none |
+
+       Falls come only on Workbench Edge: 2 to 6 a race.
+     - **After the squeeze change** (3 seeds on Placemat Loop and Sawdust Alley):
+       - NORMAL: rounds of 14.7 and 13.3 s (were 18.7 and 16.7).
+       - HARD: rounds of 19 and 16.7 s, with 2 to 4 rounds a race out of time.
+     - **What this shows:** at HARD, three drivers as quick as each other run nose to tail on the plainest tracks, and a
+       round often ends at 30 s with the leader scoring. That is HARD's character: a person has to break away to win a
+       round, rather than wait for the computer to drop off. It is in the open questions if it should change.
+     - `node tools/verify.js tabletop-grand-prix` passes, with 234 test checks in nine files.
+     - `node tools/check.js tabletop-grand-prix` has no warnings:
+       - the code is 43 KB of the 64 KB (stripped);
+       - 449 of the 1,024 tiles;
+       - 5 songs, 18 patterns, 15 effects, 15.7 KB of the 32 KB of Sample RAM;
+       - the PNG cart's payload is 53.5 KB of 147.4 KB, and it decodes to exactly the packed cart.
+     - `tests/console/library.mjs` passes, with the cart on the Racing shelf for 1 to 4 players.
+     - Not tried yet: four real gamepads, and how the music sounds to a person. Both are for the user to try in the
+       preview.
 
 Each step: build it, run `node tools/verify.js` and `node tools/devkit/smoke.mjs tabletop-grand-prix`, write its **Built**
 and **Results** notes under its number here, commit and push.
@@ -708,8 +747,10 @@ and **Results** notes under its number here, commit and push.
 Defaults I chose that you did not confirm, each easy to change:
 
 - **The cup points** are 10, 6, 3 and 1 for first to fourth place.
-- **A round runs at most 30 s.** If more than one car is still in by then, the leader scores.
-- **The squeeze** (5.5, added in step 2): from 8 s into a round, the camera pushes the leader towards the back of the
+- **A round runs at most 30 s.** If more than one car is still in by then, the leader scores. At HARD this happens in
+  about a quarter of the rounds (step 8's results): equal drivers run nose to tail. A shorter limit, or HARD drivers that
+  stray more from their line, would make it rarer.
+- **The squeeze** (5.5, added in step 2; from 6 s since step 8): from 6 s into a round, the camera pushes the leader towards the back of the
   screen, so the cars behind it drop off. Without it, cars of equal skill would never split.
 - **The grid after a round:** the winner takes pole, and the others line up in the order they went out.
 - **A fall puts a car out of the round**, the same as leaving the screen. The alternative is to put it back on the track

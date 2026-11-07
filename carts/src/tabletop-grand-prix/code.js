@@ -515,7 +515,7 @@ const LOOK = 40, CAM_K = 0.12, CAM_MAX = 4, HUD_H = 12;
 // LOOK_MAX, so the leader drifts towards the back of the screen and the cars behind it drop off (a pack of equal cars
 // would otherwise never split). The look is held to SQUEEZE_X and SQUEEZE_Y px across and down, so the leader stays at
 // least 16 px inside the screen.
-const SQUEEZE_T = 480, SQUEEZE_RATE = 6 / 60, LOOK_MAX = 112, SQUEEZE_X = 112, SQUEEZE_Y = 90;
+const SQUEEZE_T = 360, SQUEEZE_RATE = 8 / 60, LOOK_MAX = 112, SQUEEZE_X = 112, SQUEEZE_Y = 90;
 let cam = { x: 0, y: 0 };
 const lookAhead = () => (phase === 'go' && cars.length > 1 ? Math.min(LOOK_MAX, LOOK + Math.max(0, rtime - SQUEEZE_T) * SQUEEZE_RATE) : LOOK);
 function camTarget(c) {
