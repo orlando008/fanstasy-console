@@ -26,9 +26,10 @@ const put = (p, x, y, a = 0, v = 0) => { const c = p.cars[0]; Object.assign(c, {
   ok(bad.length === 0, 'the road runs along the whole centreline (no waypoint off it or in a wall, and a hole only just after a ramp)', bad.join(','));
   const cell = (s) => { const i = p.grid.indexOf(s); return [i % t.w, Math.floor(i / t.w)]; };
   const [rx, ry] = cell(p.S_ROAD), [hx, hy] = cell(p.S_HOLE), [wx, wy] = cell(p.S_WALL);
-  ok((p.mget(rx, ry) & 1023) === p.ART.tiles.road && ((p.mget(rx, ry) >> 10) & 7) === 1, 'a road cell is drawn with the road tile in Map RAM, in palette 1');
-  ok(p.mget(hx, hy) === 0, 'a hole (and the floor past the table) has no tile, so the floor below shows through');
-  ok((p.mget(wx, wy) & 1023) === p.ART.tiles.wall, 'a wall cell has the wall tile');
+  const roadTiles = new Set([...Array(16).keys()].map((m) => p.ART.tiles['road' + m])), wallTiles = new Set([...Array(16).keys()].map((m) => p.ART.tiles['wall' + m]));
+  ok(roadTiles.has(p.mget(rx, ry) & 1023) && [1, 3].includes((p.mget(rx, ry) >> 10) & 7), 'a road cell is drawn with a road tile in Map RAM, in the Breakfast palette (or its shadow)');
+  ok(p.mget(hx, hy) === 0 || (p.mget(hx, hy) & 1023) === p.ART.tiles.lip, 'a hole (and the floor past the table) has no tile, so the floor below shows through (or the table\'s front face, under its edge)');
+  ok(wallTiles.has(p.mget(wx, wy) & 1023), 'a wall cell has a wall tile');
   ok(p.surfAt(-10, 50) === p.S_HOLE && p.surfAt(5000, 50) === p.S_HOLE, 'outside the map is the floor too');
   const L1 = vm.ppu.layers[1], L2 = vm.ppu.layers[2];
   ok(L1.show && L2.show && L2.wrap && !vm.ppu.layers[0].show, 'the table is on BG1, the floor on BG2 (repeated), and BG0 is hidden');

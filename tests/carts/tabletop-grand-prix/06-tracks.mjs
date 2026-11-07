@@ -24,11 +24,11 @@ for (let i = 0; i < 8; i++) {
   if (t.tables.some(([x, y, w, h]) => x < 0 || y < 0 || x + w > t.w * 8 || y + h > t.h * 8)) bad.push('a table outside the map');
   for (let k = 0; k < n; k++) {
     const s = wpS(k), l = at(t.lx[k], t.ly[k]);
-    if (s === p.S_OFF || s === p.S_WALL || (s === p.S_HOLE && !afterRamp(k))) bad.push(`centreline ${k}`);
-    if (l === p.S_OFF || l === p.S_WALL || (l === p.S_HOLE && !afterRamp(k))) bad.push(`line ${k}`);
+    if (s === p.S_OFF || p.isWall(s) || (s === p.S_HOLE && !afterRamp(k))) bad.push(`centreline ${k}`);
+    if (l === p.S_OFF || p.isWall(l) || (l === p.S_HOLE && !afterRamp(k))) bad.push(`line ${k}`);
   }
   for (let d = -3; d <= 8; d++) if ([p.S_RAMP, p.S_HOLE].includes(wpS(d))) bad.push(`the start is at a jump (${d})`);
-  const hazards = new Set(t.prims.map((q) => q[0]).filter((s) => s !== p.S_ROAD && s !== p.S_WALL));
+  const hazards = new Set(t.prims.map((q) => q[0]).filter((s) => s !== p.S_ROAD && !p.isWall(s)));
   if (!hazards.size && !t.movers.length) bad.push('no hazard');
   if (bad.length) bads.push(`${t.name}: ${bad.slice(0, 4).join(', ')}`);
   // The Breakfast cup is gentle: no edge near the road until its fourth track; the Workshop's roads are narrower.

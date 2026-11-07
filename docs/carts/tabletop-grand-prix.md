@@ -1,7 +1,7 @@
 # Tabletop Grand Prix: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 5 of 8 built (section 15): the whole game plays (the lobby, two cups of four tracks and Quick Race, with standings, a podium, the Workshop unlock and saves), on placeholder art and sound. Step 6 (the art) is next.
+**Status:** Steps 1 to 6 of 8 built (section 15): the whole game plays with its art (the lobby, two cups of four tracks and Quick Race, standings, a podium, the Workshop unlock and saves), on placeholder sound. Step 7 (the audio) is next.
 **Cart source:** `carts/src/tabletop-grand-prix/` → `carts/tabletop-grand-prix.nova`
 
 ---
@@ -54,15 +54,15 @@ leads, and every person enters their own name on their own pad.
 
 - **BG2:** the floor far below the table, scrolled at half the camera's speed, so the table seems to stand high above it:
   kitchen tiles for the Breakfast cup, garage concrete for the Workshop. It shows through the table's holes and past its
-  edges.
-- **BG1:** the table top and the track. The surface (wood, a tablecloth, placemats) has the track's lines and kerbs
-  painted on, plus the flat props (spills, crumbs, oil).
-- **BG0:** the tall props that cars cannot cross (a cereal box, a mug, the toaster, the toolbox), in high-priority
-  tiles where a car passes behind them (under the handle of a mug).
-- **Sprites:** the four cars (16 × 16, the car about 12 px long), their shadows (sprite palettes 4 to 7 with a
-  subtractive blend), the things that roll (5.6), and the dust and splash puffs (capped at 12).
-- **Overlay:** the HUD, a strip 12 px tall across the top of the screen. It shows each car's colour, its name and five
-  point pips, and the round's banners in the middle of the screen (`ROUND 3`, `GO!`, `RED OUT`, `ACE SCORES`).
+  edges, and drifts behind the menus.
+- **BG1:** the table and the track, built from the track's grid when a race starts (12): the cloth or the cutting mat,
+  the road with its kerbs and start line, the spills, the props and their shadows, the table's front face.
+- **BG0:** the logo, on the title only.
+- **Sprites:** the four cars (16 × 16, the car 13 px long) and their shadows, the things that roll (5.6) and theirs, and
+  the dust puffs (at most 12). Shadows and dust are see-through (sprite palettes 6 and 7, blended at half).
+- **Overlay:** the HUD, a strip 12 px tall across the top of the screen: each car's colour, its name and five point pips.
+  The round's banners (`ROUND 3`, `GO!`, `DOT OUT`, `ZIP SCORES`) sit on small panels in the middle of the screen. Every
+  panel is a solid dark navy.
 
 ## 5. The rules
 
@@ -350,17 +350,52 @@ section 5). The fast pieces' leads go in octave 4 on soft instruments (a flute o
 
 ## 12. Video layers
 
-The art is made in code by `carts/src/tabletop-grand-prix/art.py` (the art toolkit, `tools/devkit/art/kit.py`).
+The art is made in code by `carts/src/tabletop-grand-prix/art.py` (the art toolkit, `tools/devkit/art/kit.py`). The look
+is a bright toy-box cartoon from above: the Breakfast cup on a red gingham tablecloth over a kitchen's terracotta and
+cream tiles, the Workshop on a green cutting mat over garage concrete.
 
-- **BG2:** the floor (one repeating texture for each cup, 64 × 64 px), at half speed.
-- **BG1:** the table and the track. It is built from a vocabulary of 8 px tiles: the table's surfaces, the road and its
-  edge pieces, kerbs, spills, crumbs, the hole's rim, and the parts of the props. The cart picks each cell's tile from
-  the surface grid and its neighbours (an edge tile where the road meets the cloth).
-- **BG0:** the tall props, as stamps of tiles, with priority where a car passes under them.
-- **Sprites:** a car in 16 directions from 5 drawings (0°, 22.5°, 45°, 67.5° and 90°; the other directions are flips).
-  Each of the four cars is a sprite palette, recoloured with `color()` to its driver's colour. Shadows, rollers and puffs
-  are sprites too.
-- **Overlay:** the HUD strip and the banners, in see-through panels (CGRAM 192 and up, `blend` half).
+**BG1, the table.** The track is built when a race starts (6), so the table is a vocabulary of 8 px tiles. `buildTrack`
+picks each cell's tile from the cell's surface and its neighbours:
+
+| Surface | Tiles | Chosen by |
+|---|---|---|
+| Table | `cloth0` to `cloth3` | the parity of the cell's column and row (the gingham's bands, 8 px every 16) |
+| Road | `road0` to `road15` | which of its four sides (1 N, 2 E, 4 S, 8 W) meet the table, a hole or a wall: a kerb there, a dark edge outside and stripes of the cloth's colours inside. In the middle of the road, about two cells in nine are `roadv0` or `roadv1` (grit, a scuff) |
+| Start line | `start` | the road cells across the first waypoint, chequered |
+| Crumbs, milk, jam | `rough0`, `rough1`, `slick0`, `slick1`, `sticky0`, `sticky1` | a hash of the cell (sawdust, oil and glue in the Workshop palette) |
+| Ramp | `ramp` | a book's cover (a plank's in the Workshop) |
+| Wall | `wall0` to `wall15` | which sides are open: lit from the upper left, light on the top and left, dark on the bottom and right |
+| Hole | `lip` under the table's edge, else none | the table's front face hangs into the cell below its edge; elsewhere the floor shows |
+
+Palettes:
+- **1 and 2:** the Breakfast and Workshop tables, with the same roles at the same entries, so every tile shows in
+  either.
+- **3 and 4:** the same tables in shadow, every colour darker. A cell to the right of, below, or below-right of a wall
+  takes them, as the prop's shadow.
+- **5:** the kitchen floor and the logo.
+- **6:** the garage floor, and the overlay's panel colour in a spare entry (110).
+- **7:** palette 1 with red walls, for the red props (`S_PROP`: the cereal box, the jam jar, the toolbox, the oil can).
+
+**BG2, the floor:** a 64 × 64 px scene for each cup (`floor0`, `floor1`), repeated, at half the camera's speed.
+
+**BG0, the logo:** `TABLETOP` in a blue gradient over `GRAND PRIX` in green, big outlined letters (`big_text`), on the
+title only.
+
+**Sprites:**
+- **The cars:** 16 directions from 5 drawings (0°, 22.5°, 45°, 67.5°, 90°; the rest are flips). The car is drawn by
+  sampling each pixel 4 × 4 times in the car's own frame (body, roof, windows, lamps, wheels) and lit from the upper left
+  of the screen. Each car is a sprite palette (0 to 3), its body ramp recoloured with `color()` to its driver's colour
+  (`tint`).
+- **Shadows:** each car's shadow is its silhouette in palette 7, 2 px right and 3 down. In a jump, the car rises up to
+  6 px and its shadow moves off by as much.
+- **Falling:** a falling car shrinks through three drawings (`fall0` to `fall2`), spinning a quarter turn every 4
+  frames.
+- **The rollers:** a pea, an orange and a ball bearing in the cars' palette's spare entries, with round shadows.
+- **Dust:** puffs from a car on crumbs (every 8 frames) and from a landing: two drawings, 16 frames, at most 12 at once.
+
+**The title:** over Placemat Loop, four computer drivers race round for ever behind the logo and the menu.
+
+The budget: 274 of the 1,024 tiles (BG tiles 1 to 383, sprites from 384).
 
 ## 13. Persistence (save slots)
 
@@ -378,8 +413,8 @@ The art is made in code by `carts/src/tabletop-grand-prix/art.py` (the art toolk
 | Asset | Budget |
 |---|---|
 | Code | Under 56 KB of the 64 KB limit, with `"strip": true` (on since step 5; `node tools/check.js tabletop-grand-prix`). The tracks are about 400 bytes each |
-| Tiles | About 520 of 1,024: the two floors (about 40), the two tables' vocabularies (about 160 each), the props (about 100), the cars and the other sprites (about 60) |
-| Sprites | At most 4 cars, 4 shadows, 4 rollers and 12 puffs: 24 at once, under the 32 a line |
+| Tiles | 274 of 1,024 (step 6): the table's vocabulary (47 tiles, shown in either cup's palette), the two floors and the logo, and 65 for the sprites |
+| Sprites | At most 4 cars, 4 shadows, 2 rollers with shadows and 12 puffs: 24 at once (the soak's most was 12), under the 32 a line |
 | Songs / SFX | 6 songs, about 20 effects |
 | Map RAM | One track at a time, at most 128 × 96 cells, and the floor (8 × 8 cells, repeated) |
 
@@ -586,6 +621,36 @@ The art is made in code by `carts/src/tabletop-grand-prix/art.py` (the art toolk
      - Not tried: four real pads. The pad joining is tested with the harness's pads 2 to 4.
 6. **The art:** the toy-box cartoon. The cars in 16 directions with shadows, the two tables, the floors below, the props,
    the HUD, the title, the track card and the podium.
+   - **Built:**
+     - **`art.py`** is new (section 12): the table's tile vocabulary in four palettes, the floors, the logo, the cars,
+       their shadows and falls, the rollers and the dust.
+     - **`buildTrack`** picks each cell's tile and palette: kerbs, bevels, shadows, the table's face, the start line.
+       Red props are a surface of their own, `S_PROP`: a wall in physics, palette 7 on the screen.
+     - **The title** is a race of computer drivers on Placemat Loop behind the logo.
+     - **Blending:** half on sprite palettes 4 to 7, for the shadows and the dust.
+   - **Changes along the way:**
+     - **Kerbs:** in red and white on the red and white cloth, they could not be seen. They got a dark outer edge.
+     - **Panels:** see-through panels mixed the navy into the red cloth, a muddy brown that `colors.mjs --check` failed
+       (0.91 against its limit of 0.3). The panels are solid navy now, and the banners have panels of their own.
+     - **The logo:** blue and green, as the user asked.
+     - **The art script:** it broke a tie in the car's shading by a Python set's order, which changes from run to run.
+       It is sorted now, and the script makes the same files every time.
+   - **Results:**
+     - `node tools/verify.js tabletop-grand-prix` passes, with 209 test checks. `02-art.mjs` was rewritten for the new
+       art, with 27 checks:
+       - every tile and sprite is drawn, and the two cups' palettes match role for role;
+       - the shadow palettes are darker;
+       - the map's choices: kerbed and plain road, the gingham's parity, a wall's shadow, a wall's bevel, the table's
+         face, the start line, the Workshop palette, a red prop, the garage floor;
+       - the car in its colour in all 16 directions, a jump raising it over its shadow, a falling car still drawn;
+       - dust within its cap, the kitchen floor past the edge;
+       - the title's logo and its race;
+       - a busy moment's sprites.
+     - `node tools/devkit/art/colors.mjs carts/tabletop-grand-prix.nova --check` is within the limits.
+     - `node tools/devkit/art/snes.mjs` scores the cart 55 of 100. Operation Ironstorm scores 62.
+     - A soak of 20,000 frames: 2.5 to 3 ms a frame at the 99th percentile, and at most 12 sprites, 10 on a line.
+     - `node tools/devkit/smoke.mjs tabletop-grand-prix` runs in the real console with no errors, at 60 fps.
+     - The code is 42.7 KB of the 64 KB, stripped.
 7. **The audio:** the six songs from their sources and the effects (11), measured with `loud.mjs`.
 8. **Balance and release:** the levels and tracks tuned with the bot, polish, then the label, the PNG cart and the Library
    entry (`node tools/release.js tabletop-grand-prix`), and a README row.

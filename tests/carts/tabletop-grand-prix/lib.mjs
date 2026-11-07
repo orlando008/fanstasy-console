@@ -17,7 +17,7 @@ const PROBE = `__expose(() => ({
   get level() { return level; }, set level(v) { level = v; },
   get mode() { return mode; }, get chooseSel() { return chooseSel; }, get cup() { return cup; }, get podium() { return podium; },
   get newUnlock() { return newUnlock; }, get lobbyMsg() { return lobbyMsg; }, standings, quickTracks, unlocked, wonCup, encodeSeat, decodeSeat,
-  finishRace, carCol, color: (i) => color(i), COLOURS, LETTERS, CUP_POINTS, CUPS, CARD_T, UNLOCK_SLOT, WINS_SLOT, CHOICE_SLOT, SEAT_SLOT, VERSION_SLOT,
+  finishRace, carCol, get puffs() { return puffs; }, PUFF_MAX, PUFF_T, S_PROP, isWall, color: (i) => color(i), COLOURS, LETTERS, CUP_POINTS, CUPS, CARD_T, UNLOCK_SLOT, WINS_SLOT, CHOICE_SLOT, SEAT_SLOT, VERSION_SLOT,
   SFX, SONG, SURF, TRACKS, S_OFF, S_ROAD, S_ROUGH, S_SLICK, S_STICKY, S_RAMP, S_HOLE, S_WALL,
   TOP, ACC, BRAKE, REV, ROLL, TURN, STEER_RAMP, R_CAR, SLIDE_KEEP, BOUNCE, FALL_T, LOOK, CAM_K, CAM_MAX, HUD_H,
 }));`;
