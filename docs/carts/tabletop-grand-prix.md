@@ -1,7 +1,7 @@
 # Tabletop Grand Prix: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 6 of 8 built (section 15): the whole game plays with its art (the lobby, two cups of four tracks and Quick Race, standings, a podium, the Workshop unlock and saves), on placeholder sound. Step 7 (the audio) is next.
+**Status:** Steps 1 to 7 of 8 built (section 15): the whole game plays with its art and its music (the lobby, two cups of four tracks and Quick Race, standings, a podium, the Workshop unlock and saves). Step 8 (balance and release) is next.
 **Cart source:** `carts/src/tabletop-grand-prix/` → `carts/tabletop-grand-prix.nova`
 
 ---
@@ -323,30 +323,53 @@ START on a person's pad pauses, for the person who pressed it (`pausePad`). The 
 
 ## 11. Audio
 
-Six songs on the new sound chip (sampled instruments and echo; SPEC 5), all lively public domain classics arranged for
-it. The notes are taken from public domain engravings (Mutopia, as Lantern Keeper did), and each source is recorded in
-`scores/SOURCES.md`. Songs use channels 0 to 5, and effects take turns on 6 and 7.
+Five songs on the new sound chip (sampled instruments and echo; SPEC 5), all lively public domain classics arranged for
+it (`carts/src/tabletop-grand-prix/audio.py`). The notes come from public domain and CC0 MIDI files, read by
+`scores.py` into note text in `scores/`, with each source and its licence in `scores/SOURCES.md`. Songs use channels 0
+to 5, and effects take turns on 6 and 7.
 
-| Song | Where | Piece |
+| Song | Where | Piece | Arranged for |
+|---|---|---|---|
+| 0 | The title, and its race behind the logo | Lumbye, *Champagne Galop*, Op. 14 (32 bars) | a soft horn over plucked chords and a bass, a galop's oom-pah drums; speed 5, 21 s |
+| 1 | The lobby and the choose screen | Suppé, *Poet and Peasant* overture, the opening chorale (16 bars) | strings and a choir, no drums; speed 12, 51 s |
+| 2 | The Breakfast cup's races (and Quick Race on its tracks) | Bellak, *Musket Galop*, Op. 176 (32 bars) | a flute over the electric piano's chords, a bass, galop drums; speed 5, 21 s |
+| 3 | The Workshop cup's races | Grieg, *In the Hall of the Mountain King* (16 bars) | the theme plucked and doubled on a soft horn, a bass, march drums; speed 6, 26 s |
+| 4 | The race result, the standings and the podium | Elgar, *Pomp and Circumstance* March No. 1, the trio's tune (40 bars) | strings and a choir; speed 8, 43 s |
+
+- **Cues:** the race song starts with the track card and runs on through the rounds. A round won is the jingle effect
+  over it, not a song of its own.
+- **Changed pieces:** the kickoff named William Tell, the Can-Can, the Flight of the Bumblebee and Light Cavalry as
+  examples. Step 7 found no clean source for them in the collection:
+  - no file for William Tell's gallop, the Can-Can or Light Cavalry (its "Galop infernal" is Camille Schubert's, not
+    Offenbach's);
+  - the only Bumblebee file is CC BY-SA, whose share-alike terms would carry into the cart's note text.
+- **What replaced them:** the songs above, all public domain or CC0. The first versions of Flow State's pieces, written
+  from memory, were wrong, so the notes come from a score here.
+
+| # | Effect | Sound |
 |---|---|---|
-| 0 | Title | Rossini, the *William Tell* Overture, the finale (the gallop) |
-| 1 | Drivers and choose | Suppé, *Light Cavalry* Overture, the march |
-| 2 | Breakfast races | Offenbach, *Orpheus in the Underworld*, the Galop infernal (the can-can) |
-| 3 | Workshop races | Rimsky-Korsakov, *The Flight of the Bumblebee* |
-| 4 | Race result and podium | Elgar, *Pomp and Circumstance* March No. 1 |
-| 5 | The points board between rounds | A short jingle, a phrase of song 0 |
+| 0, 1, 2 | Menu move, select, pause | a marimba tick, a two-note chime, the chime falling |
+| 3 | A bump against a wall | a low thud |
+| 4 | A fall off the table | a falling whistle of seven celesta notes |
+| 5 | A landing | a short thud, with dust |
+| 6 | A car out | a pop |
+| 7, 8 | The count, GO! | ticks, then a bell |
+| 9 | A round won | a little four-note jingle |
+| 10 | A race won | a horn fanfare |
+| 11 | A jump | a rising run of four notes |
+| 12 | A bump against a car | a thud, a little higher |
+| 13 | A skid | a short hiss, only for a person's car as it starts to slide (four cars skidding would never stop) |
+| 14 | The Workshop cup unlocked | a rising celesta arpeggio |
 
-All five composers are long in the public domain (Rossini died in 1868, Suppé in 1895, Offenbach in 1880, Rimsky-Korsakov
-in 1908, Elgar in 1934). *Sabre Dance*, named as an example during the kickoff, is not: Khachaturian died in 1978, so it
-is left out.
+**Levels** follow the playbook (`node tools/devkit/music/loud.mjs carts/tabletop-grand-prix.nova --check`; playbook
+section 5):
+- **Each lead alone:** 0.017 to 0.035 RMS, and 0.36 to 0.69 of its mix.
+- **Pierce:** at most 0.008.
+- **No vibrato.**
+- **The effects:** 0.011 to 0.032 RMS.
 
-Effects: menu move and select, the countdown (three ticks and a higher GO), a bump against a car, a bump against a
-wall, a skid (when a slide starts), a splash (onto a slick patch), a crunch (onto crumbs), a jump (take-off and landing),
-a fall (a falling whistle), out (a pop), a round won (a chime), a race won (a fanfare), a cup unlocked.
-
-Levels follow the playbook: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x
-where it enters, and no piercing (`node tools/devkit/music/loud.mjs carts/tabletop-grand-prix.nova --check`; playbook
-section 5). The fast pieces' leads go in octave 4 on soft instruments (a flute or a soft horn, not a bright brass).
+`clash.py` reports a few clashes in the scores themselves, all passing and leading tones: Champagne's D against D#,
+Pomp and Circumstance's dominant sevenths. They are left as the composers wrote them.
 
 ## 12. Video layers
 
@@ -652,6 +675,28 @@ The budget: 274 of the 1,024 tiles (BG tiles 1 to 383, sprites from 384).
      - `node tools/devkit/smoke.mjs tabletop-grand-prix` runs in the real console with no errors, at 60 fps.
      - The code is 42.7 KB of the 64 KB, stripped.
 7. **The audio:** the six songs from their sources and the effects (11), measured with `loud.mjs`.
+   - **Built:**
+     - `scores.py` reads the five MIDI files into `scores/`, and `SOURCES.md` records each source and its licence.
+     - `audio.py` arranges the songs with sampled instruments, a galop's or a march's drums, and an echo per song.
+     - The effects are mostly sampled.
+     - `code.js` cues the songs by state and cup, and plays two new effects: a skid for a person's car, and the unlock.
+     - It is five songs, not six (the jingle between rounds is an effect), and other pieces than the kickoff's examples
+       (section 11 says why).
+   - **Results:**
+     - `node tools/verify.js tabletop-grand-prix` passes, with 226 test checks, including the music levels. The new file
+       is `08-audio.mjs`, with 17 checks:
+       - the songs on channels 0 to 5, and each looping;
+       - which song plays on the title, the lobby, the choose screen, a Breakfast race, a Workshop race, and the result;
+       - the race song running on through rounds;
+       - the count's and GO!'s effects, all on 6 or 7;
+       - a skid once for a person's car, and none for the computer's;
+       - the unlock.
+     - `loud.mjs --check`: every song is within the limits. The first mix of the menu chorale had a lead at 0.76 of the
+       mix (limit 0.75); it got a quieter voice. The Mountain King's tune was buried at 0.014; it is now plucked at full
+       volume and doubled on a soft horn.
+     - The renders (`render.mjs`) have no clipped samples, with peaks of 0.16 to 0.27.
+     - Sample RAM: 15.7 KB of the 32 KB.
+     - `node tools/devkit/smoke.mjs tabletop-grand-prix` runs in the real console with no errors.
 8. **Balance and release:** the levels and tracks tuned with the bot, polish, then the label, the PNG cart and the Library
    entry (`node tools/release.js tabletop-grand-prix`), and a README row.
 
@@ -672,6 +717,9 @@ Defaults I chose that you did not confirm, each easy to change:
 - **Who unlocks the Workshop:** a person winning the Breakfast cup at any difficulty.
 - **The computer drivers' names and characters:** ZIP, DOT, MAX, BEA.
 - **No engine sound.** There are only two effects channels for four cars. A hum for P1's car alone is possible.
+- **The music** (section 11): the Champagne Galop, Poet and Peasant, the Musket Galop, the Hall of the Mountain King and
+  Pomp and Circumstance stand in for the kickoff's examples, which had no clean source. Other public domain pieces can
+  be swapped in the same way.
 - **Extras not chosen** at the kickoff, kept for later: cars that handle differently (a racer, a monster truck, a beetle,
   a van), a time trial with a ghost car, and records and trophies (a trophy shelf).
 - **More players on a phone:** the touch controls are player 1 only, so a second player on a phone needs a gamepad.

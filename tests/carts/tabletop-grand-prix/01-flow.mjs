@@ -12,7 +12,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   ok(p.state === 'lobby', 'A opens the drivers\' lobby');
   vm.run(12); vm.press('START'); ok(p.state === 'choose', 'START there goes on to choose a cup');
   vm.run(12); vm.press('A');
-  ok(p.state === 'race' && p.playing === p.SONG.race, 'and A starts its first race, with the race song');
+  ok(p.state === 'race' && p.playing === p.SONG.breakfast, 'and A starts its first race, with the Breakfast cup\'s song');
   ok(p.cars.length === 4 && p.track && p.track.n > 20 && p.track.i === 0, 'on the cup\'s first track', p.track?.name);
 }
 

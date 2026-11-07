@@ -2,7 +2,8 @@
 // Built so far (the spec's plan, section 15): step 1, the physics (5.1, 5.2) and the track's grid of surfaces built into
 // Map RAM from its data (6); step 2, four cars and the knock-out: collisions, ramps and falls (5.3), rounds, points and
 // the race (5.4), and the camera on the leader (5.5); step 3, the computer drivers (7); step 4, the eight tracks (6) and
-// the things that move on them (5.6); step 5, the menus, the cups and the saves (8 to 10, 13); step 6, the art (12).
+// the things that move on them (5.6); step 5, the menus, the cups and the saves (8 to 10, 13); step 6, the art (12); step 7,
+// the audio (11).
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
@@ -23,8 +24,9 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 
 // --- Sound (SPEC 5). Songs use channels 0 to 5; effects take turns on 6 and 7, so they never cut into the music. ---
 
-const SFX = { move: 0, select: 1, pause: 2, bump: 3, fall: 4, land: 5, out: 6, tick: 7, go: 8, point: 9, win: 10, jump: 11, crash: 12 };
-const SONG = { title: 0, race: 1 };
+const SFX = { move: 0, select: 1, pause: 2, bump: 3, fall: 4, land: 5, out: 6, tick: 7, go: 8, point: 9, win: 10, jump: 11, crash: 12, skid: 13, unlock: 14 };
+// The songs (spec 11): the title; the menus; a race in each cup (Quick Race too, by the track's cup); the results and podium.
+const SONG = { title: 0, menu: 1, breakfast: 2, workshop: 3, podium: 4 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -358,7 +360,9 @@ function drive(c, steer, gas, brake) {
   else if (brake) f = f > 0.05 ? Math.max(0, f - BRAKE) : Math.max(f - ACC * 0.6, -REV);
   else f *= ROLL;
   if (f > S.top) f -= (f - S.top) * 0.1;   // a slow surface drags a fast car down to its top speed
+  const was = c.sliding;
   c.sliding = !gas && Math.abs(c.st) > 0.3 && f > 1;
+  if (c.sliding && !was && state === 'race' && seats[c.seat].human) fx(SFX.skid);   // a person's car starts to slide
   side *= Math.max(S.keep, c.sliding ? SLIDE_KEEP : 0);
   c.vx = f * ca - side * sa; c.vy = f * sa + side * ca;
   for (const o of track.fans) {   // a fan blows a car away from it (spec 5.6)
@@ -570,12 +574,12 @@ function toTitle() {
   cars = seats.map((_, s) => newCar(s, 0)); lastRank = cars.slice(); newRound(null); phase = 'go'; puffs = [];
 }
 function toLobby() {
-  state = 'lobby'; timer = 0;
+  state = 'lobby'; timer = 0; play(SONG.menu);
   seats.forEach((s, k) => { s.lob = s.human ? 'colour' : 'cpu'; s.pos = 0; if (s.human) s.name = s.mine; });
   freeColours();
 }
 function toChoose() {
-  state = 'choose'; timer = 0;
+  state = 'choose'; timer = 0; play(SONG.menu);
   const ch = dget(CHOICE_SLOT), list = mode === 'cup' ? [0, 1] : quickTracks();
   chooseSel = ch ? clamp((ch >> 4) & 255, 0, list.length - 1) : 0;
   if (mode === 'cup' && chooseSel === 1 && !unlocked()) chooseSel = 0;
@@ -590,7 +594,7 @@ function startRace(i, card) {
   round = 0; lastRank = cars.slice(); newRound(null);
   if (card) phase = 'card';
   paused = false; timer = 0; state = 'race';
-  play(SONG.race);
+  play(track.cup === 1 ? SONG.workshop : SONG.breakfast);
 }
 
 /** The next round: every car back on a 2 x 2 grid at the waypoint of the last round's winner (the start line for the
@@ -748,7 +752,7 @@ function finishRace() {
     places.forEach((c, i) => { cup.total[c.seat] += CUP_POINTS[i]; });
     cup.wins[places[0].seat]++; cup.last = places.map((c) => c.seat);
   }
-  state = 'result'; timer = 0; fx(SFX.win);
+  state = 'result'; timer = 0; fx(SFX.win); play(SONG.podium);
 }
 
 function updateResult() {
@@ -770,7 +774,7 @@ function updateStandings() {
     dset(WINS_SLOT, dget(WINS_SLOT) | (1 << (cup.i * 3 + level)));
     if (cup.i === 0 && !unlocked()) { dset(UNLOCK_SLOT, dget(UNLOCK_SLOT) | 1); newUnlock = true; }
   }
-  state = 'podium'; timer = 0; fx(SFX.win);
+  state = 'podium'; timer = 0; fx(newUnlock ? SFX.unlock : SFX.win);
 }
 
 function updatePodium() {
