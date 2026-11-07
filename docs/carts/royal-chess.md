@@ -342,7 +342,7 @@ position a test sets up).
      - **The frame** is wider, so the coordinates sit on it, and the status line moved below it.
      - **Captured pieces** are letters until the art pass. Small discs with letters on them could not be read at 8 px.
    - **Results:**
-     - `node tools/verify.js royal-chess` passes, with 163 test checks. The new file is `09-panel.mjs`, with 10 checks:
+     - `node tools/verify.js royal-chess` passes, with 165 test checks. The new file is `09-panel.mjs`, with 12 checks:
        - the pieces taken and their order;
        - the lead;
        - a promoted queen taken counted as a queen;
