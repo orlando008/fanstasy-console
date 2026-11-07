@@ -1,7 +1,7 @@
 # Tabletop Grand Prix: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 and 2 of 8 built (section 15): four cars race on a test table in knock-out rounds to five points, with the physics, the surfaces, walls, holes, a jump and the camera on the leader. Step 3 (the computer drivers) is next.
+**Status:** Steps 1 to 3 of 8 built (section 15): four cars race on a test table in knock-out rounds to five points, against computer drivers at three levels with four characters. Step 4 (the eight tracks) is next.
 **Cart source:** `carts/src/tabletop-grand-prix/` → `carts/tabletop-grand-prix.nova`
 
 ---
@@ -430,6 +430,41 @@ The art is made in code by `carts/src/tabletop-grand-prix/art.py` (the art toolk
      - The code is 26.7 KB of the 64 KB, without stripping.
 3. **Computer drivers:** the racing line, the three levels and the four characters (7). The bot for the tests, and
    `sweep.mjs` over many seeds: no car stuck, every round ends, and the levels place where they should.
+   - **Built:**
+     - **The line:** `racingLine` gives each waypoint its bend, its radius and the drivers' line.
+     - **The driver:** `aiControls(c, level, character)` steers, sets its speed for bends, strays, reacts late, steers
+       round a car and backs out when stuck (all of section 7).
+     - **The cast:** `LEVELS` and `CHARS` hold the tables of section 7. `castDrivers` draws three different characters
+       for each race and names the seats after them. `level` is NORMAL until step 5's choose screen.
+     - **The bot** (`bot.mjs`) drives P1 with `aiControls`, at a level between EASY and HARD set by its `skill`.
+   - **Results:**
+     - `node tools/verify.js tabletop-grand-prix` passes, with 126 test checks. The new file is `05-drivers.mjs`, with
+       24 checks:
+       - the line is on the road and moves to the inside of a bend;
+       - the tables, and the cast differs from race to race;
+       - each level's top speed: 1.74, 1.90 and 2.00;
+       - three laps of the test table at each level with no fall: 36.3, 33.6 and 30.5 s a lap;
+       - backing out of a wall;
+       - BEA steers round a stopped car, and MAX barges into it;
+       - a HARD-level P1 wins 4 of 4 races against EASY drivers and 1 of 4 against HARD ones.
+     - **Sweep** (`node tools/devkit/sweep.mjs tabletop-grand-prix`): 36 races on the test table, 6 seeds for each of
+       three levels and two bot skills. No race failed to finish, and no car stuck.
+
+       | Computer drivers | Bot | P1 wins | Rounds a race | Average round | Rounds out of time |
+       |---|---|---|---|---|---|
+       | EASY | 0.5 | 6 of 6 | 6.7 | 11 s | 0 |
+       | EASY | 1 | 6 of 6 | 5.7 | 8 s | 0 |
+       | NORMAL | 0.5 | 1 of 6 | 11.3 | 17.5 s | 2 of 68 |
+       | NORMAL | 1 | 4 of 6 | 8.2 | 14.5 s | 5 of 49 |
+       | HARD | 0.5 | 0 of 6 | 10 | 16 s | 3 of 60 |
+       | HARD | 1 | 1 of 6 | 8.8 | 15 s | 2 of 53 |
+
+     - What this shows:
+       - The levels place as they should. A person as good as HARD beats EASY drivers every time, and wins about one
+         race in four against three HARD drivers.
+       - Rounds are now 8 to 18 s on average, within the 10 to 20 s the design wants, against 19 to 28 s in step 2.
+       - A race takes 1 to 4 minutes.
+     - `node tools/devkit/smoke.mjs tabletop-grand-prix` runs in the real console with no errors, at 60 fps.
 4. **The eight tracks** (6), with their hazards and the things that move (5.6). Each is driven by the bot at every level:
    rounds of 10 to 20 s, no corner that traps a car, and no shortcut that cheats progress.
 5. **The flow:** the title, the lobby with joining by pad, colours and names (10.2), the choose screen, the cups, the

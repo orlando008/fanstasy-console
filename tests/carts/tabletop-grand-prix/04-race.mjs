@@ -12,7 +12,7 @@ const racing = (seed = 1) => { const vm = newGame(seed), p = vm.probe(); vm.run(
 // 1. The grid and the count.
 {
   const vm = newGame(1), p = vm.probe(); vm.run(1);
-  ok(p.cars.length === 4 && p.seats[0].human && p.seats.slice(1).every((s, i) => !s.human && s.name === p.CPU_NAMES[i + 1]), 'four cars: P1 and three computer drivers (ZIP, DOT, MAX, BEA by seat)', p.seats.map((s) => s.name).join(' '));
+  ok(p.cars.length === 4 && p.seats[0].human && p.seats.slice(1).every((s) => !s.human && s.name === p.CHARS[s.ch].name), 'four cars: P1 and three computer drivers, named after their characters', p.seats.map((s) => s.name).join(' '));
   const d = p.cars.map((c) => Math.hypot(c.x - p.cars[0].x, c.y - p.cars[0].y));
   ok(p.round === 1 && p.phase === 'ready' && d[1] > 15 && d[2] > 25 && p.cars.every((c) => speed(c) === 0), 'round 1 starts on a 2 x 2 grid at the start line, stopped', d.map((v) => v.toFixed(0)).join(' '));
   const at = p.cars.map((c) => `${c.x},${c.y}`).join(); vm.run(p.READY_T - 2, M('A'));
