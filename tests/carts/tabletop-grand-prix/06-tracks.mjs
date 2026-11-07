@@ -1,5 +1,5 @@
 // Tabletop Grand Prix, step 4: the eight tracks (spec 6) and the things that move on them (5.6). Each track's map and
-// line, its start, its hazards, and laps by a computer driver at each level. One PASS/FAIL line for each behaviour.
+// line, its start, its hazards, and laps by a computer driver at each level (choosing a track: 07-menus.mjs). One PASS/FAIL line for each behaviour.
 import { newGame, M, solo } from './lib.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
@@ -86,11 +86,4 @@ ok(gentle.length === 0, 'the Breakfast tracks keep the floor away from the road 
   console.log('  laps: ' + rows.join(', '));
 }
 
-// 5. The title picks the track (until step 5's menus).
-{
-  const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(2);
-  vm.press('RIGHT'); vm.press('RIGHT'); ok(p.titleTrack === 2, 'RIGHT on the title picks the next track');
-  vm.press('LEFT'); vm.press('LEFT'); vm.press('LEFT'); ok(p.titleTrack === 7, 'LEFT the one before, round to the last');
-  vm.press('A'); ok(p.state === 'race' && p.track.i === 7, 'and A races on it', p.track.name);
-}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

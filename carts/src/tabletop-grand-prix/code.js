@@ -2,7 +2,7 @@
 // Built so far (the spec's plan, section 15): step 1, the physics (5.1, 5.2) and the track's grid of surfaces built into
 // Map RAM from its data (6); step 2, four cars and the knock-out: collisions, ramps and falls (5.3), rounds, points and
 // the race (5.4), and the camera on the leader (5.5); step 3, the computer drivers (7); step 4, the eight tracks (6) and
-// the things that move on them (5.6).
+// the things that move on them (5.6); step 5, the menus, the cups and the saves (8 to 10, 13).
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
@@ -38,7 +38,9 @@ function play(song) {
 
 // --- Save slots (spec 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 2;
+const VERSION_SLOT = 0, SAVE_VERSION = 3;
+const UNLOCK_SLOT = 1, WINS_SLOT = 2, CHOICE_SLOT = 3, SEAT_SLOT = 10;   // the Workshop unlocked (bit 0); the cups won (bit
+// cup x 3 + level); the last level, cup and track chosen; P1 to P4's names and colours (slots 10 to 13)
 
 // --- Input: each pad's buttons this frame and last, for presses that do not repeat (btnp does) ---
 
@@ -236,7 +238,6 @@ function hitsWall(x, y) {
 
 const WIN_POINTS = 5, ROUND_MAX = 1800, READY_T = 60, GO_T = 30, BOARD_T = 120, OUT_MARGIN = 4;
 const JUMP_MIN = 1.5, LIFT = 6, CAR_DAMP = 0.8;
-const SEAT_COL = [RED, 8, GOLD, GREEN];   // HUD colours: red, blue, yellow, green
 
 // The computer drivers (spec 7). A level: the share of the top speed it drives at (`throttle`), how fast it takes a bend
 // against the speed its radius allows (`corner`), how far it strays from its line (`err`, px), and how late it reacts
@@ -254,18 +255,51 @@ const CHARS = [
   { name: 'MAX', throttle: 1, corner: 1, err: 1, slick: 1.3, avoid: false, lean: 6 },
   { name: 'BEA', throttle: 1, corner: 1, err: 0.5, slick: 1.3, avoid: true, lean: 0 },
 ];
-let level = 1;    // the computer drivers' level for the race (step 5 lets the player choose it)
+let level = 1;    // the computer drivers' level for the race, chosen on the choose screen (10.3)
 
-let seats = [];   // P1 to P4: { human, name, ch }. One car a seat; a seat no person has is a computer driver's (ch: its character).
+// --- Drivers: who sits in each seat, their names and colours (spec 10.2, 13) ---
 
-function newSeats() { seats = [0, 1, 2, 3].map((i) => ({ human: i === 0, name: `P${i + 1}`, ch: -1 })); }
+const COLOURS = [['RED', 'd04040'], ['BLUE', '4070d8'], ['YELLOW', 'e8c030'], ['GREEN', '40a848'], ['ORANGE', 'e87a20'],
+  ['PURPLE', '9050c8'], ['WHITE', 'e8e8f0'], ['BLACK', '484858']];
+const CAR_BODY = 2;   // the body's ramp in each car's sprite palette: entries 2 to 4, dark to light (art.py)
+const LETTERS = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const carCol = (k) => 128 + 16 * k + CAR_BODY + 1;   // the CGRAM entry of seat k's colour (its car's body), for the HUD
 
-/** Give the computer drivers three different characters of the four, at random, and their names. */
+// P1 to P4: { human, name, col, ch, lob, pos }. One car a seat; a seat no person has is a computer driver's (ch: its
+// character). lob is the seat's place in the lobby: 'cpu', 'colour', 'name' (pos: the letter) or 'ready'.
+let seats = [];
+
+/** A seat's name and colour in one save slot: three letters of 6 bits, the colour in bits 18 to 20, bit 21 set. */
+const encodeSeat = (s) => (s.name.split('').reduce((v, ch) => v * 64 + Math.max(0, LETTERS.indexOf(ch)), 0)) | (s.col << 18) | (1 << 21);
+const decodeSeat = (v) => ({ name: [12, 6, 0].map((b) => LETTERS[(v >> b) & 63]).join(''), col: (v >> 18) & 7 });
+
+function newSeats() {
+  seats = [0, 1, 2, 3].map((i) => {
+    const v = dget(SEAT_SLOT + i), s = v & (1 << 21) ? decodeSeat(v) : { name: `P${i + 1} `, col: i };
+    return { human: i === 0, name: s.name, col: s.col, mine: s.name, ch: -1, lob: i ? 'cpu' : 'colour', pos: 0 };
+  });
+  seats.forEach((_, k) => tint(k));
+}
+
+/** Set seat k's car to its colour: three shades of it in the body's entries of its sprite palette. */
+function tint(k) {
+  const v = parseInt(COLOURS[seats[k].col][1], 16);
+  [0.55, 1, 1.35].forEach((m, j) => color(128 + 16 * k + CAR_BODY + j, ...[v >> 16, (v >> 8) & 255, v & 255].map((c) => clamp(flr((c * m) / 8), 0, 31))));
+}
+const takenBy = (col, k) => seats.some((s, j) => j !== k && s.human && s.col === col);
+
+/** Give the computer drivers three different characters of the four, at random, their names, and colours no person has. */
 function castDrivers() {
   const order = [0, 1, 2, 3];
   for (let i = 3; i > 0; i--) { const j = rndi(0, i); [order[i], order[j]] = [order[j], order[i]]; }
   let k = 0;
-  for (const s of seats) if (!s.human) { s.ch = order[k++]; s.name = CHARS[s.ch].name; } else s.ch = -1;
+  for (const s of seats) if (!s.human) { s.ch = order[k++]; s.name = CHARS[s.ch].name; } else { s.ch = -1; s.name = s.mine; }
+  freeColours();
+}
+/** The computer seats take the first colours no person has. */
+function freeColours() {
+  const used = seats.filter((s) => s.human).map((s) => s.col);
+  seats.forEach((s, k) => { if (!s.human) { s.col = [0, 1, 2, 3, 4, 5, 6, 7].find((c) => !used.includes(c)); used.push(s.col); } tint(k); });
 }
 
 /** A car on waypoint k of the track, facing along it. */
@@ -466,10 +500,14 @@ const offScreen = (c) => { const x = c.x - cam.x, y = c.y - cam.y; return x < -O
 
 let skipTitle = false, skipTrack = 0; // tests set these to land straight in a race on a track
 let state = 'title', paused = false, pausePad = 0, timer = 0, clock = 0;
-let titleSel = 0, pauseSel = 0;
+let titleSel = 0, pauseSel = 0, mode = 'cup', chooseSel = 0, lobbyMsg = 0;
 let cars = [];
-let round = 0, phase = 'ready', rtime = 0;     // the round, and its phase: 'ready' (the count), 'go' (racing), 'board' (scored)
+// The round, and its phase: 'card' (the track card, before the first round), 'ready' (the count), 'go' (racing), 'board' (scored).
+let round = 0, phase = 'ready', rtime = 0;
 let outOrder = [], lastRank = [], places = [], banner = '', bannerT = 0;
+// A cup under way (spec 8, 9): its number, the race (0 to 3), each seat's cup points and race wins, the last race's places.
+let cup = null, podium = [], newUnlock = false;
+const CUP_POINTS = [10, 6, 3, 1], CUPS = ['BREAKFAST', 'WORKSHOP'], CARD_T = 120;
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
@@ -478,21 +516,42 @@ function init() {
   }
   const f = ART.scenes.floor;
   bg(0, { show: false });
-  bg(1, { mx: 0, my: 0, mw: 128, mh: 96, wrap: false, show: true });          // the table and the track
+  bg(1, { mx: 0, my: 0, mw: 128, mh: 96, wrap: false, show: false });         // the table and the track
   bg(2, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, wrap: true, show: true });   // the floor far below, repeated
   blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (ART.colors.GLASS) are see-through
+  const ch = dget(CHOICE_SLOT);
+  level = ch ? (ch & 3) % 3 : 1;
   newSeats();
-  if (skipTitle) startRace(skipTrack); else toTitle();
+  if (skipTitle) startRace(skipTrack, false); else toTitle();
 }
 
-function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
+const unlocked = () => (dget(UNLOCK_SLOT) & 1) !== 0;
+const wonCup = (c, lv) => (dget(WINS_SLOT) & (1 << (c * 3 + lv))) !== 0;
+/** The tracks Quick Race offers: the cups unlocked. */
+const quickTracks = () => [0, 1, 2, 3, 4, 5, 6, 7].filter((t) => TRACKS[t].cup === 0 || unlocked());
+function saveChoice() { dset(CHOICE_SLOT, level | (chooseSel << 4) | (1 << 12)); }
 
-/** A race on track i: four cars on the grid at the start line, no points (the seats stay as they are). */
-function startRace(i) {
+function toTitle() { state = 'title'; timer = 0; paused = false; cup = null; play(SONG.title); }
+function toLobby() {
+  state = 'lobby'; timer = 0;
+  seats.forEach((s, k) => { s.lob = s.human ? 'colour' : 'cpu'; s.pos = 0; if (s.human) s.name = s.mine; });
+  freeColours();
+}
+function toChoose() {
+  state = 'choose'; timer = 0;
+  const ch = dget(CHOICE_SLOT), list = mode === 'cup' ? [0, 1] : quickTracks();
+  chooseSel = ch ? clamp((ch >> 4) & 255, 0, list.length - 1) : 0;
+  if (mode === 'cup' && chooseSel === 1 && !unlocked()) chooseSel = 0;
+}
+
+/** A race on track i: four cars on the grid at the start line, no points (the seats stay as they are). With `card`, the
+ * track card shows first (10.4). */
+function startRace(i, card) {
   buildTrack(i);
   castDrivers();
   cars = seats.map((_, s) => newCar(s, 0));
   round = 0; lastRank = cars.slice(); newRound(null);
+  if (card) phase = 'card';
   paused = false; timer = 0; state = 'race';
   play(SONG.race);
 }
@@ -520,25 +579,81 @@ function update() {
   readPads(); clock++;
   if (!paused) timer++; // a state's clock: it stands still while paused
   if (bannerT) bannerT--;
+  if (lobbyMsg) lobbyMsg--;
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
+  else if (state === 'lobby') updateLobby();
+  else if (state === 'choose') updateChoose();
   else if (state === 'race') updateRace();
   else if (state === 'result') updateResult();
+  else if (state === 'standings') updateStandings();
+  else if (state === 'podium') updatePodium();
 }
 
-let titleTrack = 0;   // step 4: LEFT and RIGHT on the title pick the track (step 5 brings the cups and Quick Race)
 function updateTitle() {
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
-  if (pressed(LEFT)) { titleTrack = (titleTrack + TEST_TRACK - 1) % TEST_TRACK; fx(SFX.move); }
-  if (pressed(RIGHT)) { titleTrack = (titleTrack + 1) % TEST_TRACK; fx(SFX.move); }
-  if (pressed(A) || pressed(START)) { fx(SFX.select); startRace(titleTrack); }
+  if (timer > 10 && (pressed(A) || pressed(START))) { fx(SFX.select); mode = titleSel ? 'quick' : 'cup'; toLobby(); }
+}
+
+/** The lobby (10.2): each person, on their own pad, picks a colour and a name; a pad joins with any button. */
+function updateLobby() {
+  for (let p = 0; p < 4; p++) {
+    const s = seats[p], hit = masks[p] & ~prevMasks[p];
+    if (!s.human) {
+      if (p && hit) {   // a pad joins: its seat becomes a person's, with its own colour if no one has it
+        s.human = true; s.lob = 'colour'; s.name = s.mine; s.pos = 0;
+        if (takenBy(s.col, p)) s.col = [0, 1, 2, 3, 4, 5, 6, 7].find((c) => !takenBy(c, p));
+        freeColours(); fx(SFX.select);
+      }
+      continue;
+    }
+    if (s.lob === 'colour') {
+      const d = (pressed(RIGHT, p) ? 1 : 0) - (pressed(LEFT, p) ? 1 : 0);
+      if (d) { do s.col = (s.col + d + 8) % 8; while (takenBy(s.col, p)); freeColours(); fx(SFX.move); }
+      if (pressed(A, p)) { s.lob = 'name'; s.pos = 0; fx(SFX.select); }
+      else if (pressed(B, p)) {
+        if (p) { s.human = false; s.lob = 'cpu'; freeColours(); fx(SFX.pause); }
+        else { fx(SFX.pause); toTitle(); return; }
+      }
+    } else if (s.lob === 'name') {
+      const k = LETTERS.indexOf(s.name[s.pos]), d = (pressed(UP, p) ? 1 : 0) - (pressed(DOWN, p) ? 1 : 0);
+      if (d) { const ch = s.name.split(''); ch[s.pos] = LETTERS[(k + d + LETTERS.length) % LETTERS.length]; s.name = ch.join(''); fx(SFX.move); }
+      if (pressed(RIGHT, p)) s.pos = Math.min(2, s.pos + 1);
+      if (pressed(LEFT, p)) s.pos = Math.max(0, s.pos - 1);
+      if (pressed(A, p)) { if (s.pos < 2) s.pos++; else confirmSeat(p); fx(SFX.select); }
+      else if (pressed(B, p)) { if (s.pos > 0) s.pos--; else s.lob = 'colour'; fx(SFX.move); }
+    } else if (s.lob === 'ready' && pressed(B, p)) { s.lob = 'name'; s.pos = 2; fx(SFX.move); }
+  }
+  if (timer > 10 && pressed(START)) {
+    if (seats[0].lob !== 'ready') confirmSeat(0);
+    if (seats.every((s) => !s.human || s.lob === 'ready')) { fx(SFX.select); toChoose(); }
+    else { lobbyMsg = 120; fx(SFX.bump); }
+  }
+}
+/** A person's colour and name are set: remembered for their seat (13). */
+function confirmSeat(p) { const s = seats[p]; s.lob = 'ready'; s.mine = s.name; dset(SEAT_SLOT + p, encodeSeat(s)); }
+
+/** Choose (10.3): a cup or a track, and the computer drivers' level. */
+function updateChoose() {
+  const list = mode === 'cup' ? [0, 1] : quickTracks(), n = list.length;
+  if (pressed(UP)) { chooseSel = (chooseSel + n - 1) % n; fx(SFX.move); }
+  if (pressed(DOWN)) { chooseSel = (chooseSel + 1) % n; fx(SFX.move); }
+  if (pressed(LEFT)) { level = (level + 2) % 3; fx(SFX.move); }
+  if (pressed(RIGHT)) { level = (level + 1) % 3; fx(SFX.move); }
+  if (pressed(B)) { fx(SFX.pause); toLobby(); return; }
+  if (timer > 10 && (pressed(A) || pressed(START))) {
+    const pick = list[chooseSel];
+    if (mode === 'cup' && pick === 1 && !unlocked()) { fx(SFX.bump); return; }   // the padlock
+    fx(SFX.select); saveChoice();
+    if (mode === 'cup') { cup = { i: pick, race: 0, total: [0, 0, 0, 0], wins: [0, 0, 0, 0], last: [] }; startRace(pick * 4, true); }
+    else { cup = null; startRace(pick, true); }
+  }
 }
 
 function updateRace() {
   for (let p = 0; p < 4; p++) if (seats[p].human && pressed(START, p)) { paused = true; pausePad = p; pauseSel = 0; fx(SFX.pause); return; }
-  // Step 2: a pad that presses a button takes its seat from the computer (step 5 does this in the lobby).
-  for (let p = 1; p < 4; p++) if (!seats[p].human && masks[p] && !prevMasks[p]) { seats[p].human = true; seats[p].name = `P${p + 1}`; seats[p].ch = -1; }
   rtime++;
+  if (phase === 'card') { if (rtime >= CARD_T || (rtime > 30 && pressed(A))) { phase = 'ready'; rtime = 0; } return; }
   if (phase === 'ready') {
     if (rtime >= READY_T) { phase = 'go'; rtime = 0; fx(SFX.go); } else if (rtime % 20 === 0) fx(SFX.tick);
     return;
@@ -568,13 +683,13 @@ function checkOut() {
 
 function knockOut(c) {
   if (c.out) return;
-  c.out = true; c.fall = 0; outOrder.push(c); fx(SFX.out); say(`${seats[c.seat].name} OUT`);
+  c.out = true; c.fall = 0; outOrder.push(c); fx(SFX.out); say(`${seats[c.seat].name.trim()} OUT`);
 }
 
 /** A round won: a point, and the order the cars lasted in (the next grid, and the race's tie-break). */
 function scoreRound(w) {
   if (phase === 'board') return;
-  w.points++; phase = 'board'; rtime = 0; fx(SFX.point); say(`${seats[w.seat].name} SCORES`);
+  w.points++; phase = 'board'; rtime = 0; fx(SFX.point); say(`${seats[w.seat].name.trim()} SCORES`);
   const still = cars.filter((c) => c !== w && !outOrder.includes(c)).sort((a, b) => progress(b) - progress(a));
   lastRank = [w, ...still, ...outOrder.slice().reverse()];
 }
@@ -584,14 +699,40 @@ function endBoard() {
   else newRound(lastRank[0]);
 }
 
-/** The race's places: by points, a tie to the car that lasted longer in the last round. */
+/** The race's places: by points, a tie to the car that lasted longer in the last round. In a cup, its points (9). */
 function finishRace() {
   places = cars.slice().sort((a, b) => b.points - a.points || lastRank.indexOf(a) - lastRank.indexOf(b));
+  if (cup) {
+    places.forEach((c, i) => { cup.total[c.seat] += CUP_POINTS[i]; });
+    cup.wins[places[0].seat]++; cup.last = places.map((c) => c.seat);
+  }
   state = 'result'; timer = 0; fx(SFX.win);
 }
 
 function updateResult() {
-  if (timer > 60 && (pressed(A) || pressed(START))) { fx(SFX.select); toTitle(); }   // step 5: the cup's next race
+  if (timer < 60 || !(pressed(A) || pressed(START))) return;
+  fx(SFX.select);
+  if (cup) { state = 'standings'; timer = 0; } else toChoose();
+}
+
+/** The cup's standings by points, a tie to more race wins, then to the better place in the last race (9). */
+const standings = () => [0, 1, 2, 3].sort((a, b) => cup.total[b] - cup.total[a] || cup.wins[b] - cup.wins[a] || cup.last.indexOf(a) - cup.last.indexOf(b));
+
+function updateStandings() {
+  if (timer < 30 || !(pressed(A) || pressed(START))) return;
+  fx(SFX.select);
+  if (++cup.race < 4) { startRace(cup.i * 4 + cup.race, true); return; }
+  // The cup is over: the podium, and the save if a person won it.
+  podium = standings(); newUnlock = false;
+  if (seats[podium[0]].human) {
+    dset(WINS_SLOT, dget(WINS_SLOT) | (1 << (cup.i * 3 + level)));
+    if (cup.i === 0 && !unlocked()) { dset(UNLOCK_SLOT, dget(UNLOCK_SLOT) | 1); newUnlock = true; }
+  }
+  state = 'podium'; timer = 0; fx(SFX.win);
+}
+
+function updatePodium() {
+  if (timer > 90 && (pressed(A) || pressed(START))) { fx(SFX.select); toTitle(); }
 }
 
 function updatePause() {
@@ -602,8 +743,8 @@ function updatePause() {
   else if (pressed(A, p) || pressed(START, p)) {
     fx(SFX.select);
     if (pauseSel === 0) paused = false;
-    else if (pauseSel === 1) startRace(track.i); // restart: the same cars and track, the points reset
-    else toTitle();
+    else if (pauseSel === 1) startRace(track.i, false); // restart: the same cars and track, the race's points reset (a cup's stay)
+    else toTitle();                                      // quitting abandons the race, and the cup
   }
 }
 
@@ -613,22 +754,31 @@ function say(s) { banner = s; bannerT = 60; }
 
 function draw() {
   cls();
-  if (state === 'race' || state === 'result') drawRace();
-  else if (state === 'title') drawTitle();
-  if (state === 'result') drawResult();
+  const onTrack = state === 'race' || state === 'result';
+  bg(1, { show: onTrack });
+  if (!onTrack) bgscroll(2, flr(clock / 3), flr(clock / 5));   // in the menus, the floor drifts by
+  if (onTrack) drawRace();
+  if (state === 'title') drawTitle();
+  else if (state === 'lobby') drawLobby();
+  else if (state === 'choose') drawChoose();
+  else if (state === 'result') drawResult();
+  else if (state === 'standings') drawStandings();
+  else if (state === 'podium') drawPodium();
   if (paused) drawPause();
 }
 
 /** A car's sprite for its heading: 16 directions from 5 drawings (0 to 90 degrees), the rest flipped; raised in a jump. */
 function drawCar(c) {
   if (c.out || (c.fall && (c.fall & 2))) return;   // a falling car blinks out of sight (the art pass, step 6, shrinks it)
-  const d = ((Math.round(c.a / (Math.PI / 8)) % 16) + 16) % 16;
+  carSprite(c.seat, c.a, flr(c.x - cam.x) - 8, flr(c.y - cam.y) - 8 - (c.air ? flr(LIFT * Math.sin(Math.PI * (1 - c.air / c.airT))) : 0));
+}
+function carSprite(seat, a, x, y) {
+  const d = ((Math.round(a / (Math.PI / 8)) % 16) + 16) % 16;
   let f = d, fxx = false, fyy = false;
   if (d > 4 && d <= 8) { f = 8 - d; fxx = true; }
   else if (d > 8 && d <= 12) { f = d - 8; fxx = fyy = true; }
   else if (d > 12) { f = 16 - d; fyy = true; }
-  const lift = c.air ? flr(LIFT * Math.sin(Math.PI * (1 - c.air / c.airT))) : 0;
-  sprite(ART.sprites['car' + f], flr(c.x - cam.x) - 8, flr(c.y - cam.y) - 8 - lift, { fx: fxx, fy: fyy, pal: c.seat });
+  sprite(ART.sprites['car' + f], x, y, { fx: fxx, fy: fyy, pal: seat });
 }
 
 function drawRace() {
@@ -641,15 +791,30 @@ function drawRace() {
   rectfill(0, 0, 256, HUD_H, ART.colors.GLASS);
   cars.forEach((c, i) => {
     const x = i * 64 + 2;
-    rectfill(x, 3, 6, 6, SEAT_COL[i]);
+    rectfill(x, 3, 6, 6, carCol(i));
     txt(seats[i].name, x + 9, 2, c.out ? DIM : WHITE);
     for (let j = 0; j < WIN_POINTS; j++) (j < c.points ? rectfill : rect)(x + 36 + j * 5, 4, 4, 4, j < c.points ? GOLD : DIM);
   });
   if (state !== 'race') return;
-  if (phase === 'ready') { panel(88, 84, 80, 34); ctxt(`ROUND ${round}`, 90, GOLD); ctxt(rtime < 40 ? 'READY' : 'SET', 104, WHITE); }
+  if (phase === 'card') drawCard();
+  else if (phase === 'ready') { panel(88, 84, 80, 34); ctxt(`ROUND ${round}`, 90, GOLD); ctxt(rtime < 40 ? 'READY' : 'SET', 104, WHITE); }
   else if (phase === 'go' && rtime < GO_T) ctxt('GO!', 96, GREEN);
   if (bannerT && phase !== 'ready') ctxt(banner, 120, phase === 'board' ? GOLD : WHITE);
   if (phase === 'board' && rtime >= 40) drawBoard();
+}
+
+/** The track card (10.4): the track's name, its cup, and a little map of its centreline. */
+function drawCard() {
+  panel(40, 40, 176, 150);
+  ctxt(track.name, 48, GOLD);
+  ctxt(cup ? `${CUPS[cup.i]} CUP: RACE ${cup.race + 1} OF 4` : 'QUICK RACE', 62, WHITE);
+  ctxt(LEVELS[level].name, 174, DIM);
+  const s = Math.min(144 / (track.w * 8), 88 / (track.h * 8)), ox = 128 - (track.w * 8 * s) / 2, oy = 80;
+  for (let k = 0; k < track.n; k += 2) {
+    const q = (k + 2) % track.n;
+    line(ox + track.wx[k] * s, oy + track.wy[k] * s, ox + track.wx[q] * s, oy + track.wy[q] * s, WHITE);
+  }
+  circfill(ox + track.wx[0] * s, oy + track.wy[0] * s, 2, GOLD);
 }
 
 /** Between rounds: each car's points, the new one lighting up. */
@@ -657,7 +822,7 @@ function drawBoard() {
   panel(48, 56, 160, 64);
   cars.forEach((c, i) => {
     const y = 62 + i * 14, isNew = c === lastRank[0];
-    rectfill(56, y + 1, 6, 6, SEAT_COL[i]);
+    rectfill(56, y + 1, 6, 6, carCol(i));
     txt(seats[i].name, 68, y, WHITE);
     for (let j = 0; j < WIN_POINTS; j++) {
       const lit = j < c.points - (isNew && rtime % 16 < 8 && j === c.points - 1 ? 1 : 0);
@@ -666,30 +831,97 @@ function drawBoard() {
   });
 }
 
+const ORD = ['1ST', '2ND', '3RD', '4TH'];
 function drawResult() {
   panel(40, 50, 176, 110);
-  ctxt(`${seats[places[0].seat].name} WINS!`, 58, GOLD);
+  ctxt(`${seats[places[0].seat].name.trim()} WINS!`, 58, GOLD);
   places.forEach((c, i) => {
     const y = 80 + i * 14;
-    txt(['1ST', '2ND', '3RD', '4TH'][i], 56, y, i ? WHITE : GOLD);
-    rectfill(90, y + 1, 6, 6, SEAT_COL[c.seat]);
+    txt(ORD[i], 56, y, i ? WHITE : GOLD);
+    rectfill(90, y + 1, 6, 6, carCol(c.seat));
     txt(seats[c.seat].name, 102, y, WHITE);
-    txt(`${c.points} PTS`, 150, y, DIM);
+    txt(cup ? `+${CUP_POINTS[i]}` : `${c.points} PTS`, 160, y, cup ? GREEN : DIM);
   });
   if (timer > 60 && timer % 60 < 40) ctxt('A: CONTINUE', 146, DIM);
+}
+
+function drawStandings() {
+  panel(32, 36, 192, 150);
+  ctxt(`${CUPS[cup.i]} CUP`, 44, GOLD);
+  ctxt(cup.race < 3 ? `AFTER RACE ${cup.race + 1} OF 4` : 'FINAL STANDINGS', 58, WHITE);
+  standings().forEach((k, i) => {
+    const y = 82 + i * 18, got = CUP_POINTS[cup.last.indexOf(k)];
+    txt(ORD[i], 48, y, i ? WHITE : GOLD);
+    rectfill(82, y + 1, 6, 6, carCol(k));
+    txt(seats[k].name, 94, y, WHITE);
+    txt(`+${got}`, 136, y, GREEN);
+    txt(String(cup.total[k]).padStart(3), 176, y, GOLD);
+  });
+  if (timer > 30 && timer % 60 < 40) ctxt(cup.race < 3 ? 'A: NEXT TRACK' : 'A: THE PODIUM', 170, DIM);
+}
+
+function drawPodium() {
+  ctxt(`${CUPS[cup.i]} CUP`, 24, GOLD);
+  const steps = [[104, 96, 48], [56, 120, 48], [152, 136, 48]];   // 1st in the middle and highest, 2nd left, 3rd right
+  podium.slice(0, 3).forEach((k, i) => {
+    const [x, y, w] = steps[i];
+    rectfill(x, y, w, 176 - y, i ? PANEL : GOLD); rect(x, y, w, 176 - y, SHADOW);
+    print(String(i + 1), x + w / 2 - 2, y + 6, i ? WHITE : SHADOW);
+    carSprite(k, -Math.PI / 2, x + w / 2 - 8, y - 18);
+    txt(seats[k].name, x + w / 2 - 12, y - 30, i ? WHITE : GOLD);
+  });
+  ctxt(`${seats[podium[0]].name.trim()} WINS THE CUP!`, 184, GOLD);
+  if (newUnlock) ctxt('WORKSHOP CUP UNLOCKED', 198, timer % 30 < 20 ? GREEN : WHITE);
+  if (timer > 90 && timer % 60 < 40) ctxt('A: TITLE', 212, DIM);
 }
 
 function drawTitle() {
   ctxt('TABLETOP GRAND PRIX', 50, GOLD);
   ['CUP', 'QUICK RACE'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
-  ctxt(`< ${TRACKS[titleTrack].name} >`, 150, WHITE);
-  ctxt(`${['BREAKFAST', 'WORKSHOP'][TRACKS[titleTrack].cup]} CUP, TRACK ${titleTrack % 4 + 1}`, 164, DIM);
-  ctxt(`STEP 4: THE TRACKS (${LEVELS[level].name})`, 190, DIM);
+  ctxt('1 TO 4 PLAYERS', 190, DIM); ctxt('(PLAYERS 2 TO 4 ON GAMEPADS)', 202, DIM);
+}
+
+/** The lobby: a column for each seat, its car in its colour, its name and what it waits for. */
+function drawLobby() {
+  ctxt('DRIVERS', 14, GOLD);
+  seats.forEach((s, k) => {
+    const x = k * 64, cx = x + 32;
+    panel(x + 3, 30, 58, 150);
+    txt(`P${k + 1}`, cx - 8, 36, s.human ? WHITE : DIM);
+    carSprite(k, -Math.PI / 2, cx - 8, 52);
+    if (!s.human) { txt('CPU', cx - 12, 80, DIM); txt('PRESS', cx - 20, 112, DIM); txt('ANY', cx - 12, 122, DIM); txt('BUTTON', cx - 24, 132, DIM); return; }
+    const c = COLOURS[s.col][0];
+    txt(s.lob === 'colour' ? `<${c}>` : c, cx - (c.length + (s.lob === 'colour' ? 2 : 0)) * 4, 80, s.lob === 'colour' ? WHITE : DIM);
+    for (let i = 0; i < 3; i++) {
+      const on = s.lob === 'name' && i === s.pos, lx = cx - 18 + i * 12;
+      rect(lx - 2, 98, 12, 14, on ? GOLD : PANEL);
+      txt(s.name[i], lx + 1, 101, on ? GOLD : WHITE);
+    }
+    const hint = { colour: 'A: NAME', name: 'A: NEXT', ready: 'READY' }[s.lob];
+    txt(hint, cx - hint.length * 4, 130, s.lob === 'ready' ? GREEN : DIM);
+  });
+  ctxt(lobbyMsg ? 'EVERY DRIVER: A TO GET READY' : 'P1 START: GO ON    B: BACK', 196, lobbyMsg ? RED : DIM);
+}
+
+function drawChoose() {
+  const list = mode === 'cup' ? [0, 1] : quickTracks();
+  ctxt(mode === 'cup' ? 'CHOOSE A CUP' : 'QUICK RACE', 20, GOLD);
+  panel(24, 36, 208, 20 + list.length * 16);
+  list.forEach((v, i) => {
+    const y = 46 + i * 16, on = i === chooseSel, locked = mode === 'cup' && v === 1 && !unlocked();
+    const label = mode === 'cup' ? `${CUPS[v]} CUP` : `${TRACKS[v].name}`;
+    txt(`${on ? '>' : ' '} ${label}`, 36, y, locked ? DIM : on ? WHITE : DIM);
+    if (locked) txt('LOCKED', 168, y, RED);
+    else if (mode === 'cup') for (let lv = 0; lv < 3; lv++) txt('ENH'[lv], 176 + lv * 12, y, wonCup(v, lv) ? GOLD : PANEL);
+    else txt(CUPS[TRACKS[v].cup].slice(0, 5), 176, y, PANEL);
+  });
+  ctxt(`< ${LEVELS[level].name} >`, 180, WHITE);
+  ctxt('A: RACE   B: BACK', 200, DIM);
 }
 
 function drawPause() {
   panel(64, 80, 128, 64);
-  ctxt(`PAUSED (${seats[pausePad].name})`, 88, GOLD);
+  ctxt(`PAUSED (${seats[pausePad].name.trim()})`, 88, GOLD);
   ['RESUME', 'RESTART RACE', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
 }
 

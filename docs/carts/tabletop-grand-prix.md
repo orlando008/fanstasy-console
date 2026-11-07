@@ -1,7 +1,7 @@
 # Tabletop Grand Prix: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 4 of 8 built (section 15): four cars race on eight tracks in knock-out rounds to five points, against computer drivers at three levels with four characters. Step 5 (the menus, cups and saves) is next.
+**Status:** Steps 1 to 5 of 8 built (section 15): the whole game plays (the lobby, two cups of four tracks and Quick Race, with standings, a podium, the Workshop unlock and saves), on placeholder art and sound. Step 6 (the art) is next.
 **Cart source:** `carts/src/tabletop-grand-prix/` → `carts/tabletop-grand-prix.nova`
 
 ---
@@ -261,46 +261,65 @@ level is set by `skill`, from EASY's numbers (0) to HARD's (1), with a character
 
 ### 10.1 The title
 
-The game's name on a table seen from above, with a car circling it. CUP, QUICK RACE. UP and DOWN choose, and A or START
-opens.
+The game's name, with CUP and QUICK RACE below it and a line saying 1 to 4 can play (players 2 to 4 on gamepads). UP and
+DOWN choose, and A or START opens the lobby. The art pass (step 6) puts it on a table seen from above, with a car
+circling it.
 
 ### 10.2 Drivers (the lobby)
 
-Four seats, P1 to P4. P1 is always a person (the keyboard, the touch controls or the first pad). The other seats are
-computer drivers until a pad joins, by pressing any button on it (the console counts a pad only from its first press).
-Pressing B on that pad before it has picked a colour gives the seat back to the computer.
+Four seats, P1 to P4, in four columns, each with its car in its colour.
+
+- **P1** is always a person (the keyboard, the touch controls or the first pad).
+- **The other seats** are computer drivers (`CPU`, `PRESS ANY BUTTON`) until a pad joins by pressing any button on it.
+  The console counts a pad only from its first press. A seat that joins keeps its own colour if no one has it, and takes
+  the first free one if someone does.
 
 Each person, on their own pad:
-- LEFT and RIGHT pick one of eight colours (red, blue, yellow, green, orange, purple, white, black). A colour that someone
-  else has is skipped.
-- A goes to the name: three letters, UP and DOWN change a letter, LEFT and RIGHT move between them, and A confirms.
-  The name and colour are remembered for that seat (13).
+- **Colour:** LEFT and RIGHT pick one of eight (red, blue, yellow, green, orange, purple, white, black). A colour another
+  person has is skipped. A goes on to the name. B gives the seat back to the computer (on pad 1, it goes back to the
+  title).
+- **Name:** three characters (A to Z, 0 to 9, or a space). UP and DOWN change one, LEFT and RIGHT move between them, and
+  A moves on: on the last letter, A confirms and the seat is `READY`. B steps back a letter, then to the colour.
+- **Ready:** B goes back to the name.
 
-START on pad 1 goes on once every person has confirmed, and B on pad 1 goes back to the title.
+The name and colour of a seat are saved when it is confirmed (13). The computer seats take the first colours no person
+has, each its own, and are named after their characters when a race starts (7).
+
+**START on pad 1** makes P1 ready if it is not yet, and goes on once every person is ready. If someone is not, the lobby
+says `EVERY DRIVER: A TO GET READY` for 2 s and stays.
 
 ### 10.3 Choose
 
-- **CUP:** two cups. The Workshop shows a padlock until it is unlocked, with the marks of the difficulties already won.
-- **QUICK RACE:** the tracks of the unlocked cups.
-- **Difficulty:** EASY, NORMAL, HARD (LEFT and RIGHT), remembered.
+- **CUP:** the two cups. The Workshop says `LOCKED` until it is unlocked, and A on it only thuds. Beside each cup, E, N
+  and H light up in gold for the levels a person has won it at.
+- **QUICK RACE:** the tracks of the unlocked cups: four, then all eight.
+- **The level:** EASY, NORMAL or HARD (LEFT and RIGHT).
+- **A** races, and the level and the choice are remembered (13). **B** goes back to the lobby.
 
 ### 10.4 The race
 
-- The **track card** for 120 frames: the track's name and its cup, with a small map of its centreline.
-- Then the rounds (5.4). Between rounds, the points board shows for 90 frames: each car's pips, with the new point
-  lighting up.
+- **The track card** for `CARD_T` = 120 frames (A skips it after 30): the track's name, its cup and race (`BREAKFAST
+  CUP: RACE 1 OF 4`, or `QUICK RACE`), the level, and a small map of its centreline with the start in gold.
+- **Then the rounds** (5.4). Between rounds the points board shows (5.4: `BOARD_T`, the last 80 frames of it as a
+  panel): each car's pips, with the new point blinking.
 
 ### 10.5 After the race
 
-- **The race result:** the four places with their points, for 180 frames or until A.
-- **In a cup:** the cup points added up beside the standings, then A to go to the next track.
-- **After the fourth race:** the podium, with the winner on top and the cup in gold. If a person won the Breakfast cup,
-  `WORKSHOP CUP UNLOCKED`. A goes back to the title.
+- **The race result:** who won, and the four places, each with its cup points (`+10`), or its race points outside a cup.
+  A goes on after 60 frames.
+- **In a cup, the standings:** the four drivers in cup order, each with this race's points and their total. A goes to
+  the next track's card, or after the fourth race to the podium.
+- **The podium:** the top three on steps of 1, 2 and 3, with their cars. It says who won the cup, and
+  `WORKSHOP CUP UNLOCKED` if a person won the Breakfast cup for the first time. A goes back to the title after 90
+  frames.
+- **Outside a cup,** A after the result goes back to the choose screen for another track.
 
 ### 10.6 The pause
 
-START pauses, for the person who pressed it (`pausePad`). The menu is RESUME, RESTART RACE (the same cars and track, with
-the points reset) and QUIT TO TITLE.
+START on a person's pad pauses, for the person who pressed it (`pausePad`). The menu is:
+- RESUME;
+- RESTART RACE: the same cars and track, the race's points reset, and a cup's points as they were before the race;
+- QUIT TO TITLE: abandons the race, and the cup.
 
 ## 11. Audio
 
@@ -347,18 +366,18 @@ The art is made in code by `carts/src/tabletop-grand-prix/art.py` (the art toolk
 
 | Slots | Contents |
 |---|---|
-| 0 | Format version |
+| 0 | Format version (3; an older save starts clean) |
 | 1 | Unlocks: bit 0, the Workshop cup |
-| 2 | Cups won by a person: bit (cup × 3 + difficulty) |
-| 3 | Last difficulty, and the last cup or track chosen |
-| 10–13 | Seats P1 to P4: their name (three letters, 5 bits each) and colour (3 bits) |
+| 2 | Cups won by a person: bit (cup × 3 + level) |
+| 3 | The last level (bits 0 and 1), and the last cup or track chosen (bits 4 to 11); bit 12 set once chosen |
+| 10–13 | Seats P1 to P4: their name (three characters, 6 bits each, of ` A-Z 0-9`), their colour (bits 18 to 20), and bit 21 set |
 | 14–255 | Reserved |
 
 ## 14. Asset budget
 
 | Asset | Budget |
 |---|---|
-| Code | Under 56 KB of the 64 KB limit, with `"strip": true` (`node tools/check.js tabletop-grand-prix`). The tracks are about 400 bytes each |
+| Code | Under 56 KB of the 64 KB limit, with `"strip": true` (on since step 5; `node tools/check.js tabletop-grand-prix`). The tracks are about 400 bytes each |
 | Tiles | About 520 of 1,024: the two floors (about 40), the two tables' vocabularies (about 160 each), the props (about 100), the cars and the other sprites (about 60) |
 | Sprites | At most 4 cars, 4 shadows, 4 rollers and 12 puffs: 24 at once, under the 32 a line |
 | Songs / SFX | 6 songs, about 20 effects |
@@ -537,6 +556,34 @@ The art is made in code by `carts/src/tabletop-grand-prix/art.py` (the art toolk
        when it is needed.
 5. **The flow:** the title, the lobby with joining by pad, colours and names (10.2), the choose screen, the cups, the
    standings and the podium, Quick Race, the unlock and the saves (13).
+   - **Built:**
+     - **Screens:** each part of section 10 is a state with its update and draw: `title`, `lobby`, `choose`, `race`
+       (its phases now begin with `card`), `result`, `standings` and `podium`.
+     - **Cups:** `cup` holds the cup under way (each seat's points, race wins and the last places), and `standings`
+       sorts it. Joining by pad now happens only in the lobby.
+     - **Colours:** the eight colours recolour each car's sprite palette (`tint`), and the HUD and the panels use the
+       car's own colour (`carCol`).
+     - **Saves:** `encodeSeat` and `decodeSeat` pack a seat into its save slot. The save's version went to 3.
+     - **Menus:** the floor drifts behind them, and the table (BG1) shows only in a race.
+     - **Code size:** stripping is on (`"strip": true`). The code went from 51.5 KB to 38.2 KB of the 64 KB.
+   - **Results:**
+     - `node tools/verify.js tabletop-grand-prix` passes, with 191 test checks. The new file is `07-menus.mjs`, with
+       50 checks:
+       - the lobby: colour and name, the save of a seat, pads joining and leaving, colours never shared, everyone
+         ready;
+       - the padlock and the level;
+       - the track card;
+       - a whole cup won by P1: the cup points race by race, the standings, the podium, the unlock and the cup marked
+         won, and the save carrying over to the next time;
+       - a cup the computer wins: no unlock;
+       - the standings' tie-breaks;
+       - Quick Race with four tracks, then eight;
+       - RESTART RACE keeping a cup's points, and QUIT abandoning the cup.
+     - `01-flow.mjs` now walks the title, the lobby and the choose screen into the cup's first race.
+     - A soak of 20,000 frames of random play passes through every screen with no error, 2.1 ms a frame at the 99th
+       percentile.
+     - `node tools/devkit/smoke.mjs tabletop-grand-prix` runs in the real console with no errors, at 60 fps.
+     - Not tried: four real pads. The pad joining is tested with the harness's pads 2 to 4.
 6. **The art:** the toy-box cartoon. The cars in 16 directions with shadows, the two tables, the floors below, the props,
    the HUD, the title, the track card and the podium.
 7. **The audio:** the six songs from their sources and the effects (11), measured with `loud.mjs`.

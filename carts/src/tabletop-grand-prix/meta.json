@@ -3,5 +3,6 @@
   "author": "NOVA-16",
   "description": "Toy cars race across the breakfast table and the garage workbench, for 1 to 4 players. The camera follows the leader: drop off the screen and you are out of the round, the last car left scores a point, and the first to five wins the race. Two cups of four tracks, with milk spills, crumbs, oil and jumps between tables.",
   "genre": "Racing",
-  "players": "1-4"
+  "players": "1-4",
+  "strip": true
 }

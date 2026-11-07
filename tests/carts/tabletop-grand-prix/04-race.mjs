@@ -88,7 +88,7 @@ const racing = (seed = 1) => { const vm = newGame(seed), p = vm.probe(); vm.run(
   vm.run(p.BOARD_T + 1);
   ok(p.state === 'result' && a.points === p.WIN_POINTS, `the first car to ${p.WIN_POINTS} points wins the race`);
   ok(p.places.join() === [a, b, d, c].join(), 'places by points; a tie goes to the car that lasted longer in the last round', p.places.map((x) => `${name(p, x)} ${x.points}`).join(', '));
-  vm.run(70); vm.press('A'); ok(p.state === 'title', 'A after the result goes on (for now, to the title)');
+  vm.run(70); vm.press('A'); ok(p.state === 'choose', 'A after the result of a race outside a cup goes back to choosing');
 }
 
 // 8. Car against car.
@@ -132,8 +132,9 @@ const racing = (seed = 1) => { const vm = newGame(seed), p = vm.probe(); vm.run(
 // 11. The pads of P1 to P4, and the pause of the one who paused.
 {
   const vm = newGame(4), p = vm.probe(); vm.run(2);
-  vm.step(0, [M('A')]); ok(p.seats[1].human && p.seats[1].name === 'P2', 'a button on pad 2 makes seat 2 a person\'s (P2)');
-  vm.run(p.READY_T);
+  p.seats[1].human = true; p.startRace(p.TEST_TRACK, false);   // (seat 2 a person's, as the lobby makes it)
+  ok(p.seats[1].human && p.seats[1].name === p.seats[1].mine, 'a person in seat 2 races under their own name', p.seats[1].name);
+  vm.run(p.READY_T + 1);
   const c = p.cars[1], a0 = c.a; for (let i = 0; i < 40; i++) vm.step(0, [M('A', 'RIGHT')]);
   ok(c.a > a0 + 0.3 && speed(c) > 1, 'and pad 2 drives car 2', `${(c.a - a0).toFixed(2)} rad`);
   vm.step(0, [M('START')]); ok(p.paused && p.pausePad === 1, 'START on pad 2 pauses, for P2');

@@ -8,9 +8,12 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3);
   ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
   vm.press('DOWN'); ok(p.titleSel === 1, 'DOWN moves down the menu'); vm.press('UP'); ok(p.titleSel === 0, 'and UP back');
-  sfxLog(vm); vm.press('A');
-  ok(p.state === 'race' && p.playing === p.SONG.race, 'A starts a race, with the race song');
-  ok(p.cars.length >= 1 && p.track && p.track.n > 20, 'on a track with its centreline', `${p.track?.n} waypoints`);
+  vm.run(12); sfxLog(vm); vm.press('A');
+  ok(p.state === 'lobby', 'A opens the drivers\' lobby');
+  vm.run(12); vm.press('START'); ok(p.state === 'choose', 'START there goes on to choose a cup');
+  vm.run(12); vm.press('A');
+  ok(p.state === 'race' && p.playing === p.SONG.race, 'and A starts its first race, with the race song');
+  ok(p.cars.length === 4 && p.track && p.track.n > 20 && p.track.i === 0, 'on the cup\'s first track', p.track?.name);
 }
 
 // 2. Pause.
