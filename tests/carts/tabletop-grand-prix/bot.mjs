@@ -19,16 +19,16 @@ export const botLevel = (L, s) => ({ throttle: L[0].throttle + (L[2].throttle - 
   err: L[0].err + (L[2].err - L[0].err) * s, react: Math.round(L[0].react + (L[2].react - L[0].react) * s) });
 const STEADY = { throttle: 1, corner: 1, err: 1, slick: 1.3, avoid: true, lean: 0 };
 
-let now = 0, falls = 0, rounds = [], start = 0, phase = '', me = null;
+let now = 0, falls = 0, rounds = [], start = 0, phase = '', me = null, wasFalling = [];
 export function setup(vm, p, opts) {
-  now = 0; falls = 0; rounds = []; start = 0; phase = '';
+  now = 0; falls = 0; rounds = []; start = 0; phase = ''; wasFalling = [];
   p.level = opts.level ?? 1; p.startRace(opts.track ?? p.TEST_TRACK);
   me = botLevel(p.LEVELS, opts.skill ?? 1);
 }
 
 export function pad(vm, p, frame) {
   now = frame;
-  for (const c of p.cars) if (c.fall === p.FALL_T) falls++;
+  p.cars.forEach((c, i) => { if (c.fall && !wasFalling[i]) falls++; wasFalling[i] = c.fall > 0; });   // each fall once
   if (p.phase !== phase) {   // the length of each round, and whether it ran out of time (more than one car still in)
     if (p.phase === 'board') rounds.push({ s: (frame - start) / 60, timeout: p.cars.filter((c) => !c.out && !c.fall).length > 1 });
     if (p.phase === 'go') start = frame;

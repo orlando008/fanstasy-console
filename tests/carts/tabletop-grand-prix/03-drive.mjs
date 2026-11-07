@@ -7,7 +7,7 @@ const speed = (c) => Math.hypot(c.vx, c.vy);
 const near = (a, b, e = 0.005) => Math.abs(a - b) <= e;
 
 // A laboratory: a plain oval with a big patch of each surface off the road, to drive on one at a time.
-const LAB = `TRACKS.push({ name: 'LAB', w: 128, h: 96, width: 48, table: [16, 16, 992, 736],
+const LAB = `TRACKS.push({ name: 'LAB', cup: -1, w: 128, h: 96, width: 48, tables: [[16, 16, 992, 736]], movers: [],
   pts: [100, 60, 900, 60, 960, 380, 900, 700, 100, 700, 50, 380],
   prims: [[S_ROUGH, 'r', 100, 140, 320, 120], [S_SLICK, 'r', 520, 140, 360, 120], [S_STICKY, 'r', 100, 300, 320, 120],
     [S_WALL, 'r', 600, 320, 40, 120], [S_HOLE, 'r', 160, 480, 80, 80], [S_ROAD, 'r', 300, 460, 600, 140]] });`;

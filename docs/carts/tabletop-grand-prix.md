@@ -1,7 +1,7 @@
 # Tabletop Grand Prix: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 3 of 8 built (section 15): four cars race on a test table in knock-out rounds to five points, against computer drivers at three levels with four characters. Step 4 (the eight tracks) is next.
+**Status:** Steps 1 to 4 of 8 built (section 15): four cars race on eight tracks in knock-out rounds to five points, against computer drivers at three levels with four characters. Step 5 (the menus, cups and saves) is next.
 **Cart source:** `carts/src/tabletop-grand-prix/` → `carts/tabletop-grand-prix.nova`
 
 ---
@@ -484,6 +484,57 @@ The art is made in code by `carts/src/tabletop-grand-prix/art.py` (the art toolk
      - `node tools/devkit/smoke.mjs tabletop-grand-prix` runs in the real console with no errors, at 60 fps.
 4. **The eight tracks** (6), with their hazards and the things that move (5.6). Each is driven by the bot at every level:
    rounds of 10 to 20 s, no corner that traps a car, and no shortcut that cheats progress.
+   - **Built:**
+     - **The tracks:** the eight tracks of section 6 in `TRACKS`, with the test table last (`TEST_TRACK`, where the
+       tests drive).
+       - A track can have two tables with a gap between them, bridges (road painted over a hole), rollers (`ROLLERS`:
+         a pea, an orange, ball bearings) and a fan.
+       - Rollers move (`moveRollers`) and cars bounce off them (`hitRollers`). The fan blows in `drive`.
+     - **The drivers** steer round rollers as round cars, and round a wall straight ahead (section 7).
+       - The first runs found drivers stuck on Sawdust Alley's nails, backing out and driving into them again. The
+         look-ahead fixed most of it.
+       - The nails then moved to the road's edges, out of reach of an EASY driver's 8 px of error.
+     - **For now,** LEFT and RIGHT on the title pick the track (step 5 brings the cups). `skipTrack` sets the track a
+       test starts on.
+     - **The sprites:** an orange (16 px) and a bead (8 px, for a pea and a ball bearing) in sprite palettes 4 to 6.
+     - **The bot** takes a `track` option.
+       - Its fall count counted a car that fell just as a round was scored once a frame, while it hung frozen during
+         the points board. It now counts each fall once.
+   - **Results:**
+     - `node tools/verify.js tabletop-grand-prix` passes, with 142 test checks. The new file is `06-tracks.mjs`, with
+       16 checks:
+       - the list;
+       - every track's map, line, start and hazards;
+       - the gentle Breakfast cup;
+       - rollers rolling, turning and bouncing cars;
+       - the fan's push;
+       - EASY and HARD laps of every track;
+       - the title's track choice.
+     - **Laps of each track** (two, by a computer driver, EASY / HARD): Placemat Loop 22 / 19 s, Cereal Spill
+       22 / 18, Toast Rack Run 23 / 20, Table Edge 28 / 24, Toolbox Circuit 22 / 19, Sawdust Alley 43 / 37,
+       Oil Change 34 / 26, Workbench Edge 27 / 22. No driver at any level, of any character, got stuck. A HARD driver
+       never fell; EASY ones sometimes fall off Workbench Edge's narrow ruler.
+     - **Sweep** (`node tools/devkit/sweep.mjs tabletop-grand-prix`): 32 races, 4 on each track, with NORMAL drivers
+       and the bot at skill 0.75. Every race finished.
+
+       | Track | Average round | Rounds out of time | Race | Falls a race |
+       |---|---|---|---|---|
+       | Placemat Loop | 19.5 s | 8 of 33 | 3.2 min | 0 |
+       | Cereal Spill | 13.8 s | 1 of 29 | 2.1 min | 0 |
+       | Toast Rack Run | 15.5 s | 2 of 33 | 2.5 min | 0 |
+       | Table Edge | 14.3 s | 0 of 32 | 2.3 min | 0 |
+       | Toolbox Circuit | 14.3 s | 2 of 36 | 2.6 min | 0 |
+       | Sawdust Alley | 16 s | 5 of 38 | 3 min | 0 |
+       | Oil Change | 14.3 s | 3 of 41 | 3 min | 0 |
+       | Workbench Edge | 16 s | 6 of 37 | 2.9 min | 5.3 |
+
+     - **What this shows:**
+       - Rounds are within the 10 to 20 s the design wants on every track.
+       - Placemat Loop, the widest and easiest, is at the top of that range, with the most rounds out of time. It is
+         for step 8's balance to look at.
+     - `node tools/devkit/smoke.mjs tabletop-grand-prix` runs in the real console with no errors, at 60 fps.
+     - The code is 39.5 KB of the 64 KB without stripping. Most of it is comments, which `"strip": true` will take out
+       when it is needed.
 5. **The flow:** the title, the lobby with joining by pad, colours and names (10.2), the choose screen, the cups, the
    standings and the podium, Quick Race, the unlock and the saves (13).
 6. **The art:** the toy-box cartoon. The cars in 16 directions with shadows, the two tables, the floors below, the props,
