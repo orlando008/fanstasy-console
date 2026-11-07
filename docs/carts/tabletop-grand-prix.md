@@ -183,7 +183,7 @@ Every track is checked (`06-tracks.mjs`):
 
 | # | Cup | Track | What it is | Hazards |
 |---|---|---|---|---|
-| 1 | Breakfast | **Placemat Loop** | A wide oval (road 56 px) around the fruit bowl, with cutlery for kerbs | Crumbs on the inside of the four corners |
+| 1 | Breakfast | **Placemat Loop** | An oval (road 48 px) around the fruit bowl, with cutlery for kerbs | Crumbs on the inside of the four corners |
 | 2 | Breakfast | **Cereal Spill** | A figure eight (52 px) around a fallen cereal box | A milk puddle on the crossing, cereal (rough) by the box, a rolling pea |
 | 3 | Breakfast | **Toast Rack Run** | Through a slot of the toast rack, then a chicane up to a butter dish and back past a jam jar (44 px) | Butter (slick) in the top bend, jam (sticky) by the jar, a rolling orange |
 | 4 | Breakfast | **Table Edge** | Close to the edges of two tables pushed together (44 px), crossing the 24 px gap between them twice, each time off a book ramp | The edges, the gap, crumbs |
