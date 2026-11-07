@@ -595,6 +595,12 @@ built in HTML like the editor, not inside the console.
   one; the mouse picks and clicks. Choosing the cart that is already loaded
   resumes it where it was paused. **Share link** in the details (or S, or a
   gamepad's Select) shares the selected cart (section 11.4).
+- **On a phone.** A screen 600 px wide or less shows two cartridges a row under
+  a slim header, without the keyboard hint, and the description panel hides so
+  the shelves fill the screen. A tap on a cartridge plays it; the **i** in its
+  top left corner, or holding the cartridge down, opens its description as a
+  sheet from the bottom with **Play**, **Share link** and **Close** (a tap on
+  the dimmed shelves or Escape closes it too).
 - **Opening a cart.** It loads exactly as `?cart=<name>` does, and the address
   bar changes to match, so a cart's link can be shared and the browser's Back
   button returns to the Library. Unsaved changes to the working cart are

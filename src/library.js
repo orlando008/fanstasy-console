@@ -3,7 +3,9 @@
 // working cart and ending with Open file and New cart. Arrows, a gamepad or the
 // mouse pick a cart; Share link (S, or a gamepad's Select) shares the selected one
 // (SPEC 11.4). Make your own game with AI, in the header and on the last shelf,
-// copies instructions for an AI agent (SPEC 11.5).
+// copies instructions for an AI agent (SPEC 11.5). On a phone (style.css: a narrow screen) the shelves are two
+// cartridges a row and the description is a sheet that slides up, opened by a cartridge's (i) or by holding it
+// down; a tap on a cartridge plays it, as everywhere.
 
 import { PNG_H, PNG_W, drawCartridge, labelBitmap } from './formats/nova-png.js';
 import { GENRES, playersLabel } from './genres.js';
@@ -13,6 +15,7 @@ const MANIFEST = 'carts/index.json';
 const REPEAT_DELAY = 18, REPEAT_RATE = 6; // gamepad d-pad auto-repeat, in frames
 const HOLD_FRAMES = 50; // Select + Start held this long in Run mode opens the pause menu
 const DEADZONE = 0.5;
+const HOLD_MS = 450; // a touch held this long on a cartridge opens its description (instead of playing it)
 
 export class Library {
   /**
@@ -38,14 +41,21 @@ export class Library {
     this.detailText = h('p', { class: 'lib-detail-text' });
     this.detailHint = h('p', { class: 'lib-detail-hint' });
     this.shareBtn = button('Share link', () => this.share(), { class: 'lib-share', attrs: { tabindex: '-1' } });
+    this.root = root;
+    // The description as a sheet (phones): its own Play and Close, over a dimmed shelf that closes it when tapped
+    this.playBtn = button('Play', () => { this.closeSheet(); this.activate(); }, { class: 'lib-sheet-play', attrs: { tabindex: '-1' } });
+    this.closeBtn = button('Close', () => this.closeSheet(), { class: 'lib-sheet-close', attrs: { tabindex: '-1' } });
     root.append(
       h('header', { class: 'lib-head' },
         h('h1', { class: 'lib-logo' }, 'NOVA-16'),
         h('p', { class: 'lib-sub' }, 'Pick a cart. Arrows or d-pad to choose, Enter or A to play.'),
-        button('✦ Make your own game with AI', () => hooks.makeWithAI(() => this.select(this.sel)), { class: 'lib-ai', attrs: { tabindex: '-1' } })),
+        button(['✦ ', h('span', { class: 'lib-ai-long' }, 'Make your own game with AI'), h('span', { class: 'lib-ai-short' }, 'Make a game')],
+          () => hooks.makeWithAI(() => this.select(this.sel)), { class: 'lib-ai', attrs: { tabindex: '-1' } })),
       this.shelf,
+      h('div', { class: 'lib-scrim', on: { click: () => this.closeSheet() } }),
       h('footer', { class: 'lib-detail' },
-        h('div', { class: 'lib-detail-main' }, this.detailTitle, this.detailBy, this.detailText, this.detailHint), this.shareBtn));
+        h('div', { class: 'lib-detail-main' }, this.detailTitle, this.detailBy, this.detailText, this.detailHint),
+        h('div', { class: 'lib-detail-actions' }, this.playBtn, this.shareBtn, this.closeBtn)));
 
     window.addEventListener('keydown', (e) => this.onKey(e));
     const loop = () => { this.pollPads(); requestAnimationFrame(loop); };
@@ -102,15 +112,26 @@ export class Library {
       const art = entry.kind === 'mine' || entry.kind === 'cart'
         ? this.cartridge(entry)
         : h('div', { class: 'lib-action-art' }, { open: 'OPEN', new: 'NEW', ai: 'AI' }[entry.kind]);
+      let held = null, longPressed = false; // a touch held down opens the description instead of playing
+      const unhold = () => { clearTimeout(held); held = null; };
+      const info = h('span', { class: 'lib-info', text: 'i', attrs: { role: 'button', 'aria-label': `About ${name}`, 'data-info': entry.name || entry.kind } });
       const card = h('button', {
         type: 'button', class: `lib-card${playing ? ' playing' : ''}`,
         attrs: { role: 'listitem', 'aria-label': name, 'data-cart': entry.name || entry.kind },
         on: {
-          click: () => this.activate(i),
-          focus: () => this.select(i, false),
-          mouseenter: () => this.select(i),
+          click: (e) => {
+            if (longPressed) { longPressed = false; return; }
+            const r = info.getBoundingClientRect(), slop = 8; // (where the tap landed: inside a button the click's target can be the button itself)
+            if (r.width && e.clientX >= r.left - slop && e.clientX <= r.right + slop && e.clientY >= r.top - slop && e.clientY <= r.bottom + slop) { this.openSheet(i); return; }
+            this.activate(i);
+          },
+          focus: () => this.select(i, false, !this.byPointer), // (a card touched or clicked stays where it is: scrolling it would move it from under the finger)
+          mouseenter: () => this.select(i, true, false),
+          pointerdown: (e) => { this.byPointer = true; if (e.pointerType !== 'mouse') { unhold(); longPressed = false; held = setTimeout(() => { longPressed = true; this.openSheet(i); }, HOLD_MS); } },
+          pointerup: unhold, pointercancel: unhold, pointerleave: unhold,
+          contextmenu: (e) => e.preventDefault(), // (a held touch would open the browser's menu for the picture)
         },
-      }, art,
+      }, art, info,
       h('span', { class: 'lib-card-name' }, name),
       players(entry),
       playing ? h('span', { class: 'lib-badge' }, 'PAUSED') : null);
@@ -140,15 +161,15 @@ export class Library {
     return canvas;
   }
 
-  select(i, focus = true) {
+  select(i, focus = true, scroll = true) {
     if (!this.cards.length) return;
     this.sel = Math.max(0, Math.min(this.cards.length - 1, i));
     const card = this.cards[this.sel], entry = this.entries[this.sel];
     this.cards.forEach((c, k) => c.classList.toggle('selected', k === this.sel));
     if (focus && document.activeElement !== card) card.focus({ preventScroll: true });
-    const row = card.parentElement; // on the first row of a shelf, bring its heading into view as well
-    if (row?.firstElementChild && card.offsetTop === row.firstElementChild.offsetTop) row.previousElementSibling?.scrollIntoView({ block: 'nearest' });
-    card.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const row = card.parentElement; // on the first row of a shelf, bring its heading into view as well (from the keys and pads only)
+    if (scroll && row?.firstElementChild && card.offsetTop === row.firstElementChild.offsetTop) row.previousElementSibling?.scrollIntoView({ block: 'nearest' });
+    if (scroll) card.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     this.detailTitle.textContent = entry.kind === 'mine' ? `Your cart: ${entry.title}` : entry.title;
     const who = playersLabel(entry.players).toLowerCase();
     this.detailBy.textContent = [entry.author ? `by ${entry.author}` : '', who].filter(Boolean).join('  ·  ');
@@ -159,16 +180,27 @@ export class Library {
     this.shareBtn.hidden = entry.kind !== 'cart'; // only a Library cart has a link (Your cart lives in this browser)
   }
 
+  /** The description of card i as a sheet over the shelf (phones; on a wide screen the description is always there). */
+  openSheet(i) {
+    this.select(i, false);
+    this.root.classList.add('sheet');
+    this.playBtn.textContent = { open: 'Open file', new: 'New cart', ai: 'Copy instructions' }[this.entries[this.sel]?.kind] || (this.entries[this.sel]?.playing ? 'Resume' : 'Play');
+  }
+  closeSheet() { this.root.classList.remove('sheet'); }
+  get sheetOpen() { return this.root.classList.contains('sheet'); }
+
   /** Share the selected cart's link, if it is a Library cart; then back to its cartridge. */
   share() {
     const entry = this.entries[this.sel];
     if (entry?.kind !== 'cart') return;
+    this.closeSheet();
     this.hooks.share(entry, () => this.select(this.sel));
   }
 
   activate(i = this.sel) {
     const entry = this.entries[i];
     if (!entry) return;
+    this.closeSheet();
     if (entry.kind === 'open') this.hooks.openFile();
     else if (entry.kind === 'new') this.hooks.newCart();
     else if (entry.kind === 'ai') this.hooks.makeWithAI(() => this.select(this.sel));
@@ -195,6 +227,8 @@ export class Library {
 
   onKey(e) {
     if (!this.visible || e.ctrlKey || e.metaKey || e.altKey) return;
+    this.byPointer = false;
+    if (e.key === 'Escape' && this.sheetOpen) { e.preventDefault(); this.closeSheet(); return; }
     const moves = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     if (moves[e.key]) {
       e.preventDefault();
