@@ -46,8 +46,8 @@ const handMove = (vm, p, from, to) => { cursorTo(vm, p, from); vm.press('A'); cu
   handMove(vm, p, 'e7', 'e5'); handMove(vm, p, 'd5', 'e6');
   ok(p.pos.b[sq(p, 'e6')] === p.PAWN && !p.pos.b[sq(p, 'e5')], 'en passant by hand takes the pawn that passed');
   p.newGame('8/4P3/8/8/8/8/8/k3K3 w - - 0 1'); vm.run(1);
-  handMove(vm, p, 'e7', 'e8');
-  ok(p.pos.b[sq(p, 'e8')] === p.QUEEN, 'a pawn put down on the last rank becomes a queen (step 2 offers the choice)');
+  handMove(vm, p, 'e7', 'e8'); vm.press('A');
+  ok(p.pos.b[sq(p, 'e8')] === p.QUEEN, 'a pawn put down on the last rank, and A on the first choice: a queen (06-end.mjs tests the others)');
 }
 
 // 4. On the screen.
@@ -64,7 +64,7 @@ const handMove = (vm, p, from, to) => { cursorTo(vm, p, from); vm.press('A'); cu
 {
   const vm = newGame(5), p = vm.probe(); vm.run(2);
   vm.press('START'); ok(p.paused, 'START opens the menu');
-  vm.press('DOWN'); vm.press('A'); vm.run(1); ok(!p.paused && p.pos.side === 0 && p.lastMove === 0, 'NEW GAME starts again');
+  vm.press('DOWN'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); vm.run(1); ok(!p.paused && p.pos.side === 0 && p.lastMove === 0, 'NEW GAME starts again');
   vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title', 'QUIT TO TITLE goes back to the title');
 }
 

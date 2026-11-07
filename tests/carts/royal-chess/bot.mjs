@@ -1,5 +1,6 @@
 // The bot for tools/devkit/sweep.mjs: whole games of chess, so the rules can be checked over many seeds without a
-// person: every game must end by the rules or reach the length limit, and no move may leave the mover's king attacked.
+// person: every game must end by the rules (checkmate, stalemate or a draw) or reach the length limit, and no move may
+// leave the mover's king attacked.
 //
 //   node tools/devkit/sweep.mjs royal-chess
 //
@@ -25,9 +26,10 @@ export function pad(vm, p, frame) {
   return 0;
 }
 
-export const finished = (p) => plies >= LIMIT || (p.state === 'game' && !p.legalMoves(p.pos).length);
+export const finished = (p) => plies >= LIMIT || p.state === 'over';
 
 export function result(p) {
-  const stuck = !p.legalMoves(p.pos).length;
-  return { plies, mate: stuck && p.inCheck(p.pos) ? 1 : 0, stalemate: stuck && !p.inCheck(p.pos) ? 1 : 0, problems: bad ? [`${bad} moves left the king in check`] : [] };
+  const why = p.result?.why || 'LIMIT', problems = bad ? [`${bad} moves left the king in check`] : [];
+  if (p.result && p.result.why === 'CHECKMATE' && !(p.inCheck(p.pos) && !p.legalMoves(p.pos).length)) problems.push('a checkmate that is not one');
+  return { plies, mate: +(why === 'CHECKMATE'), stalemate: +(why === 'STALEMATE'), repetition: +(why === 'REPETITION'), fifty: +(why === 'FIFTY MOVES'), material: +(why === 'NOT ENOUGH MATERIAL'), limit: +(why === 'LIMIT'), problems };
 }

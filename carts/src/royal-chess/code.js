@@ -1,7 +1,8 @@
 // Royal Chess: straight chess, against the computer or a friend (docs/carts/royal-chess.md).
 // Built so far (the spec's plan, section 15): step 1, the position on a 0x88 board, FEN, the move generator with every
 // special move, legality by check, making and unmaking moves, perft (tested against the published counts), and a board
-// to play on with the cursor, two players on one pad.
+// to play on with the cursor; step 2, the end of a game (checkmate, stalemate, the draws), promotion's choice, the
+// result, the menu's draw offer and resignation, and two pads.
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
@@ -20,7 +21,7 @@ const ART = {
 
 // --- Sound (SPEC 5). Songs use channels 0 to 5; effects take turns on 6 and 7, so they never cut into the music. ---
 
-const SFX = { move: 0, select: 1, pause: 2, lift: 3, place: 4, capture: 5, no: 6 };
+const SFX = { move: 0, select: 1, pause: 2, lift: 3, place: 4, capture: 5, no: 6, check: 7, promote: 8, mate: 9, draw: 10, castle: 11 };
 const SONG = { title: 0, game: 1 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
@@ -220,6 +221,30 @@ function perft(P, depth) {
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
+/** Not enough material for either side to mate (spec 5): king against king, a king and one minor piece against a
+ * king, or kings and bishops alone with every bishop on squares of one colour. */
+function insufficient(P) {
+  const minors = [];
+  for (let s = 0; s < 128; s++) {
+    if (s & 0x88) continue;
+    const t = typeOf(P.b[s]);
+    if (t === PAWN || t === ROOK || t === QUEEN) return false;
+    if (t === KNIGHT || t === BISHOP) minors.push([t, ((s >> 4) + (s & 7)) & 1]);
+  }
+  if (minors.length <= 1) return true;
+  return minors.every(([t, c]) => t === BISHOP && c === minors[0][1]);
+}
+
+/** How the game stands after the last move: null while it goes on, else { winner: 0 White, 1 Black, -1 a draw, why }. */
+function gameResult(P) {
+  if (!legalMoves(P).length) return inCheck(P) ? { winner: P.side ^ 1, why: 'CHECKMATE' } : { winner: -1, why: 'STALEMATE' };
+  const key = P.keys[P.keys.length - 1];
+  if (P.keys.filter((k) => k === key).length >= 3) return { winner: -1, why: 'REPETITION' };
+  if (P.half >= 100) return { winner: -1, why: 'FIFTY MOVES' };
+  if (insufficient(P)) return { winner: -1, why: 'NOT ENOUGH MATERIAL' };
+  return null;
+}
+
 // ===================================================================================================================
 // The board on the screen (spec 3, 4).
 // ===================================================================================================================
@@ -234,6 +259,12 @@ let pos = null;                 // the game's position
 let cur = { f: 4, r: 1 };       // the cursor: file and rank
 let liftedSq = -1, liftMoves = [];   // the square of the piece held, and its legal moves
 let lastMove = 0;
+let result = null;              // the game's end: { winner, why } (gameResult, a resignation or an agreed draw)
+let promo = null;               // a promotion being chosen: { moves (Q, R, B, N), sel }
+let pad2 = false, whitePad = 0;  // two players: pad 2 has joined (it plays Black), and which pad has White (colours swap each game)
+let pausePad = 0, menu = 'main', notice = '', noticeT = 0;   // the menu: who opened it, and its page ('main', 'resign', 'offer')
+const MENU = ['RESUME', 'OFFER DRAW', 'RESIGN', 'NEW GAME', 'QUIT TO TITLE'];
+const PROMOS = [QUEEN, ROOK, BISHOP, KNIGHT];
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { for (let i = 0; i < 256; i++) dset(i, 0); dset(VERSION_SLOT, SAVE_VERSION); }
@@ -243,7 +274,7 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 function newGame(fen = START_FEN) {
-  pos = fromFen(fen); cur = { f: 4, r: pos.side ? 6 : 1 }; liftedSq = -1; liftMoves = []; lastMove = 0;
+  pos = fromFen(fen); cur = { f: 4, r: pos.side ? 6 : 1 }; liftedSq = -1; liftMoves = []; lastMove = 0; result = null; promo = null;
   state = 'game'; timer = 0; paused = false; play(SONG.game);
 }
 
@@ -252,9 +283,12 @@ function newGame(fen = START_FEN) {
 function update() {
   readPads(); clock++;
   if (!paused) timer++;
+  if (noticeT) noticeT--;
+  if (state === 'game' && !pad2 && masks[1] && !prevMasks[1]) pad2 = true;   // pad 2 joins: it plays Black from now on
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'game') updateGame();
+  else if (state === 'over') updateOver();
 }
 
 function updateTitle() {
@@ -262,12 +296,14 @@ function updateTitle() {
   if (timer > 10 && (pressed(A) || pressed(START))) { fx(SFX.select); newGame(); }
 }
 
-/** The pad that moves now (step 1: pad 1 moves both sides; step 2 gives Black to pad 2 when it is used). */
-const movePad = () => 0;
+/** The pad of a side: with two pads, White's is `whitePad` and Black's the other; with one, pad 1 plays both. */
+const padOf = (side) => (pad2 ? (side === WHITE_SIDE ? whitePad : whitePad ^ 1) : 0);
+const movePad = () => padOf(pos.side);
 
 function updateGame() {
   const p = movePad();
-  if (pressed(START, p)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  for (const q of pad2 ? [0, 1] : [0]) if (pressed(START, q)) { paused = true; pausePad = q; pauseSel = 0; menu = 'main'; fx(SFX.pause); return; }
+  if (promo) { updatePromo(p); return; }
   const dx = (pressed(RIGHT, p) ? 1 : 0) - (pressed(LEFT, p) ? 1 : 0), dy = (pressed(UP, p) ? 1 : 0) - (pressed(DOWN, p) ? 1 : 0);
   if (dx || dy) { cur.f = (cur.f + dx + 8) % 8; cur.r = (cur.r + dy + 8) % 8; fx(SFX.move); }
   const s = cur.r * 16 + cur.f;
@@ -284,35 +320,78 @@ function updateGame() {
   if (s === liftedSq) { liftedSq = -1; liftMoves = []; fx(SFX.place); return; }   // put it back where it was
   const choices = liftMoves.filter((m) => mTo(m) === s);
   if (!choices.length) { fx(SFX.no); return; }
-  // Step 1: a pawn reaching the last rank becomes a queen (step 2 asks which piece).
-  playMove(choices.find((m) => mPromo(m) === QUEEN || !mPromo(m)));
+  if (mPromo(choices[0])) { promo = { moves: PROMOS.map((t) => choices.find((m) => mPromo(m) === t)), sel: 0 }; fx(SFX.select); return; }
+  playMove(choices[0]);
 }
 
-/** A move into the game: made, remembered as the last move, with its sound. */
+/** Choosing a promotion's piece: UP and DOWN, A confirms, B goes back to the pawn held. */
+function updatePromo(p) {
+  if (pressed(UP, p)) { promo.sel = (promo.sel + 3) % 4; fx(SFX.move); }
+  if (pressed(DOWN, p)) { promo.sel = (promo.sel + 1) % 4; fx(SFX.move); }
+  if (pressed(B, p)) { promo = null; fx(SFX.move); return; }
+  if (pressed(A, p)) { const m = promo.moves[promo.sel]; promo = null; playMove(m); }
+}
+
+/** A move into the game: made, remembered as the last move, with its sound; then the game may be over. */
 function playMove(m) {
   make(pos, m, true);
-  lastMove = m; liftedSq = -1; liftMoves = [];
-  fx(mFlags(m) & F_CAPTURE ? SFX.capture : SFX.place);
+  lastMove = m; liftedSq = -1; liftMoves = []; promo = null;
+  const end = gameResult(pos);
+  if (end) { finish(end); return; }
+  fx(inCheck(pos) ? SFX.check : mPromo(m) ? SFX.promote : mFlags(m) & F_CASTLE ? SFX.castle : mFlags(m) & F_CAPTURE ? SFX.capture : SFX.place);
 }
 
+/** The game is over: the result panel over the final position (spec 10). */
+function finish(end) {
+  result = end; state = 'over'; timer = 0; paused = false;
+  fx(end.winner < 0 ? SFX.draw : SFX.mate);
+}
+
+/** After the game: A a new game (two players with two pads swap colours), B the title. */
+function updateOver() {
+  if (timer < 30) return;
+  if (pressed(A)) { fx(SFX.select); if (pad2) whitePad ^= 1; newGame(); }
+  else if (pressed(B)) { fx(SFX.select); toTitle(); }
+}
+
+/** The menu, moved by the pad that opened it. RESIGN asks again; OFFER DRAW asks the other player (step 3: the computer
+ * decides for itself). Who resigns or offers: the side of the pad that opened the menu (with one pad, the side to move). */
 function updatePause() {
-  if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
-  if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
-  if (pressed(B) || (pressed(START) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
-  else if (pressed(A) || pressed(START)) {
+  const p = pausePad, side = pad2 ? (p === whitePad ? WHITE_SIDE : BLACK_SIDE) : pos.side;
+  if (menu === 'resign') {
+    if (pressed(A, p)) { fx(SFX.select); finish({ winner: side ^ 1, why: side ? 'BLACK RESIGNS' : 'WHITE RESIGNS' }); }
+    else if (pressed(B, p)) { menu = 'main'; fx(SFX.move); }
+    return;
+  }
+  if (menu === 'offer') {   // the other player answers, on their pad (pad 1 if only one is used)
+    const q = padOf(side ^ 1);
+    if (pressed(A, q)) { fx(SFX.select); finish({ winner: -1, why: 'DRAW AGREED' }); }
+    else if (pressed(B, q)) { paused = false; menu = 'main'; say('DRAW DECLINED'); fx(SFX.no); }
+    return;
+  }
+  if (pressed(UP, p)) { pauseSel = (pauseSel + MENU.length - 1) % MENU.length; fx(SFX.move); }
+  if (pressed(DOWN, p)) { pauseSel = (pauseSel + 1) % MENU.length; fx(SFX.move); }
+  if (pressed(B, p) || (pressed(START, p) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
+  else if (pressed(A, p) || pressed(START, p)) {
     fx(SFX.select);
-    if (pauseSel === 0) paused = false;
-    else if (pauseSel === 1) newGame();
+    const item = MENU[pauseSel];
+    if (item === 'RESUME') paused = false;
+    else if (item === 'OFFER DRAW') menu = 'offer';
+    else if (item === 'RESIGN') menu = 'resign';
+    else if (item === 'NEW GAME') newGame();
     else toTitle();
   }
 }
+function say(s) { notice = s; noticeT = 120; }
 
 // --- Draw ---
 
 function draw() {
   cls();
-  if (state === 'game') drawBoard();
+  if (state === 'game' || state === 'over') drawBoard();
   else if (state === 'title') drawTitle();
+  if (state === 'over') drawResult();
+  if (promo) drawPromo();
   if (paused) drawPause();
 }
 
@@ -344,7 +423,30 @@ function drawBoard() {
   const cx = BX + cur.f * SQ, cy = BY + (7 - cur.r) * SQ;
   rect(cx, cy, SQ, SQ, C.CURSOR); rect(cx + 1, cy + 1, SQ - 2, SQ - 2, C.CURSOR);
   if (liftedSq >= 0) drawPiece(pos.b[liftedSq], cx, cy - 3);   // the piece held, raised over the cursor
-  txt(pos.side ? 'BLACK TO MOVE' : 'WHITE TO MOVE', 16, 212, WHITE);
+  const status = state === 'over' ? (result.winner < 0 ? 'DRAWN' : result.winner ? 'BLACK WINS' : 'WHITE WINS')
+    : noticeT ? notice : `${pos.side ? 'BLACK' : 'WHITE'} TO MOVE${inCheck(pos) ? ': CHECK!' : ''}`;
+  txt(status, 16, 212, noticeT || inCheck(pos) ? GOLD : WHITE);
+  if (pad2) txt(`P${padOf(pos.side) + 1}`, 228, 212, DIM);
+}
+
+/** The promotion's choice, beside the square: the four pieces, one lit. */
+function drawPromo() {
+  const x = Math.min(BX + cur.f * SQ + SQ + 2, 256 - 34), y = clamp(BY + (7 - cur.r) * SQ - 30, 2, 224 - 104);
+  panel(x - 2, y - 2, 32, 104);
+  PROMOS.forEach((t, i) => {
+    if (i === promo.sel) rectfill(x, y + i * 25, 28, 25, ART.colors.CURSOR);
+    drawPiece(t | (pos.side ? BLACK : 0), x + 2, y + i * 25);
+  });
+}
+
+/** The result, over the final position (spec 10). */
+function drawResult() {
+  panel(28, 72, 200, 64);
+  const head = { CHECKMATE: 'CHECKMATE', STALEMATE: 'STALEMATE', REPETITION: 'DRAW BY REPETITION', 'FIFTY MOVES': 'DRAW: FIFTY MOVES',
+    'NOT ENOUGH MATERIAL': 'DRAW: NO MATE POSSIBLE', 'DRAW AGREED': 'DRAW AGREED' }[result.why] || result.why;
+  ctxt(head, 80, GOLD);
+  ctxt(result.winner < 0 ? 'THE GAME IS DRAWN' : result.winner ? 'BLACK WINS' : 'WHITE WINS', 96, WHITE);
+  if (timer > 30) ctxt('A: NEW GAME   B: TITLE', 118, DIM);
 }
 
 function drawTitle() {
@@ -354,9 +456,11 @@ function drawTitle() {
 }
 
 function drawPause() {
-  panel(64, 80, 128, 64);
-  ctxt('PAUSED', 88, GOLD);
-  ['RESUME', 'NEW GAME', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
+  if (menu === 'resign') { panel(48, 84, 160, 44); ctxt('RESIGN THE GAME?', 92, GOLD); ctxt('A: RESIGN   B: NO', 110, WHITE); return; }
+  if (menu === 'offer') { panel(32, 84, 192, 44); ctxt('A DRAW IS OFFERED', 92, GOLD); ctxt(`${pad2 ? `P${padOf(pos.side ^ (pausePad === padOf(pos.side) ? 1 : 0)) + 1} ` : ''}A: ACCEPT   B: DECLINE`, 110, WHITE); return; }
+  panel(64, 64, 128, 84);
+  ctxt('PAUSED', 72, GOLD);
+  MENU.forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 88 + i * 11, i === pauseSel ? WHITE : DIM));
 }
 
 function panel(x, y, w, h) { rectfill(x, y, w, h, ART.colors.GLASS); rect(x, y, w, h, PANEL); }

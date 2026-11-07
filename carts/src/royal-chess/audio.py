@@ -50,5 +50,10 @@ a.effect(1, ['G-5', 'OFF'], 'BLIP')                                # 3 a piece p
 a.effect(1, ['C-4', 'OFF'], 'THUD')                                # 4 put down
 a.effect(2, ['G-3', 'C-3', 'OFF'], 'THUD')                         # 5 a capture
 a.effect(2, ['C-3', 'OFF'], 'CRUNCH')                              # 6 not a legal move
+a.effect(3, ['A-6', None, 'OFF'], 'CHIME')                         # 7 check: a small bell
+a.effect(1, ['C-5', 'E-5', 'G-5', 'C-6', 'OFF'], 'BLIP')           # 8 a promotion
+a.effect(4, ['C-5', 'E-5', 'G-5', 'C-6', None, 'G-5', 'C-6', 'OFF'], 'FANFARE')  # 9 checkmate
+a.effect(4, ['E-5', None, 'C-5', None, 'OFF'], 'CHIME')            # 10 a draw
+a.effect(1, ['C-4', None, 'C-4', 'OFF'], 'THUD')                   # 11 castling: two knocks
 
 a.write(sys.argv[1], songs=2)

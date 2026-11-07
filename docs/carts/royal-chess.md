@@ -1,7 +1,7 @@
 # Royal Chess: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 1 of 8 built (section 15): every move of chess, proven against the published perft counts, on a board two people can play on with one pad. Step 2 (the end of a game) is next.
+**Status:** Steps 1 and 2 of 8 built (section 15): every rule of chess, the moves proven against the published perft counts, the end of a game, and two players on one pad or two. Step 3 (the computer) is next.
 **Cart source:** `carts/src/royal-chess/` → `carts/royal-chess.nova`
 
 ---
@@ -225,6 +225,34 @@ game longer than 492 half-moves stops being saved (the board says so), and is fi
      - The code is 17.3 KB of the 64 KB.
 2. **The rules of the game's end:** check, checkmate, stalemate, the three draws, promotion's choice, the result panel,
    the menu (offer a draw, resign, new game), two pads. Tests for each.
+   - **Built:**
+     - **The end of a game:** `gameResult` checks for checkmate, stalemate, threefold repetition (from the positions'
+       keys), the fifty-move rule (the half-move clock at 100) and not enough material (`insufficient`). It runs after
+       every move.
+     - **Promotion:** a pawn put down on the last rank opens a choice of four pieces beside the square.
+     - **The result panel** (`finish`): A starts a new game, swapping colours when two pads play, and B goes to the
+       title.
+     - **The menu:** RESUME, OFFER DRAW, RESIGN, NEW GAME, QUIT TO TITLE.
+       - RESIGN asks again.
+       - OFFER DRAW asks the other player on their pad. A refusal says `DRAW DECLINED` on the status line.
+       - Whoever opened the menu resigns or offers; with one pad, that is the side to move.
+     - **Pad 2** joins with any button and plays Black from then on. Only the side to move's pad moves the cursor.
+     - **The status line** shows `CHECK!`.
+     - **New effects:** check, promotion, checkmate, a draw, castling.
+   - **Results:**
+     - `node tools/verify.js royal-chess` passes, with 107 test checks. The new file is `06-end.mjs`, with 34 checks:
+       - the fool's mate, a stalemate, and a check that is not mate;
+       - threefold repetition, but not twofold;
+       - the fifty moves, and a pawn move resetting them;
+       - each case of not enough material, and the cases that play on;
+       - the promotion's choice, and going back from it;
+       - the result panel and after;
+       - resigning and a draw offer, declined and accepted;
+       - two pads: joining, moving Black, pad 2 resigning for Black, and the colours swapping.
+     - `node tools/devkit/sweep.mjs royal-chess --seeds 24`: 24 random games. 13 ended for lack of material, 2 by fifty
+       moves, 1 by checkmate, and 8 reached the 400 half-move limit. No move left a king in check, and every
+       checkmate declared was one.
+     - `node tools/devkit/smoke.mjs royal-chess` runs in the real console with no errors.
 3. **The computer:** the search and the evaluation, the three levels, time-sliced. Tests: it takes a free queen, it finds
    a mate in one and a mate in two, it never makes an illegal move, frame times while it thinks, and the levels against
    each other over a few seeded games. The bot (`bot.mjs`) plays both sides with the engine, for `sweep.mjs`: whole
