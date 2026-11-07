@@ -57,4 +57,17 @@ def car_at(deg):
     return Img.make(16, 16, px).outline(car.edge)
 art.frames('car', [car_at(d * 22.5) for d in range(5)], pal=car, region='spr')
 
+# --- The things that roll (spec 5.6): an orange (16 px) and a small round bead for a pea or a ball bearing (8 px), in
+# sprite palettes 4 (orange), 5 (pea green) and 6 (steel), each with the same roles ---
+rolls = [art.sprite_palette(k, {'edge': '141018', 'skin': ramp(c, 3)}) for k, c in ((4, 'e88a20'), (5, '70c040'), (6, 'a8b0c0'))]
+def ball(size, R):
+    def px(x, y):
+        d = math.hypot(x - size / 2 + 0.5, y - size / 2 + 0.5)
+        if d > R: return 0
+        lit = (x - size / 2) + (y - size / 2) < -R * 0.4
+        return rolls[0].skin[2] if lit and d < R * 0.6 else rolls[0].skin[0] if d > R - 1.2 else rolls[0].skin[1]
+    return Img.make(size, size, px).outline(rolls[0].edge)
+art.sprite('ball', ball(16, 6.5), pal=rolls[0], region='spr')
+art.sprite('bead', ball(8, 3), pal=rolls[0], region='spr')
+
 art.write(sys.argv[1])

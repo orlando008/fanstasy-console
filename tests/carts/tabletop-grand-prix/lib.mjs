@@ -13,15 +13,16 @@ const PROBE = `__expose(() => ({
   get rtime() { return rtime; }, set rtime(v) { rtime = v; }, get outOrder() { return outOrder; }, get lastRank() { return lastRank; },
   get places() { return places; }, get banner() { return banner; }, get bannerT() { return bannerT; }, get pausePad() { return pausePad; },
   surfAt, progress, placeAt, buildTrack, startRace, camTarget, moveCam, leader, knockOut, scoreRound, newRound, offScreen, aiControls,
-  SQUEEZE_T, SQUEEZE_RATE, LOOK_MAX, SQUEEZE_X, SQUEEZE_Y, lookAhead, WIN_POINTS, ROUND_MAX, READY_T, GO_T, BOARD_T, OUT_MARGIN, JUMP_MIN, LIFT, CAR_DAMP, LEVELS, CHARS, AI_SAFE, STUCK_T, BACK_T, castDrivers,
+  SQUEEZE_T, SQUEEZE_RATE, LOOK_MAX, SQUEEZE_X, SQUEEZE_Y, lookAhead, WIN_POINTS, ROUND_MAX, READY_T, GO_T, BOARD_T, OUT_MARGIN, JUMP_MIN, LIFT, CAR_DAMP, LEVELS, CHARS, ROLLERS, FAN_R, FAN_PUSH, TEST_TRACK, moveRollers, hitRollers, get titleTrack() { return titleTrack; }, AI_SAFE, STUCK_T, BACK_T, castDrivers,
   get level() { return level; }, set level(v) { level = v; },
   SFX, SONG, SURF, TRACKS, S_OFF, S_ROAD, S_ROUGH, S_SLICK, S_STICKY, S_RAMP, S_HOLE, S_WALL,
   TOP, ACC, BRAKE, REV, ROLL, TURN, STEER_RAMP, R_CAR, SLIDE_KEEP, BOUNCE, FALL_T, LOOK, CAM_K, CAM_MAX, HUD_H,
 }));`;
 
-/** A new game. title: true to start on the title (otherwise straight into a race). save: a save to start from. */
-export const newGame = (seed = 1, { title = false, save = null, extra = '' } = {}) =>
-  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + extra + PROBE });
+/** A new game. title: true to start on the title (otherwise straight into a race on `track`, the test table unless given).
+ * save: a save to start from. */
+export const newGame = (seed = 1, { title = false, save = null, extra = '', track = 'TEST_TRACK' } = {}) =>
+  boot(CART, { seed, save, extra: (title ? '' : `skipTitle = true; skipTrack = ${track};`) + extra + PROBE });
 export const M = (...names) => names.reduce((m, n) => m | (1 << BTN[n]), 0);
 /** The sfx commands since the last call: [[n, channel], ...]. */
 export const sfxLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'sfx').map((a) => [a[2], a[3]]); vm.audioLog.length = 0; return r; };

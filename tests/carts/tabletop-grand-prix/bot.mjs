@@ -2,13 +2,15 @@
 // level of its own, against three computer drivers, so whole races are played over many seeds: rounds that never end,
 // races that never finish, cars that fall or stick, and how the levels place.
 //
-//   node tools/devkit/sweep.mjs tabletop-grand-prix --seeds 6 --set level=0,1,2,skill=0.5,1
+//   node tools/devkit/sweep.mjs tabletop-grand-prix                                     every track, NORMAL drivers
+//   node tools/devkit/sweep.mjs tabletop-grand-prix --set track=8,level=0,1,2,skill=0.5,1    the levels, on the test table
 //
-// The contract is in the header of tools/devkit/sweep.mjs. `level` is the computer drivers' level (0 EASY, 1 NORMAL,
-// 2 HARD); `skill` the bot's own, from EASY's numbers (0) to HARD's (1), with a character that keeps to the line.
+// The contract is in the header of tools/devkit/sweep.mjs. `track` is the track (0 to 7, 8 the test table); `level` the
+// computer drivers' level (0 EASY, 1 NORMAL, 2 HARD); `skill` the bot's own, from EASY's numbers (0) to HARD's (1), with
+// a character that keeps to the line.
 import { M, newGame as boot } from './lib.mjs';
 
-export const defaults = { frames: 60000, seeds: 6, set: { level: [0, 1, 2], skill: [0.5, 1] } };
+export const defaults = { frames: 60000, seeds: 4, set: { track: [0, 1, 2, 3, 4, 5, 6, 7], level: [1], skill: [0.75] } };
 
 export const newGame = (seed) => boot(seed); // skipTitle: straight into a race
 
@@ -20,7 +22,7 @@ const STEADY = { throttle: 1, corner: 1, err: 1, slick: 1.3, avoid: true, lean: 
 let now = 0, falls = 0, rounds = [], start = 0, phase = '', me = null;
 export function setup(vm, p, opts) {
   now = 0; falls = 0; rounds = []; start = 0; phase = '';
-  p.level = opts.level ?? 1; p.startRace(0);
+  p.level = opts.level ?? 1; p.startRace(opts.track ?? p.TEST_TRACK);
   me = botLevel(p.LEVELS, opts.skill ?? 1);
 }
 

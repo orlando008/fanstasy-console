@@ -74,6 +74,33 @@
     "glass": 5,
     "tyre": 6
    }
+  },
+  "spr4": {
+   "base": 192,
+   "colors": {
+    "edge": 1,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4
+   }
+  },
+  "spr5": {
+   "base": 208,
+   "colors": {
+    "edge": 1,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4
+   }
+  },
+  "spr6": {
+   "base": 224,
+   "colors": {
+    "edge": 1,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4
+   }
   }
  },
  "scenes": {
@@ -86,6 +113,16 @@
   }
  },
  "sprites": {
+  "ball": {
+   "pal": 4,
+   "size": 16,
+   "tile": 266
+  },
+  "bead": {
+   "pal": 4,
+   "size": 8,
+   "tile": 268
+  },
   "car0": {
    "pal": 0,
    "size": 16,
@@ -121,6 +158,6 @@
   "sticky": 5,
   "wall": 7
  },
- "used": 35,
+ "used": 40,
  "version": 1
 }

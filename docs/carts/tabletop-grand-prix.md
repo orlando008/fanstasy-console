@@ -147,9 +147,12 @@ squeezed.
 
 ### 5.6 Things that move
 
-- **Rollers:** a pea, an orange, or a ball bearing rolls back and forth along a line across the track, at a speed of 0.6
-  to 1.2, turning around at each end. A car that hits one bounces off as off a wall, and the roller is not pushed.
-- **A spinning fan** (Workshop): a car near it is pushed away from it, by 0.04 at its edge.
+- **Rollers** (`ROLLERS`): a pea (radius 4 px), an orange (7 px) or a ball bearing (4 px) rolls back and forth along a
+  line across the track, at a speed of 0.7 to 1.1, turning round at each end. They move only while the cars race. A car
+  that hits one is pushed out and bounces off as off a wall (0.5), and the roller is not pushed. A car in the air passes
+  over it.
+- **A fan** (Oil Change): a car within `FAN_R` = 100 px of its hub is blown away from it each frame, by `FAN_PUSH` = 0.04
+  at the edge, rising to twice that at the hub. The hub itself is a small wall.
 
 ## 6. Tracks
 
@@ -159,22 +162,35 @@ Each track is a loop drawn on its table:
   evenly spaced about 16 px apart (`SPACING`; the test table has 199). It gives progress, the leader, the racing line of
   the computer drivers, and the grid at each restart.
 - **A width:** the road is 40 to 56 px wide.
-- **A short list of primitives:** rectangles and circles of a surface, props, ramps, holes and rollers.
+- **Tables:** one or two rectangles. Outside them is the floor, and a gap between two tables is a hole.
+- **A short list of primitives:** rectangles and circles of a surface (props are walls, a bridge is road over a hole),
+  painted in order over the tables and the road.
+- **Movers:** the rollers and the fan (5.6).
 
-At race start, the cart builds the track: it paints the road and the primitives into a JS grid of 8 px cells (the surface
-of 5.2), then writes Map RAM from that grid. One track is in Map RAM at a time, at most 128 × 96 cells (1,024 × 768 px,
-four by three screens). The tracks are data in `code.js`, a few hundred bytes each.
+At race start, the cart builds the track: it paints the tables, the road and the primitives into a JS grid of 8 px cells
+(the surface of 5.2), then writes Map RAM from that grid. A cell takes a surface when its centre is inside the shape.
+One track is in Map RAM at a time, at most 128 × 96 cells (1,024 × 768 px, four by three screens). The tracks are data in
+`code.js` (`TRACKS`), about 400 bytes each. A ninth, the test table (`TEST_TRACK`), is for the tests: a loop with a patch
+of each surface, a box, a hole and a jump.
+
+Every track is checked (`06-tracks.mjs`):
+- The map fits.
+- The centreline and the drivers' line are on the road all the way round, with a hole only just after a ramp.
+- The start is clear of jumps.
+- Each track has hazards.
+- The Breakfast cup keeps the floor at least 24 px beyond the road's edge until Table Edge, and the Workshop's roads
+  are 44 px wide or less.
 
 | # | Cup | Track | What it is | Hazards |
 |---|---|---|---|---|
-| 1 | Breakfast | **Placemat Loop** | A wide oval on two placemats around the fruit bowl, with cutlery for kerbs | Crumbs on the inside of the corners |
-| 2 | Breakfast | **Cereal Spill** | A figure eight around a fallen cereal box | A milk puddle on the crossing, cereal (rough), a rolling pea |
-| 3 | Breakfast | **Toast Rack Run** | A chicane through the slots of a toast rack, a butter dish, a jam jar | Butter (slick), jam (sticky), a rolling orange |
-| 4 | Breakfast | **Table Edge** | Along the edge of the table, and across a jump between the table and the one pushed against it, on a book ramp | The edge, the gap, crumbs |
-| 5 | Workshop | **Toolbox Circuit** | A loop around the open toolbox, with spanners for walls | Sawdust, a rolling ball bearing |
-| 6 | Workshop | **Sawdust Alley** | Long straights between planks, with a hairpin around a vice | Sawdust (rough), glue, nails as small walls |
-| 7 | Workshop | **Oil Change** | A twisting track past an oil can that has tipped over | Oil (slick), the fan, two ball bearings |
-| 8 | Workshop | **Workbench Edge** | Along the edge of the bench, over two rulers laid as bridges, and a jump onto a stool | The edge, the jump, oil, a ball bearing |
+| 1 | Breakfast | **Placemat Loop** | A wide oval (road 56 px) around the fruit bowl, with cutlery for kerbs | Crumbs on the inside of the four corners |
+| 2 | Breakfast | **Cereal Spill** | A figure eight (52 px) around a fallen cereal box | A milk puddle on the crossing, cereal (rough) by the box, a rolling pea |
+| 3 | Breakfast | **Toast Rack Run** | Through a slot of the toast rack, then a chicane up to a butter dish and back past a jam jar (44 px) | Butter (slick) in the top bend, jam (sticky) by the jar, a rolling orange |
+| 4 | Breakfast | **Table Edge** | Close to the edges of two tables pushed together (44 px), crossing the 24 px gap between them twice, each time off a book ramp | The edges, the gap, crumbs |
+| 5 | Workshop | **Toolbox Circuit** | A loop (44 px) around the open toolbox, with spanners for walls | Sawdust, a rolling ball bearing |
+| 6 | Workshop | **Sawdust Alley** | Four long straights (40 px) between planks, joined by hairpins, one round a vice | Sawdust (rough), glue, two nails at the road's edges |
+| 7 | Workshop | **Oil Change** | A twisting loop (40 px) past an oil can that has tipped over | Oil (slick) in two bends, the fan, two ball bearings |
+| 8 | Workshop | **Workbench Edge** | Along the bench's edge (40 px), a jump onto a stool, back over a ruler 20 px wide laid across the gap, and over a second ruler across a hole in the bench | The edges, the jump, the rulers, oil, a ball bearing |
 
 The Breakfast cup is gentle: wide roads, few hazards, and no edge until track 4. The Workshop's roads are narrower, with
 more slick ground and more things that roll.
@@ -187,9 +203,10 @@ faster than a person's car could. All its numbers are constants in `code.js` (`a
 - **The line.** When a track is built, each waypoint gets its `bend` (how far the track turns over the 8 waypoints around
   it) and the bend's radius. The drivers' line (`lx`, `ly`) moves towards the inside of each bend, by up to the road's half
   width less 10 px, smoothed over 7 waypoints so it eases in and out of the apex.
-- **Steering.** A driver steers for the point on the line `3 + speed` waypoints ahead of its own. That point is moved
-  sideways by its error, and by 20 px to the side of a car in the way (one up to 64 px ahead, and less than 16 px to the
-  side).
+- **Steering.** A driver steers for the point on the line `3 + speed` waypoints ahead of its own. That point is moved:
+  - sideways by its error;
+  - by 20 px to the side of a car or a roller in the way (one up to 64 px ahead, and less than 16 px to the side);
+  - by 20 px to the clear side of a wall 10 to 26 px straight ahead (a nail, a post).
 - **Speed.** A driver's top speed is `TOP` × its level's throttle × its character's. It slows for any bend in the next 12
   waypoints that it could not follow at its speed. A bend's safe speed is `TURN` × its radius × 0.9 × the level's corner
   factor × the character's: the speed at which the car's turn just follows it. A slick patch in a bend has a lower safe

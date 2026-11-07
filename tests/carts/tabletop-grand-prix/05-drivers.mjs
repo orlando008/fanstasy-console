@@ -6,7 +6,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 const speed = (c) => Math.hypot(c.vx, c.vy);
 /** A race where P1 is a computer driver too, of character `ch` (an index of CHARS), at `level`, alone on the track. */
 function alone(seed, level, ch = 3) {
-  const vm = newGame(seed), p = vm.probe(); p.level = level; p.seats[0].human = false; p.startRace(0); solo(p); p.seats[0].ch = ch; vm.run(1);
+  const vm = newGame(seed), p = vm.probe(); p.level = level; p.seats[0].human = false; p.startRace(p.TEST_TRACK); solo(p); p.seats[0].ch = ch; vm.run(1);
   return [vm, p, p.cars[0]];
 }
 
@@ -80,7 +80,7 @@ const tops3 = [];
 // 6. Round a car: a careful driver passes a stopped car on its line without hitting it; MAX does not steer round.
 {
   for (const [ch, want] of [[3, false], [2, true]]) {
-    const vm = newGame(4), p = vm.probe(); p.level = 2; p.startRace(0); vm.run(p.READY_T + 1);
+    const vm = newGame(4), p = vm.probe(); p.level = 2; p.startRace(p.TEST_TRACK); vm.run(p.READY_T + 1);
     const [a, b] = p.cars; p.knockOut(p.cars[2]); p.knockOut(p.cars[3]); p.seats[1].ch = ch;
     const k = 20; p.placeAt(b, k, 0, 0); p.placeAt(a, k + 5, 0, 0);   // P1 stopped on the centreline, 80 px ahead
     const L = p.track; a.x = L.lx[k + 5]; a.y = L.ly[k + 5];                   // on the drivers' line, exactly
@@ -94,7 +94,7 @@ const tops3 = [];
 {
   const wins = [0, 0, 0], races = 4, len = [];
   for (const lv of [0, 2]) for (let seed = 1; seed <= races; seed++) {
-    const vm = newGame(seed), p = vm.probe(); p.level = lv; p.startRace(0);
+    const vm = newGame(seed), p = vm.probe(); p.level = lv; p.startRace(p.TEST_TRACK);
     const me = { ...p.LEVELS[2] }, steady = { throttle: 1, corner: 1, err: 1, slick: 1.3, avoid: true, lean: 0 };
     let f = 0;
     while (p.state === 'race' && f < 60000) {
