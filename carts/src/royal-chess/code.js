@@ -2,7 +2,7 @@
 // Built so far (the spec's plan, section 15): step 1, the position on a 0x88 board, FEN, the move generator with every
 // special move, legality by check, making and unmaking moves, perft (tested against the published counts), and a board
 // to play on with the cursor; step 2, the end of a game (checkmate, stalemate, the draws), promotion's choice, the
-// result, the menu's draw offer and resignation, and two pads.
+// result, the menu's draw offer and resignation, and two pads; step 3, the computer (spec 7).
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
@@ -246,6 +246,137 @@ function gameResult(P) {
 }
 
 // ===================================================================================================================
+// The computer (spec 7): negamax with alpha-beta, iterative deepening and a quiescence search, on a copy of the position,
+// as a generator that yields every YIELD_NODES positions so the game runs on while it thinks.
+// ===================================================================================================================
+
+const VALUE = [0, 100, 320, 330, 500, 900, 0];
+// How good each square is for a piece, from White's side (a8 first, as the board reads); Black's are these upside down.
+const PST = [null,
+  [0, 0, 0, 0, 0, 0, 0, 0, 50, 50, 50, 50, 50, 50, 50, 50, 10, 10, 20, 30, 30, 20, 10, 10, 5, 5, 10, 25, 25, 10, 5, 5,
+    0, 0, 0, 20, 20, 0, 0, 0, 5, -5, -10, 0, 0, -10, -5, 5, 5, 10, 10, -20, -20, 10, 10, 5, 0, 0, 0, 0, 0, 0, 0, 0],
+  [-50, -40, -30, -30, -30, -30, -40, -50, -40, -20, 0, 0, 0, 0, -20, -40, -30, 0, 10, 15, 15, 10, 0, -30, -30, 5, 15, 20, 20, 15, 5, -30,
+    -30, 0, 15, 20, 20, 15, 0, -30, -30, 5, 10, 15, 15, 10, 5, -30, -40, -20, 0, 5, 5, 0, -20, -40, -50, -40, -30, -30, -30, -30, -40, -50],
+  [-20, -10, -10, -10, -10, -10, -10, -20, -10, 0, 0, 0, 0, 0, 0, -10, -10, 0, 5, 10, 10, 5, 0, -10, -10, 5, 5, 10, 10, 5, 5, -10,
+    -10, 0, 10, 10, 10, 10, 0, -10, -10, 10, 10, 10, 10, 10, 10, -10, -10, 5, 0, 0, 0, 0, 5, -10, -20, -10, -10, -10, -10, -10, -10, -20],
+  [0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 10, 10, 10, 10, 10, 5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5,
+    -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, 0, 0, 0, 5, 5, 0, 0, 0],
+  [-20, -10, -10, -5, -5, -10, -10, -20, -10, 0, 0, 0, 0, 0, 0, -10, -10, 0, 5, 5, 5, 5, 0, -10, -5, 0, 5, 5, 5, 5, 0, -5,
+    0, 0, 5, 5, 5, 5, 0, -5, -10, 5, 5, 5, 5, 5, 0, -10, -10, 0, 5, 0, 0, 0, 0, -10, -20, -10, -10, -5, -5, -10, -10, -20],
+  [-30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30,
+    -20, -30, -30, -40, -40, -30, -30, -20, -10, -20, -20, -20, -20, -20, -20, -10, 20, 20, 0, 0, 0, 0, 20, 20, 20, 30, 10, 0, 0, 10, 30, 20],
+];
+// The king in the end game (no queens, or little else left): to the middle.
+const KING_END = [-50, -40, -30, -20, -20, -30, -40, -50, -30, -20, -10, 0, 0, -10, -20, -30, -30, -10, 20, 30, 30, 20, -10, -30, -30, -10, 30, 40, 40, 30, -10, -30,
+  -30, -10, 30, 40, 40, 30, -10, -30, -30, -10, 20, 30, 30, 20, -10, -30, -30, -30, 0, 0, 0, 0, -30, -30, -50, -30, -30, -30, -30, -30, -30, -50];
+const pstAt = (t, s, white, endgame) => { const i = (white ? 7 - (s >> 4) : s >> 4) * 8 + (s & 7); return t === KING && endgame ? KING_END[i] : PST[t][i]; };
+
+/** The position's value in centipawns, for the side to move. */
+function evaluate(P) {
+  let score = 0, heavy = 0;
+  for (let s = 0; s < 128; s++) { if (s & 0x88) { s += 7; continue; } const t = typeOf(P.b[s]); if (t === QUEEN || t === ROOK) heavy += VALUE[t]; }
+  const endgame = heavy <= 1300;
+  for (let s = 0; s < 128; s++) {
+    if (s & 0x88) { s += 7; continue; }
+    const p = P.b[s];
+    if (!p) continue;
+    const t = typeOf(p), white = !(p & BLACK), v = VALUE[t] + pstAt(t, s, white, endgame);
+    score += white ? v : -v;
+  }
+  return P.side ? -score : score;
+}
+
+const LEVELS = [
+  { name: 'BEGINNER', depth: 1, qdepth: 2, noise: 120, blunder: 0.2, minT: 36, maxT: 60 },
+  { name: 'CASUAL', depth: 2, qdepth: 8, noise: 40, blunder: 0, minT: 36, maxT: 90 },
+  { name: 'STEADY', depth: 4, qdepth: 8, noise: 0, blunder: 0, minT: 36, maxT: 120 },
+];
+const MATE = 30000, YIELD_NODES = 128, FRAME_NODES = 900;   // the search's positions a frame: about 2 to 6 ms
+const BLUNDER_LOSS = 350;   // a beginner's random move never loses more than this (it does not hang the queen)
+let nodes = 0;
+
+/** A copy of a position for the search (the game's own stays as it is while the computer thinks). */
+const copyPos = (P) => ({ b: Int8Array.from(P.b), side: P.side, castle: P.castle, ep: P.ep, half: P.half, full: P.full, kings: P.kings.slice(), undo: [], keys: [] });
+
+/** Moves in the order to try them: the move given first, then captures (most valuable victim, least valuable attacker), then the rest. */
+function ordered(P, moves, first = 0) {
+  const score = (m) => (m === first ? 1e6 : (mFlags(m) & F_CAPTURE ? 1e4 + VALUE[typeOf(P.b[mTo(m)])] * 10 - VALUE[typeOf(P.b[mFrom(m)])] : 0) + (mPromo(m) ? 9e3 : 0));
+  return moves.map((m) => [score(m), m]).sort((a, b) => b[0] - a[0]).map((x) => x[1]);
+}
+
+/** Captures only, until the position is quiet (or qdepth runs out): so the search does not stop in the middle of an exchange. */
+function* quiesce(P, alpha, beta, qdepth) {
+  if (++nodes % YIELD_NODES === 0) yield;
+  const stand = evaluate(P);
+  if (stand >= beta || qdepth <= 0) return stand;
+  if (stand > alpha) alpha = stand;
+  const us = P.side;
+  for (const m of ordered(P, pseudoMoves(P, true))) {
+    make(P, m);
+    if (inCheck(P, us)) { unmake(P); continue; }
+    const v = -(yield* quiesce(P, -beta, -alpha, qdepth - 1));
+    unmake(P);
+    if (v >= beta) return v;
+    if (v > alpha) alpha = v;
+  }
+  return alpha;
+}
+
+function* alphaBeta(P, depth, alpha, beta, ply, L) {
+  if (depth <= 0) return yield* quiesce(P, alpha, beta, L.qdepth);
+  if (++nodes % YIELD_NODES === 0) yield;
+  const us = P.side;
+  let any = false;
+  for (const m of ordered(P, pseudoMoves(P))) {
+    make(P, m);
+    if (inCheck(P, us)) { unmake(P); continue; }
+    any = true;
+    const v = -(yield* alphaBeta(P, depth - 1, -beta, -alpha, ply + 1, L));
+    unmake(P);
+    if (v >= beta) return v;
+    if (v > alpha) alpha = v;
+  }
+  if (!any) return inCheck(P) ? -MATE + ply : 0;   // checkmated (sooner is worse), or stalemate
+  return alpha;
+}
+
+/** The computer's move for position P at level L: a generator; its return value is { move, score, depth }. */
+function* think(P, L) {
+  const Q = copyPos(P), root = legalMoves(Q);
+  let best = root[0], bestScore = -MATE, scores = new Map(), done = 0;
+  for (let d = 1; d <= L.depth; d++) {
+    // With noise (the gentle levels) every root move is searched with the full window, so its score is exact and the
+    // noise and the blunders choose between true values; without, alpha-beta at the root too.
+    let alpha = -MATE - 1;
+    const now = new Map();
+    for (const m of ordered(Q, root, best)) {
+      make(Q, m);
+      const v = -(yield* alphaBeta(Q, d - 1, -MATE - 1, L.noise ? MATE + 1 : -alpha, 1, L));
+      unmake(Q);
+      now.set(m, v);
+      if (v > alpha) alpha = v;
+    }
+    scores = now; done = d;
+    best = [...now.entries()].reduce((a, b) => (b[1] > a[1] ? b : a))[0];
+    thinkBest = { move: best, score: now.get(best), depth: d };   // what to play if time runs out in the next depth
+  }
+  // The level's noise: each root move's score moved by up to `noise`; and a beginner's random move now and then.
+  const noisy = [...scores.entries()].map(([m, v]) => [m, v + (L.noise ? rnd(2 * L.noise) - L.noise : 0)]);
+  let pick = noisy.reduce((a, b) => (b[1] > a[1] ? b : a));
+  const top = scores.get(best);
+  if (L.blunder && rnd() < L.blunder) {
+    const fair = [...scores.entries()].filter(([, v]) => v >= top - BLUNDER_LOSS);
+    pick = fair[rndi(0, fair.length - 1)];
+  }
+  bestScore = scores.get(pick[0]);
+  return { move: pick[0], score: bestScore, depth: done };
+}
+let thinkBest = null;
+
+/** Run a search to its end at once (the tests and the draw offer): the generator stepped until it returns. */
+function thinkNow(P, L) { const g = think(P, L); let r; do r = g.next(); while (!r.done); return r.value; }
+
+// ===================================================================================================================
 // The board on the screen (spec 3, 4).
 // ===================================================================================================================
 
@@ -261,6 +392,8 @@ let liftedSq = -1, liftMoves = [];   // the square of the piece held, and its le
 let lastMove = 0;
 let result = null;              // the game's end: { winner, why } (gameResult, a resignation or an agreed draw)
 let promo = null;               // a promotion being chosen: { moves (Q, R, B, N), sel }
+let cpu = null;                 // playing the computer: { side, level } (null: two players)
+let thinking = null, thinkT = 0, thought = null;   // the computer's search under way, frames it has run, and its answer
 let pad2 = false, whitePad = 0;  // two players: pad 2 has joined (it plays Black), and which pad has White (colours swap each game)
 let pausePad = 0, menu = 'main', notice = '', noticeT = 0;   // the menu: who opened it, and its page ('main', 'resign', 'offer')
 const MENU = ['RESUME', 'OFFER DRAW', 'RESIGN', 'NEW GAME', 'QUIT TO TITLE'];
@@ -274,6 +407,7 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 function newGame(fen = START_FEN) {
+  thinking = null; thought = null;
   pos = fromFen(fen); cur = { f: 4, r: pos.side ? 6 : 1 }; liftedSq = -1; liftMoves = []; lastMove = 0; result = null; promo = null;
   state = 'game'; timer = 0; paused = false; play(SONG.game);
 }
@@ -284,7 +418,7 @@ function update() {
   readPads(); clock++;
   if (!paused) timer++;
   if (noticeT) noticeT--;
-  if (state === 'game' && !pad2 && masks[1] && !prevMasks[1]) pad2 = true;   // pad 2 joins: it plays Black from now on
+  if (state === 'game' && !cpu && !pad2 && masks[1] && !prevMasks[1]) pad2 = true;   // pad 2 joins: it plays Black from now on
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'game') updateGame();
@@ -293,19 +427,35 @@ function update() {
 
 function updateTitle() {
   if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
-  if (timer > 10 && (pressed(A) || pressed(START))) { fx(SFX.select); newGame(); }
+  // Step 3: PLAY THE COMPUTER is White against CASUAL (step 4 brings the level and colour).
+  if (timer > 10 && (pressed(A) || pressed(START))) { fx(SFX.select); cpu = titleSel ? null : { side: BLACK_SIDE, level: 1 }; newGame(); }
 }
 
 /** The pad of a side: with two pads, White's is `whitePad` and Black's the other; with one, pad 1 plays both. */
-const padOf = (side) => (pad2 ? (side === WHITE_SIDE ? whitePad : whitePad ^ 1) : 0);
+const padOf = (side) => (pad2 && !cpu ? (side === WHITE_SIDE ? whitePad : whitePad ^ 1) : 0);
 const movePad = () => padOf(pos.side);
+const cpuToMove = () => cpu && pos.side === cpu.side;
+
+/** The computer's turn: step its search a frame's worth of positions; play its move once it has thought for at least
+ * minT frames (so it does not snap down), and stop searching deeper at maxT. */
+function updateCpu() {
+  const L = LEVELS[cpu.level];
+  if (!thinking && !thought) { thinking = think(pos, L); thinkT = 0; thinkBest = null; nodes = 0; }
+  thinkT++;
+  if (thinking) {
+    const stop = nodes + FRAME_NODES;
+    while (nodes < stop) { const r = thinking.next(); if (r.done) { thought = r.value; thinking = null; break; } }
+    if (thinking && thinkT >= L.maxT && thinkBest) { thought = thinkBest; thinking = null; }   // out of time: the deepest search finished
+  }
+  if (thought && thinkT >= L.minT) { const m = thought.move; thought = null; playMove(m); }
+}
 
 function updateGame() {
   const p = movePad();
   for (const q of pad2 ? [0, 1] : [0]) if (pressed(START, q)) { paused = true; pausePad = q; pauseSel = 0; menu = 'main'; fx(SFX.pause); return; }
   if (promo) { updatePromo(p); return; }
-  const dx = (pressed(RIGHT, p) ? 1 : 0) - (pressed(LEFT, p) ? 1 : 0), dy = (pressed(UP, p) ? 1 : 0) - (pressed(DOWN, p) ? 1 : 0);
-  if (dx || dy) { cur.f = (cur.f + dx + 8) % 8; cur.r = (cur.r + dy + 8) % 8; fx(SFX.move); }
+  if (cpuToMove()) { moveCursor(p); updateCpu(); return; }   // the cursor still moves (to look), but nothing is picked up
+  moveCursor(p);
   const s = cur.r * 16 + cur.f;
   if (pressed(B, p) && liftedSq >= 0) { liftedSq = -1; liftMoves = []; fx(SFX.place); return; }
   if (!pressed(A, p)) return;
@@ -322,6 +472,11 @@ function updateGame() {
   if (!choices.length) { fx(SFX.no); return; }
   if (mPromo(choices[0])) { promo = { moves: PROMOS.map((t) => choices.find((m) => mPromo(m) === t)), sel: 0 }; fx(SFX.select); return; }
   playMove(choices[0]);
+}
+
+function moveCursor(p) {
+  const dx = (pressed(RIGHT, p) ? 1 : 0) - (pressed(LEFT, p) ? 1 : 0), dy = (pressed(UP, p) ? 1 : 0) - (pressed(DOWN, p) ? 1 : 0);
+  if (dx || dy) { cur.f = (cur.f + dx + 8) % 8; cur.r = (cur.r + dy + 8) % 8; fx(SFX.move); }
 }
 
 /** Choosing a promotion's piece: UP and DOWN, A confirms, B goes back to the pawn held. */
@@ -361,6 +516,12 @@ function updatePause() {
   if (menu === 'resign') {
     if (pressed(A, p)) { fx(SFX.select); finish({ winner: side ^ 1, why: side ? 'BLACK RESIGNS' : 'WHITE RESIGNS' }); }
     else if (pressed(B, p)) { menu = 'main'; fx(SFX.move); }
+    return;
+  }
+  if (menu === 'offer' && cpu) {   // the computer answers at once: yes if it is at most half a pawn ahead (spec 5)
+    const Q = copyPos(pos); Q.side = cpu.side; const v = thinkNow(Q, LEVELS[1]).score;
+    paused = false; menu = 'main';
+    if (v <= 50) { fx(SFX.select); finish({ winner: -1, why: 'DRAW AGREED' }); } else { say('DRAW DECLINED'); fx(SFX.no); }
     return;
   }
   if (menu === 'offer') {   // the other player answers, on their pad (pad 1 if only one is used)
@@ -424,7 +585,8 @@ function drawBoard() {
   rect(cx, cy, SQ, SQ, C.CURSOR); rect(cx + 1, cy + 1, SQ - 2, SQ - 2, C.CURSOR);
   if (liftedSq >= 0) drawPiece(pos.b[liftedSq], cx, cy - 3);   // the piece held, raised over the cursor
   const status = state === 'over' ? (result.winner < 0 ? 'DRAWN' : result.winner ? 'BLACK WINS' : 'WHITE WINS')
-    : noticeT ? notice : `${pos.side ? 'BLACK' : 'WHITE'} TO MOVE${inCheck(pos) ? ': CHECK!' : ''}`;
+    : noticeT ? notice : cpuToMove() ? `${LEVELS[cpu.level].name} IS THINKING${'...'.slice(0, (flr(clock / 15) % 3) + 1)}`
+    : `${pos.side ? 'BLACK' : 'WHITE'} TO MOVE${inCheck(pos) ? ': CHECK!' : ''}`;
   txt(status, 16, 212, noticeT || inCheck(pos) ? GOLD : WHITE);
   if (pad2) txt(`P${padOf(pos.side) + 1}`, 228, 212, DIM);
 }
@@ -451,8 +613,8 @@ function drawResult() {
 
 function drawTitle() {
   ctxt('ROYAL CHESS', 60, GOLD);
-  ['PLAY', ''].forEach((s, i) => s && txt(`${i === titleSel ? '> ' : '  '}${s}`, 104, 110 + i * 14, WHITE));
-  ctxt('STEP 1: THE BOARD AND THE MOVES', 190, DIM);
+  ['PLAY THE COMPUTER', 'TWO PLAYERS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 72, 110 + i * 14, i === titleSel ? WHITE : DIM));
+  ctxt('STEP 3: THE COMPUTER (CASUAL, YOU WHITE)', 190, DIM);
 }
 
 function drawPause() {

@@ -12,6 +12,8 @@ const PROBE = `__expose(() => ({
   get lastMove() { return lastMove; }, get result() { return result; }, get promo() { return promo; }, get pad2() { return pad2; },
   get whitePad() { return whitePad; }, get menu() { return menu; }, get pausePad() { return pausePad; }, get notice() { return notice; }, get noticeT() { return noticeT; },
   insufficient, gameResult, padOf, MENU, PROMOS,
+  get cpu() { return cpu; }, set cpu(v) { cpu = v; }, get thinking() { return thinking; }, get thinkT() { return thinkT; }, get thought() { return thought; },
+  get nodes() { return nodes; }, get thinkBest() { return thinkBest; }, evaluate, think, thinkNow, copyPos, LEVELS, MATE, FRAME_NODES, cpuToMove,
   rnd: (n) => rnd(n), fromFen, toFen, posKey, attacked, inCheck, pseudoMoves, legalMoves, make, unmake, perft, newGame, playMove,
   mFrom, mTo, mPromo, mFlags, mk, sqName, sqOf, screenX, screenY,
   SFX, SONG, START_FEN, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING, BLACK, F_CAPTURE, F_DOUBLE, F_EP, F_CASTLE, SQ, BX, BY,

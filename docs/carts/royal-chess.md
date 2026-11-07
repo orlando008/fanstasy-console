@@ -1,7 +1,7 @@
 # Royal Chess: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 and 2 of 8 built (section 15): every rule of chess, the moves proven against the published perft counts, the end of a game, and two players on one pad or two. Step 3 (the computer) is next.
+**Status:** Steps 1 to 3 of 8 built (section 15): every rule of chess, two players, and the computer at three levels. Step 4 (the menus and saves) is next.
 **Cart source:** `carts/src/royal-chess/` → `carts/royal-chess.nova`
 
 ---
@@ -84,7 +84,7 @@ The full rules of chess (the FIDE Laws of Chess, articles 1 to 5 and 9), all of 
     bishops all on squares of one colour. A draw.
   - **Resignation:** RESIGN in the menu (asked twice). The other side wins.
   - **A draw by agreement:** OFFER DRAW in the menu. Against the computer, it accepts if its evaluation of the position
-    for itself is 0.5 pawns or less; two players, the other player accepts with A or declines with B on their pad (pad 1
+    for itself is 0.5 pawns or less (a CASUAL search, from its side); two players, the other player accepts with A or declines with B on their pad (pad 1
     if only one is used).
 
 ## 6. The board and the positions
@@ -102,15 +102,21 @@ player's.
   iteration, then captures by most valuable victim and least valuable attacker, then the rest.
 - **The evaluation:** material (pawn 100, knight 320, bishop 330, rook 500, queen 900) and a table for each piece of how
   good each square is (piece-square tables, a middle game and an end game for the king), from the side to move's view.
-- **Not freezing the screen:** the search runs a few thousand positions a frame and then yields (a generator), so the
-  console stays at 60 fps while it thinks; a test holds the frame time under 8 ms at the 99th percentile while the
-  computer thinks. It takes at least 0.6 s for a move, so its moves do not snap down.
+- **Not freezing the screen:** the search is a generator that yields every 128 positions (`YIELD_NODES`), and the game
+  runs it for 900 positions a frame (`FRAME_NODES`, about 2 to 6 ms). The console stays at 60 fps while it thinks: a
+  test holds the frame time under 8 ms at the 99th percentile while it thinks. It searches a copy of the position, so
+  the board on the screen never changes under it.
+- **Timing:** it takes at least 36 frames (0.6 s) for a move, so its moves do not snap down. At its level's limit it
+  plays the best move of the deepest search it finished.
+- **Scores at the gentle levels:** with noise, every root move is searched with the full window, so each score is exact
+  and the noise and the blunders choose between true values. Without noise (STEADY), alpha-beta prunes at the root too.
+- **Mates:** a mate found sooner scores higher, `MATE` (30,000) less the number of half-moves to it.
 
 | Level | Depth | Quiescence | Noise | Blunders | Thinking |
 |---|---|---|---|---|---|
-| BEGINNER | 1 | captures only to depth 2 | ± 120 centipawns on each root move | 1 move in 5 is a random legal move that does not hang the queen | 0.6 to 1 s |
-| CASUAL | 2 | yes | ± 40 centipawns | none | 0.6 to 1.5 s |
-| STEADY | up to 4 (iterative deepening, within 2 s) | yes | none | none | up to 2 s |
+| BEGINNER | 1 | captures only, to depth 2 | ± 120 centipawns on each root move | 1 move in 5 is a random move from those that lose at most 350 centipawns against its best (so it does not hang its queen) | 0.6 to 1 s |
+| CASUAL | 2 | captures, to depth 8 | ± 40 centipawns | none | 0.6 to 1.5 s |
+| STEADY | up to 4 (iterative deepening, within 2 s) | captures, to depth 8 | none | none | 0.6 to 2 s |
 
 The noise and the blunders use the console's seeded random numbers, so a test sees the same game every time. The levels
 are checked against each other (section 15): STEADY beats BEGINNER in nearly every game, and CASUAL beats BEGINNER in
@@ -257,6 +263,40 @@ game longer than 492 half-moves stops being saved (the board says so), and is fi
    a mate in one and a mate in two, it never makes an illegal move, frame times while it thinks, and the levels against
    each other over a few seeded games. The bot (`bot.mjs`) plays both sides with the engine, for `sweep.mjs`: whole
    games over many seeds, each ending by the rules.
+   - **Built:**
+     - **The engine** (section 7): `evaluate` (material and the tables), `quiesce`, `alphaBeta` and `think` (iterative
+       deepening, the level's noise and blunders), all generators. `thinkNow` runs a search to its end, for the tests and
+       the draw offer.
+     - **In the game,** `updateCpu` steps the search each frame and plays at the level's time. While the computer
+       thinks, the person's cursor still moves but picks nothing up, and the status line says `CASUAL IS THINKING...`.
+     - **For now,** PLAY THE COMPUTER on the title is White against CASUAL, and TWO PLAYERS is two players. Step 4
+       brings the level and the colour.
+     - **The bot** plays the computer in the game, at each level, against a random player or the engine at BEGINNER.
+   - **Results:**
+     - `node tools/verify.js royal-chess` passes, with 128 test checks. The new file is `07-engine.mjs`, with 21 checks:
+       - the evaluation level at the start and fair to both colours;
+       - a free queen taken, and a back-rank mate in one, at CASUAL and STEADY;
+       - a mate in two found by STEADY, checked independently by an exhaustive search;
+       - a wandering queen taken, and its own queen saved;
+       - only legal moves from 60 positions;
+       - STEADY 4 of 4 against BEGINNER, and CASUAL 4 of 4;
+       - frames at 5.1 ms at the 99th percentile while it thinks;
+       - 36 frames a move at the least;
+       - looking but not touching while it thinks;
+       - a draw offer accepted a queen down and declined a queen up.
+     - **Speed:** STEADY searches the start position to depth 4 in about 60 ms (8,600 positions), and the busy
+       Kiwipete position in about 80 ms (43,000).
+     - **Sweep** (`node tools/devkit/sweep.mjs royal-chess --seeds 4`): 24 games, every one ended by the rules, with no
+       illegal move and no false checkmate.
+
+       | The computer (Black) | Against a random player | Against the engine at BEGINNER (White) |
+       |---|---|---|
+       | BEGINNER | 3 wins, 1 draw (35 half-moves on average) | 1 win, 3 draws (114) |
+       | CASUAL | 4 wins (23) | 4 wins (24) |
+       | STEADY | 4 wins (16) | 4 wins (15) |
+
+     - `node tools/devkit/smoke.mjs royal-chess` runs in the real console with no errors.
+     - The code is 33.1 KB of the 64 KB, without stripping.
 4. **The flow:** the title, the level and colour, CONTINUE, the saves (a game saved, left and continued, the same).
 5. **The side panel and the highlights:** the captured pieces and the material lead, the status line, the last move,
    the check, the coordinates.
