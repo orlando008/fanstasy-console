@@ -149,27 +149,36 @@ const SAVE_KEYS = ['made', 'cogs', 'brass', 'coin', 'price', 'tinkers', 'spool',
   'ore', 'yard', 'diggers', 'foundries', 'mills', 'wheels', 'sbarrels', 'power', 'swarm', 'ingen', 'ingT', 'wound', 'sulkT',
   'dugT', 'moths', 'reached', 'starsW', 'starsP', 'rust', 'rustT', 'lostT', 'mothsMax'];
 const ENDS_SLOT = 238; // the endings seen, over every cycle (a bit each)
+const BEST_SLOT = 239, ALL_SLOT = 244; // the best times to the five great moments, and the cogs made in all (a double)
+const BESTS = ['The town is wound', 'The great launch', 'The orrery turns', 'The Dominion ending', 'The Rest ending'];
 const SAVE_INTS = ['sign', 'priceMoves', 'trust', 'escapements', 'barrels', 'contractUse', 'invs', 'solved', 'risk', 'rng',
   'orders', 'oFor', 'mind', 'rTarget', 'rPicks', 'rReward', 'dream', 'auto', 'lot', 'regDone', 'trust2',
   'tr0', 'tr1', 'tr2', 'tr3', 'tr4', 'tr5', 'trust3', 'rustSeen', 'ending', 'endD', 'endR'];
 /** Numbers set by inventions (multipliers, flags): not saved, but worked out again from the inventions made. */
 const derived = (k) => /^m[A-Z]/.test(k) || /On$/.test(k) || ['hand', 'spoolOz', 'signDiv', 'engine', 'watch', 'region', 'plans', 'moth', 'noSulk', 'contract', 'mothIns', 'rustName', 'orrery', 'bpBonus'].includes(k);
 let G = null;
-function freshRun(seed) {
+/** The rule a cycle changes (0 Scarce Brass, 1 The Red Sky, 2 Only Music Boxes; -1 none) and how strongly. */
+const ruleOf = (c) => (c > 0 ? (c - 1) % 3 : -1);
+const ruleMul = (c) => 1 + 0.5 * Math.floor(Math.max(0, c - 1) / 3);
+const RULES = ['Scarce Brass', 'The Red Sky', 'Only Music Boxes'];
+const RULE_HINT = ["The market's price for brass is doubled.", 'The Rust comes at a thousand stars, twice as strong.', 'Cogs sell for half, until MUSIC BOXES.'];
+function freshRun(seed, cyc = 0) {
+  const r = ruleOf(cyc), k = ruleMul(cyc), work = 1 + 0.1 * cyc;
   return {
+    cycle: cyc, brassX: r === 0 ? 2 * k : 1, rustAt: r === 1 ? 1e3 : T.rustAt, rustX: r === 1 ? 2 * k : 1, boxOnly: r === 2 ? k : 0,
     seed, act: 1, made: 0, cogs: 0, brass: T.brass0, coin: 0, price: T.price0, sign: 1, tinkers: 0, spool: T.spool0,
     day: 0, sold: 0, spools: 0, time: 0, mk: 0, priceMoves: 0,
     trust: 2, escapements: 1, barrels: 1, insight: 0, clev: 0, benches: 0, hand: 1,
-    mTink: 1, mSales: 1, mRev: 1, mIns: 1, mBench: 1, mOz: 1, mAll: 1, spoolOz: T.spoolOz, signDiv: 1,
+    mTink: 1, mSales: 1, mRev: 1, mIns: 1, mBench: 1, mOz: 1, mAll: work, spoolOz: T.spoolOz, signDiv: 1,
     benchOn: 0, contract: 0, contractUse: 0, riddleOn: 0, bankOn: 0, ordersOn: 0, engine: 0, watch: 0,
     invs: 0, solved: 0, bank: 0, risk: 1, rng: seed >>> 0, orders: 0, oNeed: 0, oPay: 0, oLeft: 0, oNext: 30, oFor: 0,
     mind: 0, rTarget: 0, rPicks: 0, rCost: 0, rReward: 0, bankIn: 0,
     region: 0, ore: 0, yard: 0, diggers: 0, foundries: 0, mills: 0, wheels: 0, sbarrels: 0, power: 0, swarm: 0, dream: 0,
     ingen: 0, ingT: 0, dugT: 0, auto: 0, lot: 0, regDone: 0, wound: 0, trust2: 0, sulkT: 0, plans: 0, moth: 0,
-    mDig: 1, mFound: 1, mMill: 1, mWheel: 1, mSB: 1, mDraw: 1, mMach: 1, mHand: 1, mBarrel: 1,
+    mDig: 1, mFound: 1, mMill: 1, mWheel: 1, mSB: 1, mDraw: 1, mMach: work, mHand: 1, mBarrel: 1,
     autoOn: 0, dreamOn: 0, noSulk: 0,
     moths: 0, mothsMax: 0, reached: 0, starsW: 0, starsP: 0, rust: 0, rustT: 0, lostT: 0, rustSeen: 0, trust3: 0, ending: 0, endD: 0, endR: 0,
-    tr0: 0, tr1: 0, tr2: 0, tr3: 0, tr4: 0, tr5: 0, mSpeed: 1, mWind: 1, mCopy: 1, mHarv: 1, mCostM: 1, mShelter: 1, mWings: 1,
+    tr0: 0, tr1: 0, tr2: 0, tr3: 0, tr4: 0, tr5: 0, mSpeed: work, mWind: work, mCopy: 1, mHarv: 1, mCostM: 1, mShelter: 1, mWings: 1,
     mLoss: 1, mothIns: 0, rustName: 0, luciaOn: 0, orrery: 0, bpBonus: 0,
     told: new Uint32Array(16), done: new Uint32Array(4), shown: new Uint32Array(4), mile: new Int32Array(40),
   };
@@ -183,7 +192,7 @@ function rand() {
 }
 const gauss = () => Math.sqrt(-2 * Math.log(1 - rand())) * Math.cos(2 * Math.PI * rand());
 
-const market = () => T.mktLow + (T.mktHigh - T.mktLow) * (0.5 - 0.5 * Math.cos((2 * Math.PI * G.day) / T.dayLen));
+const market = () => (T.mktLow + (T.mktHigh - T.mktLow) * (0.5 - 0.5 * Math.cos((2 * Math.PI * G.day) / T.dayLen))) * G.brassX;
 /** Cogs the town buys a second, at the current price and sign. */
 const salesRate = () => T.sales0 * T.signMul ** (G.sign - 1) * G.mSales * (T.price0 / G.price) ** T.priceExp;
 const tinkerCost = () => T.tinkerCost * T.tinkerMul ** G.tinkers;
@@ -220,7 +229,7 @@ function step(dt) {
   G.mk += makeRate() * dt;
   if (G.mk >= 1) { const n = Math.floor(G.mk); G.mk -= n; make(n); }
   const s = Math.min(G.cogs, salesRate() * dt);
-  G.cogs -= s; G.sold += s; G.coin += s * G.price * G.mRev;
+  G.cogs -= s; G.sold += s; G.coin += (s * G.price * G.mRev) / (G.boxOnly && !isDone(10) ? 2 * G.boxOnly : 1);
   if (G.cogs >= T.unsold) raise('unsold');
   // the mind: insight up to what the barrels hold; trust from cogs made
   if (!G.mind && G.made >= T.mindAt) { G.mind = 1; raise('mind'); }
@@ -372,7 +381,7 @@ const harvRate = () => G.starsW * T.harvRate * tf(3) * G.mHarv;
 const lossRate = () => (G.moths * T.lossRate * G.mLoss) / (tf(5) * G.mShelter);
 /** The Rust stung away a second: a share of it for each blueprint in WINGS (none in WINGS, no sting). */
 const stingRate = () => G.rust * T.sting * G.tr4 * G.mWings;
-const rustRate = () => G.rust * T.rustKill;
+const rustRate = () => G.rust * T.rustKill * G.rustX;
 
 function step3(dt) {
   G.time += dt;
@@ -385,7 +394,7 @@ function step3(dt) {
   G.moths += n; G.cogs -= n * mothCost();
   if (want > 1 && n < want / 2) raise('nocogs');
   const lost = Math.min(G.moths, lossRate() * dt); G.moths -= lost; G.lostT += lost;
-  if (!G.rustSeen && G.starsW >= T.rustAt) { G.rustSeen = 1; G.rust = G.moths * 0.01; raise('rust'); }
+  if (!G.rustSeen && G.starsW >= G.rustAt) { G.rustSeen = 1; G.rust = G.moths * 0.01; raise('rust'); }
   if (G.rust > 0) {
     const took = Math.min(G.moths, rustRate() * dt), stung = Math.min(G.rust, stingRate() * dt);
     G.moths -= took; G.rustT += took;
@@ -411,7 +420,8 @@ function choose(k) {
   G.ending = k + 1; if (k === 0) G.endD = 1; else G.endR = 1;
   dset(ENDS_SLOT, dget(ENDS_SLOT) | (1 << k)); // the endings seen, over every cycle
   checkMiles(); raise(k === 0 ? 'dominion' : 'rest');
-  G.act = 5; saveRun(); state = 'ending'; timer = 0;
+  dset(CYCLE_SLOT, Math.max(dget(CYCLE_SLOT), G.cycle + 1)); putD(ALL_SLOT, getD(ALL_SLOT) + G.made);
+  G.act = 5; saveRun(); dset(RUN_SLOT, 0); state = 'ending'; timer = 0; endSel = 0; // the story is told: nothing to continue
 }
 
 // --- What the player can do (the panel's rows and the hand call these; the bot and the tests too) ---
@@ -574,7 +584,12 @@ function raise(ev) { for (let j = 0; j < STORY.length; j++) if (STORY[j].ev === 
 
 // --- Milestones: the play time each was first reached (saved as seconds + 1; 0 not yet) ---
 function checkMiles() {
-  MILES.forEach((m, j) => { if (!G.mile[j] && holds(m.t)) { G.mile[j] = Math.floor(G.time) + 1; milestoneAt = clock; } });
+  MILES.forEach((m, j) => {
+    if (G.mile[j] || !holds(m.t)) return;
+    G.mile[j] = Math.floor(G.time) + 1; milestoneAt = clock;
+    const b = BESTS.indexOf(m.name), old = b >= 0 ? dget(BEST_SLOT + b) : 0;
+    if (b >= 0 && (!old || G.mile[j] < old)) dset(BEST_SLOT + b, G.mile[j]);
+  });
 }
 let milestoneAt = -999;
 /** The milestone reached last (the latest time). */
@@ -604,7 +619,7 @@ const f64 = new Float64Array(1), i32 = new Int32Array(f64.buffer);
 function putD(slot, v) { f64[0] = v; dset(slot, i32[0]); dset(slot + 1, i32[1]); }
 function getD(slot) { i32[0] = dget(slot); i32[1] = dget(slot + 1); return f64[0]; }
 function saveRun() {
-  dset(RUN_SLOT, 1 | (G.act << 8)); putD(TIME_SLOT, G.time); dset(SEED_SLOT, G.seed);
+  dset(RUN_SLOT, 1 | (G.act << 8) | (G.cycle << 16)); putD(TIME_SLOT, G.time); dset(SEED_SLOT, G.seed);
   dset(UI_SLOT, tab | (row << 8));
   SAVE_KEYS.forEach((k, i) => putD(KEYS_SLOT + 2 * i, G[k]));
   SAVE_INTS.forEach((k, i) => dset(INTS_SLOT + i, G[k] | 0));
@@ -614,7 +629,7 @@ function saveRun() {
 }
 const hasRun = () => (dget(RUN_SLOT) & 255) === 1;
 function loadRun() {
-  G = freshRun(dget(SEED_SLOT));
+  G = freshRun(dget(SEED_SLOT), dget(RUN_SLOT) >> 16);
   G.act = (dget(RUN_SLOT) >> 8) & 255;
   SAVE_KEYS.forEach((k, i) => { G[k] = getD(KEYS_SLOT + 2 * i); });
   SAVE_INTS.forEach((k, i) => { G[k] = dget(INTS_SLOT + i); });
@@ -800,12 +815,19 @@ function init() {
 }
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; confirm = false; paused = false; play(SONG.title); }
-function newRun(seed) {
-  G = freshRun(seed); logRows = []; typing = 0; tab = 0; row = 0; top = 0; bits = [];
-  state = 'play'; timer = 0; paused = false;
-  raise('start'); saveRun(); play(SONG.play);
+/** A new run: the next cycle (after an ending), with its gift (an Act I invention already made). */
+function newRun(seed, gift = 0) {
+  G = freshRun(seed, dget(CYCLE_SLOT)); logRows = []; typing = 0; tab = 0; row = 0; top = 0; bits = [];
+  state = skipTitle ? 'play' : 'opening'; timer = 0; paused = false;
+  raise('start');
+  if (gift && INV_BY[gift]) { const v = INV_BY[gift]; G.done[gift >> 5] |= 1 << (gift & 31); G.shown[gift >> 5] |= 1 << (gift & 31); G.invs++; applyEffects(v, false); }
+  saveRun(); play(SONG.play);
 }
-function continueRun() { loadRun(); state = G.act <= 3 ? 'play' : G.act === 4 ? 'choice' : 'ending'; timer = 0; paused = false; bits = []; play(SONG.play); }
+/** The inventions a cycle can give: Act I's, but not the two that end it. */
+const GIFTS = () => INVS.filter((v) => v.id <= 26);
+let giftSel = 0, endSel = 0;
+const startCycle = () => { state = 'gift'; giftSel = 0; timer = 0; };
+function continueRun() { loadRun(); state = G.act <= 3 ? 'play' : 'choice'; timer = 0; paused = false; bits = []; play(SONG.play); }
 
 // --- Update ---
 function update() {
@@ -815,7 +837,9 @@ function update() {
   else if (state === 'play') updatePlay();
   else if (state === 'log') updateLog();
   else if (state === 'miles') updateMiles();
-  else if (state === 'act') updateAct();
+  else if (state === 'opening') { if (timer > 300 || (timer > 30 && (pressed(A) || pressed(START)))) { state = 'play'; timer = 0; } }
+  else if (state === 'gift') updateGift();
+  else if (state === 'records') { if (timer > 10 && (pressed(A) || pressed(B) || pressed(START))) toTitle(); }
   else if (state === 'choice') updateChoice();
   else if (state === 'ending') updateEnding();
   timer++;
@@ -828,7 +852,7 @@ function updateTitle() {
     if (pressed(B)) { confirm = false; titleSel = 1; fx(SFX.move); }
     else if (pressed(A) || pressed(START)) {
       fx(SFX.select); confirm = false;
-      if (titleSel === 1) newRun(rndi(1, 0x7fffffff)); else titleSel = 0;
+      if (titleSel === 1) { if (dget(CYCLE_SLOT)) startCycle(); else newRun(rndi(1, 0x7fffffff)); } else titleSel = 0;
     }
     return;
   }
@@ -838,11 +862,13 @@ function updateTitle() {
     fx(SFX.select);
     const it = items[titleSel];
     if (it === 'CONTINUE') continueRun();
+    else if (it === 'MILESTONES') { state = 'records'; timer = 0; }
     else if (hasRun()) { confirm = true; titleSel = 0; }
+    else if (dget(CYCLE_SLOT)) startCycle();
     else newRun(rndi(1, 0x7fffffff));
   }
 }
-const titleItems = () => (hasRun() ? ['CONTINUE', 'NEW STORY'] : ['NEW STORY']);
+const titleItems = () => [...(hasRun() ? ['CONTINUE'] : []), 'NEW STORY', ...(dget(CYCLE_SLOT) ? ['MILESTONES'] : [])];
 
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; saveRun(); fx(SFX.pause); return; }
@@ -882,12 +908,21 @@ function updateChoice() {
   if (pressed(UP) || pressed(DOWN)) { choiceSel ^= 1; fx(SFX.move); }
   if (timer > 90 && (pressed(A) || pressed(START))) { fx(SFX.select); choose(choiceSel); }
 }
+/** The ending, then the credits rolling, then NEW CYCLE or TITLE. */
 function updateEnding() {
-  if (typing) typed += 1;
-  if (timer > 240 && (pressed(A) || pressed(START))) { fx(SFX.select); dset(RUN_SLOT, 0); toTitle(); } // new cycles: step 5
+  if (timer < CREDITS_AT) { if (timer > 240 && (pressed(A) || pressed(START))) timer = CREDITS_AT; return; }
+  if (pressed(UP) || pressed(DOWN)) { endSel ^= 1; fx(SFX.move); }
+  if (timer > CREDITS_AT + 30 && (pressed(A) || pressed(START))) {
+    fx(SFX.select);
+    if (endSel === 0) startCycle(); else toTitle();
+  }
 }
-function updateAct() {
-  if (timer > 60 && (pressed(A) || pressed(START))) { fx(SFX.select); saveRun(); toTitle(); }
+function updateGift() {
+  const n = GIFTS().length;
+  if (rep(UP)) giftSel = (giftSel + n - 1) % n;
+  if (rep(DOWN)) giftSel = (giftSel + 1) % n;
+  if (pressed(B)) { toTitle(); return; }
+  if (timer > 20 && (pressed(A) || pressed(START))) { fx(SFX.select); newRun(rndi(1, 0x7fffffff), GIFTS()[giftSel].id); }
 }
 
 function updateLog() {
@@ -919,7 +954,9 @@ function draw() {
   if (state === 'title') drawTitle();
   else if (state === 'log') drawFullLog();
   else if (state === 'miles') drawMiles();
-  else if (state === 'act') drawAct();
+  else if (state === 'opening') drawOpening();
+  else if (state === 'gift') drawGift();
+  else if (state === 'records') drawRecords();
   else if (state === 'choice') drawChoice();
   else if (state === 'ending') drawEnding();
   else { drawView(); drawTabs(); drawPanel(); drawLog(); }
@@ -1030,20 +1067,54 @@ function drawChoice() {
 }
 function drawEnding() {
   rectfill(0, 0, 256, 224, EDGE);
+  if (timer >= CREDITS_AT) return drawEndMenu();
   sysc(G.ending === 1 ? 'THE DOMINION ENDING' : 'THE REST ENDING', 40, BRASS);
   const text = STORY[STORY.findIndex((e) => e.ev === (G.ending === 1 ? 'dominion' : 'rest'))].text;
   wrap(text, 220).forEach((l, i) => txc(l, 70 + i * 10, INK));
   tx(`Play time ${clockText(G.time)}`, 6, 200, DIM);
-  if (timer > 240) txr('A to the title', 250, 200, INK);
+  if (timer > 240) txr('A: the credits', 250, 200, INK);
 }
 
-function drawAct() {
+const CREDITS_AT = 900;
+const CREDITS = ['CLOCKWORK DOMINION', '', 'Marco, a clockwork automaton', 'Paulo Benedetto, clockmaker of Rotella', 'Lucia',
+  'Signore Giuseppe Ferrese, merchant', '', 'Made for the NOVA-16', '', 'Thank you for playing'];
+function drawEndMenu() {
+  CREDITS.forEach((l, i) => (i ? txc(l, 30 + i * 12, i === 7 ? BRASS : INK) : sysc(l, 30, GOLD)));
+  const c = dget(CYCLE_SLOT);
+  txc(`The story is told. Cycle ${c + 1} would bring ${RULES[ruleOf(c)]}.`, 160, DIM);
+  [`START CYCLE ${c + 1}`, 'TITLE'].forEach((s, i) => sys(`${i === endSel ? '>' : ' '} ${s}`, 72, 178 + i * 12, i === endSel ? GOLD : DIM));
+}
+function drawOpening() {
   rectfill(0, 0, 256, 224, EDGE);
-  sysc('THE END OF ACT II', 70, BRASS);
-  txc('The Orrery', 90, GOLD);
-  txc('Act III is still being built.', 120, DIM);
-  txc('Your story is saved here.', 132, DIM);
-  if (timer > 60) txc('A to return to the title', 180, INK);
+  sysc('ROTELLA', 50, BRASS);
+  txc('An old clockmaker\'s shop, long ago', 66, DIM);
+  wrap(STORY[0].text, 200).forEach((l, i) => { const k = Math.max(0, timer * 2 - i * 60); txc(l.slice(0, k), 100 + i * 12, INK); });
+  if (timer > 30) txc('A to begin', 200, DIM);
+}
+function drawGift() {
+  rectfill(0, 0, 256, 224, PAPER);
+  const c = dget(CYCLE_SLOT), g = GIFTS();
+  sysc(`CYCLE ${c + 1}`, 8, BRASS);
+  txc(`${RULES[ruleOf(c)]}: ${RULE_HINT[ruleOf(c)]}`, 22, BAD);
+  txc(`Every helper and machine works ${c * 10}% harder. Choose a gift:`, 34, INK);
+  const from = Math.max(0, Math.min(g.length - 14, giftSel - 6));
+  for (let k = 0; k < 14 && from + k < g.length; k++) {
+    const v = g[from + k], on = from + k === giftSel, y = 50 + k * 10;
+    if (on) rectfill(3, y - 1, 250, 10, ROWC);
+    tx((on ? '> ' : '  ') + v.name, 10, y, on ? GOLD : INK);
+  }
+  tx(g[giftSel].hint, 6, 196, DIM);
+  tx('A to begin the cycle with it.  B: the title', 6, 210, DIM);
+}
+function drawRecords() {
+  rectfill(0, 0, 256, 224, PAPER);
+  sysc('MILESTONES', 8, BRASS);
+  const c = dget(CYCLE_SLOT), e = dget(ENDS_SLOT);
+  txc(`${c} ${c === 1 ? 'cycle' : 'cycles'} told.  Endings seen: ${['none', 'Dominion', 'Rest', 'both'][e & 3]}`, 26, INK);
+  BESTS.forEach((n, i) => { const t = dget(BEST_SLOT + i); tx(n, 20, 50 + i * 14, t ? INK : DIM); txr(t ? clockText(t - 1) : '-', 236, 50 + i * 14, BRASS); });
+  txc('the fastest time to each, over every cycle', 128, DIM);
+  txc(`Cogs made in all: ${fmt(getD(ALL_SLOT))}`, 150, GOOD);
+  txc('A to return', 200, DIM);
 }
 
 function drawTitle() {
@@ -1055,7 +1126,8 @@ function drawTitle() {
     ['KEEP MY STORY', 'START AGAIN'].forEach((s, i) => sys(`${i === titleSel ? '>' : ' '} ${s}`, 64, 136 + i * 10, i === titleSel ? GOLD : DIM));
     return;
   }
-  titleItems().forEach((s, i) => sys(`${i === titleSel ? '> ' : '  '}${s}`, 84, 120 + i * 14, i === titleSel ? GOLD : DIM));
+  if (dget(CYCLE_SLOT)) txc(`CYCLE ${dget(CYCLE_SLOT) + 1}`, 92, BRASS);
+  titleItems().forEach((s, i) => sys(`${i === titleSel ? '> ' : '  '}${s}`, 84, 112 + i * 14, i === titleSel ? GOLD : DIM));
   txc('A to choose', 200, DIM);
 }
 

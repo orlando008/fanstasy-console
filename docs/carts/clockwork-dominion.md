@@ -1,7 +1,7 @@
 # Clockwork Dominion: Cart Specification
 
-**Version:** 0.5 (step 4 of 10)
-**Status:** In progress: steps 1 to 4 of the plan (section 15) are built (the engine, all three acts and the choice at the end); step 5 is next
+**Version:** 0.6 (step 5 of 10)
+**Status:** In progress: steps 1 to 5 of the plan (section 15) are built (the engine, the three acts, the end, new cycles and the flow); step 6, the art, is next
 **Cart source:** `carts/src/clockwork-dominion/` → `carts/clockwork-dominion.nova`
 
 ---
@@ -200,9 +200,17 @@ themselves if WINGS and SHELTER are neglected. A stall is always recoverable (Ma
 ## 8. Modes
 
 - **The story run,** from Act I to an ending.
-- **New cycles,** after an ending: +10% work per cycle, one Act I invention given, and a changed rule (cycle 2: brass
-  is scarce, the market's price doubled; cycle 3: the Rust appears earlier and stronger; cycle 4: the town buys only in
-  music boxes; then they repeat, stronger). The cycle number is shown on the title.
+- **New cycles,** after an ending (agreed with the user): the story begins again from the first cog, with:
+  - every helper and machine (tinkers, workbenches, the Act II machines, the moths' speed and winding) working 10%
+    harder for each cycle told;
+  - a **gift**: one of Act I's first 26 inventions, chosen from a list, already made;
+  - a changed rule, in turn:
+    - cycle 2, **Scarce Brass**: the market's price for brass is doubled;
+    - cycle 3, **The Red Sky**: the Rust comes at a thousand wound stars, and takes twice as many;
+    - cycle 4, **Only Music Boxes**: cogs sell for half until MUSIC BOXES;
+    - from cycle 5 the three come round again, stronger (× 1.5, then × 2 ...).
+
+  The title shows the cycle (CYCLE 2) once one has been told; the cycle a saved run belongs to is in its slot 2.
 
 ## 9. Scoring
 
@@ -211,12 +219,16 @@ each ending over all cycles, and the count of cogs made. These are kept across c
 
 ## 10. Screens and flow
 
-1. **Title:** the workshop at night, Marco on the bench; CONTINUE, NEW STORY (asks first if a run is saved), MILESTONES.
-2. **The opening:** Paulo winds Marco up (a short cinematic), "Make a cog, little one."
-3. **Play:** the view, tabs, panel and log; cinematics at the big inventions and between acts.
-4. **Pause** (START): RESUME, THE STORY SO FAR, MILESTONES, MUSIC, EFFECTS, SAVE AND QUIT.
-5. **The end:** the dismantling, the watch and the choice, the ending's cinematic, the credits (the music's sources),
-   the run's milestones, then NEW CYCLE or TITLE.
+1. **Title:** the workshop at night, Marco on the bench (step 7); CONTINUE (a run is saved), NEW STORY (asks first over
+   a saved run; after an ending, it goes to the gifts), MILESTONES (once a story has been told: the cycles told, the
+   endings seen, the best time over every cycle to the end of each act and to each ending, the cogs made in all).
+2. **The opening:** "Rotella, an old clockmaker's shop, long ago", and Paulo's first words typing in (A, or 5 seconds,
+   to begin); a cinematic in step 7.
+3. **Play:** the view, tabs, panel and log; cinematics at the big inventions and between acts (step 7).
+4. **Pause** (START): RESUME, THE STORY SO FAR, MILESTONES (this run's), MUSIC, EFFECTS, SAVE AND QUIT.
+5. **The end:** THE LAST COG, the watch and the choice (WIND IT, LET IT STOP), the ending, then (A) the credits with
+   START CYCLE n or TITLE. The story told is not kept as a run to continue. Then the gifts: the next cycle's rule, the
+   26 inventions to choose from (A begins the cycle with it; B goes back to the title).
 
 ## 11. Audio
 
@@ -262,8 +274,8 @@ Doubles are kept in two slots each (their 64 bits as two int32).
 | Slots | Contents |
 |---|---|
 | 0 | Format version |
-| 1 | The cycle number (0 in the first run) |
-| 2 | A run is saved (1); its act (1 to 4, 4 the end) |
+| 1 | The cycles told (0 before the first ending) |
+| 2 | A run is saved (bit 0); its act (bits 8 to 15: 1 to 3, 4 at the choice); its cycle (bits 16 up) |
 | 3–4 | The run's play time, in frames (a double) |
 | 5 | The seed |
 | 6 | Settings: effects (bit 0), music (bit 1), set (bit 2) |
@@ -276,7 +288,9 @@ Doubles are kept in two slots each (their 64 bits as two int32).
 | 194–197 | Inventions given by the cycles; the changed rule |
 | 198–237 | This run's milestones: the play time of each, in seconds (+1; 0 not yet) |
 | 238 | Across cycles: the endings seen (bit 0 the Dominion, bit 1 the Rest) |
-| 239–255 | Across cycles: the best times, the cogs made in all (step 5) |
+| 239–243 | Across cycles: the best play time (seconds + 1) to the end of Act I, of Act II, the orrery turning, the Dominion and the Rest endings |
+| 244–245 | Across cycles: the cogs made in all (a double) |
+| 246–255 | Reserved |
 
 Multipliers and flags that inventions set (`mDig`, `benchOn`, `region` ...) are not saved: loading a run works them out
 again by applying the effects of the inventions made, in order.
@@ -405,6 +419,20 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
      of 64 (74%), ROM 23.3 KB, PNG payload 31%.
 5. **The flow:** the title, the opening, the two endings, the credits, new cycles and their rules, the MILESTONES page,
    the full log, the pause menu, sound settings; the save complete and tested (every slot round-trips).
+   - **Built:** the cycles' rules, gift and name agreed with the user first. Then:
+     - new cycles: `freshRun(seed, cycle)` puts the cycle's rule and its +10% into the run, so a loaded run gets them
+       back too;
+     - the gifts screen; the opening;
+     - the credits after an ending, then START CYCLE n or TITLE;
+     - the MILESTONES of every cycle, from the title;
+     - best times over every cycle, kept when each milestone is reached;
+     - the cogs made in all;
+     - Act II's placeholder card is gone, now that every act runs into the next.
+   - **Results:** 222 checks (`07-cycles` is new: the end, the credits and a new cycle with its gift, the +10% and
+     its rule; CONTINUE in a later cycle; each of the three rules and their return, stronger; the best times and
+     endings; the title's MILESTONES; and every one of the 256 save slots back as it was after a save and a load, in
+     each act). The soak and `smoke.mjs` are clean. Code is 52.2 KB of 64 (80%): steps 6 and 7 must keep their code
+     small and put the pictures in the ROM, which is at 18%. PNG payload 32%.
 6. **Art: the views.** The workshop and the town, the world as a Mode 7 globe, the orrery; each act's tile set in the
    ROM; the sprites; the panel's frame.
 7. **Art: the cinematics.** The winding of Marco, Paulo's rest, the winding of the town, the great launch, the orrery
