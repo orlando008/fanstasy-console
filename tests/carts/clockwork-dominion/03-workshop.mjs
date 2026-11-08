@@ -14,7 +14,7 @@ import { newGame, simFor, ok } from './lib.mjs';
 {
   const vm = newGame(1), p = vm.probe(), G = p.G, T = p.T;
   ok(T.brass0 === 1000 && G.brass === 1000 && G.cogs === 0 && G.coin === 0, 'a run starts with 1,000 oz of brass, no cogs and no coin');
-  ok(G.price === 0.25 && G.sign === 1 && G.spool === 15, 'the price is $0.25, the sign at level 1, a spool $15');
+  ok(G.price === 0.25 && G.sign === 1 && G.spool === 15, 'the price is L 0.25, the sign at level 1, a spool L 15');
   ok(Math.abs(p.salesRate() - 3) < 1e-9, 'at the start the town buys 3 cogs a second');
 }
 
@@ -24,7 +24,7 @@ import { newGame, simFor, ok } from './lib.mjs';
   for (let i = 0; i < 100; i++) p.ACT.hand();
   ok(p.G.made === 100 && p.G.cogs === 100 && p.G.brass === 900, 'each cog by hand uses 1 oz of brass');
   simFor(p, 10);
-  ok(Math.abs(p.G.sold - 30) < 0.01 && Math.abs(p.G.coin - 7.5) < 0.01, 'the town buys 3 a second at $0.25: 30 cogs and $7.50 in 10 s', `${p.G.sold.toFixed(2)} sold, ${p.G.coin.toFixed(2)}`);
+  ok(Math.abs(p.G.sold - 30) < 0.01 && Math.abs(p.G.coin - 7.5) < 0.01, 'the town buys 3 a second at L 0.25: 30 cogs and L 7.50 in 10 s', `${p.G.sold.toFixed(2)} sold, ${p.G.coin.toFixed(2)}`);
   p.G.price = 0.5;
   const r = p.salesRate();
   ok(Math.abs(r - 3 * 0.5 ** 1.6) < 1e-9, 'twice the price sells 0.5^1.6 as many', r.toFixed(3));
@@ -38,10 +38,10 @@ import { newGame, simFor, ok } from './lib.mjs';
 {
   const vm = newGame(3), p = vm.probe();
   ok(!p.ACT.brass() && p.G.brass === 1000, 'a spool cannot be bought without the coin');
-  p.G.coin = 100; ok(p.ACT.brass() && p.G.brass === 2000 && Math.abs(p.G.coin - 85) < 1e-9, 'a spool is 1,000 oz for $15');
-  ok(Math.abs(p.G.spool - 16.5) < 1e-9, 'and the next costs $1.50 more');
+  p.G.coin = 100; ok(p.ACT.brass() && p.G.brass === 2000 && Math.abs(p.G.coin - 85) < 1e-9, 'a spool is 1,000 oz for L 15');
+  ok(Math.abs(p.G.spool - 16.5) < 1e-9, 'and the next costs L 1.50 more');
   const lo = p.market(); p.G.day = 180; const hi = p.market();
-  ok(Math.abs(lo - 12) < 1e-9 && Math.abs(hi - 24) < 1e-9, 'the market\'s price drifts from $12 to $24 over a 6-minute day', `${lo} ${hi}`);
+  ok(Math.abs(lo - 12) < 1e-9 && Math.abs(hi - 24) < 1e-9, 'the market\'s price drifts from L 12 to L 24 over a 6-minute day', `${lo} ${hi}`);
   p.G.day = 0; p.G.spool = 30; simFor(p, 30);
   ok(p.G.spool < 20 && p.G.spool > 12, 'a dear spool falls back towards the market\'s price', p.G.spool.toFixed(2));
   p.G.brass = 0; ok(!p.ACT.hand() && p.G.made === 0, 'with no brass, no cog can be made');
@@ -51,9 +51,9 @@ import { newGame, simFor, ok } from './lib.mjs';
 {
   const vm = newGame(4), p = vm.probe();
   p.G.coin = 1000;
-  ok(p.ACT.sign() && p.G.sign === 2 && Math.abs(p.G.coin - 900) < 1e-9, 'the sign\'s next level costs $100');
+  ok(p.ACT.sign() && p.G.sign === 2 && Math.abs(p.G.coin - 900) < 1e-9, 'the sign\'s next level costs L 100');
   ok(Math.abs(p.signCost() - 200) < 1e-9, 'and then twice as much');
-  ok(p.tinkerCost() === 5, 'the first tinker costs $5');
+  ok(p.tinkerCost() === 5, 'the first tinker costs L 5');
   p.ACT.tinker(); ok(p.G.tinkers === 1 && Math.abs(p.tinkerCost() - 5 * 1.12) < 1e-9, 'each one costs 12% more than the last');
   for (let i = 0; i < 9; i++) p.ACT.tinker();
   const made = p.G.made; simFor(p, 10);

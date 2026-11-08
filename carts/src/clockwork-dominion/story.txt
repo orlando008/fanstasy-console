@@ -14,8 +14,8 @@ spools:1 | I bought a spool of brass from the merchant. He looked at me for a lo
 ev:priceup | I raised my price. Paulo peers over his spectacles and says nothing, which means: careful.
 ev:pricedown | I lowered my price. More hands reach for the window.
 ev:unsold | The window is full of cogs that no one buys. Paulo says a price is a kind of question.
-coin:50 | Fifty crowns in the jar. Paulo says that is more than the shop made all of last winter.
-sign:2 | Paulo painted a new sign: WREN & MARCO, FINE COGS. My name is on it. I read it eleven times.
+coin:50 | Fifty lire in the jar. Paulo says that is more than the shop made all of last winter.
+sign:2 | Paulo painted a new sign: BENEDETTO & MARCO, FINE COGS. My name is on it. I read it eleven times.
 sign:4 | People come from the next valley now. They point at the sign, and then at me.
 tinkers:1 | I wound up a tinker of my own. It is small and it hums as it works. I think it likes me.
 tinkers:5 | Five tinkers tick on the bench. Paulo has to keep his tea on the windowsill.

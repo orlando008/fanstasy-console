@@ -12,15 +12,15 @@ An incremental game ("clicker") in a cosy storybook world with a quietly ominous
 incrementals of the 2010s, with its own world, story, stages and controls made for a gamepad. It is meant to be the
 console's biggest game: every system of the machine on show, and the cart filled to its limits (section 14).
 
-You are **Marco**, a small clockwork automaton that the old clockmaker **Paulo Wren** has just wound up for the first
-time, on a workbench in his shop in the town of **Wrenfield**. His first words to you are "Make a cog, little one." You
+You are **Marco**, a small clockwork automaton that the old clockmaker **Paulo Benedetto** has just wound up for the first
+time, on a workbench in his shop in the town of **Rotella**. His first words to you are "Make a cog, little one." You
 make one. Then another. Sell them to the town, buy brass, set your price, build wind-up **tinkers** to make cogs for you,
 earn Paulo's trust and fit your own head with escapements, so you can think, and invent. Paulo grows old. His last
 words are a wish: **"Never let it wind down."** Marco takes them at their word.
 
 The story runs in three acts, each a different game on the same few buttons:
 
-1. **The Workshop:** the shop and the town of Wrenfield: a small business of cogs, brass, prices and helpers.
+1. **The Workshop:** the shop and the town of Rotella: a small business of cogs, brass, prices and helpers.
 2. **The Winding of the World:** the town, the country and then the whole world, turned into clockwork: ore, foundries,
    mills, tension and the tinker swarm.
 3. **The Orrery:** clockwork moths that copy themselves fly out to the stars and wind each one into a gear of a great
@@ -93,7 +93,7 @@ starting design; step 9 (balance) tunes them by measuring the bot's runs, and th
 ### Numbers
 
 Numbers are doubles (they reach 10^50 in Act III). On screen: whole numbers to 999,999, then 1.24 MILLION, 3.50
-BILLION and so on by name to DECILLION, then 1.2E36 style. Money is shown with `$` and two decimals below 1,000.
+BILLION and so on by name to DECILLION, then 1.2E36 style. Money is in lire, shown as `L 0.25`, with two decimals (centesimi) below 1,000.
 
 ### Act I: the Workshop
 
@@ -101,12 +101,12 @@ BILLION and so on by name to DECILLION, then 1.2E36 style. Money is shown with `
 |---|---|
 | A cog | uses 1 oz of brass |
 | Marco's hand (B) | 1 cog a press; held, 4 a second (A on MAKE A COG does the same) |
-| Brass | starts at 1,000 oz; bought by the spool of 1,000 oz; the price starts at $15, rises $1.50 with each spool bought and falls back towards the market's price at 3% a second; the market's price drifts between $12 and $24 over a 6-minute market day (the merchant's cart in the view) |
-| Price per cog | starts at $0.25, changed in steps of $0.01 (◄ ►), from $0.01 to $99.99 |
+| Brass | starts at 1,000 oz; bought by the spool of 1,000 oz; the price starts at L 15, rises L 1.50 with each spool bought and falls back towards the market's price at 3% a second; the market's price drifts between L 12 and L 24 over a 6-minute market day (the merchant's cart in the view) |
+| Price per cog | starts at L 0.25, changed in steps of L 0.01 (◄ ►), from L 0.01 to L 99.99 |
 | Sales | cogs sold a second = 3 × 1.3^(sign − 1) × boosts × (0.25 / price)^1.6, at most the cogs in stock |
-| The shop sign (reputation) | level 1 to 30; the next level costs $100 × 2^(level − 1) |
-| Tinkers (the HELPERS tab, from 20 cogs made) | each makes 1 cog a second; the next costs $5 × 1.12^tinkers |
-| Workbenches (an invention) | each makes 40 cogs a second; the next costs $1,000 × 1.08^benches |
+| The shop sign (reputation) | level 1 to 30; the next level costs L 100 × 2^(level − 1) |
+| Tinkers (the HELPERS tab, from 20 cogs made) | each makes 1 cog a second; the next costs L 5 × 1.12^tinkers |
+| Workbenches (an invention) | each makes 40 cogs a second; the next costs L 1,000 × 1.08^benches |
 | Paulo's trust | starts at 2; +1 at each of 2,000, 3,000, 5,000, 8,000, 13,000... cogs made (the Fibonacci numbers × 1,000), and from some inventions |
 | Escapements and barrels | each trust fits one to Marco's head: an escapement thinks 10 insight a second, a barrel holds 1,000 more insight (Marco starts with 1 of each) |
 | Insight | made by the escapements, up to the barrels' total; spent on inventions |
@@ -284,8 +284,8 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
 
      `art.py` makes a placeholder view (the wall in lamplight, a scanline gradient; the bench; Marco, a cog, a tinker) and
      the panel's ink colours (113 and up). The starter's sounds stand in for now (step 8).
-   - **Results:** 70 checks in `01-flow`, `02-art` and `03-workshop` (the spec's numbers: 3 a second at $0.25, the
-     price's power 1.6, the sign's 30%, spools $15 + $1.50, the market from $12 to $24, tinkers $5 × 1.12^n; every
+   - **Results:** 70 checks in `01-flow`, `02-art` and `03-workshop` (the spec's numbers: 3 a second at L 0.25, the
+     price's power 1.6, the sign's 30%, spools L 15 + L 1.50, the market from L 12 to L 24, tinkers L 5 × 1.12^n; every
      saved number round-trips exactly; every row and hint fits with big numbers). The soak (20,000 frames × 2) is
      clean, 0.8 ms at the 99th percentile; `smoke.mjs` runs at 60 fps with no errors. The bot (B every 8 frames, cheap
      tinkers, spools before the brass runs out, the price down while stock piles up) reaches 5,000 cogs in 4.4 minutes;

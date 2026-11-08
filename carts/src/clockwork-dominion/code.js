@@ -1,5 +1,5 @@
 // Clockwork Dominion: an incremental game in three acts (docs/carts/clockwork-dominion.md).
-// Marco, a clockwork automaton, makes cogs in Paulo Wren's shop, and winds up the town, the world and the stars.
+// Marco, a clockwork automaton, makes cogs in Paulo Benedetto's shop, and winds up the town, the world and the stars.
 //
 // The code is the engine; the book (the font and the story) is in the ROM, made by book.py. The rules are one
 // simulation, step(dt), run 10 times a second (every 6 frames) by the cart and as fast as it can go by the tests and the
@@ -101,7 +101,7 @@ function fmts(n) {
   if (e <= SHORT.length) return (n / 10 ** (3 * e)).toFixed(2) + SHORT[e - 1];
   return n.toExponential(1).toUpperCase().replace('+', '');
 }
-const money = (n) => (n < 1000 ? '$' + n.toFixed(2) : '$' + fmts(n));
+const money = (n) => (n < 1000 ? 'L ' + n.toFixed(2) : 'L ' + fmts(n)); // lire
 const rate = (n) => (n < 10 ? n.toFixed(1) : fmts(n));
 
 // --- The rules' numbers (spec section 5; the tests read them from here) ---
