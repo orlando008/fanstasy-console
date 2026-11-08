@@ -211,6 +211,16 @@
       "png": "carts/rags-to-riches.nova.png"
     },
     {
+      "name": "reversi",
+      "title": "Reversi",
+      "author": "Lucy",
+      "description": "Turn lines of discs to your color on a classic green board. Two local players pass one keyboard or gamepad, with gold dots for legal moves and previews of the discs that will flip.",
+      "genre": "Strategy",
+      "players": "2",
+      "label": "carts/labels/reversi.png",
+      "png": "carts/reversi.nova.png"
+    },
+    {
       "name": "royal-chess",
       "title": "Royal Chess",
       "author": "NOVA-16",
