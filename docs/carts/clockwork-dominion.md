@@ -313,6 +313,10 @@ Each step: build it, run `node tools/verify.js` (and `smoke.mjs`; `sweep.mjs` af
 
 ## 16. Open questions
 
+**Names are the user's call.** The setting is Italian: Marco (the automaton), Paulo Benedetto (the clockmaker),
+Rotella (the town) and lire are agreed. Every new name (a person, a place, an invention, a machine, a currency) is put
+to the user before it goes into the game.
+
 Defaults chosen at the kickoff that are easy to change:
 - **Hours:** about 5 to 6 hours to the end ("similar to the incremental it follows"); each act's length is a tuning
   number (step 9).
