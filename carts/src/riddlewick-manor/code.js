@@ -108,9 +108,9 @@ function wrap(s, w) {
 
 const N = 0, E = 1, S = 2, W = 3, DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
 const NONE = 0, CLOSED = 1, OPEN = 2, LOCKED = 3;   // a door's state (NONE: a wall)
-let MW = 3, MH = 3;   // the manor's size in rooms (step 1: a fixed 3 x 3 test manor)
+const MW = 7, MH = 6;   // the manor's size in rooms
 let doorsH = [], doorsV = [];   // doorsH[y * (MW - 1) + x]: between (x, y) and (x + 1, y); doorsV[y * MW + x]: (x, y) and (x, y + 1)
-let start = { x: 0, y: 2 }, goal = { x: 2, y: 0 };
+const start = { x: 0, y: MH - 1 }, goal = { x: MW - 1, y: 0 };   // the Entrance Hall, bottom left; the heart, top right
 let me = { x: 0, y: 0, f: N };   // where you are and which way you face
 let seen = new Set();   // the rooms you have seen (on the map)
 
@@ -125,23 +125,82 @@ function getDoor(x, y, d) { const r = doorRef(x, y, d); return r ? r.list[r.i] :
 function setDoor(x, y, d, v) { const r = doorRef(x, y, d); if (r) r.list[r.i] = v; }
 const roomId = (x, y) => y * MW + x;
 
-/** Step 1's test manor: 3 x 3, the start at the bottom left, the heart at the top right, two walls inside. */
-function testManor() {
-  MW = 3; MH = 3;
-  doorsH = [CLOSED, CLOSED, NONE, CLOSED, CLOSED, NONE];
-  doorsV = [CLOSED, NONE, CLOSED, CLOSED, CLOSED, CLOSED];
-  start = { x: 0, y: 2 }; goal = { x: 2, y: 0 };
+// The rooms' kinds (spec 6): a name, and the ghost who asks there. The first is the start's, the last the heart's.
+const KINDS = [
+  ['ENTRANCE HALL', 'THE BUTLER'], ['LIBRARY', 'THE LIBRARIAN'], ['GALLERY', 'THE PAINTER'], ['DINING ROOM', 'THE DUCHESS'],
+  ['KITCHEN', 'THE COOK'], ['CONSERVATORY', 'THE GARDENER'], ['MUSIC ROOM', 'THE ORGANIST'], ['NURSERY', 'THE TWINS'],
+  ['ARMOURY', 'THE KNIGHT'], ['CLOCK ROOM', 'LADY RIDDLEWICK'],
+];
+const HALL = 0, HEART = KINDS.length - 1;
+const EXTRA_DOORS = 0.3, N_KEYS = 3, N_STUBS = 2;   // the share of the maze's remaining walls that get a door; what lies about
+const ITEM_NONE = 0, ITEM_KEY = 1, ITEM_STUB = 2;
+let kinds = [], items = [];   // by room: its kind (an index into KINDS), and what lies in it
+
+/** A small seeded random number generator (mulberry32), so a run's manor can be made again from its seed (the save). */
+function seeded(seed) {
+  let a = seed >>> 0;
+  return (n) => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * n);
+  };
+}
+
+/** The manor of a seed (spec 5): a maze (a random spanning tree, so every room can be reached), a door in about 30% of
+ * its other walls (loops, other ways round), the rooms' kinds (no two neighbours alike where possible), and the keys and
+ * candle stubs, away from the start. */
+function makeManor(seed) {
+  const r = seeded(seed);
+  doorsH = new Array((MW - 1) * MH).fill(NONE); doorsV = new Array(MW * (MH - 1)).fill(NONE);
+  const inTree = new Set([roomId(start.x, start.y)]), frontier = [];
+  const addEdges = (x, y) => { for (let d = 0; d < 4; d++) if (doorRef(x, y, d)) frontier.push([x, y, d]); };
+  addEdges(start.x, start.y);
+  while (frontier.length) {   // Prim's maze: a random edge from the tree to a room not yet in it
+    const [x, y, d] = frontier.splice(r(frontier.length), 1)[0], nx = x + DX[d], ny = y + DY[d];
+    if (inTree.has(roomId(nx, ny))) continue;
+    setDoor(x, y, d, CLOSED); inTree.add(roomId(nx, ny)); addEdges(nx, ny);
+  }
+  for (const list of [doorsH, doorsV]) for (let i = 0; i < list.length; i++) if (list[i] === NONE && r(100) < EXTRA_DOORS * 100) list[i] = CLOSED;
+  kinds = [];
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+    let k, tries = 0;
+    do k = 1 + r(HEART - 1); while (tries++ < 12 && ((x > 0 && kinds[roomId(x - 1, y)] === k) || (y > 0 && kinds[roomId(x, y - 1)] === k)));
+    kinds.push(k);
+  }
+  kinds[roomId(start.x, start.y)] = HALL; kinds[roomId(goal.x, goal.y)] = HEART;
+  items = new Array(MW * MH).fill(ITEM_NONE);
+  const spots = [];
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) if (Math.abs(x - start.x) + Math.abs(y - start.y) >= 2 && !(x === goal.x && y === goal.y)) spots.push(roomId(x, y));
+  for (let i = 0; i < N_KEYS + N_STUBS; i++) items[spots.splice(r(spots.length), 1)[0]] = i < N_KEYS ? ITEM_KEY : ITEM_STUB;
+}
+
+/** Can the heart still be reached from (x, y) through doors that are closed or open (not locked)? */
+function canReach(x, y) {
+  const todo = [[x, y]], been = new Set([roomId(x, y)]);
+  while (todo.length) {
+    const [cx, cy] = todo.pop();
+    if (cx === goal.x && cy === goal.y) return true;
+    for (let d = 0; d < 4; d++) {
+      const st = getDoor(cx, cy, d), nx = cx + DX[d], ny = cy + DY[d];
+      if ((st === CLOSED || st === OPEN) && !been.has(roomId(nx, ny))) { been.add(roomId(nx, ny)); todo.push([nx, ny]); }
+    }
+  }
+  return false;
 }
 
 // ===================================================================================================================
 // A run (spec 5, 9).
 // ===================================================================================================================
 
-const LEVEL = 1;   // (step 4 adds the choice of level and subject)
+// The levels (spec 5): the candle's notches, and the questions' difficulty (and the points) are the level's number.
+const LEVELS = [{ name: 'NOVICE', candle: 6 }, { name: 'SCHOLAR', candle: 5 }, { name: 'SAGE', candle: 4 }, { name: 'MASTER', candle: 3 }];
+let level = 1;   // 1 to 4 (step 4 adds the choice of level and subject)
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let score = 0, streak = 0, asked = new Set(), answered = 0, rightCount = 0, won = false;
+let runSeed = 0, candle = 6, keys = 0, notice = '', noticeT = 0;
 let phase = 'explore', sel = 0, cur = null, walkT = 0, walkTo = null;   // sel: the door chosen, as a direction (N, E, S, W)
 
 function init() {
@@ -159,8 +218,9 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 function startGame() {
-  testManor();
+  runSeed = rndi(1, 0x3fffffff); makeManor(runSeed);
   me = { x: start.x, y: start.y, f: N }; seen = new Set([roomId(me.x, me.y)]);
+  candle = LEVELS[level - 1].candle; keys = 0; notice = ''; noticeT = 0;
   score = 0; streak = 0; asked = new Set(); answered = 0; rightCount = 0; won = false;
   phase = 'explore'; cur = null; sel = firstDoor(); paused = false; timer = 0; state = 'play';
   play(SONG.play);
@@ -183,7 +243,13 @@ function pickQuestion() {
   return { qi, order, sel: 0, door: sel, chosen: -1, right: false };
 }
 
-const pointsFor = () => 100 * LEVEL + 25 * LEVEL * Math.min(streak, 4);
+const pointsFor = () => 100 * level + 25 * level * Math.min(streak, 4);
+const winBonus = () => 1000 * level + 200 * level * candle;
+function say(s) { notice = s; noticeT = 150; }
+/** After a door locks or a key is used: if no way to the heart is left and you carry no key, a ghost gives you one. */
+function checkStuck() {
+  if (keys === 0 && !canReach(me.x, me.y)) { keys = 1; say(`${KINDS[kinds[roomId(me.x, me.y)]][1]} SLIPS YOU A KEY`); fx(SFX.point); }
+}
 
 // --- Update ---
 
@@ -209,8 +275,10 @@ function updateTitle() {
 
 function updatePlay() {
   if (pressed(START) && phase !== 'walk') { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (noticeT) noticeT--;
   if (phase === 'explore') updateExplore();
   else if (phase === 'ask') updateAsk();
+  else if (phase === 'confirm') updateConfirm();
   else if (phase === 'answered') updateAnswered();
   else if (phase === 'walk') updateWalk();
 }
@@ -226,25 +294,48 @@ function updateExplore() {
   const door = getDoor(me.x, me.y, sel);
   if (door === OPEN) walk(sel);
   else if (door === CLOSED) { cur = pickQuestion(); phase = 'ask'; timer = 0; fx(SFX.select); }
-  else if (door === LOCKED) fx(SFX.hit);   // (step 2: a key opens it)
+  else if (door === LOCKED) {
+    if (keys) { phase = 'confirm'; timer = 0; fx(SFX.select); } else { say('LOCKED FOR GOOD'); fx(SFX.hit); }
+  }
 }
 
-/** A question: UP and DOWN choose an answer, A answers. */
+/** A locked door, with a key in your pocket: A uses it, B does not. */
+function updateConfirm() {
+  if (pressed(B)) { phase = 'explore'; fx(SFX.move); return; }
+  if (!pressed(A) || timer < 6) return;
+  keys--; setDoor(me.x, me.y, sel, OPEN); checkStuck(); walk(sel);
+}
+
+/** A question: UP and DOWN choose an answer, A answers, B uses a key instead (not on the heart's last question). */
 function updateAsk() {
   if (pressed(UP)) { cur.sel = (cur.sel + 3) % 4; fx(SFX.move); }
   if (pressed(DOWN)) { cur.sel = (cur.sel + 1) % 4; fx(SFX.move); }
-  if (!pressed(A) || timer < 10) return;
+  if (timer < 10) return;
+  if (pressed(B) && !cur.final) {
+    if (!keys) { say('YOU HAVE NO KEY'); fx(SFX.hit); return; }
+    keys--; asked.delete(cur.qi); setDoor(me.x, me.y, cur.door, OPEN); checkStuck();
+    const d = cur.door; cur = null; walk(d); return;
+  }
+  if (!pressed(A)) return;
   cur.chosen = cur.sel; cur.right = cur.order[cur.sel] === 0; answered++;
-  if (cur.right) { score += pointsFor(); streak++; rightCount++; setDoor(me.x, me.y, cur.door, OPEN); fx(SFX.point); }
-  else { streak = 0; setDoor(me.x, me.y, cur.door, LOCKED); fx(SFX.hit); }
+  if (cur.right) {
+    score += pointsFor(); streak++; rightCount++; fx(SFX.point);
+    if (cur.final) score += winBonus(); else setDoor(me.x, me.y, cur.door, OPEN);
+  } else {
+    streak = 0; candle--; fx(SFX.hit);
+    if (!cur.final) { setDoor(me.x, me.y, cur.door, LOCKED); if (candle > 0) checkStuck(); }
+  }
   phase = 'answered'; timer = 0;
 }
 
-/** The answer shown for a moment (the right one lit), then through the door, or back to the room. */
+/** The answer shown for a moment (the right one lit), then through the door, or back to the room; the run's end. */
 function updateAnswered() {
   if (timer < 50 && !(timer > 15 && pressed(A))) return;
-  const door = cur.door, right = cur.right;
+  const { door, right, final } = cur;
   cur = null; phase = 'explore';
+  if (final && right) { won = true; gameOver(); return; }
+  if (candle <= 0) { gameOver(); return; }
+  if (final) { cur = { ...pickQuestion(), final: true }; phase = 'ask'; timer = 0; return; }   // the heart asks again
   if (right) walk(door); else sel = firstDoor();
 }
 
@@ -255,11 +346,25 @@ function updateWalk() {
   if (walkT === 12) {
     me = { x: me.x + DX[walkTo], y: me.y + DY[walkTo], f: walkTo };
     seen.add(roomId(me.x, me.y)); sel = firstDoor();
+    pickUp();
   }
   if (walkT >= 24) {
     phase = 'explore'; brightness(15);
-    if (me.x === goal.x && me.y === goal.y) { won = true; gameOver(); }
+    if (me.x === goal.x && me.y === goal.y) {   // the heart: its keeper's last question
+      cur = { ...pickQuestion(), final: true }; phase = 'ask'; timer = 0;
+      say('LADY RIDDLEWICK HAS ONE LAST QUESTION');
+    }
   } else brightness(Math.round(Math.abs(walkT - 12) * 15 / 12));
+}
+
+/** What lies in the room you walk into: a key (always taken), a candle stub (taken if the candle is not full). */
+function pickUp() {
+  const r = roomId(me.x, me.y), it = items[r];
+  if (it === ITEM_KEY) { keys++; items[r] = ITEM_NONE; say('YOU FIND A SKELETON KEY'); fx(SFX.point); }
+  else if (it === ITEM_STUB) {
+    if (candle < LEVELS[level - 1].candle) { candle++; items[r] = ITEM_NONE; say('A CANDLE STUB: YOUR CANDLE GROWS'); fx(SFX.point); }
+    else say('A CANDLE STUB (YOUR CANDLE IS FULL)');
+  }
 }
 
 function gameOver() {
@@ -360,18 +465,30 @@ function drawRoom() {
   }
 }
 
-/** The panel while exploring: the map, the score, how to play. */
+/** The panel while exploring: the map, the room's name, the candle, the keys, the score, and what A does. */
 function drawPanel() {
   rectfill(0, VIEW_H, 256, 224 - VIEW_H, SHADOW);
   line(0, VIEW_H, 255, VIEW_H, PANEL);
-  drawMap(8, VIEW_H + 8, 12);
-  txt(`SCORE ${score}`, 96, VIEW_H + 10, WHITE);
-  txt(`ANSWERED ${rightCount}/${answered}`, 96, VIEW_H + 24, DIM);
-  if (state === 'play' && phase === 'explore') {
-    const st = getDoor(me.x, me.y, sel);
-    txt(st === OPEN ? 'A: GO THROUGH' : st === LOCKED ? 'LOCKED' : 'A: KNOCK', 96, VIEW_H + 52, st === LOCKED ? RED : GOLD);
-    txt('D-PAD: CHOOSE A DOOR', 96, VIEW_H + 66, DIM);
-  }
+  drawMap(6, VIEW_H + 12, 10);
+  txt(KINDS[kinds[roomId(me.x, me.y)]][0], 84, VIEW_H + 6, GOLD);
+  drawCandle(84, VIEW_H + 20);
+  txt(`KEYS ${keys}`, 196, VIEW_H + 20, keys ? WHITE : DIM);
+  txt(`SCORE ${score}`, 84, VIEW_H + 34, WHITE);
+  if (noticeT) txt(notice.length > 21 ? notice.slice(0, 21) : notice, 84, VIEW_H + 50, CYAN);
+  if (noticeT && notice.length > 21) txt(notice.slice(21).trim(), 84, VIEW_H + 60, CYAN);
+  if (state !== 'play') return;
+  if (phase === 'confirm') { txt('USE A KEY? A: YES  B: NO', 84, VIEW_H + 74, GOLD); return; }
+  if (phase !== 'explore') return;
+  const st = getDoor(me.x, me.y, sel);
+  txt(st === OPEN ? 'A: GO THROUGH' : st === LOCKED ? (keys ? 'A: USE A KEY' : 'LOCKED') : 'A: KNOCK', 84, VIEW_H + 74, st === LOCKED && !keys ? RED : GOLD);
+}
+
+/** The candle: its notches left of the level's full candle, with a flame on top while it burns. */
+function drawCandle(x, y) {
+  const full = LEVELS[level - 1].candle;
+  txt('CANDLE', x, y, DIM);
+  for (let i = 0; i < full; i++) rectfill(x + 52 + i * 9, y + 1, 7, 6, i < candle ? WHITE : PANEL);
+  if (candle > 0) circfill(x + 52 + (candle - 1) * 9 + 3, y - 2, 1 + (flr(clock / 6) % 2), GOLD);
 }
 
 /** The map: the rooms you have seen, their doors (open: a gap; locked: red), the heart (gold) and you (an arrow). */
@@ -391,22 +508,27 @@ function drawMap(x0, y0, c) {
   rectfill(mx - 1, my - 1, 2, 2, WHITE); line(mx, my, mx + DX[me.f] * 3, my + DY[me.f] * 3, WHITE);
 }
 
-/** A question: its ghost (a placeholder) in the room, the question, and the four answers, one lit. */
+/** A question: its ghost (a placeholder) in the room, who asks, the question, and the four answers, one lit. */
 function drawQuestion() {
-  const q = QUESTIONS[cur.qi];
+  const q = QUESTIONS[cur.qi], kind = kinds[roomId(me.x, me.y)];
   circfill(128, 54, 16, 15); rectfill(112, 54, 33, 26, 15);   // the ghost (the art pass draws them)
   for (let i = 0; i < 4; i++) circfill(116 + i * 8, 80, 4, 15);
   circfill(122, 50, 2, SHADOW); circfill(134, 50, 2, SHADOW);
   panel(0, 112, 256, 112);
-  wrap(q.q, Q_LINE).forEach((l, i) => txt(l, 8, 118 + i * 11, WHITE));
+  if (phase === 'ask') txt(cur.final ? 'LADY RIDDLEWICK ASKS:' : `${KINDS[kind][1]} ASKS:`, 8, 117, cur.final ? GOLD : CYAN);
+  if (phase === 'ask' && keys && !cur.final) txt(`B: KEY (${keys})`, 248 - 8 * (8 + String(keys).length), 117, DIM);
+  wrap(q.q, Q_LINE).forEach((l, i) => txt(l, 8, 130 + i * 11, WHITE));
   cur.order.forEach((a, i) => {
-    const y = 160 + i * 14, isRight = a === 0;
+    const y = 167 + i * 13, isRight = a === 0;
     let c = i === cur.sel ? GOLD : WHITE;
     if (phase === 'answered') c = isRight ? GREEN : i === cur.chosen ? RED : DIM;
-    if (phase === 'ask' && i === cur.sel) rectfill(4, y - 3, 248, 13, PANEL);
+    if (phase === 'ask' && i === cur.sel) rectfill(4, y - 3, 248, 12, PANEL);
     txt(`${'ABCD'[i]}  ${q.ans[a]}`, 12, y, c);
   });
-  if (phase === 'answered') txt(cur.right ? 'RIGHT! THE DOOR OPENS' : 'WRONG! THE DOOR LOCKS', 8, 149, cur.right ? GREEN : RED);
+  if (phase === 'answered') {
+    const msg = cur.right ? (cur.final ? 'RIGHT! THE MANOR IS YOURS' : 'RIGHT! THE DOOR OPENS') : candle <= 0 ? 'WRONG! YOUR CANDLE GOES OUT' : cur.final ? 'WRONG! YOUR CANDLE BURNS' : 'WRONG! THE DOOR LOCKS';
+    txt(msg, 8, 117, cur.right ? GREEN : RED);
+  }
 }
 
 function drawEnd() {

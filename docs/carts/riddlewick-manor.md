@@ -1,8 +1,9 @@
 # Riddlewick Manor: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 1 of 8 built (section 15): the vertical slice, a 3 × 3 test manor with knocking, questions, doors
-that open or lock, walking and the map. Step 2 (the real manor, the candle and the keys) is next.
+**Status:** Steps 1 and 2 of 8 built (section 15): a manor made anew each run, knocking, questions, doors that open
+or lock, the candle, keys and stubs, the heart's last question, winning and losing. Step 3 (the question bank and its
+first 160 questions) is next.
 **Cart source:** `carts/src/riddlewick-manor/` → `carts/riddlewick-manor.nova`
 
 ---
@@ -246,6 +247,32 @@ The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit,
        run is then stuck (5 of 8 runs at `skill` 0.5 and 0.8).
 2. **The manor:** the generated 7 × 6 manor (a maze with loops, from the seed), facing and turning, the candle, keys and
    candle stubs, never stuck, the heart's last question, winning and losing, the scoring.
+   - **Built:**
+     - **`makeManor(seed)`:** Prim's maze from the start (a random spanning tree, so every room is reachable), then a
+       door in 30% of the other walls (`EXTRA_DOORS`); the rooms' kinds (no two neighbours alike, retrying up to 12
+       times); 3 keys and 2 stubs in rooms at least 2 doors' walk from the start, never the heart. Its own small random
+       number generator (mulberry32), so a saved run's seed makes the same manor again (step 4).
+     - **The candle** (`LEVELS`): a wrong answer burns a notch, the last one ends the run. A stub adds one, and stays in
+       its room while the candle is full.
+     - **Keys:** picked up on entering; B when a ghost asks uses one (the door opens, nothing scored or burnt, the
+       question goes back in the pool); A on a locked door asks `USE A KEY? A: YES B: NO`.
+     - **Never stuck** (`checkStuck`, after a door locks or a key is used): when the heart cannot be reached through
+       closed or open doors and you carry no key, the room's ghost gives you one (`THE BUTLER SLIPS YOU A KEY`).
+     - **The heart:** walking in, Lady Riddlewick asks a last question (a key cannot answer it); wrong burns a notch and
+       she asks another; right wins, with the bonus (section 9).
+     - **The panel:** the room's name, the candle's notches with a flame, the keys, the score, notices, and what A does;
+       the question panel says who asks, and `B: KEY (n)` when you carry one.
+   - **Results:**
+     - `node tools/verify.js riddlewick-manor` passes, with 74 test checks. New: `04-manor.mjs`, 29 checks:
+       - the manor over 40 seeds: connected, 28% extra doors, the kinds, the items, each seed different and the same
+         seed the same, neighbours rarely alike (0 of 71 pairs in one seed);
+       - the candle; keys (picking up, B on a question, a locked door's prompt); stubs; never stuck, and no key given
+         while the heart can be reached;
+       - the heart's last question, winning, and the scores at levels 1 and 3.
+     - `03-slice.mjs` and `01-flow.mjs` set the doors they need, as the manor is no longer fixed.
+     - `node tools/devkit/smoke.mjs riddlewick-manor` runs in the real console with no errors.
+     - The bot now plans the route with the fewest questions to the heart (it knows the plan). Its sweep's numbers
+       by `skill` are added below when the sweep finishes.
 3. **The question bank:** the format of the questions' text file, the script that checks and packs it into ROM, the drawing rules
    (subject, level, no repeats within and across runs), and the first 160 questions (5 per subject per difficulty).
 4. **The flow:** the title, the new game's choices, saving and CONTINUE, the pause, the end screen, initials and the top

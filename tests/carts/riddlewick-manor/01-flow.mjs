@@ -1,6 +1,6 @@
 // Riddlewick Manor: the frame (title, pause, the end, initials, records, saves) and its sound cues.
 // One PASS/FAIL line for each behaviour, written as a sentence.
-import { newGame, M, sfxLog, musicLog } from './lib.mjs';
+import { newGame, M, sfxLog, musicLog, answer } from './lib.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 
@@ -26,10 +26,10 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 
 // 3. The end, the top 10 and initials.
 {
-  const vm = newGame(3), p = vm.probe(); vm.run(2); p.score = 120; musicLog(vm);
+  const vm = newGame(3), p = vm.probe(); vm.run(2); p.score = 0; musicLog(vm);
   p.me = { x: p.goal.x, y: p.goal.y + 1, f: p.N }; p.setDoor(p.goal.x, p.goal.y + 1, p.N, p.OPEN); p.sel = p.N;
-  vm.press('A'); vm.run(30);
-  ok(p.state === 'over' && p.won && p.rank === 0, 'walking into the heart of the manor ends the run as a win, and a score in the top 10 gets a rank', `rank ${p.rank}`);
+  vm.press('A'); vm.run(30); answer(vm, p, true); vm.run(5);   // into the heart, and its last question
+  ok(p.state === 'over' && p.won && p.rank === 0, 'answering the heart\'s last question ends the run as a win, and a score in the top 10 gets a rank', `rank ${p.rank}`);
   ok(musicLog(vm).includes(-1), 'the game song stops');
   vm.run(70); vm.press('A');
   ok(p.state === 'initials', 'A asks for initials');
@@ -37,8 +37,8 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('UP'); vm.press('RIGHT'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT'); vm.press('DOWN'); vm.press('START');
   ok(p.state === 'records', 'START saves them and shows the records');
   const e = p.topTen()[0];
-  ok(e.score === 120 && e.initials === 'BC9', 'the score is saved with the initials as typed (UP is the next letter, DOWN from A wraps to 9)', `${e.score} ${e.initials}`);
-  ok(vm.m.save[p.TOP_SLOT] === 120, 'in the save slots');
+  ok(e.score === p.score && e.initials === 'BC9', 'the score is saved with the initials as typed (UP is the next letter, DOWN from A wraps to 9)', `${e.score} ${e.initials}`);
+  ok(vm.m.save[p.TOP_SLOT] === p.score, 'in the save slots');
 }
 {
   const vm = newGame(4), p = vm.probe();
