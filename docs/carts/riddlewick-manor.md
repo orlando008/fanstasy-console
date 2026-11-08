@@ -4,7 +4,7 @@
 **Status:** Steps 1 to 6 of 8 built (section 15): a manor made anew each run, knocking, questions, doors that open
 or lock, the candle, keys and stubs, the heart's last question, winning and losing, the full bank of 640 questions drawn
 by subject and level, the title and the new game's choices, the run saved as you go (CONTINUE), the records, and the
-art. Step 7 (the audio) is next.
+art and the audio. Step 8 (balance, polish and release) is next.
 **Cart source:** `carts/src/riddlewick-manor/` → `carts/riddlewick-manor.nova`
 
 ---
@@ -164,22 +164,37 @@ One mode: a run through the manor, at a chosen subject and level.
 
 ## 11. Audio
 
-Spooky classics in the public domain, arranged softly so you can think, read from public domain or CC0 engravings and
-recorded in a sources file beside the cart's scores, as the other games do (chosen in step 7: candidates are Saint-Saëns's *Danse
-macabre*, Bach's *Toccata and Fugue in D minor*, Mussorgsky's *Night on Bald Mountain*, Chopin's funeral march). Songs
-on channels 0 to 5, effects on 6 and 7.
+Spooky classics in the public domain, read from public domain engravings and recorded in
+`carts/src/riddlewick-manor/scores/SOURCES.md` (`scores.py` reads the MIDI files into note text; `audio.py` arranges
+it), played softly so you can think. Songs on channels 0 to 4, effects on 6 and 7. No drums.
 
-| Song | Where |
-|---|---|
-| 0 | The title and the menus |
-| 1 | Exploring the manor |
-| 2 | The end (a win and a loss share it, or two short cues) |
+| Song | Where | Piece | Arrangement |
+|---|---|---|---|
+| 0 | The title and the menus | Bach, *Toccata and Fugue in D minor*, the toccata's opening (bars 1 to 11), speed 3 (35 s) | the mordents and runs plucked, harpsichord-like (quick enough for its 64th notes), the left hand an octave down, the line held softly on strings like an organ, the chords on a choir; a hall's echo |
+| 1 | Exploring the manor | Beethoven, the *Moonlight Sonata*, first movement (bars 1 to 21, in D minor as engraved for two guitars), speed 18 (77 s) | the triplets on a soft electric piano, the melody on a quiet flute, the bass on strings; a room's echo |
 
-Effects: a knock, a door creaking open, a lock's clunk, a right answer's chime, a wrong answer's ghostly sigh, the candle
-guttering, a key's jingle, footsteps, the cursor's tick, and the win's fanfare.
+The end has no song of its own: a fanfare when you win, falling strings when the candle goes out, then the title's song
+with the records.
+
+| # | Effect | Sound |
+|---|---|---|
+| 0 | the cursor | a marimba tick |
+| 1 | select | two soft bells up |
+| 2 | pause | two soft bells down |
+| 3 | a knock | two raps on a tom |
+| 4 | footsteps, walking through a door | two soft taps |
+| 5 | a lock's clunk (a wrong answer's door, or a locked door with no key) | a low thud |
+| 6 | a right answer | a rising chime |
+| 7 | a wrong answer | a falling, ghostly sigh (choir) |
+| 8 | a key found, given or used | a jingle |
+| 9 | a candle stub | a warm rise |
+| 10 | the heart won | a fanfare on a soft horn |
+| 11 | the candle out | falling strings |
+| 12 | a record (initials) | three bells up |
+| 13 | a ghost appears | a rising whoo (choir) |
 
 Levels follow the playbook: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x
-where it enters (`node tools/devkit/music/loud.mjs carts/riddlewick-manor.nova --check`; playbook section 5).
+where it enters, no piercing (`node tools/devkit/music/loud.mjs carts/riddlewick-manor.nova --check`; playbook section 5).
 
 ## 12. Video layers
 
@@ -233,7 +248,7 @@ writes `rom/rooms.bin`: each kind's 15 colours for palette 1.
 | ROM | The question bank: 55 KB of the 128 KB (640 questions, built) |
 | Tiles | 864 of 1,024 (built): 745 background (the room about 260, the panel about 35, the doors about 50, the furniture about 200, the title about 200) and 119 sprite tiles (the ghost's two frames, ten props, the arrow, padlock, candle and key) |
 | Sprites | At most 8 at once (a ghost, its prop, three padlocks, keys) |
-| Songs / SFX | 3 songs, about 12 effects |
+| Songs / SFX | 2 songs (15 patterns), 14 effects, 11.5 KB of samples |
 
 ## 15. Implementation plan
 
@@ -384,6 +399,28 @@ writes `rom/rooms.bin`: each kind's 15 colours for palette 1.
      - `node tools/devkit/art/colors.mjs carts/riddlewick-manor.nova --check`: within the limits.
      - `node tools/devkit/smoke.mjs riddlewick-manor` runs in the real console with no errors.
 7. **The audio:** the three songs from their sources and the effects (11), measured with `loud.mjs`.
+   - **Built:**
+     - **The pieces:** Bach's *Toccata and Fugue in D minor* for the title, and the *Moonlight Sonata*'s first movement
+       for exploring, both Mutopia engravings in the public domain (`scores/SOURCES.md`). *Night on Bald Mountain*
+       (CC BY) and the Moonlight's piano engraving (no licence given) were left out; no public domain *Danse macabre*
+       was found. So the end has two short cues instead of a third song.
+     - **`scores.py`** (from Royal Chess's) with `tune_low`: the guitar duo's second part holds both the bass and the
+       melody, so the tune is its notes from G3 up.
+     - **The toccata's arrangement** took four tries: on a flute and strings its 64th-note runs were swallowed by the
+       strings' slow attack and the lead stood out alone (1.28, then 1.38 of the mix); plucked, with the line held softly
+       on strings under it, it passes (0.65).
+     - **The effects** (section 11), with their cues in `code.js`: a knock and the ghost's whoo, the chime or the sigh and
+       the lock's clunk, footsteps, the key's jingle, the stub, the fanfare and the falling strings.
+   - **Results:**
+     - `loud.mjs --check`: both songs within the limits.
+       - The toccata: median 0.032, its lead 0.014 (0.65 of the mix), loudest section 1.30x, pierce 0.0014.
+       - The Moonlight: median 0.039, its lead 0.028 (0.68 of the mix), entrance 1.16x, pierce 0.0006.
+     - `clash.py`: ten in the toccata, the E against B flat of its diminished chords (Bach's), and seven passing notes in
+       the Moonlight; kept as written.
+     - `sfx.mjs`: the effects measure 0.009 (the tick) to 0.035 RMS (the knock).
+     - `node tools/verify.js riddlewick-manor` passes, with 136 test checks. New: `07-audio.mjs`, 14 checks: each
+       moment's effect, on an effects channel, and the two songs' places.
+     - `node tools/devkit/smoke.mjs riddlewick-manor` runs in the real console with no errors.
 8. **Balance, polish and release:** a bot plays runs at each level with a chosen share of right answers (how often a
    run is won, how long it takes), then the label, the PNG cart and the Library (`node tools/release.js
    riddlewick-manor`) and a README row.

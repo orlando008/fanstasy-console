@@ -30,7 +30,8 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 // --- Sound (SPEC 5). Any channel plays any instrument. Songs use channels 0 to 5; effects take turns on 6 and 7, ---
 // so they never cut into the music and two can sound at once.
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
+// The effects (spec 11), in the order audio.py makes them.
+const SFX = { move: 0, select: 1, pause: 2, knock: 3, step: 4, locked: 5, right: 6, wrong: 7, key: 8, stub: 9, win: 10, lose: 11, record: 12, ghost: 13 };
 const SONG = { title: 0, play: 1 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
@@ -275,7 +276,7 @@ const winBonus = () => 1000 * level + 200 * level * candle;
 function say(s) { notice = s; noticeT = 150; }
 /** After a door locks or a key is used: if no way to the heart is left and you carry no key, a ghost gives you one. */
 function checkStuck() {
-  if (keys === 0 && !canReach(me.x, me.y)) { keys = 1; say(`${KINDS[kinds[roomId(me.x, me.y)]][1]} SLIPS YOU A KEY`); fx(SFX.point); }
+  if (keys === 0 && !canReach(me.x, me.y)) { keys = 1; say(`${KINDS[kinds[roomId(me.x, me.y)]][1]} SLIPS YOU A KEY`); fx(SFX.key); }
 }
 
 // --- Update ---
@@ -382,9 +383,9 @@ function updateExplore() {
   if (!pressed(A)) return;
   const door = getDoor(me.x, me.y, sel);
   if (door === OPEN) walk(sel);
-  else if (door === CLOSED) { cur = pickQuestion(); phase = 'ask'; timer = 0; fx(SFX.select); }
+  else if (door === CLOSED) { cur = pickQuestion(); phase = 'ask'; timer = 0; fx(SFX.knock); fx(SFX.ghost); }
   else if (door === LOCKED) {
-    if (keys) { phase = 'confirm'; timer = 0; fx(SFX.select); } else { say('LOCKED FOR GOOD'); fx(SFX.hit); }
+    if (keys) { phase = 'confirm'; timer = 0; fx(SFX.select); } else { say('LOCKED FOR GOOD'); fx(SFX.locked); }
   }
 }
 
@@ -392,7 +393,7 @@ function updateExplore() {
 function updateConfirm() {
   if (pressed(B)) { phase = 'explore'; fx(SFX.move); return; }
   if (!pressed(A) || timer < 6) return;
-  keys--; setDoor(me.x, me.y, sel, OPEN); checkStuck(); walk(sel);
+  keys--; setDoor(me.x, me.y, sel, OPEN); checkStuck(); fx(SFX.key); walk(sel);
 }
 
 /** A question: UP and DOWN choose an answer, A answers, B uses a key instead (not on the heart's last question). */
@@ -401,17 +402,17 @@ function updateAsk() {
   if (pressed(DOWN)) { cur.sel = (cur.sel + 1) % 4; fx(SFX.move); }
   if (timer < 10) return;
   if (pressed(B) && !cur.final) {
-    if (!keys) { say('YOU HAVE NO KEY'); fx(SFX.hit); return; }
-    keys--; asked.delete(cur.qi); setDoor(me.x, me.y, cur.door, OPEN); checkStuck();
+    if (!keys) { say('YOU HAVE NO KEY'); fx(SFX.locked); return; }
+    keys--; asked.delete(cur.qi); setDoor(me.x, me.y, cur.door, OPEN); checkStuck(); fx(SFX.key);
     const d = cur.door; cur = null; walk(d); return;
   }
   if (!pressed(A)) return;
   cur.chosen = cur.sel; cur.right = cur.order[cur.sel] === 0; answered++;
   if (cur.right) {
-    score += pointsFor(); streak++; rightCount++; fx(SFX.point);
+    score += pointsFor(); streak++; rightCount++; fx(SFX.right);
     if (cur.final) score += winBonus(); else setDoor(me.x, me.y, cur.door, OPEN);
   } else {
-    streak = 0; candle--; fx(SFX.hit);
+    streak = 0; candle--; fx(SFX.wrong); if (!cur.final) fx(SFX.locked);
     if (!cur.final) { setDoor(me.x, me.y, cur.door, LOCKED); if (candle > 0) checkStuck(); }
   }
   phase = 'answered'; timer = 0;
@@ -428,7 +429,7 @@ function updateAnswered() {
   if (right) walk(door); else sel = firstDoor();
 }
 
-function walk(d) { phase = 'walk'; walkT = 0; walkTo = d; fx(SFX.select); }
+function walk(d) { phase = 'walk'; walkT = 0; walkTo = d; fx(SFX.step); }
 /** Through the door: the screen dims, you are in the next room facing the way you walked, and it brightens. */
 function updateWalk() {
   walkT++;
@@ -440,7 +441,7 @@ function updateWalk() {
   if (walkT >= 24) {
     phase = 'explore'; brightness(15);
     if (me.x === goal.x && me.y === goal.y) {   // the heart: its keeper's last question
-      cur = { ...pickQuestion(), final: true }; phase = 'ask'; timer = 0;
+      cur = { ...pickQuestion(), final: true }; phase = 'ask'; timer = 0; fx(SFX.ghost);
       say('LADY RIDDLEWICK HAS ONE LAST QUESTION');
     }
   } else brightness(Math.round(Math.abs(walkT - 12) * 15 / 12));
@@ -449,15 +450,15 @@ function updateWalk() {
 /** What lies in the room you walk into: a key (always taken), a candle stub (taken if the candle is not full). */
 function pickUp() {
   const r = roomId(me.x, me.y), it = items[r];
-  if (it === ITEM_KEY) { keys++; items[r] = ITEM_NONE; say('YOU FIND A SKELETON KEY'); fx(SFX.point); }
+  if (it === ITEM_KEY) { keys++; items[r] = ITEM_NONE; say('YOU FIND A SKELETON KEY'); fx(SFX.key); }
   else if (it === ITEM_STUB) {
-    if (candle < LEVELS[level - 1].candle) { candle++; items[r] = ITEM_NONE; say('A CANDLE STUB: YOUR CANDLE GROWS'); fx(SFX.point); }
+    if (candle < LEVELS[level - 1].candle) { candle++; items[r] = ITEM_NONE; say('A CANDLE STUB: YOUR CANDLE GROWS'); fx(SFX.stub); }
     else say('A CANDLE STUB (YOUR CANDLE IS FULL)');
   }
 }
 
 function gameOver() {
-  state = 'over'; timer = 0; play(-1); fx(SFX.over); brightness(15);
+  state = 'over'; timer = 0; play(-1); fx(won ? SFX.win : SFX.lose); brightness(15);
   clearRun();
   rank = insertTop({ score, initials: lastInitials(), level, subject });
 }
