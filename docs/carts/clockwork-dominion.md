@@ -1,7 +1,7 @@
 # Clockwork Dominion: Cart Specification
 
-**Version:** 0.1 (the design, agreed at the kickoff)
-**Status:** Scaffolded: the starter's frame works and the design below is agreed; step 1 of the plan (section 15) is next
+**Version:** 0.2 (step 1 of 10)
+**Status:** In progress: step 1 of the plan (section 15) is built (the engine and Act I's first minutes); step 2 is next
 **Cart source:** `carts/src/clockwork-dominion/` → `carts/clockwork-dominion.nova`
 
 ---
@@ -71,15 +71,16 @@ shown dim, and pressing it gives a soft "no" click and says why on the hint line
 ## 4. Screen layout
 
 256 × 224. The system font is 8 × 8 (32 columns), too big for panels full of numbers, so the panels use the cart's
-own **ledger font**: 5 × 7 letters with a 6 px advance (42 columns, 9 px rows), drawn into the overlay only when a
-panel's text changes (the overlay keeps what is drawn until `cls()`). Headings and cinematics use the system font.
+own **ledger font** (`rom/font.bin`, drawn by `book.py`): letters 1 to 5 px wide (most 4) and 7 px tall, with
+descenders 2 px below, so about 50 letters fit across. Rows are 10 px apart. The overlay is drawn afresh each frame
+(under 1 ms). Headings, the headline counters and cinematics use the system font.
 
 | Rows (px) | What |
 |---|---|
-| 0–95 | **The view:** a picture of where the story is, alive: the workbench and Pip, the tinkers at work, the town outside the window filling with cogs; later the world turning (Mode 7) and the orrery of stars. It reacts to what you do (a cog drops when you make one, a new tinker walks in). In a cinematic it grows to the whole screen |
-| 96–107 | **The tabs:** ◄ WORKSHOP ► MIND INVENT ...; the current one lit, one with something new marked with a dot |
-| 108–197 | **The panel:** 10 rows of the ledger font: the counters at the top, then the rows to press, the chosen one marked `>`; the hint line at the bottom (the cost, what it does, or why not) |
-| 198–223 | **The log:** the last three lines of the story, the newest typing itself in |
+| 0–91 | **The view:** a picture of where the story is, alive: the workbench and Pip, the tinkers at work, the town outside the window filling with cogs; later the world turning (Mode 7) and the orrery of stars. It reacts to what you do (a cog drops when you make one, a new tinker walks in). In a cinematic it grows to the whole screen |
+| 92–103 | **The tabs:** ◄ WORKSHOP ► HELPERS ...; the current one lit |
+| 104–193 | **The panel:** the cogs made (brass, system font) and the coin (green) at the top; the tab's counters on one line; up to 5 rows to press, the chosen one on a bar and marked `>`, the value or cost on the right (scrolling when there are more); the hint line at the bottom (what the row does, or why not, in red) |
+| 194–223 | **The log:** the last three lines of the story, the newest typing itself in (2 letters a frame) |
 
 The headline counter, **COGS MADE** (every cog ever made in the run), stays in the top left of every panel.
 
@@ -99,12 +100,12 @@ BILLION and so on by name to DECILLION, then 1.2E36 style. Money is shown with `
 | Quantity | Value |
 |---|---|
 | A cog | uses 1 oz of brass |
-| Pip's hand (B) | 1 cog a press |
+| Pip's hand (B) | 1 cog a press; held, 4 a second (A on MAKE A COG does the same) |
 | Brass | starts at 1,000 oz; bought by the spool of 1,000 oz; the price starts at $15, rises $1.50 with each spool bought and falls back towards the market's price at 3% a second; the market's price drifts between $12 and $24 over a 6-minute market day (the merchant's cart in the view) |
-| Price per cog | starts at $0.25, changed in steps of $0.01 (◄ ►) |
+| Price per cog | starts at $0.25, changed in steps of $0.01 (◄ ►), from $0.01 to $99.99 |
 | Sales | cogs sold a second = 3 × 1.3^(sign − 1) × boosts × (0.25 / price)^1.6, at most the cogs in stock |
 | The shop sign (reputation) | level 1 to 30; the next level costs $100 × 2^(level − 1) |
-| Tinkers | each makes 1 cog a second; the next costs $5 × 1.12^tinkers |
+| Tinkers (the HELPERS tab, from 20 cogs made) | each makes 1 cog a second; the next costs $5 × 1.12^tinkers |
 | Workbenches (an invention) | each makes 40 cogs a second; the next costs $1,000 × 1.08^benches |
 | Hollis's trust | starts at 2; +1 at each of 2,000, 3,000, 5,000, 8,000, 13,000... cogs made (the Fibonacci numbers × 1,000), and from some inventions |
 | Escapements and barrels | each trust fits one to Pip's head: an escapement thinks 10 insight a second, a barrel holds 1,000 more insight (Pip starts with 1 of each) |
@@ -239,10 +240,12 @@ Doubles are kept in two slots each (their 64 bits as two int32).
 | 2 | A run is saved (1); its act (1 to 4, 4 the end) |
 | 3–4 | The run's play time, in frames (a double) |
 | 5 | The seed |
-| 6–9 | Settings (music, effects), the tab and row, the log's position |
-| 10–129 | The run's numbers: up to 60 doubles (cogs, coin, brass, ore, tension, machines, sliders, the Rust...) |
-| 130–161 | Inventions made (a bit each, 1,024 at most) |
-| 162–169 | Inventions given by the cycles; the changed rule |
+| 6 | Settings: effects (bit 0), music (bit 1), set (bit 2) |
+| 7 | The tab and row (8 bits each) |
+| 10–129 | The run's numbers: up to 60 doubles, in the order of `SAVE_KEYS` in `code.js` (new ones only at its end) |
+| 130–137 | Inventions made (a bit each, 256 at most) |
+| 138–153 | The story lines told (a bit each, 512 at most) |
+| 154–169 | Inventions given by the cycles; the changed rule |
 | 170–209 | This run's milestones: the play time of each, in seconds |
 | 210–249 | Across cycles: the best time to each milestone, the endings seen, the cogs made in all |
 | 250–255 | Reserved |
@@ -267,6 +270,26 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
 1. **The engine and the first minutes:** the simulation (`sim.step`, headless, with its own tests), the ledger font,
    the tabs, the cursor and the hint line, the log; Act I's start (the hand, brass, the price and sales, the sign,
    tinkers); saving and CONTINUE; a placeholder view.
+   - **Built:** `code.js` from scratch on the starter's frame:
+     - the simulation `step(dt)` over the run's state `G`, with the numbers in `T` (section 5);
+     - the actions in `ACT` (the hand, the price, brass, the sign, a tinker), which the panel's rows, B, the bot and
+       the tests all call;
+     - the panels as data (`TABS`: each tab's counters and rows, with a value, a cost, whether it can be done and a hint);
+     - the ledger font and the story read from the ROM, made by `book.py` (the glyphs, and `story.txt`'s 19 opening
+       lines, each told once when its trigger holds);
+     - the log (typing in) and the full log (SELECT);
+     - the save (doubles in two slots, every 10 s and at START);
+     - the title (CONTINUE, NEW STORY, which asks first over a saved story);
+     - the pause menu (RESUME, THE STORY SO FAR, MUSIC, EFFECTS, SAVE AND QUIT; the settings saved).
+
+     `art.py` makes a placeholder view (the wall in lamplight, a scanline gradient; the bench; Pip, a cog, a tinker) and
+     the panel's ink colours (113 and up). The starter's sounds stand in for now (step 8).
+   - **Results:** 70 checks in `01-flow`, `02-art` and `03-workshop` (the spec's numbers: 3 a second at $0.25, the
+     price's power 1.6, the sign's 30%, spools $15 + $1.50, the market from $12 to $24, tinkers $5 × 1.12^n; every
+     saved number round-trips exactly; every row and hint fits with big numbers). The soak (20,000 frames × 2) is
+     clean, 0.8 ms at the 99th percentile; `smoke.mjs` runs at 60 fps with no errors. The bot (B every 8 frames, cheap
+     tinkers, spools before the brass runs out, the price down while stock piles up) reaches 5,000 cogs in 4.4 minutes;
+     without the hand it cannot begin, as intended. Code 19.9 KB (stripped), ROM 2.8 KB, PNG payload 17%.
 2. **Act I whole:** trust, the mind (escapements, barrels, insight), the inventions engine reading the ROM, Act I's
    inventions, workbenches, the Guild Bank, the gear riddles and cleverness, milestones, Act I's story, THE LAST
    WINDING and WIND THE TOWN.

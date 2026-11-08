@@ -1,68 +1,86 @@
-// Clockwork Dominion: the frame (title, play, pause, game over, initials, records, saves) and its sound cues.
-// One PASS/FAIL line for each behaviour, written as a sentence. Add a file for each step of the build (02-..., 03-...).
-import { newGame, M, sfxLog, musicLog } from './lib.mjs';
-let fails = 0;
-const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
+// Clockwork Dominion: the frame. The title, a new story and CONTINUE, the panels and their tabs, the pause menu and
+// its settings, the full log, and quick frames. One PASS/FAIL line for each behaviour.
+import { newGame, M, sfxLog, musicLog, ok } from './lib.mjs';
 
-// 1. The title and its menu.
+// 1. The title: a new story, and CONTINUE once one is saved.
 {
   const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3);
   ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
-  vm.press('DOWN'); ok(p.titleSel === 1, 'DOWN moves down the menu'); vm.press('UP'); ok(p.titleSel === 0, 'and UP back');
-  vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
-  vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
-  sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
+  ok(!p.hasRun(), 'with no story saved, the only choice is NEW STORY');
+  vm.press('A'); vm.run(2);
+  ok(p.state === 'play' && p.G && p.G.made === 0 && p.playing === p.SONG.play, 'NEW STORY starts a run, with the workshop\'s song');
+  ok(p.logRows.length > 0 && p.isTold(0), 'and the story begins in the log (Hollis\'s first words)');
+  vm.run(5, M('B')); vm.run(5); vm.press('B'); vm.press('B');
+  const made = p.G.made;
+  vm.press('START'); vm.run(2); ok(p.paused, 'START pauses');
+  for (let i = 0; i < 4; i++) vm.press('DOWN');
+  vm.press('A'); vm.run(2);
+  ok(p.state === 'title' && p.hasRun(), 'SAVE AND QUIT goes to the title, with the story saved');
+  const save = Int32Array.from(vm.m.save);
+  const vm2 = newGame(9, { title: true, save }), q = vm2.probe(); vm2.run(3);
+  ok(q.titleSel === 0 && q.hasRun(), 'a saved story is offered as CONTINUE, first');
+  vm2.press('A'); vm2.run(2);
+  ok(q.state === 'play' && q.G.made === made, 'CONTINUE picks the run up where it was', `${q.G.made} of ${made} cogs`);
+  ok(q.logRows.length === p.logRows.length, 'with its story so far in the log');
 }
 
-// 2. Playing: movement, blocks, a hit costs a life.
+// 2. NEW STORY over a saved one asks first.
 {
-  const vm = newGame(1), p = vm.probe(), x0 = p.px;
-  vm.run(10, M('LEFT')); ok(p.px < x0, 'LEFT moves the player');
-  vm.run(20, M('RIGHT')); ok(p.px > x0 - 30, 'and RIGHT');
-  const lives = p.lives; sfxLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.lives === lives - 1, 'a block that lands on the player costs a life');
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch >= 6), 'with the hit sound, on an effects channel (6 or 7)');
+  const vm = newGame(1), p = vm.probe(); vm.run(2); vm.press('B'); vm.run(2); p.saveRun();
+  const save = Int32Array.from(vm.m.save);
+  const vm2 = newGame(2, { title: true, save }), q = vm2.probe(); vm2.run(3);
+  vm2.press('DOWN'); vm2.press('A'); vm2.run(2);
+  ok(q.confirm && q.state === 'title', 'NEW STORY over a saved story asks first');
+  vm2.press('A'); vm2.run(2);
+  ok(!q.confirm && q.state === 'title' && q.hasRun(), 'KEEP MY STORY keeps it');
+  vm2.press('DOWN'); vm2.press('A'); vm2.press('DOWN'); vm2.press('A'); vm2.run(2);
+  ok(q.state === 'play' && q.G.made === 0, 'START AGAIN begins a new one');
 }
 
-// 3. Pause.
+// 3. The panels: rows, tabs and the hand.
 {
-  const vm = newGame(2), p = vm.probe(); vm.run(30);
-  vm.press('START'); ok(p.paused, 'START pauses');
-  const y = p.blocks.map((b) => b.y).join(); vm.run(30); ok(p.blocks.map((b) => b.y).join() === y, 'and the game stands still');
-  const t = p.timer; vm.press('DOWN'); vm.press('A'); vm.run(2);
-  ok(!p.paused && p.score === 0 && p.timer < t, 'RESTART starts the game again');
-  vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
+  const vm = newGame(3), p = vm.probe(); vm.run(2); sfxLog(vm);
+  vm.press('B'); ok(p.G.made === 1 && p.G.brass === p.T.brass0 - 1, 'B makes a cog by hand, from 1 oz of brass');
+  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.clink && ch >= 6), 'with a clink, on an effects channel (6 or 7)');
+  vm.run(40, M('B')); const held = p.G.made;
+  ok(held >= 3 && held <= 5, 'held, B goes on making cogs, 4 a second', `${held - 1} in 40 frames`);
+  ok(p.openTabs().length === 1, 'at first there is only the WORKSHOP');
+  vm.press('DOWN'); ok(p.row === 1, 'DOWN chooses the next row');
+  const price = p.G.price; vm.press('RIGHT'); vm.run(2);
+  ok(Math.abs(p.G.price - price - 0.01) < 1e-9 && p.tab === 0, 'RIGHT on the price raises it by a cent (and stays on the tab)', p.G.price.toFixed(2));
+  vm.press('LEFT'); vm.press('LEFT'); ok(Math.abs(p.G.price - price + 0.01) < 1e-9, 'LEFT lowers it');
+  p.G.made = 25; vm.run(2);
+  ok(p.openTabs().length === 2, 'the HELPERS tab opens at 20 cogs made');
+  vm.press('UP'); vm.press('RIGHT'); ok(p.tab === 1 && p.row === 0, 'RIGHT on a plain row goes to the next tab');
+  vm.press('R'); ok(p.tab === 0, 'R does too (and wraps round)');
+  p.tab = 1; p.G.coin = 0; sfxLog(vm); vm.press('A');
+  ok(p.G.tinkers === 0 && sfxLog(vm).some(([n]) => n === p.SFX.no), 'A on a row too dear does nothing, with a "no"');
+  p.G.coin = 10; vm.press('A');
+  ok(p.G.tinkers === 1 && p.G.coin >= 5 && p.G.coin < 6, 'and with the coin, A buys it', `coin ${p.G.coin}`);
 }
 
-// 4. Game over, the top 10 and initials.
+// 4. The pause menu's settings and the full log.
 {
-  const vm = newGame(3), p = vm.probe(); p.score = 120; p.lives = 1; musicLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.state === 'over' && p.rank === 0, 'the last life ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
-  ok(musicLog(vm).includes(-1), 'the game song stops');
-  vm.run(70); vm.press('A');
-  ok(p.state === 'initials', 'A asks for initials');
-  vm.run(25); // START is ignored for a moment, so a press from the game does not skip it
-  vm.press('UP'); vm.press('RIGHT'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT'); vm.press('DOWN'); vm.press('START');
-  ok(p.state === 'records', 'START saves them and shows the records');
-  const e = p.topTen()[0];
-  ok(e.score === 120 && e.initials === 'BC9', 'the score is saved with the initials as typed (UP is the next letter, DOWN from A wraps to 9)', `${e.score} ${e.initials}`);
-  ok(vm.m.save[p.TOP_SLOT] === 120, 'in the save slots');
-}
-{
-  const vm = newGame(4), p = vm.probe();
-  const list = [50, 20, 90, 10, 70, 30, 100, 60, 40, 80].map((s) => p.insertTop({ score: s, initials: 'AAA' }));
-  ok(p.topTen().map((e) => e.score).join() === '100,90,80,70,60,50,40,30,20,10', 'the top 10 is kept best first');
-  ok(p.insertTop({ score: 5, initials: 'ZZZ' }) === -1 && p.insertTop({ score: 0, initials: 'ZZZ' }) === -1, 'a score below the tenth, or nothing, does not get in');
+  const vm = newGame(4), p = vm.probe(); vm.run(2);
+  vm.press('START'); vm.press('DOWN'); vm.press('DOWN'); musicLog(vm); vm.press('A');
+  ok(!p.musicOn && musicLog(vm).includes(-1), 'MUSIC: OFF stops the music');
+  vm.press('A'); ok(p.musicOn && p.playing === p.SONG.play, 'and ON brings it back');
+  vm.press('DOWN'); vm.press('A'); ok(!p.soundOn, 'EFFECTS: OFF silences the effects');
+  sfxLog(vm); vm.press('B'); vm.run(1); vm.press('B'); vm.run(2);
+  ok(!p.paused && sfxLog(vm).length === 0, 'B resumes, and the hand makes no sound now');
+  vm.press('START'); vm.press('DOWN'); vm.press('A'); vm.press('A'); vm.press('B');
+  const vm2 = newGame(5, { save: Int32Array.from(vm.m.save), title: true }), q = vm2.probe(); vm2.run(2);
+  ok(q.musicOn && !q.soundOn, 'the settings are saved');
+  vm.press('SELECT'); ok(p.state === 'log', 'SELECT opens the story so far');
+  vm.press('SELECT'); ok(p.state === 'play', 'and SELECT closes it');
 }
 
 // 5. Frames are quick.
 {
-  const vm = newGame(5), times = [];
-  for (let i = 0; i < 600; i++) { vm.step(i % 40 < 20 ? M('LEFT') : M('RIGHT')); times.push(vm.m.stats.cpu); }
+  const vm = newGame(5), p = vm.probe(), times = [];
+  p.G.made = 50; p.G.tinkers = 12; p.G.cogs = 500;
+  for (let i = 0; i < 600; i++) { vm.step(i % 30 < 10 ? M('B') : i % 30 < 12 ? M('DOWN') : 0); times.push(vm.m.stats.cpu); }
   times.sort((a, b) => a - b); const p99 = times[Math.floor(times.length * 0.99)];
   ok(p99 < 8 * (process.env.CI ? 3 : 1), 'frames are quick', `99th percentile ${p99.toFixed(2)} ms`);
 }
-console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);
+ok.done();

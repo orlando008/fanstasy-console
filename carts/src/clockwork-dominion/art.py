@@ -1,11 +1,13 @@
 # Clockwork Dominion's art: carts/src/clockwork-dominion/tiles.txt, palette.txt, map.txt and art.json, and the ART block in code.js.
 #   python3 carts/src/clockwork-dominion/art.py carts/src/clockwork-dominion
 # Written with the art toolkit (tools/devkit/art/kit.py: its header explains the pieces). This cart owns those files:
-# change the pictures here, not in them. Then look at the result with
-#   node tools/devkit/art/sprites.mjs carts/clockwork-dominion.nova out.png      the sprites, at their real sizes and palettes
-#   node tools/devkit/art/scene.mjs carts/clockwork-dominion.nova out.png --scene field --holes     the background, with gaps marked
-#   node tools/devkit/tiles.mjs carts/clockwork-dominion.nova out.png --from 0 --count 64 --pal 1   the tiles, with their numbers
-# (pack first: node tools/pack.js carts/src/clockwork-dominion carts/clockwork-dominion.nova). Pixel values are palette indices; 0 is transparent.
+# change the pictures here, not in them. Look at the result with
+#   node tools/devkit/art/sprites.mjs carts/clockwork-dominion.nova out.png
+#   node tools/devkit/art/scene.mjs carts/clockwork-dominion.nova out.png --scene bench --holes
+# (pack first: node tools/pack.js carts/src/clockwork-dominion carts/clockwork-dominion.nova).
+#
+# Step 1 of the plan: a placeholder view (the workshop's wall in lamplight, the bench, Pip and a cog) and the panel's
+# ink, the overlay colours the code draws the panels with. The real views come in step 6.
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *
@@ -14,62 +16,79 @@ art = Art()
 art.region('bg', 1, 255)       # background tiles
 art.region('spr', 256, 1023)   # sprites (a 16 px sprite takes four tiles)
 
-# The SNES look from the start (docs/dev/snes-picture.md): colours as ramps (shades of one colour, dark to light), a sky
-# set line by line, hills pushed back behind the ground, and see-through panels (GLASS, an overlay colour from 192 up,
-# which blend() makes translucent; code.js turns it on). BG palette 0 is shared with the overlay's text colours, so it
-# is left alone.
-art.gradient('sky', ['1c2a6a', '3c64b4', '9cd0ec'], y0=0, y1=175)          # the backdrop, a colour for each line
-art.color(200, '141c3c', 'GLASS')                                          # the panels' fill, seen through
-field = art.palette(1, {'grass': ramp('4a8a2e', 4), 'bloom': 'dad45e'})    # field.grass: 4 indices, dark to light
-far = art.palette(2, {'hill': recede(ramp('2c6a3a', 3), 0.5, '9cd0ec')})   # far things are paler, nearer the sky
-ship = art.sprite_palette(0, {'edge': '140c1c', 'hull': ramp('597dce', 4), 'white': 'deeed6', 'fire': ramp('d04648', 2),
-                              'gold': ramp('dad45e', 3)})
+# --- The panel's ink: overlay colours, BG palette 7's entries (113 to 127), kept for the overlay alone ---
+INK = {
+    'PAPER': '141d33',   # the panel's ground: deep ink blue
+    'ROW': '22305a',     # the chosen row's bar
+    'INK': 'f2e6c8',     # text: parchment cream
+    'DIM': '8790ad',     # a row that cannot be pressed yet, labels
+    'BRASS': 'e8b04a',   # headings, the headline counter
+    'GOLD': 'ffe596',    # the brightest: what changed, the chosen tab
+    'BAD': 'e2735a',     # a "no", a warning
+    'GOOD': '9ed27a',    # money coming in
+    'EDGE': '070a14',    # outlines and shadows
+    'LINE': '9a6a2a',    # the frame's brass lines
+    'THINK': '8cc4ee',   # insight
+    'LOG': 'cdbf9e',     # the log's text, a little softer than the panel's
+}
+for k, (name, hexc) in enumerate(INK.items()):
+    art.color(113 + k, hexc, name)
 
-# --- The ground (layer 0): a strip of grass, 32 x 8 tiles, lit along its top edge, flowers now and then ---
-ground = Img(256, 64)
-grass = texture('grass', 64, 64, field.grass)
-for x in range(0, 256, 64): ground.blit(grass, x, 0)
+# --- The view (lines 0 to 91): the workshop's wall in lamplight, a colour for each line ---
+art.gradient('wall', ['3a2414', '6a4024', '8a5a30', '5a3820', '2a1a10'], y0=0, y1=91)
+
+wood = art.palette(1, {'wood': ramp('7a4a26', 4), 'brass': ramp('c08a30', 3)})
+bench = Img(256, 24)
+planks = texture('planks', 256, 24, wood.wood)
+bench.blit(planks, 0, 0)
 for x in range(256):
-    ground.px[0][x] = field.grass[3]; ground.px[1][x] = field.grass[2] if x % 5 else field.grass[3]
-for k in range(12):
-    fx_, fy_ = int(hsh(k * 7 + 1) % 250) + 3, int(hsh(k * 13 + 5) % 50) + 8
-    ground.px[fy_][fx_] = field.bloom
-art.scene('field', ground, pal=field, at=(0, 0), solid=True)
+    bench.px[0][x] = wood.wood[3]; bench.px[1][x] = wood.wood[2]
+art.scene('bench', bench, pal=wood, at=(0, 0), solid=True)
 
-# --- The hills (layer 1): rolling green behind the ground, receded towards the sky ---
-back = Img(256, 64)
-hills(back, far.hill, base=64, amp=40, period=128)
-art.scene('hills', back, pal=far, at=(32, 0))
-
-# --- The player: a little ship, 16 x 16, drawn from rows of text (o edge, d b l the hull's ramp dark to light,
-# w white, r fire) ---
-player = Img.from_rows([
-    '.......oo.......',
-    '......olbo......',
-    '......olbo......',
-    '.....olbbdo.....',
-    '.....olwwdo.....',
-    '....olbwwbdo....',
+# --- Pip: a round brass automaton with a key in its back, 16 x 16 (o edge, d b l brass dark to light, e eye, k key) ---
+pipc = art.sprite_palette(0, {'edge': '1a0f08', 'brass': ramp('b07a2a', 4), 'eye': 'bfe8ff', 'key': ramp('8a8a96', 2)})
+pip = Img.from_rows([
+    '.......kk.......',
+    '......k..k......',
+    '.......kk.......',
+    '........k.......',
+    '.....oooooo.....',
+    '....olllbbdo....',
     '...olbbbbbbdo...',
-    '..olbbbbbbbbdo..',
-    '.olbbobbbbobbdo.',
-    'olbbo.obbo.obbdo',
-    'olbo..obdo..obdo',
-    'obo...orro...odo',
-    'oo....orro....oo',
-    '.......orro.....',
-    '........oo......',
-    '................',
-], key={'o': ship.edge, 'd': ship.hull[0], 'b': ship.hull[2], 'l': ship.hull[3], 'w': ship.white, 'r': ship.fire[1]})
-art.sprite('player', player, pal=ship, region='spr')
+    '...olbeebeedo...',
+    '...olbeebeedo...',
+    '...olbbbbbbdo...',
+    '...obbboobbdo...',
+    '....obbbbbdo....',
+    '.....oooooo.....',
+    '.....od..do.....',
+    '....odd..ddo....',
+    '....ooo..ooo....',
+], key={'o': pipc.edge, 'd': pipc.brass[0], 'b': pipc.brass[2], 'l': pipc.brass[3], 'e': pipc.eye, 'k': pipc.key[1]})
+art.sprite('pip', pip, pal=pipc, region='spr')
 
-# --- A gem to dodge: a faceted diamond, 16 x 16, outlined, shaded along the gold ramp ---
-def gem(x, y):
-    d = abs(x - 7.5) + abs(y - 7.5)
-    if d > 7: return 0
-    if d > 6: return ship.edge
-    if x < 8 and y < 8 and d < 4.5: return ship.white
-    return ship.gold[0] if x + y > 18 else ship.gold[1] if x + y > 12 else ship.gold[2]   # lit from the upper left
-art.sprite('gem', Img.make(16, 16, gem), pal=ship, region='spr')
+# --- A cog, 8 x 8, and a tinker, 8 x 8 ---
+cog = Img.from_rows([
+    '..o..o..',
+    '.olbblo.',
+    'oblddbdo',
+    '.bd..db.',
+    '.bd..db.',
+    'obddddbo',
+    '.obbbdo.',
+    '..o..o..',
+], key={'o': pipc.edge, 'd': pipc.brass[0], 'b': pipc.brass[2], 'l': pipc.brass[3]})
+art.sprite('cog', cog, pal=pipc, region='spr')
+tinker = Img.from_rows([
+    '...k....',
+    '..oooo..',
+    '.olbbdo.',
+    '.obeedo.',
+    '.obbbdo.',
+    '..oooo..',
+    '..o..o..',
+    '.oo..oo.',
+], key={'o': pipc.edge, 'd': pipc.brass[0], 'b': pipc.brass[2], 'l': pipc.brass[3], 'e': pipc.eye, 'k': pipc.key[1]})
+art.sprite('tinker', tinker, pal=pipc, region='spr')
 
 art.write(sys.argv[1])
