@@ -78,13 +78,14 @@ const fresh = () => {
   ok(p.G.act === 4 && p.state === 'choice', 'THE LAST COG leaves only the watch, and the choice');
   vm.run(100); vm.press('DOWN'); ok(p.choiceSel === 1, 'DOWN chooses LET IT STOP');
   vm.press('UP'); vm.press('A'); vm.run(2);
+  ok(p.state === 'cine', 'the Dominion ending is played'); vm.press('START'); vm.run(2);
   ok(p.state === 'ending' && p.G.ending === 1 && p.G.endD === 1, 'A on WIND IT gives the Dominion ending');
   ok(p.G.mile[p.MILES.findIndex((m) => m.name === 'The Dominion ending')] > 0, 'with its milestone');
   ok((vm.m.save[p.ENDS_SLOT] & 1) === 1, 'and it is kept as an ending seen, over every cycle');
-  vm.run(250); vm.press('A'); vm.run(40); vm.press('DOWN'); vm.press('A'); vm.run(2);
-  ok(p.state === 'title' && !p.hasRun(), 'after it and the credits, TITLE goes to the title, the story told');
+  vm.run(40); vm.press('DOWN'); vm.press('A'); vm.run(2);
+  ok(p.state === 'title' && !p.hasRun(), 'after it, from the credits, TITLE goes to the title, the story told');
   const { vm: v2, p: q } = fresh();
-  Object.assign(q.G, { act: 4 }); q.choose(1); v2.run(2);
+  Object.assign(q.G, { act: 4 }); q.choose(1); v2.run(2); v2.press('START'); v2.run(2);
   ok(q.state === 'ending' && q.G.ending === 2 && q.G.endR === 1 && (v2.m.save[q.ENDS_SLOT] & 2) === 2, 'LET IT STOP gives the Rest ending');
 }
 

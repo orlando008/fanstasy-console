@@ -8,8 +8,8 @@ import { newGame, M, sfxLog, musicLog, ok } from './lib.mjs';
   ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
   ok(!p.hasRun(), 'with no story saved, the only choice is NEW STORY');
   vm.press('A'); vm.run(2);
-  ok(p.state === 'opening' && p.G && p.G.made === 0 && p.playing === p.SONG.play, 'NEW STORY starts a run with its opening, and the workshop\'s song');
-  vm.run(40); vm.press('A'); vm.run(2); ok(p.state === 'play', 'A after the opening goes to the workshop');
+  ok(p.state === 'cine' && p.G && p.G.made === 0 && p.playing === p.SONG.play, 'NEW STORY starts a run with its opening cinematic, and the workshop\'s song');
+  vm.run(40); vm.press('START'); vm.run(2); ok(p.state === 'play', 'START skips it, to the workshop');
   ok(p.logRows.length > 0 && p.isTold(0), 'and the story begins in the log (Paulo\'s first words)');
   vm.run(5, M('B')); vm.run(5); vm.press('B'); vm.press('B');
   const made = p.G.made;
@@ -35,7 +35,7 @@ import { newGame, M, sfxLog, musicLog, ok } from './lib.mjs';
   vm2.press('A'); vm2.run(2);
   ok(!q.confirm && q.state === 'title' && q.hasRun(), 'KEEP MY STORY keeps it');
   vm2.press('DOWN'); vm2.press('A'); vm2.press('DOWN'); vm2.press('A'); vm2.run(2);
-  ok(q.state === 'opening' && q.G.made === 0, 'START AGAIN begins a new one');
+  ok(q.state === 'cine' && q.G.made === 0, 'START AGAIN begins a new one');
 }
 
 // 3. The panels: rows, tabs and the hand.

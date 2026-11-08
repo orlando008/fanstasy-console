@@ -20,7 +20,8 @@ function gradientLine(g, y) {
 }
 // END ART
 /** Queue one of ART.sprites at (x, y), above the background; opts as for spr (fx, fy ...). */
-function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.pal, prio: 3, ...opts }); }
+let VY = 0; // the view's top line: 0 in play, lower in a cinematic
+function sprite(s, x, y, opts = {}) { spr(s.tile, x, y + VY, { size: s.size, pal: s.pal, prio: 3, ...opts }); }
 
 // --- Colours: the panel's ink (art.py: overlay colours 113 and up) ---
 const CO = ART.colors;
@@ -351,6 +352,7 @@ function autoBuild(dt) {
 /** The start of an act's play, after the act before it ends (its cinematic comes in step 7). */
 function endAct(from) {
   checkMiles(); saveRun();
+  if (from < 3) playScene(from === 1 ? 'town' : 'launch', () => {});
   if (from === 1) {
     raise('act2'); tab = 0; row = 0; top = 0;
     G.swarm = Math.max(1000, G.tinkers * 1000 + G.benches * 10000);
@@ -413,6 +415,36 @@ function step3(dt) {
   checkInventions(); checkStory(); checkMiles();
 }
 
+// --- The cinematics (scenes.txt, in the ROM): shots of a view with effects and a caption ---
+let cine = null; // { shots, k (the shot), t (its frame), then (what follows) }
+function playScene(name, then) {
+  if (skipTitle || !SCENES[name]) return then();
+  cine = { shots: SCENES[name], k: 0, t: 0, then }; state = 'cine'; typed = 0;
+}
+const shot = () => cine.shots[cine.k];
+const fxOn = (e) => cine && state === 'cine' && shot().fx.includes(' ' + e + ' ');
+function updateCine() {
+  const s = shot(); cine.t++; typed += 2;
+  if (fxOn('tick') && cine.t % 40 === 1) fx(SFX.clink);
+  const next = pressed(START) ? cine.shots.length : cine.t >= s.f || (pressed(A) && typed >= s.cap.length + 30) ? cine.k + 1 : cine.k;
+  if (pressed(A) && typed < s.cap.length) typed = s.cap.length;
+  if (next !== cine.k) {
+    cine.k = next; cine.t = 0; typed = 0;
+    if (next >= cine.shots.length) { brightness(15); mosaic(1); winmask('screen', null); VY = 0; const f = cine.then; cine = null; state = 'play'; timer = 0; f(); }
+  }
+}
+function drawCine() {
+  const s = shot(), p = cine.t / s.f, e = 30 / s.f;
+  brightness(flr(15 * Math.min(1, fxOn('fadein') ? p / e : 1, fxOn('fadeout') ? (1 - p) / e : 1)));
+  mosaic(fxOn('mosaicout') ? 1 + flr(Math.max(0, p - 0.5) * 30) : fxOn('mosaicin') ? 1 + flr(Math.max(0, 0.5 - p) * 30) : 1);
+  irisR = fxOn('irisclose') ? lerp(150, 26, Math.min(1, p * 1.5)) : fxOn('irisopen') ? lerp(26, 220, p) : 0;
+  winmask('screen', irisR ? { w1: 'out' } : null);
+  drawView();
+  if (fxOn('launch')) for (let i = 0; i < 24; i++) { const a = i * 2.4, r = 30 + ((cine.t * (1 + (i % 4))) % 120); sprite((cine.t + i) % 12 < 6 ? S.moth0 : S.moth1, 124 + Math.cos(a) * r, GLOBE_Y - 4 + Math.sin(a) * r * 0.6); }
+  wrap(s.cap.slice(0, typed), 224).forEach((l, i) => txc(l, VY + 104 + i * 11, s.cap.startsWith('ACT ') ? GOLD : INK));
+}
+let irisR = 0;
+
 // --- The end: the watch, and the choice ---
 const CHOICES = ['WIND IT', 'LET IT STOP'];
 let choiceSel = 0;
@@ -421,7 +453,9 @@ function choose(k) {
   dset(ENDS_SLOT, dget(ENDS_SLOT) | (1 << k)); // the endings seen, over every cycle
   checkMiles(); raise(k === 0 ? 'dominion' : 'rest');
   dset(CYCLE_SLOT, Math.max(dget(CYCLE_SLOT), G.cycle + 1)); putD(ALL_SLOT, getD(ALL_SLOT) + G.made);
-  G.act = 5; saveRun(); dset(RUN_SLOT, 0); state = 'ending'; timer = 0; endSel = 0; // the story is told: nothing to continue
+  G.act = 5; saveRun(); dset(RUN_SLOT, 0); endSel = 0; // the story is told: nothing to continue
+  const end = () => { state = 'ending'; timer = skipTitle ? 0 : CREDITS_AT; };
+  if (skipTitle) end(); else playScene(k === 0 ? 'dominion' : 'stop', end);
 }
 
 // --- What the player can do (the panel's rows and the hand call these; the bot and the tests too) ---
@@ -492,6 +526,8 @@ const ACT = {
     applyEffects(v, false);
     addLog(v.story, true);
     if (G.watch) raise('watch');
+    if (v.id === 27) playScene('rest', () => {});
+    if (v.id === 99) playScene('orrery', () => {});
     if (G.region !== region) G.ore += T.regionOre[G.region]; // a new place: its ore, on top of what is left
     if (G.act !== act) endAct(act);
     return true;
@@ -542,7 +578,7 @@ function parseTrig(s) {
 const holds = (ts) => ts.every((t) => (t.inv ? isDone(t.inv) : t.k ? G[t.k] >= t.n : false));
 
 // --- The book (rom/book.bin, from book.py): the story, the inventions and the milestones ---
-let STORY = [], INVS = [], INV_BY = [], MILES = [];
+let STORY = [], INVS = [], INV_BY = [], MILES = [], SCENES = {};
 function loadBook() {
   const b = rom('book'); let i = 3;
   const str = () => { const n = b[i++]; let s = ''; for (let k = 0; k < n; k++) s += String.fromCharCode(b[i++]); return s; };
@@ -557,6 +593,11 @@ function loadBook() {
     INVS.push(v); INV_BY[id] = v;
   }
   for (let j = count(); j > 0; j--) { const trig = str(), name = str(); MILES.push({ t: parseTrig(trig), name }); }
+  for (let j = b[i++]; j > 0; j--) {
+    const name = str(), shots = [];
+    for (let k = b[i++]; k > 0; k--) { const view = str(), f = b[i] | (b[i + 1] << 8); i += 2; shots.push({ view, f, fx: ' ' + str() + ' ', cap: str() }); }
+    SCENES[name] = shots;
+  }
   // trust from inventions does not move the cogs needed for the next trust from cogs made
   trustGiven = () => INVS.reduce((s, v) => s + (isDone(v.id) ? v.effect.filter((e) => e.k === 'trust' && e.op === '+').reduce((a, e) => a + e.v, 0) : 0), 0);
 }
@@ -804,28 +845,36 @@ let state = 'title', paused = false, timer = 0, clock = 0, sub = 0, saveT = 0;
 let titleSel = 0, pauseSel = 0, confirm = false;
 let EDGE_RGB = [0, 0, 0];
 // --- The views (spec 12; art.py): each act's layers, set every frame; the globe and the galaxy on the affine BG2 ---
-const LAND = [53, 54, 55, 56], STARC = [65, 66, 67], BASE = [], BRASSC = [26, 18, 6];
+const LAND = [53, 54, 55, 56], STARC = [65, 66, 67], ARMS = [81, 82, 83, 84], LAMP = 42, BASE = [], BRASSC = [26, 18, 6];
 const sceneBg = (n, name, y = 0, wrap = false) => { const c = ART.scenes[name]; bg(n, { mx: c.mx, my: c.my, mw: c.w, mh: c.h, x: 0, y, wrap, show: true }); };
-let view = 1, grad = null, spin = 0;
+let view = 1, grad = null, spin = 0, galA = 0;
 /** Tint CGRAM entries from their art.py colours towards brass, by t (0 to 1). */
-function tint(list, t) { for (const i of list) { const b = BASE[i]; color(i, ...b.map((v, k) => Math.round(lerp(v, BRASSC[k], t)))); } }
+function tint(list, t, to = BRASSC) { for (const i of list) { const b = BASE[i]; color(i, ...b.map((v, k) => Math.round(lerp(v, to[k], t)))); } }
 function setView() {
-  view = state === 'title' || state === 'opening' || !G ? 1 : Math.min(3, G.act);
+  const sv = cine && state === 'cine' ? shot().view : '';
+  VY = sv ? 40 : 0;
+  view = sv ? ({ world: 2, orrery: 3, black: 0 }[sv] ?? 1) : state === 'title' || !G ? 1 : Math.min(3, G.act);
+  for (const i of [LAMP, ...ARMS]) color(i, ...BASE[i]);
+  if (fxOn('lampsout')) tint([LAMP], Math.min(1, (cine.t / shot().f) * 1.2 + (shot().view === 'night' ? 0.4 : 0)), [4, 4, 8]);
+  if (!view) { bg(0, { show: false }); bg(1, { show: false }); bg(2, { show: false }); grad = null; color(0, 0, 0, 0); return; }
   affine(null); winmask('bg2', null);
   if (view === 1) {
-    sceneBg(2, 'town'); sceneBg(1, 'wall'); sceneBg(0, 'bench', -(VIEW_H - 24));
-    grad = state === 'title' ? ART.gradients.night : ART.gradients.day;
+    sceneBg(2, 'town', -VY); sceneBg(1, 'wall', -VY); sceneBg(0, 'bench', -(VIEW_H - 24) - VY);
+    grad = state === 'title' || sv === 'night' ? ART.gradients.night : ART.gradients.day;
     return;
   }
-  bg(0, { show: false }); sceneBg(1, 'stars', 0, true); bgscroll(1, flr(clock / 8), 0);
+  bg(0, { show: false }); sceneBg(1, 'stars', -VY, true); bgscroll(1, flr(clock / 8), -VY);
   grad = ART.gradients.space;
   if (view === 2) {
     sceneBg(2, 'globe', 0, true); affine({ a: 1, b: 0, c: 0, d: 0, cx: 0, cy: 0 }); winmask('bg2', { w0: 'out' }); spin = (clock / 3) % 128;
     tint(LAND, Math.min(1, (G.region - 1) * 0.22 + G.wound * 0.34));
   } else {
-    sceneBg(2, 'galaxy'); tint(STARC, G.starsP);
-    const r = clock / 900, k = 0.8, cs = Math.cos(r) * k, sn = Math.sin(r) * k;
-    affine({ a: cs, b: sn * 2, c: -sn, d: cs * 2, cx: 64, cy: 64 }); bgscroll(2, -64, 64 - 46);
+    sceneBg(2, 'galaxy');
+    const gold = fxOn('gold'), out = fxOn('starsout') ? cine.t / shot().f : 0;
+    tint(STARC, gold ? 1 : G ? G.starsP : 0); if (gold) tint(ARMS, 0.7); if (out) { tint(STARC, out, [0, 0, 0]); tint(ARMS, out, [0, 0, 0]); }
+    galA += fxOn('still') ? 0 : fxOn('spin') ? 0.012 : 1 / 900;
+    const k = 0.8, cs = Math.cos(galA) * k, sn = Math.sin(galA) * k;
+    affine({ a: cs, b: sn * 2, c: -sn, d: cs * 2, cx: 64, cy: 64 }); bgscroll(2, -64, 64 - 46 - VY);
   }
 }
 const GLOBE_R = 40, GLOBE_Y = 46;
@@ -837,7 +886,7 @@ let bits = []; // cogs dropping in the view: { x, y, vy }
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { for (let i = 0; i < 256; i++) dset(i, 0); dset(VERSION_SLOT, SAVE_VERSION); }
   loadFont(); loadBook(); loadSettings(); EDGE_RGB = color(EDGE);
-  for (const i of [...LAND, ...STARC]) BASE[i] = color(i);
+  for (const i of [...LAND, ...STARC, ...ARMS, LAMP]) BASE[i] = color(i);
   if (skipTitle) newRun(1); else toTitle();
 }
 
@@ -845,10 +894,10 @@ function toTitle() { state = 'title'; timer = 0; titleSel = 0; confirm = false; 
 /** A new run: the next cycle (after an ending), with its gift (an Act I invention already made). */
 function newRun(seed, gift = 0) {
   G = freshRun(seed, dget(CYCLE_SLOT)); logRows = []; typing = 0; tab = 0; row = 0; top = 0; bits = [];
-  state = skipTitle ? 'play' : 'opening'; timer = 0; paused = false;
+  state = 'play'; timer = 0; paused = false;
   raise('start');
   if (gift && INV_BY[gift]) { const v = INV_BY[gift]; G.done[gift >> 5] |= 1 << (gift & 31); G.shown[gift >> 5] |= 1 << (gift & 31); G.invs++; applyEffects(v, false); }
-  saveRun(); play(SONG.play);
+  saveRun(); play(SONG.play); playScene('opening', () => {});
 }
 /** The inventions a cycle can give: Act I's, but not the two that end it. */
 const GIFTS = () => INVS.filter((v) => v.id <= 26);
@@ -864,7 +913,7 @@ function update() {
   else if (state === 'play') updatePlay();
   else if (state === 'log') updateLog();
   else if (state === 'miles') updateMiles();
-  else if (state === 'opening') { if (timer > 300 || (timer > 30 && (pressed(A) || pressed(START)))) { state = 'play'; timer = 0; } }
+  else if (state === 'cine') updateCine();
   else if (state === 'gift') updateGift();
   else if (state === 'records') { if (timer > 10 && (pressed(A) || pressed(B) || pressed(START))) toTitle(); }
   else if (state === 'choice') updateChoice();
@@ -981,7 +1030,7 @@ function draw() {
   if (state === 'title') drawTitle();
   else if (state === 'log') drawFullLog();
   else if (state === 'miles') drawMiles();
-  else if (state === 'opening') drawOpening();
+  else if (state === 'cine') drawCine();
   else if (state === 'gift') drawGift();
   else if (state === 'records') drawRecords();
   else if (state === 'choice') drawChoice();
@@ -995,7 +1044,8 @@ const blinkOf = (c) => (c % 200 < 6 ? S.marco2 : S.marco);
 /** Act I: Marco and Paulo, the tinkers on the bench, the workbenches, the cogs. */
 function drawShop(c) {
   sprite(blinkOf(c), 60, VIEW_H - 40 + (c % 40 < 20 ? 0 : 1));
-  if (!G || !G.watch) sprite(state === 'title' || (c % 900) > 700 ? S.paulo2 : S.paulo, 82, 34);
+  const sv = cine && state === 'cine' ? shot().view : '';
+  if (sv ? sv !== 'empty' && !fxOn('empty') : !G || !G.watch) sprite(state === 'title' || fxOn('doze') || (c % 900) > 700 ? S.paulo2 : S.paulo, 82, 34);
   if (!G) return;
   for (let i = 0; i < Math.min(G.tinkers, 14); i++) {
     const x = 116 + i * 9 + Math.round(Math.sin((c + i * 23) / 20) * 3);
@@ -1013,7 +1063,7 @@ function drawWorld(c) {
     const a = c / 140 + (i * 2 * Math.PI) / n, x = 124 + Math.cos(a) * 54, y = GLOBE_Y - 4 + Math.sin(a) * 12 + Math.sin(a * 3 + i) * 3;
     sprite((c + i * 5) % 16 < 8 ? S.tinker0 : S.tinker1, x, y, { prio: Math.sin(a) < 0 ? 0 : 3 });
   }
-  circ(128, GLOBE_Y, GLOBE_R + 1, THINK);
+  circ(128, GLOBE_Y + VY, GLOBE_R + 1, THINK);
 }
 /** Act III: the orrery's gears over the galaxy, moths at work, and the Rust. */
 function drawOrrery(c) {
@@ -1032,11 +1082,9 @@ function drawOrrery(c) {
   if (G.rust > 1) moth(Math.min(12, Math.round(Math.log10(G.rust))), S.rust0, S.rust1, 2.9);
 }
 function drawView() {
-  if (view === 1) drawShop(clock); else if (view === 2) drawWorld(clock); else drawOrrery(clock);
-  const m = MILES.findIndex((v, j) => G.mile[j] && clock - milestoneAt < 180 && j === lastMile());
+  if (view === 1) drawShop(clock); else if (view === 2) drawWorld(clock); else if (view === 3) drawOrrery(clock);
+  const m = state === 'play' ? MILES.findIndex((v, j) => G.mile[j] && clock - milestoneAt < 180 && j === lastMile()) : -1;
   if (m >= 0) { const s = `${COG} ${MILES[m].name}`; rectfill(124 - (tw(s) >> 1), 4, tw(s) + 8, 12, PAPER); tx(s, 128 - (tw(s) >> 1), 6, GOLD); }
-  const pile = Math.min(6, Math.ceil(G.cogs / 20));
-  for (let i = 0; i < pile; i++) sprite(ART.sprites.cog, 92 + (i % 3) * 6, VIEW_H - 32 - Math.floor(i / 3) * 4);
 }
 
 function drawTabs() {
@@ -1147,13 +1195,6 @@ function drawEndMenu() {
   txc(`The story is told. Cycle ${c + 1} would bring ${RULES[ruleOf(c)]}.`, 160, DIM);
   [`START CYCLE ${c + 1}`, 'TITLE'].forEach((s, i) => sys(`${i === endSel ? '>' : ' '} ${s}`, 72, 178 + i * 12, i === endSel ? GOLD : DIM));
 }
-function drawOpening() {
-  rectfill(0, 0, 256, 224, EDGE);
-  sysc('ROTELLA', 50, BRASS);
-  txc('An old clockmaker\'s shop, long ago', 66, DIM);
-  wrap(STORY[0].text, 200).forEach((l, i) => { const k = Math.max(0, timer * 2 - i * 60); txc(l.slice(0, k), 100 + i * 12, INK); });
-  if (timer > 30) txc('A to begin', 200, DIM);
-}
 function drawGift() {
   rectfill(0, 0, 256, 224, PAPER);
   const c = dget(CYCLE_SLOT), g = GIFTS();
@@ -1202,7 +1243,10 @@ function drawPause() {
 }
 
 /** Each line: the wall's lamplight in the view, the panel's ink below it. */
-function scanline(y) {
+function scanline(sy) {
+  if (irisR) { const d = sy - VY - 60, w = d * d < irisR * irisR ? Math.sqrt(irisR * irisR - d * d) : -1; winpos(1, flr(68 - w), flr(68 + w)); }
+  const y = sy - VY;
+  if (y < 0) { if (!sy) color(0, 0, 0, 0); return; }
   if (y < VIEW_H) {
     if (grad) gradientLine(grad, y);
     if (view === 2) { // the globe: each line a slice of the sphere, its row of the map squeezed into the circle
@@ -1211,5 +1255,5 @@ function scanline(y) {
       if (!GLW[y - 1]) bg(2, { show: true });
       affine({ a: 32 / w, b: 0, c: 0, d: 0, cx: spin, cy: GROW[y] }); bgscroll(2, spin - 128, 0); winpos(0, 128 - w | 0, 128 + w | 0);
     }
-  } else if (y === VIEW_H) { color(0, EDGE_RGB[0], EDGE_RGB[1], EDGE_RGB[2]); winpos(0, 1, 0); bg(2, { show: false }); }
+  } else if (y === VIEW_H) { if (VY) { color(0, 0, 0, 0); bg(1, { show: false }); } else color(0, EDGE_RGB[0], EDGE_RGB[1], EDGE_RGB[2]); winpos(0, 1, 0); bg(2, { show: false }); }
 }

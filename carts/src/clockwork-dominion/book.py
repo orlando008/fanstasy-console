@@ -8,7 +8,8 @@
 # rom/book.bin, read by code.js (loadBook): 'CB', a version byte (2), then three sections, each a count (2 bytes,
 #   little-endian) and its entries, every string a length byte and its characters (plain ASCII):
 #   the story lines (trigger, text); the inventions (id as a byte, then name, appears, cost, effect, hint, story);
-#   the milestones (trigger, name).
+#   the milestones (trigger, name); the scenes (name, then a shot count byte and each shot: view, frames as 2 bytes
+#   little-endian, effects, caption).
 #
 # story.txt holds the story: one line each, `trigger | text`. A trigger is `name:n` (the run's number `name` has reached
 # n: made:10 is the tenth cog made) or `ev:name` (an event the code raises: ev:start, ev:sold, ev:nobrass ...). Each
@@ -209,7 +210,29 @@ def read_milestones(problems):
     return out
 
 
-def book_bytes(lines, invs, miles):
+VIEWS = {'night', 'dusk', 'empty', 'world', 'orrery', 'black'}
+EFFECTS = {'fadein', 'fadeout', 'mosaicin', 'mosaicout', 'irisopen', 'irisclose', 'doze', 'lampsout', 'launch', 'spin', 'gold',
+           'still', 'starsout', 'tick', 'empty'}
+
+
+def read_scenes(problems):
+    scenes, cur = [], None
+    for n, raw in enumerate(open(os.path.join(HERE, 'scenes.txt'), encoding='utf-8').read().split('\n'), 1):
+        if not raw.strip() or raw.startswith('#'): continue
+        if raw.startswith('@'): cur = (raw[1:].strip(), []); scenes.append(cur); continue
+        parts = [p.strip() for p in raw.split('|')]
+        if cur is None or len(parts) != 4: problems.append('scenes.txt line %d: not a shot (view | frames | effects | caption)' % n); continue
+        view, frames, fx, cap = parts
+        if view not in VIEWS: problems.append('scenes.txt line %d: "%s" is not a view' % (n, view))
+        if not frames.isdigit() or not 30 <= int(frames) <= 900: problems.append('scenes.txt line %d: frames must be 30 to 900' % n)
+        for e in fx.split():
+            if e not in EFFECTS: problems.append('scenes.txt line %d: "%s" is not an effect' % (n, e))
+        if len(cap) > MAX_TEXT or any(not (32 <= ord(c) <= 126) for c in cap): problems.append('scenes.txt line %d: the caption is too long or not plain ASCII' % n)
+        cur[1].append((view, int(frames) if frames.isdigit() else 60, fx, cap))
+    return scenes
+
+
+def book_bytes(lines, invs, miles, scenes):
     out = bytearray(b'CB') + bytes([2])
     def strs(*ss):
         for s in ss:
@@ -220,20 +243,24 @@ def book_bytes(lines, invs, miles):
     for i, *rest in invs: out.append(i); strs(*rest)
     out += len(miles).to_bytes(2, 'little')
     for trig, name in miles: strs(trig, name)
+    out.append(len(scenes))
+    for name, shots in scenes:
+        strs(name); out.append(len(shots))
+        for view, frames, fx, cap in shots: strs(view); out += frames.to_bytes(2, 'little'); strs(fx, cap)
     return bytes(out)
 
 
 def main():
     problems = []
     lines = read_story(problems)
-    invs, miles = read_inventions(problems), read_milestones(problems)
-    files = {'font.bin': font_bytes(), 'book.bin': book_bytes(lines, invs, miles)}
+    invs, miles, scenes = read_inventions(problems), read_milestones(problems), read_scenes(problems)
+    files = {'font.bin': font_bytes(), 'book.bin': book_bytes(lines, invs, miles, scenes)}
     if problems:
         print('\n'.join(problems)); sys.exit(1)
     if '--check' in sys.argv:
         stale = [n for n, b in files.items() if not os.path.exists(os.path.join(ROM, n)) or open(os.path.join(ROM, n), 'rb').read() != b]
         if stale: print('stale: %s (run python3 carts/src/clockwork-dominion/book.py)' % ', '.join(stale)); sys.exit(1)
-        print('ok: %d story lines, %d inventions, %d milestones; the font and the book are up to date' % (len(lines), len(invs), len(miles))); return
+        print('ok: %d story lines, %d inventions, %d milestones, %d scenes; the font and the book are up to date' % (len(lines), len(invs), len(miles), len(scenes))); return
     os.makedirs(ROM, exist_ok=True)
     for n, b in files.items():
         open(os.path.join(ROM, n), 'wb').write(b)

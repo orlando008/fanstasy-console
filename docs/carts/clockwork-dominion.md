@@ -1,7 +1,7 @@
 # Clockwork Dominion: Cart Specification
 
-**Version:** 0.7 (step 6 of 10)
-**Status:** In progress: steps 1 to 6 of the plan (section 15) are built (the engine, the three acts, the end, new cycles, the flow and the views' art); step 7, the cinematics, is next
+**Version:** 0.8 (step 7 of 10)
+**Status:** In progress: steps 1 to 7 of the plan (section 15) are built (the engine, the three acts, the end, new cycles, the flow, the views and the cinematics); step 8, the audio, is next
 **Cart source:** `carts/src/clockwork-dominion/` → `carts/clockwork-dominion.nova`
 
 ---
@@ -222,11 +222,26 @@ each ending over all cycles, and the count of cogs made. These are kept across c
 1. **Title:** the workshop at night, Marco on the bench (step 7); CONTINUE (a run is saved), NEW STORY (asks first over
    a saved run; after an ending, it goes to the gifts), MILESTONES (once a story has been told: the cycles told, the
    endings seen, the best time over every cycle to the end of each act and to each ending, the cogs made in all).
-2. **The opening:** "Rotella, an old clockmaker's shop, long ago", and Paulo's first words typing in (A, or 5 seconds,
-   to begin); a cinematic in step 7.
-3. **Play:** the view, tabs, panel and log; cinematics at the big inventions and between acts (step 7).
+2. **The opening:** a cinematic (below), then the workshop.
+3. **Play:** the view, tabs, panel and log; cinematics at the big inventions and between acts.
+
+**The cinematics** (`scenes.txt`, in the ROM, played by `playScene`): each is a few shots of a view, lowered to the
+middle of the screen (lines 40 to 131), with a caption typing in under it. A hurries the caption and then the shot;
+START skips the scene. Effects: fades, the mosaic, an iris on Marco (window 1, a circle line by line), Paulo dozing or
+gone, Rotella's windows going dark, moths rising, the galaxy hurrying or standing still, everything turning gold,
+the stars going out, the watch ticking.
+
+| Scene | When | Shots |
+|---|---|---|
+| opening | a new story | the shop at night, the iris closing on Marco as Paulo winds him, opening on "Make a cog, little one." |
+| rest | THE LAST WINDING | Paulo dozing, the watch put in Marco's hand, the empty chair, a fade |
+| town | WIND THE TOWN | the town's windows going dark, the mosaic, ACT II over the globe |
+| launch | THE GREAT LAUNCH | moths rising from the globe, a fade, ACT III over the galaxy |
+| orrery | THE ORRERY TURNS | the galaxy hurrying, turning gold, "Only one thing is left to wind." |
+| dominion | WIND IT | gold, then everything standing still, a fade |
+| stop | LET IT STOP | the stars going out into black, then dawn in a little shop, Paulo's chair empty, a tick |
 4. **Pause** (START): RESUME, THE STORY SO FAR, MILESTONES (this run's), MUSIC, EFFECTS, SAVE AND QUIT.
-5. **The end:** THE LAST COG, the watch and the choice (WIND IT, LET IT STOP), the ending, then (A) the credits with
+5. **The end:** THE LAST COG, the watch and the choice (WIND IT, LET IT STOP), the ending's cinematic, then the credits with
    START CYCLE n or TITLE. The story told is not kept as a run to continue. Then the gifts: the next cycle's rule, the
    26 inventions to choose from (A begins the cycle with it; B goes back to the title).
 
@@ -448,6 +463,19 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
      PNG payload 38%.
 7. **Art: the cinematics.** The winding of Marco, Paulo's rest, the winding of the town, the great launch, the orrery
    turning, both endings; the title; the label.
+   - **Built:**
+     - `scenes.txt` (seven scenes, 26 shots) and a fourth section of the book for it;
+     - one small player, `playScene`, for every scene, with the view lowered by `VY` (the layers, sprites and
+       `scanline()` all follow it) and the effects as words in the script;
+     - the title's layout under the night workshop ("A story in three acts", or the cycle).
+
+     The endings' cinematics replace their text cards and run on into the credits. The label comes with the release
+     (step 10).
+   - **Results:** 251 checks (`08-scenes` is new: the seven scenes, captions that fit, each played at its moment,
+     A and START, a scene ending by itself, the fade, the iris and the brightness put back, frames). Looking at every
+     shot found the town and the galaxy hidden in scenes (the globe's first line turned the affine layer off for
+     every view) and the stars running under the captions; both fixed. The soak, `smoke.mjs` and the bot's sweep are
+     clean. Code 60.0 KB of 64 (92%): step 8 has about 5 KB. ROM 25.3 KB, PNG payload 40%.
 8. **Audio:** the eight songs, the ticking, the effects; levels checked.
 9. **Balance:** the bot plays whole runs headless (with a greedy plan, and a slower one); the acts' lengths measured and
    tuned to about 90, 120 and 120 minutes; no stall that the bot cannot leave.
