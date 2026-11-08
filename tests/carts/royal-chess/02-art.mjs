@@ -19,7 +19,7 @@ const cell = (mx, name, i = 4) => { const s = p.sqOf(name), f = s & 7, r = s >> 
   ok(pieces.every((n) => nine.every((i) => A.tiles[n + i])), 'every piece is nine named tiles (a 24 px square)');
   ok(['L0', 'L1', 'D0', 'D1'].every((k) => nine.every((i) => A.tiles[`sq${k}_${i}`])), 'light and dark squares, two grains of each');
   ok(pieces.every((n) => A.sprites['held_' + n] && A.sprites['mini_' + n]), 'each piece also a 32 px sprite (held) and an 8 px one (taken)');
-  ok(A.sprites.shadow && A.scenes.table && A.scenes.logo, 'the held piece\'s shadow, the table and the title');
+  ok(A.sprites.shadow && A.sprites.dot && A.sprites.ring && A.scenes.table && A.scenes.logo, 'the held piece\'s shadow, the marks of its legal squares, the table and the title');
   const { table: T, logo: L } = A.scenes;
   ok(T.mx >= 48 && L.mx >= T.mx + T.w && T.w === 32 && T.h === 28 && L.w === 32 && L.h === 28, 'the scenes fill the screen and clear the board\'s map (columns 0 to 47)');
 }
@@ -36,7 +36,10 @@ const cell = (mx, name, i = 4) => { const s = p.sqOf(name), f = s & 7, r = s >> 
 
 // 3. Holding a piece: it leaves its square and floats as a sprite.
 {
+  const centre = (n) => { const s = p.sqOf(n); return px(p.screenX(s) + 11, p.screenY(s) + 11); };
+  const lum = (c) => (c & 255) + ((c >> 8) & 255) + ((c >> 16) & 255), before = [centre('e3'), centre('e4')];
   cursorTo(vm, p, 'e2'); vm.press('A'); vm.run(1);
+  ok(lum(centre('e3')) < lum(before[0]) && lum(centre('e4')) < lum(before[1]) && lum(centre('e3')) > 0.3 * lum(before[0]), 'its legal squares are marked by a see-through dark dot (the wood shows through it)');
   ok(p.liftedSq === p.sqOf('e2') && cell(p.PC_MX, 'e2') === 0, 'the held pawn is gone from the map');
   const x = p.screenX(p.sqOf('e2')), y = p.screenY(p.sqOf('e2'));
   const ivory = new Set([...Array(15).keys()].map((i) => rgb(129 + i)));   // sprite palette 0: CGRAM 128 to 143

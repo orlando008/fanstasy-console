@@ -36,15 +36,24 @@ WOODS = {'maple': ['c89c64', 'e0bc84', 'f0d4a0'], 'walnut': ['5a341e', '7a4a2a',
 sq = art.palette(2, WOODS)
 art.palette(5, {k: [mix(c, 'f0d040', 0.45) for c in v] for k, v in WOODS.items()})   # the last move: a gold tint
 art.palette(6, {k: [mix(c, 'e02020', 0.55) for c in v] for k, v in WOODS.items()})   # the king in check: red
-def square(rmp, v):
-    def px(x, y):
-        g = (y * 3 + int(4 * math.sin((x + v * 7) / 5.0)) + hsh(y // 4 + v * 13) % 3) % 9
-        return rmp[0] if g == 0 else rmp[2] if g == 5 and (x + y + v) % 3 == 0 else rmp[1]
-    return Img.make(24, 24, px)
 import math
+def square(rmp, v, across):
+    """A square of inlaid wood: grain in long, gently waving streaks (along the rank for maple, along the file for
+    walnut, as an inlayer lays them), and a bevel: lit on its upper left edges, in shadow on its lower right."""
+    def px(x, y):
+        if x == 0 or y == 0: return rmp[2]
+        if x == 23 or y == 23: return rmp[0]
+        a, b = (x, y) if across else (y, x)                   # a: along the grain, b: across it
+        u = b + 1.6 * math.sin((a + 9 * v) / 7.0) + 0.8 * math.sin((a * 0.45) + v * 2.0 + b * 0.3)
+        band, f = int(u // 4), u / 4 - int(u // 4)
+        h = hsh(band * 31 + v * 7 + (0 if across else 101)) % 6
+        if f < 0.22 and h < 4: return rmp[0]                  # a dark line of grain
+        if 0.5 < f < 0.66 and h == 5: return rmp[2]           # now and then a lighter one
+        return rmp[1]
+    return Img.make(24, 24, px)
 for v in range(2):
-    for name, rmp in (('L', sq.maple), ('D', sq.walnut)):
-        img = square(rmp, v)
+    for name, rmp, across in (('L', sq.maple, True), ('D', sq.walnut, False)):
+        img = square(rmp, v, across)
         for i in range(9): art.tile('sq%s%d_%d' % (name, v, i), img.crop((i % 3) * 8, (i // 3) * 8, 8, 8), pal=sq)
 
 # --- The pieces (BG0 and sprites): silhouettes, 24 x 24, shaded as turned wood lit from the upper left ---
@@ -145,12 +154,17 @@ for name in ORDER:
             filled = [c for c in block if c]
             if len(filled) >= 4: small.px[y][x] = s_iv.body[2] if x < 4 else s_iv.body[1]
     art.sprite('mini_' + name, small.outline(s_iv.edge), pal=s_iv, region='spr')
-sh = art.sprite_palette(7, {'shade': '000000'})
+sh = art.sprite_palette(7, {'shade': '000000', 'mark': '1a0c06'})
+# The held piece's legal squares: a dot on an empty one and a ring round a piece it would take, dark and see-through
+# (palette 7 is blended at half), like a mark pressed into the wood.
+art.sprite('dot', Img.make(8, 8, lambda x, y: sh.mark if (x - 3.5) ** 2 + (y - 3.5) ** 2 <= 12.5 else 0), pal=sh, region='spr')
+art.sprite('ring', Img.make(32, 32, lambda x, y: sh.mark if 8.5 ** 2 <= (x - 15.5) ** 2 + (y - 15.5) ** 2 <= 12 ** 2 else 0), pal=sh, region='spr')
 art.sprite('shadow', Img.make(32, 32, lambda x, y: sh.shade if ((x - 15.5) / 11) ** 2 + ((y - 27) / 3.5) ** 2 <= 1 else 0), pal=sh, region='spr')
 
 # --- The table round the board (BG1): velvet, a gold thread, the frame with its brass inlay, the trays ---
 tb = art.palette(1, {'velvet': ['3c0a14', '5a1220', '74202c'], 'gold': ['a07828', 'e0b850'], 'frame': ['2c1a10', '4a2c18', '6a4428'],
-                     'tray': ['3a2414', '583820'], 'brass': 'd8b060'})
+                     'tray': ['3a2414', '583820'], 'brass': 'd8b060',
+                     'felt': ['16301e', '1f3f28', '284c31']})
 BX, BY, FW, SQ = 14, 11, 10, 24
 def table(x, y):
     bx0, by0, bx1, by1 = BX, BY, BX + 8 * SQ, BY + 8 * SQ
@@ -160,10 +174,17 @@ def table(x, y):
         if d == 6: return tb.brass                                        # a brass line inlaid round the board
         if d == 0: return tb.frame[0]
         return tb.frame[2] if (x < bx0 or y < by0) and d < 4 else tb.frame[1]   # lit on the upper left
-    if x >= 216 and (2 <= y < 107 or 110 <= y < 215):                    # the two trays
+    if x >= 216 and (2 <= y < 107 or 110 <= y < 215):                    # the two trays: wood, lined with green baize
         top = 2 if y < 107 else 110
-        if x in (216, 255) or y in (top, top + 104): return tb.tray[0]
-        return tb.tray[1] if (y + x // 2) % 7 else tb.tray[0]
+        bot = top + 104
+        if x in (216, 255) or y in (top, bot): return tb.tray[0]
+        if x in (217, 254) or y in (top + 1, bot - 1): return tb.tray[1]
+        plate = (top + 2, top + 14) if top == 2 else (bot - 15, bot - 1)   # a wooden name plate (code.js writes the name on it)
+        if plate[0] <= y < plate[1]: return tb.frame[2] if y == plate[0] else tb.tray[1]
+        if y == (plate[1] if top == 2 else plate[0] - 1): return tb.tray[0]
+        if x == 218 or y == (top + 15 if top == 2 else top + 2): return tb.felt[0]   # the baize's shadow under the rim
+        n = hsh(x * 7 + y * 13) % 11
+        return tb.felt[2] if n == 0 else tb.felt[0] if n == 1 else tb.felt[1]
     if (x + y) % 16 == 0 and (x - y) % 32 == 0: return tb.gold[1]       # a gold thread's diamonds in the velvet
     return tb.velvet[1] if (x * 7 + y * 3) % 5 else tb.velvet[0] if (x + y) % 2 else tb.velvet[2]
 art.scene('table', Img.make(256, 224, table), pal=tb, at=(48, 0))

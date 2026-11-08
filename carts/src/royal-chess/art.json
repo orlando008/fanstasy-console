@@ -16,6 +16,9 @@
    "base": 16,
    "colors": {
     "brass": 11,
+    "felt0": 12,
+    "felt1": 13,
+    "felt2": 14,
     "frame0": 6,
     "frame1": 7,
     "frame2": 8,
@@ -115,6 +118,7 @@
   "spr7": {
    "base": 240,
    "colors": {
+    "mark": 2,
     "shade": 1
    }
   }
@@ -143,6 +147,11 @@
   }
  },
  "sprites": {
+  "dot": {
+   "pal": 7,
+   "size": 8,
+   "tile": 406
+  },
   "held_bishop": {
    "pal": 0,
    "size": 32,
@@ -203,10 +212,15 @@
    "size": 8,
    "tile": 391
   },
-  "shadow": {
+  "ring": {
    "pal": 7,
    "size": 32,
    "tile": 460
+  },
+  "shadow": {
+   "pal": 7,
+   "size": 32,
+   "tile": 512
   }
  },
  "tiles": {
@@ -301,6 +315,6 @@
   "sqL1_7": 26,
   "sqL1_8": 27
  },
- "used": 328,
+ "used": 446,
  "version": 1
 }

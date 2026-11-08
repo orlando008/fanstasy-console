@@ -39,7 +39,7 @@ to light up, and the pieces each side has taken sit beside the board with who is
 | START | The menu: RESUME, OFFER DRAW, RESIGN, NEW GAME, QUIT TO TITLE |
 | SELECT | Unused |
 
-- **Picking up:** A on a piece of the side to move lifts it (a sprite, raised 2 px with a shadow). Its legal squares
+- **Picking up:** A on a piece of the side to move lifts it (a sprite, raised 4 px with a shadow). Its legal squares
   light up, and a capture's square is marked differently. A on a square that is not lit does nothing but give a soft
   thud. A on another of your pieces changes the piece held.
 - **Promotion:** a pawn put down on the last rank opens a small choice beside the square: QUEEN, ROOK, BISHOP, KNIGHT.
@@ -55,9 +55,11 @@ to light up, and the pieces each side has taken sit beside the board with who is
 
 - **The board:** 8 × 8 squares of 24 px, 192 × 192 px, at (14, 11), in a frame 10 px wide. The files `a` to `h` are on
   the frame below it and the ranks `1` to `8` on the frame to its left.
-- **The side panel,** at x 216 to 255, in two wooden trays, Black's at the top and White's at the bottom. Each tray has:
-  - who plays that side (`YOU` and `CPU` against the computer; `P1` and `P2` with two pads; else `WHITE` and `BLACK`),
-    lit in gold while it is that side's move;
+- **The side panel,** at x 216 to 255, in two wooden trays lined with green baize, Black's at the top and White's at the
+  bottom. Each tray has:
+  - a wooden name plate saying who plays that side (`YOU` and `CPU` against the computer; `P1` and `P2` with two pads;
+    else `WHITE` and `BLACK`), in small 4 × 5 letters (the 8 px font would fill the tray), ivory, or gold and
+    underlined while it is that side's move; the line blinks while the computer thinks;
   - the pieces that side has taken, in rows of four, the most valuable first, each in its own colour;
   - its lead in material (`+2`, in points: pawn 1, knight and bishop 3, rook 5, queen 9) if it is ahead.
   The pieces taken come from the game's moves, so a promoted queen that is taken counts as a queen.
@@ -67,7 +69,8 @@ to light up, and the pieces each side has taken sit beside the board with who is
   - the last move's two squares, tinted;
   - the king in check, red;
   - the cursor, a gold frame;
-  - the piece held's legal squares, a dot on an empty square and a ring on a capture.
+  - the piece held's legal squares, a dot on an empty square and a ring round a piece it can take: dark and
+    see-through, so the wood shows through.
 
 ## 5. The rules
 
@@ -186,20 +189,22 @@ where it enters, no piercing (`node tools/devkit/music/loud.mjs carts/royal-ches
 
 The art is made in code by `carts/src/royal-chess/art.py` (the art toolkit, `tools/devkit/art/kit.py`).
 
-- **BG2:** the squares, inlaid maple and walnut, each a 3 × 3 tile picture with its own grain (two variants of each
-  wood). The cart writes them into Map RAM (columns 0 to 23) every frame in palette 2; the last move's squares use
+- **BG2:** the squares, inlaid maple and walnut, each a 3 × 3 tile picture with a bevelled edge (lit on the upper left)
+  and long, gently waving grain, along the rank for maple and along the file for walnut (two variants of each wood). The cart writes them into Map RAM (columns 0 to 23) every frame in palette 2; the last move's squares use
   palette 5 (the same woods tinted gold) and the square under a king in check palette 6 (tinted red).
 - **BG1:** the table, a 256 × 224 scene (`table`, at map column 48): red velvet with a gold thread's diamonds, the
-  board's frame (10 px, lit on the upper left) with a brass line inlaid round the board, and the two trays. The board's
+  board's frame (10 px, lit on the upper left) with a brass line inlaid round the board, and the two trays: a wooden
+  rim, a name plate and green baize. The board's
   squares are transparent in it, so BG2 shows through. On the title BG1 shows the `logo` scene instead (column 80): the
   same table with ROYAL CHESS in big gold letters over the board's middle.
 - **BG0:** the pieces, each a 3 × 3 tile picture over its square (transparent around it), carved ivory (palette 3) and
   ebony (palette 4) figures, shaded across their width and outlined. The cart writes them into Map RAM (columns 24 to
   47) as the position changes; the square of the piece held is left empty.
-- **Sprites:** the piece held (32 × 32, raised 4 px, ivory in sprite palette 0 and ebony in 1) over its shadow (sprite
-  palette 7, blended at half), and the captured pieces in the trays (8 px, `mini_<piece>`).
-- **Overlay** (colours at CGRAM 160 and up): the legal squares, the cursor, the coordinates on the frame, the status
-  line, the side panel's text, the menus and the result panel.
+- **Sprites:** the piece held (32 × 32, raised 4 px, ivory in sprite palette 0 and ebony in 1) over its shadow, the
+  marks of its legal squares (`dot`, 8 px, and `ring`, 32 px; the shadow and the marks in sprite palette 7, blended at
+  half, so they darken the wood), and the captured pieces in the trays (8 px, `mini_<piece>`).
+- **Overlay** (colours at CGRAM 160 and up): the cursor, the coordinates on the frame, the status
+  line, the name plates' small letters, the material lead, the menus and the result panel.
 
 ## 13. Persistence (save slots)
 
@@ -222,8 +227,8 @@ position a test sets up).
 
 | Asset | Budget |
 |---|---|
-| Code | 44 KB of the 64 KB (built; `node tools/check.js royal-chess`). The engine about 10 KB |
-| Tiles | 328 of 1,024 (built): 210 BG tiles (the squares in 2 woods with 2 grains, the 6 pieces at 9 tiles each, used for both colours with their own palettes, the table and the logo) and 118 sprite tiles (the 6 pieces held, 32 px, the 6 small ones and the shadow) |
+| Code | 46 KB of the 64 KB (built; `node tools/check.js royal-chess`). The engine about 10 KB |
+| Tiles | 446 of 1,024 (built): 311 BG tiles (the squares in 2 woods with 2 grains, the 6 pieces at 9 tiles each, used for both colours with their own palettes, the table with its baize, and the logo) and 135 sprite tiles (the 6 pieces held, 32 px, the 6 small ones, the shadow and the two marks) |
 | Sprites | At most about 40: the piece held and its shadow, the cursor, and up to 30 captured pieces |
 | Songs / SFX | 2 songs, about 12 effects |
 
@@ -423,6 +428,14 @@ position a test sets up).
        fits.
      - **Released:** the label is the title screen; the PNG cart is `carts/royal-chess.nova.png`, on the Strategy
        shelf; and a README row.
+     - **A last art pass** (asked for after the release):
+       - the squares' grain is long waving streaks with a bevelled edge, not dots;
+       - the trays are lined with green baize, with a wooden name plate in small letters that no longer run over the
+         rim;
+       - the side to move is gold and underlined, and the line blinks while the computer thinks (the old gold bar and
+         the `...` that overlapped the name are gone);
+       - the legal squares' marks are dark and see-through (blended sprites), not bright green.
+       - `02-art.mjs` checks the marks (19 checks there now).
    - **Results:**
      - `node tools/devkit/sweep.mjs royal-chess` (8 seeds each, the computer as Black):
 
@@ -440,7 +453,7 @@ position a test sets up).
        - STEADY avoids a position the game has had.
      - `node tools/release.js royal-chess`: the label, the PNG cart (payload 50 KB of 147 KB, 34%) decoding to exactly
        the packed cart, the Library index, and the checks with no warnings.
-     - `node tools/verify.js royal-chess` passes, with 183 test checks, and `node tools/devkit/smoke.mjs royal-chess`
+     - `node tools/verify.js royal-chess` passes, with 184 test checks (after the last art pass), and `node tools/devkit/smoke.mjs royal-chess`
        runs in the real console with no errors.
 
 Each step: build it, run `node tools/verify.js` and `node tools/devkit/smoke.mjs royal-chess`, write its **Built** and
