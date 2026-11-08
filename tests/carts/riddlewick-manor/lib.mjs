@@ -16,7 +16,7 @@ const PROBE = `__expose(() => ({
   get phase() { return phase; }, get sel() { return sel; }, set sel(v) { sel = v; }, get cur() { return cur; }, get me() { return me; }, set me(v) { me = v; },
   get seen() { return seen; }, get goal() { return goal; }, get start() { return start; }, get MW() { return MW; }, get MH() { return MH; },
   getDoor, setDoor, NONE, CLOSED, OPEN, LOCKED, N, E, S, W, pointsFor, winBonus, canReach, makeManor, roomId, KINDS, LEVELS,
-  get level() { return level; }, set level(v) { level = v; }, get candle() { return candle; }, set candle(v) { candle = v; },
+  get level() { return level; }, set level(v) { level = v; }, get subject() { return subject; }, set subject(v) { subject = v; }, pickQuestion, seenBefore, SEEN_SLOT, BANK_SLOT, get candle() { return candle; }, set candle(v) { candle = v; },
   get keys() { return keys; }, set keys(v) { keys = v; }, get kinds() { return kinds; }, get items() { return items; }, get notice() { return notice; },
   get doorsH() { return doorsH; }, get doorsV() { return doorsV; }, get runSeed() { return runSeed; }, ITEM_KEY, ITEM_STUB, ITEM_NONE, N_KEYS, N_STUBS, startGame,
   SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,

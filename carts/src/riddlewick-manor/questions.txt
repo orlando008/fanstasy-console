@@ -6,27 +6,178 @@
 # Facts that do not change: no "current" holders of anything. After a change:
 #   python3 carts/src/riddlewick-manor/questions.py      (checks it and writes rom/questions.bin)
 
+# --- HISTORY ---
 HIS 1 | Which ancient people built the pyramids at Giza? | The Egyptians | The Romans | The Vikings | The Aztecs
 HIS 1 | Who was the first person to walk on the Moon? | Neil Armstrong | Buzz Aldrin | Yuri Gagarin | John Glenn
+HIS 1 | Who was the first President of the United States? | George Washington | Abraham Lincoln | Thomas Jefferson | John Adams
+HIS 1 | Which seafaring raiders from Scandinavia sailed longships? | The Vikings | The Normans | The Celts | The Saxons
+HIS 1 | What was the water-filled ditch around a castle called? | A moat | A keep | A turret | A drawbridge
 HIS 2 | In which year did the Titanic sink? | 1912 | 1905 | 1921 | 1898
+HIS 2 | Which Roman city was buried by Mount Vesuvius in AD 79? | Pompeii | Athens | Carthage | Troy
+HIS 2 | Which wall did the Romans build across northern England? | Hadrian's Wall | The Antonine Wall | Offa's Dyke | The Great Wall
+HIS 2 | In which country did the ancient Olympic Games begin? | Greece | Italy | Egypt | Turkey
+HIS 2 | Which French emperor was defeated at Waterloo in 1815? | Napoleon Bonaparte | Louis XIV | Charlemagne | Louis XVI
+HIS 3 | In which year did the Berlin Wall fall? | 1989 | 1991 | 1985 | 1961
+HIS 3 | Which of Henry VIII's wives was the mother of Elizabeth I? | Anne Boleyn | Catherine of Aragon | Jane Seymour | Anne of Cleves
+HIS 3 | Which empire built the mountain city of Machu Picchu? | The Inca | The Aztec | The Maya | The Olmec
+HIS 3 | Whose tomb did Howard Carter find in Egypt in 1922? | Tutankhamun | Ramesses II | Akhenaten | Khufu
+HIS 3 | Who was the first woman to fly solo across the Atlantic? | Amelia Earhart | Amy Johnson | Bessie Coleman | Harriet Quimby
+HIS 4 | Which treaty ended the First World War with Germany in 1919? | The Treaty of Versailles | The Treaty of Paris | The Treaty of Ghent | The Treaty of Utrecht
+HIS 4 | Who was the first Emperor of Rome? | Augustus | Julius Caesar | Nero | Caligula
+HIS 4 | In which year did Constantinople fall to the Ottomans? | 1453 | 1492 | 1204 | 1517
+HIS 4 | In which year was Magna Carta sealed by King John? | 1215 | 1066 | 1415 | 1314
+HIS 4 | Which general led Carthage's army and elephants over the Alps? | Hannibal | Hamilcar | Scipio | Spartacus
+
+# --- GEOGRAPHY ---
 GEO 1 | What is the largest ocean on Earth? | The Pacific | The Atlantic | The Indian | The Arctic
 GEO 1 | Which country is shaped like a boot? | Italy | Spain | Greece | Portugal
+GEO 1 | What is the largest country in the world by area? | Russia | Canada | China | The United States
+GEO 1 | On which continent is Egypt? | Africa | Asia | Europe | South America
+GEO 1 | Which is the longest river in South America? | The Amazon | The Orinoco | The Parana | The Magdalena
 GEO 2 | What is the capital city of Australia? | Canberra | Sydney | Melbourne | Perth
+GEO 2 | What is the capital city of Canada? | Ottawa | Toronto | Vancouver | Montreal
+GEO 2 | What is the highest mountain in the world? | Mount Everest | K2 | Kilimanjaro | Mont Blanc
+GEO 2 | Which is the largest hot desert in the world? | The Sahara | The Gobi | The Kalahari | The Atacama
+GEO 2 | In which country is the Great Barrier Reef? | Australia | Indonesia | Fiji | New Zealand
+GEO 3 | What is the capital city of Turkey? | Ankara | Istanbul | Izmir | Antalya
+GEO 3 | Which river flows through the city of Baghdad? | The Tigris | The Euphrates | The Nile | The Jordan
+GEO 3 | What is the smallest country in the world? | Vatican City | Monaco | San Marino | Liechtenstein
+GEO 3 | In which country is Mount Kilimanjaro? | Tanzania | Kenya | Uganda | Ethiopia
+GEO 3 | Which strait separates Spain from Morocco? | The Strait of Gibraltar | The Bosporus | The Strait of Dover | The Strait of Messina
+GEO 4 | Which African country was once called Abyssinia? | Ethiopia | Eritrea | Somalia | Sudan
+GEO 4 | What is the deepest lake in the world? | Lake Baikal | Lake Tanganyika | Lake Superior | Lake Victoria
+GEO 4 | Which river forms much of the border between the USA and Mexico? | The Rio Grande | The Colorado | The Mississippi | The Missouri
+GEO 4 | Lake Titicaca lies on the border of Peru and which country? | Bolivia | Chile | Ecuador | Brazil
+GEO 4 | The Atacama Desert lies mostly in which country? | Chile | Peru | Argentina | Bolivia
+
+# --- SCIENCE ---
 SCI 1 | Which planet is known as the Red Planet? | Mars | Venus | Jupiter | Mercury
 SCI 1 | Which gas do plants take in from the air to make their food? | Carbon dioxide | Oxygen | Nitrogen | Helium
+SCI 1 | What does a thermometer measure? | Temperature | Weight | Air pressure | Speed
+SCI 1 | Which star is the closest to the Earth? | The Sun | Sirius | Polaris | Alpha Centauri
+SCI 1 | Which force pulls things down towards the ground? | Gravity | Magnetism | Friction | Electricity
 SCI 2 | What is the chemical symbol for gold? | Au | Ag | Go | Gd
+SCI 2 | How many planets are there in our Solar System? | Eight | Nine | Seven | Ten
+SCI 2 | What is H2O better known as? | Water | Salt | Hydrogen peroxide | Sugar
+SCI 2 | Which part of a plant takes in water from the soil? | The roots | The leaves | The petals | The flowers
+SCI 2 | Which is the largest planet in our Solar System? | Jupiter | Saturn | Neptune | Earth
+SCI 3 | What is the hardest natural substance? | Diamond | Quartz | Granite | Iron
+SCI 3 | Roughly how fast does light travel, in kilometres a second? | 300,000 | 30,000 | 3,000,000 | 3,000
+SCI 3 | Which blood cells carry oxygen around the body? | Red blood cells | White blood cells | Platelets | Plasma cells
+SCI 3 | What is the chemical symbol for sodium? | Na | So | Sd | Sm
+SCI 3 | Which scientist gave us the theory of general relativity? | Albert Einstein | Isaac Newton | Niels Bohr | Max Planck
+SCI 4 | Which gas makes up most of the Earth's air? | Nitrogen | Oxygen | Argon | Carbon dioxide
+SCI 4 | How many bones are there in an adult human body? | 206 | 212 | 186 | 230
+SCI 4 | Which particle in an atom has no electric charge? | The neutron | The proton | The electron | The positron
+SCI 4 | Which element has the atomic number 1? | Hydrogen | Helium | Oxygen | Carbon
+SCI 4 | What is the unit of electrical resistance? | The ohm | The volt | The ampere | The watt
+
+# --- NATURE ---
 NAT 1 | How many legs does a spider have? | Eight | Six | Ten | Twelve
 NAT 1 | What is a baby frog called? | A tadpole | A kid | A cub | A fry
+NAT 1 | Which animal is called the king of the jungle? | The lion | The tiger | The elephant | The gorilla
+NAT 1 | What sweet food do bees make from the nectar of flowers? | Honey | Jam | Syrup | Treacle
+NAT 1 | Which white bird is a symbol of peace? | The dove | The eagle | The crow | The parrot
 NAT 2 | What is the largest animal that has ever lived? | The blue whale | The African elephant | The whale shark | The giraffe
+NAT 2 | What is the fastest land animal? | The cheetah | The lion | The horse | The greyhound
+NAT 2 | How many hearts does an octopus have? | Three | One | Two | Eight
+NAT 2 | Which is the only mammal that can truly fly? | The bat | The flying squirrel | The sugar glider | The flying fish
+NAT 2 | What is a group of wolves called? | A pack | A herd | A flock | A school
+NAT 3 | What is the largest bird in the world? | The ostrich | The emu | The albatross | The condor
+NAT 3 | What is a baby kangaroo called? | A joey | A kid | A cub | A pup
+NAT 3 | What is the largest kind of fish? | The whale shark | The great white shark | The blue marlin | The tuna
+NAT 3 | What does a camel store in its hump? | Fat | Water | Milk | Air
+NAT 3 | What kind of animal is a Komodo dragon? | A lizard | A snake | A crocodile | A turtle
+NAT 4 | What is a group of crows called? | A murder | A parliament | A gaggle | A pride
+NAT 4 | Which land animal carries its young the longest before birth? | The elephant | The giraffe | The rhinoceros | The hippopotamus
+NAT 4 | How many eyes do most spiders have? | Eight | Six | Four | Two
+NAT 4 | What is the study of birds called? | Ornithology | Entomology | Herpetology | Ichthyology
+NAT 4 | What is a male honey bee called? | A drone | A worker | A soldier | A king
+
+# --- ARTS AND BOOKS ---
 ART 1 | Who wrote the play Romeo and Juliet? | William Shakespeare | Charles Dickens | Jane Austen | Geoffrey Chaucer
 ART 1 | Which artist painted the Mona Lisa? | Leonardo da Vinci | Michelangelo | Vincent van Gogh | Pablo Picasso
+ART 1 | Who wrote the Harry Potter books? | J. K. Rowling | Roald Dahl | C. S. Lewis | Enid Blyton
+ART 1 | In the fairy tale, what does Cinderella leave behind at the ball? | A glass slipper | A golden ring | A silver crown | A pearl necklace
+ART 1 | Which colour do you get by mixing blue and yellow paint? | Green | Purple | Orange | Brown
 ART 2 | In which city is the Louvre museum? | Paris | Rome | London | Madrid
+ART 2 | Who wrote Charlie and the Chocolate Factory? | Roald Dahl | Dr. Seuss | Lewis Carroll | Beatrix Potter
+ART 2 | Which painter cut off part of his own ear? | Vincent van Gogh | Claude Monet | Salvador Dali | Pablo Picasso
+ART 2 | Who wrote Alice's Adventures in Wonderland? | Lewis Carroll | Charles Dickens | Mark Twain | Hans Christian Andersen
+ART 2 | What is a haiku? | A short Japanese poem | A Japanese sword | A paper-folding art | A kind of puppet show
+ART 3 | Who painted the ceiling of the Sistine Chapel? | Michelangelo | Raphael | Leonardo da Vinci | Botticelli
+ART 3 | Who wrote the novel Pride and Prejudice? | Jane Austen | Charlotte Bronte | George Eliot | Emily Bronte
+ART 3 | In which country was the writer Hans Christian Andersen born? | Denmark | Germany | Norway | Sweden
+ART 3 | Who wrote the novel Moby-Dick? | Herman Melville | Mark Twain | Jack London | Edgar Allan Poe
+ART 3 | Which ancient Greek poet is said to have made the Odyssey? | Homer | Sophocles | Plato | Aesop
+ART 4 | Which Spanish artist painted Guernica? | Pablo Picasso | Salvador Dali | Joan Miro | Francisco Goya
+ART 4 | Who wrote One Hundred Years of Solitude? | Gabriel Garcia Marquez | Jorge Luis Borges | Isabel Allende | Pablo Neruda
+ART 4 | In which city does Michelangelo's statue of David stand? | Florence | Rome | Venice | Milan
+ART 4 | Claude Monet was a leader of which art movement? | Impressionism | Cubism | Surrealism | Romanticism
+ART 4 | Who wrote the novel Crime and Punishment? | Fyodor Dostoevsky | Leo Tolstoy | Anton Chekhov | Ivan Turgenev
+
+# --- MUSIC AND SCREEN ---
 MUS 1 | How many strings does a violin have? | Four | Five | Six | Three
 MUS 1 | A standard piano has how many keys? | 88 | 64 | 72 | 100
+MUS 1 | Which of these is a brass instrument? | The trumpet | The flute | The violin | The harp
+MUS 1 | In The Wizard of Oz, what colour is the brick road? | Yellow | Red | Green | Gold
+MUS 1 | Which instrument do you play by hitting it with sticks? | The drum | The flute | The guitar | The harp
 MUS 2 | Which composer wrote the Moonlight Sonata? | Beethoven | Mozart | Bach | Chopin
+MUS 2 | How many lines are there on a musical staff? | Five | Four | Six | Seven
+MUS 2 | Which composer wrote The Four Seasons? | Antonio Vivaldi | Johann Sebastian Bach | George Frideric Handel | Joseph Haydn
+MUS 2 | Which band was made up of John, Paul, George and Ringo? | The Beatles | The Rolling Stones | The Who | Queen
+MUS 2 | In music, what does forte mean? | Loud | Soft | Fast | Slow
+MUS 3 | What was the first feature-length film from Walt Disney's studio? | Snow White | Pinocchio | Fantasia | Bambi
+MUS 3 | How many symphonies did Beethoven complete? | Nine | Five | Seven | Twelve
+MUS 3 | Which composer wrote the opera The Magic Flute? | Mozart | Haydn | Schubert | Strauss
+MUS 3 | Which instrument has pedals and 47 strings? | The harp | The piano | The cello | The lute
+MUS 3 | Which film studio's logo has a roaring lion? | MGM | Paramount | Warner Bros. | Universal
+MUS 4 | What is the highest female singing voice? | Soprano | Alto | Mezzo-soprano | Contralto
+MUS 4 | Which film won the very first Academy Award for Best Picture? | Wings | Sunrise | The Jazz Singer | Metropolis
+MUS 4 | Which composer wrote the opera Carmen? | Georges Bizet | Giuseppe Verdi | Giacomo Puccini | Richard Wagner
+MUS 4 | What does a cappella mean in music? | Sung without instruments | Played very slowly | Sung in a church | Played by a full orchestra
+MUS 4 | Which jazz trumpeter was nicknamed Satchmo? | Louis Armstrong | Miles Davis | Dizzy Gillespie | Chet Baker
+
+# --- SPORT AND GAMES ---
 SPO 1 | How many players does a soccer team have on the field at once? | Eleven | Nine | Ten | Twelve
 SPO 1 | In which sport do players hit a shuttlecock? | Badminton | Tennis | Squash | Table tennis
+SPO 1 | In which sport would you score a touchdown? | American football | Basketball | Baseball | Ice hockey
+SPO 1 | How many faces does a standard die have? | Six | Four | Eight | Twelve
+SPO 1 | In chess, which piece can only move diagonally? | The bishop | The rook | The knight | The king
 SPO 2 | How many squares are there on a chessboard? | 64 | 32 | 81 | 100
+SPO 2 | How often are the Summer Olympic Games held? | Every four years | Every two years | Every year | Every five years
+SPO 2 | In tennis, what is a score of zero called? | Love | Nil | Duck | Zip
+SPO 2 | How many players does a basketball team have on court at once? | Five | Six | Seven | Four
+SPO 2 | Which sport is played at Wimbledon? | Tennis | Golf | Cricket | Rugby
+SPO 3 | How many points is a touchdown worth in American football? | Six | Seven | Three | Five
+SPO 3 | In golf, what is a score of one under par on a hole called? | A birdie | An eagle | A bogey | An albatross
+SPO 3 | In which country was the sport of judo created? | Japan | China | Korea | Thailand
+SPO 3 | How many rings are there on the Olympic flag? | Five | Four | Six | Seven
+SPO 3 | In snooker, how many points is the black ball worth? | Seven | Five | Six | Ten
+SPO 4 | How many players does a rugby union team have on the field? | Fifteen | Thirteen | Eleven | Twelve
+SPO 4 | In which city were the first modern Olympic Games held, in 1896? | Athens | Paris | London | Rome
+SPO 4 | In snooker, what is the usual maximum break? | 147 | 155 | 150 | 180
+SPO 4 | Roughly how long is a marathon? | About 42 km | About 26 km | About 50 km | About 35 km
+SPO 4 | Which board game uses a doubling cube? | Backgammon | Ludo | Draughts | Mancala
+
+# --- FOOD AND EVERYDAY ---
 FOO 1 | Which fruit is dried to make raisins? | Grapes | Plums | Figs | Apricots
 FOO 1 | Which fruit is the main ingredient of guacamole? | Avocado | Lime | Green apple | Kiwi
+FOO 1 | What is the main ingredient of an omelette? | Eggs | Milk | Flour | Cheese
+FOO 1 | Which orange vegetable do rabbits famously love? | The carrot | The pumpkin | The sweet potato | The squash
+FOO 1 | How many days are there in a leap year? | 366 | 365 | 364 | 367
 FOO 2 | From which country does the rice dish paella come? | Spain | Italy | Mexico | Portugal
+FOO 2 | What is the dark green wrapping on many kinds of sushi? | Seaweed | Spinach | Lettuce | Cabbage
+FOO 2 | Which nut is ground to make marzipan? | Almond | Walnut | Peanut | Hazelnut
+FOO 2 | How many minutes are there in a day? | 1,440 | 1,240 | 1,400 | 3,600
+FOO 2 | Melted cheese fondue is a famous dish of which country? | Switzerland | Germany | Belgium | Denmark
+FOO 3 | What is the main ingredient of hummus? | Chickpeas | Lentils | Kidney beans | Green peas
+FOO 3 | Which spice, from a crocus flower, is the dearest by weight? | Saffron | Vanilla | Cardamom | Cinnamon
+FOO 3 | What are thin slices of raw fish called in Japan? | Sashimi | Tempura | Teriyaki | Ramen
+FOO 3 | How many grams are there in a kilogram? | 1,000 | 100 | 10,000 | 500
+FOO 3 | Which cheese is used on a Margherita pizza? | Mozzarella | Cheddar | Parmesan | Gouda
+FOO 4 | In which country is Manchego cheese made? | Spain | Italy | Portugal | France
+FOO 4 | Which vegetable gives the soup borscht its deep red colour? | Beetroot | Red cabbage | Tomato | Red pepper
+FOO 4 | Which grain is used to brew Japanese sake? | Rice | Barley | Wheat | Millet
+FOO 4 | What kind of food is a pomelo? | A citrus fruit | A kind of melon | A tropical nut | A root vegetable
+FOO 4 | Pasta cooked so it is still a little firm is called what? | Al dente | Al forno | Al fresco | A la carte

@@ -45,6 +45,7 @@ function play(song) {
 // --- Save slots (SPEC 13) ---
 
 const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
+const BANK_SLOT = 3, SEEN_SLOT = 40, SEEN_SLOTS = 20;   // the bank's size when the seen bits were kept; the questions asked in earlier runs (640 bits)
 const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
@@ -196,6 +197,7 @@ function canReach(x, y) {
 // The levels (spec 5): the candle's notches, and the questions' difficulty (and the points) are the level's number.
 const LEVELS = [{ name: 'NOVICE', candle: 6 }, { name: 'SCHOLAR', candle: 5 }, { name: 'SAGE', candle: 4 }, { name: 'MASTER', candle: 3 }];
 let level = 1;   // 1 to 4 (step 4 adds the choice of level and subject)
+let subject = -1;   // an index into SUBJECTS, or -1 for ALL SUBJECTS
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
@@ -209,6 +211,10 @@ function init() {
     dset(VERSION_SLOT, SAVE_VERSION);
   }
   QUESTIONS = loadQuestions();
+  if (dget(BANK_SLOT) !== QUESTIONS.length) {   // the bank has changed: what was asked before no longer lines up
+    for (let k = 0; k < SEEN_SLOTS; k++) dset(SEEN_SLOT + k, 0);
+    dset(BANK_SLOT, QUESTIONS.length);
+  }
   for (const l of [0, 1, 2]) bg(l, { show: false });   // (step 6 draws the rooms on the layers; until then, the overlay)
   color(0, 3, 2, 4);
   blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (ART.colors.GLASS) are see-through
@@ -232,12 +238,25 @@ function firstDoor() {
   return me.f;
 }
 
-/** A question for the door: one not asked yet in this run (the subject and level choice come in steps 3 and 4). */
+/** Has question i been asked in an earlier run (or this one)? The bits are kept in the save (slots 40 to 59). */
+const seenBefore = (i) => (dget(SEEN_SLOT + (i >> 5)) >>> (i & 31)) & 1;
+function markSeen(i, on) { const k = SEEN_SLOT + (i >> 5), b = 1 << (i & 31); dset(k, on ? dget(k) | b : dget(k) & ~b); }
+
+/** A question for the door (spec 6): of the run's subject (any, for ALL SUBJECTS) at the level's difficulty, not asked
+ * yet in this run, and not asked in an earlier run where possible. When a difficulty runs dry, the nearest fills in. */
 function pickQuestion() {
-  let pool = QUESTIONS.map((_, i) => i).filter((i) => !asked.has(i));
-  if (!pool.length) { asked.clear(); pool = QUESTIONS.map((_, i) => i); }
-  const qi = pool[rndi(0, pool.length - 1)];
-  asked.add(qi);
+  const fits = (i) => subject < 0 || QUESTIONS[i].subj === subject;
+  let qi = -1;
+  for (let off = 0; off < 4 && qi < 0; off++) for (const dd of off ? [level - off, level + off] : [level]) {   // the level's difficulty, then the nearest
+    if (dd < 1 || dd > 4 || qi >= 0) continue;
+    const pool = QUESTIONS.map((_, i) => i).filter((i) => fits(i) && QUESTIONS[i].diff === dd && !asked.has(i));
+    if (!pool.length) continue;
+    let fresh = pool.filter((i) => !seenBefore(i));
+    if (!fresh.length) { pool.forEach((i) => markSeen(i, false)); fresh = pool; }   // all asked in earlier runs: that pool starts afresh
+    qi = fresh[rndi(0, fresh.length - 1)];
+  }
+  if (qi < 0) { asked.clear(); return pickQuestion(); }   // every question of the subject asked in this run: start again
+  asked.add(qi); markSeen(qi, true);
   const order = [0, 1, 2, 3];
   for (let i = 3; i > 0; i--) { const j = rndi(0, i); [order[i], order[j]] = [order[j], order[i]]; }
   return { qi, order, sel: 0, door: sel, chosen: -1, right: false };

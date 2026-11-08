@@ -1,9 +1,9 @@
 # Riddlewick Manor: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 and 2 of 8 built (section 15): a manor made anew each run, knocking, questions, doors that open
-or lock, the candle, keys and stubs, the heart's last question, winning and losing. Step 3 (the question bank and its
-first 160 questions) is next.
+**Status:** Steps 1 to 3 of 8 built (section 15): a manor made anew each run, knocking, questions, doors that open
+or lock, the candle, keys and stubs, the heart's last question, winning and losing, and a bank of 160 questions drawn by
+subject and level. Step 4 (the flow: the new game's choices, saves and CONTINUE) is next.
 **Cart source:** `carts/src/riddlewick-manor/` → `carts/riddlewick-manor.nova`
 
 ---
@@ -199,6 +199,7 @@ The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit,
 | 0 | Format version |
 | 1 | Last initials entered |
 | 2 | The last subject and level chosen |
+| 3 | The bank's size when the record of questions asked was kept (a different bank clears the record) |
 | 10–39 | Top 10, best first, 3 slots each: score, initials, level and subject |
 | 40–59 | The questions already asked in earlier runs (640 bits) |
 | 60–79 | The run in progress: its seed, subject, level, room, facing, candle, keys, score, streak, the doors' states (2 bits each), what has been picked up, the questions asked in it |
@@ -288,6 +289,22 @@ The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit,
        questions' difficulty; a player who knows 4 answers in 5 at their level should win most runs.
 3. **The question bank:** the format of the questions' text file, the script that checks and packs it into ROM, the drawing rules
    (subject, level, no repeats within and across runs), and the first 160 questions (5 per subject per difficulty).
+   - **Built:**
+     - **160 questions** in `questions.txt`, 5 for each subject at each difficulty, written for the game. Each was
+       checked for one clearly right answer; one whose answer differs by country (teaspoons in a tablespoon: 3, or 4 in
+       Australia) was replaced.
+     - **`questions.py`** checks the file and packs it (13.7 KB of ROM); `--check` also fails when the `.bin` is stale.
+     - **Drawing** (`pickQuestion`): the run's subject (`subject`, -1 for all) at the level's difficulty, not asked in
+       this run; of those, the ones not asked in earlier runs first (one bit a question in slots 40 to 59). When all of a
+       pool have been asked before, its bits clear and it starts afresh. When the level's difficulty runs dry, the
+       nearest (one lower, then one higher) fills in; when the whole subject has been asked in the run, it starts again.
+     - **A changed bank** (a different count, slot 3) clears the record, since its questions no longer line up.
+   - **Results:**
+     - `node tools/verify.js riddlewick-manor` passes, with 87 test checks. New: `05-bank.mjs`, 13 checks: the bank's
+       counts and answers; drawing by level (20 at each) and by subject; no repeats in a run; the nearest difficulty
+       filling in; earlier runs' questions kept back, remembered across a restart, and cleared for a changed bank.
+     - `node tools/devkit/smoke.mjs riddlewick-manor` runs in the real console with no errors; a sweep at 80% right
+       won 5 of 6 runs, all finishing.
 4. **The flow:** the title, the new game's choices, saving and CONTINUE, the pause, the end screen, initials and the top
    10.
 5. **The rest of the questions:** to 640 (20 per subject per difficulty), checked for format and spread.
