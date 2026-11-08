@@ -63,4 +63,17 @@ const doorsOf = (p) => [...p.doorsH, ...p.doorsV].join('');
   r.setDoor(0, 5, r.N, r.CLOSED); r.sel = r.N; vm3.press('A'); answer(vm3, r, false); vm3.run(5);
   ok(r.state === 'over' && !r.won && !r.hasRun(), 'so does the candle going out');
 }
+// 4. A question being asked is saved too, so quitting cannot skip it; a key's refusals are said on the question.
+{
+  const vm = newGame(6), p = vm.probe(); vm.run(2);
+  p.setDoor(0, 5, p.N, p.CLOSED); p.sel = p.N; vm.press('A'); vm.run(3);
+  const q = { qi: p.cur.qi, order: p.cur.order.join(), door: p.cur.door };
+  const vm2 = newGame(7, { title: true, save: vm.m.save }), r = vm2.probe(); vm2.run(12); vm2.press('A'); vm2.run(3);
+  ok(r.phase === 'ask' && r.cur.qi === q.qi && r.cur.order.join() === q.order && r.cur.door === q.door, 'quitting during a question and coming back: the same question, its answers in the same order, at the same door');
+  r.keys = 0; vm2.run(12); vm2.press('B'); vm2.run(1);
+  ok(r.phase === 'ask' && r.cur.note === 'YOU HAVE NO KEY', 'B with no key: YOU HAVE NO KEY, on the question');
+  const vm3 = newGame(8), t = vm3.probe(); vm3.run(2);
+  t.me = { x: 6, y: 1, f: t.N }; t.setDoor(6, 1, t.N, t.OPEN); t.sel = t.N; t.keys = 1; vm3.press('A'); vm3.run(42); vm3.press('B'); vm3.run(1);
+  ok(t.cur.final && t.cur.note === 'A KEY CANNOT ANSWER HER' && t.keys === 1, 'B on Lady Riddlewick\'s question: A KEY CANNOT ANSWER HER');
+}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

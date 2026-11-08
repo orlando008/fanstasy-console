@@ -329,7 +329,7 @@ function updateSetup() {
 // --- The run in progress, saved while you explore and made again from it (CONTINUE) ---
 
 const hasRun = () => dget(RUN_SLOT) === 1;
-function clearRun() { for (let k = 0; k < 14; k++) dset(RUN_SLOT + k, 0); }
+function clearRun() { for (let k = 0; k < 15; k++) dset(RUN_SLOT + k, 0); }
 /** 21 flags a slot (so no slot's top bit is used): a set of room numbers 0 to 41 into two slots. */
 function packRooms(has, k) { let a = 0, b = 0; for (let r = 0; r < MW * MH; r++) if (has(r)) { if (r < 21) a |= 1 << r; else b |= 1 << (r - 21); } dset(k, a); dset(k + 1, b); }
 const roomBit = (k, r) => (r < 21 ? dget(k) >> r : dget(k + 1) >> (r - 21)) & 1;
@@ -342,6 +342,9 @@ function saveRun() {
   for (let k = 0; k < 5; k++) { let v = 0; for (let j = 0; j < 15; j++) v |= (doors[k * 15 + j] || 0) << (j * 2); dset(RUN_SLOT + 5 + k, v); }
   packRooms((r) => seen.has(r), RUN_SLOT + 10);
   packRooms((r) => items[r] !== ITEM_NONE, RUN_SLOT + 12);
+  // The question being asked, if one is (so quitting cannot skip it): its number + 1, its answers' order, its door, final.
+  const q = phase === 'ask' && cur ? (cur.qi + 1) | cur.order.reduce((v, a, i) => v | a << (12 + i * 2), 0) | cur.door << 20 | (cur.final ? 1 : 0) << 22 : 0;
+  dset(RUN_SLOT + 14, q);
 }
 /** CONTINUE: the manor made again from the seed, then the doors, rooms seen, items taken and the numbers put back. */
 function continueRun() {
@@ -359,7 +362,11 @@ function continueRun() {
   for (let r = 0; r < MW * MH; r++) { if (roomBit(RUN_SLOT + 10, r)) seen.add(r); if (!roomBit(RUN_SLOT + 12, r)) items[r] = ITEM_NONE; }
   asked = new Set(); won = false; notice = ''; noticeT = 0; cur = null; paused = false; timer = 0; state = 'play'; phase = 'explore';
   sel = firstDoor(); play(SONG.play);
-  if (me.x === goal.x && me.y === goal.y) { cur = { ...pickQuestion(), final: true }; phase = 'ask'; }   // back to her last question
+  const q = dget(RUN_SLOT + 14);
+  if (q) {   // back to the question that was being asked
+    cur = { qi: (q & 4095) - 1, order: [0, 1, 2, 3].map((i) => (q >> (12 + i * 2)) & 3), door: (q >> 20) & 3, final: !!((q >> 22) & 1), sel: 0, chosen: -1, right: false };
+    asked.add(cur.qi); phase = 'ask';
+  } else if (me.x === goal.x && me.y === goal.y) { cur = { ...pickQuestion(), final: true }; phase = 'ask'; }   // back to her last question
 }
 
 function updatePlay() {
@@ -368,7 +375,7 @@ function updatePlay() {
   if (phase === 'explore') updateExplore();
   else if (phase === 'ask') updateAsk();
   else if (phase === 'confirm') updateConfirm();
-  if (state === 'play' && (phase === 'explore' || (phase === 'ask' && cur.final))) saveRun();   // (unchanged slots are not written)
+  if (state === 'play' && (phase === 'explore' || phase === 'ask')) saveRun();   // (unchanged slots are not written)
   else if (phase === 'answered') updateAnswered();
   else if (phase === 'walk') updateWalk();
 }
@@ -401,8 +408,9 @@ function updateAsk() {
   if (pressed(UP)) { cur.sel = (cur.sel + 3) % 4; fx(SFX.move); }
   if (pressed(DOWN)) { cur.sel = (cur.sel + 1) % 4; fx(SFX.move); }
   if (timer < 10) return;
-  if (pressed(B) && !cur.final) {
-    if (!keys) { say('YOU HAVE NO KEY'); fx(SFX.locked); return; }
+  if (pressed(B) && cur.final) { cur.note = 'A KEY CANNOT ANSWER HER'; cur.noteT = 90; fx(SFX.locked); return; }
+  if (pressed(B)) {
+    if (!keys) { cur.note = 'YOU HAVE NO KEY'; cur.noteT = 90; fx(SFX.locked); return; }
     keys--; asked.delete(cur.qi); setDoor(me.x, me.y, cur.door, OPEN); checkStuck(); fx(SFX.key);
     const d = cur.door; cur = null; walk(d); return;
   }
@@ -648,7 +656,8 @@ function drawMap(x0, y0, c) {
 function drawQuestion() {
   const q = QUESTIONS[cur.qi], kind = kinds[roomId(me.x, me.y)];
   panel(0, 112, 256, 112);
-  if (phase === 'ask') txt(cur.final ? 'LADY RIDDLEWICK ASKS:' : `${KINDS[kind][1]} ASKS:`, 8, 117, cur.final ? GOLD : CYAN);
+  if (phase === 'ask' && cur.noteT > 0) { txt(cur.note, 8, 117, RED); cur.noteT--; }   // (a key that cannot be used here)
+  else if (phase === 'ask') txt(cur.final ? 'LADY RIDDLEWICK ASKS:' : `${KINDS[kind][1]} ASKS:`, 8, 117, cur.final ? GOLD : CYAN);
   if (phase === 'ask' && keys && !cur.final) txt(`B: KEY (${keys})`, 248 - 8 * (8 + String(keys).length), 117, DIM);
   wrap(q.q, Q_LINE).forEach((l, i) => txt(l, 8, 130 + i * 11, WHITE));
   cur.order.forEach((a, i) => {

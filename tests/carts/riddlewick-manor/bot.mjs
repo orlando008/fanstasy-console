@@ -2,6 +2,7 @@
 // probability, so the manor's layout, the candle and the keys can be checked over many seeds without a person.
 //
 //   node tools/devkit/sweep.mjs riddlewick-manor --seeds 8 --set skill=0.5,0.8
+//   node tools/devkit/sweep.mjs riddlewick-manor --seeds 16 --set level=1,2,3,4,skill=0.6,0.7,0.8,0.9
 //
 // The contract is in the header of tools/devkit/sweep.mjs. `skill` is the chance (0 to 1) of answering a question right.
 // Exploring, it takes the route to the heart with the fewest questions left (it knows the manor's plan, as a player who
@@ -9,11 +10,11 @@
 // is left).
 import { M, newGame as boot } from './lib.mjs';
 
-export const defaults = { frames: 40000, seeds: 6, set: { skill: [0.5, 0.7, 0.9] } };
+export const defaults = { frames: 40000, seeds: 6, set: { level: [1], skill: [0.5, 0.7, 0.9] } };
 export const newGame = (seed) => boot(seed);
 
 let decided = null;
-export const setup = () => { decided = null; };
+export const setup = (vm, p, opts) => { decided = null; if (opts.level) { p.level = opts.level; p.startGame(); } };
 
 const BTN_FOR = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
 export function pad(vm, p, frame, opts) {
