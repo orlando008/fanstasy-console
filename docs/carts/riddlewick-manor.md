@@ -1,10 +1,8 @@
 # Riddlewick Manor: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Steps 1 to 6 of 8 built (section 15): a manor made anew each run, knocking, questions, doors that open
-or lock, the candle, keys and stubs, the heart's last question, winning and losing, the full bank of 640 questions drawn
-by subject and level, the title and the new game's choices, the run saved as you go (CONTINUE), the records, and the
-art and the audio. Step 8 (balance, polish and release) is next.
+**Version:** 1.0
+**Status:** Complete. All 8 steps of the plan (section 15) are built, and the cart is released as
+`carts/riddlewick-manor.nova.png`, on the Library's Puzzle shelf.
 **Cart source:** `carts/src/riddlewick-manor/` → `carts/riddlewick-manor.nova`
 
 ---
@@ -90,8 +88,8 @@ Only the buttons a phone's touch controls have. A press on a door that has no do
 |---|---|---|---|---|
 | 1 | NOVICE | 6 | difficulty 1 | 100 |
 | 2 | SCHOLAR | 5 | difficulty 2 | 200 |
-| 3 | SAGE | 4 | difficulty 3 | 300 |
-| 4 | MASTER | 3 | difficulty 4 | 400 |
+| 3 | SAGE | 5 | difficulty 3 | 300 |
+| 4 | MASTER | 4 | difficulty 4 | 400 |
 
 - **A wrong answer** burns one notch. When the last one goes, the run ends (the score stands).
 - **A candle stub** adds a notch, up to the level's full candle.
@@ -238,13 +236,14 @@ writes `rom/rooms.bin`: each kind's 15 colours for palette 1.
 | 65–69 | The doors' states, 2 bits each, 15 a slot (`doorsH`, then `doorsV`) |
 | 70–71 | The rooms seen (21 a slot) |
 | 72–73 | The rooms whose key or stub is still there |
-| 74–255 | Reserved |
+| 74 | The question being asked, if one is: its number + 1, its answers' order (2 bits each, from bit 12), its door (bit 20), final (bit 22) |
+| 75–255 | Reserved |
 
 ## 14. Asset budget
 
 | Asset | Budget |
 |---|---|
-| Code | 47 KB of the 64 KB (built; the ART block, the tiles' names, is about 10 KB of it; `node tools/check.js riddlewick-manor`) |
+| Code | 48 KB of the 64 KB (built; the ART block, the tiles' names, is about 10 KB of it; `node tools/check.js riddlewick-manor`) |
 | ROM | The question bank: 55 KB of the 128 KB (640 questions, built) |
 | Tiles | 864 of 1,024 (built): 745 background (the room about 260, the panel about 35, the doors about 50, the furniture about 200, the title about 200) and 119 sprite tiles (the ghost's two frames, ten props, the arrow, padlock, candle and key) |
 | Sprites | At most 8 at once (a ghost, its prop, three padlocks, keys) |
@@ -424,6 +423,32 @@ writes `rom/rooms.bin`: each kind's 15 colours for palette 1.
 8. **Balance, polish and release:** a bot plays runs at each level with a chosen share of right answers (how often a
    run is won, how long it takes), then the label, the PNG cart and the Library (`node tools/release.js
    riddlewick-manor`) and a README row.
+   - **Built:**
+     - **The candle, tuned with the bot:** at levels 3 and 4 a candle of 4 and 3 let a player who knows 4 answers in 5
+       win only 56% and 25% of runs. They are now 5 and 4 (section 5); levels 1 and 2 stay at 6 and 5.
+     - **A question being asked is saved** (slot 74), so quitting during one and continuing comes back to it, its
+       answers in the same order: it can no longer be skipped (the open question from step 4).
+     - **A key's refusals are said on the question:** B with no key says `YOU HAVE NO KEY`, and on Lady Riddlewick's
+       question `A KEY CANNOT ANSWER HER`, in the question's header.
+     - **Released:** the label is the title screen; the PNG cart is `carts/riddlewick-manor.nova.png`, on the Puzzle
+       shelf; and a README row.
+   - **Results:**
+     - `node tools/devkit/sweep.mjs riddlewick-manor --seeds 16 --set level=1,2,3,4,skill=0.6,0.7,0.8,0.9`, all runs
+       finishing, none shut in (the bot knows the plan, so a person exploring will need a few more questions):
+
+       | Level (candle) | 60% right | 70% | 80% | 90% |
+       |---|---|---|---|---|
+       | 1 NOVICE (6) | 5 of 16 | 9 of 16 | 13 of 16 | 16 of 16 |
+       | 2 SCHOLAR (5) | 3 of 16 | 6 of 16 | 15 of 16 | 16 of 16 |
+       | 3 SAGE (5; was 4: 3, 5, 9, 16) | 5 of 16 | 8 of 16 | 13 of 16 | 16 of 16, with a candle of 4 |
+       | 4 MASTER (4; was 3: 0, 3, 4, 14) | 1 of 16 | 4 of 16 | 7 of 16 | 14 of 16, with a candle of 3 |
+
+       A run takes 11 to 18 questions on average (the shortest is 12 with the last question).
+     - `node tools/release.js riddlewick-manor`: the label, the PNG cart (payload 84 KB of 147 KB, 57%) decoding to
+       exactly the packed cart, the Library index, and the checks with no warnings.
+     - `node tools/verify.js riddlewick-manor` passes, with 139 test checks (`06-flow.mjs` checks the saved question
+       and the key's refusals); `colors.mjs --check` is within the limits; `node tools/devkit/smoke.mjs
+       riddlewick-manor` runs in the real console with no errors.
 
 Each step: build it, run `node tools/verify.js` and `node tools/devkit/smoke.mjs riddlewick-manor`, write its **Built**
 and **Results** notes under its number here, commit and push.
@@ -434,12 +459,10 @@ Defaults I chose that you did not confirm, each easy to change:
 
 - **The manor's size:** 7 × 6 rooms, the heart at least 11 doors from the start: a run is about 15 to 25 questions,
   10 to 20 minutes.
-- **The candle:** 6 notches at level 1 down to 3 at level 4; candle stubs (2 in a manor) add one back.
+- **The candle:** 6, 5, 5 and 4 notches at levels 1 to 4 (step 8 raised levels 3 and 4 from 4 and 3); candle stubs (2 in a manor) add one back.
 - **Keys:** 3 in a manor, and one given when you would otherwise be shut in.
 - **The heart's last question,** asked by Lady Riddlewick, until you answer one right.
 - **The eight subjects** and the four levels' names (NOVICE, SCHOLAR, SAGE, MASTER).
 - **No timer** on the questions.
-- **Quitting during a question** comes back to the room, not to that question, so a player could quit to skip one they
-  do not know (the question stays marked as asked). Saving the question too is a small change.
 - **Extras not chosen, kept for later:** two players taking turns, a timer mode, choosing several subjects at once,
   statistics by subject, a daily manor (the same seed for everyone that day).

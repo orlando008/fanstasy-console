@@ -40,7 +40,7 @@ const doorsOf = (p) => [...p.doorsH, ...p.doorsV].join('');
 // 2. The candle.
 {
   const vm = newGame(2), p = vm.probe(); vm.run(2);
-  ok(p.candle === 6 && p.LEVELS.map((l) => l.candle).join() === '6,5,4,3', 'the candle has 6 notches at level 1 (5, 4 and 3 at the others)');
+  ok(p.candle === 6 && p.LEVELS.map((l) => l.candle).join() === '6,5,5,4', 'the candle has 6 notches at level 1 (5, 5 and 4 at the others)');
   p.setDoor(0, 5, p.N, p.CLOSED); p.sel = p.N; vm.press('A'); answer(vm, p, false);
   ok(p.candle === 5, 'a wrong answer burns a notch');
   p.candle = 1; p.setDoor(0, 5, p.E, p.CLOSED); choose(vm, p, p.E); vm.press('A'); answer(vm, p, false); vm.run(5);
@@ -101,7 +101,7 @@ const doorsOf = (p) => [...p.doorsH, ...p.doorsV].join('');
 {
   const vm = newGame(6), p = vm.probe(); vm.run(2);
   p.level = 3; p.startGame(); vm.run(2);
-  ok(p.candle === 4 && p.pointsFor() === 300, 'at level 3: a candle of 4, and 300 a right answer');
+  ok(p.candle === 5 && p.pointsFor() === 300, 'at level 3: a candle of 5, and 300 a right answer');
   p.candle = 2; ok(p.winBonus() === 3000 + 1200, 'and winning with 2 notches left scores 3,000 + 1,200');
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

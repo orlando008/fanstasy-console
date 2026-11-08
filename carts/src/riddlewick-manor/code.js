@@ -200,7 +200,7 @@ function canReach(x, y) {
 // ===================================================================================================================
 
 // The levels (spec 5): the candle's notches, and the questions' difficulty (and the points) are the level's number.
-const LEVELS = [{ name: 'NOVICE', candle: 6 }, { name: 'SCHOLAR', candle: 5 }, { name: 'SAGE', candle: 4 }, { name: 'MASTER', candle: 3 }];
+const LEVELS = [{ name: 'NOVICE', candle: 6 }, { name: 'SCHOLAR', candle: 5 }, { name: 'SAGE', candle: 5 }, { name: 'MASTER', candle: 4 }];
 let level = 1;   // 1 to 4 (step 4 adds the choice of level and subject)
 let subject = -1;   // an index into SUBJECTS, or -1 for ALL SUBJECTS
 let skipTitle = false; // tests set this to land straight in the game
@@ -692,7 +692,7 @@ function drawTitle() {
   }
 }
 
-const LEVEL_NOTES = ['CANDLE 6, EASY QUESTIONS', 'CANDLE 5, FAIR QUESTIONS', 'CANDLE 4, HARD QUESTIONS', 'CANDLE 3, EXPERT QUESTIONS'];
+const LEVEL_NOTES = ['CANDLE 6, EASY QUESTIONS', 'CANDLE 5, FAIR QUESTIONS', 'CANDLE 5, HARD QUESTIONS', 'CANDLE 4, EXPERT QUESTIONS'];
 function drawSetup() {
   panel(16, 58, 224, 160);   // below the name on the title
   ctxt('A NEW GAME', 66, GOLD);
