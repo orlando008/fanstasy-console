@@ -1,0 +1,32 @@
+# Riddlewick Manor's questions. One a line:
+#   SUBJECT DIFFICULTY | the question | the right answer | three wrong answers, each after a |
+# Subjects: HIS history, GEO geography, SCI science, NAT nature, ART arts and books, MUS music and screen,
+# SPO sport and games, FOO food and everyday. Difficulty 1 (a curious 10-year-old knows it) to 4 (a keen quizzer).
+# A question at most 90 characters (3 lines of 30 on the screen), an answer at most 26; plain ASCII only.
+# Facts that do not change: no "current" holders of anything. After a change:
+#   python3 carts/src/riddlewick-manor/questions.py      (checks it and writes rom/questions.bin)
+
+HIS 1 | Which ancient people built the pyramids at Giza? | The Egyptians | The Romans | The Vikings | The Aztecs
+HIS 1 | Who was the first person to walk on the Moon? | Neil Armstrong | Buzz Aldrin | Yuri Gagarin | John Glenn
+HIS 2 | In which year did the Titanic sink? | 1912 | 1905 | 1921 | 1898
+GEO 1 | What is the largest ocean on Earth? | The Pacific | The Atlantic | The Indian | The Arctic
+GEO 1 | Which country is shaped like a boot? | Italy | Spain | Greece | Portugal
+GEO 2 | What is the capital city of Australia? | Canberra | Sydney | Melbourne | Perth
+SCI 1 | Which planet is known as the Red Planet? | Mars | Venus | Jupiter | Mercury
+SCI 1 | Which gas do plants take in from the air to make their food? | Carbon dioxide | Oxygen | Nitrogen | Helium
+SCI 2 | What is the chemical symbol for gold? | Au | Ag | Go | Gd
+NAT 1 | How many legs does a spider have? | Eight | Six | Ten | Twelve
+NAT 1 | What is a baby frog called? | A tadpole | A kid | A cub | A fry
+NAT 2 | What is the largest animal that has ever lived? | The blue whale | The African elephant | The whale shark | The giraffe
+ART 1 | Who wrote the play Romeo and Juliet? | William Shakespeare | Charles Dickens | Jane Austen | Geoffrey Chaucer
+ART 1 | Which artist painted the Mona Lisa? | Leonardo da Vinci | Michelangelo | Vincent van Gogh | Pablo Picasso
+ART 2 | In which city is the Louvre museum? | Paris | Rome | London | Madrid
+MUS 1 | How many strings does a violin have? | Four | Five | Six | Three
+MUS 1 | A standard piano has how many keys? | 88 | 64 | 72 | 100
+MUS 2 | Which composer wrote the Moonlight Sonata? | Beethoven | Mozart | Bach | Chopin
+SPO 1 | How many players does a soccer team have on the field at once? | Eleven | Nine | Ten | Twelve
+SPO 1 | In which sport do players hit a shuttlecock? | Badminton | Tennis | Squash | Table tennis
+SPO 2 | How many squares are there on a chessboard? | 64 | 32 | 81 | 100
+FOO 1 | Which fruit is dried to make raisins? | Grapes | Plums | Figs | Apricots
+FOO 1 | Which fruit is the main ingredient of guacamole? | Avocado | Lime | Green apple | Kiwi
+FOO 2 | From which country does the rice dish paella come? | Spain | Italy | Mexico | Portugal

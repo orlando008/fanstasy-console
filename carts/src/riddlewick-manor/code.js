@@ -1,7 +1,7 @@
-// Riddlewick Manor
-// Scaffolded by tools/new-cart.js. A tiny working game (dodge the falling blocks) around everything every cart
-// needs: a title, play, pause, game over, a saved top 10 with initials, a records screen, sound and music cues,
-// a skipTitle hook and save slots. Replace the play part, keep the frame. See docs/dev/playbook.md.
+// Riddlewick Manor: a trivia adventure in a haunted manor (docs/carts/riddlewick-manor.md). Knock on a door, answer its
+// ghost's question: right and it opens, wrong and it locks for good. Find a way, room by room, to the heart of the manor.
+// The questions are in ROM (questions.txt, packed by questions.py). Built on the starter's frame (title, pause, the
+// end, a saved top 10 with initials, the records).
 
 // --- Colours: the default palette (DawnBringer 16). The overlay's index 0 is transparent. ---
 
@@ -73,24 +73,85 @@ const BUTTONS = [UP, DOWN, LEFT, RIGHT, A, B, X, Y, L, R, START, SELECT];
 function readPad() { let m = 0; for (const b of BUTTONS) if (btn(b)) m |= 1 << b; return m; }
 const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) === 0;
 
-// --- State ---
+// ===================================================================================================================
+// The question bank (spec 6): read from ROM once.
+// ===================================================================================================================
 
+const SUBJECTS = ['HISTORY', 'GEOGRAPHY', 'SCIENCE', 'NATURE', 'ARTS AND BOOKS', 'MUSIC AND SCREEN', 'SPORT AND GAMES', 'FOOD AND EVERYDAY'];
+const Q_LINE = 30, Q_LINES = 3;   // a question is shown in up to 3 lines of 30 characters
+let QUESTIONS = [];
+/** The questions from rom('questions') (questions.py writes the format): [{ subj, diff, q, ans: [right, wrong x 3] }]. */
+function loadQuestions() {
+  const b = rom('questions'), out = [];
+  let i = 5;
+  const str = () => { const n = b[i++]; let s = ''; for (let k = 0; k < n; k++) s += String.fromCharCode(b[i++]); return s; };
+  for (let k = 0, n = b[3] | (b[4] << 8); k < n; k++) {
+    const subj = b[i++], diff = b[i++], q = str();
+    out.push({ subj, diff, q, ans: [str(), str(), str(), str()] });
+  }
+  return out;
+}
+/** Words into lines of at most `w` characters. */
+function wrap(s, w) {
+  const lines = [];
+  let line = '';
+  for (const word of s.split(' ')) {
+    if (line && line.length + 1 + word.length > w) { lines.push(line); line = word; } else line = line ? `${line} ${word}` : word;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+// ===================================================================================================================
+// The manor (spec 5): rooms on a grid, a door (or a wall) between each two neighbours.
+// ===================================================================================================================
+
+const N = 0, E = 1, S = 2, W = 3, DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0];
+const NONE = 0, CLOSED = 1, OPEN = 2, LOCKED = 3;   // a door's state (NONE: a wall)
+let MW = 3, MH = 3;   // the manor's size in rooms (step 1: a fixed 3 x 3 test manor)
+let doorsH = [], doorsV = [];   // doorsH[y * (MW - 1) + x]: between (x, y) and (x + 1, y); doorsV[y * MW + x]: (x, y) and (x, y + 1)
+let start = { x: 0, y: 2 }, goal = { x: 2, y: 0 };
+let me = { x: 0, y: 0, f: N };   // where you are and which way you face
+let seen = new Set();   // the rooms you have seen (on the map)
+
+/** The door from room (x, y) towards d: { list, i } in doorsH or doorsV, or null at the manor's edge. */
+function doorRef(x, y, d) {
+  const nx = x + DX[d], ny = y + DY[d];
+  if (nx < 0 || ny < 0 || nx >= MW || ny >= MH) return null;
+  if (d === E || d === W) return { list: doorsH, i: y * (MW - 1) + Math.min(x, nx) };
+  return { list: doorsV, i: Math.min(y, ny) * MW + x };
+}
+function getDoor(x, y, d) { const r = doorRef(x, y, d); return r ? r.list[r.i] : NONE; }
+function setDoor(x, y, d, v) { const r = doorRef(x, y, d); if (r) r.list[r.i] = v; }
+const roomId = (x, y) => y * MW + x;
+
+/** Step 1's test manor: 3 x 3, the start at the bottom left, the heart at the top right, two walls inside. */
+function testManor() {
+  MW = 3; MH = 3;
+  doorsH = [CLOSED, CLOSED, NONE, CLOSED, CLOSED, NONE];
+  doorsV = [CLOSED, NONE, CLOSED, CLOSED, CLOSED, CLOSED];
+  start = { x: 0, y: 2 }; goal = { x: 2, y: 0 };
+}
+
+// ===================================================================================================================
+// A run (spec 5, 9).
+// ===================================================================================================================
+
+const LEVEL = 1;   // (step 4 adds the choice of level and subject)
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
-let score = 0, lives = 3, px = 120, blocks = [];
-const HOME = { x: 120 };
+let score = 0, streak = 0, asked = new Set(), answered = 0, rightCount = 0, won = false;
+let phase = 'explore', sel = 0, cur = null, walkT = 0, walkTo = null;   // sel: the door chosen, as a direction (N, E, S, W)
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
     for (let i = 0; i < 256; i++) dset(i, 0);
     dset(VERSION_SLOT, SAVE_VERSION);
   }
-  // The background: the ground on layer 0 along the bottom of the screen, the hills behind it on layer 1 (each its
-  // region of Map RAM, placed with a negative scroll and not repeated), the sky a gradient in scanline() below.
-  const f = ART.scenes.field, h = ART.scenes.hills;
-  bg(0, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, x: 0, y: -(224 - f.h * 8), wrap: false, show: true });
-  bg(1, { mx: h.mx, my: h.my, mw: h.w, mh: h.h, x: 0, y: -(224 - f.h * 8 - h.h * 8 + 8), wrap: false, show: true });
+  QUESTIONS = loadQuestions();
+  for (const l of [0, 1, 2]) bg(l, { show: false });   // (step 6 draws the rooms on the layers; until then, the overlay)
+  color(0, 3, 2, 4);
   blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (ART.colors.GLASS) are see-through
   if (skipTitle) startGame(); else toTitle();
 }
@@ -98,9 +159,31 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 function startGame() {
-  score = 0; lives = 3; px = HOME.x; blocks = []; paused = false; timer = 0; state = 'play';
+  testManor();
+  me = { x: start.x, y: start.y, f: N }; seen = new Set([roomId(me.x, me.y)]);
+  score = 0; streak = 0; asked = new Set(); answered = 0; rightCount = 0; won = false;
+  phase = 'explore'; cur = null; sel = firstDoor(); paused = false; timer = 0; state = 'play';
   play(SONG.play);
 }
+
+/** The door to choose first in a room: ahead if there is one, then right, left, behind. */
+function firstDoor() {
+  for (const k of [0, 1, 3, 2]) { const d = (me.f + k) % 4; if (getDoor(me.x, me.y, d) !== NONE) return d; }
+  return me.f;
+}
+
+/** A question for the door: one not asked yet in this run (the subject and level choice come in steps 3 and 4). */
+function pickQuestion() {
+  let pool = QUESTIONS.map((_, i) => i).filter((i) => !asked.has(i));
+  if (!pool.length) { asked.clear(); pool = QUESTIONS.map((_, i) => i); }
+  const qi = pool[rndi(0, pool.length - 1)];
+  asked.add(qi);
+  const order = [0, 1, 2, 3];
+  for (let i = 3; i > 0; i--) { const j = rndi(0, i); [order[i], order[j]] = [order[j], order[i]]; }
+  return { qi, order, sel: 0, door: sel, chosen: -1, right: false };
+}
+
+const pointsFor = () => 100 * LEVEL + 25 * LEVEL * Math.min(streak, 4);
 
 // --- Update ---
 
@@ -124,23 +207,63 @@ function updateTitle() {
   }
 }
 
-/** The game itself: replace this. Left and right move; blocks fall; a hit costs a life. */
 function updatePlay() {
-  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (btn(LEFT)) px = Math.max(8, px - 3);
-  if (btn(RIGHT)) px = Math.min(248, px + 3);
-  if (timer % 30 === 0) blocks.push({ x: rndi(8, 248), y: -8 });
-  for (const b of blocks) {
-    b.y += 2 + Math.min(3, score / 40);
-    if (b.y > 196 && b.y < 212 && Math.abs(b.x - px) < 12 && !b.hit) { b.hit = true; lives--; fx(SFX.hit); }
-    if (b.y > 224 && !b.hit && !b.done) { b.done = true; score += 10; fx(SFX.point); }
+  if (pressed(START) && phase !== 'walk') { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (phase === 'explore') updateExplore();
+  else if (phase === 'ask') updateAsk();
+  else if (phase === 'answered') updateAnswered();
+  else if (phase === 'walk') updateWalk();
+}
+
+/** Exploring: the d-pad chooses a door (UP ahead, RIGHT, DOWN behind, LEFT), A knocks or walks through. */
+function updateExplore() {
+  for (const [b, k] of [[UP, 0], [RIGHT, 1], [DOWN, 2], [LEFT, 3]]) {
+    if (!pressed(b)) continue;
+    const d = (me.f + k) % 4;
+    if (getDoor(me.x, me.y, d) !== NONE) { sel = d; fx(SFX.move); }
   }
-  blocks = blocks.filter((b) => b.y < 232);
-  if (lives <= 0) gameOver();
+  if (!pressed(A)) return;
+  const door = getDoor(me.x, me.y, sel);
+  if (door === OPEN) walk(sel);
+  else if (door === CLOSED) { cur = pickQuestion(); phase = 'ask'; timer = 0; fx(SFX.select); }
+  else if (door === LOCKED) fx(SFX.hit);   // (step 2: a key opens it)
+}
+
+/** A question: UP and DOWN choose an answer, A answers. */
+function updateAsk() {
+  if (pressed(UP)) { cur.sel = (cur.sel + 3) % 4; fx(SFX.move); }
+  if (pressed(DOWN)) { cur.sel = (cur.sel + 1) % 4; fx(SFX.move); }
+  if (!pressed(A) || timer < 10) return;
+  cur.chosen = cur.sel; cur.right = cur.order[cur.sel] === 0; answered++;
+  if (cur.right) { score += pointsFor(); streak++; rightCount++; setDoor(me.x, me.y, cur.door, OPEN); fx(SFX.point); }
+  else { streak = 0; setDoor(me.x, me.y, cur.door, LOCKED); fx(SFX.hit); }
+  phase = 'answered'; timer = 0;
+}
+
+/** The answer shown for a moment (the right one lit), then through the door, or back to the room. */
+function updateAnswered() {
+  if (timer < 50 && !(timer > 15 && pressed(A))) return;
+  const door = cur.door, right = cur.right;
+  cur = null; phase = 'explore';
+  if (right) walk(door); else sel = firstDoor();
+}
+
+function walk(d) { phase = 'walk'; walkT = 0; walkTo = d; fx(SFX.select); }
+/** Through the door: the screen dims, you are in the next room facing the way you walked, and it brightens. */
+function updateWalk() {
+  walkT++;
+  if (walkT === 12) {
+    me = { x: me.x + DX[walkTo], y: me.y + DY[walkTo], f: walkTo };
+    seen.add(roomId(me.x, me.y)); sel = firstDoor();
+  }
+  if (walkT >= 24) {
+    phase = 'explore'; brightness(15);
+    if (me.x === goal.x && me.y === goal.y) { won = true; gameOver(); }
+  } else brightness(Math.round(Math.abs(walkT - 12) * 15 / 12));
 }
 
 function gameOver() {
-  state = 'over'; timer = 0; play(-1); fx(SFX.over);
+  state = 'over'; timer = 0; play(-1); fx(SFX.over); brightness(15);
   rank = insertTop({ score, initials: lastInitials() });
 }
 
@@ -171,19 +294,23 @@ function updateRecords() {
   if ((pressed(START) || pressed(A) || pressed(B)) && timer > 20) { fx(SFX.select); toTitle(); }
 }
 
+const PAUSE_MENU = ['RESUME', 'QUIT TO TITLE'];
 function updatePause() {
-  if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
-  if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
+  if (pressed(UP) || pressed(DOWN)) { pauseSel ^= 1; fx(SFX.move); }
   if (pressed(B) || (pressed(START) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
   else if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (pauseSel === 0) paused = false;
-    else if (pauseSel === 1) startGame(); // restart
-    else toTitle(); // quitting abandons the game: nothing is recorded
+    if (pauseSel === 0) paused = false; else toTitle();
   }
 }
 
 // --- Draw ---
+
+const VIEW_H = 136;   // the room's view: y 0 to 135; the panel below
+// The room in perspective (placeholders until the art pass): the back wall, and where the walls meet the floor and ceiling.
+const BACK = { x0: 64, y0: 20, x1: 192, y1: 100 };
+/** The top and bottom of the left wall at column x (0 to BACK.x0). */
+const wallTop = (x) => Math.round(BACK.y0 * x / BACK.x0), wallBot = (x) => Math.round(VIEW_H - 1 - (VIEW_H - 1 - BACK.y1) * x / BACK.x0);
 
 function draw() {
   cls();
@@ -191,15 +318,103 @@ function draw() {
   else if (state === 'title') drawTitle();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  if (state === 'over') { panel(48, 80, 160, 64); ctxt('GAME OVER', 92, RED); ctxt(`SCORE ${score}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
+  if (state === 'over') drawEnd();
   if (paused) drawPause();
 }
 
 function drawPlay() {
-  sprite(ART.sprites.player, px - 8, 196);
-  for (const b of blocks) if (!b.hit) sprite(ART.sprites.gem, b.x - 8, b.y - 2);
-  txt(`SCORE ${score}`, 8, 6, WHITE);
-  txt(`LIVES ${lives}`, 192, 6, lives > 1 ? WHITE : RED);
+  drawRoom();
+  if (phase === 'ask' || phase === 'answered') drawQuestion(); else drawPanel();
+}
+
+const DOOR_COL = [0, 4, 0, 6];
+/** The room as you see it: the walls, then the doors (ahead, left, right, and an arrow for the one behind). */
+function drawRoom() {
+  rectfill(0, 0, 256, VIEW_H, 2);                                       // the side walls and ceiling
+  for (let x = 0; x <= BACK.x0; x++) { line(x, wallBot(x), x, VIEW_H - 1, 7); line(255 - x, wallBot(x), 255 - x, VIEW_H - 1, 7); }   // the floor
+  rectfill(BACK.x0, BACK.y1, BACK.x1 - BACK.x0, VIEW_H - BACK.y1, 7);
+  rectfill(BACK.x0, BACK.y0, BACK.x1 - BACK.x0, BACK.y1 - BACK.y0, 1);  // the back wall
+  line(0, 0, BACK.x0, BACK.y0, 3); line(255, 0, BACK.x1, BACK.y0, 3); line(0, VIEW_H - 1, BACK.x0, BACK.y1, 3); line(255, VIEW_H - 1, BACK.x1, BACK.y1, 3);
+  rect(BACK.x0, BACK.y0, BACK.x1 - BACK.x0, BACK.y1 - BACK.y0, 3);
+  const choosing = state === 'play' && phase === 'explore';
+  for (const k of [0, 1, 3]) {
+    const d = (me.f + k) % 4, st = getDoor(me.x, me.y, d);
+    if (st === NONE) continue;
+    const on = choosing && sel === d, c = on && st !== LOCKED ? 9 : DOOR_COL[st];
+    if (k === 0) {   // ahead, in the back wall
+      rectfill(112, 52, 32, BACK.y1 - 52, c); rect(111, 51, 34, BACK.y1 - 50, on ? GOLD : SHADOW);
+      if (st === LOCKED) { line(112, 52, 143, BACK.y1 - 1, WHITE); line(143, 52, 112, BACK.y1 - 1, WHITE); }
+    } else {          // on a side wall: columns 18 to 44 of the left wall (mirrored for the right)
+      for (let x = 18; x <= 44; x++) {
+        const top = Math.round(wallTop(x) + (wallBot(x) - wallTop(x)) * 0.3), bot = wallBot(x), xx = k === 3 ? x : 255 - x;
+        line(xx, top, xx, bot, c);
+        if (on && (x === 18 || x === 44)) line(xx, top, xx, bot, GOLD);
+        if (st === LOCKED && (x - 18) % 9 === 0) line(xx, top, xx, bot, WHITE);
+      }
+    }
+  }
+  const back = getDoor(me.x, me.y, (me.f + 2) % 4);
+  if (back !== NONE) {   // the door behind you: an arrow at the bottom of the view
+    const on = choosing && sel === (me.f + 2) % 4, c = back === LOCKED ? RED : on ? GOLD : DIM;
+    for (let i = 0; i < 6; i++) line(128 - 6 + i, 122 + i, 128 + 6 - i, 122 + i, c);
+  }
+}
+
+/** The panel while exploring: the map, the score, how to play. */
+function drawPanel() {
+  rectfill(0, VIEW_H, 256, 224 - VIEW_H, SHADOW);
+  line(0, VIEW_H, 255, VIEW_H, PANEL);
+  drawMap(8, VIEW_H + 8, 12);
+  txt(`SCORE ${score}`, 96, VIEW_H + 10, WHITE);
+  txt(`ANSWERED ${rightCount}/${answered}`, 96, VIEW_H + 24, DIM);
+  if (state === 'play' && phase === 'explore') {
+    const st = getDoor(me.x, me.y, sel);
+    txt(st === OPEN ? 'A: GO THROUGH' : st === LOCKED ? 'LOCKED' : 'A: KNOCK', 96, VIEW_H + 52, st === LOCKED ? RED : GOLD);
+    txt('D-PAD: CHOOSE A DOOR', 96, VIEW_H + 66, DIM);
+  }
+}
+
+/** The map: the rooms you have seen, their doors (open: a gap; locked: red), the heart (gold) and you (an arrow). */
+function drawMap(x0, y0, c) {
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+    const px = x0 + x * c, py = y0 + y * c, isGoal = x === goal.x && y === goal.y;
+    if (!seen.has(roomId(x, y)) && !isGoal) continue;
+    rectfill(px + 1, py + 1, c - 2, c - 2, isGoal ? GOLD : PANEL);
+    for (const d of [E, S]) {
+      const st = getDoor(x, y, d);
+      if (st === NONE) continue;
+      const col = st === OPEN ? PANEL : st === LOCKED ? RED : 4;
+      if (d === E) rectfill(px + c - 1, py + c / 2 - 1, 2, 2, col); else rectfill(px + c / 2 - 1, py + c - 1, 2, 2, col);
+    }
+  }
+  const mx = x0 + me.x * c + c / 2, my = y0 + me.y * c + c / 2;   // you: a dot and a tick the way you face
+  rectfill(mx - 1, my - 1, 2, 2, WHITE); line(mx, my, mx + DX[me.f] * 3, my + DY[me.f] * 3, WHITE);
+}
+
+/** A question: its ghost (a placeholder) in the room, the question, and the four answers, one lit. */
+function drawQuestion() {
+  const q = QUESTIONS[cur.qi];
+  circfill(128, 54, 16, 15); rectfill(112, 54, 33, 26, 15);   // the ghost (the art pass draws them)
+  for (let i = 0; i < 4; i++) circfill(116 + i * 8, 80, 4, 15);
+  circfill(122, 50, 2, SHADOW); circfill(134, 50, 2, SHADOW);
+  panel(0, 112, 256, 112);
+  wrap(q.q, Q_LINE).forEach((l, i) => txt(l, 8, 118 + i * 11, WHITE));
+  cur.order.forEach((a, i) => {
+    const y = 160 + i * 14, isRight = a === 0;
+    let c = i === cur.sel ? GOLD : WHITE;
+    if (phase === 'answered') c = isRight ? GREEN : i === cur.chosen ? RED : DIM;
+    if (phase === 'ask' && i === cur.sel) rectfill(4, y - 3, 248, 13, PANEL);
+    txt(`${'ABCD'[i]}  ${q.ans[a]}`, 12, y, c);
+  });
+  if (phase === 'answered') txt(cur.right ? 'RIGHT! THE DOOR OPENS' : 'WRONG! THE DOOR LOCKS', 8, 149, cur.right ? GREEN : RED);
+}
+
+function drawEnd() {
+  panel(24, 72, 208, 72);
+  ctxt(won ? 'YOU FOUND THE HEART' : 'YOUR CANDLE HAS GONE OUT', 80, won ? GOLD : RED);
+  ctxt(`SCORE ${score}`, 98, WHITE);
+  ctxt(`${rightCount} OF ${answered} ANSWERED RIGHT`, 112, DIM);
+  if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 128, DIM);
 }
 
 function drawTitle() {
@@ -235,14 +450,11 @@ function drawInitials() {
 }
 
 function drawPause() {
-  panel(64, 80, 128, 64);
+  panel(64, 80, 128, 54);
   ctxt('PAUSED', 88, GOLD);
-  ['RESUME', 'RESTART', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
+  PAUSE_MENU.forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 106 + i * 12, i === pauseSel ? WHITE : DIM));
 }
 
 function panel(x, y, w, h) { rectfill(x, y, w, h, ART.colors.GLASS); rect(x, y, w, h, PANEL); }
 function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }
 const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
-
-/** Each line of the screen: the sky's colour for that line (the SNES did its skies this way, with HDMA). */
-function scanline(y) { gradientLine(ART.gradients.sky, y); }

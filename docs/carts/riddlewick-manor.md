@@ -1,8 +1,8 @@
 # Riddlewick Manor: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Scaffolded, with the spec written: the design is agreed (section 16 lists the defaults chosen). Step 1 (the
-vertical slice) is next.
+**Status:** Step 1 of 8 built (section 15): the vertical slice, a 3 × 3 test manor with knocking, questions, doors
+that open or lock, walking and the map. Step 2 (the real manor, the candle and the keys) is next.
 **Cart source:** `carts/src/riddlewick-manor/` → `carts/riddlewick-manor.nova`
 
 ---
@@ -218,6 +218,32 @@ The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit,
 1. **Vertical slice:** a fixed small manor (3 × 3), the room view with placeholder walls and doors, choosing a door,
    knocking, a question with four answers from about 20 sample questions in ROM, right opening the door and walking
    you through, wrong locking it; the map.
+   - **Built:**
+     - **The question bank:** `questions.txt` (one question a line: subject, difficulty, the question, the right answer,
+       three wrong ones) and `questions.py`, which checks it (shape, subject, difficulty, lengths, plain ASCII, four
+       different answers, no question twice) and packs it into `rom/questions.bin`. `loadQuestions` reads it at
+       start. 24 sample questions, 3 per subject.
+     - **The manor's model:** rooms on a grid, a door or a wall between neighbours (`doorsH`, `doorsV`: none, closed,
+       open, locked), you with a facing; the 3 × 3 test manor (`testManor`).
+     - **Exploring:** the d-pad chooses a door relative to your facing (a direction with no door is ignored), A knocks
+       on a closed door or walks through an open one; a locked one only thuds for now.
+     - **Questions:** one not yet asked in the run, its answers shuffled; UP and DOWN choose, A answers (after a
+       moment, so a held A does not answer). The answer shows for a moment (the right one green); right opens the
+       door, scores (100 + 25 for each answer in the streak, up to 4) and walks you through; wrong locks it.
+     - **Walking:** the screen dims and brightens; you face the way you went; the room joins the map.
+     - **Placeholders** on the overlay until the art pass: the room in perspective, its doors, a ghost, the panel and
+       the map. Mixed-case text for the questions (the system font has lower case).
+     - **The frame:** the pause is now RESUME and QUIT TO TITLE; the end says whether you found the heart.
+   - **Results:**
+     - `node tools/verify.js riddlewick-manor` passes, with 46 test checks:
+       - `01-flow.mjs` (rewritten): the title, the pause, the end, initials and the top 10, frame time;
+       - `03-slice.mjs`, new: the ROM matching `questions.txt` and every question fitting the screen; choosing doors;
+         knocking; right and wrong answers; locked and open doors; the streak; no question twice in a run; reaching
+         the heart.
+     - `node tools/devkit/smoke.mjs riddlewick-manor` runs in the real console with no errors.
+     - `bot.mjs` (rewritten) walks towards the heart and answers right with a chance `skill`. The sweep shows what step
+       2 is for: in the test manor, wrong answers can lock every way to the heart, and with no candle or keys yet a
+       run is then stuck (5 of 8 runs at `skill` 0.5 and 0.8).
 2. **The manor:** the generated 7 × 6 manor (a maze with loops, from the seed), facing and turning, the candle, keys and
    candle stubs, never stuck, the heart's last question, winning and losing, the scoring.
 3. **The question bank:** the format of the questions' text file, the script that checks and packs it into ROM, the drawing rules

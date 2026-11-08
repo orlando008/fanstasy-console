@@ -1,5 +1,5 @@
-// Riddlewick Manor: the frame (title, play, pause, game over, initials, records, saves) and its sound cues.
-// One PASS/FAIL line for each behaviour, written as a sentence. Add a file for each step of the build (02-..., 03-...).
+// Riddlewick Manor: the frame (title, pause, the end, initials, records, saves) and its sound cues.
+// One PASS/FAIL line for each behaviour, written as a sentence.
 import { newGame, M, sfxLog, musicLog } from './lib.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
@@ -12,39 +12,28 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
   sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
+  ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts a run, with the game song');
 }
 
-// 2. Playing: movement, blocks, a hit costs a life.
+// 2. Pause.
 {
-  const vm = newGame(1), p = vm.probe(), x0 = p.px;
-  vm.run(10, M('LEFT')); ok(p.px < x0, 'LEFT moves the player');
-  vm.run(20, M('RIGHT')); ok(p.px > x0 - 30, 'and RIGHT');
-  const lives = p.lives; sfxLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.lives === lives - 1, 'a block that lands on the player costs a life');
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch >= 6), 'with the hit sound, on an effects channel (6 or 7)');
-}
-
-// 3. Pause.
-{
-  const vm = newGame(2), p = vm.probe(); vm.run(30);
+  const vm = newGame(2), p = vm.probe(); vm.run(10);
   vm.press('START'); ok(p.paused, 'START pauses');
-  const y = p.blocks.map((b) => b.y).join(); vm.run(30); ok(p.blocks.map((b) => b.y).join() === y, 'and the game stands still');
-  const t = p.timer; vm.press('DOWN'); vm.press('A'); vm.run(2);
-  ok(!p.paused && p.score === 0 && p.timer < t, 'RESTART starts the game again');
-  vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
+  const t = p.timer; vm.run(30); ok(p.timer === t, 'and the game stands still');
+  vm.press('B'); ok(!p.paused, 'B resumes');
+  vm.press('START'); vm.press('DOWN'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
 }
 
-// 4. Game over, the top 10 and initials.
+// 3. The end, the top 10 and initials.
 {
-  const vm = newGame(3), p = vm.probe(); p.score = 120; p.lives = 1; musicLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.state === 'over' && p.rank === 0, 'the last life ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
+  const vm = newGame(3), p = vm.probe(); vm.run(2); p.score = 120; musicLog(vm);
+  p.me = { x: p.goal.x, y: p.goal.y + 1, f: p.N }; p.setDoor(p.goal.x, p.goal.y + 1, p.N, p.OPEN); p.sel = p.N;
+  vm.press('A'); vm.run(30);
+  ok(p.state === 'over' && p.won && p.rank === 0, 'walking into the heart of the manor ends the run as a win, and a score in the top 10 gets a rank', `rank ${p.rank}`);
   ok(musicLog(vm).includes(-1), 'the game song stops');
   vm.run(70); vm.press('A');
   ok(p.state === 'initials', 'A asks for initials');
-  vm.run(25); // START is ignored for a moment, so a press from the game does not skip it
+  vm.run(25);
   vm.press('UP'); vm.press('RIGHT'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT'); vm.press('DOWN'); vm.press('START');
   ok(p.state === 'records', 'START saves them and shows the records');
   const e = p.topTen()[0];
@@ -53,15 +42,15 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 }
 {
   const vm = newGame(4), p = vm.probe();
-  const list = [50, 20, 90, 10, 70, 30, 100, 60, 40, 80].map((s) => p.insertTop({ score: s, initials: 'AAA' }));
+  [50, 20, 90, 10, 70, 30, 100, 60, 40, 80].forEach((s) => p.insertTop({ score: s, initials: 'AAA' }));
   ok(p.topTen().map((e) => e.score).join() === '100,90,80,70,60,50,40,30,20,10', 'the top 10 is kept best first');
   ok(p.insertTop({ score: 5, initials: 'ZZZ' }) === -1 && p.insertTop({ score: 0, initials: 'ZZZ' }) === -1, 'a score below the tenth, or nothing, does not get in');
 }
 
-// 5. Frames are quick.
+// 4. Frames are quick.
 {
   const vm = newGame(5), times = [];
-  for (let i = 0; i < 600; i++) { vm.step(i % 40 < 20 ? M('LEFT') : M('RIGHT')); times.push(vm.m.stats.cpu); }
+  for (let i = 0; i < 600; i++) { vm.step(i % 40 === 0 ? M('A') : i % 40 === 20 ? M('DOWN') : 0); times.push(vm.m.stats.cpu); }
   times.sort((a, b) => a - b); const p99 = times[Math.floor(times.length * 0.99)];
   ok(p99 < 8 * (process.env.CI ? 3 : 1), 'frames are quick', `99th percentile ${p99.toFixed(2)} ms`);
 }
