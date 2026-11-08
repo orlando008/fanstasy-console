@@ -1,0 +1,19 @@
+# Clockwork Dominion: the milestones, packed into the ROM by book.py. One each: `trigger | name` (triggers as in
+# story.txt and inventions.txt). Each is kept with the play time it was first reached, on the MILESTONES page.
+# The order is the save's: add new ones at the end of an act's list only before the game is released.
+
+# --- Act I ---
+made:1 | The first cog
+sold:1 | The first sale
+tinkers:1 | A tinker of my own
+made:1000 | A thousand cogs
+invs:1 | The first invention
+tinkers:10 | Ten tinkers
+solved:1 | The first riddle
+benches:1 | The first workbench
+made:100000 | A hundred thousand cogs
+inv:20 | The tower clock strikes
+tinkers:100 | A hundred tinkers
+made:1000000 | A million cogs
+inv:27 | Paulo's rest
+inv:28 | The town is wound

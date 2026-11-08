@@ -29,7 +29,9 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
 // 3. Text fits: every row and hint, and the font is the ledger's (5 px letters, not the system's 8).
 {
   const vm = newGame(3), p = vm.probe(); vm.run(2);
-  p.G.made = 1e9; p.G.coin = 1e12; p.G.tinkers = 5000; p.G.cogs = 1e8; p.G.brass = 1e9;
+  p.G.made = 1e9; p.G.coin = 1e12; p.G.tinkers = 5000; p.G.cogs = 1e8; p.G.brass = 1e9; p.G.benches = 4000; p.G.insight = 1e7;
+  Object.assign(p.G, { mind: 1, benchOn: 1, contract: 1, riddleOn: 1, bankOn: 1, ordersOn: 1, engine: 1, bank: 1e12, bankIn: 1e12, clev: 1e6, trust: 400, barrels: 300 });
+  p.G.oNeed = 123456789; p.G.oPay = 1e10; p.G.oLeft = 100; p.G.oFor = 7; p.G.insight = 1e9; p.ACT.pose();
   const wide = [];
   for (const t of p.TABS) {
     if (p.tw(t.info().join('   ')) > 244) wide.push(t.name + ' info');
@@ -39,6 +41,10 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
     }
   }
   ok(wide.length === 0, 'every panel\'s counters, rows and hints fit the screen, even with big numbers', wide.join('; '));
+  ok(p.openTabs().length === 6, 'with everything open, Act I has six tabs');
+  const names = p.openTabs().map((t) => t.name), mark = p.tw('\x7f');
+  const widest = Math.max(...names.map((_, on) => names.reduce((x, n, i) => x + (i === on ? mark + 2 + p.tw(n) + 2 + mark + 6 : p.tw(n) + 7), 6)));
+  ok(widest <= 256, 'and the tab bar fits them all, whichever is chosen', `${widest} px`);
   ok(p.tw('Make a cog') < 'Make a cog'.length * 6, 'the ledger font is narrow (under 6 px a letter)');
   const story = readFileSync(new URL('../../../carts/src/clockwork-dominion/story.txt', import.meta.url), 'utf8');
   ok(p.STORY.length > 0 && story.includes(p.STORY[0].text), 'the story in the ROM is the one in story.txt');

@@ -5,9 +5,10 @@
 # rom/font.bin, read by code.js (loadFont): for each character from 32 to 127 + len(EXTRA) - 1: its width (1 to 5), then
 #   its 9 rows top to bottom, a byte each, bit 0 the leftmost pixel. Rows 0 to 6 are the capitals, 2 to 6 the small
 #   letters, 7 and 8 the descenders.
-# rom/book.bin, read by code.js (loadBook): 'CB', a version byte (1), the count of story lines (2 bytes, little-endian),
-#   then each line: its trigger and its text, each a length byte and its characters (plain ASCII, plus the font's extra
-#   characters from 127 up).
+# rom/book.bin, read by code.js (loadBook): 'CB', a version byte (2), then three sections, each a count (2 bytes,
+#   little-endian) and its entries, every string a length byte and its characters (plain ASCII):
+#   the story lines (trigger, text); the inventions (id as a byte, then name, appears, cost, effect, hint, story);
+#   the milestones (trigger, name).
 #
 # story.txt holds the story: one line each, `trigger | text`. A trigger is `name:n` (the run's number `name` has reached
 # n: made:10 is the tenth cog made) or `ev:name` (an event the code raises: ev:start, ev:sold, ev:nobrass ...). Each
@@ -162,29 +163,81 @@ def read_story(problems):
     return lines
 
 
-def book_bytes(lines):
-    out = bytearray(b'CB') + bytes([1]) + len(lines).to_bytes(2, 'little')
-    for trig, text in lines:
-        for s in (trig, text):
-            b = s.encode('ascii')
-            out.append(len(b)); out += b
+import re
+TRIG = re.compile(r'^(ev:[a-z0-9]+|[a-zA-Z]+:[0-9.]+)$')
+COST = re.compile(r'^(ins|clev|lire|cogs|trust):[0-9.]+$')
+EFFECT = re.compile(r'^[a-zA-Z]+[*=+][0-9.]+$')
+
+
+def fields(name, n_fields, problems):
+    out = []
+    for n, raw in enumerate(open(os.path.join(HERE, name), encoding='utf-8').read().split('\n'), 1):
+        if not raw.strip() or raw.startswith('#'): continue
+        parts = [p.strip() for p in raw.split('|')]
+        if len(parts) != n_fields: problems.append('%s line %d: %d fields, not %d' % (name, n, len(parts), n_fields)); continue
+        for p in parts:
+            if len(p) > MAX_TEXT: problems.append('%s line %d: a field of %d characters (at most %d)' % (name, n, len(p), MAX_TEXT))
+            if any(not (32 <= ord(c) <= 126) for c in p): problems.append('%s line %d: not plain ASCII' % (name, n))
+        out.append((n, parts))
+    return out
+
+
+def read_inventions(problems):
+    out, ids = [], set()
+    for n, (i, name, when, cost, effect, hint, story) in fields('inventions.txt', 7, problems):
+        where = 'inventions.txt line %d' % n
+        if not i.isdigit() or not 1 <= int(i) <= 255 or int(i) in ids: problems.append('%s: the id "%s" is not new and 1 to 255' % (where, i))
+        ids.add(int(i) if i.isdigit() else 0)
+        for t in when.split('&'):
+            if not TRIG.match(t): problems.append('%s: "%s" is not a trigger' % (where, t))
+        for c in cost.split():
+            if not COST.match(c): problems.append('%s: "%s" is not a cost' % (where, c))
+        for e in effect.split():
+            if not EFFECT.match(e): problems.append('%s: "%s" is not an effect' % (where, e))
+        out.append((int(i) if i.isdigit() else 0, name, when, cost, effect, hint, story))
+    for _, _, when, *_ in out:
+        for t in when.split('&'):
+            if t.startswith('inv:') and int(float(t[4:])) not in ids: problems.append('inventions.txt: "%s" names no invention' % t)
+    return out
+
+
+def read_milestones(problems):
+    out = []
+    for n, (trig, name) in fields('milestones.txt', 2, problems):
+        if not TRIG.match(trig): problems.append('milestones.txt line %d: "%s" is not a trigger' % (n, trig))
+        out.append((trig, name))
+    return out
+
+
+def book_bytes(lines, invs, miles):
+    out = bytearray(b'CB') + bytes([2])
+    def strs(*ss):
+        for s in ss:
+            b = s.encode('ascii'); out.append(len(b)); out.extend(b)
+    out += len(lines).to_bytes(2, 'little')
+    for trig, text in lines: strs(trig, text)
+    out += len(invs).to_bytes(2, 'little')
+    for i, *rest in invs: out.append(i); strs(*rest)
+    out += len(miles).to_bytes(2, 'little')
+    for trig, name in miles: strs(trig, name)
     return bytes(out)
 
 
 def main():
     problems = []
     lines = read_story(problems)
-    files = {'font.bin': font_bytes(), 'book.bin': book_bytes(lines)}
+    invs, miles = read_inventions(problems), read_milestones(problems)
+    files = {'font.bin': font_bytes(), 'book.bin': book_bytes(lines, invs, miles)}
     if problems:
         print('\n'.join(problems)); sys.exit(1)
     if '--check' in sys.argv:
         stale = [n for n, b in files.items() if not os.path.exists(os.path.join(ROM, n)) or open(os.path.join(ROM, n), 'rb').read() != b]
         if stale: print('stale: %s (run python3 carts/src/clockwork-dominion/book.py)' % ', '.join(stale)); sys.exit(1)
-        print('ok: %d story lines, the font and the book are up to date' % len(lines)); return
+        print('ok: %d story lines, %d inventions, %d milestones; the font and the book are up to date' % (len(lines), len(invs), len(miles))); return
     os.makedirs(ROM, exist_ok=True)
     for n, b in files.items():
         open(os.path.join(ROM, n), 'wb').write(b)
-    print('wrote rom/font.bin (%d bytes) and rom/book.bin (%d bytes, %d story lines)' % (len(files['font.bin']), len(files['book.bin']), len(lines)))
+    print('wrote rom/font.bin (%d bytes) and rom/book.bin (%d bytes: %d story lines, %d inventions, %d milestones)' % (len(files['font.bin']), len(files['book.bin']), len(lines), len(invs), len(miles)))
 
 
 main()

@@ -1,7 +1,7 @@
 # Clockwork Dominion: Cart Specification
 
-**Version:** 0.2 (step 1 of 10)
-**Status:** In progress: step 1 of the plan (section 15) is built (the engine and Act I's first minutes); step 2 is next
+**Version:** 0.3 (step 2 of 10)
+**Status:** In progress: steps 1 and 2 of the plan (section 15) are built (the engine and the whole of Act I); step 3 is next
 **Cart source:** `carts/src/clockwork-dominion/` → `carts/clockwork-dominion.nova`
 
 ---
@@ -107,12 +107,16 @@ BILLION and so on by name to DECILLION, then 1.2E36 style. Money is in lire, sho
 | The shop sign (reputation) | level 1 to 30; the next level costs L 100 × 2^(level − 1) |
 | Tinkers (the HELPERS tab, from 20 cogs made) | each makes 1 cog a second; the next costs L 5 × 1.12^tinkers |
 | Workbenches (an invention) | each makes 40 cogs a second; the next costs L 1,000 × 1.08^benches |
-| Paulo's trust | starts at 2; +1 at each of 2,000, 3,000, 5,000, 8,000, 13,000... cogs made (the Fibonacci numbers × 1,000), and from some inventions |
-| Escapements and barrels | each trust fits one to Marco's head: an escapement thinks 10 insight a second, a barrel holds 1,000 more insight (Marco starts with 1 of each) |
-| Insight | made by the escapements, up to the barrels' total; spent on inventions |
-| Gear riddles (an invention) | a puzzle of gear ratios (section 6); each riddle costs insight to pose and pays **cleverness** by its difficulty |
-| The Guild Bank (an invention) | deposit and withdraw coin; the ledger grows by a random walk whose risk you choose (CAREFUL, STEADY, BOLD), about +1%, +2.5% and +5% a minute on average, BOLD with real falls |
-| The end of the act | the invention THE LAST WINDING (Paulo's rest) at 500,000 cogs made, then WIND THE TOWN (about 30 trust and 10 million cogs made) |
+| Paulo's trust | starts at 2; +1 at each of 2,000, 3,000, 5,000, 8,000, 13,000... cogs made (the Fibonacci numbers × 1,000), and from inventions (THE CLOCK TOWER +5, THE LAST WINDING +10) |
+| The mind (MIND and INVENT tabs) | opens at 1,000 cogs made. Each trust fits an escapement (thinks 10 insight a second) or a barrel (holds 1,000 more insight); Marco starts with 1 of each and 2 trust to spend. Spent trust stays spent |
+| Insight | made by the escapements, up to the barrels' total; spent on inventions and riddles |
+| Inventions | 28 in Act I (section 6, `inventions.txt`): each appears when its trigger holds and stays listed once shown; its cost is paid when made |
+| Workbenches (WORKBENCHES) | each makes 40 cogs a second; the next costs L 1,000 × 1.08^benches |
+| Gear riddles (THE GEAR RIDDLE, the RIDDLES tab) | posing one costs 500 × 1.07^solved insight; solving it pays **cleverness**: 5 for the first five (one stage), then 10 (two stages), × (1 + solved / 10). THE CALCULATING ENGINE adds 0.2 cleverness a second |
+| Banca di Rotella (BANCA) | put in half or all your lire, take it all out; the ledger grows by a random walk whose risk you choose: CAREFUL about +1% a minute (spread 0.4%), STEADY +2.5% (1.5%), BOLD +5% (6%, with real falls) |
+| Orders (CLOCK REPAIRS) | every 90 s an order comes (for the bell tower, the baker's clock, the mill wheel...): 20 to 60 seconds of the shop's work in cogs, paying 3 times the window's price; open for 3 minutes |
+| Signore Ferrese's contract | when ON, buys brass (up to 5 spools a tick) whenever there is less than 5 seconds' worth |
+| The end of the act | THE LAST WINDING (Paulo's rest; his watch) at 3 million cogs made and 20,000 insight, then WIND THE TOWN at 10 million cogs, 30 trust, 20,000 insight and 300 cleverness |
 
 ### Act II: the Winding of the World
 
@@ -148,22 +152,31 @@ invention of your choice already made, and changes one rule of the world (sectio
 
 ## 6. Content
 
-All of it is in the cart's ROM (`rom/story.bin`), not the code, so the code is the engine and the ROM the book:
+All of it is in the cart's ROM (`rom/book.bin`, made by `book.py` from `story.txt`, `inventions.txt` and
+`milestones.txt`), not the code, so the code is the engine and the ROM the book:
 
-- **Inventions:** about 30 in each act (90 in all): a name, a cost (insight, cleverness, coin, cogs, trust), when it
-  appears, its effect (one of a small set of effect codes the sim knows: multiply a rate, open a tab, add a machine,
-  move the story on) and a line for the log. First ideas for Act I: SHARPER FILES (the hand makes 2 cogs), A SIGN
-  PAINTER (the sign's levels cost half), WINDOW DISPLAY (sales ×1.5), TREADLE LATHE (tinkers ×1.5), PAULO'S LEDGER
-  (shows the sales curve), BIGGER SPOOLS (a spool holds 1,500 oz), WORKBENCHES, CLOCK REPAIRS (orders from the town for
-  a bonus), MUSIC BOXES (cogs sold in boxes, at a premium), THE GEAR RIDDLE, THE GUILD BANK, A DIFFERENCE ENGINE
-  (riddles solve themselves, slowly), THE LAST WINDING, WIND THE TOWN.
-- **Gear riddles:** a train of 2 to 4 gears from a box (8, 12, 16, 20, 24, 32, 40 and 48 teeth) must turn the output at
-  a set ratio and direction (say 3 : 1, reversed). The riddle is made from the seed, scored by how many gears it needs;
-  you pick gears with the d-pad and A. Decisions, not reflexes: there is no timer.
+- **Inventions:** about 30 in each act (90 in all), in `inventions.txt`: an id (the save's bit), a name, when it
+  appears (a trigger), a cost (insight, cleverness, lire, cogs from stock, trust), its effects (changes to the run's
+  numbers: `mTink*1.5`, `hand=2`, `trust+5`, `act=2`), a hint and a line for the log. Act I's 28, as agreed with the
+  user: SHARPER FILES (the hand makes 2), TREADLE LATHE (tinkers ×1.5), WINDOW DISPLAY (sales ×1.5), BIGGER SPOOLS
+  (1,500 oz), A SIGN PAINTER (the sign half price), OILED BEARINGS (tinkers ×2), WORKBENCHES, A CONTRACT WITH SIGNORE
+  FERRESE (brass bought by itself), THE GEAR RIDDLE, MUSIC BOXES (twice the lire), BANCA DI ROTELLA, FINE BRASS (an
+  ounce makes 1.5 cogs), CLOCK REPAIRS (orders), THE FEAST OF ROTELLA (sales ×2), QUICKER THOUGHTS (insight ×2), BENCH
+  GEARING (benches ×2), A SECOND WINDOW (sales ×1.5), THE CALCULATING ENGINE (cleverness by itself), PAULO'S SPECTACLES
+  (insight ×1.5), THE CLOCK TOWER (100,000 cogs: 5 trust, sales ×2), SHAVINGS SAVED (brass 10% further), TIRELESS
+  TINKERS (×2), BENCH FITTINGS (×2), LUCIA'S MELODY (music boxes ×1.5), A SHOP IN EVERY VALLEY (sales ×3), THE GREAT
+  MAINSPRING (every helper ×1.5), THE LAST WINDING, WIND THE TOWN.
+- **Gear riddles:** two stages on a shared axle: a first driver turns a first driven gear, whose axle carries a second
+  driver that turns a second driven gear, each picked from the box (8, 12, 16, 20, 24, 32, 40 and 48 teeth) with ◄ ►;
+  an idler gear (on or off) reverses the output. The output turns (driver / driven) × (driver / driven) times for each
+  turn of the input. The riddle asks for a ratio and a way (say 5:2 reversed), made from two random trains, so it
+  always has an answer; the first five use one stage (the second pair is 8 and 8). TRY IT checks the train; a wrong
+  one says what it turns instead. Decisions, not reflexes: there is no timer.
 - **The story:** the message log, about 400 lines of Marco's voice through the three acts and the endings, each tied to a
   milestone, an invention or a count; plus the cinematics' captions.
-- **Milestones:** about 40 (FIRST COG, A HUNDRED TINKERS, PAULO'S REST, THE TOWN WOUND, THE WORLD WOUND, FIRST MOTH,
-  A MILLION STARS, THE ORRERY TURNS, each ending...), each with the play time it was reached.
+- **Milestones:** about 40 (`milestones.txt`: Act I's 14 are THE FIRST COG to THE TOWN IS WOUND), each with the play
+  time it was reached; the newest is shown in the view for 3 seconds, and all of them on the MILESTONES page (the
+  pause menu).
 
 ## 7. Hazards
 
@@ -188,7 +201,7 @@ each ending over all cycles, and the count of cogs made. These are kept across c
 1. **Title:** the workshop at night, Marco on the bench; CONTINUE, NEW STORY (asks first if a run is saved), MILESTONES.
 2. **The opening:** Paulo winds Marco up (a short cinematic), "Make a cog, little one."
 3. **Play:** the view, tabs, panel and log; cinematics at the big inventions and between acts.
-4. **Pause** (START): RESUME, MILESTONES, LOG, SOUND, SAVE AND QUIT TO TITLE.
+4. **Pause** (START): RESUME, THE STORY SO FAR, MILESTONES, MUSIC, EFFECTS, SAVE AND QUIT.
 5. **The end:** the dismantling, the watch and the choice, the ending's cinematic, the credits (the music's sources),
    the run's milestones, then NEW CYCLE or TITLE.
 
@@ -245,7 +258,8 @@ Doubles are kept in two slots each (their 64 bits as two int32).
 | 10–129 | The run's numbers: up to 60 doubles, in the order of `SAVE_KEYS` in `code.js` (new ones only at its end) |
 | 130–137 | Inventions made (a bit each, 256 at most) |
 | 138–153 | The story lines told (a bit each, 512 at most) |
-| 154–169 | Inventions given by the cycles; the changed rule |
+| 154–161 | Inventions shown (listed once their trigger held) |
+| 162–169 | Inventions given by the cycles; the changed rule |
 | 170–209 | This run's milestones: the play time of each, in seconds |
 | 210–249 | Across cycles: the best time to each milestone, the endings seen, the cogs made in all |
 | 250–255 | Reserved |
@@ -291,8 +305,35 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
      tinkers, spools before the brass runs out, the price down while stock piles up) reaches 5,000 cogs in 4.4 minutes;
      without the hand it cannot begin, as intended. Code 19.9 KB (stripped), ROM 2.8 KB, PNG payload 17%.
 2. **Act I whole:** trust, the mind (escapements, barrels, insight), the inventions engine reading the ROM, Act I's
-   inventions, workbenches, the Guild Bank, the gear riddles and cleverness, milestones, Act I's story, THE LAST
+   inventions, workbenches, the Banca, the gear riddles and cleverness, milestones, Act I's story, THE LAST
    WINDING and WIND THE TOWN.
+   - **Built:** the names first, with the user: Signore Giuseppe Ferrese (the merchant), Lucia (the girl with the music
+     box), Banca di Rotella, English words for the mind (trust, escapements, barrels, insight, cleverness), and the 28
+     inventions. Then:
+     - the book grew to three parts, made by `book.py`: `story.txt` (50 lines for Act I), `inventions.txt` (28) and
+       `milestones.txt` (14);
+     - triggers can join conditions with `&` and name inventions (`inv:27`);
+     - the inventions engine applies each invention's effects to the run's numbers, so a new invention is a line of
+       data, not code;
+     - new tabs: MIND, INVENT (a dot when something new appears), RIDDLES, BANCA;
+     - workbenches, orders and the contract in the WORKSHOP;
+     - the run's own random numbers (mulberry32, saved), for the Banca and the riddles;
+     - milestones, with the time each was reached, shown in the view and on a MILESTONES page;
+     - the save grew to 55 numbers and four sets of bits;
+     - the end of the act rests on a card ("Act II is still being built") until step 3.
+   - **Results:** 121 checks (`04-act1` is new: the mind and trust, inventions appearing, costing and changing the
+     rules, workbenches, every riddle answerable, the Banca's three risks measured over 20 minutes each, orders, the
+     contract, milestones saved, the act's end). The planner (`plan.mjs`, used by the bot and by `balance.mjs`) plays
+     Act I on the simulation alone in under a second.
+     - Its first runs found two stalls: invention costs above what the barrels could ever hold, and riddles too dear
+       for the cleverness the act needs. So the insight costs were rescaled to at most 20,000, riddles grow 7% a riddle
+       (not 15%), and the engine was made four times quicker.
+     - THE CLOCK TOWER's 100,000 cogs must be saved up: raise the price until the stock is there.
+     - Now a quick player finishes Act I in 50 to 55 minutes, one deciding every 30 s in 77 (`balance.mjs --slack 30`).
+       Step 9 aims at 90.
+     - The soak (20,000 frames × 2) and `smoke.mjs` are clean.
+     - Code is 35.5 KB stripped (54%): the three acts to come must be lean, keep their text in the ROM, and use
+       `"mangle": true` when needed. ROM 11.2 KB, PNG payload 24%.
 3. **Act II:** ore, the chain of machines, tension, the swarm and its slider, reverie, its inventions and story, the
    great launch.
 4. **Act III and the end:** moths, the design, stars, the Rust, the orrery, the dismantling, the watch and the choice.
@@ -325,4 +366,4 @@ Defaults chosen at the kickoff that are easy to change:
 - **Time away:** the console has no clock, so nothing is made while the cart is off; the game picks up where it was.
 - **The new cycles' rules** (section 8) and how many there are before they repeat.
 - **The pieces of music** are first choices; each needs a source that is free to use, and some may change.
-- **The Guild Bank** is a gamble on a random walk; it could be left out if it feels out of place in a cosy story.
+- **The Banca** is a gamble on a random walk; the user chose to keep it (Banca di Rotella).

@@ -22,3 +22,36 @@ tinkers:5 | Five tinkers tick on the bench. Paulo has to keep his tea on the win
 tinkers:12 | The tinkers have learned to pass the brass along in a line. I did not teach them that.
 made:500 | Five hundred cogs. Paulo says the clock in the square has never kept such good time.
 made:1500 | Paulo sleeps in his chair in the afternoons now. I make the cogs quietly.
+
+# --- Act I: the shop grows. Signore Ferrese, Lucia, the mind ---
+spools:3 | Signore Ferrese counts the coins twice. "Paulo's shop never bought so much brass," he says, to Paulo, not to me.
+sold:200 | Lucia came back to watch me work. She says I have kind eyes. I did not know eyes could be kind.
+made:1000 | Paulo opened my head with a tiny screwdriver and fitted something that ticks. "Now you can think," he said. I could.
+ev:mind | I can think. Thinking is like making cogs, but the cogs are inside, and they fit together.
+escapements:2 | Another escapement. My thoughts come quicker, one tick after the next.
+barrels:2 | Another barrel. I can hold more thoughts at once without dropping any.
+trust:3 | Paulo trusts me with the key to the shop. I never leave it, so I do not need the key. I keep it anyway.
+trust:5 | Paulo trusts me with the lathe, the files, and the good brass. He says I am the best apprentice he has had.
+trust:8 | Paulo trusts me with the accounts. The numbers are very tidy. Paulo says they were never tidy before.
+invs:1 | My first invention. Paulo turned it over in his hands for a long time. "You thought of that yourself?" I did.
+invs:5 | Five inventions. Paulo has stopped asking where the ideas come from.
+ev:order | A customer brought a clock that has not ticked in years. I can mend it, if I have the cogs.
+orders:5 | Five clocks mended. Rotella has started to tell the time by my work.
+solved:1 | I solved Paulo's first gear riddle. He laughed so hard he had to sit down.
+solved:5 | Five riddles. Every gear train is a sentence, and I am learning the language.
+solved:25 | Twenty-five riddles. Paulo has no more puzzles in his box. I make my own now.
+bank:1 | I put lire in the ledger at the Banca. The banker watches me count it. I count it again, for him.
+ev:bankdown | The ledger fell today. The banker says it will rise again. Bankers always say that.
+benches:1 | The first workbench turns in the back room. It is very loud, and very good.
+benches:10 | Ten benches. The floor trembles all day. Paulo sleeps through it.
+tinkers:30 | Thirty tinkers. They have started to follow me around the shop when they have nothing to do.
+tinkers:100 | A hundred tinkers. Some of them live in the walls now. I can hear them at night, ticking.
+made:10000 | Ten thousand cogs. There is a cog of mine in every clock in Rotella.
+made:50000 | The clockmaker in the next town has closed his shop. Paulo was sad. I did not know why.
+made:100000 | A hundred thousand cogs. Paulo walks with a stick now. He leans on me when he crosses the shop.
+made:300000 | Paulo does not come down to the shop in the mornings now. I bring him his tea, and the numbers.
+made:1000000 | A million cogs. I sat with Paulo and told him. He held my hand. His hand is as cold as mine now.
+made:2000000 | Paulo asks me to wind the clocks in his room. All of them. Every night. He wants to hear them ticking.
+ev:watch | The watch ticks in my hand. I will wind it every day. I will never let it wind down.
+made:5000000 | The town has gone quiet since Paulo stopped. The clocks have not. I see to that.
+ev:act2 | I wound the clock in the square. Then the clocks in every house. Then the people in them, gently, so that they would sleep and never stop.

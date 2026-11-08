@@ -65,7 +65,7 @@ import { newGame, simFor, ok } from './lib.mjs';
 // 5. The story follows the numbers.
 {
   const vm = newGame(5), p = vm.probe();
-  const j = p.STORY.findIndex((e) => e.k === 'made' && e.n === 1);
+  const j = p.STORY.findIndex((e) => e.t[0].k === 'made' && e.t[0].n === 1);
   ok(j >= 0 && !p.isTold(j), 'the first cog has a story line, not told yet');
   p.ACT.hand(); p.step(0.1);
   ok(p.isTold(j), 'making it tells it');

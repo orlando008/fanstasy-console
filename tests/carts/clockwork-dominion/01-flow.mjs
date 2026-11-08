@@ -13,7 +13,7 @@ import { newGame, M, sfxLog, musicLog, ok } from './lib.mjs';
   vm.run(5, M('B')); vm.run(5); vm.press('B'); vm.press('B');
   const made = p.G.made;
   vm.press('START'); vm.run(2); ok(p.paused, 'START pauses');
-  for (let i = 0; i < 4; i++) vm.press('DOWN');
+  for (let i = 0; i < 5; i++) vm.press('DOWN');
   vm.press('A'); vm.run(2);
   ok(p.state === 'title' && p.hasRun(), 'SAVE AND QUIT goes to the title, with the story saved');
   const save = Int32Array.from(vm.m.save);
@@ -62,13 +62,12 @@ import { newGame, M, sfxLog, musicLog, ok } from './lib.mjs';
 // 4. The pause menu's settings and the full log.
 {
   const vm = newGame(4), p = vm.probe(); vm.run(2);
-  vm.press('START'); vm.press('DOWN'); vm.press('DOWN'); musicLog(vm); vm.press('A');
+  vm.press('START'); vm.press('DOWN'); vm.press('DOWN'); vm.press('DOWN'); musicLog(vm); vm.press('A');
   ok(!p.musicOn && musicLog(vm).includes(-1), 'MUSIC: OFF stops the music');
   vm.press('A'); ok(p.musicOn && p.playing === p.SONG.play, 'and ON brings it back');
   vm.press('DOWN'); vm.press('A'); ok(!p.soundOn, 'EFFECTS: OFF silences the effects');
   sfxLog(vm); vm.press('B'); vm.run(1); vm.press('B'); vm.run(2);
   ok(!p.paused && sfxLog(vm).length === 0, 'B resumes, and the hand makes no sound now');
-  vm.press('START'); vm.press('DOWN'); vm.press('A'); vm.press('A'); vm.press('B');
   const vm2 = newGame(5, { save: Int32Array.from(vm.m.save), title: true }), q = vm2.probe(); vm2.run(2);
   ok(q.musicOn && !q.soundOn, 'the settings are saved');
   vm.press('SELECT'); ok(p.state === 'log', 'SELECT opens the story so far');
