@@ -33,8 +33,22 @@ const VIEW_H = 92, TAB_Y = 92, PANEL_Y = 104, LOG_Y = 194, ROWS_SHOWN = 5;
 const LM = '\x7f', RM = '\x80', DOT = '\x81', COG = '\x82'; // the ledger font's extra characters
 
 // --- Sound (SPEC 5): songs on channels 0 to 5, effects take turns on 6 and 7 ---
-const SFX = { move: 0, select: 1, pause: 2, no: 3, over: 4, clink: 5, story: 6 };
-const SONG = { title: 0, play: 1 };
+const SFX = { move: 0, select: 1, pause: 2, no: 3, invent: 4, clink: 5, story: 6, buy: 7, mile: 8, wind: 9, flutter: 10, solve: 11,
+  wrong: 12, tab: 13, tick: 14, rust: 15, act: 16, place: 17 };
+const SONG = { title: 0, shop: 1, lullaby: 2, world: 3, stars: 4, rust: 5, dominion: 6, rest: 7 };
+// The song each scene plays, and how long the music plays before it rests (and for how long), in frames.
+const SCENE_SONG = { opening: SONG.title, rest: SONG.lullaby, town: SONG.lullaby, launch: SONG.world, orrery: SONG.stars, dominion: SONG.dominion, stop: SONG.rest };
+const PLAY_FOR = 9000, REST_FOR = 2400;
+let musicT = 0;
+/** The song for what is on the screen now: the act's, the Rust's when it is strong, a scene's, the title's. */
+function wantSong() {
+  if (state === 'cine') return SCENE_SONG[Object.keys(SCENES).find((k) => SCENES[k] === cine.shots)] ?? -1;
+  if (state === 'ending') return SONG.rest;
+  if (state !== 'play' && state !== 'log' && state !== 'miles' || !G) return SONG.title;
+  if (++musicT > PLAY_FOR + REST_FOR) musicT = 0;
+  if (musicT > PLAY_FOR) { if (G.act === 1 && musicT % 60 === 0) fx(SFX.move); return -1; } // a rest: only the shop's ticking
+  return G.act === 1 ? SONG.shop : G.act === 2 ? SONG.world : G.rust > G.moths * 0.2 ? SONG.rust : SONG.stars;
+}
 const SFX_CH = [7, 6];
 let fxNext = 0, soundOn = 1, musicOn = 1, playing = -1;
 function fx(n) { if (!soundOn) return; sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -351,7 +365,7 @@ function autoBuild(dt) {
 
 /** The start of an act's play, after the act before it ends (its cinematic comes in step 7). */
 function endAct(from) {
-  checkMiles(); saveRun();
+  checkMiles(); saveRun(); fx(SFX.act);
   if (from < 3) playScene(from === 1 ? 'town' : 'launch', () => {});
   if (from === 1) {
     raise('act2'); tab = 0; row = 0; top = 0;
@@ -396,7 +410,7 @@ function step3(dt) {
   G.moths += n; G.cogs -= n * mothCost();
   if (want > 1 && n < want / 2) raise('nocogs');
   const lost = Math.min(G.moths, lossRate() * dt); G.moths -= lost; G.lostT += lost;
-  if (!G.rustSeen && G.starsW >= G.rustAt) { G.rustSeen = 1; G.rust = G.moths * 0.01; raise('rust'); }
+  if (!G.rustSeen && G.starsW >= G.rustAt) { G.rustSeen = 1; G.rust = G.moths * 0.01; raise('rust'); fx(SFX.rust); }
   if (G.rust > 0) {
     const took = Math.min(G.moths, rustRate() * dt), stung = Math.min(G.rust, stingRate() * dt);
     G.moths -= took; G.rustT += took;
@@ -425,7 +439,7 @@ const shot = () => cine.shots[cine.k];
 const fxOn = (e) => cine && state === 'cine' && shot().fx.includes(' ' + e + ' ');
 function updateCine() {
   const s = shot(); cine.t++; typed += 2;
-  if (fxOn('tick') && cine.t % 40 === 1) fx(SFX.clink);
+  if (fxOn('tick') && cine.t % 40 === 1) fx(SFX.tick);
   const next = pressed(START) ? cine.shots.length : cine.t >= s.f || (pressed(A) && typed >= s.cap.length + 30) ? cine.k + 1 : cine.k;
   if (pressed(A) && typed < s.cap.length) typed = s.cap.length;
   if (next !== cine.k) {
@@ -459,7 +473,8 @@ function choose(k) {
 }
 
 // --- What the player can do (the panel's rows and the hand call these; the bot and the tests too) ---
-let why = ''; // why the last action could not be done, for the hint line
+let why = '', quiet = false; // why the last action could not be done, for the hint line; quiet: it made its own sound
+const sound = (n) => { fx(n); quiet = true; };
 const no = (s) => { why = s; return false; };
 const ACT = {
   hand() {
@@ -523,12 +538,12 @@ const ACT = {
     if (!canAfford(v.cost)) return no(`Not yet: it needs ${costText(v.cost)}.`);
     pay(v.cost); G.done[id >> 5] |= 1 << (id & 31); G.invs++;
     const act = G.act, region = G.region;
-    applyEffects(v, false);
+    applyEffects(v, false); sound(SFX.invent);
     addLog(v.story, true);
     if (G.watch) raise('watch');
     if (v.id === 27) playScene('rest', () => {});
     if (v.id === 99) playScene('orrery', () => {});
-    if (G.region !== region) G.ore += T.regionOre[G.region]; // a new place: its ore, on top of what is left
+    if (G.region !== region) { G.ore += T.regionOre[G.region]; sound(SFX.place); } // a new place: its ore, on top of what is left
     if (G.act !== act) endAct(act);
     return true;
   },
@@ -554,8 +569,8 @@ const ACT = {
   tryIt() {
     if (!G.rTarget) return no('Pose a riddle first.');
     const [n, m, rev] = riddleTarget(), [a, b, r] = picked();
-    if (n !== a || m !== b || rev !== r) return no(`Not yet: that turns ${ratioText(a, b, r)}.`);
-    G.clev += G.rReward; G.solved++; G.rTarget = 0;
+    if (n !== a || m !== b || rev !== r) { sound(SFX.wrong); return no(`Not yet: that turns ${ratioText(a, b, r)}.`); }
+    G.clev += G.rReward; G.solved++; G.rTarget = 0; sound(SFX.solve);
     return true;
   },
   giveUp() { G.rTarget = 0; return true; },
@@ -627,7 +642,7 @@ function raise(ev) { for (let j = 0; j < STORY.length; j++) if (STORY[j].ev === 
 function checkMiles() {
   MILES.forEach((m, j) => {
     if (G.mile[j] || !holds(m.t)) return;
-    G.mile[j] = Math.floor(G.time) + 1; milestoneAt = clock;
+    G.mile[j] = Math.floor(G.time) + 1; milestoneAt = clock; if (state === 'play') fx(SFX.mile);
     const b = BESTS.indexOf(m.name), old = b >= 0 ? dget(BEST_SLOT + b) : 0;
     if (b >= 0 && (!old || G.mile[j] < old)) dset(BEST_SLOT + b, G.mile[j]);
   });
@@ -890,24 +905,25 @@ function init() {
   if (skipTitle) newRun(1); else toTitle();
 }
 
-function toTitle() { state = 'title'; timer = 0; titleSel = 0; confirm = false; paused = false; play(SONG.title); }
+function toTitle() { state = 'title'; timer = 0; titleSel = 0; confirm = false; paused = false; }
 /** A new run: the next cycle (after an ending), with its gift (an Act I invention already made). */
 function newRun(seed, gift = 0) {
   G = freshRun(seed, dget(CYCLE_SLOT)); logRows = []; typing = 0; tab = 0; row = 0; top = 0; bits = [];
   state = 'play'; timer = 0; paused = false;
   raise('start');
   if (gift && INV_BY[gift]) { const v = INV_BY[gift]; G.done[gift >> 5] |= 1 << (gift & 31); G.shown[gift >> 5] |= 1 << (gift & 31); G.invs++; applyEffects(v, false); }
-  saveRun(); play(SONG.play); playScene('opening', () => {});
+  saveRun(); musicT = 0; playScene('opening', () => {});
 }
 /** The inventions a cycle can give: Act I's, but not the two that end it. */
 const GIFTS = () => INVS.filter((v) => v.id <= 26);
 let giftSel = 0, endSel = 0;
 const startCycle = () => { state = 'gift'; giftSel = 0; timer = 0; };
-function continueRun() { loadRun(); state = G.act <= 3 ? 'play' : 'choice'; timer = 0; paused = false; bits = []; play(SONG.play); }
+function continueRun() { loadRun(); state = G.act <= 3 ? 'play' : 'choice'; timer = 0; paused = false; bits = []; musicT = 0; }
 
 // --- Update ---
 function update() {
   readPad(); clock++;
+  if (!paused) play(wantSong());
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'play') updatePlay();
@@ -955,13 +971,13 @@ function updatePlay() {
   if (rep(UP) && row > 0) { row--; fx(SFX.move); }
   if (rep(DOWN) && row < rows.length - 1) { row++; fx(SFX.move); }
   const o = openTabs().length;
-  const tabTo = (d) => { if (o > 1) { tab = (tab + d + o) % o; row = 0; top = 0; fx(SFX.move); } };
+  const tabTo = (d) => { if (o > 1) { tab = (tab + d + o) % o; row = 0; top = 0; fx(SFX.tab); } };
   if (pressed(L)) tabTo(-1); if (pressed(R)) tabTo(1);
   if (r.adj) { if (rep(LEFT)) doRow(() => r.adj(-1)); if (rep(RIGHT)) doRow(() => r.adj(1)); }
   else { if (pressed(LEFT)) tabTo(-1); if (pressed(RIGHT)) tabTo(1); }
   if (t.name === 'INVENT') newInv = false;
   if (rep(A) && r.a) doRow(r.a);
-  if (handRep()) { if (ACT.hand()) { fx(SFX.clink); dropCog(); } else hint(why); }
+  if (handRep()) { if (ACT.hand()) { fx([SFX.clink, SFX.wind, SFX.flutter][G.act - 1]); if (G.act === 1) dropCog(); } else hint(why); }
   if (row < top) top = row; if (row >= top + ROWS_SHOWN) top = row - ROWS_SHOWN + 1;
   if (++sub >= TICK_FRAMES) { sub = 0; step(TICK); }
   if (++saveT >= SAVE_EVERY) { saveT = 0; saveRun(); }
@@ -970,7 +986,8 @@ function updatePlay() {
   bits = bits.filter((c) => c.y < VIEW_H - 22);
 }
 function doRow(f) {
-  if (f()) { fx(SFX.select); if (f === ACT.hand) dropCog(); } else { fx(SFX.no); hint(why); }
+  quiet = false;
+  if (f()) { if (!quiet) fx(SFX.buy); if (f === ACT.hand) dropCog(); } else { if (!quiet) fx(SFX.no); hint(why); }
 }
 function hint(s) { hintMsg = s; hintT = 150; }
 function dropCog() { if (bits.length < 12) bits.push({ x: 84 + rndi(0, 6), y: 50, vy: -1.5 }); }
@@ -1019,7 +1036,7 @@ function updatePause() {
   if (pauseSel === 0) paused = false;
   else if (pauseSel === 1) { paused = false; state = 'log'; logScroll = 0; }
   else if (pauseSel === 2) { paused = false; state = 'miles'; logScroll = 0; }
-  else if (pauseSel === 3) { musicOn ^= 1; saveSettings(); const s = playing; playing = -2; play(musicOn ? (s >= 0 ? s : SONG.play) : -1); }
+  else if (pauseSel === 3) { musicOn ^= 1; saveSettings(); playing = -2; }
   else if (pauseSel === 4) { soundOn ^= 1; saveSettings(); }
   else { saveRun(); toTitle(); }
 }

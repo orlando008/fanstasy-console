@@ -8,8 +8,8 @@ import { newGame, M, sfxLog, musicLog, ok } from './lib.mjs';
   ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
   ok(!p.hasRun(), 'with no story saved, the only choice is NEW STORY');
   vm.press('A'); vm.run(2);
-  ok(p.state === 'cine' && p.G && p.G.made === 0 && p.playing === p.SONG.play, 'NEW STORY starts a run with its opening cinematic, and the workshop\'s song');
-  vm.run(40); vm.press('START'); vm.run(2); ok(p.state === 'play', 'START skips it, to the workshop');
+  ok(p.state === 'cine' && p.G && p.G.made === 0 && p.playing === p.SONG.title, 'NEW STORY starts a run with its opening cinematic, still with the title\'s music box');
+  vm.run(40); vm.press('START'); vm.run(2); ok(p.state === 'play' && p.playing === p.SONG.shop, 'START skips it, to the workshop and its march');
   ok(p.logRows.length > 0 && p.isTold(0), 'and the story begins in the log (Paulo\'s first words)');
   vm.run(5, M('B')); vm.run(5); vm.press('B'); vm.press('B');
   const made = p.G.made;
@@ -63,9 +63,10 @@ import { newGame, M, sfxLog, musicLog, ok } from './lib.mjs';
 // 4. The pause menu's settings and the full log.
 {
   const vm = newGame(4), p = vm.probe(); vm.run(2);
-  vm.press('START'); vm.press('DOWN'); vm.press('DOWN'); vm.press('DOWN'); musicLog(vm); vm.press('A');
+  vm.press('START'); vm.press('DOWN'); vm.press('DOWN'); vm.press('DOWN'); musicLog(vm); vm.press('A'); vm.press('B'); vm.run(2);
   ok(!p.musicOn && musicLog(vm).includes(-1), 'MUSIC: OFF stops the music');
-  vm.press('A'); ok(p.musicOn && p.playing === p.SONG.play, 'and ON brings it back');
+  vm.press('START'); vm.press('DOWN'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); vm.press('B'); vm.run(2); ok(p.musicOn && p.playing === p.SONG.shop, 'and ON brings it back');
+  vm.press('START'); vm.press('DOWN'); vm.press('DOWN'); vm.press('DOWN');
   vm.press('DOWN'); vm.press('A'); ok(!p.soundOn, 'EFFECTS: OFF silences the effects');
   sfxLog(vm); vm.press('B'); vm.run(1); vm.press('B'); vm.run(2);
   ok(!p.paused && sfxLog(vm).length === 0, 'B resumes, and the hand makes no sound now');

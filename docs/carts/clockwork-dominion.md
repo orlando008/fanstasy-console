@@ -1,7 +1,7 @@
 # Clockwork Dominion: Cart Specification
 
-**Version:** 0.8 (step 7 of 10)
-**Status:** In progress: steps 1 to 7 of the plan (section 15) are built (the engine, the three acts, the end, new cycles, the flow, the views and the cinematics); step 8, the audio, is next
+**Version:** 0.9 (step 8 of 10)
+**Status:** In progress: steps 1 to 8 of the plan (section 15) are built (the engine, the three acts, the end, new cycles, the flow, the views, the cinematics and the audio); step 9, the balance, is next
 **Cart source:** `carts/src/clockwork-dominion/` → `carts/clockwork-dominion.nova`
 
 ---
@@ -247,24 +247,31 @@ the stars going out, the watch ticking.
 
 ## 11. Audio
 
-On the new sound chip (SPEC 5): songs on channels 0 to 5, effects take turns on 6 and 7. Music-box arrangements of public
-domain classics, growing fuller act by act over a soft ticking; each piece's source is checked for its licence and
-recorded in the cart folder's `scores/SOURCES.md`, made in step 8 (as in Riddlewick Manor).
+On the new sound chip (SPEC 5), made by `audio.py`: songs on channels 0 to 5, effects take turns on 6 and 7. Public domain
+classics in their own notes (`scores.py` reads them from public domain engravings; each source and licence is in the
+cart folder's `scores/SOURCES.md`), arranged for a music box (a sample of a comb's tine, made in `audio.py`) and a few
+sampled instruments, over a soft clock tick (tick and tock, on channel 5) in the clockwork pieces.
 
-| Song | Piece (first choices) | Where |
-|---|---|---|
-| 0 | Tchaikovsky: Dance of the Sugar Plum Fairy (1892) | The title |
-| 1 | Haydn: Symphony No. 101 "The Clock", Andante (1794) | Act I |
-| 2 | Brahms: Wiegenlied, Op. 49 No. 4 (1868) | Paulo's rest and the Great Lullaby |
-| 3 | Grieg: In the Hall of the Mountain King (1875) | Act II, faster as the world is wound |
-| 4 | Saint-Saëns: Aquarium, from The Carnival of the Animals (1886) | Act III |
-| 5 | Saint-Saëns: Danse macabre (1874) | The Rust |
-| 6 | Mussorgsky: The Great Gate of Kiev (1874) | The Dominion ending |
-| 7 | Satie: Gymnopédie No. 1 (1888) | The Rest ending and the credits |
+| Song | Piece | Where | Voices |
+|---|---|---|---|
+| 0 | Mozart: *Ah, vous dirai-je, Maman*, the theme and a variation | the title, the opening, the gifts | music box over a low music box and celesta, ticking |
+| 1 | Tchaikovsky: *March of the Wooden Soldiers* | Act I | music box, celesta, plucked bass, ticking |
+| 2 | Brahms: *Wiegenlied* | Paulo's rest, the winding of the town | music box over celesta and strings, ticking |
+| 3 | Grieg: *In the Hall of the Mountain King* | Act II, the launch | plucked strings over a bass, ticking every beat |
+| 4 | Debussy: *Clair de lune* | Act III, the orrery turning | flute over electric piano, strings beneath |
+| 5 | Grieg: *Troldtog* (March of the Dwarfs) | Act III while the Rust is more than a fifth of the moths | plucked, quick |
+| 6 | Bach: *The Art of Fugue*, the canon at the octave | the Dominion ending | celesta and strings in canon, ticking |
+| 7 | Satie: *Gymnopédie No. 1* | the Rest ending and the credits | music box, slowly, over electric piano and strings |
 
-The music plays a loop and then rests for a while under the ticking, so hours of play do not wear it out. Effects (about
-30): the hand (a cog clinks, a spring ratchets, a moth flutters), buying, a no, a tab, an invention made, a milestone
-chime, a cinematic's swell, the Rust. Levels as the playbook (section 5) sets them, checked by `loud.mjs --check`.
+The first choices of the kickoff had no public domain file, and the user agreed the swaps (the Sugar Plum Fairy,
+Haydn's "Clock", the Aquarium, Danse macabre and the Great Gate of Kiev). In play, a song plays for 2.5 minutes, then
+rests for 40 seconds (in the shop, a soft tap each second, like the clocks), then begins again. All eight are within
+`loud.mjs --check`'s limits.
+
+Effects (18): a tap (the cursor, a tab), two tines (select, pause), a dull thunk (no), a chime (an invention), a clink
+(a cog by hand), a soft music box (a story line), a coin (bought), a carillon (a milestone), a ratchet (a spring wound),
+a flutter (moths launched), gears meshing (a riddle solved) and a slip (wrong), tick and tock (the watch, in the
+cinematics), a sinking low string (the Rust), a rising choir (a new act), a fanfare (a place integrated).
 
 ## 12. Video layers
 
@@ -477,6 +484,20 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
      every view) and the stars running under the captions; both fixed. The soak, `smoke.mjs` and the bot's sweep are
      clean. Code 60.0 KB of 64 (92%): step 8 has about 5 KB. ROM 25.3 KB, PNG payload 40%.
 8. **Audio:** the eight songs, the ticking, the effects; levels checked.
+   - **Built:**
+     - the pieces' public domain sources (seven Mutopia engravings, and the theme of *Ah, vous dirai-je, Maman* by
+       hand), with the user agreeing the swaps where a first choice had none;
+     - `scores.py` (Riddlewick Manor's reading, for eight pieces) and the note text in `scores/`;
+     - `audio.py`: a music box sample of its own, a clock tick, eight songs on 30 patterns, 18 effects;
+     - in `code.js`: `wantSong()` picks the song for the screen, the act and the Rust, with rests between; each
+       effect at its moment.
+   - **Results:** 275 checks (`09-audio` is new: every song and effect named, the sources recorded, each song at its
+     moment, the rest and the return, the effects on 6 and 7). `loud.mjs --check` passes for all eight songs: on the
+     way, the first arrangement was too quiet, its music box too bright (a darker tine fixed it), and the canon's lone
+     opening voice was the whole mix (now doubled softly an octave down). The first tick effects measured silent, too
+     short and too high; they are now marimba taps. Sample RAM 13.8 KB of 32, patterns 30 of 64, so there is room for
+     more music. The soak and `smoke.mjs` are clean. Code 61.0 KB (the size pass is left for the end, as the user
+     asked); PNG payload 45%.
 9. **Balance:** the bot plays whole runs headless (with a greedy plan, and a slower one); the acts' lengths measured and
    tuned to about 90, 120 and 120 minutes; no stall that the bot cannot leave.
 10. **Polish and release:** the size pass (the story written out to fill the space, the last details), the PNG cart, the
