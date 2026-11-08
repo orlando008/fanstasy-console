@@ -27,18 +27,22 @@ export function pad(vm, p, frame, opts) {
   }
   if (p.phase === 'confirm') return p.timer > 8 ? M('A') : 0;
   if (p.phase !== 'explore') return 0;
-  // The route with the fewest questions to the heart (open doors cost nothing, closed ones a question; locked ones
-  // only with a key, at a high cost): a 0-1 breadth-first search back from the heart, then the first step of it.
-  const dist = new Map(), q = [[p.goal.x, p.goal.y]];
-  dist.set(p.goal.y * p.MW + p.goal.x, 0);
-  while (q.length) {
-    const [x, y] = q.shift(), dd = dist.get(y * p.MW + x);
+  // The route with the fewest questions to the heart, then the fewest steps (so it always gets strictly shorter and the
+  // bot never paces between two rooms): open doors cost a step, closed ones a question, locked ones (only with a key) a
+  // lot. Dijkstra back from the heart over the 42 rooms.
+  const cost = (st) => (st === p.OPEN ? 1 : st === p.CLOSED ? 100 : 800);
+  const dist = new Map([[p.goal.y * p.MW + p.goal.x, 0]]), done = new Set();
+  for (;;) {
+    let k = -1, kd = Infinity;
+    for (const [r, v] of dist) if (!done.has(r) && v < kd) { k = r; kd = v; }
+    if (k < 0) break;
+    done.add(k);
+    const x = k % p.MW, y = Math.floor(k / p.MW);
     for (let d = 0; d < 4; d++) {
       const st = p.getDoor(x, y, d);
       if (st === p.NONE || (st === p.LOCKED && !p.keys)) continue;
-      const nx = x + [0, 1, 0, -1][d], ny = y + [-1, 0, 1, 0][d], c = dd + (st === p.OPEN ? 0 : st === p.CLOSED ? 1 : 8);
-      const k = ny * p.MW + nx;
-      if (!dist.has(k) || c < dist.get(k)) { dist.set(k, c); if (st === p.OPEN) q.unshift([nx, ny]); else q.push([nx, ny]); }
+      const n = (y + [-1, 0, 1, 0][d]) * p.MW + x + [0, 1, 0, -1][d], c = kd + cost(st);
+      if (!dist.has(n) || c < dist.get(n)) dist.set(n, c);
     }
   }
   let best = -1, bestCost = Infinity;
@@ -46,8 +50,8 @@ export function pad(vm, p, frame, opts) {
     const st = p.getDoor(p.me.x, p.me.y, d);
     if (st === p.NONE || (st === p.LOCKED && !p.keys)) continue;
     const nx = p.me.x + [0, 1, 0, -1][d], ny = p.me.y + [-1, 0, 1, 0][d];
-    const cost = (dist.get(ny * p.MW + nx) ?? 99) + (st === p.OPEN ? 0 : st === p.CLOSED ? 1 : 8);
-    if (cost < bestCost) { bestCost = cost; best = d; }
+    const c = (dist.get(ny * p.MW + nx) ?? 1e9) + cost(st);
+    if (c < bestCost) { bestCost = c; best = d; }
   }
   if (best < 0) return 0;
   if (p.sel !== best) return M(BTN_FOR[(best - p.me.f + 4) % 4]);
