@@ -131,6 +131,16 @@
       "png": "carts/lantern-keeper.nova.png"
     },
     {
+      "name": "riddlewick-manor",
+      "title": "Riddlewick Manor",
+      "author": "NOVA-16",
+      "description": "A trivia adventure in a haunted manor. Knock on a door and its ghost asks you a question: answer right and it opens, answer wrong and it locks for good and your candle burns down. Find your way, room by room, to the heart of the manor before your candle goes out.",
+      "genre": "Puzzle",
+      "players": "1",
+      "label": "carts/labels/riddlewick-manor.png",
+      "png": "carts/riddlewick-manor.nova.png"
+    },
+    {
       "name": "tricksy-towerz",
       "title": "Tricksy Towerz",
       "author": "NOVA-16",
