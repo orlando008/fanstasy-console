@@ -1,7 +1,7 @@
 # Clockwork Dominion: Cart Specification
 
-**Version:** 0.4 (step 3 of 10)
-**Status:** In progress: steps 1 to 3 of the plan (section 15) are built (the engine, Act I and Act II); step 4 is next
+**Version:** 0.5 (step 4 of 10)
+**Status:** In progress: steps 1 to 4 of the plan (section 15) are built (the engine, all three acts and the choice at the end); step 5 is next
 **Cart source:** `carts/src/clockwork-dominion/` → `carts/clockwork-dominion.nova`
 
 ---
@@ -140,17 +140,24 @@ places Rotella, Tuscany, Italy and the World.
 
 ### Act III: the Orrery
 
-| Quantity | Value |
+The tabs are STARS, MOTHS, DESIGN, MIND and INVENT. Names agreed with the user: moths, **the Rust**, the six traits
+SPEED, WINDING, COPYING, HARVEST, WINGS and SHELTER, and **blueprints** (the points shared over them).
+
+| Quantity | Value (each second) |
 |---|---|
-| Stars | 3.0E22 in the universe; a moth reaches new stars, and a wound star is a gear of the orrery that makes cogs |
-| Moths | built from cogs (1 million each at first); Marco's hand (B) launches one |
-| A moth's design | design points (from insight milestones) shared out over six traits with ◄ ►: SPEED (stars explored), WINDING (stars wound), COPYING (moths built by moths), HARVEST (cogs from a wound star), WINGS (fighting the Rust), SHELTER (lost moths) |
-| The Rust | from 1% of the stars wound, some moths are lost to the Rust each minute; the Rust grows with them and fights with WINGS; its strength is shown in the view |
-| The end of the act | every star is wound: the orrery turns. Then the machines are taken apart, star by star, into the last cogs, until only Marco and the watch remain |
+| The start | THE GREAT LAUNCH turns the machines into 100,000 moths; the cogs left from Act II stay |
+| Stars | 3e22 in the universe. Each moth reaches 0.001 of a star × (1 + SPEED) × its inventions, and winds 3e-5 of a reached star × (1 + WINDING) × its inventions |
+| Cogs | each wound star gives 10,000 × (1 + HARVEST) × its inventions |
+| Copying | moths build moths, at 1,000,000 cogs each (FOLDED WINGS: half): at most 0.004 a moth, and at most what the nests allow (1,000 + 0.0015 for each wound star), both × (1 + COPYING) × its inventions. B launches up to `mHand` moths (100 after MANY HANDS) |
+| The dark | 0.002 of the moths are lost, ÷ (1 + SHELTER) × its inventions |
+| Blueprints | 6, and one for each power of ten of the most moths there have been (so they never shrink), and 10 from IRON RESOLVE; shared over the six traits with ◄ ►, and taken back the same way |
+| The Rust | comes when a million stars are wound, as a hundredth of the moths. It takes 1% of itself in moths a second, and grows by half of what it takes and half of the moths lost in the dark. Each blueprint in WINGS stings away 1% of it a second (× the inventions), and none, none. It is never more than twice the moths, so a blueprint moved to WINGS always turns it back. LUCIA'S SONG brings 1% of it home as moths |
+| Trust | one for each power of ten of stars wound; insight also comes from the moths with MOTH DREAMS (50 × log10(moths)) |
+| The end of the act | every star wound: THE ORRERY TURNS, then THE LAST COG: only the watch is left |
 
 ### The end and new cycles
 
-The last screen asks: **WIND IT** or **LET IT STOP**. Winding it gives the Dominion ending (everything ticks for ever, in
+The last screen asks: **WIND IT** or **LET IT STOP** (UP and DOWN, then A). Winding it gives the Dominion ending (everything ticks for ever, in
 perfect order, and nothing else ever happens again); letting it stop gives the Rest ending (the stars unwind into
 light, it is quiet, and in a new workshop somewhere an old clockmaker hears a tick). Either way a **new cycle** can
 begin: everything made goes back to nothing, but each cycle adds 10% to every machine's work, starts with one Act I
@@ -268,7 +275,8 @@ Doubles are kept in two slots each (their 64 bits as two int32).
 | 190–193 | Inventions shown (listed once their trigger held) |
 | 194–197 | Inventions given by the cycles; the changed rule |
 | 198–237 | This run's milestones: the play time of each, in seconds (+1; 0 not yet) |
-| 238–255 | Across cycles: the best times, the endings seen, the cogs made in all |
+| 238 | Across cycles: the endings seen (bit 0 the Dominion, bit 1 the Rest) |
+| 239–255 | Across cycles: the best times, the cogs made in all (step 5) |
 
 Multipliers and flags that inventions set (`mDig`, `benchOn`, `region` ...) are not saved: loading a run works them out
 again by applying the effects of the inventions made, in order.
@@ -370,6 +378,31 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
      step 9). The soak and `smoke.mjs` are clean. Code is 45.1 KB stripped (69%): step 4 begins with the size pass
      (`"mangle": true`, more of the text into the ROM). ROM 17.9 KB, PNG payload 29%.
 4. **Act III and the end:** moths, the design, stars, the Rust, the orrery, the dismantling, the watch and the choice.
+   - **Built:** the names first, with the user (section 5). Then a size pass, which found a bug in the console's tools:
+     `tools/devkit/mangle.mjs` lost its place after any template string with two or more `${}` pieces, and broke
+     the code that followed (a later `let a = 0, b = 1` became a property). It is fixed, with a test in
+     `tests/console/mangle.mjs`; The Franchise and Vertical Fall pack exactly as before. With `"mangle": true` the code
+     went from 45.1 KB to 41.4 KB. Then:
+     - 20 inventions (ids 81 to 100), 20 story lines and 7 milestones (the two endings among them);
+     - `step3`: stars, moths, copying against the nests, the dark, the Rust, LUCIA'S SONG and trust from stars;
+     - the tabs STARS, MOTHS and DESIGN;
+     - the choice (WIND IT or LET IT STOP) and the two endings, each kept with its milestone and as an ending seen
+       over every cycle. For now each ending is a card with its line and the play time, and returns to the title
+       (the cinematics are step 7; new cycles and the credits, step 5).
+   - **Results:** 197 checks (`06-act3` is new: the act's start, the rates, blueprints, the Rust and its limits, the
+     choice and both endings, and the planner through the whole act). The planner found these on its way:
+     - **Too short:** moths copied themselves so fast that the act lasted 65 minutes, the last 25 of them from a
+       billion moths to every star. Copying is now held to what the nests on the wound stars allow.
+     - **A lock:** with no blueprints in WINGS, the Rust grew to 5e105 against 10 moths, for good. Now the Rust grows
+       only from what it takes, is never more than twice the moths, and each blueprint in WINGS stings a share of it
+       away, so moving one there always wins it back.
+     - **A flaw:** blueprints came from the moths there were, so a dip below a power of ten took back one already
+       placed. They now come from the most moths there have been.
+
+     The planner was taught to move a blueprint to WINGS when the Rust is winning, and to share blueprints by the
+     rates. Act III now takes 112 to 119 minutes at every decision speed tried (the aim is 120), and a whole story
+     about 4 hours 30 (Act I 53, Act II 106, Act III about 115). The soak and `smoke.mjs` are clean. Code is 48.4 KB
+     of 64 (74%), ROM 23.3 KB, PNG payload 31%.
 5. **The flow:** the title, the opening, the two endings, the credits, new cycles and their rules, the MILESTONES page,
    the full log, the pause menu, sound settings; the save complete and tested (every slot round-trips).
 6. **Art: the views.** The workshop and the town, the world as a Mode 7 globe, the orrery; each act's tile set in the

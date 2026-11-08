@@ -127,6 +127,10 @@ const T = {
   digCost: 200000, foundCost: 200000, millCost: 200000, wheelCost: 100000, sbCost: 50000,
   machRate: 1000, draw: 10, wheelGen: 50, river: 0.6, riverDay: 240, sbCap: 10000, power0: 10000, handPower: 100,
   swarmGrow: 0.02, sulkAfter: 600, dreamIns: 20, dreamIng: 0.2,
+  // Act III: a second's work for each moth, and the Rust
+  stars: 3e22, moths0: 100000, mothsMin: 10, mothCost: 1e6, reachRate: 1e-3, windRate: 3e-5, harvRate: 1e4, copyRate: 0.004,
+  lossRate: 0.002, rustAt: 1e6, rustKill: 0.01, sting: 0.01, rustFrom: 0.5, rustKeep: 0.5, lucia: 0.01,
+  bp0: 6, mothIns: 50, nest0: 1000, nest: 0.0015,
 };
 const REGIONS = ['', 'Rotella', 'Tuscany', 'Italy', 'the World'];
 const LOTS = [1, 10, 100, 1000, 0]; // how many a press builds; 0 is as many as the cogs allow
@@ -143,11 +147,13 @@ const TICK = 0.1, TICK_FRAMES = 6, SAVE_EVERY = 600;
 const SAVE_KEYS = ['made', 'cogs', 'brass', 'coin', 'price', 'tinkers', 'spool', 'day', 'sold', 'spools', 'time', 'mk',
   'insight', 'clev', 'benches', 'bank', 'oNeed', 'oPay', 'oLeft', 'oNext', 'rCost', 'bankIn',
   'ore', 'yard', 'diggers', 'foundries', 'mills', 'wheels', 'sbarrels', 'power', 'swarm', 'ingen', 'ingT', 'wound', 'sulkT',
-  'dugT'];
+  'dugT', 'moths', 'reached', 'starsW', 'starsP', 'rust', 'rustT', 'lostT', 'mothsMax'];
+const ENDS_SLOT = 238; // the endings seen, over every cycle (a bit each)
 const SAVE_INTS = ['sign', 'priceMoves', 'trust', 'escapements', 'barrels', 'contractUse', 'invs', 'solved', 'risk', 'rng',
-  'orders', 'oFor', 'mind', 'rTarget', 'rPicks', 'rReward', 'dream', 'auto', 'lot', 'regDone', 'trust2'];
+  'orders', 'oFor', 'mind', 'rTarget', 'rPicks', 'rReward', 'dream', 'auto', 'lot', 'regDone', 'trust2',
+  'tr0', 'tr1', 'tr2', 'tr3', 'tr4', 'tr5', 'trust3', 'rustSeen', 'ending', 'endD', 'endR'];
 /** Numbers set by inventions (multipliers, flags): not saved, but worked out again from the inventions made. */
-const derived = (k) => /^m[A-Z]/.test(k) || /On$/.test(k) || ['hand', 'spoolOz', 'signDiv', 'engine', 'watch', 'region', 'plans', 'moth', 'noSulk', 'contract'].includes(k);
+const derived = (k) => /^m[A-Z]/.test(k) || /On$/.test(k) || ['hand', 'spoolOz', 'signDiv', 'engine', 'watch', 'region', 'plans', 'moth', 'noSulk', 'contract', 'mothIns', 'rustName', 'orrery', 'bpBonus'].includes(k);
 let G = null;
 function freshRun(seed) {
   return {
@@ -162,6 +168,9 @@ function freshRun(seed) {
     ingen: 0, ingT: 0, dugT: 0, auto: 0, lot: 0, regDone: 0, wound: 0, trust2: 0, sulkT: 0, plans: 0, moth: 0,
     mDig: 1, mFound: 1, mMill: 1, mWheel: 1, mSB: 1, mDraw: 1, mMach: 1, mHand: 1, mBarrel: 1,
     autoOn: 0, dreamOn: 0, noSulk: 0,
+    moths: 0, mothsMax: 0, reached: 0, starsW: 0, starsP: 0, rust: 0, rustT: 0, lostT: 0, rustSeen: 0, trust3: 0, ending: 0, endD: 0, endR: 0,
+    tr0: 0, tr1: 0, tr2: 0, tr3: 0, tr4: 0, tr5: 0, mSpeed: 1, mWind: 1, mCopy: 1, mHarv: 1, mCostM: 1, mShelter: 1, mWings: 1,
+    mLoss: 1, mothIns: 0, rustName: 0, luciaOn: 0, orrery: 0, bpBonus: 0,
     told: new Uint32Array(16), done: new Uint32Array(4), shown: new Uint32Array(4), mile: new Int32Array(40),
   };
 }
@@ -183,7 +192,7 @@ const signCost = () => (T.signCost * 2 ** (G.sign - 1)) / G.signDiv;
 const tinkerRate = () => G.tinkers * T.tinkerRate * G.mTink * G.mAll;
 const benchRate = () => (G.benchOn ? G.benches * T.benchRate * G.mBench * G.mAll : 0);
 const makeRate = () => tinkerRate() + benchRate();
-const insRate = () => (G.mind ? (G.escapements * T.insPerEsc + (G.act === 2 ? dreamShare() * swarmLog() * T.dreamIns : 0)) * G.mIns : 0);
+const insRate = () => (G.mind ? (G.escapements * T.insPerEsc + (G.act === 2 ? dreamShare() * swarmLog() * T.dreamIns : 0) + (G.mothIns ? Math.log10(Math.max(1, G.moths)) * T.mothIns : 0)) * G.mIns : 0);
 const insCap = () => G.barrels * T.insPerBarrel * G.mBarrel;
 const freeTrust = () => G.trust - (G.escapements - 1) - (G.barrels - 1);
 const fib = (k) => { let a = 1, b = 2; for (let i = 0; i < k; i++) [a, b] = [b, a + b]; return b; };
@@ -203,6 +212,7 @@ function make(n) {
 /** One tick of the world: dt seconds. */
 function step(dt) {
   if (G.act === 2) return step2(dt);
+  if (G.act === 3) return step3(dt);
   if (G.act !== 1) return;
   G.time += dt; G.day += dt;
   G.spool += (market() - G.spool) * (1 - (1 - T.spoolFall) ** dt);
@@ -336,8 +346,72 @@ function endAct(from) {
     raise('act2'); tab = 0; row = 0; top = 0;
     G.swarm = Math.max(1000, G.tinkers * 1000 + G.benches * 10000);
     G.brass = 0; G.cogs = Math.max(G.cogs, 0);
-  } else { state = 'act'; timer = 0; } // the end of Act II: Act III is built in step 4
+  } else if (from === 2) {
+    raise('act3'); tab = 0; row = 0; top = 0;
+    G.moths = G.mothsMax = T.moths0; G.yard = 0; G.brass = 0;
+  } else { state = 'choice'; choiceSel = 0; timer = 0; raise('choice'); }
   saveRun();
+}
+
+
+// --- Act III: the Orrery. Moths reach stars, wind them, and copy themselves from the cogs the wound stars give;
+// some are lost in the dark, and from the first million wound stars the Rust fights them ---
+const TRAITS = ['SPEED', 'WINDING', 'COPYING', 'HARVEST', 'WINGS', 'SHELTER'];
+const TRAIT_HINT = ['Reach new stars faster.', 'Wind the stars reached faster.', 'Moths build more moths, from cogs.',
+  'More cogs from each wound star.', 'Fight the Rust: each point is a sharper sting.', 'Fewer moths lost in the dark.'];
+const tf = (i) => 1 + G['tr' + i]; // a trait's factor: one more for each blueprint in it
+/** Six, one for each power of ten of the most moths there have been (so they never shrink), and inventions'. */
+const blueprints = () => T.bp0 + Math.floor(Math.log10(Math.max(1, G.mothsMax))) + G.bpBonus;
+const freeBp = () => blueprints() - TRAITS.reduce((s, _, i) => s + G['tr' + i], 0);
+const mothCost = () => T.mothCost * G.mCostM;
+const reachRate = () => G.moths * T.reachRate * tf(0) * G.mSpeed;
+const windRate = () => G.moths * T.windRate * tf(1) * G.mWind;
+/** Moths built a second: as many as the moths can build, and as the nests on the wound stars can hold. */
+const copyRate = () => Math.min(G.moths * T.copyRate, T.nest0 + G.starsW * T.nest) * tf(2) * G.mCopy;
+const harvRate = () => G.starsW * T.harvRate * tf(3) * G.mHarv;
+const lossRate = () => (G.moths * T.lossRate * G.mLoss) / (tf(5) * G.mShelter);
+/** The Rust stung away a second: a share of it for each blueprint in WINGS (none in WINGS, no sting). */
+const stingRate = () => G.rust * T.sting * G.tr4 * G.mWings;
+const rustRate = () => G.rust * T.rustKill;
+
+function step3(dt) {
+  G.time += dt;
+  G.reached = Math.min(T.stars, G.reached + reachRate() * dt);
+  G.starsW = Math.min(G.reached, G.starsW + windRate() * dt);
+  if (G.starsW >= T.stars * 0.999999) G.starsW = T.stars;
+  G.starsP = G.starsW / T.stars;
+  const h = harvRate() * dt; G.cogs += h; G.made += h;
+  const want = copyRate() * dt, n = Math.min(want, G.cogs / mothCost());
+  G.moths += n; G.cogs -= n * mothCost();
+  if (want > 1 && n < want / 2) raise('nocogs');
+  const lost = Math.min(G.moths, lossRate() * dt); G.moths -= lost; G.lostT += lost;
+  if (!G.rustSeen && G.starsW >= T.rustAt) { G.rustSeen = 1; G.rust = G.moths * 0.01; raise('rust'); }
+  if (G.rust > 0) {
+    const took = Math.min(G.moths, rustRate() * dt), stung = Math.min(G.rust, stingRate() * dt);
+    G.moths -= took; G.rustT += took;
+    // the Rust grows only from the moths it takes and loses, and is never more than twice the moths: a blueprint in
+    // WINGS always turns it back
+    G.rust = Math.min(2 * G.moths, G.rust + lost * T.rustFrom + took * T.rustKeep - stung);
+    if (took > n + stung) raise('rustwins');
+    if (G.luciaOn) { const back = G.rust * T.lucia * dt; G.rust -= back; G.moths += back; raise('luciahome'); }
+    G.rust = Math.max(0, G.rust);
+  }
+  G.moths = Math.max(T.mothsMin, G.moths); // Marco always has a few moths left to begin again
+  G.mothsMax = Math.max(G.mothsMax, G.moths);
+  G.insight = Math.min(insCap(), G.insight + insRate() * dt);
+  const want3 = Math.max(0, Math.floor(Math.log10(Math.max(1, G.starsW))));
+  while (G.trust3 < want3) { G.trust3++; G.trust++; }
+  checkInventions(); checkStory(); checkMiles();
+}
+
+// --- The end: the watch, and the choice ---
+const CHOICES = ['WIND IT', 'LET IT STOP'];
+let choiceSel = 0;
+function choose(k) {
+  G.ending = k + 1; if (k === 0) G.endD = 1; else G.endR = 1;
+  dset(ENDS_SLOT, dget(ENDS_SLOT) | (1 << k)); // the endings seen, over every cycle
+  checkMiles(); raise(k === 0 ? 'dominion' : 'rest');
+  G.act = 5; saveRun(); state = 'ending'; timer = 0;
 }
 
 // --- What the player can do (the panel's rows and the hand call these; the bot and the tests too) ---
@@ -345,12 +419,23 @@ let why = ''; // why the last action could not be done, for the hint line
 const no = (s) => { why = s; return false; };
 const ACT = {
   hand() {
+    if (G.act === 3) {
+      const n = Math.min(G.mHand, Math.floor(G.cogs / mothCost()));
+      if (n < 1) return no(`A moth costs ${fmtc(mothCost())} cogs.`);
+      G.moths += n; G.cogs -= n * mothCost(); return true;
+    }
     if (G.act === 2) { if (G.power >= powerCap()) return no('The springs are wound as far as they go.'); G.power = Math.min(powerCap(), G.power + T.handPower * G.mHand); return true; }
     return make(G.hand) ? true : no('No brass left. Buy a spool from Signore Ferrese.');
   },
   build(k) { return build(k, lotOf(k)) ? true : no(`Not enough cogs: ${fmts(cost2(k))} each.`); },
   lot(d) { const l = G.lot + d; if (l < 0 || l >= LOTS.length) return no('There is no other size of lot.'); G.lot = l; return true; },
   dream(d) { const v = G.dream + d; if (v < 0 || v > 10) return no('The slider is at its end.'); G.dream = v; return true; },
+  trait(i, d) {
+    const v = G['tr' + i] + d;
+    if (v < 0) return no('No blueprints in it to take back.');
+    if (d > 0 && freeBp() < 1) return no('No blueprints left. More come with every power of ten of moths.');
+    G['tr' + i] = v; return true;
+  },
   auto(d) { const v = G.auto + d; if (v < 0 || v > 10) return no('That is as far as it goes.'); G.auto = v; return true; },
   price(d) {
     const p = Math.round((G.price + d * T.priceStep) * 100) / 100;
@@ -617,6 +702,34 @@ const TABS = [
     },
   },
   {
+    name: 'STARS', acts: 3,
+    info: () => [`Reached ${fmts(G.reached)}`, `Wound ${fmts(G.starsW)} of ${fmts(T.stars)}`],
+    rows: () => {
+      const r = [
+        { t: 'The orrery', v: () => `${(G.starsP * 100).toFixed(G.starsP < 0.01 ? 6 : 2)}% wound`, ok: () => true, h: () => 'Every star in the universe, wound into its place.' },
+        { t: 'Stars reached', v: () => `+${rate(reachRate())}/s`, ok: () => true, h: () => 'SPEED reaches them faster.' },
+        { t: 'Stars wound', v: () => `+${rate(Math.min(windRate(), G.reached - G.starsW + windRate()))}/s`, ok: () => G.reached > G.starsW || G.starsW === T.stars, h: () => (G.reached <= G.starsW + 1 ? 'Every star reached is wound: SPEED would find more.' : 'WINDING winds them faster.') },
+      ];
+      if (G.rustSeen) r.push({ t: 'The Rust', v: () => (G.rustName ? `${fmts(G.rust)} moths` : '?'), ok: () => stingRate() >= rustRate(), h: () => (G.rustName ? `It takes ${rate(rustRate())} moths/s; wings sting ${rate(stingRate())}.` : 'Red moths, flying against the others.') });
+      return r;
+    },
+  },
+  {
+    name: 'MOTHS', acts: 3,
+    info: () => [`${fmts(G.moths)} moths`, `Cogs ${fmts(G.cogs)}`],
+    rows: () => [
+      { t: 'Launch moths', v: () => 'B', a: ACT.hand, ok: () => G.cogs >= mothCost(), h: () => `B launches up to ${fmts(G.mHand)}, at ${fmtc(mothCost())} cogs each.` },
+      { t: 'Moths built by moths', v: () => `+${rate(Math.min(copyRate(), G.cogs / mothCost() / TICK))}/s`, ok: () => true, h: () => 'COPYING builds more, as long as there are cogs.' },
+      { t: 'Cogs from the stars', v: () => `+${rate(harvRate())}/s`, ok: () => true, h: () => 'HARVEST gets more from each wound star.' },
+      { t: 'Lost in the dark', v: () => `${rate(lossRate())}/s`, ok: () => true, h: () => `SHELTER keeps them safe. ${fmts(G.lostT)} lost so far.` },
+    ],
+  },
+  {
+    name: 'DESIGN', acts: 3,
+    info: () => [`Blueprints ${freeBp()} of ${blueprints()}`, 'LEFT and RIGHT to share them'],
+    rows: () => TRAITS.map((n, i) => ({ t: n, v: () => val(String(G['tr' + i])), adj: (d) => ACT.trait(i, d), ok: () => true, h: () => TRAIT_HINT[i] })),
+  },
+  {
     name: 'MIND', when: () => G.mind,
     info: () => [`Trust ${freeTrust()} of ${G.trust}`, `Insight ${fmts(G.insight)}/${fmts(insCap())}`, `+${rate(insRate())}/s`],
     rows: () => [
@@ -626,7 +739,7 @@ const TABS = [
   },
   {
     name: 'INVENT', when: () => G.mind, fresh: () => newInv,
-    info: () => [`Insight ${fmts(G.insight)}`, ...(G.act === 2 ? [`Ingenuity ${fmts(G.ingen)}`] : G.riddleOn ? [`Cleverness ${fmts(G.clev)}`] : []), `Made ${G.invs}`],
+    info: () => [`Insight ${fmts(G.insight)}`, ...(G.act === 3 ? [] : G.act === 2 ? [`Ingenuity ${fmts(G.ingen)}`] : G.riddleOn ? [`Cleverness ${fmts(G.clev)}`] : []), `Made ${G.invs}`],
     rows: () => {
       const r = available().map((v) => ({ t: v.name, v: () => costText(v.cost), a: () => ACT.invent(v.id), ok: () => canAfford(v.cost), h: () => v.hint }));
       return r.length ? r : [{ t: 'Nothing to invent yet', v: () => '', ok: () => false, h: () => 'New ideas come as the shop grows.' }];
@@ -692,7 +805,7 @@ function newRun(seed) {
   state = 'play'; timer = 0; paused = false;
   raise('start'); saveRun(); play(SONG.play);
 }
-function continueRun() { loadRun(); state = G.act <= 2 ? 'play' : 'act'; timer = 0; paused = false; bits = []; play(SONG.play); }
+function continueRun() { loadRun(); state = G.act <= 3 ? 'play' : G.act === 4 ? 'choice' : 'ending'; timer = 0; paused = false; bits = []; play(SONG.play); }
 
 // --- Update ---
 function update() {
@@ -703,6 +816,8 @@ function update() {
   else if (state === 'log') updateLog();
   else if (state === 'miles') updateMiles();
   else if (state === 'act') updateAct();
+  else if (state === 'choice') updateChoice();
+  else if (state === 'ending') updateEnding();
   timer++;
 }
 
@@ -763,6 +878,14 @@ function updateMiles() {
   if (rep(DOWN)) logScroll = Math.min(Math.max(0, MILES.length - 16), logScroll + 1);
   if (pressed(SELECT) || pressed(B) || pressed(START) || pressed(A)) { state = 'play'; fx(SFX.move); }
 }
+function updateChoice() {
+  if (pressed(UP) || pressed(DOWN)) { choiceSel ^= 1; fx(SFX.move); }
+  if (timer > 90 && (pressed(A) || pressed(START))) { fx(SFX.select); choose(choiceSel); }
+}
+function updateEnding() {
+  if (typing) typed += 1;
+  if (timer > 240 && (pressed(A) || pressed(START))) { fx(SFX.select); dset(RUN_SLOT, 0); toTitle(); } // new cycles: step 5
+}
 function updateAct() {
   if (timer > 60 && (pressed(A) || pressed(START))) { fx(SFX.select); saveRun(); toTitle(); }
 }
@@ -797,6 +920,8 @@ function draw() {
   else if (state === 'log') drawFullLog();
   else if (state === 'miles') drawMiles();
   else if (state === 'act') drawAct();
+  else if (state === 'choice') drawChoice();
+  else if (state === 'ending') drawEnding();
   else { drawView(); drawTabs(); drawPanel(); drawLog(); }
   if (paused) drawPause();
 }
@@ -896,6 +1021,20 @@ function drawMiles() {
     else { tx(j === G.mile.indexOf(0) ? '?' : '', 10, y, DIM); if (j === G.mile.indexOf(0)) break; }
   }
   tx(`${G.mile.filter((v) => v).length} of ${MILES.length}   play time ${clockText(G.time)}`, 6, 214, DIM);
+}
+
+function drawChoice() {
+  rectfill(0, 0, 256, 224, EDGE);
+  wrap(STORY[STORY.findIndex((e) => e.ev === 'choice')].text, 220).forEach((l, i) => txc(l, 40 + i * 10, LOGC));
+  if (timer > 90) CHOICES.forEach((c, i) => sys(`${i === choiceSel ? '>' : ' '} ${c}`, 80, 140 + i * 14, i === choiceSel ? GOLD : DIM));
+}
+function drawEnding() {
+  rectfill(0, 0, 256, 224, EDGE);
+  sysc(G.ending === 1 ? 'THE DOMINION ENDING' : 'THE REST ENDING', 40, BRASS);
+  const text = STORY[STORY.findIndex((e) => e.ev === (G.ending === 1 ? 'dominion' : 'rest'))].text;
+  wrap(text, 220).forEach((l, i) => txc(l, 70 + i * 10, INK));
+  tx(`Play time ${clockText(G.time)}`, 6, 200, DIM);
+  if (timer > 240) txr('A to the title', 250, 200, INK);
 }
 
 function drawAct() {

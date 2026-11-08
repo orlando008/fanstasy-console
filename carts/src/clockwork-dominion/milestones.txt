@@ -27,3 +27,12 @@ region:3 | Italy is integrated
 made:1000000000000000 | A quadrillion cogs
 region:4 | The world is integrated
 inv:65 | The great launch
+
+# --- Act III and the end ---
+reached:1000000 | A million stars reached
+rustSeen:1 | The Rust
+moths:1000000000 | A billion moths
+starsP:0.5 | Half the stars wound
+inv:99 | The orrery turns
+endD:1 | The Dominion ending
+endR:1 | The Rest ending

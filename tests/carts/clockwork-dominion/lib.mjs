@@ -23,6 +23,8 @@ const PROBE = `__expose(() => ({
   get INVS() { return INVS; }, get MILES() { return MILES; }, available, canAfford, isDone, freeTrust, insCap, insRate, riddleCost, riddleTarget, picked,
   benchCost, nextTrust, costText, ratio, GEARS, RISKS, actOf, eff2: () => eff2, powerGen, powerNeed, powerCap, machRate, build, cost2,
   workShare, dreamShare, ingRate, sulking, worldOre, REGIONS, LOTS, SAVE_INTS, workBoost, river,
+  TRAITS, blueprints, freeBp, mothCost, reachRate, windRate, copyRate, harvRate, lossRate, stingRate, rustRate, choose, CHOICES,
+  get choiceSel() { return choiceSel; }, ENDS_SLOT,
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into a new run). save: a save to start from. */

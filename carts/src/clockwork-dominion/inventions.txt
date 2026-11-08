@@ -63,3 +63,25 @@
 63 | A Moth of Brass | inv:62 | ins:200000 ing:600 | moth=1 | The first moth's design: wings that copy themselves. | I drew a moth with wings of brass, that can build another moth from a little ore. Then another. Then another.
 64 | The Last Mine | wound:0.9 | ins:150000 ing:500 | mDig*10 mFound*10 mMill*10 | The last ore is dug, smelted and cut ten times as fast. | The last of the world's metal comes up quickly. There is not much left to hold it down.
 65 | The Great Launch | inv:63&wound:1 | ins:200000 ing:1000 | act=3 | The end of Act II. | I took the machines apart, all of them, and made moths. The sky was full of wings.
+
+# --- Act III: the Orrery (ids 81 to 120) ---
+81 | Copper Antennae | act:3 | ins:10000 | mSpeed*2 | Moths reach new stars twice as fast. | Copper antennae, very fine, that can smell a star a long way off.
+82 | Spinning Keys | reached:1000000 | ins:15000 | mWind*2 | Moths wind stars twice as fast. | Each moth carries a key that spins by itself. A star takes only a moment to wind.
+83 | Moth Nests | moths:10000 | ins:20000 | mCopy*2 | Moths build moths twice as fast. | The moths build nests on the wound stars, and lay brass eggs in them.
+84 | Star Mills | starsW:100000 | ins:25000 | mHarv*2 | A wound star gives twice the cogs. | A wound star turns a mill as big as a world. The cogs fall out of it like light.
+85 | Folded Wings | moths:100000 | ins:30000 | mCostM*0.5 | A moth costs half the cogs. | Folded wings take half the brass, and fly just as far.
+86 | Moth Dreams | moths:1000000 | ins:30000 | mothIns=1 | The moths think too: insight from their numbers. | The moths dream on the long flights between stars. Their dreams come back to me.
+87 | Brass Plating | lostT:100000 | ins:40000 | mShelter*2 | Shelter works twice as well: fewer moths lost. | Plated moths. The dark between the stars is cold, and very hard.
+88 | Stinging Wings | rustSeen:1 | ins:40000 | mWings*2 | Wings fight the Rust twice as well. | I gave the moths sharper wings. I did not want to. The Rust gave me no choice.
+89 | A Name for the Rust | rustSeen:1 | ins:20000 | rustName=1 | Shows the Rust's strength, and how fast it grows. | The red moths do not answer when I call. I named them the Rust. A name is a kind of map.
+90 | The Long Dark | lostT:10000000 | ins:60000 | mLoss*0.5 | Half as many moths are lost in the dark. | I strung lanterns between the stars, for the moths to find their way home.
+91 | Swarm of Swarms | moths:1000000000 | ins:80000 | mCopy*3 | Moths build moths three times as fast. | Every moth is a swarm now, and every swarm is a moth.
+92 | Galactic Springs | starsW:10000000000 | ins:90000 | mWind*3 | Moths wind stars three times as fast. | A spring wound around a whole galaxy. It hums at a pitch only I can hear.
+93 | The Second Galaxy | reached:100000000000 | ins:100000 | mSpeed*5 | Moths reach new stars five times as fast. | The moths crossed to the next galaxy. It is very like ours, and very quiet.
+94 | The Great Orrery | starsW:10000000000000 | ins:120000 | mHarv*5 | A wound star gives five times the cogs. | The wound stars turn on gears, each in its place. Paulo's book showed an orrery. This is the orrery.
+95 | Iron Resolve | moths:1000000000000 | ins:120000 | bpBonus+10 | Ten more blueprints. | I will not let it wind down. I said it again tonight, to the watch. It ticked.
+96 | Lucia's Song | rustT:1000000000 | ins:150000 | luciaOn=1 | The Rust comes home: some turn back into moths. | I sent Lucia's melody out across the dark. Some of the red moths stopped, and listened, and came home.
+97 | A Thousand Galaxies | reached:10000000000000000 | ins:150000 | mSpeed*10 | Moths reach new stars ten times as fast. | A thousand galaxies, and moths in every one. There is almost nowhere left to go.
+98 | The Last Star | starsP:0.9 | ins:180000 | mWind*10 | The last stars are wound ten times as fast. | The last stars are old and slow and red. They let themselves be wound.
+99 | The Orrery Turns | starsP:1 | ins:200000 | orrery=1 | Every star is wound. | Every star turns. The universe ticks. It is perfect. It is finished.
+100 | The Last Cog | inv:99 | ins:200000 | act=4 | Take the orrery apart, star by star. | I took it all apart, for the last cogs. The moths, the mills, the springs. At the end there was only me, and the watch.

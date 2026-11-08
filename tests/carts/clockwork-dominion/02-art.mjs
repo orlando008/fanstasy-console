@@ -52,6 +52,13 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
     for (const r of t.rows()) { if (p.tw(r.t) + p.tw(r.v()) + 8 > 236) wide2.push(r.t + ' ' + r.v()); if (p.tw(r.h()) > 244) wide2.push('hint: ' + r.h()); }
   }
   ok(wide2.length === 0 && p.openTabs().map((t) => t.name).join() === 'WORLD,MACHINES,SWARM,MIND,INVENT', 'and Act II\'s five tabs fit too, with the world\'s numbers', wide2.join('; '));
+  Object.assign(p.G, { act: 3, moths: 1e24, mothsMax: 1e24, reached: 3e22, starsW: 2.9e22, starsP: 0.97, rust: 1e23, rustSeen: 1, rustName: 1, lostT: 1e24, cogs: 1e40, tr0: 12, tr1: 30, tr2: 25, tr3: 10, tr4: 9, tr5: 8, mHand: 100 });
+  const wide3 = [];
+  for (const t of p.openTabs()) {
+    if (p.tw(t.info().join('   ')) > 244) wide3.push(t.name + ' info');
+    for (const r of t.rows()) { if (p.tw(r.t) + p.tw(r.v()) + 8 > 236) wide3.push(r.t + ' ' + r.v()); if (p.tw(r.h()) > 244) wide3.push('hint: ' + r.h()); }
+  }
+  ok(wide3.length === 0 && p.openTabs().map((t) => t.name).join() === 'STARS,MOTHS,DESIGN,MIND,INVENT', 'and Act III\'s five tabs fit too, with the universe\'s numbers', wide3.join('; '));
   ok(p.tw('Make a cog') < 'Make a cog'.length * 6, 'the ledger font is narrow (under 6 px a letter)');
   const story = readFileSync(new URL('../../../carts/src/clockwork-dominion/story.txt', import.meta.url), 'utf8');
   ok(p.STORY.length > 0 && story.includes(p.STORY[0].text), 'the story in the ROM is the one in story.txt');

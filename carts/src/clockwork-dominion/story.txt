@@ -79,3 +79,27 @@ region:4 | The world is wound. Every clock on every wall in every house on every
 wound:0.5 | Half the world's metal is cogs now. The ground is getting light. The seas are getting high.
 wound:0.99 | Almost done. When the last ore is gone, the world will be finished. What then?
 plans:1 | Paulo had a book of the heavens on his shelf, with a picture of an orrery: all the planets on gears. I understand it now.
+
+# --- Act III: the Orrery ---
+ev:act3 | The moths flew up from the empty world, a hundred thousand wings, and the world was gone behind them.
+reached:1 | A moth reached the moon. It was cold and still. I wound it.
+reached:1000 | A thousand stars reached. Each one is running down. I can hear them, very faintly.
+starsW:1 | The first wound star. It ticks now, very slowly, like a great clock.
+moths:100000 | A hundred thousand moths. They are building moths of their own now.
+ev:nocogs | There are not enough cogs to build more moths. The wound stars will make more.
+lostT:1000 | A thousand moths lost in the dark. I counted every one.
+ev:rust | Some of the moths have stopped answering. They are red, and they fly against the others.
+rustT:1000000 | The Rust grows. Every moth it takes, it keeps.
+ev:rustwins | The Rust is winning. Wings would fight it; shelter would keep the moths safe.
+rustT:100000000 | The Rust speaks at last. It says: everything wants to stop. Let it stop.
+ev:luciahome | Red moths are coming home, one by one. They hum the melody, and their rust falls away.
+moths:1000000000 | A billion moths. The galaxy glitters with them.
+starsW:1000000000 | A billion stars wound. The galaxy turns like a wheel.
+starsP:0.5 | Half of all the stars are wound. The other half are waiting.
+starsP:0.99 | Almost every star. When the last one is wound, there will be nothing left to wind but the watch.
+orrery:1 | Paulo, it is done. Everything you could ever see is ticking. You never let it wind down. Neither did I.
+
+# --- The end ---
+ev:choice | The watch ticks in my hand. It is the last thing in the universe that is not wound. If I wind it, nothing will ever stop.
+ev:dominion | I wound the watch. Tick. The stars turn in their places, and nothing will ever change again. I keep it all, for ever. I keep it for you.
+ev:rest | I did not wind it. The watch ticked, and slowed, and stopped. Then the stars began to unwind, one by one, into light.

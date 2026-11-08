@@ -9,7 +9,7 @@ import { makePlanner } from './plan.mjs';
 
 const argv = process.argv.slice(2);
 const opt = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? Number(argv[i + 1]) : d; };
-const seed = opt('--seed', 1), hours = opt('--hours', 8), acts = opt('--acts', 2), verbose = argv.includes('-v');
+const seed = opt('--seed', 1), hours = opt('--hours', 8), acts = opt('--acts', 3), verbose = argv.includes('-v');
 const vm = newGame(seed), p = vm.probe(); p.newRun(seed); const plan = makePlanner({ taps: opt('--taps', 4), slack: opt('--slack', 0) });
 const mm = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 let invs = 0; const seen = new Set();
@@ -27,5 +27,6 @@ if (G.act <= acts) console.log(`seed ${seed}: Act ${G.act} NOT finished by ${mm(
 console.log(`  (${((performance.now() - t0) / 1000).toFixed(1)} s to run)`);
 p.MILES.forEach((m, j) => console.log(`  ${G.mile[j] ? mm(G.mile[j] - 1).padStart(7) : '      -'}  ${m.name}`));
 console.log(`  made ${p.fmt(G.made)}, tinkers ${G.tinkers}, benches ${G.benches}, sign ${G.sign}, trust ${G.trust} (${G.escapements} esc, ${G.barrels} barrels), solved ${G.solved}, price ${G.price.toFixed(2)}, inventions ${G.invs}`);
+console.log(`  act III: ${p.fmt(G.moths)} moths, reached ${p.fmt(G.reached)}, wound ${p.fmt(G.starsW)} (${(G.starsP * 100).toFixed(4)}%), rust ${p.fmt(G.rust)}, lost ${p.fmt(G.lostT)}, traits ${[0, 1, 2, 3, 4, 5].map((i) => G['tr' + i]).join('/')}`);
 console.log(`  act II: region ${G.region}, ${p.fmt(G.diggers)} diggers, ${p.fmt(G.foundries)} foundries, ${p.fmt(G.mills)} mills, ${p.fmt(G.wheels)} wheels, swarm ${p.fmt(G.swarm)}, ingenuity ${p.fmt(G.ingT)}, wound ${(G.wound * 100).toFixed(2)}%`);
 process.exit(G.act <= acts ? 1 : 0);

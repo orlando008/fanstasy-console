@@ -51,8 +51,31 @@ export function makePlanner(opts = {}) {
       if (!p.build(need, Math.max(1, Math.floor(G.cogs / 3 / p.cost2(need))))) break;
     }
   }
+  /** Act III: share the blueprints where they are needed (wings against the Rust, shelter against the dark, speed when
+   * every star reached is wound), launch moths while they are few, and choose at the end. */
+  function act3(p, dt) {
+    const G = p.G, A = p.ACT;
+    if ((wait -= dt) > 0) return;
+    wait = slack;
+    if (G.moths < 1e7) for (let k = 0; k < 10 && G.cogs >= p.mothCost(); k++) A.hand();
+    for (const v of p.available()) if (p.canAfford(v.cost)) A.invent(v.id);
+    if (G.act !== 3) return;
+    spendTrust(p);
+    // the Rust is winning and every blueprint is placed: take one back from the biggest trait, for WINGS
+    if (G.rust > 0 && p.stingRate() < p.rustRate() * 0.75 && p.freeBp() === 0) {
+      const big = [0, 1, 2, 3, 5].reduce((b, i) => (G['tr' + i] > G['tr' + b] ? i : b), 0);
+      if (G['tr' + big] > 0) A.trait(big, -1);
+    }
+    while (p.freeBp() > 0) {
+      const i = G.rust > 0 && p.stingRate() < p.rustRate() * 0.75 ? 4 : p.lossRate() > p.copyRate() * 0.3 ? 5
+        : p.reachRate() < p.windRate() * 1.5 && G.reached < p.T.stars ? 0 : [1, 2, 3, 1, 2][(G.tr1 + G.tr2 + G.tr3) % 5];
+      A.trait(i, 1);
+    }
+  }
   return function tick(p, dt) {
     const G = p.G, A = p.ACT;
+    if (G.act === 4) { if ((wait -= dt) <= 0) p.choose(opts.ending ?? 1); return; }
+    if (G.act === 3) return act3(p, dt);
     if (G.act === 2) return act2(p, dt);
     if (G.act !== 1) return;
     // the hand, while it matters
