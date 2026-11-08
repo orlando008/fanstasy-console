@@ -201,6 +201,16 @@
       "png": "carts/rags-to-riches.nova.png"
     },
     {
+      "name": "royal-chess",
+      "title": "Royal Chess",
+      "author": "NOVA-16",
+      "description": "Straight chess on a polished palace board: play the computer at one of three gentle levels, or a friend on the same console. Every rule of the game, the legal moves lit for the piece you pick up, the captured pieces and who is ahead, and a game in progress kept for when you come back.",
+      "genre": "Strategy",
+      "players": "1-2",
+      "label": "carts/labels/royal-chess.png",
+      "png": "carts/royal-chess.nova.png"
+    },
+    {
       "name": "franchise",
       "title": "The Franchise: Basketball Edition",
       "author": "NOVA-16",
