@@ -14,19 +14,83 @@
   "THINK": 123
  },
  "gradients": [
-  "wall"
+  "day",
+  "night",
+  "space"
  ],
  "palettes": {
   "bg1": {
    "base": 16,
    "colors": {
-    "brass0": 5,
-    "brass1": 6,
-    "brass2": 7,
+    "brass0": 6,
+    "brass1": 7,
+    "brass2": 8,
+    "cream": 9,
+    "dark": 13,
+    "velvet0": 10,
+    "velvet1": 11,
+    "velvet2": 12,
     "wood0": 1,
     "wood1": 2,
     "wood2": 3,
-    "wood3": 4
+    "wood3": 4,
+    "wood4": 5
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "cypress0": 8,
+    "cypress1": 9,
+    "face": 11,
+    "hill0": 1,
+    "hill1": 2,
+    "lamp": 10,
+    "roof0": 3,
+    "roof1": 4,
+    "roof2": 5,
+    "stone0": 6,
+    "stone1": 7
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "coast": 8,
+    "ice": 9,
+    "land0": 5,
+    "land1": 6,
+    "land2": 7,
+    "sea0": 1,
+    "sea1": 2,
+    "sea2": 3,
+    "sea3": 4
+   }
+  },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "gold0": 4,
+    "gold1": 5,
+    "nebula0": 6,
+    "nebula1": 7,
+    "star0": 1,
+    "star1": 2,
+    "star2": 3
+   }
+  },
+  "bg5": {
+   "base": 80,
+   "colors": {
+    "arm0": 1,
+    "arm1": 2,
+    "arm2": 3,
+    "arm3": 4,
+    "core0": 5,
+    "core1": 6,
+    "core2": 7,
+    "dust0": 8,
+    "dust1": 9
    }
   },
   "spr0": {
@@ -38,14 +102,91 @@
     "brass3": 5,
     "edge": 1,
     "eye": 6,
+    "glow": 9,
     "key0": 7,
     "key1": 8
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "coat0": 7,
+    "coat1": 8,
+    "coat2": 9,
+    "edge": 1,
+    "hair0": 5,
+    "hair1": 6,
+    "lens": 11,
+    "shirt": 10,
+    "shoe": 12,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "brass0": 2,
+    "brass1": 3,
+    "brass2": 4,
+    "brass3": 5,
+    "brass4": 6,
+    "edge": 1,
+    "glow": 9,
+    "wing0": 7,
+    "wing1": 8
+   }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "edge": 1,
+    "eye": 5,
+    "rust0": 2,
+    "rust1": 3,
+    "rust2": 4
    }
   }
  },
  "scenes": {
   "bench": {
    "h": 3,
+   "mx": 0,
+   "my": 12,
+   "pal": 1,
+   "w": 32
+  },
+  "galaxy": {
+   "h": 16,
+   "mx": 80,
+   "my": 0,
+   "pal": 5,
+   "w": 16
+  },
+  "globe": {
+   "h": 8,
+   "mx": 64,
+   "my": 0,
+   "pal": 3,
+   "w": 16
+  },
+  "stars": {
+   "h": 12,
+   "mx": 0,
+   "my": 16,
+   "pal": 4,
+   "w": 32
+  },
+  "town": {
+   "h": 9,
+   "mx": 32,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "wall": {
+   "h": 9,
    "mx": 0,
    "my": 0,
    "pal": 1,
@@ -56,20 +197,75 @@
   "cog": {
    "pal": 0,
    "size": 8,
-   "tile": 258
+   "tile": 644
   },
   "marco": {
    "pal": 0,
    "size": 16,
-   "tile": 256
+   "tile": 640
   },
-  "tinker": {
+  "marco2": {
+   "pal": 0,
+   "size": 16,
+   "tile": 642
+  },
+  "moth0": {
+   "pal": 2,
+   "size": 8,
+   "tile": 647
+  },
+  "moth1": {
+   "pal": 2,
+   "size": 8,
+   "tile": 660
+  },
+  "paulo": {
+   "pal": 1,
+   "size": 32,
+   "tile": 648
+  },
+  "paulo2": {
+   "pal": 1,
+   "size": 32,
+   "tile": 652
+  },
+  "planet": {
+   "pal": 2,
+   "size": 16,
+   "tile": 672
+  },
+  "rust0": {
+   "pal": 3,
+   "size": 8,
+   "tile": 661
+  },
+  "rust1": {
+   "pal": 3,
+   "size": 8,
+   "tile": 662
+  },
+  "sun": {
+   "pal": 2,
+   "size": 32,
+   "tile": 704
+  },
+  "tinker0": {
    "pal": 0,
    "size": 8,
-   "tile": 259
+   "tile": 645
+  },
+  "tinker1": {
+   "pal": 0,
+   "size": 8,
+   "tile": 646
+  },
+  "workbench": {
+   "pal": 2,
+   "size": 16,
+   "tile": 674
   }
  },
  "tiles": {},
- "used": 88,
+ "used": 604,
  "version": 1
 }

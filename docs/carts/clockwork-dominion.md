@@ -1,7 +1,7 @@
 # Clockwork Dominion: Cart Specification
 
-**Version:** 0.6 (step 5 of 10)
-**Status:** In progress: steps 1 to 5 of the plan (section 15) are built (the engine, the three acts, the end, new cycles and the flow); step 6, the art, is next
+**Version:** 0.7 (step 6 of 10)
+**Status:** In progress: steps 1 to 6 of the plan (section 15) are built (the engine, the three acts, the end, new cycles, the flow and the views' art); step 7, the cinematics, is next
 **Cart source:** `carts/src/clockwork-dominion/` → `carts/clockwork-dominion.nova`
 
 ---
@@ -253,19 +253,18 @@ chime, a cinematic's swell, the Rust. Levels as the playbook (section 5) sets th
 
 ## 12. Video layers
 
-- **BG2:** the view's far layer: the sky, by a `scanline()` gradient (the lamplight, dusk, the stars), and in Act II the
-  world as a Mode 7 globe (the affine layer, scaled line by line into a sphere and turning).
-- **BG1:** the view's middle layer: the workshop's wall and window, the town, the machines.
-- **BG0:** the panel's frame (brass and parchment) and the view's front (the bench).
-- **Sprites:** Marco, Paulo, tinkers, cogs, the merchant's cart, machines turning, moths and the Rust (at most 64 at once,
-  under 24 on a line).
-- **Overlay:** the panel's text (the ledger font), the log, the tabs' text, the cinematics' captions.
-- **Effects:** colour blending for glass and lamplight, brightness and mosaic for scene changes, windows for an iris on
-  Marco at the opening and the end.
+The view is lines 0 to 91, drawn by `art.py` into the one tile sheet (756 of 1,024 tiles after step 6), with the panel,
+the tabs and the log in the overlay below it. `setView()` sets each act's layers every frame; `scanline()` gives the
+backdrop its gradient line by line and shapes the globe.
 
-Each act's view has its own tile set and map, in the ROM, loaded into Tile and Map RAM when the act begins (so the three
-acts and the cinematics are not limited to one 1,024-tile sheet). The art is made in code by
-`carts/src/clockwork-dominion/art.py` (the art toolkit, `tools/devkit/art/kit.py`).
+| Act | BG2 | BG1 | BG0 | Sprites |
+|---|---|---|---|---|
+| I, the workshop (and the title, at night) | Rotella through the arched window: hills, rooftops, the clock tower, cypresses, lit windows; the sky behind it is the backdrop's gradient (day, or night on the title) | the wall: planks and a rail, shelves of clocks, a case clock with its pendulum, Paulo's red armchair, the window's brass frame and mullions | the bench | Marco (blinking), Paulo in his chair (dozing now and then; gone after THE LAST WINDING), up to 14 tinkers walking, up to 6 workbenches, the cogs falling and piling |
+| II, the world | the globe: a 128 × 64 map of seas, land and ice on the affine layer, a sphere line by line (each line's width and row of the map worked out once; the layer is off outside it), turning; its land turns to brass as the places are integrated and the world is wound | the stars, scrolling slowly | — | the swarm, up to 18 tinkers going round the globe (behind it on the far side); a pale ring for the air |
+| III, the orrery | a spiral galaxy, 128 × 128, on the affine layer, turning and tilted | the stars, which turn gold as the stars are wound | — | the sun gear and three planet gears on their orbits, up to 20 moths and 12 of the Rust, by their numbers |
+
+Palettes: BG 1 the wood, brass, cream and velvet of the shop; 2 the town; 3 the globe; 4 the stars; 5 the galaxy; 7 the
+panel's ink (overlay). Sprites: 0 Marco, the tinkers and cogs; 1 Paulo; 2 the gears, moths and workbench; 3 the Rust.
 
 ## 13. Persistence (save slots)
 
@@ -435,6 +434,18 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
      small and put the pictures in the ROM, which is at 18%. PNG payload 32%.
 6. **Art: the views.** The workshop and the town, the world as a Mode 7 globe, the orrery; each act's tile set in the
    ROM; the sprites; the panel's frame.
+   - **Built:** `art.py` drew the three views and 14 sprites in the one tile sheet (756 of 1,024 tiles), so no tiles
+     need loading from the ROM and the drawing code stays small (section 12): the workshop with Rotella at dusk
+     through its arched window, Paulo (32 px) in his armchair, the globe, the stars and the galaxy, the gears, moths
+     and the Rust. `setView()` puts each act's layers up; the globe is a sphere made line by line in `scanline()`;
+     its land and the stars turn to brass and gold with the story. The title shows the workshop at night. The
+     panel's frame stays in the overlay (its brass line) to save code.
+   - **Results:** 231 checks (`02-art` checks each act's view on the screen: the town in the window, the clocks,
+     Paulo, the sky's gradient, the globe cut to a sphere and kept out of the panel, the galaxy and gears, and the
+     globe's cost). The globe first cost 8.3 ms a frame under load; working its lines out once and turning the layer
+     off outside it brought it to 3.4 ms. The soak, `smoke.mjs` and `colors.mjs --check` are clean; `snes.mjs` scores
+     the cart 72 of 100. Code 57.4 KB of 64 (88%): step 7's cinematics must be mostly data (the ROM is at 18%).
+     PNG payload 38%.
 7. **Art: the cinematics.** The winding of Marco, Paulo's rest, the winding of the town, the great launch, the orrery
    turning, both endings; the title; the label.
 8. **Audio:** the eight songs, the ticking, the effects; levels checked.

@@ -9,7 +9,7 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
 {
   const vm = newGame(1), p = vm.probe(); vm.run(2);
   const { sprites, colors } = p.ART;
-  ok(['marco', 'cog', 'tinker'].every((n) => sprites[n]), 'art.py made Marco, a cog and a tinker');
+  ok(['marco', 'paulo', 'cog', 'tinker0', 'sun', 'planet', 'moth0', 'rust0', 'workbench'].every((n) => sprites[n]), 'art.py made Marco, Paulo, a cog, a tinker, gears, a moth and the Rust');
   ok(Object.values(sprites).every((s) => [8, 16, 32].includes(s.size) && s.tile >= 256), 'every sprite is 8, 16 or 32 px, in the sprite region');
   ok(['PAPER', 'INK', 'DIM', 'BRASS', 'GOLD', 'BAD', 'GOOD'].every((n) => colors[n] >= 113 && colors[n] <= 127), 'the panel\'s ink is its own (BG palette 7, kept for the overlay)');
 }
@@ -21,9 +21,23 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
   ok(has(vm, C.PAPER, 0, 110, 256, 190), 'the panel is drawn in its ink blue');
   ok(has(vm, C.BRASS, 0, 104, 120, 116), 'with the cogs made in brass at its top');
   ok(has(vm, C.LOG, 0, 196, 256, 224) || has(vm, C.INK, 0, 196, 256, 224), 'and the log along the bottom');
-  const wall = [2, 40, 80].map((y) => vm.out32[y * 256 + 4] >>> 0);
-  ok(new Set(wall).size === 3, 'the view\'s wall is a gradient (scanline())', wall.map((v) => v.toString(16)).join(' '));
-  ok(!vm.ppu.layers[0].show && !vm.ppu.layers[2].show && vm.ppu.layers[1].show, 'only the bench\'s layer shows (the others wait for step 6)');
+  const L = vm.ppu.layers;
+  ok(L[0].show && L[1].show && L[2].show, 'Act I\'s view has three layers: the bench, the wall and the town through the window');
+  const man = JSON.parse(readFileSync(new URL('../../../carts/src/clockwork-dominion/art.json', import.meta.url), 'utf8'));
+  const col = (pal, role) => man.palettes[pal].base + man.palettes[pal].colors[role];
+  ok(has(vm, col('bg2', 'roof1'), 168, 6, 240, 62) || has(vm, col('bg2', 'roof2'), 168, 6, 240, 62), 'the rooftops of Rotella show in the window');
+  ok(has(vm, col('bg1', 'cream'), 0, 0, 80, 40), 'the clocks on the shelves');
+  ok(has(vm, col('spr1', 'coat1'), 70, 30, 120, 70), 'and Paulo in his armchair');
+  const sky = [10, 20, 30].map((y) => vm.out32[y * 256 + 186] >>> 0);
+  ok(new Set(sky).size >= 2, 'the sky through the window is a gradient (scanline())', sky.map((v) => v.toString(16)).join(' '));
+  Object.assign(p.G, { act: 2, region: 1, swarm: 1e6 }); vm.run(3);
+  ok(vm.ppu.layers[2].show && has(vm, col('bg3', 'sea1'), 100, 20, 156, 72), 'Act II\'s view: the globe, on the affine layer');
+  ok(!has(vm, col('bg3', 'sea1'), 0, 0, 60, 90) && !has(vm, col('bg3', 'sea1'), 200, 0, 256, 90), 'cut to a sphere: none of the map beyond its edge');
+  ok(!has(vm, col('bg3', 'sea1'), 0, 104, 256, 224), 'and none of it below the view');
+  Object.assign(p.G, { act: 3, moths: 1e6 }); vm.run(3);
+  ok(has(vm, col('bg5', 'arm2'), 0, 0, 256, 92) && has(vm, col('spr2', 'brass2'), 80, 20, 180, 80), 'Act III\'s view: the galaxy, with the orrery\'s gears');
+  const ts = []; p.G.act = 2; for (let i = 0; i < 300; i++) { vm.step(0); ts.push(vm.m.stats.cpu); }
+  ts.sort((a2, b2) => a2 - b2); ok(ts[296] < 8 * (process.env.CI ? 3 : 1), 'the globe, a sphere line by line, is quick', `99th percentile ${ts[296].toFixed(2)} ms`);
 }
 
 // 3. Text fits: every row and hint, and the font is the ledger's (5 px letters, not the system's 8).
