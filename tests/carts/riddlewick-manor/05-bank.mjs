@@ -11,7 +11,7 @@ const draw = (p, n) => Array.from({ length: n }, () => p.pickQuestion().qi);
   const vm = newGame(1), p = vm.probe(); vm.run(2);
   const Q = p.QUESTIONS, count = (s, d) => Q.filter((q) => q.subj === s && q.diff === d).length;
   let min = Infinity; for (let s = 0; s < 8; s++) for (let d = 1; d <= 4; d++) min = Math.min(min, count(s, d));
-  ok(Q.length >= 160 && min >= 5, 'the bank has at least 160 questions, at least 5 for each subject at each difficulty', `${Q.length}, at least ${min} each`);
+  ok(Q.length >= 640 && min >= 20, 'the bank has 640 questions, 20 for each subject at each difficulty', `${Q.length}, at least ${min} each`);
   ok(new Set(Q.map((q) => q.q.toLowerCase())).size === Q.length, 'no question is in it twice');
   ok(Q.every((q) => new Set(q.ans.map((a) => a.toLowerCase())).size === 4), 'and each has four different answers');
 }
@@ -24,9 +24,10 @@ const draw = (p, n) => Array.from({ length: n }, () => p.pickQuestion().qi);
   ok(byLevel, 'each level draws questions of its own difficulty (20 at each, ALL SUBJECTS)');
   p.level = 1; p.startGame(); const subjects = new Set(draw(p, 20).map((i) => p.QUESTIONS[i].subj));
   ok(subjects.size >= 5, 'ALL SUBJECTS mixes them', `${subjects.size} subjects in 20 questions`);
-  p.subject = 3; p.level = 2; p.startGame(); const five = draw(p, 5);
-  ok(five.every((i) => p.QUESTIONS[i].subj === 3 && p.QUESTIONS[i].diff === 2), 'one subject draws only that subject, at the level\'s difficulty');
-  ok(new Set(five).size === 5, 'never the same question twice in a run');
+  p.subject = 3; p.level = 2; p.startGame();
+  const pool = p.QUESTIONS.filter((q) => q.subj === 3 && q.diff === 2).length, all = draw(p, pool);
+  ok(all.every((i) => p.QUESTIONS[i].subj === 3 && p.QUESTIONS[i].diff === 2), 'one subject draws only that subject, at the level\'s difficulty', `${pool} of them`);
+  ok(new Set(all).size === pool, 'never the same question twice in a run');
   const sixth = p.QUESTIONS[p.pickQuestion().qi];
   ok(sixth.subj === 3 && (sixth.diff === 1 || sixth.diff === 3), 'when the level\'s pool runs dry, the nearest difficulty fills in', `difficulty ${sixth.diff}`);
 }
@@ -34,9 +35,10 @@ const draw = (p, n) => Array.from({ length: n }, () => p.pickQuestion().qi);
 // 3. Across runs: questions asked before are kept back while there are others, and remembered in the save.
 {
   const vm = newGame(3), p = vm.probe(); vm.run(2);
-  p.subject = 5; p.level = 3; p.startGame(); const first = draw(p, 3);
-  p.startGame(); const second = draw(p, 2), saved = Int32Array.from(vm.m.save);
-  ok(second.every((i) => !first.includes(i)), 'a new run asks first the questions not asked before', `${first} then ${second}`);
+  p.subject = 5; p.level = 3; p.startGame();
+  const pool = p.QUESTIONS.filter((q) => q.subj === 5 && q.diff === 3).length, first = draw(p, 12);
+  p.startGame(); const second = draw(p, pool - 12), saved = Int32Array.from(vm.m.save);
+  ok(second.every((i) => !first.includes(i)), 'a new run asks first the questions not asked before', `12, then the other ${pool - 12}`);
   p.startGame(); const third = draw(p, 1);
   ok(p.QUESTIONS[third[0]].subj === 5 && p.QUESTIONS[third[0]].diff === 3, 'when all have been asked, they start again');
   ok([...vm.m.save.slice(p.SEEN_SLOT, p.SEEN_SLOT + 20)].some((v) => v !== 0), 'what has been asked is kept in the save (slots 40 to 59)');

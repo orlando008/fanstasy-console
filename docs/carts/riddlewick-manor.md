@@ -218,7 +218,7 @@ The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit,
 | Asset | Budget |
 |---|---|
 | Code | Under 40 KB of the 64 KB (`node tools/check.js riddlewick-manor`) |
-| ROM | The question bank, about 70 KB of the 128 KB |
+| ROM | The question bank: 55 KB of the 128 KB (640 questions, built) |
 | Tiles | About 700 of 1,024: the room box (about 250), the furniture (10 stamps, about 200), the panel and map (about 40); sprites: the doors (about 100), 10 ghosts (32 × 48: about 300), the candle, keys and arrows |
 | Sprites | At most about 20 at once |
 | Songs / SFX | 3 songs, about 12 effects |
@@ -334,6 +334,21 @@ The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit,
        end clearing the save; the records' level and subject. `01-flow.mjs` goes through the new game's screen.
      - `node tools/devkit/smoke.mjs riddlewick-manor` runs in the real console with no errors.
 5. **The rest of the questions:** to 640 (20 per subject per difficulty), checked for format and spread.
+   - **Built:**
+     - **480 more questions,** 15 for each subject at each difficulty, for 640: 20 of each, sorted by subject and
+       difficulty in `questions.txt`. Each was checked for one clearly right answer that does not change with time
+       or country (a raisin question that repeated an earlier one, and a pool question that did not say whether the
+       cue ball counts, were rewritten before they went in).
+     - **A check for near-duplicates** (the same right answer and shared words) found seven pairs; each asks a
+       different fact (Canada's flag and its maple syrup, two Bach works ...), so all stay.
+     - Changing the bank's size clears the record of questions asked before (step 3), so nobody's record is wrong.
+   - **Results:**
+     - `python3 carts/src/riddlewick-manor/questions.py`: 640 questions, 54,917 bytes; every count 20.
+     - `node tools/check.js riddlewick-manor`: code 36.7 KB, ROM 54.9 KB of 128 KB, the PNG cart's payload 64 KB of
+       147 KB (43%).
+     - `node tools/verify.js riddlewick-manor` passes, with 107 test checks; `05-bank.mjs` now checks for 640 and draws
+       a whole pool of 20 before the nearest difficulty fills in.
+     - `node tools/devkit/smoke.mjs riddlewick-manor` runs in the real console with no errors.
 6. **The art:** the rooms, doors, furniture, ghosts, the panel, the map, the candle, the title.
 7. **The audio:** the three songs from their sources and the effects (11), measured with `loud.mjs`.
 8. **Balance, polish and release:** a bot plays runs at each level with a chosen share of right answers (how often a
