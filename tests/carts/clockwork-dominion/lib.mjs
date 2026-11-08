@@ -15,7 +15,8 @@ const PROBE = `__expose(() => ({
   T, ACT, SFX, SONG, TABS, SAVE_KEYS, step, fmt, money, salesRate, tinkerCost, signCost, market, makeRate,
   saveRun, loadRun, hasRun, newRun, openTabs, curTab, tw, wrap, raise, isTold,
   get INVS() { return INVS; }, get MILES() { return MILES; }, available, canAfford, isDone, freeTrust, insCap, insRate, riddleCost, riddleTarget, picked,
-  benchCost, nextTrust, costText, ratio, GEARS, RISKS,
+  benchCost, nextTrust, costText, ratio, GEARS, RISKS, actOf, eff2: () => eff2, powerGen, powerNeed, powerCap, machRate, build, cost2,
+  workShare, dreamShare, ingRate, sulking, worldOre, REGIONS, LOTS, SAVE_INTS, workBoost, river,
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into a new run). save: a save to start from. */

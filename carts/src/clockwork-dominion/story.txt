@@ -55,3 +55,27 @@ made:2000000 | Paulo asks me to wind the clocks in his room. All of them. Every 
 ev:watch | The watch ticks in my hand. I will wind it every day. I will never let it wind down.
 made:5000000 | The town has gone quiet since Paulo stopped. The clocks have not. I see to that.
 ev:act2 | I wound the clock in the square. Then the clocks in every house. Then the people in them, gently, so that they would sleep and never stop.
+
+# --- Act II: the Winding of the World ---
+diggers:1 | The first digger bit into the hill behind the shop. The hill did not wake up.
+foundries:1 | A foundry glows where the bakery was. It smells of hot brass instead of bread.
+mills:1 | The first cog mill. It makes in a minute what the shop made in a week.
+wheels:1 | A waterwheel on the river, winding a spring as tall as the church.
+ev:nopower | The machines slowed and stopped, one by one. There was no spring power left to drive them. I wound faster.
+diggers:100 | A hundred diggers. The hills around Rotella have holes in them like cheese.
+ev:yardfull | The ore piles up in the yard. More foundries would smelt it.
+ev:brassfull | The brass piles up beside the mills. More cog mills would cut it.
+ev:regdone | There is no more metal here. Everything has been dug, smelted and cut. I must go further.
+ev:sulk | The swarm is sulking. They have been at one thing too long. I should move the slider.
+swarm:1000000 | A million tinkers. When they all tick at once, the windows rattle in Florence.
+ingT:1 | A dreaming tinker gave me an idea. I did not know they could. I wonder what else they dream.
+ingT:50 | The dreams are getting stranger. One tinker dreamed of a clock with no hands that tells the time anyway.
+region:2 | Tuscany is wound. The vineyards are rows of little gears now, very neat.
+made:1000000000000 | A trillion cogs. I counted them all. It took no time at all.
+region:3 | Italy is wound. The trains run exactly on time. Nobody rides them.
+swarm:1000000000 | A billion tinkers. They cover the hills like frost.
+made:1000000000000000 | A quadrillion cogs. Lucia's house is still standing. I have not touched it. She is asleep inside, and her music box is playing.
+region:4 | The world is wound. Every clock on every wall in every house on every continent. All of them, all at once. Tick.
+wound:0.5 | Half the world's metal is cogs now. The ground is getting light. The seas are getting high.
+wound:0.99 | Almost done. When the last ore is gone, the world will be finished. What then?
+plans:1 | Paulo had a book of the heavens on his shelf, with a picture of an orrery: all the planets on gears. I understand it now.

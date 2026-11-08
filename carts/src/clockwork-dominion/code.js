@@ -101,6 +101,12 @@ function fmts(n) {
   if (e <= SHORT.length) return (n / 10 ** (3 * e)).toFixed(2) + SHORT[e - 1];
   return n.toExponential(1).toUpperCase().replace('+', '');
 }
+/** Costs, short: 9,500, then 150K, 2.5M, 100Qa (three figures at most). */
+function fmtc(n) {
+  if (n < 1e4) return commas(n);
+  const e = Math.floor(Math.log10(n) / 3), v = n / 10 ** (3 * e);
+  return e <= SHORT.length ? +v.toPrecision(3) + SHORT[e - 1] : n.toExponential(1).toUpperCase().replace('+', '');
+}
 const money = (n) => (n < 1000 ? 'L ' + n.toFixed(2) : 'L ' + fmts(n)); // lire
 const rate = (n) => (n < 10 ? n.toFixed(1) : fmts(n));
 
@@ -116,7 +122,14 @@ const T = {
   orderEvery: 90, orderLife: 180, orderPay: 3, // an order every 90 s, open for 180 s, paying 3 times the window's price
   contractLow: 5, // the contract buys brass when there is less than 5 seconds' worth
   unsold: 150, // cogs in stock that make the town's indifference a story line
+  // Act II: the machines (each built from cogs, at a fixed price), spring power, the swarm
+  regionOre: [0, 1e9, 1e13, 1e17, 6e21], // the ore of Rotella, Tuscany, Italy and the World
+  digCost: 200000, foundCost: 200000, millCost: 200000, wheelCost: 100000, sbCost: 50000,
+  machRate: 1000, draw: 10, wheelGen: 50, river: 0.6, riverDay: 240, sbCap: 10000, power0: 10000, handPower: 100,
+  swarmGrow: 0.02, sulkAfter: 600, dreamIns: 20, dreamIng: 0.2,
 };
+const REGIONS = ['', 'Rotella', 'Tuscany', 'Italy', 'the World'];
+const LOTS = [1, 10, 100, 1000, 0]; // how many a press builds; 0 is as many as the cogs allow
 // The Banca's risks: the ledger's average growth and its spread, a minute.
 const RISKS = [{ n: 'CAREFUL', mu: 0.01, s: 0.004 }, { n: 'STEADY', mu: 0.025, s: 0.015 }, { n: 'BOLD', mu: 0.05, s: 0.06 }];
 const GEARS = [8, 12, 16, 20, 24, 32, 40, 48]; // the gear riddles' box
@@ -125,13 +138,16 @@ const ORDER_FOR = ['the bell tower', "the baker's clock", 'the mill wheel', "the
 const TICK = 0.1, TICK_FRAMES = 6, SAVE_EVERY = 600;
 
 // --- The run: everything in G is the game (saved by saveRun) ---
-// The order of SAVE_KEYS is the save's layout: add new keys at the end, never reorder.
-const SAVE_KEYS = ['made', 'cogs', 'brass', 'coin', 'price', 'sign', 'tinkers', 'spool', 'day', 'sold', 'spools',
-  'time', 'mk', 'priceMoves',
-  'trust', 'escapements', 'barrels', 'insight', 'clev', 'benches', 'hand', 'mTink', 'mSales', 'mRev', 'mIns', 'mBench',
-  'mOz', 'mAll', 'spoolOz', 'signDiv', 'benchOn', 'contract', 'contractOn', 'riddleOn', 'bankOn', 'ordersOn', 'engine',
-  'watch', 'invs', 'solved', 'bank', 'risk', 'rng', 'orders', 'oNeed', 'oPay', 'oLeft', 'oNext', 'oFor', 'mind',
-  'rTarget', 'rPicks', 'rCost', 'rReward', 'bankIn'];
+// The save's layout (spec section 13): SAVE_KEYS are doubles, SAVE_INTS whole numbers. Add new keys only at the end
+// of a list, never reorder. Multipliers and flags are not saved: loadRun works them out again from the inventions made.
+const SAVE_KEYS = ['made', 'cogs', 'brass', 'coin', 'price', 'tinkers', 'spool', 'day', 'sold', 'spools', 'time', 'mk',
+  'insight', 'clev', 'benches', 'bank', 'oNeed', 'oPay', 'oLeft', 'oNext', 'rCost', 'bankIn',
+  'ore', 'yard', 'diggers', 'foundries', 'mills', 'wheels', 'sbarrels', 'power', 'swarm', 'ingen', 'ingT', 'wound', 'sulkT',
+  'dugT'];
+const SAVE_INTS = ['sign', 'priceMoves', 'trust', 'escapements', 'barrels', 'contractUse', 'invs', 'solved', 'risk', 'rng',
+  'orders', 'oFor', 'mind', 'rTarget', 'rPicks', 'rReward', 'dream', 'auto', 'lot', 'regDone', 'trust2'];
+/** Numbers set by inventions (multipliers, flags): not saved, but worked out again from the inventions made. */
+const derived = (k) => /^m[A-Z]/.test(k) || /On$/.test(k) || ['hand', 'spoolOz', 'signDiv', 'engine', 'watch', 'region', 'plans', 'moth', 'noSulk', 'contract'].includes(k);
 let G = null;
 function freshRun(seed) {
   return {
@@ -139,10 +155,14 @@ function freshRun(seed) {
     day: 0, sold: 0, spools: 0, time: 0, mk: 0, priceMoves: 0,
     trust: 2, escapements: 1, barrels: 1, insight: 0, clev: 0, benches: 0, hand: 1,
     mTink: 1, mSales: 1, mRev: 1, mIns: 1, mBench: 1, mOz: 1, mAll: 1, spoolOz: T.spoolOz, signDiv: 1,
-    benchOn: 0, contract: 0, contractOn: 0, riddleOn: 0, bankOn: 0, ordersOn: 0, engine: 0, watch: 0,
+    benchOn: 0, contract: 0, contractUse: 0, riddleOn: 0, bankOn: 0, ordersOn: 0, engine: 0, watch: 0,
     invs: 0, solved: 0, bank: 0, risk: 1, rng: seed >>> 0, orders: 0, oNeed: 0, oPay: 0, oLeft: 0, oNext: 30, oFor: 0,
     mind: 0, rTarget: 0, rPicks: 0, rCost: 0, rReward: 0, bankIn: 0,
-    told: new Uint32Array(16), done: new Uint32Array(8), shown: new Uint32Array(8), mile: new Int32Array(40),
+    region: 0, ore: 0, yard: 0, diggers: 0, foundries: 0, mills: 0, wheels: 0, sbarrels: 0, power: 0, swarm: 0, dream: 0,
+    ingen: 0, ingT: 0, dugT: 0, auto: 0, lot: 0, regDone: 0, wound: 0, trust2: 0, sulkT: 0, plans: 0, moth: 0,
+    mDig: 1, mFound: 1, mMill: 1, mWheel: 1, mSB: 1, mDraw: 1, mMach: 1, mHand: 1, mBarrel: 1,
+    autoOn: 0, dreamOn: 0, noSulk: 0,
+    told: new Uint32Array(16), done: new Uint32Array(4), shown: new Uint32Array(4), mile: new Int32Array(40),
   };
 }
 
@@ -163,8 +183,8 @@ const signCost = () => (T.signCost * 2 ** (G.sign - 1)) / G.signDiv;
 const tinkerRate = () => G.tinkers * T.tinkerRate * G.mTink * G.mAll;
 const benchRate = () => (G.benchOn ? G.benches * T.benchRate * G.mBench * G.mAll : 0);
 const makeRate = () => tinkerRate() + benchRate();
-const insRate = () => (G.mind ? G.escapements * T.insPerEsc * G.mIns : 0);
-const insCap = () => G.barrels * T.insPerBarrel;
+const insRate = () => (G.mind ? (G.escapements * T.insPerEsc + (G.act === 2 ? dreamShare() * swarmLog() * T.dreamIns : 0)) * G.mIns : 0);
+const insCap = () => G.barrels * T.insPerBarrel * G.mBarrel;
 const freeTrust = () => G.trust - (G.escapements - 1) - (G.barrels - 1);
 const fib = (k) => { let a = 1, b = 2; for (let i = 0; i < k; i++) [a, b] = [b, a + b]; return b; };
 /** The cogs made at which the next trust comes: 2,000, 3,000, 5,000, 8,000 ... (the Fibonacci numbers x 1,000). */
@@ -182,10 +202,11 @@ function make(n) {
 
 /** One tick of the world: dt seconds. */
 function step(dt) {
+  if (G.act === 2) return step2(dt);
   if (G.act !== 1) return;
   G.time += dt; G.day += dt;
   G.spool += (market() - G.spool) * (1 - (1 - T.spoolFall) ** dt);
-  if (G.contract && G.contractOn) for (let k = 0; k < 5 && G.brass * G.mOz < makeRate() * T.contractLow && G.coin >= G.spool; k++) ACT.brass();
+  if (G.contract && G.contractUse) for (let k = 0; k < 5 && G.brass * G.mOz < makeRate() * T.contractLow && G.coin >= G.spool; k++) ACT.brass();
   G.mk += makeRate() * dt;
   if (G.mk >= 1) { const n = Math.floor(G.mk); G.mk -= n; make(n); }
   const s = Math.min(G.cogs, salesRate() * dt);
@@ -227,11 +248,110 @@ function riddleTarget() { const v = G.rTarget; return [v & 255, (v >> 8) & 255, 
 function picked() { const p = unpackPicks(G.rPicks); return [...ratio(GEARS[p[0]], GEARS[p[1]], GEARS[p[2]], GEARS[p[3]]), p[4]]; }
 const ratioText = (n, m, rev) => `${n}:${m} ${rev ? 'reversed' : 'same way'}`;
 
+
+/** An invention's effects on the run's numbers; replay: only the multipliers and flags (when a save is loaded). */
+function applyEffects(v, replay) {
+  for (const e of v.effect) {
+    if (replay && !derived(e.k)) continue;
+    if (e.op === '*') G[e.k] *= e.v; else if (e.op === '+') G[e.k] += e.v; else G[e.k] = e.v;
+  }
+}
+const actOf = (id) => (id <= 40 ? 1 : id <= 80 ? 2 : 3);
+
+// --- Act II: the Winding of the World. Ore is dug, smelted to brass and cut into cogs; every machine draws spring
+// power, which waterwheels wind (more or less as the river rises and falls) and spring barrels store ---
+const workShare = () => (G.dreamOn ? (10 - G.dream) / 10 : 1);
+const dreamShare = () => (G.dreamOn ? G.dream / 10 : 0);
+const swarmLog = () => Math.log10(Math.max(10, G.swarm));
+const sulking = () => !G.noSulk && G.sulkT >= T.sulkAfter;
+const machines = () => G.diggers + G.foundries + G.mills;
+const powerCap = () => T.power0 + G.sbarrels * T.sbCap * G.mSB;
+const powerNeed = () => machines() * T.draw * G.mDraw;
+const river = () => 1 + T.river * Math.sin((2 * Math.PI * G.time) / T.riverDay);
+const powerGen = () => G.wheels * T.wheelGen * G.mWheel * river();
+const workBoost = () => 1 + workShare() * (sulking() && G.dream === 0 ? 0.5 : 1);
+const machRate = (n, m) => n * T.machRate * m * G.mMach * workBoost();
+const ingRate = () => dreamShare() * swarmLog() * T.dreamIng * (sulking() && G.dream === 10 ? 0.5 : 1);
+const COSTS2 = { diggers: 'digCost', foundries: 'foundCost', mills: 'millCost', wheels: 'wheelCost', sbarrels: 'sbCost' };
+const cost2 = (k) => T[COSTS2[k]];
+const worldOre = () => T.regionOre.reduce((a, b) => a + b, 0);
+let eff2 = 1; // the share of the machines' work the spring power could drive, last tick
+
+function step2(dt) {
+  G.time += dt;
+  // spring power: wound by the wheels, stored up to the barrels' total, drawn by every machine
+  const have = G.power + powerGen() * dt, need = powerNeed() * dt;
+  eff2 = need > 0 ? Math.min(1, have / need) : 1;
+  G.power = Math.min(powerCap(), Math.max(0, have - need * eff2));
+  if (need > 0 && eff2 < 0.05) raise('nopower');
+  // the chain: dig, smelt, cut
+  const dug = Math.min(G.ore, machRate(G.diggers, G.mDig) * eff2 * dt);
+  G.ore -= dug; G.yard += dug; G.dugT += dug; G.wound = Math.min(1, G.wound + dug / worldOre());
+  if (G.ore <= 0 && G.region && G.regDone < G.region) { G.ore = 0; G.regDone = G.region; raise('regdone'); }
+  if (G.regDone === 4) G.wound = 1; // every place dug: the world is all cogs
+  const smelt = Math.min(G.yard, machRate(G.foundries, G.mFound) * eff2 * dt);
+  G.yard -= smelt; G.brass += smelt;
+  const cut = Math.min(G.brass, machRate(G.mills, G.mMill) * eff2 * dt);
+  G.brass -= cut; G.cogs += cut * G.mOz; G.made += cut * G.mOz;
+  // the old shop's tinkers and workbenches go on making cogs from Rotella's old clocks, so the chain can always begin again
+  const old = makeRate() * dt; G.cogs += old; G.made += old;
+  if (G.yard > 1e6 && G.yard > machRate(G.diggers, G.mDig) * 60) raise('yardfull');
+  if (G.brass > 1e6 && G.brass > machRate(G.foundries, G.mFound) * 60) raise('brassfull');
+  // the swarm grows by itself; at one end of the slider for too long, it sulks
+  G.swarm *= 1 + (T.swarmGrow * dt) / 60;
+  if (G.dreamOn && (G.dream === 0 || G.dream === 10)) { G.sulkT += dt; if (sulking()) raise('sulk'); } else G.sulkT = 0;
+  const ing = ingRate() * dt; G.ingen += ing; G.ingT += ing;
+  G.insight = Math.min(insCap(), G.insight + insRate() * dt);
+  // trust: one for each power of ten of cogs made from 100 million, and at 10, 100, 1,000 ... ingenuity
+  const want = Math.max(0, Math.floor(Math.log10(Math.max(1, G.made))) - 7) + (G.ingT >= 10 ? Math.floor(Math.log10(G.ingT)) : 0);
+  while (G.trust2 < want) { G.trust2++; G.trust++; }
+  if (G.autoOn && G.auto) autoBuild(dt);
+  checkInventions(); checkStory(); checkMiles();
+}
+
+/** How many of a machine a press builds now (the lot, or as many as the cogs allow). */
+const lotOf = (k) => { const n = LOTS[G.lot]; return n || Math.max(1, Math.floor(G.cogs / cost2(k))); };
+function build(k, n) {
+  const c = cost2(k), can = Math.min(n, Math.floor(G.cogs / c));
+  if (can < 1) return 0;
+  G[k] += can; G.cogs -= can * c;
+  return can;
+}
+/** The Tinker Works: a share of the cogs each second goes to the machine the chain needs most. */
+function autoBuild(dt) {
+  let spend = G.cogs * (G.auto / 10) * Math.min(1, dt * 2);
+  for (let k = 0; k < 4 && spend > 0; k++) {
+    const need = powerGen() < powerNeed() * 1.2 ? 'wheels' : powerCap() < powerNeed() * 20 ? 'sbarrels' : G.yard > machRate(G.foundries, G.mFound) * 10 ? 'foundries'
+      : G.brass > machRate(G.mills, G.mMill) * 10 ? 'mills' : G.ore > 0 ? 'diggers' : 'mills';
+    const n = Math.floor(spend / 4 / cost2(need));
+    if (n < 1) break;
+    spend -= build(need, n) * cost2(need);
+  }
+}
+
+/** The start of an act's play, after the act before it ends (its cinematic comes in step 7). */
+function endAct(from) {
+  checkMiles(); saveRun();
+  if (from === 1) {
+    raise('act2'); tab = 0; row = 0; top = 0;
+    G.swarm = Math.max(1000, G.tinkers * 1000 + G.benches * 10000);
+    G.brass = 0; G.cogs = Math.max(G.cogs, 0);
+  } else { state = 'act'; timer = 0; } // the end of Act II: Act III is built in step 4
+  saveRun();
+}
+
 // --- What the player can do (the panel's rows and the hand call these; the bot and the tests too) ---
 let why = ''; // why the last action could not be done, for the hint line
 const no = (s) => { why = s; return false; };
 const ACT = {
-  hand() { return make(G.hand) ? true : no('No brass left. Buy a spool from Signore Ferrese.'); },
+  hand() {
+    if (G.act === 2) { if (G.power >= powerCap()) return no('The springs are wound as far as they go.'); G.power = Math.min(powerCap(), G.power + T.handPower * G.mHand); return true; }
+    return make(G.hand) ? true : no('No brass left. Buy a spool from Signore Ferrese.');
+  },
+  build(k) { return build(k, lotOf(k)) ? true : no(`Not enough cogs: ${fmts(cost2(k))} each.`); },
+  lot(d) { const l = G.lot + d; if (l < 0 || l >= LOTS.length) return no('There is no other size of lot.'); G.lot = l; return true; },
+  dream(d) { const v = G.dream + d; if (v < 0 || v > 10) return no('The slider is at its end.'); G.dream = v; return true; },
+  auto(d) { const v = G.auto + d; if (v < 0 || v > 10) return no('That is as far as it goes.'); G.auto = v; return true; },
   price(d) {
     const p = Math.round((G.price + d * T.priceStep) * 100) / 100;
     if (p < T.priceMin || p > T.priceMax) return no('That is as far as the price goes.');
@@ -261,7 +381,7 @@ const ACT = {
   },
   escapement() { if (freeTrust() < 1) return no(`No trust to spend. More comes at ${fmt(nextTrust())} cogs made.`); G.escapements++; return true; },
   barrel() { if (freeTrust() < 1) return no(`No trust to spend. More comes at ${fmt(nextTrust())} cogs made.`); G.barrels++; return true; },
-  contract() { G.contractOn ^= 1; return true; },
+  contract() { G.contractUse ^= 1; return true; },
   fill() {
     if (!G.oNeed) return no('There is no order waiting.');
     if (G.cogs < G.oNeed) return no(`Not enough cogs in stock: ${fmt(G.oNeed)} are needed.`);
@@ -273,12 +393,12 @@ const ACT = {
     if (!v || isDone(id)) return no('Already made.');
     if (!canAfford(v.cost)) return no(`Not yet: it needs ${costText(v.cost)}.`);
     pay(v.cost); G.done[id >> 5] |= 1 << (id & 31); G.invs++;
-    for (const e of v.effect) {
-      if (e.op === '*') G[e.k] *= e.v; else if (e.op === '+') G[e.k] += e.v; else G[e.k] = e.v;
-    }
+    const act = G.act, region = G.region;
+    applyEffects(v, false);
     addLog(v.story, true);
     if (G.watch) raise('watch');
-    if (G.act === 2) endAct1();
+    if (G.region !== region) G.ore += T.regionOre[G.region]; // a new place: its ore, on top of what is left
+    if (G.act !== act) endAct(act);
     return true;
   },
   pose() {
@@ -346,12 +466,12 @@ function loadBook() {
   trustGiven = () => INVS.reduce((s, v) => s + (isDone(v.id) ? v.effect.filter((e) => e.k === 'trust' && e.op === '+').reduce((a, e) => a + e.v, 0) : 0), 0);
 }
 function parseCost(s) { const c = {}; for (const p of s.split(' ')) { const [k, v] = p.split(':'); c[k] = +v; } return c; }
-const COST_HAVE = { ins: () => G.insight, clev: () => G.clev, lire: () => G.coin, cogs: () => G.cogs, trust: () => freeTrust() };
-const COST_KEY = { ins: 'insight', clev: 'clev', lire: 'coin', cogs: 'cogs', trust: 'trust' };
+const COST_HAVE = { ins: () => G.insight, clev: () => G.clev, ing: () => G.ingen, lire: () => G.coin, cogs: () => G.cogs, trust: () => freeTrust() };
+const COST_KEY = { ins: 'insight', clev: 'clev', ing: 'ingen', lire: 'coin', cogs: 'cogs', trust: 'trust' };
 const canAfford = (c) => Object.keys(c).every((k) => COST_HAVE[k]() >= c[k]);
 function pay(c) { for (const k in c) G[COST_KEY[k]] -= c[k]; }
 function costText(c) {
-  return Object.keys(c).map((k) => (k === 'lire' ? money(c[k]) : `${fmts(c[k])} ${k === 'ins' ? 'ins' : k === 'clev' ? 'clev' : k}`)).join(' + ');
+  return Object.keys(c).map((k) => (k === 'lire' ? 'L ' + fmtc(c[k]) : `${fmtc(c[k])} ${k}`)).join(' + ');
 }
 const isDone = (id) => (G.done[id >> 5] >>> (id & 31)) & 1;
 const isShown = (id) => (G.shown[id >> 5] >>> (id & 31)) & 1;
@@ -359,7 +479,7 @@ let newInv = false; // an invention has appeared since INVENT was last open
 function checkInventions() {
   for (const v of INVS) if (!isShown(v.id) && holds(v.when)) { G.shown[v.id >> 5] |= 1 << (v.id & 31); newInv = true; }
 }
-const available = () => INVS.filter((v) => isShown(v.id) && !isDone(v.id));
+const available = () => INVS.filter((v) => isShown(v.id) && !isDone(v.id) && actOf(v.id) === G.act);
 
 // --- The story: each line told once a run, when its trigger first holds ---
 const isTold = (j) => (G.told[j >> 5] >>> (j & 31)) & 1;
@@ -393,8 +513,8 @@ function rebuildLog() {
 }
 
 // --- Save slots (spec section 13). Doubles take two slots: their 64 bits as two int32 ---
-const VERSION_SLOT = 0, SAVE_VERSION = 2, CYCLE_SLOT = 1, RUN_SLOT = 2, TIME_SLOT = 3, SEED_SLOT = 5, SET_SLOT = 6;
-const UI_SLOT = 7, KEYS_SLOT = 10, DONE_SLOT = 130, TOLD_SLOT = 138, SHOWN_SLOT = 154, MILE_SLOT = 170;
+const VERSION_SLOT = 0, SAVE_VERSION = 3, CYCLE_SLOT = 1, RUN_SLOT = 2, TIME_SLOT = 3, SEED_SLOT = 5, SET_SLOT = 6;
+const UI_SLOT = 7, KEYS_SLOT = 10, INTS_SLOT = 130, DONE_SLOT = 170, TOLD_SLOT = 174, SHOWN_SLOT = 190, MILE_SLOT = 198;
 const f64 = new Float64Array(1), i32 = new Int32Array(f64.buffer);
 function putD(slot, v) { f64[0] = v; dset(slot, i32[0]); dset(slot + 1, i32[1]); }
 function getD(slot) { i32[0] = dget(slot); i32[1] = dget(slot + 1); return f64[0]; }
@@ -402,8 +522,9 @@ function saveRun() {
   dset(RUN_SLOT, 1 | (G.act << 8)); putD(TIME_SLOT, G.time); dset(SEED_SLOT, G.seed);
   dset(UI_SLOT, tab | (row << 8));
   SAVE_KEYS.forEach((k, i) => putD(KEYS_SLOT + 2 * i, G[k]));
+  SAVE_INTS.forEach((k, i) => dset(INTS_SLOT + i, G[k] | 0));
   for (let i = 0; i < 16; i++) dset(TOLD_SLOT + i, G.told[i] | 0);
-  for (let i = 0; i < 8; i++) { dset(DONE_SLOT + i, G.done[i] | 0); dset(SHOWN_SLOT + i, G.shown[i] | 0); }
+  for (let i = 0; i < 4; i++) { dset(DONE_SLOT + i, G.done[i] | 0); dset(SHOWN_SLOT + i, G.shown[i] | 0); }
   for (let i = 0; i < 40; i++) dset(MILE_SLOT + i, G.mile[i]);
 }
 const hasRun = () => (dget(RUN_SLOT) & 255) === 1;
@@ -411,9 +532,12 @@ function loadRun() {
   G = freshRun(dget(SEED_SLOT));
   G.act = (dget(RUN_SLOT) >> 8) & 255;
   SAVE_KEYS.forEach((k, i) => { G[k] = getD(KEYS_SLOT + 2 * i); });
+  SAVE_INTS.forEach((k, i) => { G[k] = dget(INTS_SLOT + i); });
+  G.rng >>>= 0;
   for (let i = 0; i < 16; i++) G.told[i] = dget(TOLD_SLOT + i) >>> 0;
-  for (let i = 0; i < 8; i++) { G.done[i] = dget(DONE_SLOT + i) >>> 0; G.shown[i] = dget(SHOWN_SLOT + i) >>> 0; }
+  for (let i = 0; i < 4; i++) { G.done[i] = dget(DONE_SLOT + i) >>> 0; G.shown[i] = dget(SHOWN_SLOT + i) >>> 0; }
   for (let i = 0; i < 40; i++) G.mile[i] = dget(MILE_SLOT + i);
+  for (const v of INVS) if (isDone(v.id)) applyEffects(v, true); // the multipliers and flags, again
   const ui = dget(UI_SLOT); tab = ui & 255; row = (ui >> 8) & 255;
   rebuildLog();
 }
@@ -427,7 +551,7 @@ function loadSettings() { const s = dget(SET_SLOT); if (s & 4) { soundOn = s & 1
 const val = (s) => `${LM} ${s} ${RM}`;
 const TABS = [
   {
-    name: 'WORKSHOP',
+    name: 'WORKSHOP', acts: 1,
     info: () => [`In stock ${fmts(G.cogs)}`, `Brass ${fmts(G.brass)} oz`, `Town buys ${rate(salesRate())}/s`],
     rows: () => {
       const r = [
@@ -435,19 +559,61 @@ const TABS = [
         { t: 'Price per cog', v: () => val(money(G.price)), adj: (d) => ACT.price(d), ok: () => true, h: () => 'LEFT and RIGHT. Dearer sells fewer, but earns more.' },
         { t: `Buy brass, ${fmt(G.spoolOz)} oz`, v: () => money(G.spool), a: ACT.brass, ok: () => G.coin >= G.spool, h: () => `Signore Ferrese's price follows the market: near ${money(market())}.` },
       ];
-      if (G.contract) r.push({ t: "Signore Ferrese's contract", v: () => (G.contractOn ? 'ON' : 'OFF'), a: ACT.contract, ok: () => true, h: () => 'When ON, brass is bought by itself before it runs out.' });
+      if (G.contract) r.push({ t: "Signore Ferrese's contract", v: () => (G.contractUse ? 'ON' : 'OFF'), a: ACT.contract, ok: () => true, h: () => 'When ON, brass is bought by itself before it runs out.' });
       if (G.oNeed) r.unshift({ t: `Order: ${ORDER_FOR[G.oFor]}, ${fmts(G.oNeed)} cogs`, v: () => money(G.oPay), a: ACT.fill, ok: () => G.cogs >= G.oNeed, h: () => `Fill it from stock: ${Math.ceil(G.oLeft)} s left.` });
       r.push({ t: `Shop sign, level ${G.sign}`, v: () => (G.sign >= T.signMax ? 'done' : money(signCost())), a: ACT.sign, ok: () => G.sign < T.signMax && G.coin >= signCost(), h: () => `A grander sign: the town buys ${Math.round((T.signMul - 1) * 100)}% more.` });
       return r;
     },
   },
   {
-    name: 'HELPERS', when: () => G.made >= 20 || G.tinkers > 0,
+    name: 'HELPERS', acts: 1, when: () => G.made >= 20 || G.tinkers > 0,
     info: () => [`Tinkers ${fmts(G.tinkers)}`, ...(G.benchOn ? [`Benches ${fmts(G.benches)}`] : []), `making ${rate(makeRate())}/s`],
     rows: () => {
       const r = [{ t: 'Wind up a tinker', v: () => money(tinkerCost()), a: ACT.tinker, ok: () => G.coin >= tinkerCost(), h: () => `A tinker makes ${rate(T.tinkerRate * G.mTink * G.mAll)} cogs a second.` }];
       if (G.benchOn) r.push({ t: 'Build a workbench', v: () => money(benchCost()), a: ACT.bench, ok: () => G.coin >= benchCost(), h: () => `A workbench makes ${rate(T.benchRate * G.mBench * G.mAll)} cogs a second.` });
       return r;
+    },
+  },
+  {
+    name: 'WORLD', acts: 2,
+    info: () => [G.region ? `${REGIONS[G.region]}: ${fmts(G.ore)} oz of ore` : 'Rotella is awake', `Spring power ${fmts(G.power)}/${fmts(powerCap())}`],
+    rows: () => [
+      { t: 'Wind a spring', v: () => 'B', a: ACT.hand, ok: () => G.power < powerCap(), h: () => `B winds ${fmts(T.handPower * G.mHand)} spring power, from any panel.` },
+      { t: 'Ore in the yard', v: () => `${fmts(G.yard)} oz`, ok: () => true, h: () => `Dug ${rate(machRate(G.diggers, G.mDig) * eff2)}/s; foundries smelt it to brass.` },
+      { t: 'Brass by the mills', v: () => `${fmts(G.brass)} oz`, ok: () => true, h: () => `Smelted ${rate(machRate(G.foundries, G.mFound) * eff2)}/s; cog mills cut it.` },
+      { t: 'Cogs', v: () => fmts(G.cogs), ok: () => true, h: () => `Cut ${rate(machRate(G.mills, G.mMill) * eff2 * G.mOz)}/s, and ${rate(makeRate())}/s from the old shop.` },
+      { t: 'Spring power', v: () => `+${rate(powerGen())} -${rate(powerNeed())}`, ok: () => eff2 > 0.99, h: () => (eff2 < 0.99 ? `Too little: the machines run at ${Math.round(eff2 * 100)}%.` : 'Enough to drive every machine. The river rises and falls.') },
+      { t: 'The world', v: () => `${(G.wound * 100).toFixed(G.wound < 0.01 ? 4 : 1)}% wound`, ok: () => true, h: () => 'How much of the world\'s metal is cogs now.' },
+    ],
+  },
+  {
+    name: 'MACHINES', acts: 2, when: () => G.region,
+    info: () => [`Cogs ${fmts(G.cogs)}`, `Machines ${fmts(machines())}`],
+    rows: () => {
+      const m = (k, t, h) => ({ t: `${t} (${fmts(G[k])})`, v: () => (LOTS[G.lot] ? fmtc(cost2(k) * LOTS[G.lot]) : `${fmtc(cost2(k))} each`), a: () => ACT.build(k), ok: () => G.cogs >= cost2(k), h });
+      const r = [
+        { t: 'Build in lots of', v: () => val(LOTS[G.lot] ? fmt(LOTS[G.lot]) : 'MAX'), adj: (d) => ACT.lot(d), ok: () => true, h: () => 'LEFT and RIGHT: how many each press builds.' },
+        m('diggers', 'Diggers', () => `Each digs ${rate(machRate(1, G.mDig))} oz of ore a second.`),
+        m('foundries', 'Foundries', () => `Each smelts ${rate(machRate(1, G.mFound))} oz of ore to brass a second.`),
+        m('mills', 'Cog Mills', () => `Each cuts ${rate(machRate(1, G.mMill))} oz of brass to cogs a second.`),
+        m('wheels', 'Waterwheels', () => `Each winds ${rate(T.wheelGen * G.mWheel)} spring power a second.`),
+        m('sbarrels', 'Spring Barrels', () => `Each stores ${fmts(T.sbCap * G.mSB)} spring power.`),
+      ];
+      if (G.autoOn) r.push({ t: 'The Tinker Works', v: () => val(`${G.auto * 10}%`), adj: (d) => ACT.auto(d), ok: () => true, h: () => 'The share of cogs the tinkers build machines with.' });
+      return r;
+    },
+  },
+  {
+    name: 'SWARM', acts: 2,
+    info: () => [`${fmts(G.swarm)} tinkers`, ...(G.dreamOn ? [`Ingenuity ${fmts(G.ingen)}`, `+${rate(ingRate())}/s`] : [])],
+    rows: () => {
+      if (!G.dreamOn) return [{ t: 'The swarm is working', v: () => `x${workBoost().toFixed(1)}`, ok: () => true, h: () => 'Every tinker works the machines: they run twice as fast.' }];
+      const bar = '|'.repeat(10 - G.dream) + DOT + '|'.repeat(G.dream);
+      return [
+        { t: 'WORK', v: () => `${LM} ${bar} ${RM} DREAM`, adj: (d) => ACT.dream(d), ok: () => true, h: () => (sulking() ? 'The swarm is sulking: move the slider.' : 'Work runs the machines faster; dreams bring ingenuity.') },
+        { t: 'The machines run', v: () => `x${workBoost().toFixed(2)}`, ok: () => true, h: () => 'All at WORK: twice as fast.' },
+        { t: 'Dreams bring', v: () => `${rate(ingRate())} ingenuity/s`, ok: () => true, h: () => 'And insight too. More tinkers, more dreams.' },
+      ];
     },
   },
   {
@@ -460,14 +626,14 @@ const TABS = [
   },
   {
     name: 'INVENT', when: () => G.mind, fresh: () => newInv,
-    info: () => [`Insight ${fmts(G.insight)}`, ...(G.riddleOn ? [`Cleverness ${fmts(G.clev)}`] : []), `Made ${G.invs}`],
+    info: () => [`Insight ${fmts(G.insight)}`, ...(G.act === 2 ? [`Ingenuity ${fmts(G.ingen)}`] : G.riddleOn ? [`Cleverness ${fmts(G.clev)}`] : []), `Made ${G.invs}`],
     rows: () => {
       const r = available().map((v) => ({ t: v.name, v: () => costText(v.cost), a: () => ACT.invent(v.id), ok: () => canAfford(v.cost), h: () => v.hint }));
       return r.length ? r : [{ t: 'Nothing to invent yet', v: () => '', ok: () => false, h: () => 'New ideas come as the shop grows.' }];
     },
   },
   {
-    name: 'RIDDLES', when: () => G.riddleOn,
+    name: 'RIDDLES', acts: 1, when: () => G.riddleOn,
     info: () => (G.rTarget ? [`Wanted ${ratioText(...riddleTarget())}`, `Now ${ratioText(...picked())}`] : [`Cleverness ${fmts(G.clev)}`, `Solved ${G.solved}`, ...(G.engine ? [`+${rate(T.engineRate)}/s`] : [])]),
     rows: () => {
       if (!G.rTarget) return [{ t: 'Pose a riddle', v: () => `${fmts(riddleCost())} ins`, a: ACT.pose, ok: () => G.insight >= riddleCost(), h: () => 'Build a gear train that turns as the riddle asks.' }];
@@ -480,7 +646,7 @@ const TABS = [
     },
   },
   {
-    name: 'BANCA', when: () => G.bankOn,
+    name: 'BANCA', acts: 1, when: () => G.bankOn,
     info: () => [`Ledger ${money(G.bank)}`, `put in ${money(G.bankIn)}`],
     rows: () => [
       { t: 'Risk', v: () => val(RISKS[G.risk].n), adj: (d) => ACT.risk(d), ok: () => true, h: () => `About +${(RISKS[G.risk].mu * 100).toFixed(1)}% a minute${G.risk === 2 ? ', with real falls' : ''}.` },
@@ -491,11 +657,9 @@ const TABS = [
   },
 ];
 let tab = 0, row = 0, top = 0, hintMsg = '', hintT = 0;
-const openTabs = () => TABS.filter((t) => !t.when || t.when());
+const openTabs = () => TABS.filter((t) => (!t.acts || t.acts === G.act) && (!t.when || t.when()));
 function curTab() { const o = openTabs(); if (tab >= o.length) tab = 0; return o[tab]; }
 
-/** The end of Act I (WIND THE TOWN). Act II is built in step 3; until then the run rests here. */
-function endAct1() { G.act = 2; checkMiles(); raise('act2'); saveRun(); state = 'act'; timer = 0; }
 
 // --- Input: edges and repeats ---
 const BUTTONS = [UP, DOWN, LEFT, RIGHT, A, B, X, Y, L, R, START, SELECT];
@@ -528,7 +692,7 @@ function newRun(seed) {
   state = 'play'; timer = 0; paused = false;
   raise('start'); saveRun(); play(SONG.play);
 }
-function continueRun() { loadRun(); state = G.act === 1 ? 'play' : 'act'; timer = 0; paused = false; bits = []; play(SONG.play); }
+function continueRun() { loadRun(); state = G.act <= 2 ? 'play' : 'act'; timer = 0; paused = false; bits = []; play(SONG.play); }
 
 // --- Update ---
 function update() {
@@ -671,8 +835,8 @@ function drawPanel() {
   const made = fmt(G.made);
   sys(made, 6, y0, BRASS);
   tx(made === '1' ? 'cog made' : 'cogs made', 6 + made.length * 8 + 4, y0, DIM);
-  const coin = money(G.coin);
-  sys(coin, 250 - coin.length * 8, y0, GOOD);
+  const coin = G.act === 1 ? money(G.coin) : `${fmts(G.cogs)} ${G.act === 2 ? 'cogs' : ''}`;
+  if (G.act === 1) sys(coin, 250 - coin.length * 8, y0, GOOD); else txr(coin, 250, y0, GOOD);
   const t = curTab();
   tx(t.info().join('   '), 6, y0 + 12, INK);
   line(4, y0 + 22, 251, y0 + 22, LINE);
@@ -736,9 +900,9 @@ function drawMiles() {
 
 function drawAct() {
   rectfill(0, 0, 256, 224, EDGE);
-  sysc('THE END OF ACT I', 70, BRASS);
-  txc('The Winding of the World', 90, GOLD);
-  txc('Act II is still being built.', 120, DIM);
+  sysc('THE END OF ACT II', 70, BRASS);
+  txc('The Orrery', 90, GOLD);
+  txc('Act III is still being built.', 120, DIM);
   txc('Your story is saved here.', 132, DIM);
   if (timer > 60) txc('A to return to the title', 180, INK);
 }

@@ -17,3 +17,13 @@ tinkers:100 | A hundred tinkers
 made:1000000 | A million cogs
 inv:27 | Paulo's rest
 inv:28 | The town is wound
+
+# --- Act II ---
+diggers:1 | The first digger
+region:2 | Tuscany is integrated
+dreamOn:1 | The tinkers dream
+swarm:1000000000 | A billion tinkers
+region:3 | Italy is integrated
+made:1000000000000000 | A quadrillion cogs
+region:4 | The world is integrated
+inv:65 | The great launch

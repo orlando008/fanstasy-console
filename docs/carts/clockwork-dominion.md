@@ -1,7 +1,7 @@
 # Clockwork Dominion: Cart Specification
 
-**Version:** 0.3 (step 2 of 10)
-**Status:** In progress: steps 1 and 2 of the plan (section 15) are built (the engine and the whole of Act I); step 3 is next
+**Version:** 0.4 (step 3 of 10)
+**Status:** In progress: steps 1 to 3 of the plan (section 15) are built (the engine, Act I and Act II); step 4 is next
 **Cart source:** `carts/src/clockwork-dominion/` → `carts/clockwork-dominion.nova`
 
 ---
@@ -120,17 +120,23 @@ BILLION and so on by name to DECILLION, then 1.2E36 style. Money is in lire, sho
 
 ### Act II: the Winding of the World
 
-Coin is gone: the town sleeps and everything is Marco's. Cogs are now what machines are built from.
+Lire are gone: the town sleeps and everything is Marco's. Cogs are what machines are built from. The tabs are WORLD,
+MACHINES (from THE LONG LULLABY), SWARM, MIND and INVENT. Names agreed with the user: diggers, foundries, cog mills,
+waterwheels, spring barrels; **spring power** (the drive); **ingenuity** (what the dreaming tinkers make); the four
+places Rotella, Tuscany, Italy and the World.
 
 | Quantity | Value |
 |---|---|
-| Ore | the world's metal: 6.0E27 oz, dug by diggers; when it is all dug the act ends |
-| Diggers, foundries, cog mills | dig ore, smelt it to brass, cut brass to cogs, each a step of the chain (1,000, 800 and 1,000 oz a second at first); each built from cogs, the next costing 1.07 times the last |
-| Tension | the drive of every machine. Waterwheels wind it (50 a second each), spring barrels store it (10,000 each); each machine draws 1 a second, and with too little tension the machines slow in proportion |
-| Marco's hand (B) | winds 100 tension a press |
-| The tinker swarm | tinkers build more tinkers; a ◄ ► slider sets them between WORK (the machines run faster, up to ×2) and DREAM (they dream insight and **reverie**, Act II's cleverness); the swarm sulks (×0.5) if left at one end for 10 minutes |
-| Marco's mind | escapements and barrels again, now bought with reverie milestones as well as trust |
-| The end of the act | the last ore is dug: every machine is taken apart into the first moths (THE GREAT LAUNCH) |
+| The places | Rotella 1e9 oz of ore (THE LONG LULLABY, which also gives 5 million cogs from the town's clocks), Tuscany 1e13, Italy 1e17, the World 6e21. Each next place's invention (INTEGRATE TUSCANY, ITALY, THE WORLD) appears when half the ore so far is dug (5e8, 5e12, 5e16 oz) and adds its ore to what is left; they cost insight and ingenuity, never cogs |
+| Diggers, foundries, cog mills | the chain: dig ore into the yard, smelt it to brass, cut brass to cogs (an ounce of brass makes `mOz` cogs, as in Act I). Each machine does 1,000 oz a second, × its inventions, × the swarm's work. Each costs 200,000 cogs, and the price does not rise |
+| Waterwheels, spring barrels | a waterwheel (100,000 cogs) winds 50 spring power a second, more or less as the river rises and falls (±60% over 4 minutes); a spring barrel (50,000) stores 10,000. The springs hold 10,000 to begin with |
+| Spring power | every digger, foundry and mill draws 10 a second; with too little, they all slow in proportion (and the story says so) |
+| Marco's hand (B) | winds 100 spring power a press (MANY HANDS: 10,000) |
+| The old shop | Act I's tinkers and workbenches go on making cogs at their Act I rate, from Rotella's old clocks: the chain can always be begun again, even with every cog spent |
+| Building | a press builds a lot of 1, 10, 100, 1,000 or MAX (as many as the cogs allow), chosen with ◄ ►. THE TINKER WORKS builds by itself with a share of the cogs (◄ ► in tenths), each time the machine the chain lacks most (waterwheels if the power is short, spring barrels if they hold under 20 seconds of it, foundries if the ore piles up, mills if the brass does, else diggers) |
+| The swarm | starts at 1,000 tinkers for each of Act I's tinkers and 10,000 for each workbench, and grows 2% a minute. Until DREAMING TINKERS, it all works: the machines run ×2. Then a slider sets it from WORK to DREAM in tenths: the machines run × (1 + work), and dreams bring ingenuity (dream × log10(tinkers) × 0.2 a second) and insight (dream × log10(tinkers) × 20 a second). Left at either end for 10 minutes, the swarm sulks and that end's gift is halved, until the slider moves (SWARM SONGS: never) |
+| Trust | one for each power of ten of cogs made from 1e8, and at 10, 100, 1,000 ... ingenuity earned |
+| The end of the act | every place dug (the world is wound), A MOTH OF BRASS made, then THE GREAT LAUNCH (200,000 insight, 1,000 ingenuity): the machines become moths |
 
 ### Act III: the Orrery
 
@@ -256,13 +262,16 @@ Doubles are kept in two slots each (their 64 bits as two int32).
 | 6 | Settings: effects (bit 0), music (bit 1), set (bit 2) |
 | 7 | The tab and row (8 bits each) |
 | 10–129 | The run's numbers: up to 60 doubles, in the order of `SAVE_KEYS` in `code.js` (new ones only at its end) |
-| 130–137 | Inventions made (a bit each, 256 at most) |
-| 138–153 | The story lines told (a bit each, 512 at most) |
-| 154–161 | Inventions shown (listed once their trigger held) |
-| 162–169 | Inventions given by the cycles; the changed rule |
-| 170–209 | This run's milestones: the play time of each, in seconds |
-| 210–249 | Across cycles: the best time to each milestone, the endings seen, the cogs made in all |
-| 250–255 | Reserved |
+| 130–169 | The run's whole numbers (counts, choices, flags the player sets), in the order of `SAVE_INTS` |
+| 170–173 | Inventions made (a bit each, ids 1 to 127) |
+| 174–189 | The story lines told (a bit each, 512 at most) |
+| 190–193 | Inventions shown (listed once their trigger held) |
+| 194–197 | Inventions given by the cycles; the changed rule |
+| 198–237 | This run's milestones: the play time of each, in seconds (+1; 0 not yet) |
+| 238–255 | Across cycles: the best times, the endings seen, the cogs made in all |
+
+Multipliers and flags that inventions set (`mDig`, `benchOn`, `region` ...) are not saved: loading a run works them out
+again by applying the effects of the inventions made, in order.
 
 ## 14. Asset budget
 
@@ -334,8 +343,32 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
      - The soak (20,000 frames × 2) and `smoke.mjs` are clean.
      - Code is 35.5 KB stripped (54%): the three acts to come must be lean, keep their text in the ROM, and use
        `"mangle": true` when needed. ROM 11.2 KB, PNG payload 24%.
-3. **Act II:** ore, the chain of machines, tension, the swarm and its slider, reverie, its inventions and story, the
-   great launch.
+3. **Act II:** ore, the chain of machines, spring power, the swarm and its slider, ingenuity, its inventions and
+   story, the great launch.
+   - **Built:** the names first, with the user (section 5). Then:
+     - 25 inventions (ids 41 to 65), 22 story lines and 8 milestones for the act;
+     - `step2`, the chain of machines and spring power, the old shop, lots and THE TINKER WORKS, the four places, the
+       swarm with its WORK / DREAM slider and sulking, and trust from powers of ten;
+     - the tabs WORLD, MACHINES and SWARM (each tab now names its act);
+     - short costs (150K, 5T) so that the dearest fit the panel;
+     - the save's new layout, with whole numbers in single slots, and multipliers worked out again from the
+       inventions made;
+     - the end of Act II rests on a card ("Act III is still being built") until step 4.
+   - **Results:** 161 checks (`05-act2` is new: the act's start, the chain's numbers, spring power and the hand, the
+     old shop, lots, the Tinker Works, the places, WORK and DREAM and sulking, trust, the save with every Act II number
+     and the multipliers again, and the planner through the whole act). The planner found three things on its way
+     through:
+     - **A bug:** each tick's winding was capped by the springs' store before the machines drew on it, so they ran at
+       5% with power to spare. They now draw on what is wound in the tick as well.
+     - **A trap:** a player who spent every cog on diggers and wheels before a cog mill could never make another cog.
+       The old shop now goes on making cogs.
+     - **Another trap:** the places, and THE TINKER WORKS, cost cogs, which a player who keeps building machines would
+       not have when the ore ran out. They now cost only insight and ingenuity, appear at half dug, and add their ore
+       on top. Spring barrels also joined the Tinker Works' list (and DEEPER BARRELS could then be found).
+
+     Now Act II takes 106 to 107 minutes whether the player decides every 0, 5, 15 or 30 seconds (the aim is 120;
+     step 9). The soak and `smoke.mjs` are clean. Code is 45.1 KB stripped (69%): step 4 begins with the size pass
+     (`"mangle": true`, more of the text into the ROM). ROM 17.9 KB, PNG payload 29%.
 4. **Act III and the end:** moths, the design, stars, the Rust, the orrery, the dismantling, the watch and the choice.
 5. **The flow:** the title, the opening, the two endings, the credits, new cycles and their rules, the MILESTONES page,
    the full log, the pause menu, sound settings; the save complete and tested (every slot round-trips).

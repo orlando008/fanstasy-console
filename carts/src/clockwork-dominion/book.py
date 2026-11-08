@@ -165,7 +165,7 @@ def read_story(problems):
 
 import re
 TRIG = re.compile(r'^(ev:[a-z0-9]+|[a-zA-Z]+:[0-9.]+)$')
-COST = re.compile(r'^(ins|clev|lire|cogs|trust):[0-9.]+$')
+COST = re.compile(r'^(ins|clev|ing|lire|cogs|trust):[0-9.]+$')
 EFFECT = re.compile(r'^[a-zA-Z]+[*=+][0-9.]+$')
 
 

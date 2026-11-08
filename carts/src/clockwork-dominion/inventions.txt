@@ -36,3 +36,30 @@
 26 | The Great Mainspring | inv:25 | ins:18000 clev:200 | mAll*1.5 | Every helper works half as fast again. | I wound a mainspring as tall as Paulo under the floor. The whole shop leans on it, gently.
 27 | The Last Winding | made:3000000 | ins:20000 | trust+10 watch=1 | Paulo is very old. Sit with him. | Paulo gave me his pocket watch and closed my hand over it. "Never let it wind down," he said. Then he was still.
 28 | Wind the Town | inv:27&made:10000000&trust:30 | ins:20000 clev:300 | act=2 | Every clock in Rotella will be wound. And more. | I will not let it wind down. Not the watch. Not the town. Not anything. I begin.
+
+# --- Act II: the Winding of the World (ids 41 to 80) ---
+41 | The Long Lullaby | act:2 | ins:1000 | region=1 cogs+5000000 | Rotella sleeps. Take its clocks apart for cogs. | I rang the bells of Rotella softly, all night, until everyone slept. Then I took the clocks apart, one by one, for their cogs.
+42 | Iron Moles | diggers:5 | ins:5000 | mDig*2 | Diggers dig twice as fast. | The diggers have learned to turn the earth like moles, nose first, and never stop.
+43 | Hotter Furnaces | foundries:5 | ins:5000 | mFound*2 | Foundries smelt twice as fast. | The furnaces burn white now. Snow melts a mile away.
+44 | Finer Saws | mills:5 | ins:5000 | mMill*2 | Cog mills cut twice as fast. | A finer saw cuts a cog in a single breath. I can hear them breathing all over the valley.
+45 | The Mill Race | wheels:3 | ins:6000 | mWheel*2 | Waterwheels wind twice as much. | I dug a channel so the river runs faster past the wheels. The river did not mind.
+46 | Deeper Barrels | sbarrels:3 | ins:6000 | mSB*5 | Spring barrels hold five times as much. | Deeper barrels, longer springs. They hum when they are full.
+47 | Deep Thoughts | inv:41 | ins:8000 | mBarrel*10 | Marco's barrels hold ten times the insight. | I wound my thoughts tighter. A barrel of them holds what ten did.
+48 | The Tinker Works | mills:20 | ins:10000 | autoOn=1 | Machines build themselves, from a share of the cogs. | The tinkers build the machines now, and the machines build tinkers. I only have to choose how much.
+49 | Integrate Tuscany | dugT:500000000 | ins:15000 | region=2 | Tuscany's ore: ten trillion ounces. | The bells rang down the valley, over the hills, into Tuscany. Everything there is very quiet now, and very well wound.
+50 | Dreaming Tinkers | inv:49 | ins:12000 | dreamOn=1 | Opens the swarm's WORK / DREAM: dreams bring ingenuity. | Some of the tinkers have stopped working. They sit very still and tick slowly. I think they are dreaming.
+51 | Many Hands | inv:50 | ins:8000 ing:5 | mHand*100 | B winds a hundred times as much. | When I wind a spring now, a thousand tinkers wind with me.
+52 | Swarm Songs | ingT:20 | ins:20000 ing:20 | noSulk=1 | The swarm never sulks at one end of the slider. | The swarm sings while it works now, and while it dreams. It is the melody Lucia wrote, very slow.
+53 | Clockwork Rivers | wheels:50 | ins:25000 ing:30 | mWheel*5 | Waterwheels wind five times as much. | I wound the rivers. They run uphill when I need them to.
+54 | Integrate Italy | dugT:5000000000000 | ins:40000 ing:50 | region=3 | Italy's ore: a hundred quadrillion ounces. | From the Alps to the sea, every bell, every clock, every sleeper. Italy ticks.
+55 | Self-Oiling Gears | inv:54 | ins:35000 ing:60 | mDraw*0.5 | Machines draw half the spring power. | Every gear oils the next. Nothing grinds. Nothing complains.
+56 | Magnet Diggers | inv:54 | ins:50000 ing:80 | mDig*5 | Diggers dig five times as fast. | The diggers pull the metal out of the ground with magnets. The ground gives it up without a sound.
+57 | The Great Furnace | inv:56 | ins:50000 ing:80 | mFound*5 | Foundries smelt five times as fast. | One furnace for all of Italy, as wide as a lake, and as bright as noon.
+58 | Gang Saws | inv:57 | ins:50000 ing:80 | mMill*5 | Cog mills cut five times as fast. | A hundred saws on a single frame. The cogs fall like rain.
+59 | A Hundred Minds | ingT:200 | ins:60000 ing:150 | mIns*3 | Insight comes three times as fast. | I fitted escapements in a hundred tinkers and wound their thoughts into mine. We think together now.
+60 | The Iron Tide | inv:58&inv:59 | ins:100000 ing:300 | mMach*3 | Every machine works three times as fast. | The machines move together like a tide. They come in, and they do not go out again.
+61 | Integrate the World | dugT:50000000000000000 | ins:150000 ing:400 | region=4 | The whole world's ore: six sextillion ounces. | Every city. Every sea. Every mountain. I am sorry, Paulo. You said never let it wind down.
+62 | The Orrery Plans | inv:61 | ins:120000 ing:300 | plans=1 | Marco looks up. | At night I looked up for the first time. The stars are winding down too. Someone must wind them.
+63 | A Moth of Brass | inv:62 | ins:200000 ing:600 | moth=1 | The first moth's design: wings that copy themselves. | I drew a moth with wings of brass, that can build another moth from a little ore. Then another. Then another.
+64 | The Last Mine | wound:0.9 | ins:150000 ing:500 | mDig*10 mFound*10 mMill*10 | The last ore is dug, smelted and cut ten times as fast. | The last of the world's metal comes up quickly. There is not much left to hold it down.
+65 | The Great Launch | inv:63&wound:1 | ins:200000 ing:1000 | act=3 | The end of Act II. | I took the machines apart, all of them, and made moths. The sky was full of wings.

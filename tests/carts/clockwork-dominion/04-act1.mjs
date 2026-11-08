@@ -43,7 +43,7 @@ const inv = (p, name) => p.INVS.find((v) => v.name === name);
   p.G.coin = 0; simFor(p, 0.1);
   const bank = inv(p, 'Banca di Rotella'); p.G.coin = 1000; simFor(p, 0.1); p.G.coin = 0; simFor(p, 0.1);
   ok(p.available().includes(bank), 'once shown, an invention stays in the list (even if its trigger no longer holds)');
-  const all = p.INVS.map((v) => v.id);
+  const all = p.INVS.filter((v) => v.id <= 40).map((v) => v.id);
   ok(all.length === 28 && new Set(all).size === 28, 'Act I has its 28 inventions, each with its own id');
   ok(p.INVS.every((v) => p.tw(v.hint) <= 244 && p.tw(v.name) + p.tw(p.costText(v.cost)) + 8 <= 236), 'every invention\'s name, cost and hint fit the panel');
 }
@@ -98,7 +98,7 @@ const inv = (p, name) => p.INVS.find((v) => v.name === name);
   p.G.cogs = p.G.oNeed; const c = p.G.coin; p.ACT.fill();
   ok(p.G.oNeed === 0 && p.G.coin > c && p.G.orders === 1, 'filling it takes the cogs and pays');
   p.G.oNext = 0.05; simFor(p, 0.2); simFor(p, 181); ok(!p.G.oNeed || p.G.oLeft > 0, 'an order not filled goes away after 3 minutes');
-  const q = fresh().p; q.G.contract = 1; q.G.contractOn = 1; q.G.coin = 1e6; q.G.tinkers = 200; q.G.brass = 0; simFor(q, 1);
+  const q = fresh().p; q.G.contract = 1; q.G.contractUse = 1; q.G.coin = 1e6; q.G.tinkers = 200; q.G.brass = 0; simFor(q, 1);
   ok(q.G.spools > 0 && q.G.brass > 0, 'with the contract ON, brass is bought by itself when it runs low');
 }
 
@@ -115,7 +115,7 @@ const inv = (p, name) => p.INVS.find((v) => v.name === name);
   const wind = inv(p, 'Wind the Town');
   ok(p.available().includes(wind), 'WIND THE TOWN appears after THE LAST WINDING, at 10 million cogs and 30 trust');
   p.ACT.invent(wind.id); vm.run(2);
-  ok(p.G.act === 2 && p.state === 'act', 'making it ends Act I');
+  ok(p.G.act === 2 && p.state === 'play' && p.openTabs()[0].name === 'WORLD', 'making it ends Act I, and Act II begins');
   ok(p.G.mile[p.MILES.findIndex((m) => m.name === 'The town is wound')] > 0, 'with its milestone');
 }
 
