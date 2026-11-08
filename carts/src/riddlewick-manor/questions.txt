@@ -27,6 +27,31 @@ HIS 1 | Which people built the Parthenon in Athens? | The ancient Greeks | The R
 HIS 1 | Who was the first person to travel into space? | Yuri Gagarin | Neil Armstrong | John Glenn | Alan Shepard
 HIS 1 | Which country gave the Statue of Liberty to the USA? | France | Britain | Spain | Italy
 HIS 1 | In which modern country did the Aztecs live? | Mexico | Peru | Brazil | Chile
+HIS 1 | Who was Queen of the United Kingdom from 1952 to 2022? | Elizabeth II | Victoria | Anne | Mary
+HIS 1 | What were the soldiers of the Roman army called? | Legionaries | Samurai | Knights | Vikings
+HIS 1 | What were Japan's sword-carrying warriors called? | The samurai | The pharaohs | The Vikings | The Celts
+HIS 1 | What were the fighters in Roman arenas called? | Gladiators | Knights | Samurai | Pirates
+HIS 1 | Where did medieval kings and lords live, behind towers and walls? | In a castle | In a pyramid | In a temple | In an igloo
+HIS 1 | Which ancient people wrapped their dead as mummies? | The Egyptians | The Vikings | The Romans | The Greeks
+HIS 1 | What were the young men training to be knights called? | Squires | Jesters | Monks | Bards
+HIS 1 | The leader of which country lives in the White House? | The USA | France | Russia | Canada
+HIS 1 | Which came first in history? | The Stone Age | The Bronze Age | The Iron Age | The Space Age
+HIS 1 | What did the Romans build so their armies could march quickly? | Straight roads | Canals | Railways | Tunnels
+HIS 1 | Which US president led the country through its Civil War? | Abraham Lincoln | George Washington | Theodore Roosevelt | Thomas Jefferson
+HIS 1 | What lit most homes before electricity? | Candles and oil lamps | Torches | Light bulbs | Glow worms
+HIS 1 | What did the Romans build to carry water into their cities? | Aqueducts | Pyramids | Canals | Windmills
+HIS 1 | Which sport did the Romans watch at the Circus Maximus? | Chariot racing | Football | Jousting | Sumo
+HIS 1 | In which ocean did the Titanic sink? | The Atlantic | The Pacific | The Indian | The Arctic
+HIS 1 | Which inventor is famous for the electric light bulb? | Thomas Edison | Isaac Newton | Albert Einstein | Charles Darwin
+HIS 1 | What is a statue with a lion's body and a human head called? | A sphinx | A pyramid | An obelisk | A griffin
+HIS 1 | What was a medieval jester's job? | To make people laugh | To guard the gate | To cook the food | To fight in battles
+HIS 1 | Which language did the ancient Romans speak? | Latin | Greek | Italian | French
+HIS 1 | Which legendary king pulled a sword from a stone? | King Arthur | Richard the Lionheart | Henry V | Alfred the Great
+HIS 1 | What did knights ride into battle? | Horses | Camels | Elephants | Donkeys
+HIS 1 | Which girl wrote a diary while hiding in Amsterdam in the war? | Anne Frank | Marie Curie | Helen Keller | Rosa Parks
+HIS 1 | Which tower was built in Paris for a world's fair in 1889? | The Eiffel Tower | The Leaning Tower | Big Ben | The Tower of London
+HIS 1 | What did the ancient Greeks build to watch plays in? | Theatres | Pyramids | Castles | Igloos
+HIS 1 | What was the pirates' skull and crossbones flag called? | The Jolly Roger | The Union Jack | The Stars and Stripes | The Tricolour
 HIS 2 | In which year did the Titanic sink? | 1912 | 1905 | 1921 | 1898
 HIS 2 | Which Roman city was buried by Mount Vesuvius in AD 79? | Pompeii | Athens | Carthage | Troy
 HIS 2 | Which wall did the Romans build across northern England? | Hadrian's Wall | The Antonine Wall | Offa's Dyke | The Great Wall
@@ -47,6 +72,31 @@ HIS 2 | On which ship did Charles Darwin sail around the world? | HMS Beagle | H
 HIS 2 | Which people built the pyramid city of Chichen Itza? | The Maya | The Inca | The Aztecs | The Olmecs
 HIS 2 | Who led the Soviet Union during the Second World War? | Joseph Stalin | Vladimir Lenin | Nikita Khrushchev | Leon Trotsky
 HIS 2 | In which year did people first land on the Moon? | 1969 | 1965 | 1972 | 1959
+HIS 2 | Which two men first reached the top of Mount Everest, in 1953? | Hillary and Tenzing | Amundsen and Scott | Lewis and Clark | Mallory and Irvine
+HIS 2 | What did Johannes Gutenberg invent around 1440? | The printing press | The telescope | The steam engine | The compass
+HIS 2 | Which of the Seven Wonders of the ancient world still stands? | The Great Pyramid of Giza | The Colossus of Rhodes | The Hanging Gardens | The Temple of Artemis
+HIS 2 | What did the Montgolfier brothers send up in 1783? | A hot-air balloon | An aeroplane | A glider | A rocket
+HIS 2 | On which ship did Captain Cook reach Australia in 1770? | HMS Endeavour | HMS Beagle | The Mayflower | The Golden Hind
+HIS 2 | What was the strong main tower of a castle called? | The keep | The moat | The gatehouse | The bailey
+HIS 2 | In which country was paper first made? | China | Egypt | Greece | India
+HIS 2 | What is a line of rulers from one family called? | A dynasty | A colony | A republic | A crusade
+HIS 2 | What did the Romans call Britain? | Britannia | Gaul | Hispania | Germania
+HIS 2 | What were the soldiers who fought on horseback called? | Cavalry | Infantry | Artillery | Marines
+HIS 2 | Which weapon made medieval English archers famous? | The longbow | The crossbow | The spear | The musket
+HIS 2 | Which war of the 1860s split the USA into North and South? | The American Civil War | The War of Independence | The Seven Years' War | The Korean War
+HIS 2 | Which city was mostly burnt down in a great fire in 1666? | London | Paris | Rome | Edinburgh
+HIS 2 | What illness was the Black Death of the 1340s? | The plague | Smallpox | Cholera | Measles
+HIS 2 | Who was the first woman to travel into space, in 1963? | Valentina Tereshkova | Sally Ride | Mae Jemison | Helen Sharman
+HIS 2 | Which French heroine was called the Maid of Orleans? | Joan of Arc | Marie Antoinette | Catherine de Medici | Eleanor of Aquitaine
+HIS 2 | What powered the first machines of the Industrial Revolution? | Steam | Petrol | Electricity | Nuclear power
+HIS 2 | Whose face is on the US one-dollar bill? | George Washington | Abraham Lincoln | Benjamin Franklin | Thomas Jefferson
+HIS 2 | Which Roman emperor is said to have played music as Rome burned? | Nero | Caligula | Augustus | Claudius
+HIS 2 | On which side was Japan in the Second World War? | The Axis | The Allies | Neutral | It did not fight
+HIS 2 | The Roman province of Gaul is mostly which country today? | France | Spain | Germany | Greece
+HIS 2 | Which Roman leader was killed on the Ides of March, 44 BC? | Julius Caesar | Augustus | Nero | Caligula
+HIS 2 | Who first flew alone non-stop across the Atlantic, in 1927? | Charles Lindbergh | Amelia Earhart | Louis Bleriot | Howard Hughes
+HIS 2 | Which Chinese invention helped sailors find north at sea? | The compass | The sextant | The telescope | The clock
+HIS 2 | What was the old trade route between China and Europe called? | The Silk Road | The Spice Way | The Amber Road | The Tea Trail
 HIS 3 | In which year did the Berlin Wall fall? | 1989 | 1991 | 1985 | 1961
 HIS 3 | Which of Henry VIII's wives was the mother of Elizabeth I? | Anne Boleyn | Catherine of Aragon | Jane Seymour | Anne of Cleves
 HIS 3 | Which empire built the mountain city of Machu Picchu? | The Inca | The Aztec | The Maya | The Olmec
@@ -67,6 +117,31 @@ HIS 3 | Who led the first expedition to reach the South Pole? | Roald Amundsen |
 HIS 3 | Of which country was Nelson Mandela president? | South Africa | Zimbabwe | Kenya | Namibia
 HIS 3 | Which ancient Greek city-state was famous for its warriors? | Sparta | Athens | Corinth | Thebes
 HIS 3 | Who was Queen of England when the Spanish Armada sailed in 1588? | Elizabeth I | Mary I | Victoria | Anne
+HIS 3 | Who nailed his 95 Theses to a church door in 1517? | Martin Luther | John Calvin | Henry VIII | Thomas More
+HIS 3 | Which Roman crossed the Rubicon with his army in 49 BC? | Julius Caesar | Augustus | Pompey | Mark Antony
+HIS 3 | Which French queen was guillotined in 1793? | Marie Antoinette | Joan of Arc | Catherine de Medici | Josephine
+HIS 3 | On which ship was there a famous mutiny in 1789? | HMS Bounty | HMS Victory | HMS Beagle | The Mary Rose
+HIS 3 | After which explorer was America named? | Amerigo Vespucci | Christopher Columbus | John Cabot | Hernan Cortes
+HIS 3 | Bronze is made by mixing copper with which metal? | Tin | Iron | Silver | Lead
+HIS 3 | Which Anglo-Saxon king is called the Great for fighting Vikings? | Alfred | Harold | Ethelred | Edgar
+HIS 3 | What was the pirate Blackbeard's real name? | Edward Teach | Francis Drake | Henry Morgan | William Kidd
+HIS 3 | Which country opened the first public steam railway, in 1825? | Britain | The USA | Germany | France
+HIS 3 | At which sea battle of 1805 did Nelson win, and die? | Trafalgar | The Nile | Copenhagen | Jutland
+HIS 3 | Which long war between England and France ended in 1453? | The Hundred Years' War | The Wars of the Roses | The Thirty Years' War | The Crusades
+HIS 3 | Which astronomer was put on trial by the Church in 1633? | Galileo Galilei | Nicolaus Copernicus | Johannes Kepler | Isaac Newton
+HIS 3 | Who was the first Tudor king of England? | Henry VII | Henry VIII | Richard III | Edward IV
+HIS 3 | Which country did the Ming dynasty rule? | China | Japan | Korea | Mongolia
+HIS 3 | Which two explorers crossed the American West from 1804 to 1806? | Lewis and Clark | Stanley and Livingstone | Burke and Wills | Mason and Dixon
+HIS 3 | Who found the explorer David Livingstone in Africa in 1871? | Henry Morton Stanley | Richard Burton | John Speke | Mungo Park
+HIS 3 | What was England's first lasting colony in America, in 1607? | Jamestown | Plymouth | Roanoke | Boston
+HIS 3 | Who led the Free French in the Second World War? | Charles de Gaulle | Philippe Petain | Georges Clemenceau | Napoleon III
+HIS 3 | Which empire did Suleiman the Magnificent rule? | The Ottoman Empire | The Mughal Empire | The Persian Empire | The Byzantine Empire
+HIS 3 | Which wonder of the ancient world stood at Olympia? | The Statue of Zeus | The Colossus of Rhodes | The Mausoleum | The Pharos of Alexandria
+HIS 3 | Which Roman emperor made Christianity legal in AD 313? | Constantine | Nero | Augustus | Hadrian
+HIS 3 | Which Viking reached North America around the year 1000? | Leif Erikson | Erik the Red | Harald Hardrada | Canute
+HIS 3 | Which war ended in 1953 with an armistice, not a peace treaty? | The Korean War | The Vietnam War | The Gulf War | The Crimean War
+HIS 3 | Which city held the Summer Olympic Games of 1936? | Berlin | London | Rome | Paris
+HIS 3 | Which Jamaican nurse cared for soldiers in the Crimean War? | Mary Seacole | Florence Nightingale | Edith Cavell | Clara Barton
 HIS 4 | Which treaty ended the First World War with Germany in 1919? | The Treaty of Versailles | The Treaty of Paris | The Treaty of Ghent | The Treaty of Utrecht
 HIS 4 | Who was the first Emperor of Rome? | Augustus | Julius Caesar | Nero | Caligula
 HIS 4 | In which year did Constantinople fall to the Ottomans? | 1453 | 1492 | 1204 | 1517
@@ -87,6 +162,31 @@ HIS 4 | In which year did the Soviet Union break up? | 1991 | 1989 | 1985 | 1993
 HIS 4 | Which ancient wonder was a huge bronze statue by a harbour? | The Colossus of Rhodes | The Statue of Zeus | The Pharos of Alexandria | The Mausoleum
 HIS 4 | Which explorer first reached India by sea from Europe, in 1498? | Vasco da Gama | Bartolomeu Dias | Ferdinand Magellan | Christopher Columbus
 HIS 4 | What was the first artificial satellite, launched in 1957? | Sputnik 1 | Explorer 1 | Vostok 1 | Telstar
+HIS 4 | Who first sailed alone around the world, from 1895 to 1898? | Joshua Slocum | Francis Chichester | Robin Knox-Johnston | Ellen MacArthur
+HIS 4 | What was the name of Shackleton's ship crushed by Antarctic ice? | Endurance | Discovery | Terra Nova | Fram
+HIS 4 | Which woman ruled Egypt as pharaoh around 1470 BC? | Hatshepsut | Nefertiti | Cleopatra | Nefertari
+HIS 4 | Which civilisation built the city of Mohenjo-daro? | The Indus Valley | The Sumerians | The Hittites | The Minoans
+HIS 4 | Which king of Macedon conquered the Persian Empire? | Alexander the Great | Philip II | Darius III | Xerxes
+HIS 4 | Which leader gave his name to the golden age of Athens? | Pericles | Solon | Cleisthenes | Themistocles
+HIS 4 | Which battle did Henry V win in France in 1415? | Agincourt | Crecy | Poitiers | Orleans
+HIS 4 | Under which emperor was the Mughal Empire at its largest? | Aurangzeb | Akbar | Babur | Shah Jahan
+HIS 4 | Which Chinese admiral led great sea voyages in the early 1400s? | Zheng He | Kublai Khan | Sun Tzu | Confucius
+HIS 4 | Which peace of 1648 ended the Thirty Years' War? | The Peace of Westphalia | The Treaty of Utrecht | The Treaty of Paris | The Treaty of Ghent
+HIS 4 | Who was the British king during the American Revolution? | George III | George II | George IV | William IV
+HIS 4 | Which North African city did Rome destroy in 146 BC? | Carthage | Alexandria | Tripoli | Tangier
+HIS 4 | Which revolution brought Lenin to power in Russia in 1917? | The October Revolution | The February Revolution | The Decembrist Revolt | The Velvet Revolution
+HIS 4 | Which emperor of France was Napoleon Bonaparte's nephew? | Napoleon III | Louis XVIII | Charles X | Louis Philippe
+HIS 4 | Who founded the Mughal Empire in India in 1526? | Babur | Akbar | Humayun | Shah Jahan
+HIS 4 | Which civilisation built the palace of Knossos on Crete? | The Minoans | The Mycenaeans | The Etruscans | The Phoenicians
+HIS 4 | Who was the Aztec emperor when the Spanish arrived in 1519? | Moctezuma II | Atahualpa | Cuauhtemoc | Pachacuti
+HIS 4 | Which Inca emperor was captured by Francisco Pizarro? | Atahualpa | Moctezuma II | Pachacuti | Huascar
+HIS 4 | Which empire built the palace city of Persepolis? | The Persian Empire | The Roman Empire | The Assyrian Empire | The Ottoman Empire
+HIS 4 | Which family ruled the Austrian Empire from Vienna? | The Habsburgs | The Romanovs | The Bourbons | The Tudors
+HIS 4 | Who led India's struggle for independence through non-violence? | Mahatma Gandhi | Jawaharlal Nehru | Subhas Chandra Bose | Muhammad Ali Jinnah
+HIS 4 | In which year did India become independent? | 1947 | 1950 | 1935 | 1960
+HIS 4 | What were the three wars between Rome and Carthage called? | The Punic Wars | The Gallic Wars | The Samnite Wars | The Persian Wars
+HIS 4 | Which queen of the Iceni rose up against Rome in AD 60? | Boudica | Cartimandua | Zenobia | Cleopatra
+HIS 4 | Which people of Mesopotamia invented cuneiform writing? | The Sumerians | The Egyptians | The Hittites | The Phoenicians
 
 # --- GEOGRAPHY ---
 GEO 1 | What is the largest ocean on Earth? | The Pacific | The Atlantic | The Indian | The Arctic
@@ -109,6 +209,31 @@ GEO 1 | Which country is famous for tulips and windmills? | The Netherlands | De
 GEO 1 | What is the capital city of Italy? | Rome | Milan | Venice | Naples
 GEO 1 | On which continent is India? | Asia | Africa | Europe | Oceania
 GEO 1 | Which mountain range runs down the west of South America? | The Andes | The Alps | The Rockies | The Himalayas
+GEO 1 | What is the capital city of the USA? | Washington, D.C. | New York | Los Angeles | Chicago
+GEO 1 | On which continent is Brazil? | South America | Africa | Europe | Asia
+GEO 1 | Which is the biggest continent? | Asia | Africa | Europe | North America
+GEO 1 | In which country is the Taj Mahal? | India | Egypt | Turkey | Iran
+GEO 1 | What is at the very top of the world on a globe? | The North Pole | The South Pole | The equator | Antarctica
+GEO 1 | What is a huge body of salt water called? | An ocean | A lake | A river | A pond
+GEO 1 | In which country do wild giant pandas live? | China | Japan | India | Australia
+GEO 1 | What is a mountain that can erupt called? | A volcano | A glacier | A canyon | A geyser
+GEO 1 | What colour are the stars on the flag of the USA? | White | Gold | Red | Blue
+GEO 1 | Which country's flag is a red circle on white? | Japan | China | Canada | Switzerland
+GEO 1 | What is the capital city of Greece? | Athens | Sparta | Rome | Istanbul
+GEO 1 | In which country is the city of Sydney? | Australia | New Zealand | Canada | South Africa
+GEO 1 | What is a slow river of ice on a mountain called? | A glacier | An iceberg | A fjord | A tundra
+GEO 1 | On which continent is the Sahara Desert? | Africa | Asia | Australia | South America
+GEO 1 | In which country is Venice, the city of canals? | Italy | France | Spain | Greece
+GEO 1 | Which country is made of England, Scotland, Wales and N. Ireland? | The United Kingdom | Ireland | Australia | Canada
+GEO 1 | What is the capital city of Scotland? | Edinburgh | Glasgow | Aberdeen | Dundee
+GEO 1 | Which country lies just north of the USA? | Canada | Mexico | Russia | Greenland
+GEO 1 | Which country lies just south of the USA? | Mexico | Canada | Brazil | Cuba
+GEO 1 | What is a hot, dry place with very little rain called? | A desert | A rainforest | A swamp | A tundra
+GEO 1 | What is the world's largest rainforest? | The Amazon | The Congo | The Daintree | The Black Forest
+GEO 1 | What is the capital city of India? | New Delhi | Mumbai | Kolkata | Bangalore
+GEO 1 | On which continent is Germany? | Europe | Asia | Africa | South America
+GEO 1 | Which country is famous for kilts and bagpipes? | Scotland | Ireland | Wales | Norway
+GEO 1 | In which country is the city of Toronto? | Canada | The USA | Australia | Ireland
 GEO 2 | What is the capital city of Australia? | Canberra | Sydney | Melbourne | Perth
 GEO 2 | What is the capital city of Canada? | Ottawa | Toronto | Vancouver | Montreal
 GEO 2 | What is the highest mountain in the world? | Mount Everest | K2 | Kilimanjaro | Mont Blanc
@@ -129,6 +254,31 @@ GEO 2 | What is the capital city of Ireland? | Dublin | Cork | Belfast | Galway
 GEO 2 | In which country is the city of Rio de Janeiro? | Brazil | Argentina | Portugal | Mexico
 GEO 2 | Which sea lies between Europe and Africa? | The Mediterranean | The Red Sea | The Black Sea | The Baltic
 GEO 2 | What is the capital city of China? | Beijing | Shanghai | Hong Kong | Guangzhou
+GEO 2 | Which line of 0 degrees longitude runs through Greenwich? | The Prime Meridian | The equator | The Tropic of Cancer | The date line
+GEO 2 | The island of Sicily is part of which country? | Italy | Greece | Spain | Malta
+GEO 2 | What is the fan of land where a river splits before the sea? | A delta | A canyon | A fjord | A gorge
+GEO 2 | Which country lies east of Australia across the Tasman Sea? | New Zealand | Fiji | Papua New Guinea | Indonesia
+GEO 2 | What is the capital city of Austria? | Vienna | Salzburg | Munich | Prague
+GEO 2 | What is the capital city of Sweden? | Stockholm | Oslo | Helsinki | Copenhagen
+GEO 2 | What is the capital city of Denmark? | Copenhagen | Oslo | Stockholm | Aarhus
+GEO 2 | What is the capital city of Mexico? | Mexico City | Guadalajara | Cancun | Monterrey
+GEO 2 | What is the capital city of the Netherlands? | Amsterdam | Rotterdam | Utrecht | Brussels
+GEO 2 | Which river flows through Rome? | The Tiber | The Arno | The Po | The Seine
+GEO 2 | Which ocean lies between Africa and Australia? | The Indian | The Pacific | The Atlantic | The Southern
+GEO 2 | In which mountain range is Mount Everest? | The Himalayas | The Andes | The Alps | The Rockies
+GEO 2 | Which US city is famous for the Golden Gate Bridge? | San Francisco | Los Angeles | Seattle | San Diego
+GEO 2 | In which country is the city of Barcelona? | Spain | Italy | Portugal | France
+GEO 2 | What is the capital city of Belgium? | Brussels | Antwerp | Bruges | Amsterdam
+GEO 2 | Which long, thin country runs down South America's west coast? | Chile | Peru | Argentina | Ecuador
+GEO 2 | What is the capital city of Thailand? | Bangkok | Phuket | Chiang Mai | Hanoi
+GEO 2 | Which sea is so salty that people float in it easily? | The Dead Sea | The Red Sea | The Black Sea | The North Sea
+GEO 2 | What is the capital city of Finland? | Helsinki | Turku | Tallinn | Oslo
+GEO 2 | To which country do the Canary Islands belong? | Spain | Portugal | Morocco | Italy
+GEO 2 | Which is the largest US state by area? | Alaska | Texas | California | Montana
+GEO 2 | What is the great red rock in the middle of Australia called? | Uluru | Kata Tjuta | The Pinnacles | Wave Rock
+GEO 2 | What is the capital city of Poland? | Warsaw | Krakow | Gdansk | Prague
+GEO 2 | Which Scandinavian country is famous for its fjords? | Norway | Sweden | Finland | Denmark
+GEO 2 | Which ocean surrounds Antarctica? | The Southern Ocean | The Arctic Ocean | The Indian Ocean | The Atlantic Ocean
 GEO 3 | What is the capital city of Turkey? | Ankara | Istanbul | Izmir | Antalya
 GEO 3 | Which river flows through the city of Baghdad? | The Tigris | The Euphrates | The Nile | The Jordan
 GEO 3 | What is the smallest country in the world? | Vatican City | Monaco | San Marino | Liechtenstein
@@ -149,6 +299,31 @@ GEO 3 | Which is the smallest of the world's oceans? | The Arctic | The Indian |
 GEO 3 | What is the capital city of Portugal? | Lisbon | Porto | Madrid | Faro
 GEO 3 | In which country is the city of Krakow? | Poland | Czechia | Hungary | Slovakia
 GEO 3 | Greenland is part of which country's kingdom? | Denmark | Norway | Iceland | Canada
+GEO 3 | Which river flows along the west side of Manhattan? | The Hudson | The Potomac | The Delaware | The Charles
+GEO 3 | Which is the largest state of Australia? | Western Australia | Queensland | New South Wales | Victoria
+GEO 3 | What is the capital city of New Zealand? | Wellington | Auckland | Christchurch | Hamilton
+GEO 3 | What is the capital city of Hungary? | Budapest | Vienna | Prague | Bucharest
+GEO 3 | What is the capital city of the Czech Republic? | Prague | Brno | Bratislava | Vienna
+GEO 3 | What is the capital city of Colombia? | Bogota | Medellin | Cali | Quito
+GEO 3 | What is the capital city of Chile? | Santiago | Valparaiso | Lima | Buenos Aires
+GEO 3 | In which country is the Serengeti National Park? | Tanzania | Kenya | Uganda | Zambia
+GEO 3 | What is the capital city of Saudi Arabia? | Riyadh | Jeddah | Mecca | Dubai
+GEO 3 | Which strait divides Istanbul between Europe and Asia? | The Bosporus | The Dardanelles | Gibraltar | The Bering Strait
+GEO 3 | Which mountains run through Switzerland, France and Italy? | The Alps | The Pyrenees | The Apennines | The Carpathians
+GEO 3 | Which mountains lie between France and Spain? | The Pyrenees | The Alps | The Urals | The Apennines
+GEO 3 | Which is North America's largest lake by area? | Lake Superior | Lake Michigan | Lake Huron | Great Bear Lake
+GEO 3 | What is the capital city of Iran? | Tehran | Isfahan | Baghdad | Kabul
+GEO 3 | On which river are the Victoria Falls? | The Zambezi | The Nile | The Congo | The Limpopo
+GEO 3 | In which ocean are the Maldives? | The Indian Ocean | The Pacific Ocean | The Atlantic Ocean | The Arctic Ocean
+GEO 3 | What is the capital city of Cuba? | Havana | Santiago de Cuba | Kingston | San Juan
+GEO 3 | The island of Crete is part of which country? | Greece | Italy | Turkey | Cyprus
+GEO 3 | What is the capital city of Ukraine? | Kyiv | Kharkiv | Lviv | Odesa
+GEO 3 | In which country is the walled city of Dubrovnik? | Croatia | Slovenia | Greece | Montenegro
+GEO 3 | Which desert lies in southern Africa? | The Kalahari | The Sahara | The Gobi | The Atacama
+GEO 3 | Which river flows through the German city of Cologne? | The Rhine | The Elbe | The Danube | The Main
+GEO 3 | What is the capital city of Malaysia? | Kuala Lumpur | Singapore | Penang | Jakarta
+GEO 3 | Which sea lies between Italy and the Balkans? | The Adriatic | The Aegean | The Baltic | The Caspian
+GEO 3 | What is the highest mountain in North America? | Denali | Mount Whitney | Mount Rainier | Mount Logan
 GEO 4 | Which African country was once called Abyssinia? | Ethiopia | Eritrea | Somalia | Sudan
 GEO 4 | What is the deepest lake in the world? | Lake Baikal | Lake Tanganyika | Lake Superior | Lake Victoria
 GEO 4 | Which river forms much of the border between the USA and Mexico? | The Rio Grande | The Colorado | The Mississippi | The Missouri
@@ -169,6 +344,31 @@ GEO 4 | Which strait separates Asia from North America? | The Bering Strait | Th
 GEO 4 | What is the capital city of Iceland? | Reykjavik | Akureyri | Oslo | Nuuk
 GEO 4 | On which Japanese island is Mount Fuji? | Honshu | Hokkaido | Kyushu | Shikoku
 GEO 4 | What is the capital city of Kenya? | Nairobi | Mombasa | Kampala | Addis Ababa
+GEO 4 | What is the capital city of Mongolia? | Ulaanbaatar | Almaty | Bishkek | Tashkent
+GEO 4 | What is the capital city of Ethiopia? | Addis Ababa | Nairobi | Asmara | Khartoum
+GEO 4 | Which country is the largest made up only of islands? | Indonesia | The Philippines | Japan | Madagascar
+GEO 4 | What is the capital city of Bhutan? | Thimphu | Kathmandu | Paro | Dhaka
+GEO 4 | Which is the longest river in Asia? | The Yangtze | The Yellow River | The Mekong | The Ganges
+GEO 4 | The Atlas Mountains lie mostly in which country? | Morocco | Egypt | Kenya | Spain
+GEO 4 | What is the capital city of Albania? | Tirana | Skopje | Sarajevo | Podgorica
+GEO 4 | What is the capital city of Madagascar? | Antananarivo | Toamasina | Maputo | Nairobi
+GEO 4 | Which river forms much of the border of Laos and Thailand? | The Mekong | The Chao Phraya | The Irrawaddy | The Salween
+GEO 4 | What is the capital city of Venezuela? | Caracas | Maracaibo | Bogota | Quito
+GEO 4 | Which country lies entirely inside South Africa? | Lesotho | Eswatini | Botswana | Namibia
+GEO 4 | What is the capital city of Uruguay? | Montevideo | Buenos Aires | Asuncion | Punta del Este
+GEO 4 | What is the capital of Greenland? | Nuuk | Reykjavik | Torshavn | Ilulissat
+GEO 4 | Which strait lies between mainland Australia and Tasmania? | The Bass Strait | The Torres Strait | Cook Strait | Foveaux Strait
+GEO 4 | Which strait separates New Zealand's two main islands? | Cook Strait | The Bass Strait | Foveaux Strait | The Torres Strait
+GEO 4 | What is the capital city of Laos? | Vientiane | Phnom Penh | Luang Prabang | Bangkok
+GEO 4 | In which country is the temple of Angkor Wat? | Cambodia | Thailand | Laos | Vietnam
+GEO 4 | Accra is the capital city of which country? | Ghana | Nigeria | Senegal | Togo
+GEO 4 | What is the capital city of Ecuador? | Quito | Guayaquil | Lima | Bogota
+GEO 4 | What is the largest inland body of water in the world? | The Caspian Sea | Lake Superior | Lake Victoria | The Aral Sea
+GEO 4 | Argentina shares the region of Patagonia with which country? | Chile | Peru | Bolivia | Uruguay
+GEO 4 | What is the capital city of Jordan? | Amman | Petra | Damascus | Beirut
+GEO 4 | In which mountain range is K2? | The Karakoram | The Himalayas | The Hindu Kush | The Pamirs
+GEO 4 | Which is the longest river in Australia? | The Murray | The Darling | The Murrumbidgee | The Lachlan
+GEO 4 | What is the official capital city of Tanzania? | Dodoma | Dar es Salaam | Arusha | Zanzibar City
 
 # --- SCIENCE ---
 SCI 1 | Which planet is known as the Red Planet? | Mars | Venus | Jupiter | Mercury
@@ -191,6 +391,31 @@ SCI 1 | What does a solar panel use to make electricity? | Sunlight | Wind | Run
 SCI 1 | Which bones protect your brain? | The skull | The ribs | The spine | The pelvis
 SCI 1 | What is a child's first set of teeth called? | Milk teeth | Wisdom teeth | Molars | Fangs
 SCI 1 | What does a magnet pull towards it? | Iron | Wood | Glass | Plastic
+SCI 1 | What do we call water that has frozen solid? | Ice | Steam | Rain | Dew
+SCI 1 | What is the Earth's natural satellite called? | The Moon | The Sun | Mars | A comet
+SCI 1 | What do plants need from the Sun to grow? | Light | Wind | Snow | Sound
+SCI 1 | Which sense do you use your ears for? | Hearing | Sight | Smell | Taste
+SCI 1 | What appears when sunlight shines through raindrops? | A rainbow | Thunder | Snow | Fog
+SCI 1 | Which gas do we breathe in to stay alive? | Oxygen | Carbon dioxide | Helium | Smoke
+SCI 1 | What falls from clouds as drops of water? | Rain | Steam | Smoke | Sand
+SCI 1 | What shape does a full Moon look like? | A circle | A square | A triangle | A star
+SCI 1 | Which season comes after winter? | Spring | Summer | Autumn | Monsoon
+SCI 1 | What do astronomers use to look at faraway stars? | A telescope | A microscope | A periscope | A stethoscope
+SCI 1 | Which weighs more: a kilo of feathers or a kilo of bricks? | They weigh the same | The bricks | The feathers | It depends on the day
+SCI 1 | Which gas fills party balloons that float up? | Helium | Oxygen | Carbon dioxide | Steam
+SCI 1 | What is the long line of bones down your back called? | The spine | The ribs | The skull | The hips
+SCI 1 | What is the Earth's outside layer, which we live on, called? | The crust | The core | The mantle | The sky
+SCI 1 | What do your muscles pull on to move your body? | Your bones | Your blood | Your skin | Your hair
+SCI 1 | What does ice become when it melts? | Water | Steam | Air | Salt
+SCI 1 | Which part of a plant makes seeds and attracts bees? | The flower | The root | The stem | The bark
+SCI 1 | What does a battery store? | Energy | Water | Air | Light
+SCI 1 | About how many hours does the Earth take to spin once? | 24 | 12 | 365 | 7
+SCI 1 | Which planet is third from the Sun? | Earth | Mars | Venus | Jupiter
+SCI 1 | What colour is blood inside your body? | Red | Blue | Green | Purple
+SCI 1 | What is a group of stars that makes a picture in the sky? | A constellation | A galaxy | A planet | A comet
+SCI 1 | In a storm, which do you notice first? | The lightning | The thunder | Both at once | Neither
+SCI 1 | Which way does a compass needle point? | North | South | East | West
+SCI 1 | Which sense uses your tongue? | Taste | Smell | Touch | Sight
 SCI 2 | What is the chemical symbol for gold? | Au | Ag | Go | Gd
 SCI 2 | How many planets are there in our Solar System? | Eight | Nine | Seven | Ten
 SCI 2 | What is H2O better known as? | Water | Salt | Hydrogen peroxide | Sugar
@@ -211,6 +436,31 @@ SCI 2 | What is the very centre of the Earth called? | The core | The crust | Th
 SCI 2 | Which instrument makes tiny things look bigger? | A microscope | A telescope | A periscope | A stethoscope
 SCI 2 | What is the chemical symbol for oxygen? | O | Ox | Om | Og
 SCI 2 | What is a ramp called in the list of simple machines? | An inclined plane | A lever | A pulley | A wheel and axle
+SCI 2 | What is a scientist who studies rocks called? | A geologist | A biologist | A chemist | An astronomer
+SCI 2 | What is it called when the Moon blocks out the Sun? | A solar eclipse | A lunar eclipse | A sunset | A meteor shower
+SCI 2 | What is it called when water turns into vapour in the sun? | Evaporation | Freezing | Melting | Condensation
+SCI 2 | Which simple machine is a bar that turns on a point? | A lever | A pulley | A wheel | A screw
+SCI 2 | What is the path of a planet around the Sun called? | Its orbit | Its axis | Its equator | Its tail
+SCI 2 | Which planet shines brightest in our night sky? | Venus | Mars | Jupiter | Saturn
+SCI 2 | Which organs clean your blood and make urine? | The kidneys | The lungs | The liver | The heart
+SCI 2 | How many teeth does an adult usually have? | 32 | 28 | 24 | 36
+SCI 2 | What is it called when water vapour turns back into water? | Condensation | Evaporation | Freezing | Melting
+SCI 2 | Which part of a plant makes its food, using sunlight? | The leaves | The roots | The flowers | The seeds
+SCI 2 | What is the chemical symbol for carbon? | C | Ca | Co | Cr
+SCI 2 | What is the chemical symbol for silver? | Ag | Si | Sv | Au
+SCI 2 | What is the longest bone in the human body? | The femur | The spine | The tibia | The humerus
+SCI 2 | What is the smallest unit of life? | The cell | The atom | The organ | The tissue
+SCI 2 | What kind of energy does a moving object have? | Kinetic energy | Potential energy | Chemical energy | Nuclear energy
+SCI 2 | What colour is the Sun's light, all its colours mixed? | White | Yellow | Orange | Red
+SCI 2 | What are animals that eat only meat called? | Carnivores | Herbivores | Omnivores | Detritivores
+SCI 2 | What is the push up on something floating in water called? | Buoyancy | Gravity | Friction | Pressure
+SCI 2 | How many sides does a snowflake usually have? | Six | Four | Five | Eight
+SCI 2 | Which planet is farthest from the Sun? | Neptune | Uranus | Saturn | Pluto
+SCI 2 | Where in the body is the smallest bone? | In the ear | In the toe | In the nose | In the finger
+SCI 2 | What makes sound? | Vibrations | Light | Magnets | Heat
+SCI 2 | Which metal is used most in electric wires? | Copper | Iron | Gold | Lead
+SCI 2 | What does a seismograph measure? | Earthquakes | Wind speed | Rainfall | Sunlight
+SCI 2 | How many moons does the Earth have? | One | Two | None | Four
 SCI 3 | What is the hardest natural substance? | Diamond | Quartz | Granite | Iron
 SCI 3 | Roughly how fast does light travel, in kilometres a second? | 300,000 | 30,000 | 3,000,000 | 3,000
 SCI 3 | Which blood cells carry oxygen around the body? | Red blood cells | White blood cells | Platelets | Plasma cells
@@ -231,6 +481,31 @@ SCI 3 | Which part of the eye changes how much light gets in? | The iris | The r
 SCI 3 | Which planet has the Great Red Spot? | Jupiter | Mars | Saturn | Neptune
 SCI 3 | Roughly what is absolute zero in degrees Celsius? | -273 | -100 | -459 | -1,000
 SCI 3 | What does DNA carry from parents to children? | Genes | Blood | Oxygen | Vitamins
+SCI 3 | Which is the hottest planet in our Solar System? | Venus | Mercury | Mars | Jupiter
+SCI 3 | What is the chemical symbol for lead? | Pb | Le | Ld | Pl
+SCI 3 | What is the chemical formula of table salt? | NaCl | KCl | NaOH | CaCO3
+SCI 3 | Which gas does a fire need to keep burning? | Oxygen | Nitrogen | Helium | Carbon dioxide
+SCI 3 | What are animals with a backbone called? | Vertebrates | Invertebrates | Arthropods | Molluscs
+SCI 3 | Who argued in 1543 that the Earth goes round the Sun? | Nicolaus Copernicus | Galileo Galilei | Ptolemy | Johannes Kepler
+SCI 3 | Which two elements did Marie and Pierre Curie discover? | Polonium and radium | Uranium and thorium | Helium and neon | Radon and xenon
+SCI 3 | About how long does the Moon take to go round the Earth? | About a month | About a week | About a year | About a day
+SCI 3 | What does a light-year measure? | Distance | Time | Brightness | Speed
+SCI 3 | Which blood vessels carry blood away from the heart? | Arteries | Veins | Capillaries | Nerves
+SCI 3 | What is the main gas in natural gas? | Methane | Propane | Butane | Hydrogen
+SCI 3 | What is the hardest substance in the human body? | Tooth enamel | Bone | Nail | Cartilage
+SCI 3 | Which part of the brain controls balance? | The cerebellum | The cerebrum | The brain stem | The hippocampus
+SCI 3 | What is the centre of an atom called? | The nucleus | The electron | The shell | The core
+SCI 3 | What type of rock is marble? | Metamorphic | Igneous | Sedimentary | Volcanic
+SCI 3 | Which colour of light has the longest wavelength? | Red | Violet | Green | Blue
+SCI 3 | Who made the first injected polio vaccine, in 1955? | Jonas Salk | Louis Pasteur | Edward Jenner | Albert Sabin
+SCI 3 | Who made the first vaccine, against smallpox, in 1796? | Edward Jenner | Louis Pasteur | Jonas Salk | Robert Koch
+SCI 3 | At what temperature in Fahrenheit does water boil? | 212 degrees | 100 degrees | 180 degrees | 32 degrees
+SCI 3 | Which organ makes insulin? | The pancreas | The liver | The kidneys | The stomach
+SCI 3 | Which acid is in your stomach? | Hydrochloric acid | Sulfuric acid | Citric acid | Nitric acid
+SCI 3 | Which layer of the air shields us from the Sun's UV rays? | The ozone layer | The ionosphere | The troposphere | The magnetosphere
+SCI 3 | Which instrument measures air pressure? | A barometer | A thermometer | An anemometer | A hygrometer
+SCI 3 | Which particle in an atom has a positive charge? | The proton | The electron | The neutron | The photon
+SCI 3 | Who discovered the electron in 1897? | J. J. Thomson | Ernest Rutherford | Niels Bohr | James Chadwick
 SCI 4 | Which gas makes up most of the Earth's air? | Nitrogen | Oxygen | Argon | Carbon dioxide
 SCI 4 | How many bones are there in an adult human body? | 206 | 212 | 186 | 230
 SCI 4 | Which particle in an atom has no electric charge? | The neutron | The proton | The electron | The positron
@@ -251,6 +526,31 @@ SCI 4 | What is the largest moon in our Solar System? | Ganymede | Titan | Calli
 SCI 4 | Which law says energy cannot be made or destroyed, only changed? | Conservation of energy | Newton's first law | Ohm's law | Hooke's law
 SCI 4 | How many protons does a carbon atom have? | Six | Twelve | Four | Eight
 SCI 4 | Which gland in the neck controls the body's metabolism? | The thyroid | The pituitary | The adrenal | The pancreas
+SCI 4 | On which planet is a day longer than its year? | Venus | Mercury | Mars | Uranus
+SCI 4 | What is the chemical symbol for tin? | Sn | Ti | Tn | Si
+SCI 4 | What is the chemical symbol for mercury? | Hg | Me | Mr | Mc
+SCI 4 | Which particle carries light? | The photon | The electron | The gluon | The neutrino
+SCI 4 | Which element is the most common in the Earth's crust? | Oxygen | Silicon | Iron | Aluminium
+SCI 4 | Who discovered the neutron in 1932? | James Chadwick | Ernest Rutherford | J. J. Thomson | Enrico Fermi
+SCI 4 | What is the edge of a black hole, past which nothing escapes? | The event horizon | The singularity | The photon sphere | The corona
+SCI 4 | Who discovered X-rays in 1895? | Wilhelm Rontgen | Marie Curie | Thomas Edison | Nikola Tesla
+SCI 4 | What is the SI unit of electric current? | The ampere | The volt | The ohm | The watt
+SCI 4 | What is the SI unit of power? | The watt | The joule | The newton | The volt
+SCI 4 | How many chambers does the human heart have? | Four | Two | Three | Six
+SCI 4 | Which vitamin does the blood need to clot? | Vitamin K | Vitamin C | Vitamin D | Vitamin B12
+SCI 4 | In which part of a plant or animal cell is most of its DNA? | The nucleus | The cell wall | The ribosome | The vacuole
+SCI 4 | The moon Titan, with its thick air, goes round which planet? | Saturn | Jupiter | Uranus | Neptune
+SCI 4 | What is the theory that the universe began expanding from a point? | The Big Bang | The Steady State | String theory | Relativity
+SCI 4 | Who measured the electron's charge with drops of oil? | Robert Millikan | J. J. Thomson | Michael Faraday | Niels Bohr
+SCI 4 | Which element is the most electronegative? | Fluorine | Oxygen | Chlorine | Nitrogen
+SCI 4 | What speeds up a chemical reaction without being used up? | A catalyst | A solvent | A reagent | A buffer
+SCI 4 | What are atoms of one element with different numbers of neutrons? | Isotopes | Ions | Isomers | Allotropes
+SCI 4 | Which part of the ear turns vibrations into nerve signals? | The cochlea | The eardrum | The anvil | The ear canal
+SCI 4 | What was the supercontinent of about 300 million years ago? | Pangaea | Gondwana | Laurasia | Rodinia
+SCI 4 | What is the nearest large galaxy to our own? | Andromeda | Triangulum | The Sombrero | Whirlpool
+SCI 4 | What does the c stand for in E = mc2? | The speed of light | The charge of an electron | A constant of heat | The mass of a carbon atom
+SCI 4 | Who described the double helix of DNA with Francis Crick? | James Watson | Rosalind Franklin | Maurice Wilkins | Linus Pauling
+SCI 4 | Which planet did William Herschel discover in 1781? | Uranus | Neptune | Saturn | Pluto
 
 # --- NATURE ---
 NAT 1 | How many legs does a spider have? | Eight | Six | Ten | Twelve
@@ -273,6 +573,31 @@ NAT 1 | Which farm animal gives us most of our wool? | The sheep | The cow | The
 NAT 1 | Which animal hops and carries its baby in a pouch? | The kangaroo | The rabbit | The frog | The deer
 NAT 1 | Which lizard is famous for changing colour? | The chameleon | The gecko | The iguana | The skink
 NAT 1 | Where do polar bears live? | Around the Arctic | In the Sahara | In the Amazon | In Antarctica
+NAT 1 | What is a baby sheep called? | A lamb | A kid | A calf | A foal
+NAT 1 | What is a baby cow called? | A calf | A lamb | A cub | A kid
+NAT 1 | Which bird hoots at night? | The owl | The pigeon | The duck | The robin
+NAT 1 | What do honey bees live in? | A hive | A nest | A burrow | A den
+NAT 1 | Which big striped cat lives in the jungles of India? | The tiger | The lion | The cheetah | The leopard
+NAT 1 | What do caterpillars mostly eat? | Leaves | Meat | Seeds | Fish
+NAT 1 | Which bird cannot fly and lives around Antarctica? | The penguin | The puffin | The ostrich | The seagull
+NAT 1 | What is a baby bear called? | A cub | A pup | A kit | A joey
+NAT 1 | Which slow animal carries a hard shell and lives on land? | The tortoise | The rabbit | The fox | The mouse
+NAT 1 | Which animal has long ears and hops about? | The rabbit | The cat | The dog | The horse
+NAT 1 | How many legs does a bird have? | Two | Four | Six | None
+NAT 1 | What do new plants grow from? | Seeds | Stones | Shells | Sticks
+NAT 1 | Which very slow animal hangs from trees all day? | The sloth | The koala | The monkey | The panda
+NAT 1 | Which orange and white fish lives among sea anemones? | The clownfish | The goldfish | The salmon | The tuna
+NAT 1 | What colour are flamingos? | Pink | Blue | Green | Black
+NAT 1 | Which garden animal rolls into a ball of spines? | The hedgehog | The badger | The squirrel | The mole
+NAT 1 | What do frogs catch with their long tongues? | Insects | Fish | Seeds | Leaves
+NAT 1 | Which big grey animal has horns on its nose? | The rhinoceros | The hippopotamus | The elephant | The walrus
+NAT 1 | What are animals like frogs, at home in water and on land? | Amphibians | Reptiles | Mammals | Birds
+NAT 1 | Which bird lays most of the eggs we eat? | The chicken | The duck | The ostrich | The goose
+NAT 1 | What do squirrels hide away for the winter? | Nuts | Stones | Leaves | Fish
+NAT 1 | Which little beetle is red with black spots? | The ladybird | The firefly | The stag beetle | The dung beetle
+NAT 1 | Which animal is called man's best friend? | The dog | The cat | The horse | The parrot
+NAT 1 | Which bird spreads a big tail of colourful feathers? | The peacock | The pigeon | The crow | The swan
+NAT 1 | What do baby mammals drink? | Milk | Water | Juice | Honey
 NAT 2 | What is the largest animal that has ever lived? | The blue whale | The African elephant | The whale shark | The giraffe
 NAT 2 | What is the fastest land animal? | The cheetah | The lion | The horse | The greyhound
 NAT 2 | How many hearts does an octopus have? | Three | One | Two | Eight
@@ -293,6 +618,31 @@ NAT 2 | What is a baby horse called? | A foal | A calf | A kid | A lamb
 NAT 2 | Which animal builds dams across rivers? | The beaver | The otter | The badger | The heron
 NAT 2 | What is the largest land animal alive today? | The African elephant | The white rhino | The hippopotamus | The giraffe
 NAT 2 | Which beetle's tail lights up at night? | The firefly | The ladybird | The dung beetle | The stag beetle
+NAT 2 | Which is the biggest ape? | The gorilla | The chimpanzee | The orangutan | The gibbon
+NAT 2 | What is a group of cows called? | A herd | A pack | A flock | A school
+NAT 2 | Which sea mammal has two long tusks? | The walrus | The seal | The dolphin | The manatee
+NAT 2 | What is a baby goat called? | A kid | A lamb | A calf | A foal
+NAT 2 | What is a male duck called? | A drake | A gander | A cob | A cockerel
+NAT 2 | To which family of animals does the giant panda belong? | Bears | Raccoons | Cats | Dogs
+NAT 2 | Which bird is a symbol of wisdom? | The owl | The crow | The parrot | The eagle
+NAT 2 | What are trees that keep their leaves all year called? | Evergreen | Deciduous | Tropical | Perennial
+NAT 2 | Which fish swims upriver to lay eggs where it hatched? | The salmon | The tuna | The cod | The shark
+NAT 2 | What is a female fox called? | A vixen | A doe | A sow | A jenny
+NAT 2 | Which sea creature has no bones and stings? | The jellyfish | The octopus | The crab | The starfish
+NAT 2 | What is a group of birds called? | A flock | A herd | A pack | A school
+NAT 2 | Which is the largest living reptile? | The saltwater crocodile | The Komodo dragon | The anaconda | The leatherback turtle
+NAT 2 | Which plant snaps shut to catch flies? | The Venus flytrap | The cactus | The sunflower | The daisy
+NAT 2 | What gives plants their green colour? | Chlorophyll | Sap | Pollen | Nectar
+NAT 2 | What is the tough outer layer of a tree trunk called? | Bark | Sap | Rings | Roots
+NAT 2 | Which shy flightless bird of New Zealand comes out at night? | The kiwi | The emu | The ostrich | The penguin
+NAT 2 | Which flightless bird of Mauritius died out in the 1600s? | The dodo | The moa | The great auk | The passenger pigeon
+NAT 2 | Which insect lives with a queen and builds great hills? | The ant | The ladybird | The grasshopper | The butterfly
+NAT 2 | Which big cat has a shaggy mane? | The male lion | The tiger | The leopard | The jaguar
+NAT 2 | Which marsupial sleeps up to 20 hours a day? | The koala | The kangaroo | The wombat | The possum
+NAT 2 | What do caterpillars hatch from? | Eggs | Seeds | Cocoons | Flowers
+NAT 2 | Which gentle sea mammal is called the sea cow? | The manatee | The walrus | The seal | The dolphin
+NAT 2 | How many wings does a honey bee have? | Four | Two | Six | Eight
+NAT 2 | Which tree's seeds spin down like little helicopters? | The maple | The oak | The pine | The palm
 NAT 3 | What is the largest bird in the world? | The ostrich | The emu | The albatross | The condor
 NAT 3 | What is a baby kangaroo called? | A joey | A kid | A cub | A pup
 NAT 3 | What is the largest kind of fish? | The whale shark | The great white shark | The blue marlin | The tuna
@@ -313,6 +663,31 @@ NAT 3 | What does a caterpillar make before it becomes a butterfly? | A chrysali
 NAT 3 | How many arms do most starfish have? | Five | Six | Eight | Four
 NAT 3 | Which bird has the widest wingspan of any living bird? | The wandering albatross | The condor | The pelican | The golden eagle
 NAT 3 | Which big cat cannot fully pull in its claws? | The cheetah | The lion | The tiger | The jaguar
+NAT 3 | What is a group of kangaroos called? | A mob | A pride | A pack | A gaggle
+NAT 3 | What is a baby owl called? | An owlet | A cygnet | A gosling | A kitten
+NAT 3 | Which land animal has the biggest eyes? | The ostrich | The owl | The horse | The elephant
+NAT 3 | How many parts does a cow's stomach have? | Four | One | Two | Six
+NAT 3 | Which is the only continent with no snakes? | Antarctica | Australia | Europe | South America
+NAT 3 | What is an animal that hunts others for food called? | A predator | A prey | A scavenger | A parasite
+NAT 3 | Which is the largest predatory fish? | The great white shark | The whale shark | The tiger shark | The marlin
+NAT 3 | What is a baby goose called? | A gosling | A cygnet | A duckling | An eaglet
+NAT 3 | Which butterfly flies from Canada to Mexico each autumn? | The monarch | The red admiral | The painted lady | The swallowtail
+NAT 3 | Which kind of plant gives us vanilla? | An orchid | A lily | A palm | A rose
+NAT 3 | What is a female horse called? | A mare | A doe | A sow | A ewe
+NAT 3 | What is a male cow called? | A bull | A boar | A stag | A ram
+NAT 3 | Which tall animal has a dark blue-black tongue? | The giraffe | The camel | The zebra | The ostrich
+NAT 3 | Which bird's bill can hold more than its stomach? | The pelican | The toucan | The stork | The heron
+NAT 3 | How do bats find their way in the dark? | By echolocation | By smell | By heat | By starlight
+NAT 3 | Which animal has the thickest fur of all? | The sea otter | The polar bear | The yak | The arctic fox
+NAT 3 | What is a group of whales called? | A pod | A school | A herd | A flock
+NAT 3 | Which garden creature has no legs and breathes through its skin? | The earthworm | The caterpillar | The snail | The ant
+NAT 3 | Which reptile can live for more than 150 years? | The giant tortoise | The crocodile | The iguana | The cobra
+NAT 3 | Which animal is called the ship of the desert? | The camel | The horse | The donkey | The elephant
+NAT 3 | What are colours and patterns that help an animal hide called? | Camouflage | Hibernation | Migration | Metamorphosis
+NAT 3 | Which bird flies from the Arctic to the Antarctic each year? | The Arctic tern | The swallow | The albatross | The stork
+NAT 3 | What is the hard outer covering of an insect called? | Its exoskeleton | Its skeleton | Its shell | Its scales
+NAT 3 | Which fish has a long, flat, pointed bill like a blade? | The swordfish | The pufferfish | The sunfish | The catfish
+NAT 3 | What is a scientist who studies plants called? | A botanist | A zoologist | A geologist | A chemist
 NAT 4 | What is a group of crows called? | A murder | A parliament | A gaggle | A pride
 NAT 4 | Which land animal carries its young the longest before birth? | The elephant | The giraffe | The rhinoceros | The hippopotamus
 NAT 4 | How many eyes do most spiders have? | Eight | Six | Four | Two
@@ -333,6 +708,31 @@ NAT 4 | Which bird lays its eggs in other birds' nests? | The cuckoo | The magpi
 NAT 4 | What are the tiny openings on the surface of a leaf called? | Stomata | Xylem | Petioles | Sepals
 NAT 4 | Which whale has a long spiral tusk? | The narwhal | The beluga | The orca | The sperm whale
 NAT 4 | What is the largest rodent in the world? | The capybara | The beaver | The porcupine | The marmot
+NAT 4 | What is a group of ravens called? | An unkindness | A parliament | A gaggle | A charm
+NAT 4 | What is a castrated male horse called? | A gelding | A stallion | A colt | A filly
+NAT 4 | What is a female swan called? | A pen | A cob | A hen | A duck
+NAT 4 | What is the study of fish called? | Ichthyology | Herpetology | Entomology | Ornithology
+NAT 4 | What is the study of reptiles and amphibians called? | Herpetology | Ichthyology | Entomology | Mycology
+NAT 4 | Which tree gives us cork? | The cork oak | The beech | The birch | The pine
+NAT 4 | Which gas do plants give off in the dark? | Carbon dioxide | Oxygen | Nitrogen | Helium
+NAT 4 | Which is the largest frog in the world? | The goliath frog | The bullfrog | The cane toad | The tree frog
+NAT 4 | What is a plant that lives for only one year called? | An annual | A perennial | A biennial | An evergreen
+NAT 4 | Which animal has the largest brain? | The sperm whale | The blue whale | The elephant | The human
+NAT 4 | Which part of a flower receives the pollen? | The stigma | The stamen | The petal | The sepal
+NAT 4 | What is the change from caterpillar to butterfly called? | Metamorphosis | Photosynthesis | Hibernation | Migration
+NAT 4 | Which bird lays the largest egg for the size of its body? | The kiwi | The ostrich | The emu | The hummingbird
+NAT 4 | Which is the largest meat-eating marsupial alive? | The Tasmanian devil | The quoll | The wombat | The numbat
+NAT 4 | What is a clutch, in nature? | A set of eggs laid at once | A group of lions | A baby kangaroo | A nest of wasps
+NAT 4 | Which is the largest tree in the world by volume? | The giant sequoia | The coast redwood | The baobab | The banyan
+NAT 4 | What is the thread-like network a fungus grows from? | Mycelium | Spores | Gills | Lichen
+NAT 4 | Which animal has the highest blood pressure? | The giraffe | The elephant | The blue whale | The cheetah
+NAT 4 | What is a scientist who studies insects called? | An entomologist | An ornithologist | A herpetologist | A botanist
+NAT 4 | Which plants have no flowers and spread by spores? | Ferns | Roses | Grasses | Cacti
+NAT 4 | From which tree's bark does quinine come? | The cinchona | The willow | The cork oak | The eucalyptus
+NAT 4 | Which tree's bark gave the first aspirin-like medicine? | The willow | The cinchona | The birch | The oak
+NAT 4 | Which sea creature can grow back a lost arm? | The starfish | The jellyfish | The sea urchin | The seahorse
+NAT 4 | In which fish does the father carry the eggs? | The seahorse | The salmon | The goldfish | The tuna
+NAT 4 | What is the largest known kind of jellyfish? | The lion's mane | The box jellyfish | The moon jelly | The comb jelly
 
 # --- ARTS AND BOOKS ---
 ART 1 | Who wrote the play Romeo and Juliet? | William Shakespeare | Charles Dickens | Jane Austen | Geoffrey Chaucer
@@ -355,6 +755,31 @@ ART 1 | Who wrote and drew The Very Hungry Caterpillar? | Eric Carle | Julia Don
 ART 1 | In Peter Pan, what is the pirate captain called? | Captain Hook | Long John Silver | Blackbeard | Captain Nemo
 ART 1 | What do we call a person who writes poems? | A poet | A painter | A sculptor | A composer
 ART 1 | What kind of animal is Paddington? | A bear | A rabbit | A mouse | A badger
+ART 1 | Who wrote The Gruffalo? | Julia Donaldson | Roald Dahl | Dr. Seuss | Eric Carle
+ART 1 | Which colour do you get by mixing red and yellow paint? | Orange | Purple | Green | Brown
+ART 1 | Which colour do you get by mixing red and blue paint? | Purple | Orange | Green | Pink
+ART 1 | Which brother and sister find a house made of sweets? | Hansel and Gretel | Jack and Jill | Peter and Wendy | Tom and Jerry
+ART 1 | Which fairy-tale princess sleeps for a hundred years? | Sleeping Beauty | Snow White | Cinderella | Rapunzel
+ART 1 | Who wears a red cape and meets a wolf in the woods? | Little Red Riding Hood | Goldilocks | Gretel | Alice
+ART 1 | In The Three Little Pigs, which house does the wolf not blow down? | The brick house | The straw house | The stick house | The mud house
+ART 1 | What is a book of maps called? | An atlas | A dictionary | A diary | A novel
+ART 1 | What is a book of words and their meanings called? | A dictionary | An atlas | A comic | A cookbook
+ART 1 | Who wrote Matilda? | Roald Dahl | Enid Blyton | Dr. Seuss | Beatrix Potter
+ART 1 | In the fairy tale, how many dwarfs live with Snow White? | Seven | Six | Eight | Five
+ART 1 | What is Winnie-the-Pooh's gloomy donkey friend called? | Eeyore | Piglet | Tigger | Roo
+ART 1 | Who draws the pictures for a book? | An illustrator | An author | A publisher | An editor
+ART 1 | In Dr. Seuss's story, what colour is the Grinch? | Green | Red | Blue | Purple
+ART 1 | What cloth on a frame does an artist paint on? | A canvas | A palette | An easel | A sketchbook
+ART 1 | What is the board an artist mixes paints on called? | A palette | A canvas | An easel | A frame
+ART 1 | Which animal does Alice follow down the rabbit hole? | A white rabbit | A black cat | A brown mouse | A grey owl
+ART 1 | Which girl in a fairy tale is no bigger than a thumb? | Thumbelina | Tinker Bell | Goldilocks | Heidi
+ART 1 | What is Peter Pan's fairy friend called? | Tinker Bell | Thumbelina | Wendy | Tiger Lily
+ART 1 | In the Narnia stories, what kind of animal is Aslan? | A lion | A tiger | A bear | A wolf
+ART 1 | Which young wizard has a scar like a lightning bolt? | Harry Potter | Ron Weasley | Neville Longbottom | Draco Malfoy
+ART 1 | What troubles the three billy goats under the bridge? | A troll | A giant | A dragon | A witch
+ART 1 | What are words that end with the same sound, like cat and hat? | Rhymes | Riddles | Puzzles | Plots
+ART 1 | What is a story told in drawings inside boxes called? | A comic strip | A novel | A poem | A play
+ART 1 | In Pinocchio, who carved the wooden puppet? | Geppetto | Jiminy Cricket | Stromboli | The Blue Fairy
 ART 2 | In which city is the Louvre museum? | Paris | Rome | London | Madrid
 ART 2 | Who wrote Charlie and the Chocolate Factory? | Roald Dahl | Dr. Seuss | Lewis Carroll | Beatrix Potter
 ART 2 | Which painter cut off part of his own ear? | Vincent van Gogh | Claude Monet | Salvador Dali | Pablo Picasso
@@ -375,6 +800,31 @@ ART 2 | Which Dutch artist painted Girl with a Pearl Earring? | Johannes Vermeer
 ART 2 | Which hobbit carries the One Ring to Mordor? | Frodo Baggins | Bilbo Baggins | Samwise Gamgee | Peregrin Took
 ART 2 | Who wrote Robinson Crusoe? | Daniel Defoe | Jonathan Swift | Robert Louis Stevenson | Jules Verne
 ART 2 | Which author wrote the Famous Five books? | Enid Blyton | Roald Dahl | J. K. Rowling | C. S. Lewis
+ART 2 | Who wrote The Lion, the Witch and the Wardrobe? | C. S. Lewis | J. R. R. Tolkien | Roald Dahl | Lewis Carroll
+ART 2 | Who wrote Little Women? | Louisa May Alcott | Jane Austen | Emily Bronte | Harriet Beecher Stowe
+ART 2 | Who wrote The Wind in the Willows? | Kenneth Grahame | A. A. Milne | Beatrix Potter | Roald Dahl
+ART 2 | Who wrote the Winnie-the-Pooh stories? | A. A. Milne | Kenneth Grahame | Beatrix Potter | Lewis Carroll
+ART 2 | Who painted The Starry Night? | Vincent van Gogh | Claude Monet | Paul Cezanne | Paul Gauguin
+ART 2 | Who wrote The Secret Garden? | Frances Hodgson Burnett | Louisa May Alcott | Beatrix Potter | E. Nesbit
+ART 2 | Who wrote Gulliver's Travels? | Jonathan Swift | Daniel Defoe | Jules Verne | Mark Twain
+ART 2 | Who wrote Around the World in Eighty Days? | Jules Verne | H. G. Wells | Mark Twain | Charles Dickens
+ART 2 | Who wrote The War of the Worlds? | H. G. Wells | Jules Verne | Arthur C. Clarke | George Orwell
+ART 2 | In which city is the Rijksmuseum? | Amsterdam | Rotterdam | Brussels | Copenhagen
+ART 2 | In which city is the Metropolitan Museum of Art? | New York | Washington | Chicago | Boston
+ART 2 | In which city is the British Museum? | London | Oxford | Edinburgh | Cambridge
+ART 2 | Who created the detective Sherlock Holmes? | Arthur Conan Doyle | Agatha Christie | Charles Dickens | Wilkie Collins
+ART 2 | Who created the detective Hercule Poirot? | Agatha Christie | Arthur Conan Doyle | Dorothy L. Sayers | P. D. James
+ART 2 | In which book does the pirate Long John Silver appear? | Treasure Island | Peter Pan | Moby-Dick | Robinson Crusoe
+ART 2 | What is the name of Harry Potter's snowy owl? | Hedwig | Errol | Pigwidgeon | Fawkes
+ART 2 | What is a painting of fruit, flowers or objects called? | A still life | A landscape | A portrait | A mural
+ART 2 | What is a painting of a view of the countryside called? | A landscape | A still life | A portrait | A fresco
+ART 2 | What is a picture made of small pieces of glass or stone? | A mosaic | A collage | A fresco | A sketch
+ART 2 | In Greek myth, who had snakes for hair? | Medusa | Athena | Hera | Pandora
+ART 2 | Which hero of Greek myth carried out twelve labours? | Heracles | Perseus | Theseus | Jason
+ART 2 | Who wrote Black Beauty? | Anna Sewell | Enid Blyton | Louisa May Alcott | Beatrix Potter
+ART 2 | Who wrote Heidi, about a girl in the Swiss Alps? | Johanna Spyri | Hans Christian Andersen | The Brothers Grimm | Astrid Lindgren
+ART 2 | Who wrote Pippi Longstocking? | Astrid Lindgren | Johanna Spyri | Tove Jansson | Roald Dahl
+ART 2 | Which brothers collected fairy tales like Snow White? | The Brothers Grimm | The Wright Brothers | The Marx Brothers | The Lumiere Brothers
 ART 3 | Who painted the ceiling of the Sistine Chapel? | Michelangelo | Raphael | Leonardo da Vinci | Botticelli
 ART 3 | Who wrote the novel Pride and Prejudice? | Jane Austen | Charlotte Bronte | George Eliot | Emily Bronte
 ART 3 | In which country was the writer Hans Christian Andersen born? | Denmark | Germany | Norway | Sweden
@@ -395,6 +845,31 @@ ART 3 | Which Norwegian artist painted The Scream? | Edvard Munch | Edvard Grieg
 ART 3 | Who wrote The Little Prince? | Antoine de Saint-Exupery | Victor Hugo | Jules Verne | Albert Camus
 ART 3 | Who wrote Les Miserables? | Victor Hugo | Alexandre Dumas | Gustave Flaubert | Emile Zola
 ART 3 | Which Greek hero of the Trojan War had a weak heel? | Achilles | Hector | Odysseus | Perseus
+ART 3 | Who wrote Wuthering Heights? | Emily Bronte | Charlotte Bronte | Anne Bronte | Jane Austen
+ART 3 | Who wrote The Great Gatsby? | F. Scott Fitzgerald | Ernest Hemingway | John Steinbeck | William Faulkner
+ART 3 | Who wrote The Old Man and the Sea? | Ernest Hemingway | F. Scott Fitzgerald | Jack London | Herman Melville
+ART 3 | Who wrote To Kill a Mockingbird? | Harper Lee | Truman Capote | John Steinbeck | Mark Twain
+ART 3 | Who wrote Of Mice and Men? | John Steinbeck | Ernest Hemingway | William Faulkner | Harper Lee
+ART 3 | Who wrote Brave New World? | Aldous Huxley | George Orwell | H. G. Wells | Ray Bradbury
+ART 3 | Who wrote The Catcher in the Rye? | J. D. Salinger | Jack Kerouac | Harper Lee | John Updike
+ART 3 | Who painted The Hay Wain? | John Constable | J. M. W. Turner | Thomas Gainsborough | George Stubbs
+ART 3 | Who painted American Gothic? | Grant Wood | Edward Hopper | Norman Rockwell | Andrew Wyeth
+ART 3 | Which American artist is famous for drip paintings? | Jackson Pollock | Mark Rothko | Andy Warhol | Roy Lichtenstein
+ART 3 | Who wrote the play A Doll's House? | Henrik Ibsen | Anton Chekhov | August Strindberg | George Bernard Shaw
+ART 3 | Who wrote the play Pygmalion? | George Bernard Shaw | Oscar Wilde | Noel Coward | J. M. Barrie
+ART 3 | Who wrote The Importance of Being Earnest? | Oscar Wilde | George Bernard Shaw | Noel Coward | J. M. Barrie
+ART 3 | Who wrote Peter Pan? | J. M. Barrie | Lewis Carroll | Kenneth Grahame | A. A. Milne
+ART 3 | Who is the hero of Homer's Odyssey? | Odysseus | Achilles | Hector | Agamemnon
+ART 3 | In Greek myth, who opened a jar of the world's troubles? | Pandora | Medusa | Persephone | Athena
+ART 3 | Which art movement did Picasso and Braque begin? | Cubism | Surrealism | Impressionism | Pop Art
+ART 3 | Which Mexican artist painted many self-portraits with flowers? | Frida Kahlo | Diego Rivera | Georgia O'Keeffe | Tamara de Lempicka
+ART 3 | Who wrote The Jungle Book? | Rudyard Kipling | Robert Louis Stevenson | Lewis Carroll | H. G. Wells
+ART 3 | Who wrote The Three Musketeers? | Alexandre Dumas | Victor Hugo | Jules Verne | Gustave Flaubert
+ART 3 | Who wrote Gone with the Wind? | Margaret Mitchell | Harper Lee | Pearl S. Buck | Willa Cather
+ART 3 | Who wrote Lord of the Flies? | William Golding | George Orwell | J. D. Salinger | Aldous Huxley
+ART 3 | Which Renaissance painter made The School of Athens? | Raphael | Michelangelo | Leonardo da Vinci | Titian
+ART 3 | Who wrote the play The Cherry Orchard? | Anton Chekhov | Henrik Ibsen | Leo Tolstoy | Maxim Gorky
+ART 3 | Who wrote the poem about a host of golden daffodils? | William Wordsworth | Samuel Taylor Coleridge | John Keats | Lord Byron
 ART 4 | Which Spanish artist painted Guernica? | Pablo Picasso | Salvador Dali | Joan Miro | Francisco Goya
 ART 4 | Who wrote One Hundred Years of Solitude? | Gabriel Garcia Marquez | Jorge Luis Borges | Isabel Allende | Pablo Neruda
 ART 4 | In which city does Michelangelo's statue of David stand? | Florence | Rome | Venice | Milan
@@ -415,6 +890,31 @@ ART 4 | In which city is the Hermitage Museum? | St Petersburg | Moscow | Vienna
 ART 4 | Who wrote the 1922 novel Ulysses? | James Joyce | Virginia Woolf | Samuel Beckett | Oscar Wilde
 ART 4 | Who painted The Garden of Earthly Delights? | Hieronymus Bosch | Pieter Bruegel | Jan van Eyck | Albrecht Durer
 ART 4 | Which poet wrote The Waste Land? | T. S. Eliot | W. B. Yeats | Ezra Pound | W. H. Auden
+ART 4 | Who painted The Fighting Temeraire? | J. M. W. Turner | John Constable | Thomas Gainsborough | Joshua Reynolds
+ART 4 | Who wrote the novel Things Fall Apart? | Chinua Achebe | Wole Soyinka | Ngugi wa Thiong'o | Ben Okri
+ART 4 | Who wrote the novel Beloved? | Toni Morrison | Maya Angelou | Alice Walker | Zora Neale Hurston
+ART 4 | Who wrote The Trial and The Metamorphosis? | Franz Kafka | Thomas Mann | Hermann Hesse | Robert Musil
+ART 4 | Which German poet wrote the two-part drama Faust? | Johann Wolfgang von Goethe | Friedrich Schiller | Heinrich Heine | Thomas Mann
+ART 4 | Who painted Las Meninas? | Diego Velazquez | Francisco Goya | El Greco | Bartolome Murillo
+ART 4 | Who painted The Arnolfini Portrait? | Jan van Eyck | Hans Holbein | Rogier van der Weyden | Albrecht Durer
+ART 4 | Who painted the dotted picture of La Grande Jatte? | Georges Seurat | Paul Signac | Claude Monet | Edgar Degas
+ART 4 | Which French painter is famous for his ballet dancers? | Edgar Degas | Auguste Renoir | Mary Cassatt | Henri Matisse
+ART 4 | Who wrote the novel The Name of the Rose? | Umberto Eco | Italo Calvino | Primo Levi | Alberto Moravia
+ART 4 | Who wrote Doctor Zhivago? | Boris Pasternak | Leo Tolstoy | Aleksandr Solzhenitsyn | Ivan Turgenev
+ART 4 | In which language was the poem Beowulf written? | Old English | Latin | Old Norse | Middle English
+ART 4 | Who wrote The Prince, a book on power, in 1532? | Niccolo Machiavelli | Thomas More | Erasmus | Dante Alighieri
+ART 4 | Who wrote Utopia, about an ideal island, in 1516? | Thomas More | Niccolo Machiavelli | Francis Bacon | Erasmus
+ART 4 | Which American poet wrote Leaves of Grass? | Walt Whitman | Robert Frost | Emily Dickinson | Edgar Allan Poe
+ART 4 | Who wrote the poem The Road Not Taken? | Robert Frost | Walt Whitman | T. S. Eliot | Carl Sandburg
+ART 4 | Which early Renaissance sculptor made a famous bronze David? | Donatello | Michelangelo | Bernini | Ghiberti
+ART 4 | Who sculpted The Ecstasy of Saint Teresa in Rome? | Gian Lorenzo Bernini | Michelangelo | Donatello | Antonio Canova
+ART 4 | Which painter made cut-paper pictures late in life, like The Snail? | Henri Matisse | Pablo Picasso | Joan Miro | Marc Chagall
+ART 4 | Who tells the stories of One Thousand and One Nights? | Scheherazade | Aladdin | Sinbad | Ali Baba
+ART 4 | Who wrote The Rime of the Ancient Mariner? | Samuel Taylor Coleridge | William Wordsworth | Lord Byron | Percy Shelley
+ART 4 | Who wrote the novel Mrs Dalloway? | Virginia Woolf | Jane Austen | George Eliot | Katherine Mansfield
+ART 4 | Who wrote Germinal, about French coal miners? | Emile Zola | Victor Hugo | Gustave Flaubert | Honore de Balzac
+ART 4 | Who wrote the novel Siddhartha? | Hermann Hesse | Thomas Mann | Franz Kafka | Rainer Maria Rilke
+ART 4 | Which Japanese poet is the most famous master of haiku? | Matsuo Basho | Murasaki Shikibu | Yukio Mishima | Sei Shonagon
 
 # --- MUSIC AND SCREEN ---
 MUS 1 | How many strings does a violin have? | Four | Five | Six | Three
@@ -437,6 +937,31 @@ MUS 1 | Which green ogre stars in his own films? | Shrek | Hulk | Grinch | Gru
 MUS 1 | What colour are most of the Minions? | Yellow | Green | Blue | Orange
 MUS 1 | In Frozen, who is Elsa's sister? | Anna | Ariel | Belle | Aurora
 MUS 1 | Which school of magic does Harry Potter go to? | Hogwarts | Narnia | Neverland | Camelot
+MUS 1 | Which instrument has black and white keys? | The piano | The violin | The drum | The flute
+MUS 1 | In Finding Nemo, what is the forgetful blue fish called? | Dory | Marlin | Bruce | Crush
+MUS 1 | In Toy Story, who is Woody's space ranger friend? | Buzz Lightyear | Rex | Hamm | Slinky
+MUS 1 | Which Disney film has a genie in a magic lamp? | Aladdin | Mulan | Tangled | Bambi
+MUS 1 | Which superhero is really Peter Parker? | Spider-Man | Batman | Superman | Iron Man
+MUS 1 | Which superhero comes from the planet Krypton? | Superman | Batman | Spider-Man | The Hulk
+MUS 1 | What is a song sung to send a baby to sleep? | A lullaby | An anthem | A carol | A march
+MUS 1 | Which cartoon cat is always chasing a mouse called Jerry? | Tom | Garfield | Sylvester | Felix
+MUS 1 | How many musicians play in a trio? | Three | Two | Four | Five
+MUS 1 | What is a country's own special song called? | A national anthem | A lullaby | A carol | A jingle
+MUS 1 | What are songs sung at Christmas called? | Carols | Anthems | Lullabies | Shanties
+MUS 1 | Which instrument is tucked under the chin and played with a bow? | The violin | The cello | The guitar | The harp
+MUS 1 | What is the Disney deer called? | Bambi | Dumbo | Thumper | Simba
+MUS 1 | Which Disney elephant flies with his big ears? | Dumbo | Bambi | Babar | Jumbo
+MUS 1 | In Monsters, Inc., what do the monsters collect for power? | Screams | Toys | Sweets | Socks
+MUS 1 | What colour is Sonic the Hedgehog? | Blue | Red | Green | Yellow
+MUS 1 | Which instruments are shaken, often in pairs, to rattle? | Maracas | Drums | Cymbals | Bongos
+MUS 1 | Which film is about a rat who becomes a cook in Paris? | Ratatouille | Cars | Up | Brave
+MUS 1 | Which film follows a little robot cleaning up the Earth? | WALL-E | Up | Cars | Coco
+MUS 1 | In the film Up, what lifts the house into the sky? | Balloons | A rocket | Birds | A tornado
+MUS 1 | In Beauty and the Beast, which candlestick sings Be Our Guest? | Lumiere | Cogsworth | Mrs Potts | Chip
+MUS 1 | Which mermaid princess wants legs in a Disney film? | Ariel | Moana | Belle | Jasmine
+MUS 1 | How many letters name the notes of music, from A to G? | Seven | Eight | Five | Twelve
+MUS 1 | What is a group of singers called? | A choir | A band | An orchestra | A troupe
+MUS 1 | Which Disney heroine fights as a soldier to save China? | Mulan | Moana | Merida | Elsa
 MUS 2 | Which composer wrote the Moonlight Sonata? | Beethoven | Mozart | Bach | Chopin
 MUS 2 | How many lines are there on a musical staff? | Five | Four | Six | Seven
 MUS 2 | Which composer wrote The Four Seasons? | Antonio Vivaldi | Johann Sebastian Bach | George Frideric Handel | Joseph Haydn
@@ -457,6 +982,31 @@ MUS 2 | Which band sang Bohemian Rhapsody? | Queen | The Beatles | ABBA | The Wh
 MUS 2 | Which Swedish group sang Dancing Queen? | ABBA | Roxette | Ace of Base | Europe
 MUS 2 | Which Japanese studio made Spirited Away? | Studio Ghibli | Toei | Pixar | Aardman
 MUS 2 | Which instrument did Jimi Hendrix play? | The guitar | The drums | The piano | The saxophone
+MUS 2 | Which brass instrument has a slide? | The trombone | The trumpet | The tuba | The French horn
+MUS 2 | How many musicians play in a quintet? | Five | Four | Six | Seven
+MUS 2 | Which singer made the album Thriller? | Michael Jackson | Prince | Lionel Richie | Stevie Wonder
+MUS 2 | In music, what does crescendo mean? | Getting louder | Getting softer | Getting faster | Getting slower
+MUS 2 | Which instrument is a little bigger than a violin, smaller than a cello? | The viola | The double bass | The ukulele | The mandolin
+MUS 2 | Which small four-stringed instrument is famous in Hawaii? | The ukulele | The banjo | The mandolin | The lute
+MUS 2 | Which film has a theme park full of cloned dinosaurs? | Jurassic Park | King Kong | Godzilla | Avatar
+MUS 2 | Who is the headmaster of Hogwarts in the Harry Potter films? | Albus Dumbledore | Severus Snape | Rubeus Hagrid | Lord Voldemort
+MUS 2 | In The Wizard of Oz, who wants a heart? | The Tin Man | The Scarecrow | The Lion | Toto
+MUS 2 | What is a piece of music with no singing called? | An instrumental | A chorus | A verse | A ballad
+MUS 2 | What is the part of a song repeated between the verses? | The chorus | The verse | The bridge | The intro
+MUS 2 | Which team catches ghosts in a 1984 film? | The Ghostbusters | The Goonies | The Avengers | The Incredibles
+MUS 2 | Which film is about a family of superheroes called the Parrs? | The Incredibles | The Avengers | Big Hero 6 | Megamind
+MUS 2 | Who is Harry Potter's dark enemy? | Lord Voldemort | Sauron | Darth Vader | Count Dracula
+MUS 2 | Which singer is called the king of reggae? | Bob Marley | Jimmy Cliff | Peter Tosh | Toots Hibbert
+MUS 2 | Which Spanish dance uses castanets and stamping feet? | Flamenco | Tango | Salsa | Polka
+MUS 2 | Which American city is called the birthplace of jazz? | New Orleans | Chicago | New York | Memphis
+MUS 2 | In which country did samba music begin? | Brazil | Cuba | Spain | Mexico
+MUS 2 | Which sign in music raises a note by half a step? | A sharp | A flat | A natural | A rest
+MUS 2 | Which film has the song Hakuna Matata? | The Lion King | The Jungle Book | Tarzan | Madagascar
+MUS 2 | In which film does a nanny fly in with her umbrella? | Mary Poppins | Matilda | Annie | Heidi
+MUS 2 | Which small green Jedi master trains Luke Skywalker? | Yoda | Chewbacca | R2-D2 | Jabba
+MUS 2 | Which Wookiee is Han Solo's co-pilot? | Chewbacca | Yoda | C-3PO | Lando
+MUS 2 | Who wrote the music for the Star Wars films? | John Williams | Hans Zimmer | Danny Elfman | Howard Shore
+MUS 2 | Which instrument plays the highest notes in an orchestra? | The piccolo | The violin | The flute | The trumpet
 MUS 3 | What was the first feature-length film from Walt Disney's studio? | Snow White | Pinocchio | Fantasia | Bambi
 MUS 3 | How many symphonies did Beethoven complete? | Nine | Five | Seven | Twelve
 MUS 3 | Which composer wrote the opera The Magic Flute? | Mozart | Haydn | Schubert | Strauss
@@ -477,6 +1027,31 @@ MUS 3 | Which composer wrote the opera Madama Butterfly? | Puccini | Verdi | Ros
 MUS 3 | What is a chord of three notes, built in thirds, called? | A triad | A trio | A scale | An octave
 MUS 3 | Which film character says I'll be back? | The Terminator | Rocky | Rambo | Indiana Jones
 MUS 3 | What is the spy James Bond's code number? | 007 | 001 | 006 | 009
+MUS 3 | Who composed the Hungarian Rhapsodies? | Franz Liszt | Frederic Chopin | Johannes Brahms | Bela Bartok
+MUS 3 | Which composer wrote Clair de lune? | Claude Debussy | Maurice Ravel | Erik Satie | Frederic Chopin
+MUS 3 | Who composed Bolero? | Maurice Ravel | Claude Debussy | Georges Bizet | Hector Berlioz
+MUS 3 | Who composed the New World Symphony? | Antonin Dvorak | Antonin Reicha | Bedrich Smetana | Gustav Mahler
+MUS 3 | Who composed The Lark Ascending? | Ralph Vaughan Williams | Edward Elgar | Gustav Holst | Benjamin Britten
+MUS 3 | Which Verdi opera is set in ancient Egypt? | Aida | Rigoletto | La Traviata | Nabucco
+MUS 3 | Which instrument is Yo-Yo Ma famous for? | The cello | The violin | The piano | The guitar
+MUS 3 | Who directed the film 2001: A Space Odyssey? | Stanley Kubrick | Ridley Scott | George Lucas | Steven Spielberg
+MUS 3 | Who directed the film The Godfather? | Francis Ford Coppola | Martin Scorsese | Steven Spielberg | Sergio Leone
+MUS 3 | Which silent film star played the Little Tramp? | Charlie Chaplin | Buster Keaton | Harold Lloyd | Stan Laurel
+MUS 3 | Which musical is about rival gangs, the Jets and the Sharks? | West Side Story | Grease | Oliver! | Guys and Dolls
+MUS 3 | Which musical is set at Rydell High School? | Grease | Fame | Hairspray | West Side Story
+MUS 3 | Who wrote the musical Hamilton? | Lin-Manuel Miranda | Andrew Lloyd Webber | Stephen Sondheim | Tim Rice
+MUS 3 | Which band made the album The Dark Side of the Moon? | Pink Floyd | Led Zeppelin | The Who | Genesis
+MUS 3 | Which singer was called the Queen of Soul? | Aretha Franklin | Diana Ross | Tina Turner | Whitney Houston
+MUS 3 | Which group sang Good Vibrations? | The Beach Boys | The Beatles | The Monkees | The Byrds
+MUS 3 | From which city did the Beatles come? | Liverpool | Manchester | London | Birmingham
+MUS 3 | How many beats does a whole note last in 4/4 time? | Four | Two | One | Eight
+MUS 3 | In music, what does pianissimo mean? | Very softly | Very loudly | Very quickly | Very slowly
+MUS 3 | Which keyboard instrument plucks its strings? | The harpsichord | The piano | The organ | The celesta
+MUS 3 | In which city is the opera house with roofs like sails? | Sydney | Melbourne | Auckland | Cape Town
+MUS 3 | What was the first feature film made all by computer, in 1995? | Toy Story | Shrek | A Bug's Life | Antz
+MUS 3 | Which studio makes the Wallace and Gromit films? | Aardman | Pixar | DreamWorks | Studio Ghibli
+MUS 3 | Who directed the film Spirited Away? | Hayao Miyazaki | Akira Kurosawa | Isao Takahata | Makoto Shinkai
+MUS 3 | The film industry called Bollywood is in which country? | India | Pakistan | Bangladesh | Nepal
 MUS 4 | What is the highest female singing voice? | Soprano | Alto | Mezzo-soprano | Contralto
 MUS 4 | Which film won the very first Academy Award for Best Picture? | Wings | Sunrise | The Jazz Singer | Metropolis
 MUS 4 | Which composer wrote the opera Carmen? | Georges Bizet | Giuseppe Verdi | Giacomo Puccini | Richard Wagner
@@ -497,6 +1072,31 @@ MUS 4 | What is the lowest male singing voice? | Bass | Baritone | Tenor | Count
 MUS 4 | Which Polish composer wrote many mazurkas and nocturnes? | Frederic Chopin | Franz Liszt | Robert Schumann | Felix Mendelssohn
 MUS 4 | Which Finnish composer wrote Finlandia? | Jean Sibelius | Edvard Grieg | Carl Nielsen | Edward Elgar
 MUS 4 | To which family of instruments does the oboe belong? | Woodwind | Brass | Strings | Percussion
+MUS 4 | In which film does Rick say Here's looking at you, kid? | Casablanca | Citizen Kane | Gone with the Wind | The Maltese Falcon
+MUS 4 | Which composer wrote the opera Eugene Onegin? | Tchaikovsky | Rachmaninoff | Mussorgsky | Rimsky-Korsakov
+MUS 4 | Who composed the gentle piano pieces called Gymnopedies? | Erik Satie | Claude Debussy | Maurice Ravel | Gabriel Faure
+MUS 4 | Who composed Peter and the Wolf? | Sergei Prokofiev | Igor Stravinsky | Dmitri Shostakovich | Sergei Rachmaninoff
+MUS 4 | Who composed the Enigma Variations? | Edward Elgar | Gustav Holst | Ralph Vaughan Williams | Henry Purcell
+MUS 4 | Who composed the opera Porgy and Bess? | George Gershwin | Leonard Bernstein | Aaron Copland | Cole Porter
+MUS 4 | Who composed The Carnival of the Animals? | Camille Saint-Saens | Claude Debussy | Maurice Ravel | Georges Bizet
+MUS 4 | What is a piece for a soloist and an orchestra called? | A concerto | A symphony | A sonata | An overture
+MUS 4 | Which Italian word tells players to slow down gradually? | Ritardando | Accelerando | Crescendo | Staccato
+MUS 4 | In music, what does staccato mean? | Short and detached | Smooth and joined | Very loud | Very slow
+MUS 4 | What is the gap between a note and the next of the same name? | An octave | A fifth | A tone | A triad
+MUS 4 | Which bandleader composed Mood Indigo? | Duke Ellington | Count Basie | Benny Goodman | Glenn Miller
+MUS 4 | Which jazz pianist composed Round Midnight? | Thelonious Monk | Art Tatum | Oscar Peterson | Bud Powell
+MUS 4 | Who directed the silent film Metropolis in 1927? | Fritz Lang | F. W. Murnau | Sergei Eisenstein | D. W. Griffith
+MUS 4 | Who directed the film Lawrence of Arabia? | David Lean | John Ford | Carol Reed | Michael Powell
+MUS 4 | Which Swedish director made The Seventh Seal? | Ingmar Bergman | Lars von Trier | Carl Dreyer | Ingrid Bergman
+MUS 4 | Which Italian director made La Dolce Vita? | Federico Fellini | Roberto Rossellini | Vittorio De Sica | Sergio Leone
+MUS 4 | In which year were the first Academy Awards given? | 1929 | 1919 | 1939 | 1949
+MUS 4 | Which Indian director made the Apu Trilogy? | Satyajit Ray | Raj Kapoor | Guru Dutt | Mrinal Sen
+MUS 4 | Which musician made the sitar famous around the world? | Ravi Shankar | Zakir Hussain | A. R. Rahman | Bismillah Khan
+MUS 4 | Which French composer wrote The Sorcerer's Apprentice? | Paul Dukas | Camille Saint-Saens | Hector Berlioz | Jules Massenet
+MUS 4 | Which Russian composer wrote Pictures at an Exhibition? | Modest Mussorgsky | Alexander Borodin | Sergei Prokofiev | Tchaikovsky
+MUS 4 | Which Czech composer wrote The Moldau? | Bedrich Smetana | Antonin Dvorak | Leos Janacek | Bohuslav Martinu
+MUS 4 | Which Norwegian composer wrote the music for Peer Gynt? | Edvard Grieg | Jean Sibelius | Carl Nielsen | Edvard Munch
+MUS 4 | Which English composer wrote the opera Dido and Aeneas? | Henry Purcell | George Frideric Handel | Edward Elgar | Thomas Tallis
 
 # --- SPORT AND GAMES ---
 SPO 1 | How many players does a soccer team have on the field at once? | Eleven | Nine | Ten | Twelve
@@ -519,6 +1119,31 @@ SPO 1 | What is it called when one player scores three goals in a game? | A hat-
 SPO 1 | Which word game uses letter tiles on a board? | Scrabble | Monopoly | Chess | Draughts
 SPO 1 | In which sport do you score a strike by knocking down all the pins? | Bowling | Golf | Darts | Snooker
 SPO 1 | In which sport do the players ride horses and hit a ball with mallets? | Polo | Cricket | Croquet | Lacrosse
+SPO 1 | What do players kick in a game of soccer? | A ball | A puck | A shuttlecock | A stick
+SPO 1 | In which sport do people ride waves on a board? | Surfing | Skiing | Sailing | Rowing
+SPO 1 | In which sport do you slide down snowy hills on two long boards? | Skiing | Surfing | Skating | Sledging
+SPO 1 | What is the name of Nintendo's famous plumber hero? | Mario | Luigi | Wario | Sonic
+SPO 1 | What do players hit over the net in table tennis? | A small plastic ball | A shuttlecock | A puck | A tennis ball
+SPO 1 | Which game has kings, queens, bishops and knights? | Chess | Draughts | Monopoly | Ludo
+SPO 1 | In which board game do you climb ladders and slide down snakes? | Snakes and ladders | Ludo | Draughts | Monopoly
+SPO 1 | How many points is one goal worth in soccer? | One | Two | Three | Six
+SPO 1 | In which sport do players throw a ball through a high hoop? | Basketball | Volleyball | Rugby | Cricket
+SPO 1 | In pool, what colour is the cue ball you strike? | White | Black | Red | Yellow
+SPO 1 | Which sport is fought in a roped ring wearing gloves? | Boxing | Wrestling | Judo | Fencing
+SPO 1 | In which sport do you shoot arrows with a bow? | Archery | Darts | Fencing | Javelin
+SPO 1 | Which sport is the Tour de France? | Cycling | Running | Swimming | Rowing
+SPO 1 | How many cards are in a standard pack, without jokers? | 52 | 54 | 48 | 50
+SPO 1 | How many suits are there in a pack of cards? | Four | Two | Three | Five
+SPO 1 | In which sport do people do somersaults on a balance beam? | Gymnastics | Diving | Trampolining | Skating
+SPO 1 | Which water sport uses a paddle and a small open boat? | Canoeing | Sailing | Surfing | Diving
+SPO 1 | Which team game is played on grass with curved sticks and a ball? | Hockey | Cricket | Lacrosse | Golf
+SPO 1 | In which game does one player look for everyone else? | Hide and seek | Tag | Musical chairs | Leapfrog
+SPO 1 | Which game is played with round counters on a checked board? | Draughts | Chess | Scrabble | Monopoly
+SPO 1 | In which race do runners pass a baton to each other? | A relay | A marathon | A sprint | Hurdles
+SPO 1 | In British football, what is a score of zero called? | Nil | Love | Duck | Zip
+SPO 1 | Which chess piece is shaped like a castle tower? | The rook | The king | The bishop | The pawn
+SPO 1 | In which video game do you fit falling blocks into lines? | Tetris | Pac-Man | Minecraft | Pong
+SPO 1 | How many people play against each other in a game of chess? | Two | One | Three | Four
 SPO 2 | How many squares are there on a chessboard? | 64 | 32 | 81 | 100
 SPO 2 | How often are the Summer Olympic Games held? | Every four years | Every two years | Every year | Every five years
 SPO 2 | In tennis, what is a score of zero called? | Love | Nil | Duck | Zip
@@ -539,6 +1164,31 @@ SPO 2 | How many pins are set up in ten-pin bowling? | Ten | Nine | Twelve | Eig
 SPO 2 | In which country did the game of cricket begin? | England | Australia | India | South Africa
 SPO 2 | In which sport do players shout fore as a warning? | Golf | Tennis | Cricket | Baseball
 SPO 2 | In chess, which piece moves in an L shape? | The knight | The bishop | The rook | The queen
+SPO 2 | In snooker, how many points is a red ball worth? | One | Two | Five | Seven
+SPO 2 | How many players does an ice hockey team have on the ice? | Six | Five | Seven | Eleven
+SPO 2 | How many players are there in a cricket team? | Eleven | Nine | Ten | Thirteen
+SPO 2 | Which country held the 2008 Summer Olympics? | China | Japan | Greece | Brazil
+SPO 2 | What shape is an ice hockey puck? | A flat disc | A ball | A cube | An oval
+SPO 2 | In golf, what is a score of two under par on a hole called? | An eagle | A birdie | A bogey | An albatross
+SPO 2 | In which game do players strike balls with a long cue? | Snooker | Croquet | Golf | Hockey
+SPO 2 | How many letter tiles does each player hold in Scrabble? | Seven | Five | Six | Eight
+SPO 2 | Which sport do the New York Yankees play? | Baseball | Basketball | American football | Ice hockey
+SPO 2 | How many players does a rugby league team have on the field? | Thirteen | Fifteen | Eleven | Twelve
+SPO 2 | How many dice do you roll in Monopoly? | Two | One | Three | Four
+SPO 2 | In which country was basketball invented? | The USA | Canada | Britain | France
+SPO 2 | What is the big box in front of a soccer goal called? | The penalty area | The crease | The end zone | The key
+SPO 2 | How many players can play a game of Ludo at most? | Four | Two | Six | Eight
+SPO 2 | In which sport do nations race for the America's Cup? | Sailing | Rowing | Swimming | Cycling
+SPO 2 | Which sport uses swords called the foil, epee and sabre? | Fencing | Kendo | Archery | Judo
+SPO 2 | In which country is sumo wrestling the national sport? | Japan | China | Korea | Mongolia
+SPO 2 | What does a soccer referee show to send a player off? | A red card | A yellow card | A green card | A white card
+SPO 2 | How many points is a free throw worth in basketball? | One | Two | Three | Four
+SPO 2 | How many points is a long basket from beyond the arc worth? | Three | Two | Four | Five
+SPO 2 | Which chess piece can never move backwards? | The pawn | The knight | The bishop | The rook
+SPO 2 | How many players does a polo team have? | Four | Six | Five | Seven
+SPO 2 | Which sport is played at Lord's in London? | Cricket | Tennis | Rugby | Golf
+SPO 2 | In which video game do players build in a world of blocks? | Minecraft | Tetris | Pac-Man | Pong
+SPO 2 | What does Pac-Man eat to be able to chase the ghosts? | Power pellets | Cherries | Coins | Mushrooms
 SPO 3 | How many points is a touchdown worth in American football? | Six | Seven | Three | Five
 SPO 3 | In golf, what is a score of one under par on a hole called? | A birdie | An eagle | A bogey | An albatross
 SPO 3 | In which country was the sport of judo created? | Japan | China | Korea | Thailand
@@ -559,6 +1209,31 @@ SPO 3 | In which game do players drop discs to get four in a row? | Connect Four
 SPO 3 | How many squares long is each side of a Scrabble board? | 15 | 12 | 18 | 20
 SPO 3 | In which year was the first FIFA World Cup played? | 1930 | 1950 | 1920 | 1934
 SPO 3 | Which famous horse race is run at Aintree? | The Grand National | The Derby | The Gold Cup | The Oaks
+SPO 3 | In which sport might a bowler send down a googly? | Cricket | Baseball | Bowls | Ten-pin bowling
+SPO 3 | Which card game is played in pairs who bid, then win tricks? | Bridge | Poker | Rummy | Snap
+SPO 3 | How many minutes long is a quarter of an NBA game? | 12 | 10 | 15 | 20
+SPO 3 | How many periods are there in an ice hockey game? | Three | Two | Four | Five
+SPO 3 | In which event is the Fosbury flop used? | The high jump | The long jump | The pole vault | The hurdles
+SPO 3 | In which city were the Summer Olympics of 2000 held? | Sydney | Athens | Beijing | Atlanta
+SPO 3 | Which country has won the most Olympic gold medals of all? | The USA | Russia | China | Britain
+SPO 3 | How many bases are there in baseball, counting home plate? | Four | Three | Five | Six
+SPO 3 | In tennis, what is a serve that the other player cannot touch? | An ace | A let | A volley | A smash
+SPO 3 | In chess, what is it called when a king is attacked but can escape? | Check | Checkmate | Stalemate | Castling
+SPO 3 | In chess, what is a draw where a player cannot move but is not in check? | Stalemate | Checkmate | Castling | Zugzwang
+SPO 3 | In Monopoly, where do you go if you roll three doubles in a row? | To jail | To Go | To Free Parking | To Mayfair
+SPO 3 | How many pieces does each player start with in draughts? | 12 | 10 | 16 | 8
+SPO 3 | What is the highest hand in poker? | A royal flush | A full house | Four of a kind | A straight
+SPO 3 | In golf, what is three under par on one hole called? | An albatross | An eagle | A birdie | A condor
+SPO 3 | In which country was table tennis first played? | England | China | Japan | Korea
+SPO 3 | Which Korean martial art is famous for its high kicks? | Taekwondo | Judo | Karate | Kung fu
+SPO 3 | How many laps of a 400 metre track make a 1,500 metre race? | Three and three quarters | Four | Three | Five
+SPO 3 | In which sport are there slalom and downhill races? | Skiing | Cycling | Rowing | Swimming
+SPO 3 | How many players make a beach volleyball team? | Two | Three | Four | Six
+SPO 3 | Which chess pieces start in the corners of the board? | The rooks | The bishops | The knights | The kings
+SPO 3 | What is the most you can score in one frame of ten-pin bowling? | 30 | 10 | 20 | 300
+SPO 3 | What is the score of a perfect game of ten-pin bowling? | 300 | 100 | 200 | 250
+SPO 3 | In which country was the Rubik's Cube invented? | Hungary | Japan | The USA | Germany
+SPO 3 | In which sport is the clean and jerk a lift? | Weightlifting | Gymnastics | Wrestling | Rowing
 SPO 4 | How many players does a rugby union team have on the field? | Fifteen | Thirteen | Eleven | Twelve
 SPO 4 | In which city were the first modern Olympic Games held, in 1896? | Athens | Paris | London | Rome
 SPO 4 | In snooker, what is the usual maximum break? | 147 | 155 | 150 | 180
@@ -579,6 +1254,31 @@ SPO 4 | In which town were the first Winter Olympics held, in 1924? | Chamonix |
 SPO 4 | How many players does a netball team have on court? | Seven | Five | Six | Nine
 SPO 4 | In baseball, how many strikes make a strikeout? | Three | Four | Two | Five
 SPO 4 | Which Grand Slam tennis tournament is played on clay? | The French Open | Wimbledon | The US Open | The Australian Open
+SPO 4 | In which town is the Masters golf tournament played? | Augusta | St Andrews | Pebble Beach | Pinehurst
+SPO 4 | The Claret Jug is the prize for winning which golf tournament? | The Open Championship | The Masters | The US Open | The Ryder Cup
+SPO 4 | In which city were the Summer Olympics of 1964 held? | Tokyo | Rome | Mexico City | Melbourne
+SPO 4 | Who invented basketball, in 1891? | James Naismith | Walter Camp | Abner Doubleday | William Morgan
+SPO 4 | Who founded the modern Olympic Games? | Pierre de Coubertin | Avery Brundage | Juan Antonio Samaranch | Jacques Rogge
+SPO 4 | How many players does a Gaelic football team have on the field? | Fifteen | Eleven | Thirteen | Eighteen
+SPO 4 | In which sport do men's national teams play for the Thomas Cup? | Badminton | Tennis | Squash | Table tennis
+SPO 4 | How long is a cricket pitch, in yards? | 22 | 20 | 25 | 18
+SPO 4 | In which country was polo first played? | Iran | India | England | Argentina
+SPO 4 | In which year was the first Tour de France held? | 1903 | 1896 | 1911 | 1925
+SPO 4 | About how heavy is the shot in men's Olympic shot put? | About 7 kg | About 4 kg | About 10 kg | About 2 kg
+SPO 4 | How many players does an Australian rules football team field? | 18 | 15 | 13 | 11
+SPO 4 | Which chess opening begins with e4, answered by c5? | The Sicilian Defence | The French Defence | The Ruy Lopez | The Queen's Gambit
+SPO 4 | Which board game of pits and seeds is played across Africa? | Mancala | Go | Senet | Nine men's morris
+SPO 4 | Which ancient Egyptian board game was found in pharaohs' tombs? | Senet | Mancala | Chess | Backgammon
+SPO 4 | Which card game is also called Patience? | Solitaire | Rummy | Snap | Bridge
+SPO 4 | How many points win a game of table tennis? | 11 | 21 | 15 | 10
+SPO 4 | How long is the run in a standard Olympic triathlon? | 10 km | 5 km | 21 km | 42 km
+SPO 4 | In which sport do England and Scotland play for the Calcutta Cup? | Rugby union | Cricket | Golf | Soccer
+SPO 4 | Which is the oldest tennis tournament in the world? | Wimbledon | The US Open | The French Open | The Australian Open
+SPO 4 | Which sport's champions win the Vince Lombardi Trophy? | American football | Baseball | Basketball | Ice hockey
+SPO 4 | In which country did the sport of curling begin? | Scotland | Canada | Norway | Switzerland
+SPO 4 | How many players does an Ultimate frisbee team have on the field? | Seven | Five | Six | Eleven
+SPO 4 | In the game of Go, what colour are the first player's stones? | Black | White | Red | Blue
+SPO 4 | In a standard game of darts, players count down from which score? | 501 | 301 | 1001 | 180
 
 # --- FOOD AND EVERYDAY ---
 FOO 1 | Which fruit is dried to make raisins? | Grapes | Plums | Figs | Apricots
@@ -601,6 +1301,31 @@ FOO 1 | Which is the first month of the year? | January | March | December | Jun
 FOO 1 | An apple a day keeps who away, says the old saying? | The doctor | The dentist | The teacher | The postman
 FOO 1 | How many sides does a triangle have? | Three | Four | Five | Six
 FOO 1 | What colour is the inside of most kiwi fruit? | Green | Orange | Red | Purple
+FOO 1 | What colour is a ripe tomato? | Red | Blue | Purple | Black
+FOO 1 | Which fruit do we peel to find juicy segments inside? | The orange | The apple | The grape | The cherry
+FOO 1 | Which food made from milk is melted on top of pizza? | Cheese | Butter | Jam | Honey
+FOO 1 | What yellow spread is made by churning cream? | Butter | Cheese | Honey | Jam
+FOO 1 | Which small green vegetable grows in pods? | The pea | The carrot | The potato | The onion
+FOO 1 | How many legs does a chair usually have? | Four | Three | Five | Six
+FOO 1 | Which day comes after Monday? | Tuesday | Sunday | Wednesday | Friday
+FOO 1 | How many minutes are there in an hour? | 60 | 100 | 30 | 24
+FOO 1 | Which is usually the coldest season? | Winter | Summer | Spring | Autumn
+FOO 1 | Which big fruit is green outside and red inside, with black seeds? | The watermelon | The apple | The kiwi | The pear
+FOO 1 | What is the meal in the middle of the day called? | Lunch | Breakfast | Supper | Brunch
+FOO 1 | Which cold sweet treat is often served in a cone? | Ice cream | Jelly | Cake | Custard
+FOO 1 | What do we use to eat soup? | A spoon | A fork | A knife | Chopsticks
+FOO 1 | How many wheels does a bicycle have? | Two | Three | Four | One
+FOO 1 | On a traffic light, which colour means stop? | Red | Green | Yellow | Blue
+FOO 1 | Which shape has four equal sides and four corners? | A square | A triangle | A circle | An oval
+FOO 1 | How many days are there in a year that is not a leap year? | 365 | 366 | 360 | 364
+FOO 1 | Which sour yellow fruit is used to make lemonade? | The lemon | The banana | The mango | The pineapple
+FOO 1 | Which grain is porridge usually made from? | Oats | Rice | Corn | Barley
+FOO 1 | Which sweet treat is made from cocoa beans? | Chocolate | Toffee | Marshmallow | Liquorice
+FOO 1 | Which is the last month of the year? | December | November | January | October
+FOO 1 | How many hours are there in half a day? | 12 | 6 | 24 | 10
+FOO 1 | How many eggs are there in a dozen? | 12 | 10 | 6 | 20
+FOO 1 | Which vegetable is carved into a lantern at Halloween? | A pumpkin | A potato | A cabbage | A turnip
+FOO 1 | Which brown, hairy fruit grows on palm trees? | The coconut | The pineapple | The kiwi | The mango
 FOO 2 | From which country does the rice dish paella come? | Spain | Italy | Mexico | Portugal
 FOO 2 | What is the dark green wrapping on many kinds of sushi? | Seaweed | Spinach | Lettuce | Cabbage
 FOO 2 | Which nut is ground to make marzipan? | Almond | Walnut | Peanut | Hazelnut
@@ -621,6 +1346,31 @@ FOO 2 | How many hours are there in a week? | 168 | 144 | 160 | 120
 FOO 2 | In a rainbow, which colour comes between green and indigo? | Blue | Yellow | Violet | Orange
 FOO 2 | Which grain do we pop to make popcorn? | Corn | Rice | Wheat | Oats
 FOO 2 | Which nuts make the sauce served with satay? | Peanuts | Almonds | Cashews | Walnuts
+FOO 2 | From which country does the taco come? | Mexico | Spain | Italy | India
+FOO 2 | From which country does the long baguette loaf come? | France | Italy | Germany | Spain
+FOO 2 | Which nuts are ground into classic basil pesto? | Pine nuts | Peanuts | Walnuts | Cashews
+FOO 2 | Which vegetable is the main part of coleslaw? | Cabbage | Lettuce | Carrot | Onion
+FOO 2 | How many days does February have in a leap year? | 29 | 28 | 30 | 31
+FOO 2 | How many weeks are there in a year? | 52 | 48 | 50 | 60
+FOO 2 | What is the Roman numeral for 10? | X | V | L | I
+FOO 2 | What is the Roman numeral for 5? | V | X | L | I
+FOO 2 | How many sides does an octagon have? | Eight | Six | Seven | Ten
+FOO 2 | How many sides does a pentagon have? | Five | Four | Six | Seven
+FOO 2 | Which month has the fewest days? | February | April | June | November
+FOO 2 | Which kitchen tool is used to beat eggs and cream? | A whisk | A ladle | A grater | A peeler
+FOO 2 | What are meringues made from, with sugar? | Egg whites | Egg yolks | Milk | Flour
+FOO 2 | Which Italian dish is layers of pasta, sauce and cheese? | Lasagne | Risotto | Ravioli | Minestrone
+FOO 2 | The hamburger is named after a city in which country? | Germany | The USA | Britain | Austria
+FOO 2 | Which red spice is made from dried, ground peppers? | Paprika | Turmeric | Cinnamon | Nutmeg
+FOO 2 | What is the French word for thank you? | Merci | Danke | Gracias | Grazie
+FOO 2 | What is the Spanish word for hello? | Hola | Ciao | Bonjour | Hallo
+FOO 2 | How many years are there in a decade? | Ten | Five | Twenty | A hundred
+FOO 2 | Which shape has no corners and no straight sides? | A circle | A square | A triangle | A hexagon
+FOO 2 | What is 7 times 8? | 56 | 54 | 48 | 64
+FOO 2 | How many centimetres are there in a metre? | 100 | 10 | 1,000 | 50
+FOO 2 | Which drink is made by soaking dried leaves in hot water? | Tea | Coffee | Cocoa | Lemonade
+FOO 2 | Which fruit is dried to make prunes? | Plums | Grapes | Figs | Dates
+FOO 2 | What is a word with the same meaning as another called? | A synonym | An antonym | A palindrome | An acronym
 FOO 3 | What is the main ingredient of hummus? | Chickpeas | Lentils | Kidney beans | Green peas
 FOO 3 | Which spice, from a crocus flower, is the dearest by weight? | Saffron | Vanilla | Cardamom | Cinnamon
 FOO 3 | What are thin slices of raw fish called in Japan? | Sashimi | Tempura | Teriyaki | Ramen
@@ -641,6 +1391,31 @@ FOO 3 | From which country does kimchi come? | Korea | Japan | China | Vietnam
 FOO 3 | What is the Roman numeral for 100? | C | M | L | D
 FOO 3 | Which nuts go into a classic Waldorf salad? | Walnuts | Almonds | Peanuts | Cashews
 FOO 3 | What is the French word for goodbye? | Au revoir | Bonjour | Merci | Bonsoir
+FOO 3 | What kind of plant is a peanut, really? | A legume | A tree nut | A cereal | A root
+FOO 3 | From which country does Wiener schnitzel come? | Austria | Germany | Switzerland | Hungary
+FOO 3 | Which country is famous for Gouda and Edam cheeses? | The Netherlands | Denmark | Belgium | Switzerland
+FOO 3 | From which country does Parmesan cheese come? | Italy | France | Greece | Spain
+FOO 3 | Which grain is a risotto made from? | Rice | Barley | Wheat | Oats
+FOO 3 | What is Italian polenta made from? | Cornmeal | Rice | Potatoes | Semolina
+FOO 3 | What do Americans call a courgette? | A zucchini | An eggplant | A squash blossom | A gherkin
+FOO 3 | What do Americans call an aubergine? | An eggplant | A zucchini | A rutabaga | A scallion
+FOO 3 | Which word, meaning quiet, uses the letters of listen? | Silent | Tinsel | Enlist | Inlets
+FOO 3 | Which word is made from the letters of earth? | Heart | Hearth | Tears | Threat
+FOO 3 | What is the plural of mouse? | Mice | Mouses | Meese | Mousen
+FOO 3 | How many sides does a dodecagon have? | 12 | 10 | 20 | 8
+FOO 3 | What is the Roman numeral for 500? | D | M | C | L
+FOO 3 | What is the square root of 144? | 12 | 14 | 11 | 16
+FOO 3 | How many seconds are there in a day? | 86,400 | 3,600 | 24,000 | 60,000
+FOO 3 | Which day of the week is named after the god Thor? | Thursday | Tuesday | Wednesday | Friday
+FOO 3 | Which month is named after Julius Caesar? | July | June | August | March
+FOO 3 | Which planet is Saturday named after? | Saturn | Mars | Jupiter | Mercury
+FOO 3 | What is the German word for thank you? | Danke | Merci | Gracias | Grazie
+FOO 3 | Which Italian word means both hello and goodbye? | Ciao | Prego | Grazie | Basta
+FOO 3 | Which herb gives classic pesto its flavour? | Basil | Parsley | Mint | Coriander
+FOO 3 | Which fruit goes with toffee in a banoffee pie? | Banana | Apple | Pear | Peach
+FOO 3 | What is a crouton? | A cube of toasted bread | A small onion | A French cheese | A tiny cake
+FOO 3 | Which Japanese dish is food fried in a light batter? | Tempura | Sashimi | Teriyaki | Ramen
+FOO 3 | What is the main ingredient of Indian dal? | Lentils | Rice | Potatoes | Chicken
 FOO 4 | In which country is Manchego cheese made? | Spain | Italy | Portugal | France
 FOO 4 | Which vegetable gives the soup borscht its deep red colour? | Beetroot | Red cabbage | Tomato | Red pepper
 FOO 4 | Which grain is used to brew Japanese sake? | Rice | Barley | Wheat | Millet
@@ -661,3 +1436,28 @@ FOO 4 | Imitation wasabi is usually made from which root? | Horseradish | Ginger
 FOO 4 | What kind of food is prosciutto? | Cured ham | A hard cheese | A pasta | A sausage
 FOO 4 | Which fruit is traditionally used to make marmalade? | Oranges | Lemons | Strawberries | Plums
 FOO 4 | Which vitamin in citrus fruit prevents scurvy? | Vitamin C | Vitamin D | Vitamin A | Vitamin K
+FOO 4 | From which country does the bean stew feijoada come? | Brazil | Spain | Mexico | Cuba
+FOO 4 | From which country does haggis come? | Scotland | Ireland | Wales | Norway
+FOO 4 | Which spice is the seed of a tree whose covering gives mace? | Nutmeg | Cardamom | Clove | Allspice
+FOO 4 | What is ghee? | Clarified butter | A soft cheese | A sweet syrup | A rice flour
+FOO 4 | Which vegetable goes with potato in the cold soup vichyssoise? | Leeks | Onions | Carrots | Celery
+FOO 4 | Which herb gives French bearnaise sauce its flavour? | Tarragon | Thyme | Rosemary | Dill
+FOO 4 | In which country is Darjeeling tea grown? | India | China | Sri Lanka | Kenya
+FOO 4 | Which grain is couscous made from? | Wheat | Rice | Corn | Millet
+FOO 4 | What is kohlrabi? | A cabbage-family vegetable | A kind of fish | A spice | A cheese
+FOO 4 | Which seeds are ground to make tahini? | Sesame seeds | Sunflower seeds | Pumpkin seeds | Poppy seeds
+FOO 4 | What does the Scoville scale measure? | The heat of chillies | The sweetness of fruit | The age of wine | The hardness of cheese
+FOO 4 | Roughly how many grams are in an ounce? | 28 | 16 | 100 | 50
+FOO 4 | How many feet are there in a mile? | 5,280 | 1,760 | 3,000 | 5,000
+FOO 4 | What is the Roman numeral for 40? | XL | XXXX | LX | IVX
+FOO 4 | What is the Roman numeral for 90? | XC | LXXXX | IC | CX
+FOO 4 | What is a word made from initials, like NASA, called? | An acronym | A synonym | A palindrome | An anagram
+FOO 4 | What is a set of three linked books or films called? | A trilogy | A trio | A triad | A triptych
+FOO 4 | What is the fear of spiders called? | Arachnophobia | Claustrophobia | Agoraphobia | Acrophobia
+FOO 4 | Which month was the eighth of the early Roman calendar? | October | August | September | December
+FOO 4 | What is a thousand million called? | A billion | A trillion | A gazillion | A quadrillion
+FOO 4 | What does RSVP on an invitation ask you to do? | Please reply | Bring a gift | Dress smartly | Arrive early
+FOO 4 | Which French phrase means already seen? | Deja vu | Bon voyage | Raison d'etre | Faux pas
+FOO 4 | What is a Bramley? | A cooking apple | A pear | A plum | A potato
+FOO 4 | What is panna cotta mainly made of? | Cream | Eggs | Cheese | Rice
+FOO 4 | From which country do pierogi dumplings come? | Poland | Italy | Greece | Hungary

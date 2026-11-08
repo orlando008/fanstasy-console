@@ -11,7 +11,7 @@ const draw = (p, n) => Array.from({ length: n }, () => p.pickQuestion().qi);
   const vm = newGame(1), p = vm.probe(); vm.run(2);
   const Q = p.QUESTIONS, count = (s, d) => Q.filter((q) => q.subj === s && q.diff === d).length;
   let min = Infinity; for (let s = 0; s < 8; s++) for (let d = 1; d <= 4; d++) min = Math.min(min, count(s, d));
-  ok(Q.length >= 640 && min >= 20, 'the bank has 640 questions, 20 for each subject at each difficulty', `${Q.length}, at least ${min} each`);
+  ok(Q.length >= 1440 && min >= 45, 'the bank has 1,440 questions, 45 for each subject at each difficulty', `${Q.length}, at least ${min} each`);
   ok(new Set(Q.map((q) => q.q.toLowerCase())).size === Q.length, 'no question is in it twice');
   ok(Q.every((q) => new Set(q.ans.map((a) => a.toLowerCase())).size === 4), 'and each has four different answers');
 }
@@ -41,7 +41,8 @@ const draw = (p, n) => Array.from({ length: n }, () => p.pickQuestion().qi);
   ok(second.every((i) => !first.includes(i)), 'a new run asks first the questions not asked before', `12, then the other ${pool - 12}`);
   p.startGame(); const third = draw(p, 1);
   ok(p.QUESTIONS[third[0]].subj === 5 && p.QUESTIONS[third[0]].diff === 3, 'when all have been asked, they start again');
-  ok([...vm.m.save.slice(p.SEEN_SLOT, p.SEEN_SLOT + 20)].some((v) => v !== 0), 'what has been asked is kept in the save (slots 40 to 59)');
+  ok([...vm.m.save.slice(p.SEEN_SLOT, p.SEEN_SLOT + 48)].some((v) => v !== 0), 'what has been asked is kept in the save (slots 80 to 127)');
+  ok(p.QUESTIONS.length <= 48 * 32, 'and there is a bit for every question', `${p.QUESTIONS.length} of ${48 * 32}`);
   const vm2 = newGame(4, { save: saved }), q = vm2.probe(); vm2.run(2);
   ok([...first, ...second].every((i) => q.seenBefore(i)), 'and is still known after the console is switched off and on');
   const save = Int32Array.from(saved); save[p.BANK_SLOT] = 99;

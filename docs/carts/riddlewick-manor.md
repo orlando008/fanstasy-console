@@ -126,7 +126,8 @@ neighbours alike where possible.
 - **Eight subjects:** HISTORY, GEOGRAPHY, SCIENCE, NATURE, ARTS AND BOOKS, MUSIC AND SCREEN, SPORT AND GAMES, FOOD AND
   EVERYDAY; or ALL SUBJECTS.
 - **Four difficulties,** matching the levels: 1 a curious 10-year-old knows it; 4 a keen quizzer might.
-- **The bank:** 20 questions for each subject at each difficulty: **640 questions**. Written for the game, checked for
+- **The bank:** 45 questions for each subject at each difficulty: **1,440 questions** (640 at release, then a batch of
+  800). Written for the game, checked for
   facts that do not change (no "current" record holders or office holders), one clearly right answer and three
   plausible wrong ones.
 - **The format:** a question of at most 90 characters (3 lines of 30), four answers of at most 26 characters each (the
@@ -227,7 +228,7 @@ writes `rom/rooms.bin`: each kind's 15 colours for palette 1.
 | 2 | The last subject and level chosen |
 | 3 | The bank's size when the record of questions asked was kept (a different bank clears the record) |
 | 10–39 | Top 10, best first, 3 slots each: score, initials, and level + (subject + 1) × 16 |
-| 40–59 | The questions already asked in earlier runs (640 bits) |
+| 40–59 | Unused (the questions asked before were kept here while the bank had 640) |
 | 60 | A run is saved (1) |
 | 61 | Its seed (the manor is made again from it) |
 | 62 | Its subject + 1, level, facing, room (x, y), candle and keys, 4 bits each |
@@ -237,14 +238,16 @@ writes `rom/rooms.bin`: each kind's 15 colours for palette 1.
 | 70–71 | The rooms seen (21 a slot) |
 | 72–73 | The rooms whose key or stub is still there |
 | 74 | The question being asked, if one is: its number + 1, its answers' order (2 bits each, from bit 12), its door (bit 20), final (bit 22) |
-| 75–255 | Reserved |
+| 75–79 | Reserved |
+| 80–127 | The questions already asked in earlier runs (a bit each, 32 a slot: 1,536 at most) |
+| 128–255 | Reserved |
 
 ## 14. Asset budget
 
 | Asset | Budget |
 |---|---|
 | Code | 48 KB of the 64 KB (built; the ART block, the tiles' names, is about 10 KB of it; `node tools/check.js riddlewick-manor`) |
-| ROM | The question bank: 55 KB of the 128 KB (640 questions, built) |
+| ROM | The question bank: 126 KB of the 128 KB (1,440 questions; 96% of the ROM, with the room colours) |
 | Tiles | 864 of 1,024 (built): 745 background (the room about 260, the panel about 35, the doors about 50, the furniture about 200, the title about 200) and 119 sprite tiles (the ghost's two frames, ten props, the arrow, padlock, candle and key) |
 | Sprites | At most 8 at once (a ghost, its prop, three padlocks, keys) |
 | Songs / SFX | 2 songs (15 patterns), 14 effects, 11.5 KB of samples |
@@ -449,6 +452,25 @@ writes `rom/rooms.bin`: each kind's 15 colours for palette 1.
      - `node tools/verify.js riddlewick-manor` passes, with 139 test checks (`06-flow.mjs` checks the saved question
        and the key's refusals); `colors.mjs --check` is within the limits; `node tools/devkit/smoke.mjs
        riddlewick-manor` runs in the real console with no errors.
+
+### After the release: a second batch of questions
+
+- **Built:**
+  - **800 more questions,** 25 for each subject at each difficulty, for 1,440 (45 in every pool), written and checked as
+    before: one clearly right answer that does not change with time or country. Two were reworded before they went in:
+    a longbow question that named Agincourt (another question's answer) and a clumsy one about Lindbergh.
+  - **The record of questions asked before** grew with the bank: it moved from slots 40 to 59 (640 bits) to slots 80 to
+    127 (48 slots, room for 1,536), and the old slots are cleared. The bank's new size clears the record once, as a
+    changed bank always does.
+  - **Two checks over the whole bank:** pairs with the same answer and shared words (each asks a different fact), and an
+    answer named in another question's text. The few that remain only share a name (a question set in Toy Story does not
+    say it was the first film made by computer), and a run sees about 15 of the 1,440, so none gives an answer away.
+- **Results:**
+  - `python3 carts/src/riddlewick-manor/questions.py`: 1,440 questions, 125,879 bytes; every count 45.
+  - `node tools/check.js riddlewick-manor`: ROM 126 KB of 128 KB (96%), the PNG cart's payload 122 KB of 147 KB (83%),
+    code 48 KB.
+  - `node tools/verify.js riddlewick-manor` passes, with 140 test checks (`05-bank.mjs` checks for 1,440, 45 each, and a
+    bit in the save for every question); the cart is released again with its label.
 
 Each step: build it, run `node tools/verify.js` and `node tools/devkit/smoke.mjs riddlewick-manor`, write its **Built**
 and **Results** notes under its number here, commit and push.

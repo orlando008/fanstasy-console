@@ -47,7 +47,7 @@ function play(song) {
 // --- Save slots (SPEC 13) ---
 
 const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
-const CHOICE_SLOT = 2, BANK_SLOT = 3, SEEN_SLOT = 40, SEEN_SLOTS = 20;
+const CHOICE_SLOT = 2, BANK_SLOT = 3, SEEN_SLOT = 80, SEEN_SLOTS = 48;   // the questions asked before: a bit each, 32 a slot (1,536 at most)
 const RUN_SLOT = 60;   // the run in progress (spec 13): 60 a flag, 61 the seed, 62 the run's numbers, 63 the score, 64 the tallies,
                        // 65 to 69 the doors (2 bits each), 70 and 71 the rooms seen, 72 and 73 the rooms whose item is still there   // the bank's size when the seen bits were kept; the questions asked in earlier runs (640 bits)
 const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
@@ -218,6 +218,7 @@ function init() {
   QUESTIONS = loadQuestions();
   if (dget(BANK_SLOT) !== QUESTIONS.length) {   // the bank has changed: what was asked before no longer lines up
     for (let k = 0; k < SEEN_SLOTS; k++) dset(SEEN_SLOT + k, 0);
+    for (let k = 40; k < 60; k++) dset(k, 0);   // (where they were kept for the first 640 questions)
     dset(BANK_SLOT, QUESTIONS.length);
   }
   ROOMS = rom('rooms');
@@ -247,7 +248,7 @@ function firstDoor() {
   return me.f;
 }
 
-/** Has question i been asked in an earlier run (or this one)? The bits are kept in the save (slots 40 to 59). */
+/** Has question i been asked in an earlier run (or this one)? The bits are kept in the save (slots 80 to 127). */
 const seenBefore = (i) => (dget(SEEN_SLOT + (i >> 5)) >>> (i & 31)) & 1;
 function markSeen(i, on) { const k = SEEN_SLOT + (i >> 5), b = 1 << (i & 31); dset(k, on ? dget(k) | b : dget(k) & ~b); }
 
