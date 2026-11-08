@@ -21,6 +21,7 @@ same('an array in an object is not a list of keys', 'const first = 1, second = 2
 same('a ternary in an object is not a key', 'const yes = 1, no = 2; let flag = true; const o = { v: flag ? yes : no, w: !flag ? yes : no }; r = o;');
 same('a local with the name of a top-level one means what it meant', 'const value = 10; function f(value) { return value + 1; } function g() { const value = 5; return value; } r = [f(1), g(), value];');
 same('strings and templates are left alone', 'const amount = 7; const word = "amount"; r = [word, `amount ${amount} ${`in ${amount}`}`, \'amount\'];');
+same('a template with two or more ${} pieces, then an object and a list of lets', 'const first = 1, second = 2; const rows = { a: { t: `a ${first} b ${second}`, n: 1 } }; let count = 3, total = 4; r = [rows, count, total];');
 same('a regular expression is left alone', 'const text = "aab"; r = [/a+b/.test(text), text.replace(/a/g, "x"), 8 / 2 / 2];');
 same('a name used before it is declared (a function) and a call from an arrow', 'const out = () => helperFn(2); function helperFn(n) { return n * 3; } r = out();');
 same('shorthand in a destructuring parameter', 'const alpha = 5; const f = ({ alpha, other }) => alpha + other; r = f({ alpha: 1, other: 2 }) + alpha;');

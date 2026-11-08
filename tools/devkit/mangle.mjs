@@ -73,7 +73,8 @@ function classify(T, src) {
   const stack = [], kinds = new Array(T.length).fill('var');
   for (let k = 0; k < T.length; k++) {
     const t = T[k];
-    if (t.t === 'tpl') { if (t.v.endsWith('${')) stack.push('tpl'); else if (t.v.startsWith('}')) stack.pop(); if (t.v.startsWith('}') && t.v.endsWith('${')) stack.push('tpl'); continue; }
+    // a template's pieces: `...${ opens, }...${ closes one and opens the next, }...` closes
+    if (t.t === 'tpl') { if (t.v.startsWith('}')) stack.pop(); if (t.v.endsWith('${')) stack.push('tpl'); continue; }
     if (t.t === 'p') {
       if (t.v === '{') stack.push(t.top); else if (t.v === '(') stack.push('par'); else if (t.v === '[') stack.push('arr');
       else if (t.v === '}' || t.v === ')' || t.v === ']') stack.pop();
