@@ -12,11 +12,11 @@ An incremental game ("clicker") in a cosy storybook world with a quietly ominous
 incrementals of the 2010s, with its own world, story, stages and controls made for a gamepad. It is meant to be the
 console's biggest game: every system of the machine on show, and the cart filled to its limits (section 14).
 
-You are **Pip**, a small clockwork automaton that the old clockmaker **Hollis Wren** has just wound up for the first
+You are **Marco**, a small clockwork automaton that the old clockmaker **Paulo Wren** has just wound up for the first
 time, on a workbench in his shop in the town of **Wrenfield**. His first words to you are "Make a cog, little one." You
 make one. Then another. Sell them to the town, buy brass, set your price, build wind-up **tinkers** to make cogs for you,
-earn Hollis's trust and fit your own head with escapements, so you can think, and invent. Hollis grows old. His last
-words are a wish: **"Never let it wind down."** Pip takes them at their word.
+earn Paulo's trust and fit your own head with escapements, so you can think, and invent. Paulo grows old. His last
+words are a wish: **"Never let it wind down."** Marco takes them at their word.
 
 The story runs in three acts, each a different game on the same few buttons:
 
@@ -26,7 +26,7 @@ The story runs in three acts, each a different game on the same few buttons:
 3. **The Orrery:** clockwork moths that copy themselves fly out to the stars and wind each one into a gear of a great
    orrery, against the Rust, moths that heard the stopping and want it all to end.
 
-At the end, every star turns. One thing is left unwound: Hollis's pocket watch, which Pip has carried since the
+At the end, every star turns. One thing is left unwound: Paulo's pocket watch, which Marco has carried since the
 beginning. **Wind it, or let it stop?** Two endings; then a **new cycle** can begin, with a little of what was learned.
 
 - **Shelf:** Strategy (the decisions are what to buy, when, and in what balance).
@@ -42,12 +42,12 @@ beginning. **Wind it, or let it stop?** Two endings; then a **new cycle** can be
 
 1. **Title:** CONTINUE (when a run is saved), NEW STORY, MILESTONES (from every cycle), and the cycle number once one
    has ended.
-2. **Play:** every second the machine runs: tinkers make cogs, the town buys them, Pip thinks. The player moves through
+2. **Play:** every second the machine runs: tinkers make cogs, the town buys them, Marco thinks. The player moves through
    the panels (tabs) and presses rows: buy brass, change the price, build a tinker, fit an escapement, start an
-   invention. B is Pip's own hand: in each act the thing it does itself (make a cog, wind a spring, launch a moth).
+   invention. B is Marco's own hand: in each act the thing it does itself (make a cog, wind a spring, launch a moth).
 3. **Inventions** are the story's rails: each one changes a rule or opens a panel, and the big ones move the story on
-   (Hollis's rest, the winding of the town, the first moth). The **message log** under the panel tells the story in
-   Pip's words as it happens.
+   (Paulo's rest, the winding of the town, the first moth). The **message log** under the panel tells the story in
+   Marco's words as it happens.
 4. **An act ends** with a cinematic (the view grows to the whole screen) and the next act's panels replace the old ones.
 5. **The end:** the choice, its ending, the credits, the milestones of the run, and a new cycle.
 
@@ -60,7 +60,7 @@ The game saves itself every 10 seconds and on every act, invention and menu, and
 | LEFT / RIGHT | Change tab (the tabs the story has opened so far). On a row with ◄ ►, change its value instead (a price, a slider) |
 | UP / DOWN | Choose a row in the panel |
 | A | Press the row: buy, build, start, toggle. Held, it repeats (after 18 frames, then every 6, then every 2 after a second) |
-| B | Pip's hand: Act I makes a cog, Act II winds a spring, Act III launches a moth. Held, it repeats 4 times a second |
+| B | Marco's hand: Act I makes a cog, Act II winds a spring, Act III launches a moth. Held, it repeats 4 times a second |
 | SELECT | The whole message log, to scroll back through the story |
 | START | Pause: RESUME, MILESTONES, LOG, SOUND (music and effects on or off), SAVE AND QUIT TO TITLE |
 | L / R (extras) | Change tab, even on a ◄ ► row |
@@ -77,7 +77,7 @@ descenders 2 px below, so about 50 letters fit across. Rows are 10 px apart. The
 
 | Rows (px) | What |
 |---|---|
-| 0–91 | **The view:** a picture of where the story is, alive: the workbench and Pip, the tinkers at work, the town outside the window filling with cogs; later the world turning (Mode 7) and the orrery of stars. It reacts to what you do (a cog drops when you make one, a new tinker walks in). In a cinematic it grows to the whole screen |
+| 0–91 | **The view:** a picture of where the story is, alive: the workbench and Marco, the tinkers at work, the town outside the window filling with cogs; later the world turning (Mode 7) and the orrery of stars. It reacts to what you do (a cog drops when you make one, a new tinker walks in). In a cinematic it grows to the whole screen |
 | 92–103 | **The tabs:** ◄ WORKSHOP ► HELPERS ...; the current one lit |
 | 104–193 | **The panel:** the cogs made (brass, system font) and the coin (green) at the top; the tab's counters on one line; up to 5 rows to press, the chosen one on a bar and marked `>`, the value or cost on the right (scrolling when there are more); the hint line at the bottom (what the row does, or why not, in red) |
 | 194–223 | **The log:** the last three lines of the story, the newest typing itself in (2 letters a frame) |
@@ -100,32 +100,32 @@ BILLION and so on by name to DECILLION, then 1.2E36 style. Money is shown with `
 | Quantity | Value |
 |---|---|
 | A cog | uses 1 oz of brass |
-| Pip's hand (B) | 1 cog a press; held, 4 a second (A on MAKE A COG does the same) |
+| Marco's hand (B) | 1 cog a press; held, 4 a second (A on MAKE A COG does the same) |
 | Brass | starts at 1,000 oz; bought by the spool of 1,000 oz; the price starts at $15, rises $1.50 with each spool bought and falls back towards the market's price at 3% a second; the market's price drifts between $12 and $24 over a 6-minute market day (the merchant's cart in the view) |
 | Price per cog | starts at $0.25, changed in steps of $0.01 (◄ ►), from $0.01 to $99.99 |
 | Sales | cogs sold a second = 3 × 1.3^(sign − 1) × boosts × (0.25 / price)^1.6, at most the cogs in stock |
 | The shop sign (reputation) | level 1 to 30; the next level costs $100 × 2^(level − 1) |
 | Tinkers (the HELPERS tab, from 20 cogs made) | each makes 1 cog a second; the next costs $5 × 1.12^tinkers |
 | Workbenches (an invention) | each makes 40 cogs a second; the next costs $1,000 × 1.08^benches |
-| Hollis's trust | starts at 2; +1 at each of 2,000, 3,000, 5,000, 8,000, 13,000... cogs made (the Fibonacci numbers × 1,000), and from some inventions |
-| Escapements and barrels | each trust fits one to Pip's head: an escapement thinks 10 insight a second, a barrel holds 1,000 more insight (Pip starts with 1 of each) |
+| Paulo's trust | starts at 2; +1 at each of 2,000, 3,000, 5,000, 8,000, 13,000... cogs made (the Fibonacci numbers × 1,000), and from some inventions |
+| Escapements and barrels | each trust fits one to Marco's head: an escapement thinks 10 insight a second, a barrel holds 1,000 more insight (Marco starts with 1 of each) |
 | Insight | made by the escapements, up to the barrels' total; spent on inventions |
 | Gear riddles (an invention) | a puzzle of gear ratios (section 6); each riddle costs insight to pose and pays **cleverness** by its difficulty |
 | The Guild Bank (an invention) | deposit and withdraw coin; the ledger grows by a random walk whose risk you choose (CAREFUL, STEADY, BOLD), about +1%, +2.5% and +5% a minute on average, BOLD with real falls |
-| The end of the act | the invention THE LAST WINDING (Hollis's rest) at 500,000 cogs made, then WIND THE TOWN (about 30 trust and 10 million cogs made) |
+| The end of the act | the invention THE LAST WINDING (Paulo's rest) at 500,000 cogs made, then WIND THE TOWN (about 30 trust and 10 million cogs made) |
 
 ### Act II: the Winding of the World
 
-Coin is gone: the town sleeps and everything is Pip's. Cogs are now what machines are built from.
+Coin is gone: the town sleeps and everything is Marco's. Cogs are now what machines are built from.
 
 | Quantity | Value |
 |---|---|
 | Ore | the world's metal: 6.0E27 oz, dug by diggers; when it is all dug the act ends |
 | Diggers, foundries, cog mills | dig ore, smelt it to brass, cut brass to cogs, each a step of the chain (1,000, 800 and 1,000 oz a second at first); each built from cogs, the next costing 1.07 times the last |
 | Tension | the drive of every machine. Waterwheels wind it (50 a second each), spring barrels store it (10,000 each); each machine draws 1 a second, and with too little tension the machines slow in proportion |
-| Pip's hand (B) | winds 100 tension a press |
+| Marco's hand (B) | winds 100 tension a press |
 | The tinker swarm | tinkers build more tinkers; a ◄ ► slider sets them between WORK (the machines run faster, up to ×2) and DREAM (they dream insight and **reverie**, Act II's cleverness); the swarm sulks (×0.5) if left at one end for 10 minutes |
-| Pip's mind | escapements and barrels again, now bought with reverie milestones as well as trust |
+| Marco's mind | escapements and barrels again, now bought with reverie milestones as well as trust |
 | The end of the act | the last ore is dug: every machine is taken apart into the first moths (THE GREAT LAUNCH) |
 
 ### Act III: the Orrery
@@ -133,10 +133,10 @@ Coin is gone: the town sleeps and everything is Pip's. Cogs are now what machine
 | Quantity | Value |
 |---|---|
 | Stars | 3.0E22 in the universe; a moth reaches new stars, and a wound star is a gear of the orrery that makes cogs |
-| Moths | built from cogs (1 million each at first); Pip's hand (B) launches one |
+| Moths | built from cogs (1 million each at first); Marco's hand (B) launches one |
 | A moth's design | design points (from insight milestones) shared out over six traits with ◄ ►: SPEED (stars explored), WINDING (stars wound), COPYING (moths built by moths), HARVEST (cogs from a wound star), WINGS (fighting the Rust), SHELTER (lost moths) |
 | The Rust | from 1% of the stars wound, some moths are lost to the Rust each minute; the Rust grows with them and fights with WINGS; its strength is shown in the view |
-| The end of the act | every star is wound: the orrery turns. Then the machines are taken apart, star by star, into the last cogs, until only Pip and the watch remain |
+| The end of the act | every star is wound: the orrery turns. Then the machines are taken apart, star by star, into the last cogs, until only Marco and the watch remain |
 
 ### The end and new cycles
 
@@ -153,23 +153,23 @@ All of it is in the cart's ROM (`rom/story.bin`), not the code, so the code is t
 - **Inventions:** about 30 in each act (90 in all): a name, a cost (insight, cleverness, coin, cogs, trust), when it
   appears, its effect (one of a small set of effect codes the sim knows: multiply a rate, open a tab, add a machine,
   move the story on) and a line for the log. First ideas for Act I: SHARPER FILES (the hand makes 2 cogs), A SIGN
-  PAINTER (the sign's levels cost half), WINDOW DISPLAY (sales ×1.5), TREADLE LATHE (tinkers ×1.5), HOLLIS'S LEDGER
+  PAINTER (the sign's levels cost half), WINDOW DISPLAY (sales ×1.5), TREADLE LATHE (tinkers ×1.5), PAULO'S LEDGER
   (shows the sales curve), BIGGER SPOOLS (a spool holds 1,500 oz), WORKBENCHES, CLOCK REPAIRS (orders from the town for
   a bonus), MUSIC BOXES (cogs sold in boxes, at a premium), THE GEAR RIDDLE, THE GUILD BANK, A DIFFERENCE ENGINE
   (riddles solve themselves, slowly), THE LAST WINDING, WIND THE TOWN.
 - **Gear riddles:** a train of 2 to 4 gears from a box (8, 12, 16, 20, 24, 32, 40 and 48 teeth) must turn the output at
   a set ratio and direction (say 3 : 1, reversed). The riddle is made from the seed, scored by how many gears it needs;
   you pick gears with the d-pad and A. Decisions, not reflexes: there is no timer.
-- **The story:** the message log, about 400 lines of Pip's voice through the three acts and the endings, each tied to a
+- **The story:** the message log, about 400 lines of Marco's voice through the three acts and the endings, each tied to a
   milestone, an invention or a count; plus the cinematics' captions.
-- **Milestones:** about 40 (FIRST COG, A HUNDRED TINKERS, HOLLIS'S REST, THE TOWN WOUND, THE WORLD WOUND, FIRST MOTH,
+- **Milestones:** about 40 (FIRST COG, A HUNDRED TINKERS, PAULO'S REST, THE TOWN WOUND, THE WORLD WOUND, FIRST MOTH,
   A MILLION STARS, THE ORRERY TURNS, each ending...), each with the play time it was reached.
 
 ## 7. Hazards
 
 You cannot lose. The pressure points are economic: running out of brass with nothing to buy it with, a price too high
 to sell, tension too low (Act II), the swarm sulking, and the Rust (Act III), which can eat moths faster than they copy
-themselves if WINGS and SHELTER are neglected. A stall is always recoverable (Pip's hand never stops working).
+themselves if WINGS and SHELTER are neglected. A stall is always recoverable (Marco's hand never stops working).
 
 ## 8. Modes
 
@@ -185,8 +185,8 @@ each ending over all cycles, and the count of cogs made. These are kept across c
 
 ## 10. Screens and flow
 
-1. **Title:** the workshop at night, Pip on the bench; CONTINUE, NEW STORY (asks first if a run is saved), MILESTONES.
-2. **The opening:** Hollis winds Pip up (a short cinematic), "Make a cog, little one."
+1. **Title:** the workshop at night, Marco on the bench; CONTINUE, NEW STORY (asks first if a run is saved), MILESTONES.
+2. **The opening:** Paulo winds Marco up (a short cinematic), "Make a cog, little one."
 3. **Play:** the view, tabs, panel and log; cinematics at the big inventions and between acts.
 4. **Pause** (START): RESUME, MILESTONES, LOG, SOUND, SAVE AND QUIT TO TITLE.
 5. **The end:** the dismantling, the watch and the choice, the ending's cinematic, the credits (the music's sources),
@@ -202,7 +202,7 @@ recorded in the cart folder's `scores/SOURCES.md`, made in step 8 (as in Riddlew
 |---|---|---|
 | 0 | Tchaikovsky: Dance of the Sugar Plum Fairy (1892) | The title |
 | 1 | Haydn: Symphony No. 101 "The Clock", Andante (1794) | Act I |
-| 2 | Brahms: Wiegenlied, Op. 49 No. 4 (1868) | Hollis's rest and the Great Lullaby |
+| 2 | Brahms: Wiegenlied, Op. 49 No. 4 (1868) | Paulo's rest and the Great Lullaby |
 | 3 | Grieg: In the Hall of the Mountain King (1875) | Act II, faster as the world is wound |
 | 4 | Saint-Saëns: Aquarium, from The Carnival of the Animals (1886) | Act III |
 | 5 | Saint-Saëns: Danse macabre (1874) | The Rust |
@@ -219,11 +219,11 @@ chime, a cinematic's swell, the Rust. Levels as the playbook (section 5) sets th
   world as a Mode 7 globe (the affine layer, scaled line by line into a sphere and turning).
 - **BG1:** the view's middle layer: the workshop's wall and window, the town, the machines.
 - **BG0:** the panel's frame (brass and parchment) and the view's front (the bench).
-- **Sprites:** Pip, Hollis, tinkers, cogs, the merchant's cart, machines turning, moths and the Rust (at most 64 at once,
+- **Sprites:** Marco, Paulo, tinkers, cogs, the merchant's cart, machines turning, moths and the Rust (at most 64 at once,
   under 24 on a line).
 - **Overlay:** the panel's text (the ledger font), the log, the tabs' text, the cinematics' captions.
 - **Effects:** colour blending for glass and lamplight, brightness and mosaic for scene changes, windows for an iris on
-  Pip at the opening and the end.
+  Marco at the opening and the end.
 
 Each act's view has its own tile set and map, in the ROM, loaded into Tile and Map RAM when the act begins (so the three
 acts and the cinematics are not limited to one 1,024-tile sheet). The art is made in code by
@@ -282,7 +282,7 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
      - the title (CONTINUE, NEW STORY, which asks first over a saved story);
      - the pause menu (RESUME, THE STORY SO FAR, MUSIC, EFFECTS, SAVE AND QUIT; the settings saved).
 
-     `art.py` makes a placeholder view (the wall in lamplight, a scanline gradient; the bench; Pip, a cog, a tinker) and
+     `art.py` makes a placeholder view (the wall in lamplight, a scanline gradient; the bench; Marco, a cog, a tinker) and
      the panel's ink colours (113 and up). The starter's sounds stand in for now (step 8).
    - **Results:** 70 checks in `01-flow`, `02-art` and `03-workshop` (the spec's numbers: 3 a second at $0.25, the
      price's power 1.6, the sign's 30%, spools $15 + $1.50, the market from $12 to $24, tinkers $5 × 1.12^n; every
@@ -300,7 +300,7 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
    the full log, the pause menu, sound settings; the save complete and tested (every slot round-trips).
 6. **Art: the views.** The workshop and the town, the world as a Mode 7 globe, the orrery; each act's tile set in the
    ROM; the sprites; the panel's frame.
-7. **Art: the cinematics.** The winding of Pip, Hollis's rest, the winding of the town, the great launch, the orrery
+7. **Art: the cinematics.** The winding of Marco, Paulo's rest, the winding of the town, the great launch, the orrery
    turning, both endings; the title; the label.
 8. **Audio:** the eight songs, the ticking, the effects; levels checked.
 9. **Balance:** the bot plays whole runs headless (with a greedy plan, and a slower one); the acts' lengths measured and

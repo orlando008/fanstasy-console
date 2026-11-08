@@ -9,7 +9,7 @@ import { newGame, M, sfxLog, musicLog, ok } from './lib.mjs';
   ok(!p.hasRun(), 'with no story saved, the only choice is NEW STORY');
   vm.press('A'); vm.run(2);
   ok(p.state === 'play' && p.G && p.G.made === 0 && p.playing === p.SONG.play, 'NEW STORY starts a run, with the workshop\'s song');
-  ok(p.logRows.length > 0 && p.isTold(0), 'and the story begins in the log (Hollis\'s first words)');
+  ok(p.logRows.length > 0 && p.isTold(0), 'and the story begins in the log (Paulo\'s first words)');
   vm.run(5, M('B')); vm.run(5); vm.press('B'); vm.press('B');
   const made = p.G.made;
   vm.press('START'); vm.run(2); ok(p.paused, 'START pauses');

@@ -6,7 +6,7 @@
 #   node tools/devkit/art/scene.mjs carts/clockwork-dominion.nova out.png --scene bench --holes
 # (pack first: node tools/pack.js carts/src/clockwork-dominion carts/clockwork-dominion.nova).
 #
-# Step 1 of the plan: a placeholder view (the workshop's wall in lamplight, the bench, Pip and a cog) and the panel's
+# Step 1 of the plan: a placeholder view (the workshop's wall in lamplight, the bench, Marco and a cog) and the panel's
 # ink, the overlay colours the code draws the panels with. The real views come in step 6.
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
@@ -45,9 +45,9 @@ for x in range(256):
     bench.px[0][x] = wood.wood[3]; bench.px[1][x] = wood.wood[2]
 art.scene('bench', bench, pal=wood, at=(0, 0), solid=True)
 
-# --- Pip: a round brass automaton with a key in its back, 16 x 16 (o edge, d b l brass dark to light, e eye, k key) ---
-pipc = art.sprite_palette(0, {'edge': '1a0f08', 'brass': ramp('b07a2a', 4), 'eye': 'bfe8ff', 'key': ramp('8a8a96', 2)})
-pip = Img.from_rows([
+# --- Marco: a round brass automaton with a key in its back, 16 x 16 (o edge, d b l brass dark to light, e eye, k key) ---
+marcoc = art.sprite_palette(0, {'edge': '1a0f08', 'brass': ramp('b07a2a', 4), 'eye': 'bfe8ff', 'key': ramp('8a8a96', 2)})
+marco = Img.from_rows([
     '.......kk.......',
     '......k..k......',
     '.......kk.......',
@@ -64,8 +64,8 @@ pip = Img.from_rows([
     '.....od..do.....',
     '....odd..ddo....',
     '....ooo..ooo....',
-], key={'o': pipc.edge, 'd': pipc.brass[0], 'b': pipc.brass[2], 'l': pipc.brass[3], 'e': pipc.eye, 'k': pipc.key[1]})
-art.sprite('pip', pip, pal=pipc, region='spr')
+], key={'o': marcoc.edge, 'd': marcoc.brass[0], 'b': marcoc.brass[2], 'l': marcoc.brass[3], 'e': marcoc.eye, 'k': marcoc.key[1]})
+art.sprite('marco', marco, pal=marcoc, region='spr')
 
 # --- A cog, 8 x 8, and a tinker, 8 x 8 ---
 cog = Img.from_rows([
@@ -77,8 +77,8 @@ cog = Img.from_rows([
     'obddddbo',
     '.obbbdo.',
     '..o..o..',
-], key={'o': pipc.edge, 'd': pipc.brass[0], 'b': pipc.brass[2], 'l': pipc.brass[3]})
-art.sprite('cog', cog, pal=pipc, region='spr')
+], key={'o': marcoc.edge, 'd': marcoc.brass[0], 'b': marcoc.brass[2], 'l': marcoc.brass[3]})
+art.sprite('cog', cog, pal=marcoc, region='spr')
 tinker = Img.from_rows([
     '...k....',
     '..oooo..',
@@ -88,7 +88,7 @@ tinker = Img.from_rows([
     '..oooo..',
     '..o..o..',
     '.oo..oo.',
-], key={'o': pipc.edge, 'd': pipc.brass[0], 'b': pipc.brass[2], 'l': pipc.brass[3], 'e': pipc.eye, 'k': pipc.key[1]})
-art.sprite('tinker', tinker, pal=pipc, region='spr')
+], key={'o': marcoc.edge, 'd': marcoc.brass[0], 'b': marcoc.brass[2], 'l': marcoc.brass[3], 'e': marcoc.eye, 'k': marcoc.key[1]})
+art.sprite('tinker', tinker, pal=marcoc, region='spr')
 
 art.write(sys.argv[1])

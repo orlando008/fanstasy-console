@@ -9,7 +9,7 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
 {
   const vm = newGame(1), p = vm.probe(); vm.run(2);
   const { sprites, colors } = p.ART;
-  ok(['pip', 'cog', 'tinker'].every((n) => sprites[n]), 'art.py made Pip, a cog and a tinker');
+  ok(['marco', 'cog', 'tinker'].every((n) => sprites[n]), 'art.py made Marco, a cog and a tinker');
   ok(Object.values(sprites).every((s) => [8, 16, 32].includes(s.size) && s.tile >= 256), 'every sprite is 8, 16 or 32 px, in the sprite region');
   ok(['PAPER', 'INK', 'DIM', 'BRASS', 'GOLD', 'BAD', 'GOOD'].every((n) => colors[n] >= 113 && colors[n] <= 127), 'the panel\'s ink is its own (BG palette 7, kept for the overlay)');
 }
