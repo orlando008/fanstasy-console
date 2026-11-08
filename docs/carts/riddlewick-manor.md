@@ -271,8 +271,21 @@ The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit,
        - the heart's last question, winning, and the scores at levels 1 and 3.
      - `03-slice.mjs` and `01-flow.mjs` set the doors they need, as the manor is no longer fixed.
      - `node tools/devkit/smoke.mjs riddlewick-manor` runs in the real console with no errors.
-     - The bot now plans the route with the fewest questions to the heart (it knows the plan). Its sweep's numbers
-       by `skill` are added below when the sweep finishes.
+     - **The bot** now plans the route with the fewest questions to the heart, then the fewest steps (it knows the
+       plan; counting steps too stops it pacing between two rooms joined by an open door, which a first version did).
+       `node tools/devkit/sweep.mjs riddlewick-manor --seeds 16 --set skill=0.5,0.6,0.7,0.8,0.9`, at level 1 (a candle
+       of 6), all 80 runs finishing, none shut in:
+
+       | Right answers | Runs won | Questions (mean, range) | Candle left (mean) |
+       |---|---|---|---|
+       | 50% | 1 of 16 | 12 (9 to 17) | 0.1 |
+       | 60% | 2 of 16 | 14 (9 to 20) | 0.1 |
+       | 70% | 6 of 16 | 16 (9 to 26) | 1.2 |
+       | 80% | 13 of 16 | 17 (11 to 32) | 2.9 |
+       | 90% | 16 of 16 | 15 (12 to 24) | 5.0 |
+
+       A run is 12 questions at best (11 doors and the last question). Step 8 tunes the candle against the real
+       questions' difficulty; a player who knows 4 answers in 5 at their level should win most runs.
 3. **The question bank:** the format of the questions' text file, the script that checks and packs it into ROM, the drawing rules
    (subject, level, no repeats within and across runs), and the first 160 questions (5 per subject per difficulty).
 4. **The flow:** the title, the new game's choices, saving and CONTINUE, the pause, the end screen, initials and the top
