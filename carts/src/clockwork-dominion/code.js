@@ -138,14 +138,14 @@ const T = {
   contractLow: 5, // the contract buys brass when there is less than 5 seconds' worth
   unsold: 150, // cogs in stock that make the town's indifference a story line
   // Act II: the machines (each built from cogs, at a fixed price), spring power, the swarm
-  regionOre: [0, 1e9, 1e13, 1e17, 6e21], // the ore of Rotella, Tuscany, Italy and the World
+  regionOre: [0, 1e9, 1e13, 1e17, 6e23], // the ore of Rotella, Tuscany, Italy and the World
   digCost: 200000, foundCost: 200000, millCost: 200000, wheelCost: 100000, sbCost: 50000,
   machRate: 1000, draw: 10, wheelGen: 50, river: 0.6, riverDay: 240, sbCap: 10000, power0: 10000, handPower: 100,
   swarmGrow: 0.02, sulkAfter: 600, dreamIns: 20, dreamIng: 0.2,
   // Act III: a second's work for each moth, and the Rust
-  stars: 3e22, moths0: 100000, mothsMin: 10, mothCost: 1e6, reachRate: 1e-3, windRate: 3e-5, harvRate: 1e4, copyRate: 0.004,
+  stars: 3e22, moths0: 100000, mothsMin: 10, mothCost: 1e6, reachRate: 1e-3, windRate: 2.5e-5, harvRate: 1e4, copyRate: 0.004,
   lossRate: 0.002, rustAt: 1e6, rustKill: 0.01, sting: 0.01, rustFrom: 0.5, rustKeep: 0.5, lucia: 0.01,
-  bp0: 6, mothIns: 50, nest0: 1000, nest: 0.0015,
+  bp0: 6, mothIns: 50, draw0: 50000, nest0: 1000, nest: 0.0015,
 };
 const REGIONS = ['', 'Rotella', 'Tuscany', 'Italy', 'the World'];
 const LOTS = [1, 10, 100, 1000, 0]; // how many a press builds; 0 is as many as the cogs allow
@@ -168,7 +168,7 @@ const BEST_SLOT = 239, ALL_SLOT = 244; // the best times to the five great momen
 const BESTS = ['The town is wound', 'The great launch', 'The orrery turns', 'The Dominion ending', 'The Rest ending'];
 const SAVE_INTS = ['sign', 'priceMoves', 'trust', 'escapements', 'barrels', 'contractUse', 'invs', 'solved', 'risk', 'rng',
   'orders', 'oFor', 'mind', 'rTarget', 'rPicks', 'rReward', 'dream', 'auto', 'lot', 'regDone', 'trust2',
-  'tr0', 'tr1', 'tr2', 'tr3', 'tr4', 'tr5', 'trust3', 'rustSeen', 'ending', 'endD', 'endR'];
+  'tr0', 'tr1', 'tr2', 'tr3', 'tr4', 'tr5', 'trust3', 'rustSeen', 'ending', 'endD', 'endR', 'bpDrawn'];
 /** Numbers set by inventions (multipliers, flags): not saved, but worked out again from the inventions made. */
 const derived = (k) => /^m[A-Z]/.test(k) || /On$/.test(k) || ['hand', 'spoolOz', 'signDiv', 'engine', 'watch', 'region', 'plans', 'moth', 'noSulk', 'contract', 'mothIns', 'rustName', 'orrery', 'bpBonus'].includes(k);
 let G = null;
@@ -193,7 +193,7 @@ function freshRun(seed, cyc = 0) {
     mDig: 1, mFound: 1, mMill: 1, mWheel: 1, mSB: 1, mDraw: 1, mMach: work, mHand: 1, mBarrel: 1,
     autoOn: 0, dreamOn: 0, noSulk: 0,
     moths: 0, mothsMax: 0, reached: 0, starsW: 0, starsP: 0, rust: 0, rustT: 0, lostT: 0, rustSeen: 0, trust3: 0, ending: 0, endD: 0, endR: 0,
-    tr0: 0, tr1: 0, tr2: 0, tr3: 0, tr4: 0, tr5: 0, mSpeed: work, mWind: work, mCopy: 1, mHarv: 1, mCostM: 1, mShelter: 1, mWings: 1,
+    bpDrawn: 0, tr0: 0, tr1: 0, tr2: 0, tr3: 0, tr4: 0, tr5: 0, mSpeed: work, mWind: work, mCopy: 1, mHarv: 1, mCostM: 1, mShelter: 1, mWings: 1,
     mLoss: 1, mothIns: 0, rustName: 0, luciaOn: 0, orrery: 0, bpBonus: 0,
     told: new Uint32Array(16), done: new Uint32Array(4), shown: new Uint32Array(4), mile: new Int32Array(40),
   };
@@ -386,7 +386,8 @@ const TRAIT_HINT = ['Reach new stars faster.', 'Wind the stars reached faster.',
   'More cogs from each wound star.', 'Fight the Rust: each point is a sharper sting.', 'Fewer moths lost in the dark.'];
 const tf = (i) => 1 + G['tr' + i]; // a trait's factor: one more for each blueprint in it
 /** Six, one for each power of ten of the most moths there have been (so they never shrink), and inventions'. */
-const blueprints = () => T.bp0 + Math.floor(Math.log10(Math.max(1, G.mothsMax))) + G.bpBonus;
+const blueprints = () => T.bp0 + Math.floor(Math.log10(Math.max(1, G.mothsMax))) + G.bpBonus + G.bpDrawn;
+const drawCost = () => T.draw0 * 2 ** G.bpDrawn;
 const freeBp = () => blueprints() - TRAITS.reduce((s, _, i) => s + G['tr' + i], 0);
 const mothCost = () => T.mothCost * G.mCostM;
 const reachRate = () => G.moths * T.reachRate * tf(0) * G.mSpeed;
@@ -489,6 +490,7 @@ const ACT = {
   build(k) { return build(k, lotOf(k)) ? true : no(`Not enough cogs: ${fmts(cost2(k))} each.`); },
   lot(d) { const l = G.lot + d; if (l < 0 || l >= LOTS.length) return no('There is no other size of lot.'); G.lot = l; return true; },
   dream(d) { const v = G.dream + d; if (v < 0 || v > 10) return no('The slider is at its end.'); G.dream = v; return true; },
+  drawBp() { const c = drawCost(); if (G.insight < c) return no(`A blueprint costs ${fmtc(c)} insight.`); G.insight -= c; G.bpDrawn++; return true; },
   trait(i, d) {
     const v = G['tr' + i] + d;
     if (v < 0) return no('No blueprints in it to take back.');
@@ -798,7 +800,8 @@ const TABS = [
   {
     name: 'DESIGN', acts: 3,
     info: () => [`Blueprints ${freeBp()} of ${blueprints()}`, 'LEFT and RIGHT to share them'],
-    rows: () => TRAITS.map((n, i) => ({ t: n, v: () => val(String(G['tr' + i])), adj: (d) => ACT.trait(i, d), ok: () => true, h: () => TRAIT_HINT[i] })),
+    rows: () => [...TRAITS.map((n, i) => ({ t: n, v: () => val(String(G['tr' + i])), adj: (d) => ACT.trait(i, d), ok: () => true, h: () => TRAIT_HINT[i] })),
+      { t: 'Draw a blueprint', v: () => `${fmtc(drawCost())} ins`, a: ACT.drawBp, ok: () => G.insight >= drawCost(), h: () => 'One more blueprint. Each costs twice the last.' }],
   },
   {
     name: 'MIND', when: () => G.mind,

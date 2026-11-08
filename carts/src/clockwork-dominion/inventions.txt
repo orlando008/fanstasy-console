@@ -34,8 +34,8 @@
 24 | Lucia's Melody | inv:10&made:500000 | ins:12000 clev:80 | mRev*1.5 | Music boxes sell for half as much again. | Lucia is grown now. She wrote a melody for the boxes. It goes round and round and never quite ends.
 25 | A Shop in Every Valley | made:1000000 | ins:15000 clev:150 | mSales*3 | The town and the valleys buy three times as many. | Carts leave every morning for the valleys. Every clock from here to the sea is ticking with my cogs.
 26 | The Great Mainspring | inv:25 | ins:18000 clev:200 | mAll*1.5 | Every helper works half as fast again. | I wound a mainspring as tall as Paulo under the floor. The whole shop leans on it, gently.
-27 | The Last Winding | made:3000000 | ins:20000 | trust+10 watch=1 | Paulo is very old. Sit with him. | Paulo gave me his pocket watch and closed my hand over it. "Never let it wind down," he said. Then he was still.
-28 | Wind the Town | inv:27&made:10000000&trust:30 | ins:20000 clev:300 | act=2 | Every clock in Rotella will be wound. And more. | I will not let it wind down. Not the watch. Not the town. Not anything. I begin.
+27 | The Last Winding | made:8000000 | ins:20000 | trust+10 watch=1 | Paulo is very old. Sit with him. | Paulo gave me his pocket watch and closed my hand over it. "Never let it wind down," he said. Then he was still.
+28 | Wind the Town | inv:27&made:50000000&trust:32 | ins:20000 clev:300 | act=2 | Every clock in Rotella will be wound. And more. | I will not let it wind down. Not the watch. Not the town. Not anything. I begin.
 
 # --- Act II: the Winding of the World (ids 41 to 80) ---
 41 | The Long Lullaby | act:2 | ins:1000 | region=1 cogs+5000000 | Rotella sleeps. Take its clocks apart for cogs. | I rang the bells of Rotella softly, all night, until everyone slept. Then I took the clocks apart, one by one, for their cogs.
@@ -58,11 +58,11 @@
 58 | Gang Saws | inv:57 | ins:50000 ing:80 | mMill*5 | Cog mills cut five times as fast. | A hundred saws on a single frame. The cogs fall like rain.
 59 | A Hundred Minds | ingT:200 | ins:60000 ing:150 | mIns*3 | Insight comes three times as fast. | I fitted escapements in a hundred tinkers and wound their thoughts into mine. We think together now.
 60 | The Iron Tide | inv:58&inv:59 | ins:100000 ing:300 | mMach*3 | Every machine works three times as fast. | The machines move together like a tide. They come in, and they do not go out again.
-61 | Integrate the World | dugT:50000000000000000 | ins:150000 ing:400 | region=4 | The whole world's ore: six sextillion ounces. | Every city. Every sea. Every mountain. I am sorry, Paulo. You said never let it wind down.
+61 | Integrate the World | dugT:50000000000000000 | ins:150000 ing:400 | region=4 | The whole world's ore: 600 sextillion ounces. | Every city. Every sea. Every mountain. I am sorry, Paulo. You said never let it wind down.
 62 | The Orrery Plans | inv:61 | ins:120000 ing:300 | plans=1 | Marco looks up. | At night I looked up for the first time. The stars are winding down too. Someone must wind them.
-63 | A Moth of Brass | inv:62 | ins:200000 ing:600 | moth=1 | The first moth's design: wings that copy themselves. | I drew a moth with wings of brass, that can build another moth from a little ore. Then another. Then another.
-64 | The Last Mine | wound:0.9 | ins:150000 ing:500 | mDig*10 mFound*10 mMill*10 | The last ore is dug, smelted and cut ten times as fast. | The last of the world's metal comes up quickly. There is not much left to hold it down.
-65 | The Great Launch | inv:63&wound:1 | ins:200000 ing:1000 | act=3 | The end of Act II. | I took the machines apart, all of them, and made moths. The sky was full of wings.
+63 | A Moth of Brass | inv:62 | ins:200000 ing:300 | moth=1 | The first moth's design: wings that copy themselves. | I drew a moth with wings of brass, that can build another moth from a little ore. Then another. Then another.
+64 | The Last Mine | wound:0.5 | ins:150000 ing:500 | mDig*10 mFound*10 mMill*10 | The last ore is dug, smelted and cut ten times as fast. | The last of the world's metal comes up quickly. There is not much left to hold it down.
+65 | The Great Launch | inv:63&wound:1 | ins:200000 ing:500 | act=3 | The end of Act II. | I took the machines apart, all of them, and made moths. The sky was full of wings.
 
 # --- Act III: the Orrery (ids 81 to 120) ---
 81 | Copper Antennae | act:3 | ins:10000 | mSpeed*2 | Moths reach new stars twice as fast. | Copper antennae, very fine, that can smell a star a long way off.
@@ -74,8 +74,8 @@
 87 | Brass Plating | lostT:100000 | ins:40000 | mShelter*2 | Shelter works twice as well: fewer moths lost. | Plated moths. The dark between the stars is cold, and very hard.
 88 | Stinging Wings | rustSeen:1 | ins:40000 | mWings*2 | Wings fight the Rust twice as well. | I gave the moths sharper wings. I did not want to. The Rust gave me no choice.
 89 | A Name for the Rust | rustSeen:1 | ins:20000 | rustName=1 | Shows the Rust's strength, and how fast it grows. | The red moths do not answer when I call. I named them the Rust. A name is a kind of map.
-90 | The Long Dark | lostT:10000000 | ins:60000 | mLoss*0.5 | Half as many moths are lost in the dark. | I strung lanterns between the stars, for the moths to find their way home.
-91 | Swarm of Swarms | moths:1000000000 | ins:80000 | mCopy*3 | Moths build moths three times as fast. | Every moth is a swarm now, and every swarm is a moth.
+90 | The Long Dark | lostT:1000000 | ins:60000 | mLoss*0.5 | Half as many moths are lost in the dark. | I strung lanterns between the stars, for the moths to find their way home.
+91 | Swarm of Swarms | moths:100000000 | ins:80000 | mCopy*3 | Moths build moths three times as fast. | Every moth is a swarm now, and every swarm is a moth.
 92 | Galactic Springs | starsW:10000000000 | ins:90000 | mWind*3 | Moths wind stars three times as fast. | A spring wound around a whole galaxy. It hums at a pitch only I can hear.
 93 | The Second Galaxy | reached:100000000000 | ins:100000 | mSpeed*5 | Moths reach new stars five times as fast. | The moths crossed to the next galaxy. It is very like ours, and very quiet.
 94 | The Great Orrery | starsW:10000000000000 | ins:120000 | mHarv*5 | A wound star gives five times the cogs. | The wound stars turn on gears, each in its place. Paulo's book showed an orrery. This is the orrery.

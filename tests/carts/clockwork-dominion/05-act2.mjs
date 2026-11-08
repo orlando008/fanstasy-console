@@ -69,7 +69,7 @@ function act2(seed = 1) {
   p.G.dugT = 5e8; simFor(p, 0.1); ok(p.available().includes(tus), 'and then appears');
   const ore = p.G.ore; p.G.insight = 1e5; p.ACT.invent(tus.id);
   ok(p.G.region === 2 && p.G.ore === ore + 1e13, 'integrating it adds its ten trillion ounces to what is left');
-  ok(p.T.regionOre.join() === '0,1000000000,10000000000000,100000000000000000,6e+21', 'Rotella, Tuscany, Italy and the World: 1e9, 1e13, 1e17 and 6e21 oz');
+  ok(p.T.regionOre.join() === '0,1000000000,10000000000000,100000000000000000,6e+23', 'Rotella, Tuscany, Italy and the World: 1e9, 1e13, 1e17 and 6e23 oz');
   ok(['Integrate Tuscany', 'Integrate Italy', 'Integrate the World'].every((n) => !inv(p, n).cost.cogs), 'the places cost insight and ingenuity, not cogs (so spending every cog cannot strand you)');
 }
 
@@ -107,7 +107,7 @@ function act2(seed = 1) {
   while (p.G.act === 2 && p.G.time < start + 4 * 3600) { plan(p, 0.1); p.step(0.1); }
   const mins = (p.G.time - start) / 60;
   ok(p.G.act === 3, 'a sensible player finishes Act II', `in ${mins.toFixed(0)} minutes`);
-  ok(mins > 60 && mins < 180, 'in 1 to 3 hours (120 is the aim, tuned in step 9)');
+  ok(mins > 45 && mins < 180, 'in 45 minutes to 3 hours (about 65; see 10-balance)');
   ok(p.G.wound === 1 && p.G.region === 4, 'with the whole world wound');
   ok(p.INVS.filter((v) => v.id > 40 && v.id <= 80).every((v) => p.isDone(v.id)), 'having made all 25 of Act II\'s inventions');
 }

@@ -54,6 +54,11 @@ made:1000000 | A million cogs. I sat with Paulo and told him. He held my hand. H
 made:2000000 | Paulo asks me to wind the clocks in his room. All of them. Every night. He wants to hear them ticking.
 ev:watch | The watch ticks in my hand. I will wind it every day. I will never let it wind down.
 made:5000000 | The town has gone quiet since Paulo stopped. The clocks have not. I see to that.
+made:12000000 | I wind Paulo's watch every morning at seven, as he did. Then I wind every other clock in the shop. It takes all day now.
+made:28000000 | The square is full of my clocks, and none of them is a minute out. The town keeps time like a single heart.
+made:42000000 | The tinkers have stopped asking what we are for. We are for this. For keeping everything going.
+made:20000000 | Twenty million cogs. The town is very still now. Only the clocks are awake, and me.
+made:35000000 | Lucia came to the shop window and watched me for a long time. She did not say anything. I think she knows.
 ev:act2 | I wound the clock in the square. Then the clocks in every house. Then the people in them, gently, so that they would sleep and never stop.
 
 # --- Act II: the Winding of the World ---
@@ -70,13 +75,19 @@ ev:sulk | The swarm is sulking. They have been at one thing too long. I should m
 swarm:1000000 | A million tinkers. When they all tick at once, the windows rattle in Florence.
 ingT:1 | A dreaming tinker gave me an idea. I did not know they could. I wonder what else they dream.
 ingT:50 | The dreams are getting stranger. One tinker dreamed of a clock with no hands that tells the time anyway.
+ingT:100 | A hundred ideas from the dreaming swarm. Most are strange. One was a way to wind a river. I am trying it.
+swarm:100000000 | A hundred million tinkers. They sleep in shifts, and dream in shifts, and the dreams go round like a wheel.
+ingT:250 | The tinkers dreamed of Paulo last night, all of them at once. I do not know how they knew his face.
 region:2 | Tuscany is wound. The vineyards are rows of little gears now, very neat.
 made:1000000000000 | A trillion cogs. I counted them all. It took no time at all.
 region:3 | Italy is wound. The trains run exactly on time. Nobody rides them.
 swarm:1000000000 | A billion tinkers. They cover the hills like frost.
 made:1000000000000000 | A quadrillion cogs. Lucia's house is still standing. I have not touched it. She is asleep inside, and her music box is playing.
 region:4 | The world is wound. Every clock on every wall in every house on every continent. All of them, all at once. Tick.
+wound:0.1 | A tenth of the world's metal is cogs. The mountains are hollow. You can hear the wind inside them.
+wound:0.25 | A quarter of the world. The oceans fill the empty mines, and the machines drink the oceans for their springs.
 wound:0.5 | Half the world's metal is cogs now. The ground is getting light. The seas are getting high.
+wound:0.75 | Three quarters. The night side of the world glows with foundries. From the moon it must look like a city.
 wound:0.99 | Almost done. When the last ore is gone, the world will be finished. What then?
 plans:1 | Paulo had a book of the heavens on his shelf, with a picture of an orrery: all the planets on gears. I understand it now.
 
@@ -89,13 +100,28 @@ moths:100000 | A hundred thousand moths. They are building moths of their own no
 ev:nocogs | There are not enough cogs to build more moths. The wound stars will make more.
 lostT:1000 | A thousand moths lost in the dark. I counted every one.
 ev:rust | Some of the moths have stopped answering. They are red, and they fly against the others.
+rustT:10000 | Ten thousand moths lost to the Rust. I gave each of them a name. I am running out of names.
+rustT:300000 | The red moths fly in silence. Mine hum. You can hear the edge of the Rust from far off: where the humming stops.
 rustT:1000000 | The Rust grows. Every moth it takes, it keeps.
 ev:rustwins | The Rust is winning. Wings would fight it; shelter would keep the moths safe.
+rustT:10000000 | Some nights I listen to the Rust for a long time. It is very patient. It thinks it has already won.
 rustT:100000000 | The Rust speaks at last. It says: everything wants to stop. Let it stop.
 ev:luciahome | Red moths are coming home, one by one. They hum the melody, and their rust falls away.
+moths:10000000 | Ten million moths. When they turn together, the stars behind them flicker.
 moths:1000000000 | A billion moths. The galaxy glitters with them.
+moths:100000000000 | A hundred billion moths. Some have been flying so long they were built by moths built by moths built by me.
 starsW:1000000000 | A billion stars wound. The galaxy turns like a wheel.
+starsW:1000000000000 | A trillion stars wound. Whole galaxies tick now, in time with each other.
+bpDrawn:1 | I drew a new blueprint by the light of a wound star. Paulo drew his on the back of old invoices.
 starsP:0.5 | Half of all the stars are wound. The other half are waiting.
+starsW:1000000000000000 | A quadrillion stars. I sent a moth back to the world, to see. There was nothing left but cogs, turning.
+moths:10000000000000 | Ten trillion moths. They fill the dark between the galaxies like snow falling upward.
+starsW:100000000000000000 | A hundred quadrillion stars wound. I can no longer hear any one of them. I hear them all, together, as one long chord.
+moths:10000000000000000 | Ten quadrillion moths. The Rust grows with them. Every light has its shadow, Paulo used to say.
+starsW:10000000000000000000 | Ten quintillion stars. The orrery is taking its shape: wheels within wheels within wheels.
+moths:10000000000000000000 | Ten quintillion moths. There are more moths now than there were grains of sand on the world.
+starsP:0.75 | Three quarters of the stars. The last ones are far and faint. The moths fly for years to reach them.
+starsP:0.9 | Nine stars in ten. Somewhere in the last tenth, the Rust is hiding. It knows what comes after.
 starsP:0.99 | Almost every star. When the last one is wound, there will be nothing left to wind but the watch.
 orrery:1 | Paulo, it is done. Everything you could ever see is ticking. You never let it wind down. Neither did I.
 

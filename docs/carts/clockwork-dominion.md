@@ -1,7 +1,7 @@
 # Clockwork Dominion: Cart Specification
 
-**Version:** 0.9 (step 8 of 10)
-**Status:** In progress: steps 1 to 8 of the plan (section 15) are built (the engine, the three acts, the end, new cycles, the flow, the views, the cinematics and the audio); step 9, the balance, is next
+**Version:** 0.10 (step 9 of 10)
+**Status:** In progress: steps 1 to 9 of the plan (section 15) are built (the whole game, balanced); step 10, polish and release, is next
 **Cart source:** `carts/src/clockwork-dominion/` → `carts/clockwork-dominion.nova`
 
 ---
@@ -31,8 +31,8 @@ beginning. **Wind it, or let it stop?** Two endings; then a **new cycle** can be
 
 - **Shelf:** Strategy (the decisions are what to buy, when, and in what balance).
 - **Players:** 1.
-- **Structure:** one long story run in three acts, saved as you go (CONTINUE), about 5 to 6 hours to the end, like the
-  incrementals it follows; then new cycles.
+- **Structure:** one long story run in three acts, saved as you go (CONTINUE), about 4 hours to the end (Act I 70 to
+  90 minutes, Act II about 65, Act III about 100), like the incrementals it follows; then new cycles.
 - **Difficulty:** relaxed. You cannot lose; a poor plan is only slower. Each act has its tight spots to work out (brass
   running short, a price set too high, tension too low to drive the mills, the Rust).
 - **Tone:** cosy-spooky storybook: brass and parchment, ticking, warm lamplight in the shop, growing grand and eerie as
@@ -116,7 +116,7 @@ BILLION and so on by name to DECILLION, then 1.2E36 style. Money is in lire, sho
 | Banca di Rotella (BANCA) | put in half or all your lire, take it all out; the ledger grows by a random walk whose risk you choose: CAREFUL about +1% a minute (spread 0.4%), STEADY +2.5% (1.5%), BOLD +5% (6%, with real falls) |
 | Orders (CLOCK REPAIRS) | every 90 s an order comes (for the bell tower, the baker's clock, the mill wheel...): 20 to 60 seconds of the shop's work in cogs, paying 3 times the window's price; open for 3 minutes |
 | Signore Ferrese's contract | when ON, buys brass (up to 5 spools a tick) whenever there is less than 5 seconds' worth |
-| The end of the act | THE LAST WINDING (Paulo's rest; his watch) at 3 million cogs made and 20,000 insight, then WIND THE TOWN at 10 million cogs, 30 trust, 20,000 insight and 300 cleverness |
+| The end of the act | THE LAST WINDING (Paulo's rest; his watch) at 8 million cogs made and 20,000 insight, then WIND THE TOWN at 50 million cogs, 32 trust, 20,000 insight and 300 cleverness |
 
 ### Act II: the Winding of the World
 
@@ -127,7 +127,7 @@ places Rotella, Tuscany, Italy and the World.
 
 | Quantity | Value |
 |---|---|
-| The places | Rotella 1e9 oz of ore (THE LONG LULLABY, which also gives 5 million cogs from the town's clocks), Tuscany 1e13, Italy 1e17, the World 6e21. Each next place's invention (INTEGRATE TUSCANY, ITALY, THE WORLD) appears when half the ore so far is dug (5e8, 5e12, 5e16 oz) and adds its ore to what is left; they cost insight and ingenuity, never cogs |
+| The places | Rotella 1e9 oz of ore (THE LONG LULLABY, which also gives 5 million cogs from the town's clocks), Tuscany 1e13, Italy 1e17, the World 6e23. Each next place's invention (INTEGRATE TUSCANY, ITALY, THE WORLD) appears when half the ore so far is dug (5e8, 5e12, 5e16 oz) and adds its ore to what is left; they cost insight and ingenuity, never cogs |
 | Diggers, foundries, cog mills | the chain: dig ore into the yard, smelt it to brass, cut brass to cogs (an ounce of brass makes `mOz` cogs, as in Act I). Each machine does 1,000 oz a second, × its inventions, × the swarm's work. Each costs 200,000 cogs, and the price does not rise |
 | Waterwheels, spring barrels | a waterwheel (100,000 cogs) winds 50 spring power a second, more or less as the river rises and falls (±60% over 4 minutes); a spring barrel (50,000) stores 10,000. The springs hold 10,000 to begin with |
 | Spring power | every digger, foundry and mill draws 10 a second; with too little, they all slow in proportion (and the story says so) |
@@ -136,7 +136,7 @@ places Rotella, Tuscany, Italy and the World.
 | Building | a press builds a lot of 1, 10, 100, 1,000 or MAX (as many as the cogs allow), chosen with ◄ ►. THE TINKER WORKS builds by itself with a share of the cogs (◄ ► in tenths), each time the machine the chain lacks most (waterwheels if the power is short, spring barrels if they hold under 20 seconds of it, foundries if the ore piles up, mills if the brass does, else diggers) |
 | The swarm | starts at 1,000 tinkers for each of Act I's tinkers and 10,000 for each workbench, and grows 2% a minute. Until DREAMING TINKERS, it all works: the machines run ×2. Then a slider sets it from WORK to DREAM in tenths: the machines run × (1 + work), and dreams bring ingenuity (dream × log10(tinkers) × 0.2 a second) and insight (dream × log10(tinkers) × 20 a second). Left at either end for 10 minutes, the swarm sulks and that end's gift is halved, until the slider moves (SWARM SONGS: never) |
 | Trust | one for each power of ten of cogs made from 1e8, and at 10, 100, 1,000 ... ingenuity earned |
-| The end of the act | every place dug (the world is wound), A MOTH OF BRASS made, then THE GREAT LAUNCH (200,000 insight, 1,000 ingenuity): the machines become moths |
+| The end of the act | every place dug (the world is wound), A MOTH OF BRASS (300 ingenuity), then THE GREAT LAUNCH (200,000 insight, 500 ingenuity): the machines become moths. THE LAST MINE (×10) comes at half the world wound |
 
 ### Act III: the Orrery
 
@@ -146,11 +146,11 @@ SPEED, WINDING, COPYING, HARVEST, WINGS and SHELTER, and **blueprints** (the poi
 | Quantity | Value (each second) |
 |---|---|
 | The start | THE GREAT LAUNCH turns the machines into 100,000 moths; the cogs left from Act II stay |
-| Stars | 3e22 in the universe. Each moth reaches 0.001 of a star × (1 + SPEED) × its inventions, and winds 3e-5 of a reached star × (1 + WINDING) × its inventions |
+| Stars | 3e22 in the universe. Each moth reaches 0.001 of a star × (1 + SPEED) × its inventions, and winds 2.5e-5 of a reached star × (1 + WINDING) × its inventions |
 | Cogs | each wound star gives 10,000 × (1 + HARVEST) × its inventions |
 | Copying | moths build moths, at 1,000,000 cogs each (FOLDED WINGS: half): at most 0.004 a moth, and at most what the nests allow (1,000 + 0.0015 for each wound star), both × (1 + COPYING) × its inventions. B launches up to `mHand` moths (100 after MANY HANDS) |
 | The dark | 0.002 of the moths are lost, ÷ (1 + SHELTER) × its inventions |
-| Blueprints | 6, and one for each power of ten of the most moths there have been (so they never shrink), and 10 from IRON RESOLVE; shared over the six traits with ◄ ►, and taken back the same way |
+| Blueprints | 6, and one for each power of ten of the most moths there have been (so they never shrink), 10 from IRON RESOLVE, and one for each drawn from insight on the DESIGN tab (DRAW A BLUEPRINT: 50,000 insight, twice as much each time); shared over the six traits with ◄ ►, and taken back the same way |
 | The Rust | comes when a million stars are wound, as a hundredth of the moths. It takes 1% of itself in moths a second, and grows by half of what it takes and half of the moths lost in the dark. Each blueprint in WINGS stings away 1% of it a second (× the inventions), and none, none. It is never more than twice the moths, so a blueprint moved to WINGS always turns it back. LUCIA'S SONG brings 1% of it home as moths |
 | Trust | one for each power of ten of stars wound; insight also comes from the moths with MOTH DREAMS (50 × log10(moths)) |
 | The end of the act | every star wound: THE ORRERY TURNS, then THE LAST COG: only the watch is left |
@@ -500,6 +500,24 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
      asked); PNG payload 45%.
 9. **Balance:** the bot plays whole runs headless (with a greedy plan, and a slower one); the acts' lengths measured and
    tuned to about 90, 120 and 120 minutes; no stall that the bot cannot leave.
+   - **Built:**
+     - the planner takes a minute over each riddle, as a person would (`think`), and moves the swarm towards DREAM
+       when an invention waits only on ingenuity;
+     - `balance.mjs` reports each act's longest stretch with nothing new (no invention, milestone or story line);
+     - tuning: THE LAST WINDING at 8 million cogs (was 3), WIND THE TOWN at 50 million and 32 trust (was 10 million
+       and 30); THE LAST MINE at half the world (was 90%); the moth's and the launch's ingenuity halved; SWARM OF SWARMS
+       and THE LONG DARK sooner; the World 6e23 oz; the moths' winding 2.5e-5;
+     - DRAW A BLUEPRINT, a use for Act III's insight, which sat at its cap with nothing to buy;
+     - 26 more story lines through the quiet stretches (Act I's long wait for the town, the world's metal going, the
+       moths and stars by powers of ten, the Rust).
+   - **Results:** 295 checks (`10-balance` is new: whole stories over four seeds and decision speeds, each 3.8 to 4.3
+     hours, each act about an hour or more, never 15 minutes with nothing new; and cycles 2, 3 and 4, with their
+     rules, played to the end).
+     - **Act II's length:** an attempt to stretch it showed that its machines outgrow any amount of ore (the World,
+       even at 6e23 oz, is dug in minutes): the act is paced by the swarm's dreams. Making the digging itself the long
+       climb would need a new economy (machine costs that rise, or a swarm that builds them), which was put back; Act
+       II stays at about 65 minutes, the aim of 120 left as an open question.
+     - The soak, `smoke.mjs` and the bot's sweep are clean. Code 61.5 KB, ROM 28.3 KB, PNG payload 46%.
 10. **Polish and release:** the size pass (the story written out to fill the space, the last details), the PNG cart, the
     Library entry and the README row.
 
@@ -513,8 +531,9 @@ Rotella (the town) and lire are agreed. Every new name (a person, a place, an in
 to the user before it goes into the game.
 
 Defaults chosen at the kickoff that are easy to change:
-- **Hours:** about 5 to 6 hours to the end ("similar to the incremental it follows"); each act's length is a tuning
-  number (step 9).
+- **Hours:** about 4 hours to the end after step 9 ("similar to the incremental it follows"). Act II is about 65
+  minutes, shorter than the 120 planned: its machines outgrow the world's ore, so the swarm's dreams pace it. A longer
+  Act II would need costs that rise with the machines, or a swarm that has to build them.
 - **LEFT/RIGHT on a ◄ ► row** change the value rather than the tab (L, R and the other rows change tabs); if this is
   confusing, A could open a value for changing instead.
 - **Time away:** the console has no clock, so nothing is made while the cart is off; the game picks up where it was.

@@ -20,7 +20,8 @@ function solveRiddle(p) {
 }
 
 export function makePlanner(opts = {}) {
-  const taps = opts.taps ?? 4, slack = opts.slack ?? 0;
+  const taps = opts.taps ?? 4, slack = opts.slack ?? 0, think = opts.think ?? 0; // think: seconds a riddle takes to work out
+  let riddleAt = 0;
   let tapAcc = 0, wait = 0;
   const spendTrust = (p) => {
     const G = p.G, A = p.ACT, avail = p.available();
@@ -40,7 +41,10 @@ export function makePlanner(opts = {}) {
     if (G.act !== 2) return;
     spendTrust(p);
     while (G.lot < 4) A.lot(1);
-    if (G.dreamOn && G.dream !== 5) A.dream(G.dream < 5 ? 1 : -1);
+    // dream more when an invention waits only on ingenuity (but not at the very end, where the swarm would sulk)
+    const lacking = p.available().some((v) => (v.cost.ing || 0) > G.ingen && (v.cost.ins || 0) <= G.insight);
+    const want = lacking ? 9 : 5;
+    if (G.dreamOn && G.dream !== want) A.dream(G.dream < want ? 1 : -1);
     const hoard = Math.max(0, ...p.available().map((v) => v.cost.cogs || 0));
     if (G.autoOn) { const want = hoard > G.cogs ? 0 : 10; while (G.auto !== want) A.auto(want > G.auto ? 1 : -1); return; }
     if (hoard > G.cogs && G.cogs > hoard * 0.2) return;
@@ -61,6 +65,7 @@ export function makePlanner(opts = {}) {
     for (const v of p.available()) if (p.canAfford(v.cost)) A.invent(v.id);
     if (G.act !== 3) return;
     spendTrust(p);
+    if (G.insight >= p.drawCost() && !p.available().length) A.drawBp();
     // the Rust is winning and every blueprint is placed: take one back from the biggest trait, for WINGS
     if (G.rust > 0 && p.stingRate() < p.rustRate() * 0.75 && p.freeBp() === 0) {
       const big = [0, 1, 2, 3, 5].reduce((b, i) => (G['tr' + i] > G['tr' + b] ? i : b), 0);
@@ -99,7 +104,8 @@ export function makePlanner(opts = {}) {
       const next = Math.min(Infinity, ...p.available().map((v) => v.cost.ins || Infinity));
       if (G.insight - p.riddleCost() >= Math.min(next, p.insCap()) * 0.5 || next === Infinity) A.pose();
     }
-    if (G.rTarget) { solveRiddle(p); A.tryIt(); }
+    if (G.rTarget && !riddleAt) riddleAt = G.time + think;
+    if (G.rTarget && G.time >= riddleAt) { solveRiddle(p); A.tryIt(); riddleAt = 0; }
     const spend = G.coin - (G.contractUse ? G.spool * 3 : 0);
     if (spend > p.signCost() * 2 && G.sign < p.T.signMax) A.sign();
     if (G.benchOn && spend > p.benchCost() * 1.5) A.bench();

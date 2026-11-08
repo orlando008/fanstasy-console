@@ -23,7 +23,7 @@ const PROBE = `__expose(() => ({
   get INVS() { return INVS; }, get MILES() { return MILES; }, available, canAfford, isDone, freeTrust, insCap, insRate, riddleCost, riddleTarget, picked,
   benchCost, nextTrust, costText, ratio, GEARS, RISKS, actOf, eff2: () => eff2, powerGen, powerNeed, powerCap, machRate, build, cost2,
   workShare, dreamShare, ingRate, sulking, worldOre, REGIONS, LOTS, SAVE_INTS, workBoost, river,
-  TRAITS, blueprints, freeBp, mothCost, reachRate, windRate, copyRate, harvRate, lossRate, stingRate, rustRate, choose, CHOICES,
+  TRAITS, blueprints, freeBp, drawCost, mothCost, reachRate, windRate, copyRate, harvRate, lossRate, stingRate, rustRate, choose, CHOICES,
   get choiceSel() { return choiceSel; }, ENDS_SLOT, BEST_SLOT, ALL_SLOT, GIFTS, titleItems, ruleOf, RULES, playScene, get cine() { return cine; }, get SCENES() { return SCENES; },
 }));`;
 
