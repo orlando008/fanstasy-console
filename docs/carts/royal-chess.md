@@ -1,7 +1,7 @@
 # Royal Chess: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 6 of 8 built (section 15): every rule of chess, two players, the computer at three levels, the menus and saves, the side panel and the palace-study art. Step 7 (the audio) is next.
+**Status:** Steps 1 to 7 of 8 built (section 15): every rule of chess, two players, the computer at three levels, the menus and saves, the side panel, the palace-study art and the music and effects. Step 8 (balance, polish and release) is next.
 **Cart source:** `carts/src/royal-chess/` → `carts/royal-chess.nova`
 
 ---
@@ -151,17 +151,29 @@ None: a game is won, lost or drawn. (Records against each level were not chosen 
 
 ## 11. Audio
 
-Calm baroque music, public domain, read from public domain or CC0 engravings and recorded in `scores/SOURCES.md`, as the
-other games do. Songs on channels 0 to 5, effects on 6 and 7.
+Calm baroque music, public domain, read from public domain engravings and recorded in
+`carts/src/royal-chess/scores/SOURCES.md`, as the other games do (`scores.py` reads the MIDI files into note text;
+`audio.py` arranges it). Songs on channels 0 to 4, effects on 6 and 7. No drums.
 
-| Song | Where | Piece (to choose in step 7) |
+| Song | Where | Piece | Arrangement |
+|---|---|---|---|
+| 0 | The title and the menus | Bach, *Minuet in G* (BWV Anh. 114), all 32 bars, speed 14 (45 s) | the tune plucked like a harpsichord, held softly on strings beneath; the left hand plucked over a quiet bass |
+| 1 | The game | Bach, *Sheep May Safely Graze* (BWV 208), bars 1 to 20, speed 13 (69 s) | the recorders' tune (and the singer's, where they rest) on a soft flute an octave down, the other lines on strings, the continuo on the bass; a hall's echo |
+
+| # | Effect | Sound |
 |---|---|---|
-| 0 | The title and the menus | a harpsichord piece by Bach or Handel |
-| 1 | The game | a slower piece, quiet enough to think over |
-
-Effects: the cursor's tick; picking a piece up (a wooden click), putting it down (a soft knock), a capture (a firmer
-knock), castling (two knocks), a promotion (a little rising chime), check (a small bell), a move that is not legal (a
-soft thud), checkmate (a short fanfare), a draw (two gentle notes), the computer's move (its put-down knock).
+| 0 | the cursor | a short marimba tick |
+| 1 | select | two soft bells up |
+| 2 | pause | two soft bells down |
+| 3 | a piece picked up | a wooden click (marimba) |
+| 4 | put down, and the computer's move | a soft knock (tom) |
+| 5 | a capture | a firmer, lower knock |
+| 6 | a move that is not legal | a soft thud |
+| 7 | check | a small bell |
+| 8 | a promotion | a little rising chime |
+| 9 | checkmate | a short fanfare on a soft horn |
+| 10 | a draw | two gentle notes |
+| 11 | castling | two knocks |
 
 Levels follow the playbook: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x
 where it enters, no piercing (`node tools/devkit/music/loud.mjs carts/royal-chess.nova --check`; playbook section 5).
@@ -376,6 +388,21 @@ position a test sets up).
      - `09-panel.mjs` checks the last move by the squares' palette (5).
      - `node tools/devkit/smoke.mjs royal-chess` runs in the real console with no errors.
 7. **The audio:** the two songs from their sources and the effects (11), measured with `loud.mjs`.
+   - **Built:**
+     - **The pieces:** Bach's *Minuet in G* for the title and *Sheep May Safely Graze* for the game. Both are Mutopia
+       engravings in the public domain (`scores/SOURCES.md`). The Goldberg Aria was the first choice for the game, but
+       its engraving is CC BY-SA, so it was left out.
+     - **`scores.py`** reads them into `scores/minuet.txt` and `scores/sheep.txt`; `audio.py` arranges them (section 11)
+       and makes the 12 effects from wood and bell sounds.
+   - **Results:**
+     - `loud.mjs --check`: both songs within the limits.
+       - The minuet: median 0.033, its lead 0.013 (0.40 of the mix), pierce 0.0017.
+       - Sheep: median 0.046, its lead 0.025 (0.54 of the mix), pierce 0.0023.
+     - `clash.py`: none in the minuet; ten in Sheep, Bach's own passing notes and suspensions over the bass (an A over
+       a B flat, for one), kept as written.
+     - `sfx.mjs`: the effects measure 0.009 (the cursor's tick) to 0.028 RMS (the fanfare).
+     - `node tools/verify.js royal-chess` passes, and `node tools/devkit/smoke.mjs royal-chess` runs in the real console
+       with no errors.
 8. **Balance, polish and release:** the levels tuned with the bot, then the label, the PNG cart and the Library
    (`node tools/release.js royal-chess`), and a README row.
 
