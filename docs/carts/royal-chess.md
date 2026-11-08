@@ -1,7 +1,7 @@
 # Royal Chess: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Steps 1 to 7 of 8 built (section 15): every rule of chess, two players, the computer at three levels, the menus and saves, the side panel, the palace-study art and the music and effects. Step 8 (balance, polish and release) is next.
+**Version:** 1.0
+**Status:** Complete. All 8 steps of the plan (section 15) are built, and the cart is released as `carts/royal-chess.nova.png`, on the Library's Strategy shelf.
 **Cart source:** `carts/src/royal-chess/` → `carts/royal-chess.nova`
 
 ---
@@ -118,6 +118,10 @@ player's.
 - **Scores at the gentle levels:** with noise, every root move is searched with the full window, so each score is exact
   and the noise and the blunders choose between true values. Without noise (STEADY), alpha-beta prunes at the root too.
 - **Mates:** a mate found sooner scores higher, `MATE` (30,000) less the number of half-moves to it.
+- **The end of the game, at the root:** each of its moves that leaves no reply scores as mate or, for a stalemate, as a
+  draw (0); and each move back to a position the game has already had scores 0 too. So even BEGINNER (depth 1, which goes
+  straight to the captures) mates in one and never stalemates a lone king, and a side that is ahead does not drift into a
+  draw by repetition.
 
 | Level | Depth | Quiescence | Noise | Blunders | Thinking |
 |---|---|---|---|---|---|
@@ -218,7 +222,7 @@ position a test sets up).
 
 | Asset | Budget |
 |---|---|
-| Code | Under 40 KB of the 64 KB (`node tools/check.js royal-chess`). The engine about 10 KB |
+| Code | 44 KB of the 64 KB (built; `node tools/check.js royal-chess`). The engine about 10 KB |
 | Tiles | 328 of 1,024 (built): 210 BG tiles (the squares in 2 woods with 2 grains, the 6 pieces at 9 tiles each, used for both colours with their own palettes, the table and the logo) and 118 sprite tiles (the 6 pieces held, 32 px, the 6 small ones and the shadow) |
 | Sprites | At most about 40: the piece held and its shadow, the cursor, and up to 30 captured pieces |
 | Songs / SFX | 2 songs, about 12 effects |
@@ -405,6 +409,39 @@ position a test sets up).
        with no errors.
 8. **Balance, polish and release:** the levels tuned with the bot, then the label, the PNG cart and the Library
    (`node tools/release.js royal-chess`), and a README row.
+   - **Built:**
+     - **Two fixes the sweeps found**, both at the root of the search (section 7):
+       - BEGINNER stalemated a lone king in 4 of 8 games against a random player: at depth 1 it never saw that its
+         opponent had no move. A move that leaves no reply now scores as mate or as a draw.
+       - STEADY, 15 pawns ahead, drew one game by repetition. A move back to a position the game has had now scores
+         as a draw.
+     - **The levels' numbers are unchanged** (section 7); the ladder holds.
+     - **The root's checks are paced:** each counts as 32 positions searched and pauses the search, so the frame time
+       while the computer thinks stays about 5 ms at the 99th percentile (the test's limit is 8 ms).
+     - **The menus** (the setup, the pause menu, a resignation, a draw offer, the promotion and the result) are centred
+       on the board, not the screen, so they no longer overhang the trays; the pause menu is wider, so QUIT TO TITLE
+       fits.
+     - **Released:** the label is the title screen; the PNG cart is `carts/royal-chess.nova.png`, on the Strategy
+       shelf; and a README row.
+   - **Results:**
+     - `node tools/devkit/sweep.mjs royal-chess` (8 seeds each, the computer as Black):
+
+       | Black | White | Black won | Plies (mean, range) |
+       |---|---|---|---|
+       | BEGINNER | a random player | 8 of 8, all by mate (before the fix: 4, and 4 stalemates) | 21 (9 to 36) |
+       | CASUAL | a random player | 8 of 8 | 23 (11 to 35) |
+       | STEADY | a random player | 8 of 8 | 16 (10 to 21) |
+       | CASUAL | BEGINNER | 8 of 8 | 27 (8 to 45) |
+       | STEADY | BEGINNER | 8 of 8 (before the fix: 7, and a repetition) | 19 (10 to 38) |
+       | STEADY | CASUAL | 8 of 8 | 34 (24 to 61) |
+
+     - `07-engine.mjs` has two new checks:
+       - BEGINNER mates in one every time and never stalemates;
+       - STEADY avoids a position the game has had.
+     - `node tools/release.js royal-chess`: the label, the PNG cart (payload 50 KB of 147 KB, 34%) decoding to exactly
+       the packed cart, the Library index, and the checks with no warnings.
+     - `node tools/verify.js royal-chess` passes, with 183 test checks, and `node tools/devkit/smoke.mjs royal-chess`
+       runs in the real console with no errors.
 
 Each step: build it, run `node tools/verify.js` and `node tools/devkit/smoke.mjs royal-chess`, write its **Built** and
 **Results** notes under its number here, commit and push.
@@ -414,7 +451,8 @@ Each step: build it, run `node tools/verify.js` and `node tools/devkit/smoke.mjs
 Defaults I chose that you did not confirm, each easy to change:
 
 - **The three levels' numbers** (7): BEGINNER makes a random move one time in five; STEADY looks four moves ahead at
-  most.
+  most. BEGINNER is very gentle: it sees no threat of mate against itself, and CASUAL mates it in 14 moves on average.
+  A person who knows how the pieces move should beat it; one who wants more plays CASUAL.
 - **Draws are declared at once:** a threefold repetition or fifty moves end the game without a player having to claim
   them.
 - **The computer accepts a draw offer** when it thinks it is at most half a pawn ahead.

@@ -346,7 +346,7 @@ function* alphaBeta(P, depth, alpha, beta, ply, L) {
 
 /** The computer's move for position P at level L: a generator; its return value is { move, score, depth }. */
 function* think(P, L) {
-  const Q = copyPos(P), root = legalMoves(Q);
+  const Q = copyPos(P), root = legalMoves(Q), seen = new Set(P.keys);   // the game's positions so far
   let best = root[0], bestScore = -MATE, scores = new Map(), done = 0;
   for (let d = 1; d <= L.depth; d++) {
     // With noise (the gentle levels) every root move is searched with the full window, so its score is exact and the
@@ -355,7 +355,14 @@ function* think(P, L) {
     const now = new Map();
     for (const m of ordered(Q, root, best)) {
       make(Q, m);
-      const v = -(yield* alphaBeta(Q, d - 1, -MATE - 1, L.noise ? MATE + 1 : -alpha, 1, L));
+      // A move that leaves no reply ends the game: mate, or a stalemate (a draw, 0). Checked here, as a search of depth 1
+      // (BEGINNER) goes straight to the captures and would score a stalemate by the material it is ahead. A move back to
+      // a position the game has had scores as a draw too (0), so a side ahead does not drift into a repetition.
+      // That check costs about as much as 32 positions searched: counted, and a pause, so a frame's budget holds.
+      const over = !legalMoves(Q).length;
+      nodes += 32; yield;
+      const v = over ? (inCheck(Q) ? MATE - 1 : 0) : seen.has(posKey(Q)) ? 0
+        : -(yield* alphaBeta(Q, d - 1, -MATE - 1, L.noise ? MATE + 1 : -alpha, 1, L));
       unmake(Q);
       now.set(m, v);
       if (v > alpha) alpha = v;
@@ -719,14 +726,14 @@ function drawPanel() {
 
 /** The promotion's choice, beside the square: the four pieces, one lit. */
 function drawPromo() {
-  panel(64, 70, 128, 72);
+  panel(46, 70, 128, 72);
   ctxt('PROMOTE TO', 78, GOLD);
-  PROMOS.forEach((t, i) => txt(`${i === promo.sel ? '>' : ' '} ${PIECE_NAMES[t].toUpperCase()}`, 92, 92 + i * 11, i === promo.sel ? WHITE : DIM));
+  PROMOS.forEach((t, i) => txt(`${i === promo.sel ? '>' : ' '} ${PIECE_NAMES[t].toUpperCase()}`, 74, 92 + i * 11, i === promo.sel ? WHITE : DIM));
 }
 
 /** The result, over the final position (spec 10). */
 function drawResult() {
-  panel(28, 72, 200, 64);
+  panel(10, 72, 200, 64);
   const head = { CHECKMATE: 'CHECKMATE', STALEMATE: 'STALEMATE', REPETITION: 'DRAW BY REPETITION', 'FIFTY MOVES': 'DRAW: FIFTY MOVES',
     'NOT ENOUGH MATERIAL': 'DRAW: NO MATE POSSIBLE', 'DRAW AGREED': 'DRAW AGREED' }[result.why] || result.why;
   ctxt(head, 80, GOLD);
@@ -742,25 +749,25 @@ function drawTitle() {
 }
 
 function drawSetup() {
-  panel(28, 36, 200, 168);
+  panel(10, 36, 200, 168);
   ctxt('PLAY THE COMPUTER', 50, GOLD);
-  panel(40, 76, 176, 60);
+  panel(22, 76, 176, 60);
   [['LEVEL', LEVELS[setupLevel].name], ['YOU PLAY', COLOURS[setupColour]]].forEach(([k, v], i) => {
     const y = 88 + i * 22, on = i === setupRow;
-    txt(k, 52, y, on ? WHITE : DIM); txt(on ? `< ${v} >` : `  ${v}`, 124, y, on ? GOLD : WHITE);
+    txt(k, 34, y, on ? WHITE : DIM); txt(on ? `< ${v} >` : `  ${v}`, 106, y, on ? GOLD : WHITE);
   });
   ctxt(['MAKES MISTAKES ON PURPOSE', 'A RELAXED GAME', 'THINKS FOUR MOVES AHEAD'][setupLevel], 150, DIM);
   ctxt('A: PLAY   B: BACK', 190, DIM);
 }
 
 function drawPause() {
-  if (menu === 'resign') { panel(48, 84, 160, 44); ctxt('RESIGN THE GAME?', 92, GOLD); ctxt('A: RESIGN   B: NO', 110, WHITE); return; }
-  if (menu === 'offer') { panel(32, 84, 192, 44); ctxt('A DRAW IS OFFERED', 92, GOLD); ctxt(`${pad2 ? `P${padOf(pos.side ^ (pausePad === padOf(pos.side) ? 1 : 0)) + 1} ` : ''}A: ACCEPT   B: DECLINE`, 110, WHITE); return; }
-  panel(64, 64, 128, 84);
+  if (menu === 'resign') { panel(30, 84, 160, 44); ctxt('RESIGN THE GAME?', 92, GOLD); ctxt('A: RESIGN   B: NO', 110, WHITE); return; }
+  if (menu === 'offer') { panel(6, 84, 208, 44); ctxt('A DRAW IS OFFERED', 92, GOLD); ctxt(`${pad2 ? `P${padOf(pos.side ^ (pausePad === padOf(pos.side) ? 1 : 0)) + 1} ` : ''}A: ACCEPT   B: DECLINE`, 110, WHITE); return; }
+  panel(38, 64, 144, 84);
   ctxt('PAUSED', 72, GOLD);
-  MENU.forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 88 + i * 11, i === pauseSel ? WHITE : DIM));
+  MENU.forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 50, 88 + i * 11, i === pauseSel ? WHITE : DIM));
 }
 
 function panel(x, y, w, h) { rectfill(x, y, w, h, ART.colors.GLASS); rect(x, y, w, h, PANEL); }
 function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }
-const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
+const ctxt = (s, y, c) => txt(s, BX + 4 * SQ - s.length * 4, y, c);   // centred on the board

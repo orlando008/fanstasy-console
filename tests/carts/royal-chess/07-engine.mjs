@@ -112,4 +112,26 @@ function match(a, b, games) {
   const b = offer('3qk3/8/8/8/8/8/8/4K3 w - - 0 1');
   ok(b.state === 'game' && b.notice === 'DRAW DECLINED', 'a queen up, it declines');
 }
+// 7. The end of the game seen at the root: even BEGINNER (a search of depth 1) mates in one when it can and never
+// stalemates a lone king (Qg6 here is stalemate; Qg7 is mate).
+{
+  const v = newGame(9), q = v.probe(); v.run(2);
+  const P = q.fromFen('7k/8/5K2/8/8/8/8/6Q1 w - - 0 1');
+  let mates = 0, stalemates = 0;
+  for (let i = 0; i < 24; i++) {
+    const m = q.thinkNow(P, q.LEVELS[0]).move; q.make(P, m);
+    if (!q.legalMoves(P).length) { if (q.inCheck(P)) mates++; else stalemates++; }
+    q.unmake(P);
+  }
+  ok(mates === 24 && stalemates === 0, 'BEGINNER mates in one every time and never stalemates', `${mates} mates, ${stalemates} stalemates of 24`);
+}
+// 8. A side ahead does not go back to a position the game has had (three times is a draw): such a move scores 0.
+{
+  const v = newGame(9), q = v.probe(); v.run(2);
+  const fen = 'r3k3/8/8/8/8/8/8/2Q1K3 w - - 0 1', first = q.thinkNow(q.fromFen(fen), q.LEVELS[2]).move;
+  const P = q.fromFen(fen); q.make(P, first); const back = q.posKey(P); q.unmake(P);
+  P.keys.push(back);   // the game has been there before
+  const again = q.thinkNow(P, q.LEVELS[2]);
+  ok(again.move !== first && again.score > 300, 'STEADY, a queen for a rook ahead, avoids a position the game has had', `${q.sqName(q.mFrom(first))}${q.sqName(q.mTo(first))} then ${q.sqName(q.mFrom(again.move))}${q.sqName(q.mTo(again.move))} ${again.score}`);
+}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);
