@@ -11,8 +11,10 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('DOWN'); ok(p.titleSel === 1, 'DOWN moves down the menu'); vm.press('UP'); ok(p.titleSel === 0, 'and UP back');
   vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
-  sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts a run, with the game song');
+  sfxLog(vm); vm.run(12); vm.press('A');
+  ok(p.state === 'setup', 'NEW GAME opens the new game\'s choices');
+  vm.run(12); vm.press('A');
+  ok(p.state === 'play' && p.playing === p.SONG.play, 'and A begins a run, with the game song');
 }
 
 // 2. Pause.

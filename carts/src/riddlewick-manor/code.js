@@ -45,12 +45,15 @@ function play(song) {
 // --- Save slots (SPEC 13) ---
 
 const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
-const BANK_SLOT = 3, SEEN_SLOT = 40, SEEN_SLOTS = 20;   // the bank's size when the seen bits were kept; the questions asked in earlier runs (640 bits)
+const CHOICE_SLOT = 2, BANK_SLOT = 3, SEEN_SLOT = 40, SEEN_SLOTS = 20;
+const RUN_SLOT = 60;   // the run in progress (spec 13): 60 a flag, 61 the seed, 62 the run's numbers, 63 the score, 64 the tallies,
+                       // 65 to 69 the doors (2 bits each), 70 and 71 the rooms seen, 72 and 73 the rooms whose item is still there   // the bank's size when the seen bits were kept; the questions asked in earlier runs (640 bits)
 const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)) }; }
-function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); }
+// An entry: its score, its initials, and its level and subject (level | (subject + 1) << 4).
+function readEntry(i) { const s = TOP_SLOT + i * ENTRY, v = dget(s + 2); return { score: dget(s), initials: unpackInitials(dget(s + 1)), level: v & 15, subject: (v >> 4) - 1 }; }
+function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); dset(s + 2, (e.level || 0) | ((e.subject ?? -1) + 1) << 4); }
 const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
 
 /** Put a score into the top 10 if it makes it. Returns its row, or -1. */
@@ -281,15 +284,76 @@ function update() {
   else if (state === 'over') updateOver();
   else if (state === 'initials') updateInitials();
   else if (state === 'records') updateRecords();
+  else if (state === 'setup') updateSetup();
   prevMask = inputMask;
 }
 
+// --- The title and the new game's choices (spec 10) ---
+
+const titleItems = () => (hasRun() ? ['CONTINUE', 'NEW GAME', 'RECORDS'] : ['NEW GAME', 'RECORDS']);
 function updateTitle() {
-  if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
-  if (pressed(A) || pressed(START)) {
-    fx(SFX.select);
-    if (titleSel === 0) startGame(); else { state = 'records'; hl = -1; timer = 0; }
+  const items = titleItems(), n = items.length;
+  if (titleSel >= n) titleSel = 0;
+  if (pressed(UP)) { titleSel = (titleSel + n - 1) % n; fx(SFX.move); }
+  if (pressed(DOWN)) { titleSel = (titleSel + 1) % n; fx(SFX.move); }
+  if (!(pressed(A) || pressed(START)) || timer < 10) return;
+  fx(SFX.select);
+  const it = items[titleSel];
+  if (it === 'CONTINUE') continueRun();
+  else if (it === 'NEW GAME') toSetup();
+  else { state = 'records'; hl = -1; timer = 0; }
+}
+
+let setupRow = 0;
+function toSetup() {
+  const c = dget(CHOICE_SLOT);   // the last choice (0: none yet)
+  if (c) { subject = (c & 15) - 1; level = (c >> 4) & 15 || 1; } else { subject = -1; level = 1; }
+  state = 'setup'; setupRow = 0; timer = 0;
+}
+/** The new game: UP and DOWN choose the row (SUBJECT, LEVEL), LEFT and RIGHT change it, A begins, B goes back. */
+function updateSetup() {
+  if (pressed(UP) || pressed(DOWN)) { setupRow ^= 1; fx(SFX.move); }
+  const d = pressed(RIGHT) ? 1 : pressed(LEFT) ? -1 : 0;
+  if (d && setupRow === 0) { subject = ((subject + 1 + d + 9) % 9) - 1; fx(SFX.move); }
+  if (d && setupRow === 1) { level = ((level - 1 + d + 4) % 4) + 1; fx(SFX.move); }
+  if (pressed(B)) { fx(SFX.pause); toTitle(); return; }
+  if (timer > 10 && (pressed(A) || pressed(START))) { fx(SFX.select); dset(CHOICE_SLOT, (subject + 1) | (level << 4)); startGame(); }
+}
+
+// --- The run in progress, saved while you explore and made again from it (CONTINUE) ---
+
+const hasRun = () => dget(RUN_SLOT) === 1;
+function clearRun() { for (let k = 0; k < 14; k++) dset(RUN_SLOT + k, 0); }
+/** 21 flags a slot (so no slot's top bit is used): a set of room numbers 0 to 41 into two slots. */
+function packRooms(has, k) { let a = 0, b = 0; for (let r = 0; r < MW * MH; r++) if (has(r)) { if (r < 21) a |= 1 << r; else b |= 1 << (r - 21); } dset(k, a); dset(k + 1, b); }
+const roomBit = (k, r) => (r < 21 ? dget(k) >> r : dget(k + 1) >> (r - 21)) & 1;
+function saveRun() {
+  dset(RUN_SLOT, 1); dset(RUN_SLOT + 1, runSeed);
+  dset(RUN_SLOT + 2, (subject + 1) | level << 4 | me.f << 8 | me.x << 12 | me.y << 16 | Math.min(candle, 15) << 20 | Math.min(keys, 15) << 24);
+  dset(RUN_SLOT + 3, score);
+  dset(RUN_SLOT + 4, Math.min(streak, 255) | Math.min(answered, 255) << 8 | Math.min(rightCount, 255) << 16);
+  const doors = [...doorsH, ...doorsV];
+  for (let k = 0; k < 5; k++) { let v = 0; for (let j = 0; j < 15; j++) v |= (doors[k * 15 + j] || 0) << (j * 2); dset(RUN_SLOT + 5 + k, v); }
+  packRooms((r) => seen.has(r), RUN_SLOT + 10);
+  packRooms((r) => items[r] !== ITEM_NONE, RUN_SLOT + 12);
+}
+/** CONTINUE: the manor made again from the seed, then the doors, rooms seen, items taken and the numbers put back. */
+function continueRun() {
+  runSeed = dget(RUN_SLOT + 1); makeManor(runSeed);
+  const v = dget(RUN_SLOT + 2), t = dget(RUN_SLOT + 4);
+  subject = (v & 15) - 1; level = (v >> 4) & 15; me = { f: (v >> 8) & 15, x: (v >> 12) & 15, y: (v >> 16) & 15 };
+  candle = (v >> 20) & 15; keys = (v >> 24) & 15; score = dget(RUN_SLOT + 3);
+  streak = t & 255; answered = (t >> 8) & 255; rightCount = (t >> 16) & 255;
+  const nH = doorsH.length;
+  for (let i = 0; i < nH + doorsV.length; i++) {
+    const d = (dget(RUN_SLOT + 5 + flr(i / 15)) >> ((i % 15) * 2)) & 3;
+    if (i < nH) doorsH[i] = d; else doorsV[i - nH] = d;
   }
+  seen = new Set();
+  for (let r = 0; r < MW * MH; r++) { if (roomBit(RUN_SLOT + 10, r)) seen.add(r); if (!roomBit(RUN_SLOT + 12, r)) items[r] = ITEM_NONE; }
+  asked = new Set(); won = false; notice = ''; noticeT = 0; cur = null; paused = false; timer = 0; state = 'play'; phase = 'explore';
+  sel = firstDoor(); play(SONG.play);
+  if (me.x === goal.x && me.y === goal.y) { cur = { ...pickQuestion(), final: true }; phase = 'ask'; }   // back to her last question
 }
 
 function updatePlay() {
@@ -298,6 +362,7 @@ function updatePlay() {
   if (phase === 'explore') updateExplore();
   else if (phase === 'ask') updateAsk();
   else if (phase === 'confirm') updateConfirm();
+  if (state === 'play' && (phase === 'explore' || (phase === 'ask' && cur.final))) saveRun();   // (unchanged slots are not written)
   else if (phase === 'answered') updateAnswered();
   else if (phase === 'walk') updateWalk();
 }
@@ -388,7 +453,8 @@ function pickUp() {
 
 function gameOver() {
   state = 'over'; timer = 0; play(-1); fx(SFX.over); brightness(15);
-  rank = insertTop({ score, initials: lastInitials() });
+  clearRun();
+  rank = insertTop({ score, initials: lastInitials(), level, subject });
 }
 
 function updateOver() {
@@ -442,6 +508,7 @@ function draw() {
   else if (state === 'title') drawTitle();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
+  else if (state === 'setup') drawSetup();
   if (state === 'over') drawEnd();
   if (paused) drawPause();
 }
@@ -560,7 +627,26 @@ function drawEnd() {
 
 function drawTitle() {
   ctxt('RIDDLEWICK MANOR', 50, GOLD);
-  ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
+  titleItems().forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 88, 100 + i * 14, i === titleSel ? WHITE : DIM));
+  if (hasRun()) {
+    const v = dget(RUN_SLOT + 2);
+    ctxt(`SAVED: ${SUBJECTS[(v & 15) - 1] || 'ALL SUBJECTS'}`, 170, DIM);
+    ctxt(`LEVEL ${(v >> 4) & 15}, SCORE ${dget(RUN_SLOT + 3)}`, 182, DIM);
+  }
+}
+
+const LEVEL_NOTES = ['CANDLE 6, EASY QUESTIONS', 'CANDLE 5, FAIR QUESTIONS', 'CANDLE 4, HARD QUESTIONS', 'CANDLE 3, EXPERT QUESTIONS'];
+function drawSetup() {
+  panel(16, 32, 224, 160);
+  ctxt('A NEW GAME', 42, GOLD);
+  [['SUBJECT', subject < 0 ? 'ALL SUBJECTS' : SUBJECTS[subject]], ['LEVEL', `${level} ${LEVELS[level - 1].name}`]].forEach(([k, v], i) => {
+    const y = 72 + i * 30, on = i === setupRow;
+    txt(k, 28, y, on ? WHITE : DIM);
+    txt(on ? `< ${v} >` : `  ${v}`, 28, y + 12, on ? GOLD : WHITE);
+  });
+  ctxt(LEVEL_NOTES[level - 1], 140, DIM);
+  if (hasRun()) ctxt('REPLACES YOUR SAVED GAME', 156, RED);
+  ctxt('A: BEGIN   B: BACK', 176, DIM);
 }
 
 function drawRecords() {
@@ -571,7 +657,8 @@ function drawRecords() {
     if (on && timer % 40 < 30) rectfill(28, y - 2, 200, 12, PANEL);
     txt(String(i + 1).padStart(2), 40, y, i === 0 ? GOLD : DIM);
     txt(e.score ? e.initials : '---', 72, y, on ? GOLD : WHITE);
-    txt(e.score ? String(e.score).padStart(8) : '', 128, y, i === 0 ? GOLD : WHITE);
+    txt(e.score ? String(e.score).padStart(6) : '', 104, y, i === 0 ? GOLD : WHITE);
+    if (e.score && e.level) txt(`L${e.level} ${['ALL', 'HIS', 'GEO', 'SCI', 'NAT', 'ART', 'MUS', 'SPO', 'FOO'][e.subject + 1]}`, 168, y, DIM);
   });
   if (timer % 60 < 40) ctxt('START: BACK', 192, DIM);
 }

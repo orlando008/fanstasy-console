@@ -3,7 +3,8 @@
 **Version:** 0.1 (draft)
 **Status:** Steps 1 to 3 of 8 built (section 15): a manor made anew each run, knocking, questions, doors that open
 or lock, the candle, keys and stubs, the heart's last question, winning and losing, and a bank of 160 questions drawn by
-subject and level. Step 4 (the flow: the new game's choices, saves and CONTINUE) is next.
+subject and level, the title and the new game's choices, the run saved as you go (CONTINUE), and the records. Step 5
+(the rest of the questions, to 640) is next.
 **Cart source:** `carts/src/riddlewick-manor/` → `carts/riddlewick-manor.nova`
 
 ---
@@ -200,10 +201,17 @@ The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit,
 | 1 | Last initials entered |
 | 2 | The last subject and level chosen |
 | 3 | The bank's size when the record of questions asked was kept (a different bank clears the record) |
-| 10–39 | Top 10, best first, 3 slots each: score, initials, level and subject |
+| 10–39 | Top 10, best first, 3 slots each: score, initials, and level + (subject + 1) × 16 |
 | 40–59 | The questions already asked in earlier runs (640 bits) |
-| 60–79 | The run in progress: its seed, subject, level, room, facing, candle, keys, score, streak, the doors' states (2 bits each), what has been picked up, the questions asked in it |
-| 80–255 | Reserved |
+| 60 | A run is saved (1) |
+| 61 | Its seed (the manor is made again from it) |
+| 62 | Its subject + 1, level, facing, room (x, y), candle and keys, 4 bits each |
+| 63 | Its score |
+| 64 | Its streak, questions answered and answered right, 8 bits each |
+| 65–69 | The doors' states, 2 bits each, 15 a slot (`doorsH`, then `doorsV`) |
+| 70–71 | The rooms seen (21 a slot) |
+| 72–73 | The rooms whose key or stub is still there |
+| 74–255 | Reserved |
 
 ## 14. Asset budget
 
@@ -307,6 +315,24 @@ The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit,
        won 5 of 6 runs, all finishing.
 4. **The flow:** the title, the new game's choices, saving and CONTINUE, the pause, the end screen, initials and the top
    10.
+   - **Built:**
+     - **The title:** CONTINUE (when a run is saved, first), NEW GAME, RECORDS; a saved run's subject, level and score
+       below.
+     - **A new game:** SUBJECT (ALL SUBJECTS or one of eight) and LEVEL (1 NOVICE to 4 MASTER, with its candle and
+       questions in a line); UP and DOWN choose the row, LEFT and RIGHT change it (wrapping), A begins, B goes back.
+       The choice is kept in slot 2 and offered first next time. `REPLACES YOUR SAVED GAME` when one is saved.
+     - **Saving** (`saveRun`): every frame while you explore, or wait on the heart's last question (the console writes
+       only slots that change). A question that is being asked is not saved: CONTINUE comes back to the room.
+     - **CONTINUE** (`continueRun`): the manor made again from the seed, then the doors, rooms seen, items taken and
+       the numbers put back; in the heart, Lady Riddlewick asks again.
+     - **The end** (winning, or the candle going out) clears the save; QUIT TO TITLE keeps it.
+     - **The records** show each score's level and subject (`L2 HIS`).
+   - **Results:**
+     - `node tools/verify.js riddlewick-manor` passes, with 107 test checks. New: `06-flow.mjs`, 19 checks: the
+       choices (changing, wrapping, going back, remembered); the run saved and made again exactly after a restart
+       (doors, place, facing, candle, keys, score, tallies, map, items, level and subject); CONTINUE in the heart; the
+       end clearing the save; the records' level and subject. `01-flow.mjs` goes through the new game's screen.
+     - `node tools/devkit/smoke.mjs riddlewick-manor` runs in the real console with no errors.
 5. **The rest of the questions:** to 640 (20 per subject per difficulty), checked for format and spread.
 6. **The art:** the rooms, doors, furniture, ghosts, the panel, the map, the candle, the title.
 7. **The audio:** the three songs from their sources and the effects (11), measured with `loud.mjs`.
@@ -328,5 +354,7 @@ Defaults I chose that you did not confirm, each easy to change:
 - **The heart's last question,** asked by Lady Riddlewick, until you answer one right.
 - **The eight subjects** and the four levels' names (NOVICE, SCHOLAR, SAGE, MASTER).
 - **No timer** on the questions.
+- **Quitting during a question** comes back to the room, not to that question, so a player could quit to skip one they
+  do not know (the question stays marked as asked). Saving the question too is a small change.
 - **Extras not chosen, kept for later:** two players taking turns, a timer mode, choosing several subjects at once,
   statistics by subject, a daily manor (the same seed for everyone that day).
