@@ -1,28 +1,77 @@
-// Riddlewick Manor: the art made by art.py is in the cart (the starter's for now; the art pass is step 6). One PASS/FAIL line for each behaviour.
-import { readFileSync } from 'node:fs';
+// Riddlewick Manor, step 6: the art (spec 12). The room is one scene recoloured for each kind from rom/rooms.bin, its
+// furniture and doors are written into Map RAM as you turn and walk, the ghost and its prop, the arrow, the padlocks and
+// the candle are sprites, and the title shows the manor at night. One PASS/FAIL line for each behaviour.
+import { readFileSync, mkdtempSync, cpSync, rmSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { newGame } from './lib.mjs';
-// The colours by name, from the manifest art.py wrote: entry = the palette's base + the role's index.
-const manifest = JSON.parse(readFileSync(new URL('../../../carts/src/riddlewick-manor/art.json', import.meta.url), 'utf8'));
-const color = (pal, role) => manifest.palettes[pal].base + manifest.palettes[pal].colors[role];
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
-const rgb = (vm, i) => { const v = vm.cart.palette[i]; const e = (c) => (c << 3) | (c >> 2); return (e(v & 31) | (e((v >> 5) & 31) << 8) | (e((v >> 10) & 31) << 16) | 0xff000000) >>> 0; };
-const tileEmpty = (vm, t) => { for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) if (vm.cart.tiles[(Math.floor(t / 16) * 8 + y) * 128 + (t % 16) * 8 + x]) return false; return true; };
-/** Is there a pixel of this CGRAM colour inside the box of the screen? */
-const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) if ((vm.out32[y * 256 + x] >>> 0) === want) return true; return false; };
+const SRC = fileURLToPath(new URL('../../../carts/src/riddlewick-manor/', import.meta.url));
+const pal = (e) => (e >> 10) & 7, fx = (e) => (e >> 13) & 1, tileOf = (e) => e & 1023;
 
-// 1. The manifest and the sheet.
+// 1. What art.py makes.
 {
   const vm = newGame(1), p = vm.probe(); vm.run(2);
-  const { sprites, scenes } = p.ART;
-  ok(Object.keys(sprites).length >= 2 && Object.keys(scenes).length >= 1, 'art.py made sprites and a scene (the ART block in code.js)', Object.keys(sprites).join(', '));
-  ok(Object.values(sprites).every((s) => [8, 16, 32].includes(s.size) && s.tile >= 256), 'every sprite has a size of 8, 16 or 32 and sits in the sprite region of the sheet');
-  ok(Object.values(sprites).every((s) => { for (let j = 0; j < s.size / 8; j++) for (let i = 0; i < s.size / 8; i++) if (tileEmpty(vm, s.tile + j * 16 + i) && j + i === 0) return false; return true; }), 'and its first tile is drawn (not an empty tile)');
-  ok(tileEmpty(vm, 0), 'tile 0 is empty (the console keeps it so)');
-  const f = scenes.field; let holes = 0;
-  for (let y = 0; y < f.h; y++) for (let x = 0; x < f.w; x++) if (!p.mget(f.mx + x, f.my + y)) holes++;
-  ok(holes === 0, 'the field fills its whole map region (no holes)', `${holes} empty cells`);
+  const A = p.ART;
+  ok(['room', 'panel', 'title'].every((s) => A.scenes[s]), 'the scenes: the room, the panel and the title');
+  const sprites = ['arrow', 'padlock', 'holder', 'flame0', 'flame1', 'key', 'ghost_top0', 'ghost_top1', 'ghost_bot0', 'ghost_bot1', ...Array.from({ length: 10 }, (_, k) => `prop${k}`)];
+  ok(sprites.every((s) => A.sprites[s]), 'the sprites: arrow, padlock, candle, key, the ghost (two frames) and a prop for each of the ten ghosts', sprites.filter((s) => !A.sprites[s]).join(','));
+  ok(Array.from({ length: 10 }, (_, k) => k).every((k) => Object.keys(A.tiles).some((n) => n.startsWith(`fur${k}_`))), 'a piece of furniture for each of the ten kinds of room');
+  ok(Object.keys(A.tiles).some((n) => n.startsWith('door_back_')) && Object.keys(A.tiles).some((n) => n.startsWith('door_side_')), 'a door for the back wall and one for a side wall');
+  const bin = readFileSync(join(SRC, 'rom/rooms.bin'));
+  ok(bin.length === 10 * 15 * 2, 'rom/rooms.bin holds 15 colours for each of the ten kinds', `${bin.length} bytes`);
+  const tmp = mkdtempSync(join(tmpdir(), 'rm-art-')); try {
+    cpSync(SRC, join(tmp, 'src'), { recursive: true });
+    spawnSync('python3', [join(SRC, 'art.py'), join(tmp, 'src')], { encoding: 'utf8' });
+    ok(Buffer.compare(readFileSync(join(tmp, 'src', 'rom', 'rooms.bin')), bin) === 0, 'and art.py makes exactly that file (run it after a change)');
+  } finally { rmSync(tmp, { recursive: true, force: true }); }
 }
 
-// (The on-screen checks come with the art pass, step 6: until then the rooms are drawn on the overlay.)
+// 2. A room on the screen: its colours, furniture and doors.
+{
+  const vm = newGame(2), p = vm.probe(); vm.run(2);
+  const bin = readFileSync(join(SRC, 'rom/rooms.bin'));
+  for (const k of [0, 6]) {
+    p.kinds[p.roomId(p.me.x, p.me.y)] = k; vm.run(1);
+    const want = Array.from({ length: 15 }, (_, i) => { const v = bin[(k * 15 + i) * 2] | (bin[(k * 15 + i) * 2 + 1] << 8); return [v & 31, (v >> 5) & 31, v >> 10].join(); });
+    const got = Array.from({ length: 15 }, (_, i) => p.color(17 + i).join());
+    ok(p.roomKind === k && want.join('|') === got.join('|'), `walking into a ${p.KINDS[k][0].toLowerCase()}: palette 1 takes its colours`);
+  }
+  const fl = p.mget(p.FUR_MX + 9, 12), fr = p.mget(p.FUR_MX + 22, 12);
+  ok(tileOf(fl) && pal(fl) === 2 && tileOf(fr) === tileOf(fl) && fx(fr) === 1 && fx(fl) === 0, 'its furniture stands either side of the back door, the right one mirrored');
+  p.setDoor(0, 5, p.N, p.CLOSED); p.setDoor(0, 5, p.E, p.OPEN); vm.run(1);
+  const back = p.mget(p.DOOR_MX + 15, 10), right = p.mget(p.DOOR_MX + 27, 10), left = p.mget(p.DOOR_MX + 3, 10);
+  ok(tileOf(back) && pal(back) === 3, 'the door ahead, closed, in palette 3');
+  ok(tileOf(right) && pal(right) === 4 && fx(right) === 1, 'the door on the right, open (a dark doorway, palette 4), the side door flipped');
+  ok(!left, 'no door where the wall has none');
+  p.setDoor(0, 5, p.N, p.LOCKED); vm.run(1);
+  ok(pal(p.mget(p.DOOR_MX + 15, 10)) === 5, 'a locked door greys (palette 5)');
+}
+
+// 3. The sprites: the arrow over the chosen door, a padlock on a locked one, the ghost and its prop when one asks.
+{
+  const vm = newGame(3), p = vm.probe(); vm.run(2);
+  p.setDoor(0, 5, p.N, p.CLOSED); p.setDoor(0, 5, p.E, p.CLOSED); p.sel = p.N; vm.run(1);
+  const explore = vm.ppu.oamCount;
+  ok(explore >= 3, 'exploring: the arrow, the candle\'s holder and flame', `${explore} sprites`);
+  p.setDoor(0, 5, p.E, p.LOCKED); vm.run(1);
+  ok(vm.ppu.oamCount === explore + 1, 'a locked door adds its padlock');
+  vm.press('A'); vm.run(2);
+  ok(p.phase === 'ask' && vm.ppu.oamCount === 4, 'a question: the ghost (two sprites) and its prop, and the padlock (the arrow and candle give way to the question)', `${vm.ppu.oamCount} sprites`);
+  ok(vm.ppu.oamCount <= 128, 'within the console\'s 128 sprites');
+}
+
+// 4. The title: the manor at night, the sky a gradient.
+{
+  const vm = newGame(4, { title: true }), p = vm.probe(); vm.run(12);
+  const L2 = vm.ppu.layers[2], L1 = vm.ppu.layers[1];
+  ok(L2.show && L2.mx === p.ART.scenes.title.mx && !L1.show, 'the title shows the manor (BG2) without the room\'s furniture or doors');
+  const sky = [3, 90].map((y) => vm.out32[y * 256 + 2] >>> 0);
+  ok(sky[0] !== sky[1], 'and its sky is a gradient', sky.map((v) => v.toString(16)).join(' '));
+  vm.press('A'); vm.run(12); vm.press('A'); vm.run(3);
+  ok(vm.ppu.layers[2].mx === 0 && vm.ppu.layers[1].show && vm.ppu.layers[0].show, 'in the manor, BG2 shows the room again, with the furniture and doors');
+}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

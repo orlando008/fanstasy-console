@@ -1,10 +1,10 @@
 # Riddlewick Manor: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 3 of 8 built (section 15): a manor made anew each run, knocking, questions, doors that open
-or lock, the candle, keys and stubs, the heart's last question, winning and losing, and a bank of 160 questions drawn by
-subject and level, the title and the new game's choices, the run saved as you go (CONTINUE), and the records. Step 5
-(the rest of the questions, to 640) is next.
+**Status:** Steps 1 to 6 of 8 built (section 15): a manor made anew each run, knocking, questions, doors that open
+or lock, the candle, keys and stubs, the heart's last question, winning and losing, the full bank of 640 questions drawn
+by subject and level, the title and the new game's choices, the run saved as you go (CONTINUE), the records, and the
+art. Step 7 (the audio) is next.
 **Cart source:** `carts/src/riddlewick-manor/` → `carts/riddlewick-manor.nova`
 
 ---
@@ -110,18 +110,18 @@ Each room has a kind, which sets its look (wall colours, its piece of furniture 
 there. The heart is always the Clock Room; the Entrance Hall the start; the rest are dealt with the seed, no two
 neighbours alike where possible.
 
-| Kind | Furniture | Ghost |
-|---|---|---|
-| Entrance Hall | a grand staircase | the Butler |
-| Library | bookcases | the Librarian |
-| Gallery | portraits | the Painter |
-| Dining Room | a long table and candelabra | the Duchess |
-| Kitchen | a range and copper pans | the Cook |
-| Conservatory | ferns and a glass roof | the Gardener |
-| Music Room | a harp and an organ | the Organist |
-| Nursery | a rocking horse | the Twins |
-| Armoury | suits of armour | the Knight |
-| Clock Room (the heart) | a great clock | Lady Riddlewick |
+| Kind | Colours (walls, panelling, rug) | Furniture (either side of the back door) | Ghost, and its prop |
+|---|---|---|---|
+| Entrance Hall | green, oak, red | coat stands with top hats | the Butler, a top hat |
+| Library | burgundy, walnut, green | bookcases | the Librarian, spectacles |
+| Gallery | slate blue, oak, crimson | portraits whose eyes follow you | the Painter, a beret |
+| Dining Room | crimson, mahogany, gold | sideboards with candelabra | the Duchess, a tiara |
+| Kitchen | cream, pine, a stone floor | ranges under copper pans | the Cook, a chef's hat |
+| Conservatory | leaf green, white wood, terracotta | ferns in pots | the Gardener, a straw hat |
+| Music Room | purple, rosewood, blue | harps | the Organist, a powdered wig |
+| Nursery | pale blue, cream, pink | rocking horses | the Twins, a big bow |
+| Armoury | stone blue-grey, dark wood, red | suits of armour | the Knight, a helmet |
+| Clock Room (the heart) | midnight blue, black lacquer, purple | grandfather clocks | Lady Riddlewick, a crown |
 
 ### The questions
 
@@ -183,15 +183,27 @@ where it enters (`node tools/devkit/music/loud.mjs carts/riddlewick-manor.nova -
 
 ## 12. Video layers
 
-The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit, `tools/devkit/art/kit.py`).
+The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit, `tools/devkit/art/kit.py`), which also
+writes `rom/rooms.bin`: each kind's 15 colours for palette 1.
 
-- **BG2:** the room: one box in perspective (back wall, side walls, floor, ceiling) for every room, its colours from the
-  room kind's palette, so the tiles are shared.
-- **BG1:** the furniture on the back wall (a stamp of tiles for each kind) and the panel's frame.
-- **BG0:** the doors' frames and the panel's map.
-- **Sprites:** the doors (closed, open, locked; ahead and on each side wall), the ghost asking (32 × 48, half see-through
-  by colour blending), the candle's flame, keys and the arrow behind you.
-- **Overlay:** the text: the question and answers, the score and names, the map's marks, the menus.
+- **BG2:** the room and the panel, one scene of 32 × 28 tiles. The room is a box in perspective, the back wall at x 64
+  to 191, y 16 to 103 (on the tile grid): damask wallpaper over panelling with its rail and skirting, a beamed ceiling,
+  floorboards running to a vanishing point and a rug. Every room uses these tiles; walking into a room loads its kind's
+  colours into palette 1 (`loadRoomColours`). The panel (y 136 to 223) is a mahogany desk with a parchment for the map
+  (palette 6). On the title, the new game, the records and initials, BG2 shows the manor at night instead (palette 7;
+  the sky is a gradient on the backdrop, set line by line in `scanline`).
+- **BG1:** the furniture: the kind's 32 × 56 stamp at columns 9 to 12, and mirrored at 19 to 22 (palette 2), written by
+  `renderRoom` into Map RAM from column 64.
+- **BG0:** the doors, written by `renderRoom` from column 96: the back wall's (32 × 56, columns 14 to 17) and a side
+  wall's (cut in perspective, columns 2 to 5; the right wall's is the same tiles flipped). One set of tiles, three
+  palettes: 3 closed, 4 open (the leaf a dark doorway), 5 locked (cold slate, the iron red).
+- **Sprites:** the gold arrow over the chosen door (bobbing); a padlock on each locked door; when a ghost asks, the ghost
+  at its door (32 × 64 in two sprites, two frames of its hem, in sprite palette 5, blended at half so it is
+  see-through) and its prop (16 px, palette 1, solid); the candle's brass holder and its flickering flame; a key for
+  each key carried.
+- **Overlay** (its own colours at CGRAM 160 and up, none of the default grey or brown): the text, the map in ink on the
+  parchment, the candle's wax (as tall as the notches left), the door behind you when it is not chosen, and the panels
+  (solid; only the title's menu is see-through glass, over the night).
 
 ## 13. Persistence (save slots)
 
@@ -217,10 +229,10 @@ The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit,
 
 | Asset | Budget |
 |---|---|
-| Code | Under 40 KB of the 64 KB (`node tools/check.js riddlewick-manor`) |
+| Code | 47 KB of the 64 KB (built; the ART block, the tiles' names, is about 10 KB of it; `node tools/check.js riddlewick-manor`) |
 | ROM | The question bank: 55 KB of the 128 KB (640 questions, built) |
-| Tiles | About 700 of 1,024: the room box (about 250), the furniture (10 stamps, about 200), the panel and map (about 40); sprites: the doors (about 100), 10 ghosts (32 × 48: about 300), the candle, keys and arrows |
-| Sprites | At most about 20 at once |
+| Tiles | 864 of 1,024 (built): 745 background (the room about 260, the panel about 35, the doors about 50, the furniture about 200, the title about 200) and 119 sprite tiles (the ghost's two frames, ten props, the arrow, padlock, candle and key) |
+| Sprites | At most 8 at once (a ghost, its prop, three padlocks, keys) |
 | Songs / SFX | 3 songs, about 12 effects |
 
 ## 15. Implementation plan
@@ -350,6 +362,27 @@ The art is made in code by `carts/src/riddlewick-manor/art.py` (the art toolkit,
        a whole pool of 20 before the nearest difficulty fills in.
      - `node tools/devkit/smoke.mjs riddlewick-manor` runs in the real console with no errors.
 6. **The art:** the rooms, doors, furniture, ghosts, the panel, the map, the candle, the title.
+   - **Built:**
+     - **`art.py`**, rewritten (section 12): the room in perspective, the desk and parchment, ten colour schemes in
+       `rom/rooms.bin`, the doors with three palettes, ten pieces of furniture, the ghost and ten props, the arrow,
+       padlock, candle and key, and the manor at night with its name.
+     - **`code.js`**: `loadRoomColours` and `renderRoom` (furniture and doors into Map RAM every frame), the sprites
+       (`drawRoomSprites`: the arrow, padlocks, the ghost at the door it keeps, with its prop), the panel's map in ink,
+       the candle (wax as tall as the notches left), and the title's menu over the night.
+     - **Fitting the tiles:** the first desk and title used 329 and 200 tiles of noise that never repeated; their wood
+       grain, parchment speckle and stonework now repeat on the tile grid, so identical tiles are shared (898 tiles down
+       to 864 in all, with the regions moved to 863 for backgrounds and 160 for sprites).
+     - **The colours** pass `colors.mjs --check`: the text's shadow, the panels' edge and quiet text have colours of
+       their own (they were the default grey and brown); panels are solid, as the see-through ones turned brown over the
+       wood (muddy panels 0.47 to 0.01); the woods are warmer and the locked door a cold slate (the median screen's mud
+       0.45 to 0.17).
+   - **Results:**
+     - `node tools/verify.js riddlewick-manor` passes, with 122 test checks. `02-art.mjs` was rewritten, with 20 checks:
+       the scenes, sprites, furniture and doors made; `rooms.bin` the size it should be and exactly what `art.py` makes;
+       a room's colours loaded into palette 1; the furniture either side of the door, mirrored; doors closed, open,
+       locked and absent; the arrow, padlock, ghost and prop as sprites; the title's manor and gradient sky.
+     - `node tools/devkit/art/colors.mjs carts/riddlewick-manor.nova --check`: within the limits.
+     - `node tools/devkit/smoke.mjs riddlewick-manor` runs in the real console with no errors.
 7. **The audio:** the three songs from their sources and the effects (11), measured with `loud.mjs`.
 8. **Balance, polish and release:** a bot plays runs at each level with a chosen share of right answers (how often a
    run is won, how long it takes), then the label, the PNG cart and the Library (`node tools/release.js
