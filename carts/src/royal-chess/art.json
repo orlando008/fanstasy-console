@@ -1,20 +1,306 @@
 {
  "colors": {
-  "CHECK": 120,
-  "CURSOR": 118,
-  "DARK": 114,
-  "EBONY": 116,
-  "FRAME": 117,
-  "GLASS": 122,
-  "IVORY": 115,
-  "LAST": 121,
-  "LIGHT": 113,
-  "MOVE": 119
+  "CHECK": 167,
+  "CURSOR": 165,
+  "DARK": 161,
+  "EBONY": 163,
+  "FRAME": 164,
+  "GLASS": 169,
+  "IVORY": 162,
+  "LAST": 168,
+  "LIGHT": 160,
+  "MOVE": 166
  },
- "palettes": {},
- "scenes": {},
- "sprites": {},
- "tiles": {},
- "used": 0,
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "brass": 11,
+    "frame0": 6,
+    "frame1": 7,
+    "frame2": 8,
+    "gold0": 4,
+    "gold1": 5,
+    "tray0": 9,
+    "tray1": 10,
+    "velvet0": 1,
+    "velvet1": 2,
+    "velvet2": 3
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "maple0": 1,
+    "maple1": 2,
+    "maple2": 3,
+    "walnut0": 4,
+    "walnut1": 5,
+    "walnut2": 6
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "body0": 2,
+    "body1": 3,
+    "body2": 4,
+    "body3": 5,
+    "edge": 1
+   }
+  },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "body0": 2,
+    "body1": 3,
+    "body2": 4,
+    "body3": 5,
+    "edge": 1
+   }
+  },
+  "bg5": {
+   "base": 80,
+   "colors": {
+    "maple0": 1,
+    "maple1": 2,
+    "maple2": 3,
+    "walnut0": 4,
+    "walnut1": 5,
+    "walnut2": 6
+   }
+  },
+  "bg6": {
+   "base": 96,
+   "colors": {
+    "maple0": 1,
+    "maple1": 2,
+    "maple2": 3,
+    "walnut0": 4,
+    "walnut1": 5,
+    "walnut2": 6
+   }
+  },
+  "bg7": {
+   "base": 112,
+   "colors": {
+    "drop": 6,
+    "gold0": 1,
+    "gold1": 2,
+    "gold2": 3,
+    "gold3": 4,
+    "ink": 5
+   }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "body0": 2,
+    "body1": 3,
+    "body2": 4,
+    "body3": 5,
+    "edge": 1
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "body0": 2,
+    "body1": 3,
+    "body2": 4,
+    "body3": 5,
+    "edge": 1
+   }
+  },
+  "spr7": {
+   "base": 240,
+   "colors": {
+    "shade": 1
+   }
+  }
+ },
+ "scenes": {
+  "logo": {
+   "h": 28,
+   "mx": 80,
+   "my": 0,
+   "pal": 7,
+   "w": 32
+  },
+  "table": {
+   "h": 28,
+   "mx": 48,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  },
+  "title_table": {
+   "h": 28,
+   "mx": 80,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  }
+ },
+ "sprites": {
+  "held_bishop": {
+   "pal": 0,
+   "size": 32,
+   "tile": 396
+  },
+  "held_king": {
+   "pal": 0,
+   "size": 32,
+   "tile": 456
+  },
+  "held_knight": {
+   "pal": 0,
+   "size": 32,
+   "tile": 392
+  },
+  "held_pawn": {
+   "pal": 0,
+   "size": 32,
+   "tile": 384
+  },
+  "held_queen": {
+   "pal": 0,
+   "size": 32,
+   "tile": 452
+  },
+  "held_rook": {
+   "pal": 0,
+   "size": 32,
+   "tile": 448
+  },
+  "mini_bishop": {
+   "pal": 0,
+   "size": 8,
+   "tile": 390
+  },
+  "mini_king": {
+   "pal": 0,
+   "size": 8,
+   "tile": 405
+  },
+  "mini_knight": {
+   "pal": 0,
+   "size": 8,
+   "tile": 389
+  },
+  "mini_pawn": {
+   "pal": 0,
+   "size": 8,
+   "tile": 388
+  },
+  "mini_queen": {
+   "pal": 0,
+   "size": 8,
+   "tile": 404
+  },
+  "mini_rook": {
+   "pal": 0,
+   "size": 8,
+   "tile": 391
+  },
+  "shadow": {
+   "pal": 7,
+   "size": 32,
+   "tile": 460
+  }
+ },
+ "tiles": {
+  "bishop0": 55,
+  "bishop1": 56,
+  "bishop2": 57,
+  "bishop3": 58,
+  "bishop4": 59,
+  "bishop5": 60,
+  "bishop6": 43,
+  "bishop7": 44,
+  "bishop8": 45,
+  "king0": 78,
+  "king1": 79,
+  "king2": 80,
+  "king3": 40,
+  "king4": 81,
+  "king5": 42,
+  "king6": 82,
+  "king7": 76,
+  "king8": 54,
+  "knight0": 46,
+  "knight1": 47,
+  "knight2": 48,
+  "knight3": 49,
+  "knight4": 50,
+  "knight5": 51,
+  "knight6": 52,
+  "knight7": 53,
+  "knight8": 54,
+  "pawn0": 37,
+  "pawn1": 38,
+  "pawn2": 39,
+  "pawn3": 40,
+  "pawn4": 41,
+  "pawn5": 42,
+  "pawn6": 43,
+  "pawn7": 44,
+  "pawn8": 45,
+  "queen0": 69,
+  "queen1": 70,
+  "queen2": 71,
+  "queen3": 72,
+  "queen4": 73,
+  "queen5": 74,
+  "queen6": 75,
+  "queen7": 76,
+  "queen8": 77,
+  "rook0": 61,
+  "rook1": 62,
+  "rook2": 63,
+  "rook3": 64,
+  "rook4": 65,
+  "rook5": 66,
+  "rook6": 52,
+  "rook7": 67,
+  "rook8": 68,
+  "sqD0_0": 10,
+  "sqD0_1": 11,
+  "sqD0_2": 12,
+  "sqD0_3": 13,
+  "sqD0_4": 14,
+  "sqD0_5": 15,
+  "sqD0_6": 16,
+  "sqD0_7": 17,
+  "sqD0_8": 18,
+  "sqD1_0": 28,
+  "sqD1_1": 29,
+  "sqD1_2": 30,
+  "sqD1_3": 31,
+  "sqD1_4": 32,
+  "sqD1_5": 33,
+  "sqD1_6": 34,
+  "sqD1_7": 35,
+  "sqD1_8": 36,
+  "sqL0_0": 1,
+  "sqL0_1": 2,
+  "sqL0_2": 3,
+  "sqL0_3": 4,
+  "sqL0_4": 5,
+  "sqL0_5": 6,
+  "sqL0_6": 7,
+  "sqL0_7": 8,
+  "sqL0_8": 9,
+  "sqL1_0": 19,
+  "sqL1_1": 20,
+  "sqL1_2": 21,
+  "sqL1_3": 22,
+  "sqL1_4": 23,
+  "sqL1_5": 24,
+  "sqL1_6": 25,
+  "sqL1_7": 26,
+  "sqL1_8": 27
+ },
+ "used": 328,
  "version": 1
 }

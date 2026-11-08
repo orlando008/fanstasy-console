@@ -13,7 +13,7 @@ const PROBE = `__expose(() => ({
   get whitePad() { return whitePad; }, get menu() { return menu; }, get pausePad() { return pausePad; }, get notice() { return notice; }, get noticeT() { return noticeT; },
   insufficient, gameResult, padOf, MENU, PROMOS,
   get cpu() { return cpu; }, set cpu(v) { cpu = v; }, get thinking() { return thinking; }, get thinkT() { return thinkT; }, get thought() { return thought; },
-  get nodes() { return nodes; }, color: (i) => color(i), captured, material, nameOf, PX, PW, FRAME_W, get saving() { return saving; }, get setupLevel() { return setupLevel; }, get setupColour() { return setupColour; },
+  get nodes() { return nodes; }, color: (i) => color(i), mget: (x, y) => mget(x, y), SQ_MX, PC_MX, PIECE_NAMES, captured, material, nameOf, PX, PW, FRAME_W, get saving() { return saving; }, get setupLevel() { return setupLevel; }, get setupColour() { return setupColour; },
   get setupRow() { return setupRow; }, titleItems, hasSave, continueGame, packMove, GAME_SLOT, PLIES_SLOT, CHOICE_SLOT, MOVES_SLOT, MAX_SAVED, VERSION_SLOT, get thinkBest() { return thinkBest; }, evaluate, think, thinkNow, copyPos, LEVELS, MATE, FRAME_NODES, cpuToMove,
   rnd: (n) => rnd(n), fromFen, toFen, posKey, attacked, inCheck, pseudoMoves, legalMoves, make, unmake, perft, newGame, playMove,
   mFrom, mTo, mPromo, mFlags, mk, sqName, sqOf, screenX, screenY,

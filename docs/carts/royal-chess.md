@@ -1,7 +1,7 @@
 # Royal Chess: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Steps 1 to 5 of 8 built (section 15): every rule of chess, two players, the computer at three levels, the menus and saves, and the side panel. Step 6 (the art) is next.
+**Status:** Steps 1 to 6 of 8 built (section 15): every rule of chess, two players, the computer at three levels, the menus and saves, the side panel and the palace-study art. Step 7 (the audio) is next.
 **Cart source:** `carts/src/royal-chess/` → `carts/royal-chess.nova`
 
 ---
@@ -55,7 +55,7 @@ to light up, and the pieces each side has taken sit beside the board with who is
 
 - **The board:** 8 × 8 squares of 24 px, 192 × 192 px, at (14, 11), in a frame 10 px wide. The files `a` to `h` are on
   the frame below it and the ranks `1` to `8` on the frame to its left.
-- **The side panel,** at x 220 to 254, in two wooden trays, Black's at the top and White's at the bottom. Each tray has:
+- **The side panel,** at x 216 to 255, in two wooden trays, Black's at the top and White's at the bottom. Each tray has:
   - who plays that side (`YOU` and `CPU` against the computer; `P1` and `P2` with two pads; else `WHITE` and `BLACK`),
     lit in gold while it is that side's move;
   - the pieces that side has taken, in rows of four, the most valuable first, each in its own colour;
@@ -170,16 +170,20 @@ where it enters, no piercing (`node tools/devkit/music/loud.mjs carts/royal-ches
 
 The art is made in code by `carts/src/royal-chess/art.py` (the art toolkit, `tools/devkit/art/kit.py`).
 
-- **BG2:** the table around the board: deep red velvet with a gold-thread border, and at the edges of the screen the
-  marble floor beyond it. Candlelight: a warm glow on the board, the corners dimmer.
-- **BG1:** the board: inlaid squares of maple and walnut, each a 3 × 3 tile picture with its own grain, and the board's
-  frame with the files and ranks inlaid in brass.
-- **BG0:** the pieces, each a 3 × 3 tile picture over its square (transparent around it, so the square shows), carved
-  ivory and ebony figures seen a little from the front so each is known by its shape. The cart writes them into Map RAM
-  as the position changes.
-- **Sprites:** the piece held (32 × 32, raised, with a shadow), the cursor's frame, the captured pieces in the side panel
-  (8 px).
-- **Overlay:** the highlights (last move, check, legal squares), the status line, the menus and the result panel.
+- **BG2:** the squares, inlaid maple and walnut, each a 3 × 3 tile picture with its own grain (two variants of each
+  wood). The cart writes them into Map RAM (columns 0 to 23) every frame in palette 2; the last move's squares use
+  palette 5 (the same woods tinted gold) and the square under a king in check palette 6 (tinted red).
+- **BG1:** the table, a 256 × 224 scene (`table`, at map column 48): red velvet with a gold thread's diamonds, the
+  board's frame (10 px, lit on the upper left) with a brass line inlaid round the board, and the two trays. The board's
+  squares are transparent in it, so BG2 shows through. On the title BG1 shows the `logo` scene instead (column 80): the
+  same table with ROYAL CHESS in big gold letters over the board's middle.
+- **BG0:** the pieces, each a 3 × 3 tile picture over its square (transparent around it), carved ivory (palette 3) and
+  ebony (palette 4) figures, shaded across their width and outlined. The cart writes them into Map RAM (columns 24 to
+  47) as the position changes; the square of the piece held is left empty.
+- **Sprites:** the piece held (32 × 32, raised 4 px, ivory in sprite palette 0 and ebony in 1) over its shadow (sprite
+  palette 7, blended at half), and the captured pieces in the trays (8 px, `mini_<piece>`).
+- **Overlay** (colours at CGRAM 160 and up): the legal squares, the cursor, the coordinates on the frame, the status
+  line, the side panel's text, the menus and the result panel.
 
 ## 13. Persistence (save slots)
 
@@ -203,7 +207,7 @@ position a test sets up).
 | Asset | Budget |
 |---|---|
 | Code | Under 40 KB of the 64 KB (`node tools/check.js royal-chess`). The engine about 10 KB |
-| Tiles | About 400 of 1,024: the squares (2 woods with grain variants, about 40), the 12 pieces (9 tiles each, 108), the frame and its letters (about 60), the table and floor (about 60), and the sprites (the 12 pieces held, 32 px: 192, and the small ones) |
+| Tiles | 328 of 1,024 (built): 210 BG tiles (the squares in 2 woods with 2 grains, the 6 pieces at 9 tiles each, used for both colours with their own palettes, the table and the logo) and 118 sprite tiles (the 6 pieces held, 32 px, the 6 small ones and the shadow) |
 | Sprites | At most about 40: the piece held and its shadow, the cursor, and up to 30 captured pieces |
 | Songs / SFX | 2 songs, about 12 effects |
 
@@ -353,6 +357,24 @@ position a test sets up).
        - the files on the frame.
      - `node tools/devkit/smoke.mjs royal-chess` runs in the real console with no errors.
 6. **The art:** the palace study (section 12).
+   - **Built:**
+     - **The board is drawn with BG layers** (`renderBoard`): squares on BG2, pieces on BG0, written into Map RAM each
+       frame. The last move and the check are the squares' own palettes now, not overlay tints.
+     - **The pieces** are six silhouettes, shaded and outlined in code; one set of tiles serves both colours.
+     - **The table** (velvet, frame, brass line, trays) is a scene on BG1, and the title is the same table with the logo.
+     - **The piece held** is a sprite with a shadow, and the captured pieces are small sprites in the trays.
+     - **The trays** are wider (x 216 to 255), so the names fit; the promotion choice is a panel of names; the title's
+       menu sits over the board's middle.
+   - **Results:**
+     - `node tools/verify.js royal-chess` passes, with 181 test checks. `02-art.mjs` was rewritten for the art, with 18
+       checks:
+       - the named colours, tiles, sprites and scenes, and the scenes clear of the board's map;
+       - the squares' and pieces' palettes in Map RAM, and an empty square without piece tiles;
+       - the table round the board;
+       - the piece held leaving the map, drawn as a sprite, and put back;
+       - the title's gold logo over the table.
+     - `09-panel.mjs` checks the last move by the squares' palette (5).
+     - `node tools/devkit/smoke.mjs royal-chess` runs in the real console with no errors.
 7. **The audio:** the two songs from their sources and the effects (11), measured with `loud.mjs`.
 8. **Balance, polish and release:** the levels tuned with the bot, then the label, the PNG cart and the Library
    (`node tools/release.js royal-chess`), and a README row.

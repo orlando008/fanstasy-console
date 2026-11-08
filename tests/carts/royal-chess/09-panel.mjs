@@ -36,9 +36,9 @@ const rgb = (i) => { const [r, g, b] = p.color(i); const e = (c) => (c << 3) | (
 // 3. The highlights and the layout.
 {
   p.newGame(); vm.run(1); play('g1f3'); vm.run(1);
-  const last = rgb(p.ART.colors.LAST), at = (n) => px(p.screenX(p.sqOf(n)) + 1, p.screenY(p.sqOf(n)) + 1);
-  ok(at('g1') === last && at('f3') === last && at('e2') !== last, 'the last move\'s two squares are tinted');
-  ok(p.BX - p.FRAME_W >= 0 && p.BX + 8 * p.SQ + p.FRAME_W <= p.PX - 2 && p.BY - p.FRAME_W >= 0 && p.BY + 8 * p.SQ + p.FRAME_W <= 215, 'the board and its frame fit the screen, left of the panel and above the status line');
+  const at = (n) => { const s = p.sqOf(n); return (p.mget(p.SQ_MX + (s & 7) * 3 + 1, (7 - (s >> 4)) * 3 + 1) >> 10) & 7; };
+  ok(at('g1') === 5 && at('f3') === 5 && at('e2') === 2, 'the last move\'s two squares are tinted (the gold palette, 5)');
+  ok(p.BX - p.FRAME_W >= 0 && p.BX + 8 * p.SQ + p.FRAME_W <= p.PX && p.BY - p.FRAME_W >= 0 && p.BY + 8 * p.SQ + p.FRAME_W <= 215, 'the board and its frame fit the screen, left of the panel and above the status line');
   ok(p.PX + p.PW <= 256, 'and the panel fits too');
   const ivory = rgb(p.ART.colors.IVORY);
   let file = false; for (let x = p.BX; x < p.BX + p.SQ; x++) for (let y = p.BY + 8 * p.SQ; y < p.BY + 8 * p.SQ + p.FRAME_W; y++) if (px(x, y) === ivory) file = true;
