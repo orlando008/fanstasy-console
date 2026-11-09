@@ -1189,7 +1189,7 @@ function drawLog() {
       left = typed - before; if (left <= 0) continue;
       if (left < s.length) s = s.slice(0, left);
     }
-    tx(s, 5, LOG_Y + 3 + (i - from) * 10, i >= firstTyping && typing ? INK : LOGC);
+    tx(s, 5, LOG_Y + 2 + (i - from) * 9, i >= firstTyping && typing ? INK : LOGC); // 9 rows a line: the descenders of the third stay on the screen
   }
   if (typing) { let all = 0; for (let j = firstTyping; j < n; j++) all += logRows[j].s.length; if (typed >= all) typing = 0; }
 }
@@ -1251,7 +1251,7 @@ function drawGift() {
     if (on) rectfill(3, y - 3, 250, 30, ROWC);
     tx(TIER[k], 14, y, on ? BRASS : DIM);
     tx((on ? '> ' : '  ') + v.name, 10, y + 10, on ? GOLD : INK);
-    tx(v.hint, 22, y + 20 - 1, DIM);
+    tx(v.hint, 10, y + 20 - 1, DIM);
   });
   tx('A to begin the cycle with it.  B: the title', 6, 210, DIM);
 }

@@ -80,7 +80,7 @@ descenders 2 px below, so about 50 letters fit across. Rows are 10 px apart. The
 | 0–91 | **The view:** a picture of where the story is, alive: the workbench and Marco, the tinkers at work, the town outside the window filling with cogs; later the world turning (Mode 7) and the orrery of stars. It reacts to what you do (a cog drops when you make one, a new tinker walks in). In a cinematic it grows to the whole screen |
 | 92–103 | **The tabs:** ◄ WORKSHOP ► HELPERS ...; the current one lit |
 | 104–193 | **The panel:** the cogs made (brass, system font) and the coin (green) at the top; the tab's counters on one line; up to 5 rows to press, the chosen one on a bar and marked `>`, the value or cost on the right (scrolling when there are more); the hint line at the bottom (what the row does, or why not, in red) |
-| 194–223 | **The log:** the last three lines of the story, the newest typing itself in (2 letters a frame) |
+| 194–223 | **The log:** the last three lines of the story, 9 rows apart from line 196, the newest typing itself in (2 letters a frame) |
 
 The headline counter, **COGS MADE** (every cog ever made in the run), stays in the top left of every panel.
 
@@ -535,6 +535,12 @@ again by applying the effects of the inventions made, in order.
       was needed.
     - **Results:** all 312 checks, the soak, `smoke.mjs`, the bot's sweep, `loud.mjs --check` and `colors.mjs --check`
       pass. The pull request's review (step 9) is answered.
+    - **After the release:** the user found the log's third line cut off at the bottom of the screen (its descenders
+      ran past line 223). The log's lines are now 9 rows apart, from line 196. `11-text` records every string the game
+      draws, in both fonts, over every kind of screen (each act's tabs and rows with big numbers, the log typing every
+      story line, the full log, milestones, pause, title, gifts, records, every shot of every scene, the choice, the
+      ending, the credits), and fails on any outside the screen: it fails with the old log, and found one more, a gift's
+      hint running off the right edge on the gifts screen, now fixed.
 
 Each step: build it, run `node tools/verify.js` (and `smoke.mjs`; `sweep.mjs` after a rules change), write its
 **Built** and **Results** notes under its number here, commit and push.

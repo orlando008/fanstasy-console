@@ -24,12 +24,14 @@ const PROBE = `__expose(() => ({
   benchCost, nextTrust, costText, ratio, GEARS, RISKS, actOf, eff2: () => eff2, powerGen, powerNeed, powerCap, machRate, build, cost2,
   workShare, dreamShare, ingRate, sulking, worldOre, REGIONS, LOTS, SAVE_INTS, workBoost, river,
   TRAITS, blueprints, freeBp, drawCost, mothCost, reachRate, windRate, copyRate, harvRate, lossRate, stingRate, rustRate, choose, CHOICES,
-  get choiceSel() { return choiceSel; }, ENDS_SLOT, BEST_SLOT, ALL_SLOT, GIFTS, GIFT_TIERS, titleItems, ruleOf, RULES, playScene, get cine() { return cine; }, get SCENES() { return SCENES; },
+  get choiceSel() { return choiceSel; }, ENDS_SLOT, BEST_SLOT, ALL_SLOT, GIFTS, GIFT_TIERS, titleItems, addLog, startCycle, toRecords: () => { state = 'records'; timer = 0; },
+  get boxes() { return typeof __boxes === 'undefined' ? null : __boxes; }, ruleOf, RULES, playScene, get cine() { return cine; }, get SCENES() { return SCENES; },
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into a new run). save: a save to start from. */
-export const newGame = (seed = 1, { title = false, save = null } = {}) =>
-  boot(CART, { seed, save, extra: rename((title ? '' : 'skipTitle = true;') + PROBE, MAP) });
+/** A new game. title: start on the title; save: a save to start from; extra: more source for the cart's scope (renamed too). */
+export const newGame = (seed = 1, { title = false, save = null, extra = '' } = {}) =>
+  boot(CART, { seed, save, extra: rename((title ? '' : 'skipTitle = true;') + extra + PROBE, MAP) });
 export const M = (...names) => names.reduce((m, n) => m | (1 << BTN[n]), 0);
 /** The sfx commands since the last call: [[n, channel], ...]. */
 export const sfxLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'sfx').map((a) => [a[2], a[3]]); vm.audioLog.length = 0; return r; };
