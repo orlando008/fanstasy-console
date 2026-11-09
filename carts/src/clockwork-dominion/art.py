@@ -169,7 +169,7 @@ for k in range(7):
         t.pset(sx, sy, [sky.star[0], sky.star[1], sky.gold[0], sky.star[2], sky.gold[1], sky.star[0], sky.star[1]][(k + j) % 7])
     star_tiles.append(t)
 stars_img = tile_fill(W, H, star_tiles, seed=5, weights=[3, 3, 1, 1, 1, 2, 2])
-art.scene('stars', stars_img, pal=sky, at=(0, 16))
+art.scene('stars', stars_img, pal=sky, at=(0, 40))
 
 # ===================================================== Act III ====================================================
 # The galaxy: a spiral, 128 x 128, its two arms lit along their length, a gold core; read by the affine layer, turning.
@@ -297,5 +297,16 @@ bench_s = Img.from_rows([
     'oooooooooooooooo', 'ollllllllllllllo', 'obbbbbbbbbbbbbbo', 'oooooooooooooooo', '.ob..........bo.', '.ob..........bo.',
     '.ob..........bo.', '.ob..........bo.', '.oo..........oo.', '................'], key=M2)
 art.sprite('workbench', bench_s, pal=mach, region='spr')
+
+# ===================================================== The title ====================================================
+# CLOCKWORK DOMINION in brass, under the bench (map rows 15 to 20): the title widens the bench's layer to show it.
+logo_pal = art.palette(6, {'brass': ramp('c08a30', 5), 'edge': '1a0f08', 'shade': '3a2010', 'night': '060a1c'})
+logo = Img(W, 48)
+for y in range(48):
+    for x in range(W): logo.px[y][x] = logo_pal.night
+for k, word in enumerate(['CLOCKWORK', 'DOMINION']):
+    t = big_text(word, logo_pal.brass, scale=2, outline=logo_pal.edge, shadow=logo_pal.shade)
+    logo.blit(t, (W - t.w) // 2, 4 + k * 22)
+art.scene('logo', logo, pal=logo_pal, at=(0, 15), solid=True)
 
 art.write(sys.argv[1])

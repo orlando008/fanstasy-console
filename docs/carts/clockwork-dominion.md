@@ -1,7 +1,7 @@
 # Clockwork Dominion: Cart Specification
 
-**Version:** 0.10 (step 9 of 10)
-**Status:** In progress: steps 1 to 9 of the plan (section 15) are built (the whole game, balanced); step 10, polish and release, is next
+**Version:** 1.0
+**Status:** Released: all 10 steps of the plan (section 15) are built, and the cart is released as `carts/clockwork-dominion.nova.png`, on the Library's Strategy shelf
 **Cart source:** `carts/src/clockwork-dominion/` → `carts/clockwork-dominion.nova`
 
 ---
@@ -319,18 +319,14 @@ again by applying the effects of the inventions made, in order.
 
 ## 14. Asset budget
 
-The aim is to fill the cart: the code near its 64 KB (with `"strip": true`, and `"mangle": true` when it is needed), the
-ROM's 128 KB (the story, the inventions, each act's tiles and maps), most of the 1,024 tiles and the 32 KB of samples, and
-the PNG cart's payload (147 KB compressed, which is what limits a cart this full) above 90%.
-
 | Asset | Budget |
 |---|---|
-| Code | the engine, about 55 to 63 KB of the 64 KB (`node tools/check.js clockwork-dominion`) |
-| ROM | about 120 KB of the 128 KB: the story and inventions (about 40 KB) and the acts' tile sets and maps (about 80 KB) |
-| Tiles | the panel's frame and the sprites stay; each act's view swaps its own (about 600 tiles each) |
-| Sprites | at most 64 at once |
-| Songs / SFX | 8 songs (64 patterns), about 30 effects, about 30 KB of samples |
-| PNG cart | above 90% of the payload |
+| Code | 62.7 KB of the 64 KB (`"strip": true` and `"mangle": true`; `node tools/check.js clockwork-dominion`) |
+| ROM | 28.3 KB of the 128 KB: the font and the book (119 story lines, 73 inventions, 29 milestones, 7 scenes) |
+| Tiles | 685 of 1,024: the three views, the logo and 14 sprites, all in the one sheet |
+| Sprites | at most about 40 at once (the orrery's moths, the Rust, the swarm round the globe) |
+| Songs / SFX | 8 of 8 songs (30 of 64 patterns), 18 effects, 13.8 KB of 32 KB of samples |
+| PNG cart | 81.8 KB of the 147 KB payload (55%, with the label) |
 
 ## 15. Implementation plan
 
@@ -533,6 +529,12 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
      - The soak, `smoke.mjs` and the bot's sweep are clean. Code 61.5 KB, ROM 28.3 KB, PNG payload 46%.
 10. **Polish and release:** the size pass (the story written out to fill the space, the last details), the PNG cart, the
     Library entry and the README row.
+    - **Built:** the title's logo (the kit's lettering in brass, under the night workshop: the bench's layer widened on
+      the title to show it); the release (`node tools/release.js clockwork-dominion`: the label is the title, the PNG
+      cart, the Library's Strategy shelf) and the README row. The code fits in 64 KB as it is (62.7 KB), so no size pass
+      was needed.
+    - **Results:** all 312 checks, the soak, `smoke.mjs`, the bot's sweep, `loud.mjs --check` and `colors.mjs --check`
+      pass. The pull request's review (step 9) is answered.
 
 Each step: build it, run `node tools/verify.js` (and `smoke.mjs`; `sweep.mjs` after a rules change), write its
 **Built** and **Results** notes under its number here, commit and push.

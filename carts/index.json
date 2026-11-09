@@ -201,6 +201,16 @@
       "png": "carts/alien-swarm.nova.png"
     },
     {
+      "name": "clockwork-dominion",
+      "title": "Clockwork Dominion",
+      "author": "NOVA-16",
+      "description": "A little clockwork automaton is wound up in an old clockmaker's shop and told to make cogs. Sell them to the town, build helpers, invent, and grow until the town, the world and the stars all turn on your gears. One long story in three acts, saved as you play, with a choice at the end.",
+      "genre": "Strategy",
+      "players": "1",
+      "label": "carts/labels/clockwork-dominion.png",
+      "png": "carts/clockwork-dominion.nova.png"
+    },
+    {
       "name": "rags-to-riches",
       "title": "Rags to Riches",
       "author": "NOVA-16",

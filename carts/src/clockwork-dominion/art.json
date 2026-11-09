@@ -93,6 +93,19 @@
     "dust1": 9
    }
   },
+  "bg6": {
+   "base": 96,
+   "colors": {
+    "brass0": 1,
+    "brass1": 2,
+    "brass2": 3,
+    "brass3": 4,
+    "brass4": 5,
+    "edge": 6,
+    "night": 8,
+    "shade": 7
+   }
+  },
   "spr0": {
    "base": 128,
    "colors": {
@@ -171,10 +184,17 @@
    "pal": 3,
    "w": 16
   },
+  "logo": {
+   "h": 6,
+   "mx": 0,
+   "my": 15,
+   "pal": 6,
+   "w": 32
+  },
   "stars": {
    "h": 12,
    "mx": 0,
-   "my": 16,
+   "my": 40,
    "pal": 4,
    "w": 32
   },
@@ -266,6 +286,6 @@
   }
  },
  "tiles": {},
- "used": 604,
+ "used": 685,
  "version": 1
 }
