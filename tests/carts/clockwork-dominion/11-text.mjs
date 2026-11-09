@@ -28,6 +28,10 @@ const see = (name, frames) => { const bad = check(vm, p, frames); results[name] 
 see('the title');
 p.newRun(1); for (const sc of Object.keys(p.SCENES)) { p.playScene(sc, () => {}); for (let k = 0; k < p.SCENES[sc].length; k++) { p.cine.k = k; p.cine.t = 0; see('the cinematics', 200); } }
 vm.press('START'); vm.run(2);
+// the tab strip: no arrows round the only tab; arrows once there is a second
+{ p.boxes.length = 0; vm.run(1); const one = p.boxes.some((b) => b.s === '\x7f' && b.y < 104);
+  p.G.made = 30; p.step(0.1); p.boxes.length = 0; vm.run(1); const two = p.boxes.some((b) => b.s === '\x7f' && b.y < 104);
+  ok(!one && two && p.openTabs().length === 2, 'the tab strip has arrows only when there is another tab to go to'); }
 // each act, every tab and every row chosen, with big numbers and the log's longest lines typing in
 for (const act of [1, 2, 3]) {
   Object.assign(p.G, {

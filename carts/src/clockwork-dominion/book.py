@@ -125,6 +125,8 @@ EXTRA = [
     ('|>', '... #.. ##. ### ##. #.. ...'),            # 128: the right mark
     ('dot', '.. .. .. ## ## .. ..'),                  # 129: a dot
     ('cog', '..... .#.#. ##### ##.## ##### .#.#. .....'),  # 130: a cog
+    ('up', '..... ..... ..#.. .###. ##### ..... .....'),   # 131: more rows above
+    ('down', '..... ..... ##### .###. ..#.. ..... .....'), # 132: more rows below
 ]
 
 
@@ -212,7 +214,7 @@ def read_milestones(problems):
 
 VIEWS = {'night', 'dusk', 'empty', 'world', 'orrery', 'black'}
 EFFECTS = {'fadein', 'fadeout', 'mosaicin', 'mosaicout', 'irisopen', 'irisclose', 'doze', 'lampsout', 'launch', 'spin', 'gold',
-           'still', 'starsout', 'tick', 'empty'}
+           'still', 'starsout', 'tick', 'empty', 'alone'}
 
 
 def read_scenes(problems):

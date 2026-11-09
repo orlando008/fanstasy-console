@@ -229,8 +229,10 @@ each ending over all cycles, and the count of cogs made. These are kept across c
 **The cinematics** (`scenes.txt`, in the ROM, played by `playScene`): each is a few shots of a view, lowered to the
 middle of the screen (lines 40 to 131), with a caption typing in under it. Each shot waits, before its last half
 second (a fade, a dissolve), with "A: on" blinking in the corner, until A is pressed (the user asked for this, so there
-is time to read); A while the caption types shows it whole; START skips the scene. Effects: fades, the mosaic, an iris on Marco (window 1, a circle line by line), Paulo dozing or
-gone, Rotella's windows going dark, moths rising, the galaxy hurrying or standing still, everything turning gold,
+is time to read); A while the caption types shows it whole; START skips the scene. While a shot waits its picture is
+whole: an opening iris has reached the corners, and a mosaic only begins in the last half second. Effects: fades, the
+mosaic, an iris on Marco (window 1, a circle line by line), Paulo dozing or gone, Paulo alone (before Marco), Rotella's
+windows going dark, moths rising, the galaxy hurrying or standing still, everything turning gold,
 the stars going out, the watch ticking.
 
 | Scene | When | Shots |
@@ -241,9 +243,11 @@ the stars going out, the watch ticking.
 | launch | THE GREAT LAUNCH | moths rising from the globe, a fade, ACT III over the galaxy |
 | orrery | THE ORRERY TURNS | the galaxy hurrying, turning gold, "Only one thing is left to wind." |
 | dominion | WIND IT | gold, then everything standing still, a fade |
-| stop | LET IT STOP | the stars going out into black, then dawn in a little shop, Paulo's chair empty, a tick |
+| stop | LET IT STOP | the stars going out into black, then day in a little shop: the old clockmaker in his chair, and no Marco yet |
 4. **Pause** (START): RESUME, THE STORY SO FAR, MILESTONES (this run's), MUSIC, EFFECTS, SAVE AND QUIT.
-5. **The end:** THE LAST COG, the watch and the choice (WIND IT, LET IT STOP), the ending's cinematic, then the credits with
+5. **The end:** THE LAST COG, the watch and the choice (Paulo's watch drawn under the words: a brass case with its
+   crown and ring, a pale face, the hands a little before twelve, a red second hand that moves with a tick each second;
+   then WIND IT, LET IT STOP), the ending's cinematic, then the credits with
    START CYCLE n or TITLE. The story told is not kept as a run to continue. Then the gifts: the next cycle's rule, the
    26 inventions to choose from (A begins the cycle with it; B goes back to the title).
 
@@ -296,7 +300,7 @@ its top.
 | Act | BG2 | BG1 | BG0 | Sprites |
 |---|---|---|---|---|
 | I, the workshop (and the title, at night) | Rotella through the arched window: hills, rooftops, the clock tower, cypresses, lit windows; the sky behind it is the backdrop's gradient (day, or night on the title) | the wall: planks and a rail, shelves of clocks, a case clock with its pendulum, Paulo's red armchair, the window's brass frame and mullions | the bench | Marco (blinking), Paulo in his chair (dozing now and then; gone after THE LAST WINDING), up to 14 tinkers walking, up to 6 workbenches, the cogs falling and piling |
-| II, the world | the globe in the porthole: a 128 × 64 map of seas, land and ice on the affine layer, a sphere line by line (each line's width and row of the map worked out once for each framing; the layer is off outside it), turning; its land turns to brass as the places are integrated and the world is wound | the wall again, with the porthole (`wall2`); Paulo's chair is empty | the bench | Marco at the winding lever (pulled when you wind by hand); the swarm, up to 10 tinkers going round the globe (18 on the whole sky; behind it on the far side); a pale ring for the air |
+| II, the world | the globe in the porthole: a 128 × 64 map (continents with ragged coasts from five sizes of noise, shallow and deep seas, dry highlands, ice at the poles) on the affine layer, a sphere line by line (each line's width and row of the map worked out once for each framing; the layer is off outside it), turning; its land turns to brass as the places are integrated and the world is wound (each of its colours to a darker or lighter brass, so the relief stays; no brass before the first place) | the wall again, with the porthole (`wall2`); Paulo's chair is empty | the bench | Marco at the winding lever (pulled when you wind by hand); the swarm, up to 10 tinkers going round the globe (18 on the whole sky; behind it on the far side); a pale ring for the air |
 | III, the orrery | a spiral galaxy, 128 × 128, on the affine layer, turning and tilted, in the porthole | the wall with the porthole | the bench | Marco at a brass telescope; the sun gear and two planet gears (three on the whole sky), up to 20 moths and 12 of the Rust, by their numbers |
 
 The stars are overlay pixels in palette 4's colours (40 turning slowly in the porthole, 110 drifting across the whole
@@ -580,6 +584,25 @@ again by applying the effects of the inventions made, in order.
         mix, and *Clair de lune*'s climax pierced: their leads are softer). `09-audio` checks the new sources, the 64
         patterns with a speed on each, each act's medley over 100 s with `PASS` matching it, and the theme's patterns
         coming back in every act.
+
+    - **A polishing pass** (the user asked for one): every screen was looked at (53 shots: the title, each shot of
+      each scene, every tab of every act, the log, the pause, the milestones, the riddle, the choice, the ending, the
+      gifts, the records), and these were put right:
+      - The choice was words on black: Paulo's watch is drawn there now, ticking.
+      - The globe was one great blob (its noise had only one size, the scale given in the wrong unit), and before the
+        first place was integrated its brass tint was negative, which turned its coasts orange in the Act II card: a new
+        map with continents, and the tint kept at nothing or more.
+      - Brass and gold were one flat colour (the wound world, the golden galaxy of the endings): each colour of a list
+        now goes to its own shade.
+      - A waiting shot showed an unfinished effect: the opening's iris stopped short of the right edge, and "There is
+        so much more to wind" waited half dissolved. The launch's moths flew out of the picture into the black above.
+      - The Rest ending's last words are of an old clockmaker hearing a tick, over a picture of Marco and an empty
+        chair: it shows Paulo, and no Marco yet (a new effect word, `alone`).
+      - The title's "Start a new story?" box cut through the logo: it is below it. The only tab had arrows round it.
+        The gifts were bunched at the top of their page. The marks for more rows were the letters ^ and v: they are
+        small arrows (two more characters in the font).
+      - `06-act3`, `08-scenes` and `11-text` check these. `08-scenes` timed a scene by its three slowest frames of
+        200, which are Node compiling a path, not the cart: it uses the 95th percentile (a frame is about 2 ms).
 
 Each step: build it, run `node tools/verify.js` (and `smoke.mjs`; `sweep.mjs` after a rules change), write its
 **Built** and **Results** notes under its number here, commit and push.

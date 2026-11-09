@@ -5,7 +5,8 @@
 #   frames:  how long the shot lasts (60 a second); A hurries the caption, START skips the scene
 #   effects: any of fadein fadeout (brightness), mosaicin mosaicout, irisopen irisclose (a circle on Marco),
 #            doze (Paulo asleep), lampsout (Rotella's windows go dark), launch (moths rise), spin (the galaxy hurries),
-#            gold (everything turns gold), still (nothing turns), starsout (the stars go out), tick (the watch ticks)
+#            gold (everything turns gold), still (nothing turns), starsout (the stars go out), tick (the watch ticks),
+#            empty (Paulo's chair empty), alone (Paulo without Marco)
 #   caption: typed under the picture (plain ASCII; empty for none)
 
 @opening
@@ -45,4 +46,4 @@ orrery | 300 | gold still fadeout | I keep it all, for ever. I keep it for you, 
 orrery | 240 | tick | I did not wind it. The watch ticked, and slowed.
 orrery | 300 | starsout | The stars began to unwind, one by one, into light.
 black | 200 | | It was very quiet, for a very long time.
-dusk | 300 | fadein empty | Then, somewhere, in a little shop, an old clockmaker heard a tick.
+dusk | 300 | fadein alone | Then, somewhere, in a little shop, an old clockmaker heard a tick.
