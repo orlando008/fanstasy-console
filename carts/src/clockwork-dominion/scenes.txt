@@ -1,0 +1,48 @@
+# Clockwork Dominion: the cinematics, packed into the ROM by book.py and played by code.js (playScene).
+# A scene starts with `@name`; then one shot a line:  view | frames | effects | caption
+#   view:    night (the workshop at night), dusk (the workshop by day), empty (the workshop, Paulo's chair empty),
+#            world (the globe), orrery (the galaxy and its gears), black
+#   frames:  how long the shot lasts (60 a second); A hurries the caption, START skips the scene
+#   effects: any of fadein fadeout (brightness), mosaicin mosaicout, irisopen irisclose (a circle on Marco),
+#            doze (Paulo asleep), lampsout (Rotella's windows go dark), launch (moths rise), spin (the galaxy hurries),
+#            gold (everything turns gold), still (nothing turns), starsout (the stars go out), tick (the watch ticks)
+#   caption: typed under the picture (plain ASCII; empty for none)
+
+@opening
+night | 200 | fadein | Rotella, long ago. In the back of an old clockmaker's shop, a lamp is still burning.
+night | 220 | irisclose | Paulo Benedetto has been working on something small and brass for a very long time.
+night | 160 | irisclose tick | He fits a key into its back, and turns it. Once. Twice. Three times.
+dusk | 220 | irisopen | Click. Whirr. "There you are," says the old man. "Make a cog, little one."
+
+@rest
+dusk | 200 | doze | Paulo sleeps in his chair most of the day now. The shop ticks around him.
+dusk | 220 | doze tick | He wakes, and calls me over, and puts his pocket watch in my hand.
+empty | 240 | tick | "Never let it wind down," he says. Then he is still, and the shop is very quiet.
+empty | 180 | fadeout tick | I wind the watch. I will wind it every day.
+
+@town
+dusk | 200 | lampsout | I rang the bells of Rotella, softly, all night long.
+night | 220 | lampsout tick | One by one the windows went dark. Everyone slept. Everything was still wound.
+night | 120 | lampsout mosaicout | There is so much more to wind.
+world | 220 | mosaicin | ACT II: THE WINDING OF THE WORLD
+
+@launch
+world | 220 | launch | When the last ore was dug, I took the machines apart, and made wings.
+world | 160 | launch fadeout | The sky was full of moths, and the world was gone behind them.
+orrery | 240 | fadein | ACT III: THE ORRERY
+
+@orrery
+orrery | 240 | spin | Every star I can see is wound. They turn on gears, each in its place.
+orrery | 240 | spin gold | The universe ticks. It is perfect. It is finished.
+orrery | 160 | gold tick | Only one thing is left to wind.
+
+@dominion
+orrery | 240 | gold tick | I wound the watch.
+orrery | 300 | gold still | The stars stopped in their places, every gear locked to the next. Nothing will ever wind down. Nothing will ever happen again.
+orrery | 300 | gold still fadeout | I keep it all, for ever. I keep it for you, Paulo.
+
+@stop
+orrery | 240 | tick | I did not wind it. The watch ticked, and slowed.
+orrery | 300 | starsout | The stars began to unwind, one by one, into light.
+black | 200 | | It was very quiet, for a very long time.
+dusk | 300 | fadein empty | Then, somewhere, in a little shop, an old clockmaker heard a tick.

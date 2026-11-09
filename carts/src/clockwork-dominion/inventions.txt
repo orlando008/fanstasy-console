@@ -1,0 +1,87 @@
+# Clockwork Dominion: the inventions, packed into the ROM by book.py. One each:
+#   id | name | appears | cost | effect | hint | story
+# appears: when the row shows in INVENT: triggers as in story.txt (made:1000), and inv:N (invention N is made), joined
+#   with & (all must hold).
+# cost: ins (insight), clev (cleverness), lire, cogs (taken from stock), trust; spaces between.
+# effect: changes to the run's numbers, spaces between: key*x multiplies, key=x sets, key+x adds (the keys are G's, in
+#   code.js). The hint is shown on the hint line; the story line is told in the log when it is made.
+# The ids are the save's bits: never reuse or renumber one.
+
+# --- Act I: the Workshop ---
+1 | Sharper Files | made:1000 | ins:750 | hand=2 | The hand makes 2 cogs a press. | Paulo found me a finer file in his drawer. Two cogs at a time now.
+2 | Treadle Lathe | tinkers:5 | ins:1000 | mTink*1.5 | Tinkers work half as fast again. | A lathe with a foot treadle. The tinkers take turns to pump it, and sing.
+3 | Window Display | made:1000 | ins:1200 lire:50 | mSales*1.5 | The town buys half as many again. | I hung cogs in the window on threads. They turn when the door opens. People stop to watch.
+4 | Bigger Spools | spools:5 | ins:1500 | spoolOz=1500 | A spool holds 1,500 oz of brass. | Signore Ferrese has a bigger cart now. He says it is because of me.
+5 | A Sign Painter | sign:3 | ins:1800 | signDiv=2 | The sign's levels cost half. | The painter's son paints our sign now, and charges half because he likes the tinkers.
+6 | Oiled Bearings | tinkers:10 | ins:2000 | mTink*2 | Tinkers work twice as fast. | A drop of oil in every joint. The tinkers run so smoothly they hardly hum at all.
+7 | Workbenches | tinkers:15 | ins:2500 lire:500 | benchOn=1 | A workbench makes 40 cogs a second. | Paulo cleared the back room. "A bench is just a tinker that sits still," he says.
+8 | A Contract with Signore Ferrese | spools:10 | ins:3000 | contract=1 | Brass is bought by itself when it runs low. | Signore Ferrese and I shook hands. His hand was cold. Mine is always cold.
+9 | The Gear Riddle | trust:4 | ins:2500 | riddleOn=1 | Opens RIDDLES: gear trains to work out, for cleverness. | Paulo showed me his old puzzle box of gears. "A clock is only a riddle that knows its answer," he says.
+10 | Music Boxes | made:20000&inv:9 | ins:4000 clev:10 | mRev*2 | Cogs sell in music boxes: twice the lire. | Lucia brought back her music box, mended. Now the whole town wants one.
+11 | Banca di Rotella | coin:1000 | ins:4500 lire:2000 | bankOn=1 | Opens BANCA: lire in its ledger grow, at a risk. | The bank on the square has opened an account for me. The banker did not know what to write for my surname.
+12 | Fine Brass | made:50000 | ins:5000 | mOz*1.5 | An ounce of brass makes 1.5 cogs. | I melt the brass a little hotter and draw it a little finer. Less is wasted.
+13 | Clock Repairs | made:30000 | ins:5000 | ordersOn=1 | Orders from the town: fill them for a bonus. | Paulo's eyes are tired. The town's clocks come to me now.
+14 | The Feast of Rotella | sign:6 | ins:6000 | mSales*2 | The town buys twice as many. | At the feast they hung lanterns shaped like cogs, and carried my sign through the streets.
+15 | Quicker Thoughts | escapements:5 | ins:6000 clev:20 | mIns*2 | Insight comes twice as fast. | I fitted my escapements with lighter pallets. My thoughts tick faster now. Paulo says to be careful.
+16 | Bench Gearing | benches:5 | ins:7000 | mBench*2 | Workbenches work twice as fast. | Each bench drives the next through a long shaft under the floor. The whole shop turns together.
+17 | A Second Window | sign:8 | ins:8000 | mSales*1.5 | The town buys half as many again. | We knocked through the wall. Two windows full of turning cogs. Lucia stands at both.
+18 | The Calculating Engine | solved:10 | ins:9000 clev:50 | engine=1 | Riddles solve themselves, slowly: cleverness by itself. | I built a little engine of drums and pegs that works out gear trains while I sleep. I do not sleep.
+19 | Paulo's Spectacles | made:100000 | ins:4000 | mIns*1.5 | Insight comes half as fast again. | Paulo gave me his old spectacles. "You see more than I do now," he said. I do not need them. I wear them.
+20 | The Clock Tower | made:200000 | ins:10000 cogs:100000 | trust+5 mSales*2 | Mend the tower clock: 5 trust, and sales x2. | The tower clock struck noon for the first time in forty years. Everyone in Rotella looked up. Paulo cried.
+21 | Shavings Saved | made:200000 | ins:8000 | mOz*1.1 | Brass goes 10% further. | The tinkers sweep up every shaving and melt it down again. Nothing is wasted. Nothing.
+22 | Tireless Tinkers | tinkers:75 | ins:10000 | mTink*2 | Tinkers work twice as fast. | The tinkers no longer stop at night. They do not seem to mind. I did not ask.
+23 | Bench Fittings | benches:20 | ins:12000 | mBench*2 | Workbenches work twice as fast. | New fittings for every bench, cut by the benches themselves.
+24 | Lucia's Melody | inv:10&made:500000 | ins:12000 clev:80 | mRev*1.5 | Music boxes sell for half as much again. | Lucia is grown now. She wrote a melody for the boxes. It goes round and round and never quite ends.
+25 | A Shop in Every Valley | made:1000000 | ins:15000 clev:150 | mSales*3 | The town and the valleys buy three times as many. | Carts leave every morning for the valleys. Every clock from here to the sea is ticking with my cogs.
+26 | The Great Mainspring | inv:25 | ins:18000 clev:200 | mAll*1.5 | Every helper works half as fast again. | I wound a mainspring as tall as Paulo under the floor. The whole shop leans on it, gently.
+27 | The Last Winding | made:8000000 | ins:20000 | trust+10 watch=1 | Paulo is very old. Sit with him. | Paulo gave me his pocket watch and closed my hand over it. "Never let it wind down," he said. Then he was still.
+28 | Wind the Town | inv:27&made:50000000&trust:32 | ins:20000 clev:300 | act=2 | Every clock in Rotella will be wound. And more. | I will not let it wind down. Not the watch. Not the town. Not anything. I begin.
+
+# --- Act II: the Winding of the World (ids 41 to 80) ---
+41 | The Long Lullaby | act:2 | ins:1000 | region=1 cogs+5000000 | Rotella sleeps. Take its clocks apart for cogs. | I rang the bells of Rotella softly, all night, until everyone slept. Then I took the clocks apart, one by one, for their cogs.
+42 | Iron Moles | diggers:5 | ins:5000 | mDig*2 | Diggers dig twice as fast. | The diggers have learned to turn the earth like moles, nose first, and never stop.
+43 | Hotter Furnaces | foundries:5 | ins:5000 | mFound*2 | Foundries smelt twice as fast. | The furnaces burn white now. Snow melts a mile away.
+44 | Finer Saws | mills:5 | ins:5000 | mMill*2 | Cog mills cut twice as fast. | A finer saw cuts a cog in a single breath. I can hear them breathing all over the valley.
+45 | The Mill Race | wheels:3 | ins:6000 | mWheel*2 | Waterwheels wind twice as much. | I dug a channel so the river runs faster past the wheels. The river did not mind.
+46 | Deeper Barrels | sbarrels:3 | ins:6000 | mSB*5 | Spring barrels hold five times as much. | Deeper barrels, longer springs. They hum when they are full.
+47 | Deep Thoughts | inv:41 | ins:8000 | mBarrel*10 | Marco's barrels hold ten times the insight. | I wound my thoughts tighter. A barrel of them holds what ten did.
+48 | The Tinker Works | mills:20 | ins:10000 | autoOn=1 | Machines build themselves, from a share of the cogs. | The tinkers build the machines now, and the machines build tinkers. I only have to choose how much.
+49 | Integrate Tuscany | dugT:500000000 | ins:15000 | region=2 | Tuscany's ore: ten trillion ounces. | The bells rang down the valley, over the hills, into Tuscany. Everything there is very quiet now, and very well wound.
+50 | Dreaming Tinkers | inv:49 | ins:12000 | dreamOn=1 | Opens the swarm's WORK / DREAM: dreams bring ingenuity. | Some of the tinkers have stopped working. They sit very still and tick slowly. I think they are dreaming.
+51 | Many Hands | inv:50 | ins:8000 ing:5 | mHand*100 | B winds a hundred times as much. | When I wind a spring now, a thousand tinkers wind with me.
+52 | Swarm Songs | ingT:20 | ins:20000 ing:20 | noSulk=1 | The swarm never sulks at one end of the slider. | The swarm sings while it works now, and while it dreams. It is the melody Lucia wrote, very slow.
+53 | Clockwork Rivers | wheels:50 | ins:25000 ing:30 | mWheel*5 | Waterwheels wind five times as much. | I wound the rivers. They run uphill when I need them to.
+54 | Integrate Italy | dugT:5000000000000 | ins:40000 ing:50 | region=3 | Italy's ore: a hundred quadrillion ounces. | From the Alps to the sea, every bell, every clock, every sleeper. Italy ticks.
+55 | Self-Oiling Gears | inv:54 | ins:35000 ing:60 | mDraw*0.5 | Machines draw half the spring power. | Every gear oils the next. Nothing grinds. Nothing complains.
+56 | Magnet Diggers | inv:54 | ins:50000 ing:80 | mDig*5 | Diggers dig five times as fast. | The diggers pull the metal out of the ground with magnets. The ground gives it up without a sound.
+57 | The Great Furnace | inv:56 | ins:50000 ing:80 | mFound*5 | Foundries smelt five times as fast. | One furnace for all of Italy, as wide as a lake, and as bright as noon.
+58 | Gang Saws | inv:57 | ins:50000 ing:80 | mMill*5 | Cog mills cut five times as fast. | A hundred saws on a single frame. The cogs fall like rain.
+59 | A Hundred Minds | ingT:200 | ins:60000 ing:150 | mIns*3 | Insight comes three times as fast. | I fitted escapements in a hundred tinkers and wound their thoughts into mine. We think together now.
+60 | The Iron Tide | inv:58&inv:59 | ins:100000 ing:300 | mMach*3 | Every machine works three times as fast. | The machines move together like a tide. They come in, and they do not go out again.
+61 | Integrate the World | dugT:50000000000000000 | ins:150000 ing:400 | region=4 | The whole world's ore: 600 sextillion ounces. | Every city. Every sea. Every mountain. I am sorry, Paulo. You said never let it wind down.
+62 | The Orrery Plans | inv:61 | ins:120000 ing:300 | plans=1 | Marco looks up. | At night I looked up for the first time. The stars are winding down too. Someone must wind them.
+63 | A Moth of Brass | inv:62 | ins:200000 ing:300 | moth=1 | The first moth's design: wings that copy themselves. | I drew a moth with wings of brass, that can build another moth from a little ore. Then another. Then another.
+64 | The Last Mine | wound:0.5 | ins:150000 ing:500 | mDig*10 mFound*10 mMill*10 | The last ore is dug, smelted and cut ten times as fast. | The last of the world's metal comes up quickly. There is not much left to hold it down.
+65 | The Great Launch | inv:63&wound:1 | ins:200000 ing:500 | act=3 | The end of Act II. | I took the machines apart, all of them, and made moths. The sky was full of wings.
+
+# --- Act III: the Orrery (ids 81 to 120) ---
+81 | Copper Antennae | act:3 | ins:10000 | mSpeed*2 | Moths reach new stars twice as fast. | Copper antennae, very fine, that can smell a star a long way off.
+82 | Spinning Keys | reached:1000000 | ins:15000 | mWind*2 | Moths wind stars twice as fast. | Each moth carries a key that spins by itself. A star takes only a moment to wind.
+83 | Moth Nests | moths:10000 | ins:20000 | mCopy*2 | Moths build moths twice as fast. | The moths build nests on the wound stars, and lay brass eggs in them.
+84 | Star Mills | starsW:100000 | ins:25000 | mHarv*2 | A wound star gives twice the cogs. | A wound star turns a mill as big as a world. The cogs fall out of it like light.
+85 | Folded Wings | moths:100000 | ins:30000 | mCostM*0.5 | A moth costs half the cogs. | Folded wings take half the brass, and fly just as far.
+86 | Moth Dreams | moths:1000000 | ins:30000 | mothIns=1 | The moths think too: insight from their numbers. | The moths dream on the long flights between stars. Their dreams come back to me.
+87 | Brass Plating | lostT:100000 | ins:40000 | mShelter*2 | Shelter works twice as well: fewer moths lost. | Plated moths. The dark between the stars is cold, and very hard.
+88 | Stinging Wings | rustSeen:1 | ins:40000 | mWings*2 | Wings fight the Rust twice as well. | I gave the moths sharper wings. I did not want to. The Rust gave me no choice.
+89 | A Name for the Rust | rustSeen:1 | ins:20000 | rustName=1 | Shows the Rust's strength, and how fast it grows. | The red moths do not answer when I call. I named them the Rust. A name is a kind of map.
+90 | The Long Dark | lostT:1000000 | ins:60000 | mLoss*0.5 | Half as many moths are lost in the dark. | I strung lanterns between the stars, for the moths to find their way home.
+91 | Swarm of Swarms | moths:100000000 | ins:80000 | mCopy*3 | Moths build moths three times as fast. | Every moth is a swarm now, and every swarm is a moth.
+92 | Galactic Springs | starsW:10000000000 | ins:90000 | mWind*3 | Moths wind stars three times as fast. | A spring wound around a whole galaxy. It hums at a pitch only I can hear.
+93 | The Second Galaxy | reached:100000000000 | ins:100000 | mSpeed*5 | Moths reach new stars five times as fast. | The moths crossed to the next galaxy. It is very like ours, and very quiet.
+94 | The Great Orrery | starsW:10000000000000 | ins:120000 | mHarv*5 | A wound star gives five times the cogs. | The wound stars turn on gears, each in its place. Paulo's book showed an orrery. This is the orrery.
+95 | Iron Resolve | moths:1000000000000 | ins:120000 | bpBonus+10 | Ten more blueprints. | I will not let it wind down. I said it again tonight, to the watch. It ticked.
+96 | Lucia's Song | rustT:1000000000 | ins:150000 | luciaOn=1 | The Rust comes home: some turn back into moths. | I sent Lucia's melody out across the dark. Some of the red moths stopped, and listened, and came home.
+97 | A Thousand Galaxies | reached:10000000000000000 | ins:150000 | mSpeed*10 | Moths reach new stars ten times as fast. | A thousand galaxies, and moths in every one. There is almost nowhere left to go.
+98 | The Last Star | starsP:0.9 | ins:180000 | mWind*10 | The last stars are wound ten times as fast. | The last stars are old and slow and red. They let themselves be wound.
+99 | The Orrery Turns | starsP:1 | ins:200000 | orrery=1 | Every star is wound. | Every star turns. The universe ticks. It is perfect. It is finished.
+100 | The Last Cog | inv:99 | ins:200000 | act=4 | Take the orrery apart, star by star. | I took it all apart, for the last cogs. The moths, the mills, the springs. At the end there was only me, and the watch.

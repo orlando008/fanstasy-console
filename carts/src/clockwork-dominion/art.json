@@ -1,0 +1,306 @@
+{
+ "colors": {
+  "BAD": 119,
+  "BRASS": 117,
+  "DIM": 116,
+  "EDGE": 121,
+  "GOLD": 118,
+  "GOOD": 120,
+  "INK": 115,
+  "LINE": 122,
+  "LOG": 124,
+  "PAPER": 113,
+  "ROW": 114,
+  "THINK": 123
+ },
+ "gradients": [
+  "day",
+  "night",
+  "space"
+ ],
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "brass0": 6,
+    "brass1": 7,
+    "brass2": 8,
+    "cream": 9,
+    "dark": 13,
+    "velvet0": 10,
+    "velvet1": 11,
+    "velvet2": 12,
+    "wood0": 1,
+    "wood1": 2,
+    "wood2": 3,
+    "wood3": 4,
+    "wood4": 5
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "cypress0": 8,
+    "cypress1": 9,
+    "face": 11,
+    "hill0": 1,
+    "hill1": 2,
+    "lamp": 10,
+    "roof0": 3,
+    "roof1": 4,
+    "roof2": 5,
+    "stone0": 6,
+    "stone1": 7
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "coast": 8,
+    "ice": 9,
+    "land0": 5,
+    "land1": 6,
+    "land2": 7,
+    "sea0": 1,
+    "sea1": 2,
+    "sea2": 3,
+    "sea3": 4
+   }
+  },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "gold0": 4,
+    "gold1": 5,
+    "nebula0": 6,
+    "nebula1": 7,
+    "star0": 1,
+    "star1": 2,
+    "star2": 3
+   }
+  },
+  "bg5": {
+   "base": 80,
+   "colors": {
+    "arm0": 1,
+    "arm1": 2,
+    "arm2": 3,
+    "arm3": 4,
+    "core0": 5,
+    "core1": 6,
+    "core2": 7,
+    "dust0": 8,
+    "dust1": 9
+   }
+  },
+  "bg6": {
+   "base": 96,
+   "colors": {
+    "brass0": 1,
+    "brass1": 2,
+    "brass2": 3,
+    "brass3": 4,
+    "brass4": 5,
+    "edge": 6,
+    "night": 8,
+    "shade": 7
+   }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "brass0": 2,
+    "brass1": 3,
+    "brass2": 4,
+    "brass3": 5,
+    "edge": 1,
+    "eye": 6,
+    "glow": 9,
+    "key0": 7,
+    "key1": 8
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "coat0": 7,
+    "coat1": 8,
+    "coat2": 9,
+    "edge": 1,
+    "hair0": 5,
+    "hair1": 6,
+    "lens": 11,
+    "shirt": 10,
+    "shoe": 12,
+    "skin0": 2,
+    "skin1": 3,
+    "skin2": 4
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "brass0": 2,
+    "brass1": 3,
+    "brass2": 4,
+    "brass3": 5,
+    "brass4": 6,
+    "edge": 1,
+    "glow": 9,
+    "wing0": 7,
+    "wing1": 8
+   }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "edge": 1,
+    "eye": 5,
+    "rust0": 2,
+    "rust1": 3,
+    "rust2": 4
+   }
+  }
+ },
+ "scenes": {
+  "bench": {
+   "h": 3,
+   "mx": 0,
+   "my": 12,
+   "pal": 1,
+   "w": 32
+  },
+  "galaxy": {
+   "h": 16,
+   "mx": 80,
+   "my": 0,
+   "pal": 5,
+   "w": 16
+  },
+  "globe": {
+   "h": 8,
+   "mx": 64,
+   "my": 0,
+   "pal": 3,
+   "w": 16
+  },
+  "logo": {
+   "h": 6,
+   "mx": 0,
+   "my": 15,
+   "pal": 6,
+   "w": 32
+  },
+  "town": {
+   "h": 9,
+   "mx": 32,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "wall": {
+   "h": 9,
+   "mx": 0,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  },
+  "wall2": {
+   "h": 9,
+   "mx": 0,
+   "my": 21,
+   "pal": 1,
+   "w": 32
+  }
+ },
+ "sprites": {
+  "cog": {
+   "pal": 0,
+   "size": 8,
+   "tile": 780
+  },
+  "lever": {
+   "pal": 2,
+   "size": 32,
+   "tile": 844
+  },
+  "marco": {
+   "pal": 0,
+   "size": 32,
+   "tile": 768
+  },
+  "marco2": {
+   "pal": 0,
+   "size": 32,
+   "tile": 772
+  },
+  "marco3": {
+   "pal": 0,
+   "size": 32,
+   "tile": 776
+  },
+  "moth0": {
+   "pal": 2,
+   "size": 8,
+   "tile": 783
+  },
+  "moth1": {
+   "pal": 2,
+   "size": 8,
+   "tile": 796
+  },
+  "paulo": {
+   "pal": 1,
+   "size": 32,
+   "tile": 832
+  },
+  "paulo2": {
+   "pal": 1,
+   "size": 32,
+   "tile": 836
+  },
+  "planet": {
+   "pal": 2,
+   "size": 16,
+   "tile": 812
+  },
+  "rust0": {
+   "pal": 3,
+   "size": 8,
+   "tile": 797
+  },
+  "rust1": {
+   "pal": 3,
+   "size": 8,
+   "tile": 798
+  },
+  "sun": {
+   "pal": 2,
+   "size": 32,
+   "tile": 840
+  },
+  "telescope": {
+   "pal": 2,
+   "size": 32,
+   "tile": 896
+  },
+  "tinker0": {
+   "pal": 0,
+   "size": 8,
+   "tile": 781
+  },
+  "tinker1": {
+   "pal": 0,
+   "size": 8,
+   "tile": 782
+  },
+  "workbench": {
+   "pal": 2,
+   "size": 16,
+   "tile": 814
+  }
+ },
+ "tiles": {},
+ "used": 690,
+ "version": 1
+}
