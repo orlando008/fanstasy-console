@@ -165,16 +165,21 @@ art.scene('town', tw, pal=town, at=(32, 0))
 # the world is wound (they are the palette's entries 'land' and 'coast').
 globe = art.palette(3, {'sea': ramp('1e4a8a', 4), 'land': ramp('4a8a3a', 3), 'coast': 'c8b878', 'ice': 'e8f0f8'})
 gm = Img(128, 64)
+SEA_AT = 0.53
 for y in range(64):
     lat = abs(y - 31.5) / 32
     for x in range(128):
-        h = fbm(x / 128 * 6, y / 64 * 3, 1, 11, octaves=4, period=(6, 1024)) if 'fbm' in globals() else noise(x, y, 18, 11)
-        land = h > 0.56 - 0.08 * lat
-        if lat > 0.86: gm.px[y][x] = globe.ice
-        elif land:
-            gm.px[y][x] = globe.coast if h < 0.585 - 0.08 * lat else globe.land[2 if h > 0.68 else 1 if h > 0.62 else 0]
+        # continents with ragged coasts (five sizes of noise, repeating round the world), less land towards the poles
+        h = fbm(x, y, 32, 11, octaves=5, period=(128, 1024)) - 0.10 * max(0, lat - 0.6)
+        dry = fbm(x, y, 16, 18, octaves=3, period=(128, 1024))                 # the high, dry land inland
+        if lat > 0.84 + 0.12 * (noise(x, y, 8, 14, (128, 1024)) - 0.5): gm.px[y][x] = globe.ice
+        elif h > SEA_AT:
+            e = h - SEA_AT
+            gm.px[y][x] = (globe.coast if e < 0.012 or (e > 0.13 and dry > 0.63) else globe.land[0] if e < 0.05
+                           else globe.land[2] if e > 0.09 or dry > 0.6 else globe.land[1])
         else:
-            gm.px[y][x] = globe.sea[3 if h > 0.5 else 2 if h > 0.42 else 1 if h > 0.3 else 0]
+            d = SEA_AT - h
+            gm.px[y][x] = globe.sea[3 if d < 0.025 else 2 if d < 0.07 else 1 if d < 0.14 else 0]
 art.scene('globe', gm, pal=globe, at=(64, 0), solid=True, prio=1)
 
 # The stars: drawn by code.js on the overlay, as single pixels in these colours (the first three turn gold in Act III,

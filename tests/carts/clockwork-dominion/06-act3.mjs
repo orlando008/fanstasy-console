@@ -76,7 +76,11 @@ const fresh = () => {
   p.G.insight = 1e6; p.ACT.invent(inv(p, 'The Orrery Turns').id); simFor(p, 0.1); p.G.insight = 1e6;
   p.ACT.invent(inv(p, 'The Last Cog').id); vm.run(2);
   ok(p.G.act === 4 && p.state === 'choice', 'THE LAST COG leaves only the watch, and the choice');
-  vm.run(100); vm.press('DOWN'); ok(p.choiceSel === 1, 'DOWN chooses LET IT STOP');
+  vm.audioLog.length = 0; vm.run(130);
+  const C = p.ART.colors, px = (x, y) => vm.m.overlay.buf[y * 256 + x];
+  ok(px(128, 106 - 22) === C.GOLD && px(128 + 20, 106) === C.BRASS && px(128 + 10, 106 + 10) === C.INK, 'Paulo\'s watch is on the screen: a brass case, a pale face');
+  ok(vm.audioLog.filter((a) => a[1] === 'sfx' && a[2] === p.SFX.tick).length >= 2, 'and it ticks each second');
+  vm.press('DOWN'); ok(p.choiceSel === 1, 'DOWN chooses LET IT STOP');
   vm.press('UP'); vm.press('A'); vm.run(2);
   ok(p.state === 'cine', 'the Dominion ending is played'); vm.press('START'); vm.run(2);
   ok(p.state === 'ending' && p.G.ending === 1 && p.G.endD === 1, 'A on WIND IT gives the Dominion ending');

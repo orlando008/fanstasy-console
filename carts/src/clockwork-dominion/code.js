@@ -468,11 +468,11 @@ function updateCine() {
 function drawCine() {
   const s = shot(), p = cine.t / s.f, e = 30 / s.f;
   brightness(flr(15 * Math.min(1, fxOn('fadein') ? p / e : 1, fxOn('fadeout') ? (1 - p) / e : 1)));
-  mosaic(fxOn('mosaicout') ? 1 + flr(Math.max(0, p - 0.5) * 30) : fxOn('mosaicin') ? 1 + flr(Math.max(0, 0.5 - p) * 30) : 1);
-  irisR = fxOn('irisclose') ? lerp(150, 26, Math.min(1, p * 1.5)) : fxOn('irisopen') ? lerp(26, 220, p) : 0;
+  mosaic(fxOn('mosaicout') ? 1 + flr(Math.max(0, cine.t - s.f + HOLD) / 2) : fxOn('mosaicin') ? 1 + flr(Math.max(0, 0.5 - p) * 30) : 1);
+  irisR = fxOn('irisclose') ? lerp(150, 26, Math.min(1, p * 1.5)) : fxOn('irisopen') ? lerp(26, 260, p) : 0;
   winmask('screen', irisR ? { w1: 'out' } : null);
   drawView();
-  if (fxOn('launch')) for (let i = 0; i < 24; i++) { const a = i * 2.4, r = 30 + ((clock * (1 + (i % 4))) % 120), y = FULL.y - 4 + Math.sin(a) * r * 0.6; if (y < VIEW_H - 8) sprite((clock + i) % 12 < 6 ? S.moth0 : S.moth1, 124 + Math.cos(a) * r, y); }
+  if (fxOn('launch')) for (let i = 0; i < 24; i++) { const a = i * 2.4, r = 30 + ((clock * (1 + (i % 4))) % 120), y = FULL.y - 4 + Math.sin(a) * r * 0.6; if (y > 0 && y < VIEW_H - 8) sprite((clock + i) % 12 < 6 ? S.moth0 : S.moth1, 124 + Math.cos(a) * r, y); }
   wrap(s.cap.slice(0, typed), 224).forEach((l, i) => txc(l, VY + 104 + i * 11, s.cap.startsWith('ACT ') ? GOLD : INK));
   if (waiting() && typed >= s.cap.length && clock % 50 < 34) txr(`A: on ${RM}`, 248, 210, DIM); // waiting to be read
 }
@@ -891,7 +891,7 @@ const LAND = [53, 54, 55, 56], STARC = [65, 66, 67], ARMS = [81, 82, 83, 84], LA
 const sceneBg = (n, name, y = 0, wrap = false) => { const c = ART.scenes[name]; bg(n, { mx: c.mx, my: c.my, mw: c.w, mh: c.h, x: 0, y, wrap, show: true }); };
 let view = 1, grad = null, spin = 0, galA = 0;
 /** Tint CGRAM entries from their art.py colours towards brass, by t (0 to 1). */
-function tint(list, t, to = BRASSC) { for (const i of list) { const b = BASE[i]; color(i, ...b.map((v, k) => Math.round(lerp(v, to[k], t)))); } }
+function tint(list, t, to = BRASSC) { list.forEach((i, n) => color(i, ...BASE[i].map((v, k) => Math.round(lerp(v, Math.min(31, to[k] * (to === BRASSC ? 0.55 + n * 0.15 : 1)), t))))); }
 function setView() {
   const sv = cine && state === 'cine' ? shot().view : '';
   VY = sv ? 40 : 0;
@@ -912,11 +912,11 @@ function setView() {
   grad = ART.gradients.space;
   if (view === 2) {
     sceneBg(2, 'globe', 0, true); affine({ a: 1, b: 0, c: 0, d: 0, cx: 0, cy: 0 }); winmask('bg2', { w0: 'out' }); spin = (clock / 3) % 128;
-    tint(LAND, Math.min(1, (G.region - 1) * 0.22 + G.wound * 0.34));
+    tint(LAND, Math.max(0, Math.min(1, (G.region - 1) * 0.22 + G.wound * 0.34)));
   } else {
     sceneBg(2, 'galaxy');
     const gold = fxOn('gold'), out = fxOn('starsout') ? cine.t / shot().f : 0;
-    tint(STARC, gold ? 1 : G ? G.starsP : 0); if (gold) tint(ARMS, 0.7); if (out) { tint(STARC, out, [0, 0, 0]); tint(ARMS, out, [0, 0, 0]); }
+    tint(STARC, gold ? 1 : G ? G.starsP : 0); if (gold) tint(ARMS, 0.9); if (out) { tint(STARC, out, [0, 0, 0]); tint(ARMS, out, [0, 0, 0]); }
     galA += fxOn('still') ? 0 : fxOn('spin') ? 0.012 : 1 / 900;
     const k = GL.k, cs = Math.cos(galA) * k, sn = Math.sin(galA) * k;
     affine({ a: cs, b: sn * 2, c: -sn, d: cs * 2, cx: 64, cy: 64 }); bgscroll(2, 64 - GL.x, 64 - GL.y - VY);
@@ -1045,6 +1045,7 @@ function updateMiles() {
   if (pressed(SELECT) || pressed(B) || pressed(START) || pressed(A)) { state = 'play'; fx(SFX.move); }
 }
 function updateChoice() {
+  if (timer % 60 === 1) fx(SFX.tick);
   if (pressed(UP) || pressed(DOWN)) { choiceSel ^= 1; fx(SFX.move); }
   if (timer > 90 && (pressed(A) || pressed(START))) { fx(SFX.select); choose(choiceSel); }
 }
@@ -1127,7 +1128,7 @@ function drawSky(c) {
 }
 /** Act I: Marco and Paulo, the tinkers on the bench, the workbenches, the cogs. */
 function drawShop(c) {
-  drawMarco(c);
+  if (!fxOn('alone')) drawMarco(c);
   const sv = cine && state === 'cine' ? shot().view : '';
   if (sv ? sv !== 'empty' && !fxOn('empty') : !G || !G.watch) sprite(state === 'title' || fxOn('doze') || (c % 900) > 700 ? S.paulo2 : S.paulo, 82, 34);
   if (!G) return;
@@ -1180,7 +1181,7 @@ function drawTabs() {
     const on = i === tab;
     if (on) {
       if (onTabs) rectfill(x - 3, TAB_Y + 1, tw(t.name) + 2 * tw(LM) + 10, 10, ROWC); // the cursor is on the strip
-      x = tx(LM, x, TAB_Y + 2, GOLD) + 2; x = tx(t.name, x, TAB_Y + 2, GOLD) + 2; x = tx(RM, x, TAB_Y + 2, GOLD) + 6;
+      if (o[1]) x = tx(LM, x, TAB_Y + 2, GOLD) + 2; x = tx(t.name, x, TAB_Y + 2, GOLD) + 2; x = (o[1] ? tx(RM, x, TAB_Y + 2, GOLD) : x) + 6;
     }
     else {
       x = tx(t.name, x, TAB_Y + 2, DIM) + 1;
@@ -1209,8 +1210,8 @@ function drawPanel() {
     tx(r.t, 13, y, can ? INK : DIM);
     txr(r.v(), 250, y, on && !onTabs ? GOLD : can ? BRASS : DIM);
   }
-  if (top > 0) tx('^', 244, y0 + 18, DIM);
-  if (top + ROWS_SHOWN < rows.length) tx('v', 244, y0 + 26 + ROWS_SHOWN * 10 - 3, DIM);
+  if (top > 0) tx('\x83', 244, y0 + 17, DIM);
+  if (top + ROWS_SHOWN < rows.length) tx('\x84', 244, y0 + 26 + ROWS_SHOWN * 10 - 4, DIM);
   const r = rows[row];
   const h = hintT > 0 ? hintMsg : onTabs ? 'LEFT and RIGHT: the tabs.  DOWN: back to the rows.' : r ? r.h() : '';
   if (hintT > 0) hintT--;
@@ -1260,8 +1261,15 @@ function drawMiles() {
 
 function drawChoice() {
   rectfill(0, 0, 256, 224, EDGE);
-  wrap(STORY[STORY.findIndex((e) => e.ev === 'choice')].text, 220).forEach((l, i) => txc(l, 40 + i * 10, LOGC));
-  if (timer > 90) CHOICES.forEach((c, i) => sys(`${i === choiceSel ? '>' : ' '} ${c}`, 80, 140 + i * 14, i === choiceSel ? GOLD : DIM));
+  wrap(STORY[STORY.findIndex((e) => e.ev === 'choice')].text, 220).forEach((l, i) => txc(l, 24 + i * 10, LOGC));
+  // Paulo's watch: a brass case with its crown and ring, a pale face, twelve marks, the hands a little before twelve,
+  // and a second hand that moves on each second, with the tick
+  const X = 128, Y = 106, hand = (a, r, c) => line(X, Y, X + Math.sin(a) * r, Y - Math.cos(a) * r, c);
+  circ(X, Y - 29, 4, BRASS); rectfill(X - 2, Y - 26, 5, 5, BRASS);
+  circfill(X, Y, 22, BRASS); circ(X, Y, 22, GOLD); circfill(X, Y, 18, INK);
+  for (let i = 0; i < 12; i++) pset(X + Math.sin(i * 0.5236) * 15.5, Y - Math.cos(i * 0.5236) * 15.5, EDGE);
+  hand(-0.2, 9, EDGE); hand(-0.75, 13, EDGE); hand(flr(timer / 60) * 0.1047, 15, BAD);
+  if (timer > 90) CHOICES.forEach((c, i) => sys(`${i === choiceSel ? '>' : ' '} ${c}`, 80, 146 + i * 14, i === choiceSel ? GOLD : DIM));
 }
 function drawEnding() {
   rectfill(0, 0, 256, 224, EDGE);
@@ -1289,7 +1297,7 @@ function drawGift() {
   txc(`${RULES[ruleOf(c)]}: ${RULE_HINT[ruleOf(c)]}`, 22, BAD);
   txc(`Every helper and machine works ${c * 10}% harder. Choose a gift:`, 34, INK);
   g.forEach((v, k) => {
-    const on = k === giftSel, y = 66 + k * 34;
+    const on = k === giftSel, y = 62 + k * 44;
     if (on) rectfill(3, y - 3, 250, 30, ROWC);
     tx(TIER[k], 14, y, on ? BRASS : DIM);
     tx((on ? '> ' : '  ') + v.name, 10, y + 10, on ? GOLD : INK);
@@ -1311,9 +1319,9 @@ function drawRecords() {
 function drawTitle() {
   drawShop(clock);
   if (confirm) {
-    rectfill(40, 104, 176, 56, PAPER); rect(40, 104, 176, 56, LINE);
-    txc('Start a new story?', 112, INK); txc('The one you have will be lost.', 122, DIM);
-    ['KEEP MY STORY', 'START AGAIN'].forEach((s, i) => sys(`${i === titleSel ? '>' : ' '} ${s}`, 64, 136 + i * 10, i === titleSel ? GOLD : DIM));
+    rectfill(40, 148, 176, 56, PAPER); rect(40, 148, 176, 56, LINE);
+    txc('Start a new story?', 156, INK); txc('The one you have will be lost.', 166, DIM);
+    ['KEEP MY STORY', 'START AGAIN'].forEach((s, i) => sys(`${i === titleSel ? '>' : ' '} ${s}`, 64, 180 + i * 10, i === titleSel ? GOLD : DIM));
     return;
   }
   txc(dget(CYCLE_SLOT) ? `CYCLE ${dget(CYCLE_SLOT) + 1}` : 'A story in three acts', 144, BRASS);
