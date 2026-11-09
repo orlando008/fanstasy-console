@@ -24,7 +24,7 @@ const PROBE = `__expose(() => ({
   benchCost, nextTrust, costText, ratio, GEARS, RISKS, actOf, eff2: () => eff2, powerGen, powerNeed, powerCap, machRate, build, cost2,
   workShare, dreamShare, ingRate, sulking, worldOre, REGIONS, LOTS, SAVE_INTS, workBoost, river,
   TRAITS, blueprints, freeBp, drawCost, mothCost, reachRate, windRate, copyRate, harvRate, lossRate, stingRate, rustRate, choose, CHOICES,
-  get choiceSel() { return choiceSel; }, ENDS_SLOT, BEST_SLOT, ALL_SLOT, GIFTS, GIFT_TIERS, titleItems, addLog, startCycle, toRecords: () => { state = 'records'; timer = 0; },
+  get choiceSel() { return choiceSel; }, ENDS_SLOT, BEST_SLOT, ALL_SLOT, GIFTS, GIFT_TIERS, titleItems, addLog, startCycle, HOLD, get typed() { return typed; }, toRecords: () => { state = 'records'; timer = 0; },
   get boxes() { return typeof __boxes === 'undefined' ? null : __boxes; }, ruleOf, RULES, playScene, get cine() { return cine; }, get SCENES() { return SCENES; },
 }));`;
 

@@ -443,13 +443,23 @@ function playScene(name, then) {
 }
 const shot = () => cine.shots[cine.k];
 const fxOn = (e) => cine && state === 'cine' && shot().fx.includes(' ' + e + ' ');
+/** A shot plays and types its caption, then waits (HOLD frames before its end) for A, so there is time to read it;
+ * after A it plays its last part (a fade, a dissolve) and the next shot begins. A while the caption types shows it
+ * whole; A once it is read moves on at once; START skips the scene. */
+const HOLD = 30;
+const waiting = () => cine.t >= shot().f - HOLD && !cine.go;
 function updateCine() {
-  const s = shot(); cine.t++; typed += 2;
-  if (fxOn('tick') && cine.t % 40 === 1) fx(SFX.tick);
-  const next = pressed(START) ? cine.shots.length : cine.t >= s.f || (pressed(A) && typed >= s.cap.length + 30) ? cine.k + 1 : cine.k;
-  if (pressed(A) && typed < s.cap.length) typed = s.cap.length;
+  const s = shot();
+  if (!waiting()) cine.t++;
+  typed += 2;
+  if (fxOn('tick') && clock % 40 === 1) fx(SFX.tick);
+  if (pressed(A)) {
+    if (typed < s.cap.length) typed = s.cap.length;
+    else { cine.go = true; cine.t = Math.max(cine.t, s.f - HOLD); fx(SFX.move); }
+  }
+  const next = pressed(START) ? cine.shots.length : cine.t >= s.f ? cine.k + 1 : cine.k;
   if (next !== cine.k) {
-    cine.k = next; cine.t = 0; typed = 0;
+    cine.k = next; cine.t = 0; typed = 0; cine.go = false;
     if (next >= cine.shots.length) { brightness(15); mosaic(1); winmask('screen', null); VY = 0; const f = cine.then; cine = null; state = 'play'; timer = 0; f(); }
   }
 }
@@ -460,8 +470,9 @@ function drawCine() {
   irisR = fxOn('irisclose') ? lerp(150, 26, Math.min(1, p * 1.5)) : fxOn('irisopen') ? lerp(26, 220, p) : 0;
   winmask('screen', irisR ? { w1: 'out' } : null);
   drawView();
-  if (fxOn('launch')) for (let i = 0; i < 24; i++) { const a = i * 2.4, r = 30 + ((cine.t * (1 + (i % 4))) % 120); sprite((cine.t + i) % 12 < 6 ? S.moth0 : S.moth1, 124 + Math.cos(a) * r, GLOBE_Y - 4 + Math.sin(a) * r * 0.6); }
+  if (fxOn('launch')) for (let i = 0; i < 24; i++) { const a = i * 2.4, r = 30 + ((clock * (1 + (i % 4))) % 120); sprite((clock + i) % 12 < 6 ? S.moth0 : S.moth1, 124 + Math.cos(a) * r, GLOBE_Y - 4 + Math.sin(a) * r * 0.6); }
   wrap(s.cap.slice(0, typed), 224).forEach((l, i) => txc(l, VY + 104 + i * 11, s.cap.startsWith('ACT ') ? GOLD : INK));
+  if (waiting() && typed >= s.cap.length && clock % 50 < 34) txr(`A: on ${RM}`, 248, 210, DIM); // waiting to be read
 }
 let irisR = 0;
 

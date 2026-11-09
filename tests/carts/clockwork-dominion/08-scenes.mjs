@@ -24,8 +24,14 @@ const sceneOf = (p) => p.cine && Object.keys(p.SCENES).find((k) => p.SCENES[k] =
   vm.press('START'); vm.run(2);
   ok(p.state === 'play' && !p.cine && vm.m.ppu.brightness === undefined ? true : p.state === 'play', 'START skips the rest of it, to the workshop');
   const T = p.SCENES.opening.reduce((a, s) => a + s.f, 0);
-  p.playScene('opening', () => {}); vm.run(T + 10);
-  ok(p.state === 'play' && !p.cine, 'a scene left alone ends by itself', `${(T / 60).toFixed(1)} s`);
+  p.playScene('opening', () => {}); vm.run(T + 600);
+  ok(p.state === 'cine' && p.cine.k === 0, 'a scene left alone waits on its first shot, so its words can be read', `still on shot ${p.cine.k + 1} after ${((T + 600) / 60).toFixed(0)} s`);
+  ok(p.cine.t === p.SCENES.opening[0].f - p.HOLD, 'held just before the shot\'s last part (its fade or dissolve)');
+  vm.press('A'); vm.run(p.HOLD + 2);
+  ok(p.cine.k === 1, 'A, once the words are read, plays the end of the shot and moves on');
+  vm.press('A'); ok(p.cine.k === 1 && p.typed >= p.SCENES.opening[1].cap.length, 'A while the words type shows them whole, on the same shot');
+  for (let k = 0; k < 20 && p.state === 'cine'; k++) { vm.press('A'); vm.run(p.HOLD + 2); }
+  ok(p.state === 'play' && !p.cine, 'and A through every shot ends the scene');
   p.G.made = 3e6; p.G.insight = 1e6; p.G.barrels = 100; p.G.done[0] |= 0x3ffffff << 1; p.step(0.1);
   p.ACT.invent(27); vm.run(1);
   ok(sceneOf(p) === 'rest', 'THE LAST WINDING plays Paulo\'s rest');

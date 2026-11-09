@@ -227,8 +227,9 @@ each ending over all cycles, and the count of cogs made. These are kept across c
 3. **Play:** the view, tabs, panel and log; cinematics at the big inventions and between acts.
 
 **The cinematics** (`scenes.txt`, in the ROM, played by `playScene`): each is a few shots of a view, lowered to the
-middle of the screen (lines 40 to 131), with a caption typing in under it. A hurries the caption and then the shot;
-START skips the scene. Effects: fades, the mosaic, an iris on Marco (window 1, a circle line by line), Paulo dozing or
+middle of the screen (lines 40 to 131), with a caption typing in under it. Each shot waits, before its last half
+second (a fade, a dissolve), with "A: on" blinking in the corner, until A is pressed (the user asked for this, so there
+is time to read); A while the caption types shows it whole; START skips the scene. Effects: fades, the mosaic, an iris on Marco (window 1, a circle line by line), Paulo dozing or
 gone, Rotella's windows going dark, moths rising, the galaxy hurrying or standing still, everything turning gold,
 the stars going out, the watch ticking.
 
