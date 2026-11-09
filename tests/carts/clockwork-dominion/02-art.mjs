@@ -9,7 +9,8 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
 {
   const vm = newGame(1), p = vm.probe(); vm.run(2);
   const { sprites, colors } = p.ART;
-  ok(['marco', 'paulo', 'cog', 'tinker0', 'sun', 'planet', 'moth0', 'rust0', 'workbench'].every((n) => sprites[n]), 'art.py made Marco, Paulo, a cog, a tinker, gears, a moth and the Rust');
+  ok(['marco', 'paulo', 'cog', 'tinker0', 'sun', 'planet', 'moth0', 'rust0', 'workbench', 'lever', 'telescope'].every((n) => sprites[n]), 'art.py made Marco, Paulo, a cog, a tinker, gears, a moth, the Rust, the lever and the telescope');
+  ok(['marco', 'marco2', 'marco3'].every((n) => sprites[n].size === 32), 'Marco is 32 px, with a blink and a working frame');
   ok(Object.values(sprites).every((s) => [8, 16, 32].includes(s.size) && s.tile >= 256), 'every sprite is 8, 16 or 32 px, in the sprite region');
   ok(['PAPER', 'INK', 'DIM', 'BRASS', 'GOLD', 'BAD', 'GOOD'].every((n) => colors[n] >= 113 && colors[n] <= 127), 'the panel\'s ink is its own (BG palette 7, kept for the overlay)');
 }
@@ -31,11 +32,15 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
   const sky = [10, 20, 30].map((y) => vm.out32[y * 256 + 186] >>> 0);
   ok(new Set(sky).size >= 2, 'the sky through the window is a gradient (scanline())', sky.map((v) => v.toString(16)).join(' '));
   Object.assign(p.G, { act: 2, region: 1, swarm: 1e6 }); vm.run(3);
-  ok(vm.ppu.layers[2].show && has(vm, col('bg3', 'sea1'), 100, 20, 156, 72), 'Act II\'s view: the globe, on the affine layer');
-  ok(!has(vm, col('bg3', 'sea1'), 0, 0, 60, 90) && !has(vm, col('bg3', 'sea1'), 200, 0, 256, 90), 'cut to a sphere: none of the map beyond its edge');
+  const P = p.PORT;
+  ok(vm.ppu.layers[2].show && has(vm, col('bg3', 'sea1'), P.x - 20, P.y - 20, P.x + 20, P.y + 20), 'Act II\'s view: the globe, on the affine layer, through the porthole');
+  ok(!has(vm, col('bg3', 'sea1'), 0, 0, P.x - P.r - 1, 92) && !has(vm, col('bg3', 'sea1'), P.x + P.r + 1, 0, 256, 92) && !has(vm, col('bg3', 'sea1'), 0, P.y + P.r + 1, 256, 92), 'cut to a sphere: none of the map beyond its edge');
   ok(!has(vm, col('bg3', 'sea1'), 0, 104, 256, 224), 'and none of it below the view');
+  ok(vm.ppu.layers[1].show && has(vm, col('bg1', 'cream'), 0, 0, 80, 40) && has(vm, col('spr0', 'eye'), p.MARCO_X, p.MARCO_Y, p.MARCO_X + 32, p.MARCO_Y + 32), 'the workshop stays, with Marco at the bench');
+  ok(has(vm, col('bg1', 'brass1'), P.x - P.r - 4, P.y - P.r - 4, P.x + P.r + 4, P.y), 'and a brass rim round the porthole');
   Object.assign(p.G, { act: 3, moths: 1e6 }); vm.run(3);
-  ok(has(vm, col('bg5', 'arm2'), 0, 0, 256, 92) && has(vm, col('spr2', 'brass2'), 80, 20, 180, 80), 'Act III\'s view: the galaxy, with the orrery\'s gears');
+  ok(has(vm, col('bg5', 'arm2'), P.x - P.r, P.y - P.r, P.x + P.r, P.y + P.r) && has(vm, col('spr2', 'brass2'), P.x - 20, P.y - 20, P.x + 20, P.y + 20), 'Act III\'s view: the galaxy in the porthole, with the orrery\'s gears');
+  ok(has(vm, col('spr2', 'brass3'), p.MARCO_X + 22, p.MARCO_Y - 2, p.MARCO_X + 54, p.MARCO_Y + 30), 'and Marco at the telescope');
   const ts = []; p.G.act = 2; for (let i = 0; i < 300; i++) { vm.step(0); ts.push(vm.m.stats.cpu); }
   ts.sort((a2, b2) => a2 - b2); ok(ts[296] < 8 * (process.env.CI ? 3 : 1), 'the globe, a sphere line by line, is quick', `99th percentile ${ts[296].toFixed(2)} ms`);
 }

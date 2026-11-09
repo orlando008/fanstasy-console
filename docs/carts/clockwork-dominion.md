@@ -277,18 +277,28 @@ cinematics), a sinking low string (the Rust), a rising choir (a new act), a fanf
 
 ## 12. Video layers
 
-The view is lines 0 to 91, drawn by `art.py` into the one tile sheet (756 of 1,024 tiles after step 6), with the panel,
-the tabs and the log in the overlay below it. `setView()` sets each act's layers every frame; `scanline()` gives the
-backdrop its gradient line by line and shapes the globe.
+The view is lines 0 to 91, drawn by `art.py` into the one tile sheet (690 of 1,024 tiles: background 1 to 767,
+sprites 768 on), with the panel, the tabs and the log in the overlay below it. `setView()` sets each act's layers every
+frame; `scanline()` gives the backdrop its gradient line by line and shapes the globe. The workshop stays on the screen
+all game: in Acts II and III its window is a great round porthole (centre 196, 36; the hole's radius 33, a brass rim
+with rivets), and the world or the galaxy is seen through it. The scenes show them on the whole sky instead (`FULL` and
+`PORT` in `code.js`: the globe's centre and radius, 128, 46, 40 or 196, 36, 26; the galaxy's scale). Marco is 32 px
+(three frames: idle, a blink, and his arm up with a file for a moment when you work by hand), on the bench at x 44 in
+every act. The wood is calm: the wall's planks have only a few long streaks of grain, the bench is smooth and lit along
+its top.
 
 | Act | BG2 | BG1 | BG0 | Sprites |
 |---|---|---|---|---|
 | I, the workshop (and the title, at night) | Rotella through the arched window: hills, rooftops, the clock tower, cypresses, lit windows; the sky behind it is the backdrop's gradient (day, or night on the title) | the wall: planks and a rail, shelves of clocks, a case clock with its pendulum, Paulo's red armchair, the window's brass frame and mullions | the bench | Marco (blinking), Paulo in his chair (dozing now and then; gone after THE LAST WINDING), up to 14 tinkers walking, up to 6 workbenches, the cogs falling and piling |
-| II, the world | the globe: a 128 × 64 map of seas, land and ice on the affine layer, a sphere line by line (each line's width and row of the map worked out once; the layer is off outside it), turning; its land turns to brass as the places are integrated and the world is wound | the stars, scrolling slowly | — | the swarm, up to 18 tinkers going round the globe (behind it on the far side); a pale ring for the air |
-| III, the orrery | a spiral galaxy, 128 × 128, on the affine layer, turning and tilted | the stars, which turn gold as the stars are wound | — | the sun gear and three planet gears on their orbits, up to 20 moths and 12 of the Rust, by their numbers |
+| II, the world | the globe in the porthole: a 128 × 64 map of seas, land and ice on the affine layer, a sphere line by line (each line's width and row of the map worked out once for each framing; the layer is off outside it), turning; its land turns to brass as the places are integrated and the world is wound | the wall again, with the porthole (`wall2`); Paulo's chair is empty | the bench | Marco at the winding lever (pulled when you wind by hand); the swarm, up to 10 tinkers going round the globe (18 on the whole sky; behind it on the far side); a pale ring for the air |
+| III, the orrery | a spiral galaxy, 128 × 128, on the affine layer, turning and tilted, in the porthole | the wall with the porthole | the bench | Marco at a brass telescope; the sun gear and two planet gears (three on the whole sky), up to 20 moths and 12 of the Rust, by their numbers |
+
+The stars are overlay pixels in palette 4's colours (40 turning slowly in the porthole, 110 drifting across the whole
+sky; none over the globe; a few twinkle), and the first three of those colours turn gold as the stars are wound.
 
 Palettes: BG 1 the wood, brass, cream and velvet of the shop; 2 the town; 3 the globe; 4 the stars; 5 the galaxy; 7 the
-panel's ink (overlay). Sprites: 0 Marco, the tinkers and cogs; 1 Paulo; 2 the gears, moths and workbench; 3 the Rust.
+panel's ink (overlay). Sprites: 0 Marco, the tinkers and cogs; 1 Paulo; 2 the gears, moths, workbench, lever and
+telescope; 3 the Rust.
 
 ## 13. Persistence (save slots)
 
@@ -542,6 +552,16 @@ again by applying the effects of the inventions made, in order.
       story line, the full log, milestones, pause, title, gifts, records, every shot of every scene, the choice, the
       ending, the credits), and fails on any outside the screen: it fails with the old log, and found one more, a gift's
       hint running off the right edge on the gifts screen, now fixed.
+    - **A game magazine's notes**, and the user's choices from them. Art: Marco was hard to see (16 px); the charm faded
+      after Act I (a plain globe, a common galaxy, the workshop never seen again); the wood's grain was noisy. Sound: the
+      pieces were very familiar and Marco had no theme of his own; the loops were short for acts of an hour or more;
+      there was room for more music. The user chose: the world seen through the window, Marco twice the size in every
+      act, and an original theme plus more pieces.
+      - **Built (art):** the porthole wall (`wall2`), the globe and the galaxy framed in it (`PORT`), the stars as
+        overlay pixels, a 32 px Marco with a blink and a working frame, the lever (Act II) and the telescope (Act III),
+        calmer wood (section 12). The scenes keep the whole sky. The launch's moths no longer fly over the caption.
+      - **Results (art):** `02-art` checks the globe and the galaxy in the porthole and nowhere else, its brass rim, the
+        workshop and Marco staying in Acts II and III, the telescope, and Marco's three 32 px frames.
 
 Each step: build it, run `node tools/verify.js` (and `smoke.mjs`; `sweep.mjs` after a rules change), write its
 **Built** and **Results** notes under its number here, commit and push.

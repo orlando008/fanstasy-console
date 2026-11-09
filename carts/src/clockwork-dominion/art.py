@@ -19,8 +19,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../
 from kit import *
 
 art = Art()
-art.region('bg', 1, 639)       # background tiles
-art.region('spr', 640, 1023)   # sprites (a 16 px sprite takes four tiles)
+art.region('bg', 1, 767)       # background tiles
+art.region('spr', 768, 1023)   # sprites (a 16 px sprite takes four tiles)
 W, H = 256, 96                 # the view's pictures: 12 rows of tiles (the view shows 92 lines of them)
 
 # --- The panel's ink: overlay colours, BG palette 7's entries (113 to 127), kept for the overlay alone ---
@@ -55,12 +55,12 @@ def in_window(x, y):
     return y >= top or (x - cx) ** 2 + (y - top) ** 2 <= rad * rad
 
 
-def wall_px(x, y):
-    """The workshop's back wall: planks with a rail, shadowed into the corner; the window cut out of it."""
-    if in_window(x, y): return 0
+def wall_px(x, y, win=True):
+    """The workshop's back wall: planks with a rail, shadowed into the corner; the window cut out of it (if win)."""
+    if win and in_window(x, y): return 0
     W5 = wood.wood
     plank = (x // 16) % 2
-    grain = tex_noise(x * 0.3, y * 2.2, 4, 7) > 0.62
+    grain = tex_noise(x * 0.08, y * 1.4, 4, 7) > 0.74 and (x % 16) in (4, 5, 11)   # a few long, quiet streaks
     shade = 2 + plank - (1 if grain else 0)
     if x % 16 == 0: shade = 0
     if 40 <= y < 44: shade = 3 if y == 40 else 1            # the rail
@@ -106,11 +106,29 @@ for y in range(42, 70):
             wall.pset(x, y, v)
 art.scene('wall', wall, pal=wood, at=(0, 0))
 
+# The same wall in Acts II and III, with a great round porthole where the window was: the globe, then the galaxy and the
+# orrery, are seen through it (a brass rim with rivets; the bench hides its lowest edge)
+PORT = (196, 36, 33)   # centre x, centre y, radius (code.js: PORT_X, PORT_Y, PORT_R)
+def wall2_px(x, y):
+    cx, cy, r = PORT
+    d = math.hypot(x - cx, y - cy)
+    if d < r: return 0
+    if d < r + 4:
+        a = math.atan2(y - cy, x - cx)
+        if d >= r + 1.5 and d < r + 3 and abs(math.sin(a * 6)) > 0.97: return wood.cream                # rivets
+        return wood.brass[2 if (x - cx) + (y - cy) < 0 else 1 if d < r + 3 else 0]
+    if d < r + 5: return wood.dark
+    return wall_px(x, y, win=False)
+wall2 = Img.make(W, 72, wall2_px)
+for y in range(72):
+    for x in range(WIN[0] - 8): wall2.px[y][x] = wall.px[y][x]          # the shelves, the case clock and the chair, as in Act I
+art.scene('wall2', wall2, pal=wood, at=(0, 21))
+
 bench = Img(W, 24)
 for y in range(24):
     for x in range(W):
-        g = tex_noise(x * 0.12, y * 0.9, 3, 3)
-        v = 3 if g > 0.55 else 2 if g > 0.3 else 1
+        g = tex_noise(x * 0.04, y * 0.8, 3, 3)
+        v = 2 if g > 0.62 else 3 if y < 8 else 2 if y < 15 else 1                        # smooth, lit along the top
         bench.px[y][x] = wood.wood[4 if y == 0 else 3 if y == 1 else 0 if y >= 21 else v]
 art.scene('bench', bench, pal=wood, at=(0, 12), solid=True)
 
@@ -159,17 +177,9 @@ for y in range(64):
             gm.px[y][x] = globe.sea[3 if h > 0.5 else 2 if h > 0.42 else 1 if h > 0.3 else 0]
 art.scene('globe', gm, pal=globe, at=(64, 0), solid=True, prio=1)
 
-# The stars: a few tiles of single stars, scattered (two of them turn gold in Act III as the stars are wound)
+# The stars: drawn by code.js on the overlay, as single pixels in these colours (the first three turn gold in Act III,
+# as the stars are wound: code.js STARC)
 sky = art.palette(4, {'star': ramp('8090c0', 3), 'gold': ramp('e8b04a', 2), 'nebula': ramp('2a1a4a', 2)})
-star_tiles = []
-for k in range(7):
-    t = Img(8, 8)
-    for j in range(1 + k % 3):
-        sx, sy = int(hsh(k * 17 + j * 5) % 8), int(hsh(k * 29 + j * 3 + 1) % 8)
-        t.pset(sx, sy, [sky.star[0], sky.star[1], sky.gold[0], sky.star[2], sky.gold[1], sky.star[0], sky.star[1]][(k + j) % 7])
-    star_tiles.append(t)
-stars_img = tile_fill(W, H, star_tiles, seed=5, weights=[3, 3, 1, 1, 1, 2, 2])
-art.scene('stars', stars_img, pal=sky, at=(0, 40))
 
 # ===================================================== Act III ====================================================
 # The galaxy: a spiral, 128 x 128, its two arms lit along their length, a gold core; read by the affine layer, turning.
@@ -196,27 +206,71 @@ art.scene('galaxy', gi, pal=gal, at=(80, 0))
 marcoc = art.sprite_palette(0, {'edge': '1a0f08', 'brass': ramp('b07a2a', 4), 'eye': 'bfe8ff', 'key': ramp('8a8a96', 2), 'glow': 'fff0b0'})
 K = {'o': marcoc.edge, 'd': marcoc.brass[0], 'm': marcoc.brass[1], 'b': marcoc.brass[2], 'l': marcoc.brass[3], 'e': marcoc.eye,
      'k': marcoc.key[1], 'K': marcoc.key[0], 'g': marcoc.glow}
-marco_rows = [
-    '................',
-    '.......kk.......',
-    '......k..k......',
-    '.......kK.......',
-    '.....oooooo.....',
-    '....ollllbmo....',
-    '...olbbbbbbmo...',
-    '...olbeebeemo...',
-    '...olbeebeemo...',
-    '...olbbbbbbmo...',
-    '...obboggobmo...',
-    '....obbbbbmo....',
-    '.....omdddo.....',
-    '....omo..omo....',
-    '...omdo..odmo...',
-    '...ooo....ooo...',
-]
-art.sprite('marco', Img.from_rows(marco_rows, key=K), pal=marcoc, region='spr')
-blink = list(marco_rows); blink[7] = '...olbbbbbbmo...'; blink[8] = '...olbooboomo...'
-art.sprite('marco2', Img.from_rows(blink, key=K), pal=marcoc, region='spr')
+def marco32(frame):
+    """Marco at 32 px: a round brass automaton, big glass eyes, a key in the top of his head, a dial on his chest.
+    frame: 'idle', 'blink' (eyes shut), 'work' (his right arm up, with a file)."""
+    im = Img(32, 32)
+    def put(x, y, c):
+        if 0 <= x < 32 and 0 <= y < 32: im.px[y][x] = c
+    def shade(dx, dy, r):          # lit from the upper left
+        k = 2 + round(-(dx + dy) / (r * 0.9))
+        return marcoc.brass[max(0, min(3, k))]
+    # the key: a bow (a ring) on a short shaft
+    for y in range(0, 7):
+        for x in range(10, 22):
+            d = math.hypot(x - 15.5, y - 2.5)
+            if 1.6 <= d <= 3.1 and y < 5: put(x, y, marcoc.key[1] if x < 16 else marcoc.key[0])
+    for y in range(5, 8): put(15, y, marcoc.key[1]); put(16, y, marcoc.key[0])
+    # the head
+    for y in range(6, 22):
+        for x in range(4, 28):
+            dx, dy = x - 15.5, y - 14
+            d = math.hypot(dx, dy * 1.05)
+            if d <= 9.6: put(x, y, marcoc.edge if d > 8.8 else shade(dx, dy, 9))
+    # the eyes: glass discs with a dark pupil and a glint (shut: a line)
+    for k, ex in enumerate((11.5, 20.0)):
+        for y in range(9, 19):
+            for x in range(6, 26):
+                d = math.hypot(x - ex, y - 13.5)
+                if frame == 'blink':
+                    if abs(y - 14) < 0.6 and d < 3.8: put(x, y, marcoc.edge)
+                elif d <= 3.8: put(x, y, marcoc.edge if d > 3.0 else marcoc.eye)
+        if frame != 'blink':
+            px = (11, 19)[k]                                                   # the pupils, 2 x 2, with a glint
+            for dx in (0, 1):
+                for dy in (0, 1): put(px + dx, 13 + dy, marcoc.edge)
+            put(px, 13, marcoc.glow)
+    for x in (13, 15, 17): put(x, 19, marcoc.brass[0])                      # the mouth's grille
+    # the body, with a dial on the chest
+    for y in range(21, 29):
+        for x in range(9, 23):
+            if (x in (9, 22) and y in (21, 28)): continue
+            put(x, y, marcoc.edge if x in (9, 22) or y in (21, 28) else shade(x - 15.5, y - 24, 6))
+    for y in range(22, 28):
+        for x in range(13, 19):
+            d = math.hypot(x - 15.5, y - 24.5)
+            if d <= 2.6: put(x, y, marcoc.edge if d > 1.9 else marcoc.glow)
+    put(15, 24, marcoc.edge); put(16, 23, marcoc.edge)
+    # the legs
+    for y in range(28, 32):
+        for x in (11, 12, 13, 18, 19, 20):
+            put(x, y, marcoc.edge if y == 31 or x in (11, 20) else marcoc.brass[1])
+    # the arms: down at the sides, or the right one raised with a file
+    for y in range(22, 28):
+        for x in (6, 7, 8):
+            put(x, y, marcoc.edge if x == 6 or y == 27 else marcoc.brass[2])
+    if frame == 'work':
+        for k in range(8):
+            put(24 + k // 3, 22 - k, marcoc.edge); put(25 + k // 3, 22 - k, marcoc.brass[3]); put(26 + k // 3, 22 - k, marcoc.edge)
+        for k in range(6): put(28 + k // 3, 14 - k, marcoc.key[1])
+    else:
+        for y in range(22, 28):
+            for x in (23, 24, 25):
+                put(x, y, marcoc.edge if x == 25 or y == 27 else marcoc.brass[1])
+    return im
+art.sprite('marco', marco32('idle'), pal=marcoc, region='spr')
+art.sprite('marco2', marco32('blink'), pal=marcoc, region='spr')
+art.sprite('marco3', marco32('work'), pal=marcoc, region='spr')
 cog = Img.from_rows(['..o..o..', '.olbblo.', 'oblddbdo', '.bd..db.', '.bd..db.', 'obddddbo', '.obbbdo.', '..o..o..'], key=K)
 art.sprite('cog', cog, pal=marcoc, region='spr')
 for n, rows in enumerate([['...k....', '..oooo..', '.olbbmo.', '.obeemo.', '.obbbmo.', '..oooo..', '..o..o..', '.oo..oo.'],
@@ -297,6 +351,25 @@ bench_s = Img.from_rows([
     'oooooooooooooooo', 'ollllllllllllllo', 'obbbbbbbbbbbbbbo', 'oooooooooooooooo', '.ob..........bo.', '.ob..........bo.',
     '.ob..........bo.', '.ob..........bo.', '.oo..........oo.', '................'], key=M2)
 art.sprite('workbench', bench_s, pal=mach, region='spr')
+# Act II: the winding lever at Marco's side (16 x 32); Act III: a brass telescope on a tripod, aimed at the porthole (32)
+lever = Img(32, 32)                       # a 32 px sprite; the lever is in its left half
+for y in range(32):
+    for x in range(16):
+        if 26 <= y and 2 <= x <= 13: lever.px[y][x] = mach.edge if y in (26, 31) or x in (2, 13) else mach.brass[1]
+        elif 6 <= x <= 8 and 6 <= y < 26: lever.px[y][x] = mach.edge if x == 6 else mach.brass[3] if x == 7 else mach.brass[1]
+        elif math.hypot(x - 7.5, y - 4) <= 3.4: lever.px[y][x] = mach.edge if math.hypot(x - 7.5, y - 4) > 2.6 else mach.glow
+art.sprite('lever', lever, pal=mach, region='spr')
+scope = Img(32, 32)
+def scope_px(x, y):
+    t = (x - 4) / 26                                    # along the tube, from the eyepiece (left, low) to the lens (right, high)
+    if -0.05 <= t <= 1.05:
+        cy = 20 - t * 14
+        r = 1.6 + t * 2.2
+        if abs(y - cy) <= r: return mach.edge if abs(y - cy) > r - 0.9 or x in (4, 30) else mach.brass[3 if y < cy else 2]
+    if y >= 20 and any(abs(x - (16 + (y - 20) * k)) < 0.8 for k in (-0.6, 0, 0.6)): return mach.edge
+    return 0
+scope = Img.make(32, 32, scope_px)
+art.sprite('telescope', scope, pal=mach, region='spr')
 
 # ===================================================== The title ====================================================
 # CLOCKWORK DOMINION in brass, under the bench (map rows 15 to 20): the title widens the bench's layer to show it.

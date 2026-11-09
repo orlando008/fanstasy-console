@@ -191,13 +191,6 @@
    "pal": 6,
    "w": 32
   },
-  "stars": {
-   "h": 12,
-   "mx": 0,
-   "my": 40,
-   "pal": 4,
-   "w": 32
-  },
   "town": {
    "h": 9,
    "mx": 32,
@@ -211,81 +204,103 @@
    "my": 0,
    "pal": 1,
    "w": 32
+  },
+  "wall2": {
+   "h": 9,
+   "mx": 0,
+   "my": 21,
+   "pal": 1,
+   "w": 32
   }
  },
  "sprites": {
   "cog": {
    "pal": 0,
    "size": 8,
-   "tile": 644
+   "tile": 780
+  },
+  "lever": {
+   "pal": 2,
+   "size": 32,
+   "tile": 844
   },
   "marco": {
    "pal": 0,
-   "size": 16,
-   "tile": 640
+   "size": 32,
+   "tile": 768
   },
   "marco2": {
    "pal": 0,
-   "size": 16,
-   "tile": 642
+   "size": 32,
+   "tile": 772
+  },
+  "marco3": {
+   "pal": 0,
+   "size": 32,
+   "tile": 776
   },
   "moth0": {
    "pal": 2,
    "size": 8,
-   "tile": 647
+   "tile": 783
   },
   "moth1": {
    "pal": 2,
    "size": 8,
-   "tile": 660
+   "tile": 796
   },
   "paulo": {
    "pal": 1,
    "size": 32,
-   "tile": 648
+   "tile": 832
   },
   "paulo2": {
    "pal": 1,
    "size": 32,
-   "tile": 652
+   "tile": 836
   },
   "planet": {
    "pal": 2,
    "size": 16,
-   "tile": 672
+   "tile": 812
   },
   "rust0": {
    "pal": 3,
    "size": 8,
-   "tile": 661
+   "tile": 797
   },
   "rust1": {
    "pal": 3,
    "size": 8,
-   "tile": 662
+   "tile": 798
   },
   "sun": {
    "pal": 2,
    "size": 32,
-   "tile": 704
+   "tile": 840
+  },
+  "telescope": {
+   "pal": 2,
+   "size": 32,
+   "tile": 896
   },
   "tinker0": {
    "pal": 0,
    "size": 8,
-   "tile": 645
+   "tile": 781
   },
   "tinker1": {
    "pal": 0,
    "size": 8,
-   "tile": 646
+   "tile": 782
   },
   "workbench": {
    "pal": 2,
    "size": 16,
-   "tile": 674
+   "tile": 814
   }
  },
  "tiles": {},
- "used": 685,
+ "used": 690,
  "version": 1
 }

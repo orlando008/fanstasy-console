@@ -25,7 +25,7 @@ const PROBE = `__expose(() => ({
   workShare, dreamShare, ingRate, sulking, worldOre, REGIONS, LOTS, SAVE_INTS, workBoost, river,
   TRAITS, blueprints, freeBp, drawCost, mothCost, reachRate, windRate, copyRate, harvRate, lossRate, stingRate, rustRate, choose, CHOICES,
   get choiceSel() { return choiceSel; }, ENDS_SLOT, BEST_SLOT, ALL_SLOT, GIFTS, GIFT_TIERS, titleItems, addLog, startCycle, HOLD, get typed() { return typed; }, toRecords: () => { state = 'records'; timer = 0; },
-  get boxes() { return typeof __boxes === 'undefined' ? null : __boxes; }, ruleOf, RULES, playScene, get cine() { return cine; }, get SCENES() { return SCENES; },
+  get boxes() { return typeof __boxes === 'undefined' ? null : __boxes; }, ruleOf, RULES, playScene, get cine() { return cine; }, get SCENES() { return SCENES; }, PORT, FULL, MARCO_X, MARCO_Y,
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into a new run). save: a save to start from. */
