@@ -30,8 +30,17 @@ export function songSpeed(cart, s) {
   const row = cart.patterns[cart.songs[s].order[0]][0].find((c) => c && (c.fx >> 8) === 0xF && (c.fx & 255));
   return row ? row.fx & 255 : 6;
 }
-/** The seconds one pass of the song lasts. */
-export const songSeconds = (cart, s) => cart.songs[s].order.length * 64 * songSpeed(cart, s) / TICK_HZ;
+/** The seconds one pass of the song lasts: its rows at their speeds (a song can change its speed with Fxx on any row,
+ * such as one for each piece of a medley, or a slowing at its end). */
+export function songSeconds(cart, s) {
+  let speed = 6, ticks = 0;
+  for (const n of cart.songs[s].order) for (const row of cart.patterns[n]) {
+    const f = row.find((c) => c && (c.fx >> 8) === 0xF && (c.fx & 255));
+    if (f) speed = f.fx & 255;
+    ticks += speed;
+  }
+  return ticks / TICK_HZ;
+}
 
 export function rms(x, a = 0, b = x.length) { let s = 0; for (let i = a; i < b; i++) s += x[i] * x[i]; return Math.sqrt(s / Math.max(1, b - a)); }
 export function peak(x) { let p = 0; for (const v of x) p = Math.max(p, Math.abs(v)); return p; }

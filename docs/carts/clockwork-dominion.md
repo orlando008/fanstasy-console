@@ -249,26 +249,32 @@ the stars going out, the watch ticking.
 
 ## 11. Audio
 
-On the new sound chip (SPEC 5), made by `audio.py`: songs on channels 0 to 5, effects take turns on 6 and 7. Public domain
-classics in their own notes (`scores.py` reads them from public domain engravings; each source and licence is in the
-cart folder's `scores/SOURCES.md`), arranged for a music box (a sample of a comb's tine, made in `audio.py`) and a few
-sampled instruments, over a soft clock tick (tick and tock, on channel 5) in the clockwork pieces.
+On the new sound chip (SPEC 5), made by `audio.py`: songs on channels 0 to 5, effects take turns on 6 and 7. Marco's own
+theme (an original waltz in C, 16 bars of 3/4, written by hand in `scores.py`: it winds up in a rising arpeggio and runs
+down; the first half ends open, the second home; a plain statement over a waltz bass, and a variation over a running
+arpeggio), and public domain classics in their own notes (`scores.py` reads them from public domain engravings; each
+source and licence is in the cart folder's `scores/SOURCES.md`), arranged for a music box (a sample of a comb's tine,
+made in `audio.py`), a harp and a reed (made there too) and a few sampled instruments, over a soft clock tick (tick and
+tock, on channel 5) in the clockwork pieces. Each song is its pieces in turn; each piece starts a pattern and sets its
+own speed, so the theme's reprise in an act is the title's own patterns (63 of 64 patterns, 15 KB of 32 KB of samples).
 
-| Song | Piece | Where | Voices |
-|---|---|---|---|
-| 0 | Mozart: *Ah, vous dirai-je, Maman*, the theme and a variation | the title, the opening, the gifts | music box over a low music box and celesta, ticking |
-| 1 | Tchaikovsky: *March of the Wooden Soldiers* | Act I | music box, celesta, plucked bass, ticking |
-| 2 | Brahms: *Wiegenlied* | Paulo's rest, the winding of the town | music box over celesta and strings, ticking |
-| 3 | Grieg: *In the Hall of the Mountain King* | Act II, the launch | plucked strings over a bass, ticking every beat |
-| 4 | Debussy: *Clair de lune* | Act III, the orrery turning | flute over electric piano, strings beneath |
-| 5 | Grieg: *Troldtog* (March of the Dwarfs) | Act III while the Rust is more than a fifth of the moths | plucked, quick |
-| 6 | Bach: *The Art of Fugue*, the canon at the octave | the Dominion ending | celesta and strings in canon, ticking |
-| 7 | Satie: *Gymnopédie No. 1* | the Rest ending and the credits | music box, slowly, over electric piano and strings |
+| Song | Pieces, in turn | Where | Voices | Length |
+|---|---|---|---|---|
+| 0 | Marco's theme; its variation | the title, the opening, the gifts | music box over a low music box and celesta; then a celesta over the box's arpeggio; ticking | 58 s |
+| 1 | Tchaikovsky: *March of the Wooden Soldiers*; Haydn: the Menuet of the Sonata in G (Hob. XVI:27); Marco's theme | Act I | music box, celesta, plucked bass, ticking | 135 s |
+| 2 | Brahms: *Wiegenlied*, twice | Paulo's rest, the winding of the town | music box over celesta and strings, ticking | 70 s |
+| 3 | Grieg: *In the Hall of the Mountain King*; Grieg: *Wedding Day at Troldhaugen*; the theme's variation | Act II, the launch | plucked strings over a bass; a reed over plucked chords; ticking | 113 s |
+| 4 | Debussy: *Clair de lune* (bars 1 to 28); Debussy: the first *Arabesque*; Marco's theme | Act III, the orrery turning | flute over electric piano, strings beneath; electric piano over a harp's triplets | 211 s |
+| 5 | Grieg: *Troldtog* (March of the Dwarfs), to the return of its tune | Act III while the Rust is more than a fifth of the moths | plucked, quick | 30 s |
+| 6 | Bach: *The Art of Fugue*, the canon at the octave; the theme's variation, grand | the Dominion ending | celesta and strings in canon, ticking; celesta and strings over the music box | 83 s |
+| 7 | Satie: *Gymnopédie No. 1*; Marco's theme on the music box alone, slowing as it runs down | the Rest ending and the credits | music box over electric piano and strings; the music box | 132 s |
 
 The first choices of the kickoff had no public domain file, and the user agreed the swaps (the Sugar Plum Fairy,
-Haydn's "Clock", the Aquarium, Danse macabre and the Great Gate of Kiev). In play, a song plays for 2.5 minutes, then
-rests for 40 seconds (in the shop, a soft tap each second, like the clocks), then begins again. All eight are within
-`loud.mjs --check`'s limits.
+Haydn's "Clock", the Aquarium, Danse macabre and the Great Gate of Kiev). After the release, the theme replaced
+Mozart's *Ah, vous dirai-je, Maman* on the title, and the Haydn, the *Wedding Day* and the *Arabesque* joined the acts
+(the user's choice, from a game magazine's notes). In play, an act's song plays once through (`PASS` in `code.js`, its
+length in frames; the Rust's march loops as long as the stars' song), then rests for 40 seconds (in the shop, a soft tap
+each second, like the clocks), then begins again. All eight are within `loud.mjs --check`'s limits.
 
 Effects (18): a tap (the cursor, a tab), two tines (select, pause), a dull thunk (no), a chime (an invention), a clink
 (a cog by hand), a soft music box (a story line), a coin (bought), a carillon (a milestone), a ratchet (a spring wound),
@@ -562,6 +568,18 @@ again by applying the effects of the inventions made, in order.
         calmer wood (section 12). The scenes keep the whole sky. The launch's moths no longer fly over the caption.
       - **Results (art):** `02-art` checks the globe and the galaxy in the porthole and nowhere else, its brass rim, the
         workshop and Marco staying in Acts II and III, the telescope, and Marco's three 32 px frames.
+      - **Built (music):** Marco's theme (section 11), on the title and opening and coming back in every act, and in
+        both endings; the acts' songs made medleys of two pieces and the theme (Act I adds Haydn's Menuet, Act II
+        Grieg's *Wedding Day at Troldhaugen*, Act III the first *Arabesque*, and *Clair de lune* runs to bar 28), the
+        Rust's march to the return of its tune, a harp and a reed made in `audio.py`; each piece starts a pattern with
+        its own speed, so a reprise is free (63 of 64 patterns). The music rests after a whole pass of an act's song,
+        not after 2.5 minutes. `loud.mjs` timed a song by its first speed; it now reads each row's (`songSeconds` in
+        `tools/devkit/music/lib.mjs`), which a medley needs.
+      - **Results (music):** all eight songs within `loud.mjs --check` (the theme's low music box surged at each bar,
+        3.1 times the median: held strings now carry its bass; the Menuet's and the Arabesque's leads were most of the
+        mix, and *Clair de lune*'s climax pierced: their leads are softer). `09-audio` checks the new sources, the 64
+        patterns with a speed on each, each act's medley over 100 s with `PASS` matching it, and the theme's patterns
+        coming back in every act.
 
 Each step: build it, run `node tools/verify.js` (and `smoke.mjs`; `sweep.mjs` after a rules change), write its
 **Built** and **Results** notes under its number here, commit and push.

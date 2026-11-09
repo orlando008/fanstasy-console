@@ -307,6 +307,12 @@ unit. Games made before it are carts for the old chip (format version 1) until e
   and makes a change (a quieter lead) a one-line edit. The script must regenerate `audio.json` exactly. A game with
   only an `audio.json` gets a script with `python3 tools/devkit/music/script.py carts/src/<name>/audio.json
   carts/src/<name>/audio.py` (every pattern as tracker text), which packs to the same cart.
+- **A long stretch of play wants a medley, not one short loop.** A song can be several pieces in turn, each starting a
+  pattern with its own speed (an `Fxx` on the pattern's first row): Clockwork Dominion's `audio.py` (`piece()` and
+  `song()`) does this, and a piece used in two songs is the same patterns, so a reprise (a theme coming back) costs
+  nothing. `loud.mjs` times a song by the speed of each row, so it measures a medley whole; give the code each song's
+  length in frames (that cart's `PASS`) if it rests between passes. A note's volume (`v`, 0 to 15) scales its
+  instrument's: 15 is the instrument as it is, anything less is softer.
 - Cues (`play(song)` that does not restart the song already playing; `fx(n)` for effects) belong in one place in
   the code so a test can check them.
 - The `sound-test` demo plays every sampled instrument on its own and three songs (`carts/src/sound-test/audio.py`).

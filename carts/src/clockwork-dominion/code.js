@@ -38,16 +38,18 @@ const SFX = { move: 0, select: 1, pause: 2, no: 3, invent: 4, clink: 5, story: 6
 const SONG = { title: 0, shop: 1, lullaby: 2, world: 3, stars: 4, rust: 5, dominion: 6, rest: 7 };
 // The song each scene plays, and how long the music plays before it rests (and for how long), in frames.
 const SCENE_SONG = { opening: SONG.title, rest: SONG.lullaby, town: SONG.lullaby, launch: SONG.world, orrery: SONG.stars, dominion: SONG.dominion, stop: SONG.rest };
-const PLAY_FOR = 9000, REST_FOR = 2400;
+// PASS: one pass of each act's song (audio.py prints them; the Rust's march loops for as long as the stars' song)
+const PASS = [0, 8128, 0, 6784, 12672, 12672], REST_FOR = 2400;
 let musicT = 0;
 /** The song for what is on the screen now: the act's, the Rust's when it is strong, a scene's, the title's. */
 function wantSong() {
   if (state === 'cine') return SCENE_SONG[Object.keys(SCENES).find((k) => SCENES[k] === cine.shots)] ?? -1;
   if (state === 'ending') return SONG.rest;
   if (state !== 'play' && state !== 'log' && state !== 'miles' || !G) return SONG.title;
-  if (++musicT > PLAY_FOR + REST_FOR) musicT = 0;
-  if (musicT > PLAY_FOR) { if (G.act === 1 && musicT % 60 === 0) fx(SFX.move); return -1; } // a rest: only the shop's ticking
-  return G.act === 1 ? SONG.shop : G.act === 2 ? SONG.world : G.rust > G.moths * 0.2 ? SONG.rust : SONG.stars;
+  const n = G.act === 1 ? SONG.shop : G.act === 2 ? SONG.world : G.rust > G.moths * 0.2 ? SONG.rust : SONG.stars;
+  if (++musicT > PASS[n] + REST_FOR) musicT = 0;
+  if (musicT > PASS[n]) { if (G.act === 1 && musicT % 60 === 0) fx(SFX.move); return -1; } // a rest: only the shop's ticking
+  return n;
 }
 const SFX_CH = [7, 6];
 let fxNext = 0, soundOn = 1, musicOn = 1, playing = -1;

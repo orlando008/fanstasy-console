@@ -12,18 +12,23 @@ const boot = (title = false) => { const vm = newGame(1, { title }), p = vm.probe
   ok(audio.songs.length === 8 && Object.keys(p.SONG).length === 8, 'eight songs, each named in code.js');
   ok(audio.sfx.length === Math.max(...Object.values(p.SFX)) + 1, 'and every effect code.js names is in the audio', `${audio.sfx.length} effects`);
   const src = readFileSync(new URL('../../../carts/src/clockwork-dominion/scores/SOURCES.md', import.meta.url), 'utf8');
-  ok(['Mozart', 'Tchaikovsky', 'Brahms', 'Grieg', 'Debussy', 'Bach', 'Satie'].every((n) => src.includes(n)) && (src.match(/Public domain/g) || []).length >= 7, 'every piece has its source and licence in scores/SOURCES.md');
+  ok(['Tchaikovsky', 'Haydn', 'Brahms', 'Grieg', 'Troldhaugen', 'Debussy', 'Arabesque', 'Bach', 'Satie'].every((n) => src.includes(n)) && (src.match(/Public domain/g) || []).length >= 10, 'every piece has its source and licence in scores/SOURCES.md');
+  ok(audio.patterns.length <= 64 && audio.songs.every((s) => s.order.every((n) => audio.patterns[n].rows[0][7]?.fx?.[0] === 'F')), 'the songs fit the 64 patterns, each pattern starting with its piece\'s speed', `${audio.patterns.length} patterns`);
+  const frames = (k) => audio.songs[k].order.reduce((t, n) => t + 64 * parseInt(audio.patterns[n].rows[0][7].fx.slice(1), 16), 0);
+  ok([1, 3, 4].every((k) => p.PASS[k] === frames(k)) && [1, 3, 4].every((k) => frames(k) >= 6000), 'each act\'s song is a medley of over 100 s, and code.js knows its length', [1, 3, 4].map(frames).join(' '));
+  const theme = audio.songs[0].order.slice(0, 3).join();
+  ok([1, 4].every((k) => audio.songs[k].order.join().includes(theme)) && audio.songs[3].order.join().includes(audio.songs[0].order.slice(3).join()), 'Marco\'s theme comes back in every act (the same patterns as the title\'s)');
 }
 
 // 2. When each song plays.
 {
   const { vm, p } = boot(true); vm.run(2);
-  ok(p.playing === p.SONG.title, 'the title plays Ah, vous dirai-je, Maman');
+  ok(p.playing === p.SONG.title, 'the title plays Marco\'s theme');
   p.newRun(1); vm.run(2); ok(p.playing === p.SONG.title, 'and so does the opening');
-  vm.press('START'); vm.run(2); ok(p.playing === p.SONG.shop, 'the workshop plays the March of the Wooden Soldiers');
+  vm.press('START'); vm.run(2); ok(p.playing === p.SONG.shop, 'the workshop plays the March of the Wooden Soldiers and the Haydn menuet');
   p.playScene('rest', () => {}); vm.run(2); ok(p.playing === p.SONG.lullaby, 'Paulo\'s rest, the lullaby');
-  vm.press('START'); p.G.act = 2; vm.run(2); ok(p.playing === p.SONG.world, 'Act II, In the Hall of the Mountain King');
-  p.G.act = 3; p.G.moths = 1e6; p.G.rust = 0; vm.run(2); ok(p.playing === p.SONG.stars, 'Act III, Clair de lune');
+  vm.press('START'); p.G.act = 2; vm.run(2); ok(p.playing === p.SONG.world, 'Act II, In the Hall of the Mountain King and Wedding Day at Troldhaugen');
+  p.G.act = 3; p.G.moths = 1e6; p.G.rust = 0; vm.run(2); ok(p.playing === p.SONG.stars, 'Act III, Clair de lune and the Arabesque');
   p.G.rust = 5e5; vm.run(2); ok(p.playing === p.SONG.rust, 'and the March of the Dwarfs while the Rust is strong');
   p.G.rust = 0; vm.run(2); ok(p.playing === p.SONG.stars, 'Clair de lune again when it is beaten');
   p.playScene('dominion', () => {}); vm.run(2); ok(p.playing === p.SONG.dominion, 'the Dominion ending, the Art of Fugue\'s canon');
@@ -34,7 +39,7 @@ const boot = (title = false) => { const vm = newGame(1, { title }), p = vm.probe
 {
   const { vm, p } = boot(); vm.run(2);
   ok(p.playing === p.SONG.shop, 'the music plays');
-  vm.run(9000); ok(p.playing === -1, 'after two and a half minutes it rests');
+  vm.run(p.PASS[p.SONG.shop]); ok(p.playing === -1, 'after one pass of the act\'s song it rests');
   vm.run(2400); ok(p.playing === p.SONG.shop, 'and after forty seconds it begins again');
 }
 
