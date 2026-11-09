@@ -13,7 +13,7 @@ const MAP = mangle(stripComments(readFileSync(new URL('../../../carts/src/clockw
 // What a test needs to read or set (the cart's code runs in one scope, so getters see its variables). Add to it as the
 // game grows.
 const PROBE = `__expose(() => ({
-  get state() { return state; }, get timer() { return timer; }, get paused() { return paused; }, get playing() { return playing; },
+  get state() { return state; }, get timer() { return timer; }, get onTabs() { return onTabs; }, get paused() { return paused; }, get playing() { return playing; },
   get G() { return G; }, set G(v) { G = v; }, get tab() { return tab; }, set tab(v) { tab = v; }, get row() { return row; }, set row(v) { row = v; },
   get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; }, get confirm() { return confirm; },
   get logRows() { return logRows; }, get typing() { return typing; }, get STORY() { return STORY; }, get why() { return why; },
@@ -24,7 +24,7 @@ const PROBE = `__expose(() => ({
   benchCost, nextTrust, costText, ratio, GEARS, RISKS, actOf, eff2: () => eff2, powerGen, powerNeed, powerCap, machRate, build, cost2,
   workShare, dreamShare, ingRate, sulking, worldOre, REGIONS, LOTS, SAVE_INTS, workBoost, river,
   TRAITS, blueprints, freeBp, drawCost, mothCost, reachRate, windRate, copyRate, harvRate, lossRate, stingRate, rustRate, choose, CHOICES,
-  get choiceSel() { return choiceSel; }, ENDS_SLOT, BEST_SLOT, ALL_SLOT, GIFTS, titleItems, ruleOf, RULES, playScene, get cine() { return cine; }, get SCENES() { return SCENES; },
+  get choiceSel() { return choiceSel; }, ENDS_SLOT, BEST_SLOT, ALL_SLOT, GIFTS, GIFT_TIERS, titleItems, ruleOf, RULES, playScene, get cine() { return cine; }, get SCENES() { return SCENES; },
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into a new run). save: a save to start from. */

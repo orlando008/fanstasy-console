@@ -9,6 +9,7 @@ made:5 | Five cogs. Paulo says each tooth must be the same as the last. I make t
 made:20 | "We will put them in the window," says Paulo. "The town is always needing cogs."
 sold:1 | A girl with a broken music box bought a cog. Paulo put the coin in a jar marked MARCO.
 sold:25 | The jar is getting heavier. Paulo taps it and says I am paying my way.
+ev:shavings | No brass and no lire. Paulo swept the shavings off the bench into my hand. "Start again with these," he said.
 ev:nobrass | There is no more brass on the bench. The merchant's cart comes down the hill on market days.
 spools:1 | I bought a spool of brass from the merchant. He looked at me for a long time before he took the coin.
 ev:priceup | I raised my price. Paulo peers over his spectacles and says nothing, which means: careful.

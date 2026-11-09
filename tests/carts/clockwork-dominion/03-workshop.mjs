@@ -44,7 +44,9 @@ import { newGame, simFor, ok } from './lib.mjs';
   ok(Math.abs(lo - 12) < 1e-9 && Math.abs(hi - 24) < 1e-9, 'the market\'s price drifts from L 12 to L 24 over a 6-minute day', `${lo} ${hi}`);
   p.G.day = 0; p.G.spool = 30; simFor(p, 30);
   ok(p.G.spool < 20 && p.G.spool > 12, 'a dear spool falls back towards the market\'s price', p.G.spool.toFixed(2));
-  p.G.brass = 0; ok(!p.ACT.hand() && p.G.made === 0, 'with no brass, no cog can be made');
+  p.G.brass = 0; p.G.coin = 100; ok(!p.ACT.hand() && p.G.made === 0, 'with no brass (and the lire for a spool), no cog can be made');
+  p.G.coin = 5; p.G.cogs = 0; ok(p.ACT.hand() && p.G.made === 1, 'but stranded (no brass, no cogs, not the lire for a spool), the hand makes one from the shavings');
+  p.G.cogs = 0; p.G.coin = 0;
 }
 
 // 4. The sign and the tinkers.

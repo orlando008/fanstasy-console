@@ -6,8 +6,8 @@ import { newGame, ok } from './lib.mjs';
 import { makePlanner } from './plan.mjs';
 
 /** A whole story: the minutes each act took, and each act's longest stretch with nothing new. */
-function story(seed, slack, cycle = 0) {
-  const vm = newGame(seed), p = vm.probe(); vm.run(1); vm.m.save[1] = cycle; p.newRun(seed);
+function story(seed, slack, cycle = 0, gift = 0) {
+  const vm = newGame(seed), p = vm.probe(); vm.run(1); vm.m.save[1] = cycle; p.newRun(seed, gift);
   const plan = makePlanner({ taps: 3, slack, think: 60, ending: seed % 2 });
   const ends = [0], gaps = [0, 0, 0, 0];
   let sig = '', last = 0;
@@ -33,5 +33,13 @@ ok(new Set(runs.map((r) => r.total.toFixed(0))).size > 1, 'the seeds play differ
 for (const [cycle, rule] of [[1, 'Scarce Brass'], [2, 'The Red Sky'], [3, 'Only Music Boxes']]) {
   const r = story(5, 10, cycle);
   ok(r.p.G.act === 4 && r.gaps.every((g) => g < 15), `cycle ${cycle + 1} (${rule}) can be played to the end too`, `${(r.total / 60).toFixed(1)} h, gaps ${r.gaps.map((g) => g.toFixed(1)).join(', ')} min`);
+}
+// Every gift a cycle can give (the reviewer's check): each lets the story end, and none saves more than 15% of it.
+{
+  const times = [];
+  for (let id = 1; id <= 26; id++) { const r = story(3, 10, 1, id); times.push([id, r.p.G.act === 4 ? r.total : Infinity]); }
+  const sorted = times.map((t) => t[1]).sort((a, b) => a - b), median = sorted[13];
+  ok(times.every((t) => t[1] < Infinity), 'with every one of the 26 gifts, the story ends', times.filter((t) => t[1] === Infinity).map((t) => t[0]).join());
+  ok(sorted[0] > median * 0.85, 'and no gift saves more than 15% of it', `the best ${(100 * (1 - sorted[0] / median)).toFixed(1)}% faster than the median`);
 }
 ok.done();

@@ -18,17 +18,20 @@ function ended(vm, p, k = 0) {
   ok(p.state === 'ending', 'A after the ending rolls the credits');
   vm.run(40); vm.press('A'); vm.run(2);
   ok(p.state === 'gift' && !p.hasRun(), 'START CYCLE 2 asks for a gift (the story told is cleared)');
-  ok(p.GIFTS().length === 26 && p.GIFTS().every((v) => v.id <= 26), 'the gift is one of Act I\'s inventions, but not the two that end it');
+  ok(p.GIFTS().length === 3 && p.GIFTS().every((v) => v.id <= 26), 'it offers three of Act I\'s inventions (never the two that end it)', p.GIFTS().map((v) => v.name).join(', '));
+  ok(p.GIFT_TIERS.every((t, k) => t.includes(p.GIFTS()[k].id)), 'one small, one middle and one great');
+  const seen = new Set(); for (let c = 1; c <= 12; c++) { vm.m.save[1] = c; for (const v of p.GIFTS()) seen.add(v.id); } vm.m.save[1] = 1;
+  ok(seen.size >= 15, 'and different cycles offer different gifts', `${seen.size} of 26 over 12 cycles`);
   vm.run(25); vm.press('A'); vm.run(2);
   ok(p.state !== 'gift' && p.G.cycle === 1, 'choosing it begins cycle 2');
-  ok(p.isDone(1) && p.G.hand === 2, 'with the gift already made (SHARPER FILES: the hand makes 2)');
+  const g0 = p.GIFT_TIERS[0][(1 * 5) % 9]; ok(p.isDone(g0) && p.G.invs === 1, 'with the first gift already made', p.INVS.find((v) => v.id === g0).name);
   ok(Math.abs(p.G.mAll - 1.1) < 1e-9 && Math.abs(p.G.mMach - 1.1) < 1e-9, 'and every helper and machine working 10% harder');
   ok(p.G.brassX === 2 && Math.abs(p.market() - 24) < 1e-9, 'cycle 2 is SCARCE BRASS: the market\'s price doubled');
   p.saveRun();
   const vm2 = newGame(5, { save: Int32Array.from(vm.m.save), title: true }), q = vm2.probe(); vm2.run(2);
   ok(q.titleItems().join() === 'CONTINUE,NEW STORY,MILESTONES', 'the title offers CONTINUE, NEW STORY and MILESTONES');
   vm2.press('A'); vm2.run(2);
-  ok(q.G.cycle === 1 && q.G.brassX === 2 && q.G.hand === 2 && Math.abs(q.G.mAll - 1.1) < 1e-9, 'CONTINUE carries on cycle 2, with its rule, its gift and its +10%');
+  ok(q.G.cycle === 1 && q.G.brassX === 2 && q.isDone(g0) && Math.abs(q.G.mAll - 1.1) < 1e-9, 'CONTINUE carries on cycle 2, with its rule, its gift and its +10%');
 }
 
 // 2. The rules of the cycles.

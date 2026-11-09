@@ -52,12 +52,33 @@ import { newGame, M, sfxLog, musicLog, ok } from './lib.mjs';
   vm.press('LEFT'); vm.press('LEFT'); ok(Math.abs(p.G.price - price + 0.01) < 1e-9, 'LEFT lowers it');
   p.G.made = 25; vm.run(2);
   ok(p.openTabs().length === 2, 'the HELPERS tab opens at 20 cogs made');
-  vm.press('UP'); vm.press('RIGHT'); ok(p.tab === 1 && p.row === 0, 'RIGHT on a plain row goes to the next tab');
-  vm.press('R'); ok(p.tab === 0, 'R does too (and wraps round)');
+  vm.press('UP'); vm.press('RIGHT'); ok(p.tab === 0, 'RIGHT on a plain row does not change the tab');
+  vm.press('UP'); ok(p.onTabs, 'UP from the first row puts the cursor on the tab strip');
+  vm.press('RIGHT'); ok(p.tab === 1 && p.onTabs, 'where RIGHT changes the tab, and the cursor stays on the strip');
+  const pr = p.G.price; vm.press('RIGHT'); vm.press('RIGHT'); ok(p.tab === 1 && p.G.price === pr, 'pressing on through the tabs never changes a value', `tab ${p.tab}`);
+  vm.press('R'); ok(p.tab === 0 && p.onTabs, 'R changes the tab too (and wraps round), onto the strip');
+  vm.press('DOWN'); ok(!p.onTabs && p.row === 0, 'DOWN goes back to the rows');
   p.tab = 1; p.G.coin = 0; sfxLog(vm); vm.press('A');
   ok(p.G.tinkers === 0 && sfxLog(vm).some(([n]) => n === p.SFX.no), 'A on a row too dear does nothing, with a "no"');
   p.G.coin = 10; vm.press('A');
   ok(p.G.tinkers === 1 && p.G.coin >= 5 && p.G.coin < 6, 'and with the coin, A buys it', `coin ${p.G.coin}`);
+}
+
+// 3b. Every tab can be reached with only the phone's buttons (no L or R), from every tab, in every act.
+for (const act of [1, 2, 3]) {
+  const vm = newGame(7), p = vm.probe(); vm.run(2);
+  Object.assign(p.G, { act, made: 1e6, mind: 1, riddleOn: 1, bankOn: 1, benchOn: 1, region: 2, dreamOn: 1, autoOn: 1, moths: 1e6, mothsMax: 1e6 });
+  p.G.insight = 1e6; p.ACT.pose(); vm.run(2);
+  const n = p.openTabs().length; let all = true;
+  for (let from = 0; from < n; from++) {
+    p.tab = from; p.row = 0; vm.run(1);
+    for (let k = 0; k < 6; k++) vm.press('DOWN'); // somewhere in the rows, maybe on a LEFT/RIGHT row
+    const seen = new Set();
+    for (let k = 0; k < 12; k++) vm.press('UP');
+    for (let k = 0; k < n + 1; k++) { seen.add(p.tab); vm.press('RIGHT'); }
+    if (seen.size !== n) all = false;
+  }
+  ok(all, `in act ${act}, every one of its ${n} tabs can be reached from every tab with UP and RIGHT alone`);
 }
 
 // 4. The pause menu's settings and the full log.

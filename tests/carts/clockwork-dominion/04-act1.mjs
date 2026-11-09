@@ -85,8 +85,22 @@ const inv = (p, name) => p.INVS.find((v) => v.name === name);
   ok(Math.abs(mean(runs[0]) - 0.01) < 0.004 && spread(runs[0]) < 0.01, 'CAREFUL grows the ledger about 1% a minute, steadily', `${(mean(runs[0]) * 100).toFixed(2)}% ± ${(spread(runs[0]) * 100).toFixed(2)}`);
   ok(spread(runs[2]) > spread(runs[1]) && spread(runs[1]) > spread(runs[0]) && runs[2].some((v) => v < 0), 'BOLD swings most, and can fall', `${(spread(runs[2]) * 100).toFixed(1)}%`);
   p.G.coin = 100; p.G.bank = 0; p.ACT.deposit(0.5);
-  ok(Math.abs(p.G.coin - 50) < 1e-9 && Math.abs(p.G.bank - 50) < 1e-9, 'putting in half moves half the lire to the ledger');
-  p.ACT.withdraw(); ok(p.G.bank === 0 && p.G.coin > 99, 'taking it out brings it all back');
+  ok(Math.abs(p.G.coin - 50) < 1e-9 && Math.abs(p.G.bank - 49) < 1e-9, 'putting in half moves half the lire to the ledger, less the bank\'s 2%');
+  ok(!p.ACT.withdraw() && p.G.bank > 0 && /stay in/.test(p.why), 'and they stay in for 2 minutes', p.why);
+  simFor(p, 121); p.ACT.withdraw(); ok(p.G.bank === 0 && p.G.coin > 98, 'then taking it out brings it all back');
+}
+// 5b. The best risk depends on the situation (the reviewer's check): BOLD for a quick gamble, STEADY for a long hold.
+{
+  const { p } = fresh();
+  const hold = (risk, mins, n) => { const out = []; for (let k = 0; k < n; k++) { p.G.bank = 1000; p.G.risk = risk; simFor(p, mins * 60); out.push(p.G.bank / 1000); } return out.sort((a, b) => a - b); };
+  const mean = (a) => a.reduce((x, v) => x + v, 0) / a.length, median = (a) => a[a.length >> 1];
+  const b3 = hold(2, 3, 300), s3 = hold(1, 3, 300);
+  ok(mean(b3) > mean(s3), 'over 3 minutes, BOLD gains more than STEADY on average', `${((mean(b3) - 1) * 100).toFixed(1)}% against ${((mean(s3) - 1) * 100).toFixed(1)}%`);
+  const b60 = hold(2, 60, 60), s60 = hold(1, 60, 60);
+  ok(median(s60) > median(b60), 'over an hour, STEADY usually ends ahead of BOLD', `medians x${median(s60).toFixed(2)} and x${median(b60).toFixed(2)}`);
+  ok(b60.filter((v) => v < 1).length > s60.filter((v) => v < 1).length, 'and BOLD loses money far more often');
+  const c3 = hold(0, 3, 100);
+  ok(c3[0] > 1 && s3[0] < c3[0], 'CAREFUL is the one that never loses, for lire needed again soon');
 }
 
 // 6. Orders, the contract.

@@ -150,7 +150,11 @@ const T = {
 const REGIONS = ['', 'Rotella', 'Tuscany', 'Italy', 'the World'];
 const LOTS = [1, 10, 100, 1000, 0]; // how many a press builds; 0 is as many as the cogs allow
 // The Banca's risks: the ledger's average growth and its spread, a minute.
-const RISKS = [{ n: 'CAREFUL', mu: 0.01, s: 0.004 }, { n: 'STEADY', mu: 0.025, s: 0.015 }, { n: 'BOLD', mu: 0.05, s: 0.06 }];
+// BOLD also crashes now and then (a run on the bank: `crash` a minute, losing `loss` of the ledger), so it gains the most
+// on average but usually least over a long hold: a gamble for a quick profit. Each deposit pays a fee, and the lire stay
+// in for a while, so timing the market is not free.
+const RISKS = [{ n: 'CAREFUL', mu: 0.01, s: 0.004 }, { n: 'STEADY', mu: 0.025, s: 0.015 }, { n: 'BOLD', mu: 0.05, s: 0.06, crash: 0.04, loss: 0.5 }];
+const BANK = { fee: 0.02, lock: 120 };
 const GEARS = [8, 12, 16, 20, 24, 32, 40, 48]; // the gear riddles' box
 const ORDER_FOR = ['the bell tower', "the baker's clock", 'the mill wheel', "the inn's clock", "a ship's clock",
   'the church clock', 'a music box', 'the school clock', "the mayor's watch", 'the station clock'];
@@ -162,7 +166,7 @@ const TICK = 0.1, TICK_FRAMES = 6, SAVE_EVERY = 600;
 const SAVE_KEYS = ['made', 'cogs', 'brass', 'coin', 'price', 'tinkers', 'spool', 'day', 'sold', 'spools', 'time', 'mk',
   'insight', 'clev', 'benches', 'bank', 'oNeed', 'oPay', 'oLeft', 'oNext', 'rCost', 'bankIn',
   'ore', 'yard', 'diggers', 'foundries', 'mills', 'wheels', 'sbarrels', 'power', 'swarm', 'ingen', 'ingT', 'wound', 'sulkT',
-  'dugT', 'moths', 'reached', 'starsW', 'starsP', 'rust', 'rustT', 'lostT', 'mothsMax'];
+  'dugT', 'moths', 'reached', 'starsW', 'starsP', 'rust', 'rustT', 'lostT', 'mothsMax', 'bankAt'];
 const ENDS_SLOT = 238; // the endings seen, over every cycle (a bit each)
 const BEST_SLOT = 239, ALL_SLOT = 244; // the best times to the five great moments, and the cogs made in all (a double)
 const BESTS = ['The town is wound', 'The great launch', 'The orrery turns', 'The Dominion ending', 'The Rest ending'];
@@ -187,7 +191,7 @@ function freshRun(seed, cyc = 0) {
     mTink: 1, mSales: 1, mRev: 1, mIns: 1, mBench: 1, mOz: 1, mAll: work, spoolOz: T.spoolOz, signDiv: 1,
     benchOn: 0, contract: 0, contractUse: 0, riddleOn: 0, bankOn: 0, ordersOn: 0, engine: 0, watch: 0,
     invs: 0, solved: 0, bank: 0, risk: 1, rng: seed >>> 0, orders: 0, oNeed: 0, oPay: 0, oLeft: 0, oNext: 30, oFor: 0,
-    mind: 0, rTarget: 0, rPicks: 0, rCost: 0, rReward: 0, bankIn: 0,
+    mind: 0, rTarget: 0, rPicks: 0, rCost: 0, rReward: 0, bankIn: 0, bankAt: -999,
     region: 0, ore: 0, yard: 0, diggers: 0, foundries: 0, mills: 0, wheels: 0, sbarrels: 0, power: 0, swarm: 0, dream: 0,
     ingen: 0, ingT: 0, dugT: 0, auto: 0, lot: 0, regDone: 0, wound: 0, trust2: 0, sulkT: 0, plans: 0, moth: 0,
     mDig: 1, mFound: 1, mMill: 1, mWheel: 1, mSB: 1, mDraw: 1, mMach: work, mHand: 1, mBarrel: 1,
@@ -254,6 +258,7 @@ function step(dt) {
   if (G.bank > 0) {
     const k = RISKS[G.risk], r = (k.mu * dt) / 60 + k.s * Math.sqrt(dt / 60) * gauss();
     G.bank *= 1 + r;
+    if (k.crash && rand() < (k.crash * dt) / 60) { G.bank *= 1 - k.loss; raise('bankdown'); }
     if (r < -0.01) raise('bankdown');
   }
   if (G.ordersOn) {
@@ -485,6 +490,8 @@ const ACT = {
       G.moths += n; G.cogs -= n * mothCost(); return true;
     }
     if (G.act === 2) { if (G.power >= powerCap()) return no('The springs are wound as far as they go.'); G.power = Math.min(powerCap(), G.power + T.handPower * G.mHand); return true; }
+    // stranded (no brass, no cogs to sell, not the lire for a spool): the shavings swept off the bench make a cog
+    if (G.brass * G.mOz < 1 && G.cogs < 1 && G.coin < G.spool) { G.brass += 1 / G.mOz; raise('shavings'); }
     return make(G.hand) ? true : no('No brass left. Buy a spool from Signore Ferrese.');
   },
   build(k) { return build(k, lotOf(k)) ? true : no(`Not enough cogs: ${fmts(cost2(k))} each.`); },
@@ -579,10 +586,14 @@ const ACT = {
   risk(d) { const r = G.risk + d; if (r < 0 || r > 2) return no('There is no other risk.'); G.risk = r; return true; },
   deposit(share) {
     const v = Math.floor(G.coin * share * 100) / 100; if (v <= 0) return no('No lire to put in.');
-    G.coin -= v; G.bank += v; G.bankIn += v; raise('bank1');
+    G.coin -= v; G.bank += v * (1 - BANK.fee); G.bankIn += v; G.bankAt = G.time; raise('bank1');
     return true;
   },
-  withdraw() { if (G.bank <= 0) return no('The ledger is empty.'); G.coin += G.bank; G.bank = 0; G.bankIn = 0; return true; },
+  withdraw() {
+    if (G.bank <= 0) return no('The ledger is empty.');
+    const w = Math.ceil(G.bankAt + BANK.lock - G.time); if (w > 0) return no(`The lire stay in for ${w} s more.`);
+    G.coin += G.bank; G.bank = 0; G.bankIn = 0; return true;
+  },
 };
 
 // --- Triggers: `made:1000` (a number of the run has reached 1,000), `inv:7` (invention 7 is made), `ev:name` ---
@@ -836,14 +847,14 @@ const TABS = [
     name: 'BANCA', acts: 1, when: () => G.bankOn,
     info: () => [`Ledger ${money(G.bank)}`, `put in ${money(G.bankIn)}`],
     rows: () => [
-      { t: 'Risk', v: () => val(RISKS[G.risk].n), adj: (d) => ACT.risk(d), ok: () => true, h: () => `About +${(RISKS[G.risk].mu * 100).toFixed(1)}% a minute${G.risk === 2 ? ', with real falls' : ''}.` },
-      { t: 'Put in half your lire', v: () => money(G.coin / 2), a: () => ACT.deposit(0.5), ok: () => G.coin > 0, h: () => 'The ledger grows (or falls) while it holds lire.' },
-      { t: 'Put in all your lire', v: () => money(G.coin), a: () => ACT.deposit(1), ok: () => G.coin > 0, h: () => 'The ledger grows (or falls) while it holds lire.' },
-      { t: 'Take it all out', v: () => money(G.bank), a: ACT.withdraw, ok: () => G.bank > 0, h: () => 'Everything in the ledger back into your hand.' },
+      { t: 'Risk', v: () => val(RISKS[G.risk].n), adj: (d) => ACT.risk(d), ok: () => true, h: () => [`Slow and sure: about +1% a minute.`, `About +2.5% a minute, and some ups and downs.`, `+5% a minute, but now and then it loses half.`][G.risk] },
+      { t: 'Put in half your lire', v: () => money(G.coin / 2), a: () => ACT.deposit(0.5), ok: () => G.coin > 0, h: () => `The bank keeps ${BANK.fee * 100}% of each deposit. Locked for ${BANK.lock / 60} min.` },
+      { t: 'Put in all your lire', v: () => money(G.coin), a: () => ACT.deposit(1), ok: () => G.coin > 0, h: () => `The bank keeps ${BANK.fee * 100}% of each deposit. Locked for ${BANK.lock / 60} min.` },
+      { t: 'Take it all out', v: () => money(G.bank), a: ACT.withdraw, ok: () => G.bank > 0 && G.time >= G.bankAt + BANK.lock, h: () => (G.time < G.bankAt + BANK.lock ? `Locked for ${Math.ceil(G.bankAt + BANK.lock - G.time)} s more.` : 'Everything in the ledger back into your hand.') },
     ],
   },
 ];
-let tab = 0, row = 0, top = 0, hintMsg = '', hintT = 0;
+let tab = 0, row = 0, top = 0, hintMsg = '', hintT = 0, onTabs = false;
 const openTabs = () => TABS.filter((t) => (!t.acts || t.acts === G.act) && (!t.when || t.when()));
 function curTab() { const o = openTabs(); if (tab >= o.length) tab = 0; return o[tab]; }
 
@@ -918,7 +929,11 @@ function newRun(seed, gift = 0) {
   saveRun(); musicT = 0; playScene('opening', () => {});
 }
 /** The inventions a cycle can give: Act I's, but not the two that end it. */
-const GIFTS = () => INVS.filter((v) => v.id <= 26);
+// Three gifts a cycle, one from each tier (a small help, a middle one, a great one), picked by the cycle number so the
+// same three are shown every time; the two inventions that end Act I are never a gift.
+const GIFT_TIERS = [[1, 4, 5, 8, 9, 11, 12, 13, 21], [2, 3, 6, 7, 10, 14, 15, 16, 17, 18, 19, 22, 23], [20, 24, 25, 26]];
+const TIER = ['A small gift', 'A middle gift', 'A great gift'];
+const GIFTS = () => { const c = dget(CYCLE_SLOT); return GIFT_TIERS.map((t, k) => INV_BY[t[(c * [5, 7, 1][k] + k) % t.length]]); };
 let giftSel = 0, endSel = 0;
 const startCycle = () => { state = 'gift'; giftSel = 0; timer = 0; };
 function continueRun() { loadRun(); state = G.act <= 3 ? 'play' : 'choice'; timer = 0; paused = false; bits = []; musicT = 0; }
@@ -970,16 +985,23 @@ function updatePlay() {
   if (pressed(SELECT)) { state = 'log'; logScroll = 0; fx(SFX.move); return; }
   const t = curTab(), rows = t.rows();
   if (row >= rows.length) row = rows.length - 1;
-  const r = rows[row];
-  if (rep(UP) && row > 0) { row--; fx(SFX.move); }
-  if (rep(DOWN) && row < rows.length - 1) { row++; fx(SFX.move); }
-  const o = openTabs().length;
-  const tabTo = (d) => { if (o > 1) { tab = (tab + d + o) % o; row = 0; top = 0; fx(SFX.tab); } };
+  const r = rows[row], o = openTabs().length;
+  // The tab strip: UP from the first row puts the cursor on it, where LEFT and RIGHT change tabs (and nothing else);
+  // DOWN or A goes back to the rows. A tab change, by any button, leaves the cursor on the strip, so pressing on through
+  // the tabs never changes a value by mistake. Only the buttons a phone's touch controls have are needed.
+  const tabTo = (d) => { if (o > 1) { tab = (tab + d + o) % o; row = 0; top = 0; onTabs = true; fx(SFX.tab); } };
   if (pressed(L)) tabTo(-1); if (pressed(R)) tabTo(1);
-  if (r.adj) { if (rep(LEFT)) doRow(() => r.adj(-1)); if (rep(RIGHT)) doRow(() => r.adj(1)); }
-  else { if (pressed(LEFT)) tabTo(-1); if (pressed(RIGHT)) tabTo(1); }
+  if (onTabs) {
+    if (rep(LEFT)) tabTo(-1); if (rep(RIGHT)) tabTo(1);
+    if (pressed(DOWN) || pressed(A)) { onTabs = false; fx(SFX.move); }
+  } else {
+    if (rep(UP)) { if (row > 0) { row--; fx(SFX.move); } else if (o > 1) { onTabs = true; fx(SFX.move); } }
+    if (rep(DOWN) && row < rows.length - 1) { row++; fx(SFX.move); }
+    if (r.adj) { if (rep(LEFT)) doRow(() => r.adj(-1)); if (rep(RIGHT)) doRow(() => r.adj(1)); }
+    else if (pressed(LEFT) || pressed(RIGHT)) hint('UP to the tabs, then LEFT and RIGHT change them.');
+    if (rep(A) && r.a) doRow(r.a);
+  }
   if (t.name === 'INVENT') newInv = false;
-  if (rep(A) && r.a) doRow(r.a);
   if (handRep()) { if (ACT.hand()) { fx([SFX.clink, SFX.wind, SFX.flutter][G.act - 1]); if (G.act === 1) dropCog(); } else hint(why); }
   if (row < top) top = row; if (row >= top + ROWS_SHOWN) top = row - ROWS_SHOWN + 1;
   if (++sub >= TICK_FRAMES) { sub = 0; step(TICK); }
@@ -1113,7 +1135,10 @@ function drawTabs() {
   const o = openTabs(); let x = 6;
   o.forEach((t, i) => {
     const on = i === tab;
-    if (on) { x = tx(LM, x, TAB_Y + 2, GOLD) + 2; x = tx(t.name, x, TAB_Y + 2, GOLD) + 2; x = tx(RM, x, TAB_Y + 2, GOLD) + 6; }
+    if (on) {
+      if (onTabs) rectfill(x - 3, TAB_Y + 1, tw(t.name) + 2 * tw(LM) + 10, 10, ROWC); // the cursor is on the strip
+      x = tx(LM, x, TAB_Y + 2, GOLD) + 2; x = tx(t.name, x, TAB_Y + 2, GOLD) + 2; x = tx(RM, x, TAB_Y + 2, GOLD) + 6;
+    }
     else {
       x = tx(t.name, x, TAB_Y + 2, DIM) + 1;
       if (t.fresh && t.fresh() && clock % 40 < 28) tx(DOT, x, TAB_Y + 2, GOLD); // something new in it
@@ -1137,15 +1162,14 @@ function drawPanel() {
   for (let k = 0; k < ROWS_SHOWN; k++) {
     const i = top + k, r = rows[i]; if (!r) break;
     const y = y0 + 26 + k * 10, on = i === row, can = r.ok();
-    if (on) rectfill(3, y - 1, 250, 10, ROWC);
-    if (on) tx('>', 6, y, GOLD);
+    if (on && !onTabs) { rectfill(3, y - 1, 250, 10, ROWC); tx('>', 6, y, GOLD); }
     tx(r.t, 13, y, can ? INK : DIM);
-    txr(r.v(), 250, y, on ? GOLD : can ? BRASS : DIM);
+    txr(r.v(), 250, y, on && !onTabs ? GOLD : can ? BRASS : DIM);
   }
   if (top > 0) tx('^', 244, y0 + 18, DIM);
   if (top + ROWS_SHOWN < rows.length) tx('v', 244, y0 + 26 + ROWS_SHOWN * 10 - 3, DIM);
   const r = rows[row];
-  const h = hintT > 0 ? hintMsg : r ? r.h() : '';
+  const h = hintT > 0 ? hintMsg : onTabs ? 'LEFT and RIGHT: the tabs.  DOWN: back to the rows.' : r ? r.h() : '';
   if (hintT > 0) hintT--;
   tx(h, 6, LOG_Y - 11, hintT > 0 ? BAD : DIM);
 }
@@ -1221,13 +1245,13 @@ function drawGift() {
   sysc(`CYCLE ${c + 1}`, 8, BRASS);
   txc(`${RULES[ruleOf(c)]}: ${RULE_HINT[ruleOf(c)]}`, 22, BAD);
   txc(`Every helper and machine works ${c * 10}% harder. Choose a gift:`, 34, INK);
-  const from = Math.max(0, Math.min(g.length - 14, giftSel - 6));
-  for (let k = 0; k < 14 && from + k < g.length; k++) {
-    const v = g[from + k], on = from + k === giftSel, y = 50 + k * 10;
-    if (on) rectfill(3, y - 1, 250, 10, ROWC);
-    tx((on ? '> ' : '  ') + v.name, 10, y, on ? GOLD : INK);
-  }
-  tx(g[giftSel].hint, 6, 196, DIM);
+  g.forEach((v, k) => {
+    const on = k === giftSel, y = 66 + k * 34;
+    if (on) rectfill(3, y - 3, 250, 30, ROWC);
+    tx(TIER[k], 14, y, on ? BRASS : DIM);
+    tx((on ? '> ' : '  ') + v.name, 10, y + 10, on ? GOLD : INK);
+    tx(v.hint, 22, y + 20 - 1, DIM);
+  });
   tx('A to begin the cycle with it.  B: the title', 6, 210, DIM);
 }
 function drawRecords() {

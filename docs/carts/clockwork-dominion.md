@@ -57,13 +57,13 @@ The game saves itself every 10 seconds and on every act, invention and menu, and
 
 | Button | Use |
 |---|---|
-| LEFT / RIGHT | Change tab (the tabs the story has opened so far). On a row with ◄ ►, change its value instead (a price, a slider) |
-| UP / DOWN | Choose a row in the panel |
+| LEFT / RIGHT | On a row with ◄ ►, change its value (a price, a slider). On the tab strip, change tab |
+| UP / DOWN | Choose a row in the panel. UP from the first row puts the cursor on the tab strip (the tab lit on a bar, the hint says so); DOWN or A goes back to the rows. Any change of tab leaves the cursor on the strip, so pressing on through the tabs never changes a value |
 | A | Press the row: buy, build, start, toggle. Held, it repeats (after 18 frames, then every 6, then every 2 after a second) |
 | B | Marco's hand: Act I makes a cog, Act II winds a spring, Act III launches a moth. Held, it repeats 4 times a second |
 | SELECT | The whole message log, to scroll back through the story |
 | START | Pause: RESUME, MILESTONES, LOG, SOUND (music and effects on or off), SAVE AND QUIT TO TITLE |
-| L / R (extras) | Change tab, even on a ◄ ► row |
+| L / R (extras) | Change tab from anywhere (onto the strip) |
 
 Only the buttons a phone's touch controls have are needed. A row that cannot be pressed yet (too dear, not unlocked) is
 shown dim, and pressing it gives a soft "no" click and says why on the hint line.
@@ -100,7 +100,7 @@ BILLION and so on by name to DECILLION, then 1.2E36 style. Money is in lire, sho
 | Quantity | Value |
 |---|---|
 | A cog | uses 1 oz of brass |
-| Marco's hand (B) | 1 cog a press; held, 4 a second (A on MAKE A COG does the same) |
+| Marco's hand (B) | 1 cog a press; held, 4 a second (A on MAKE A COG does the same). Stranded (no brass, no cogs to sell, not the lire for a spool), it makes a cog from the shavings swept off the bench, so no run is ever stuck |
 | Brass | starts at 1,000 oz; bought by the spool of 1,000 oz; the price starts at L 15, rises L 1.50 with each spool bought and falls back towards the market's price at 3% a second; the market's price drifts between L 12 and L 24 over a 6-minute market day (the merchant's cart in the view) |
 | Price per cog | starts at L 0.25, changed in steps of L 0.01 (◄ ►), from L 0.01 to L 99.99 |
 | Sales | cogs sold a second = 3 × 1.3^(sign − 1) × boosts × (0.25 / price)^1.6, at most the cogs in stock |
@@ -113,7 +113,7 @@ BILLION and so on by name to DECILLION, then 1.2E36 style. Money is in lire, sho
 | Inventions | 28 in Act I (section 6, `inventions.txt`): each appears when its trigger holds and stays listed once shown; its cost is paid when made |
 | Workbenches (WORKBENCHES) | each makes 40 cogs a second; the next costs L 1,000 × 1.08^benches |
 | Gear riddles (THE GEAR RIDDLE, the RIDDLES tab) | posing one costs 500 × 1.07^solved insight; solving it pays **cleverness**: 5 for the first five (one stage), then 10 (two stages), × (1 + solved / 10). THE CALCULATING ENGINE adds 0.2 cleverness a second |
-| Banca di Rotella (BANCA) | put in half or all your lire, take it all out; the ledger grows by a random walk whose risk you choose: CAREFUL about +1% a minute (spread 0.4%), STEADY +2.5% (1.5%), BOLD +5% (6%, with real falls) |
+| Banca di Rotella (BANCA) | put in half or all your lire (the bank keeps 2% of each deposit, and the lire stay in for 2 minutes), take it all out; the ledger grows by a random walk whose risk you choose: CAREFUL about +1% a minute (spread 0.4%), STEADY +2.5% (1.5%), BOLD +5% (6%) but with a run on the bank about once in 25 minutes (4% a minute) that loses half. So BOLD gains most over a few minutes, STEADY usually most over a long hold, and CAREFUL never loses |
 | Orders (CLOCK REPAIRS) | every 90 s an order comes (for the bell tower, the baker's clock, the mill wheel...): 20 to 60 seconds of the shop's work in cogs, paying 3 times the window's price; open for 3 minutes |
 | Signore Ferrese's contract | when ON, buys brass (up to 5 spools a tick) whenever there is less than 5 seconds' worth |
 | The end of the act | THE LAST WINDING (Paulo's rest; his watch) at 8 million cogs made and 20,000 insight, then WIND THE TOWN at 50 million cogs, 32 trust, 20,000 insight and 300 cleverness |
@@ -203,7 +203,8 @@ themselves if WINGS and SHELTER are neglected. A stall is always recoverable (Ma
 - **New cycles,** after an ending (agreed with the user): the story begins again from the first cog, with:
   - every helper and machine (tinkers, workbenches, the Act II machines, the moths' speed and winding) working 10%
     harder for each cycle told;
-  - a **gift**: one of Act I's first 26 inventions, chosen from a list, already made;
+  - a **gift**, chosen from three: a small, a middle and a great one of Act I's first 26 inventions (in three tiers, picked by
+    the cycle number), already made;
   - a changed rule, in turn:
     - cycle 2, **Scarce Brass**: the market's price for brass is doubled;
     - cycle 3, **The Red Sky**: the Rust comes at a thousand wound stars, and takes twice as many;
@@ -510,6 +511,18 @@ the PNG cart's payload (147 KB compressed, which is what limits a cart this full
      - DRAW A BLUEPRINT, a use for Act III's insight, which sat at its cap with nothing to buy;
      - 26 more story lines through the quiet stretches (Act I's long wait for the town, the world's metal going, the
        moths and stars by powers of ten, the Rust).
+   - **The pull request's review** (orlando008/fanstasy-console#74), four points, all taken:
+     1. On a phone (no L or R) a player could not leave the DESIGN tab, whose every row takes LEFT and RIGHT. Now UP
+        from the first row reaches the tab strip, where LEFT and RIGHT change tabs.
+     2. Flipping through tabs with LEFT and RIGHT could land on a ◄ ► row and change a setting (the lot, the slider,
+        the risk). A tab change now leaves the cursor on the strip.
+        `01-flow` walks every tab of every act from every tab with UP and RIGHT alone.
+     3. BOLD beat the other risks in every case: it now has a run on the bank, deposits a 2% fee and a 2-minute lock;
+        `04-act1` checks BOLD wins over 3 minutes and STEADY over an hour, and the planner uses the Banca.
+     4. The 26 gifts were not a real choice: a cycle now offers three, a small, a middle and a great one; `10-balance`
+        plays a story with each of the 26 (none saves more than 15%; the best, 2%). It also found a real trap: a player
+        with no brass, no cogs and too few lire for a spool (easy in Scarce Brass) was stuck for good. The hand now makes
+        a cog from the shavings when stranded.
    - **Results:** 295 checks (`10-balance` is new: whole stories over four seeds and decision speeds, each 3.8 to 4.3
      hours, each act about an hour or more, never 15 minutes with nothing new; and cycles 2, 3 and 4, with their
      rules, played to the end).
@@ -534,8 +547,8 @@ Defaults chosen at the kickoff that are easy to change:
 - **Hours:** about 4 hours to the end after step 9 ("similar to the incremental it follows"). Act II is about 65
   minutes, shorter than the 120 planned: its machines outgrow the world's ore, so the swarm's dreams pace it. A longer
   Act II would need costs that rise with the machines, or a swarm that has to build them.
-- **LEFT/RIGHT on a ◄ ► row** change the value rather than the tab (L, R and the other rows change tabs); if this is
-  confusing, A could open a value for changing instead.
+- **Gifts are mild.** With the planner, the best of the 26 gifts saves only about 2% of a story, as Act I is paced by its
+  thresholds more than its production; they give a cycle variety more than speed. Stronger gifts are possible.
 - **Time away:** the console has no clock, so nothing is made while the cart is off; the game picks up where it was.
 - **The new cycles' rules** (section 8) and how many there are before they repeat.
 - **The pieces of music** are first choices; each needs a source that is free to use, and some may change.

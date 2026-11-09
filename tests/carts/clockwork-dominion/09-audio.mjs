@@ -43,7 +43,7 @@ const boot = (title = false) => { const vm = newGame(1, { title }), p = vm.probe
   const { vm, p } = boot(); vm.run(2); sfxLog(vm);
   vm.press('B'); let log = sfxLog(vm); ok(log.some(([n]) => n === p.SFX.clink), 'a cog by hand clinks');
   ok(log.every(([, ch]) => ch === 6 || ch === 7), 'and effects play on channels 6 and 7 only');
-  p.G.made = 25; vm.run(2); sfxLog(vm); vm.press('R'); ok(sfxLog(vm).some(([n]) => n === p.SFX.tab), 'changing tab ticks');
+  p.G.made = 25; vm.run(2); sfxLog(vm); vm.press('R'); ok(sfxLog(vm).some(([n]) => n === p.SFX.tab), 'changing tab ticks'); vm.press('DOWN');
   p.G.mind = 1; p.G.made = 1000; p.G.insight = 1000; vm.run(2); p.tab = 0; sfxLog(vm);
   const files = p.INVS.find((v) => v.name === 'Sharper Files'); p.ACT.invent(files.id); vm.run(1);
   ok(sfxLog(vm).some(([n]) => n === p.SFX.invent), 'an invention chimes');

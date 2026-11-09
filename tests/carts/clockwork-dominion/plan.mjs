@@ -106,6 +106,11 @@ export function makePlanner(opts = {}) {
     }
     if (G.rTarget && !riddleAt) riddleAt = G.time + think;
     if (G.rTarget && G.time >= riddleAt) { solveRiddle(p); A.tryIt(); riddleAt = 0; }
+    // the Banca: half the lire into STEADY when there is plenty, taken out again after ten minutes
+    if (G.bankOn) {
+      if (!G.bank && G.coin > 5000) { while (G.risk !== 1) A.risk(G.risk > 1 ? -1 : 1); A.deposit(0.5); }
+      else if (G.bank && G.time > G.bankAt + 600) A.withdraw();
+    }
     const spend = G.coin - (G.contractUse ? G.spool * 3 : 0);
     if (spend > p.signCost() * 2 && G.sign < p.T.signMax) A.sign();
     if (G.benchOn && spend > p.benchCost() * 1.5) A.bench();
