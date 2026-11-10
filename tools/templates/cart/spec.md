@@ -89,13 +89,17 @@ TODO: what is on BG0 to BG2, the sprites and the overlay. The art is made in cod
 ## 15. Implementation plan
 
 1. **Vertical slice:** the core mechanic playable on a test course, with the frame already in place (scaffolded).
-2. **Core mechanics:** the rules of section 5.
-3. **Opponents or hazards.**
-4. **Content:** levels, tracks or stages.
-5. **Flow:** modes, menus, saves and the records for the real game.
-6. **Art pass.**
-7. **Audio pass.**
-8. **Balance and polish:** check with an automatic player, then the label, the PNG cart and the Library
+2. **The art proof:** the look, agreed before the rest is drawn. The hero (every frame, 24 px or more), the palettes,
+   and one screen of the game as it will look, from the recipes of `docs/dev/art-recipes.md`; then
+   `node tools/devkit/art/proof.mjs {{NAME}}`, the picture sent to the user, and what they said written here.
+   - **Agreed:** TODO (the date, and the changes asked for)
+3. **Core mechanics:** the rules of section 5.
+4. **Opponents or hazards.**
+5. **Content:** levels, tracks or stages.
+6. **Flow:** modes, menus, saves and the records for the real game.
+7. **Art pass:** the rest of the art, in the look agreed in step 2 (`gallery.mjs` and `critique.mjs` over every screen).
+8. **Audio pass.**
+9. **Balance and polish:** check with an automatic player, then the label, the PNG cart and the Library
    (`node tools/release.js {{NAME}}`) and a README row.
 
 Each step: build it, run `node tools/check.js {{NAME}}` and `node tools/test.js {{NAME}}`, write its **Built** and

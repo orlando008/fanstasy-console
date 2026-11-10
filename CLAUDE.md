@@ -20,6 +20,8 @@
   screens (a small hero, flat or noisy pictures, text that is hard to read). Draw with the kit's modules (`rig.py` for characters, `sculpt.py`,
   `texture.py`, `scenery.py`, `lettering.py`) before placing pixels by hand: `docs/dev/art-recipes.md` has a picture and the code for each (a hero, a big character, sculpted things, textures,
   a landscape, a room, a title), and the starter's `art.py` uses them.
+- **Agree the look early**: once a new game runs, draw its hero, palettes and one screen, run `node tools/devkit/art/proof.mjs <name>`,
+  send the picture to the user and write what they say in the spec, before drawing the rest (the playbook's art proof step).
 - Commit and push after every build step. Open a pull request only when the user asks, and merge only when told to.
   When you open one, give the user its preview link (`https://orlando008.github.io/fanstasy-console/pr/<number>/`) and
   what to try in it.
