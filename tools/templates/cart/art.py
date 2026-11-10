@@ -22,8 +22,10 @@ art.gradient('sky', ['1c2a6a', '3c64b4', '9cd0ec'], y0=0, y1=175)          # the
 art.color(200, '141c3c', 'GLASS')                                          # the panels' fill, seen through
 field = art.palette(1, {'grass': ramp('4a8a2e', 4), 'bloom': 'dad45e'})    # field.grass: 4 indices, dark to light
 far = art.palette(2, {'hill': recede(ramp('2c6a3a', 3), 0.5, '9cd0ec')})   # far things are paler, nearer the sky
-ship = art.sprite_palette(0, {'edge': '140c1c', 'hull': ramp('597dce', 4), 'white': 'deeed6', 'fire': ramp('d04648', 2),
-                              'gold': ramp('dad45e', 3)})
+# Sprite palettes: 15 colours each, so a character is a few ramps (skin, hair, shirt, trousers), not a rainbow.
+hero_pal = art.sprite_palette(0, {'skin': ramp('e8a878', 4), 'hair': ramp('5a3a22', 3), 'shirt': ramp('d04648', 4), 'pants': ramp('3050a0', 4)})
+gem_pal = art.sprite_palette(1, {'gold': ramp('dad45e', 5), 'edge': '140c1c', 'white': 'fff8e0'})
+logo_pal = art.palette(3, {'gold': ramp('e0a030', 5), 'edge': '1c1020', 'shade': '2a2040'})
 
 # --- The ground (layer 0): a strip of grass, 32 x 8 tiles, lit along its top edge, flowers now and then ---
 ground = Img(256, 64)
@@ -41,35 +43,35 @@ back = Img(256, 64)
 hills(back, far.hill, base=64, amp=40, period=128)
 art.scene('hills', back, pal=far, at=(32, 0))
 
-# --- The player: a little ship, 16 x 16, drawn from rows of text (o edge, d b l the hull's ramp dark to light,
-# w white, r fire) ---
-player = Img.from_rows([
-    '.......oo.......',
-    '......olbo......',
-    '......olbo......',
-    '.....olbbdo.....',
-    '.....olwwdo.....',
-    '....olbwwbdo....',
-    '...olbbbbbbdo...',
-    '..olbbbbbbbbdo..',
-    '.olbbobbbbobbdo.',
-    'olbbo.obbo.obbdo',
-    'olbo..obdo..obdo',
-    'obo...orro...odo',
-    'oo....orro....oo',
-    '.......orro.....',
-    '........oo......',
-    '................',
-], key={'o': ship.edge, 'd': ship.hull[0], 'b': ship.hull[2], 'l': ship.hull[3], 'w': ship.white, 'r': ship.fire[1]})
-art.sprite('player', player, pal=ship, region='spr')
+# --- The hero: a character from the kit's skeleton (rig.py), not pixels placed by hand. One Rig gives every frame in
+# the same proportions and light: a standing pose and a walk of four frames, each 32 x 32 (a hero should be big enough
+# to read: 24 px or more on this screen). To change the character, change the preset ('hero', 'brawler', 'boxer' ...),
+# the ramps or the poses (pose(STAND, arm_n=60)); to add an action, add its poses (JUMP, PUNCH, HIT). Look at them all
+# with filmstrip('/tmp/hero.png', hero, poses, hero_pal), or in the packed cart with tools/devkit/art/sprites.mjs.
+hero = Rig('hero', height=26, skin=hero_pal.skin, hair=hero_pal.hair, shirt=hero_pal.shirt, pants=hero_pal.pants, shoes=hero_pal.hair, margin=1)
+def frame(p):
+    """A pose as a 32 x 32 sprite picture: the figure's feet on the bottom row, centred."""
+    img, out = hero.render(p), Img(32, 32)
+    out.blit(img, (32 - img.w) // 2, 32 - img.h)
+    return out
+for k, p in enumerate([STAND] + hero.animate(WALK, 8)[::2]): art.sprite('hero%d' % k, frame(p), pal=hero_pal, region='spr')
 
-# --- A gem to dodge: a faceted diamond, 16 x 16, outlined, shaded along the gold ramp ---
-def gem(x, y):
-    d = abs(x - 7.5) + abs(y - 7.5)
-    if d > 7: return 0
-    if d > 6: return ship.edge
-    if x < 8 and y < 8 and d < 4.5: return ship.white
-    return ship.gold[0] if x + y > 18 else ship.gold[1] if x + y > 12 else ship.gold[2]   # lit from the upper left
-art.sprite('gem', Img.make(16, 16, gem), pal=ship, region='spr')
+# --- A gem to dodge: a ball sculpted from a 3D shape (sculpt.py), lit, glossy and outlined by the kit ---
+ball = Sculpt(16, 16)
+ball.sphere(8, 8, 0, 6.5, Mat(gem_pal.gold, gloss=0.9))
+art.sprite('gem', ball.render(), pal=gem_pal, region='spr')
+
+# --- The title: the game's name in big bevelled letters (lettering.py), on its own layer (layer 2, shown on the title).
+# Words go on a second line when the name is long; a very long word is drawn at the font's own size. ---
+TITLE, lines = '{{TITLE_UPPER}}', ['']
+for word in TITLE.split():
+    if lines[-1] and len(lines[-1]) + 1 + len(word) > 15: lines.append('')
+    lines[-1] = (lines[-1] + ' ' + word).strip()
+scale = 2 if max(len(l) for l in lines) <= 15 else 1
+logo = Img(256, 8 * (3 if scale == 2 else 2) * len(lines))
+for k, l in enumerate(lines):
+    t = big_text(l, logo_pal.gold, scale=scale, outline=logo_pal.edge, shadow=logo_pal.shade)
+    logo.blit(t, max(0, (256 - t.w) // 2), k * 8 * (3 if scale == 2 else 2) + 1)
+art.scene('logo', logo, pal=logo_pal, at=(0, 16))
 
 art.write(sys.argv[1])
