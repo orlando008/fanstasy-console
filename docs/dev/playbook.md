@@ -154,6 +154,7 @@ recommended answer after each question.
 | `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons, `--extra "skipTitle = true;"`) |
 | `node tools/devkit/gallery.mjs <name> [out-dir]` | **Every screen of the game on contact sheets**, from the list in `tests/carts/<name>/screens.mjs` (the starter has one: add a `shot(vm, 'name')` for each new screen and each state worth a look; `{ zoom: [x, y, w, h] }` adds an enlarged crop). Run it before a release, after changing the art, and for a polish pass: looking at all of Clockwork Dominion's 56 screens found a wrong tint, an iris that stopped short and a box across the logo that no test had caught |
 | `python3 tools/devkit/music/score.py file.mid [bar-ticks] [from] [to]` | The bars of a MIDI file (to pick an excerpt), and as a module the reader that turns a piece into note text for a cart (a tune, a bass and two inner voices); `medley.py` plays that text as songs of several pieces |
+| `node tools/devkit/size.mjs <name>` | **Where the code's bytes go** when a game nears its 64 KB: the packed size and what is left, the biggest top-level pieces, the text (longest and repeated strings), the cart's long property names, and what each would save (see the size pass below) |
 | `node tools/devkit/gif.mjs carts/<name>.nova out.gif --from 60 --to 240` | An animated GIF of the cart (`--hold`, `--crop x,y,w,h`, `--every 2`): to show a person an animation you cannot watch |
 | `python3 tools/devkit/art/selftest.py` | The kit's own checks (CI runs it) |
 
@@ -201,6 +202,14 @@ test is not in CI (it needs Playwright and Chromium). On CI the tests' frame-tim
   source is 80 KB, its cart 60 KB). It is the first thing to try when a game nears the limit; the second is `"mangle": true` next to it (`tools/devkit/mangle.mjs`), which renames the functions, consts and lets the code declares at its top level to `$a`, `$b`... (properties, strings, the console's own names and the hooks stay; The Franchise gets 9 % back, 60.7 KB to 55.3 KB). The cart's tests then read its variables through `rename(text, map)` of that tool (see `tests/carts/franchise/lib.mjs`), and `state` and `skipTitle` keep their names for the dev tools. After it, the console's own `clamp`, `abs` and `sgn` are shorter than the `Math` forms, and a short name for a call you make a hundred times (`const rf = rectfill`) is worth its bytes. Moto Crosser is at 93%. Tables of level data are the big spender: keep
   them compact (`[kind, lane, x]` arrays), generate repetitive tiles in code rather than data, and measure with
   `node tools/check.js <name>` as you go, not at the end.
+- **The size pass**, when the code is near its limit: `node tools/devkit/size.mjs <name>` says where the bytes are. In
+  order of what it costs to do: (1) `"strip"` and `"mangle"` in `meta.json`, if they are off; (2) Math's functions by
+  their own names, declared once (`const min = Math.min, floor = Math.floor ...`), which the mangler then shortens:
+  Clockwork Dominion got 723 bytes from this alone; (3) text that is data (story, names, hints, tables of words) into
+  the ROM, read once at start (`carts/src/clockwork-dominion/book.py` and `loadBook()` in its code are the pattern); (4)
+  a constant for a string written several times; (5) shorter names for the cart's own properties written most (`G.insight`
+  twenty times is 140 bytes; rename them in the tests' probes too); (6) an `art.py` that writes only what the code
+  uses into the ART block. Stop when there is room for the work ahead: short names cost readability.
 - **Screen** 256 x 224; BG0 front, BG1 middle, BG2 back; sprites 8, 16 or 32 px, **128 in OAM, 32 per scanline**
   (more are dropped: particles and crowds are what hit it, so cap them); Map RAM 256 x 128; tile sheet 128 x 512
   (1,024 tiles). Palettes: BG palette p is entries 16p+k, sprite palette p is 128+16p+k; the overlay colours

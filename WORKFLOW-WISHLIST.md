@@ -261,6 +261,9 @@ cart runs there is nothing on screen but the game.
   a bass and two inner voices; `score.py file.mid` prints its bars, to pick an excerpt), and songs made of pieces in turn, each with its own speed,
   a reprise sharing patterns. Clockwork Dominion uses both. The other carts with their own `scores.py` (Riddlewick Manor, Lantern Keeper, Royal
   Chess, Tabletop Grand Prix) could move to it.
+- [x] **A size report** (`tools/devkit/size.mjs <name>`): where a cart's code bytes go (its biggest pieces, its text, its long property names) and what
+  would shrink them, for a game near the 64 KB limit. Its first advice (Math's functions by their own names) gave Clockwork Dominion 723 bytes back.
+  The playbook has the size pass in order.
 - [ ] **A general score importer** (`tools/devkit/music/midi_notes.py`): `carts/src/flow-state/import_score.py` turns one voice of a MIDI file into note text
   (grid, top or bottom voice, legato, a pitch limit, separating a repeated figure). Move it to the tools, give it a test, and let a song cart (not only a rhythm game) start
   from a public domain score.

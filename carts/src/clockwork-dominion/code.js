@@ -29,6 +29,8 @@ const PAPER = CO.PAPER, ROWC = CO.ROW, INK = CO.INK, DIM = CO.DIM, BRASS = CO.BR
 const GOOD = CO.GOOD, EDGE = CO.EDGE, LINE = CO.LINE, THINK = CO.THINK, LOGC = CO.LOG;
 
 // --- The screen (spec section 4) ---
+// Math's functions by their own names (the mangler shortens them: about 800 bytes of the packed code; tools/devkit/size.mjs)
+const min = Math.min, max = Math.max, floor = Math.floor, round = Math.round, ceil = Math.ceil, sqrt = Math.sqrt, sin = Math.sin, cos = Math.cos, log10 = Math.log10;
 const VIEW_H = 92, TAB_Y = 92, PANEL_Y = 104, LOG_Y = 194, ROWS_SHOWN = 5;
 const LM = '\x7f', RM = '\x80', DOT = '\x81', COG = '\x82'; // the ledger font's extra characters
 
@@ -103,25 +105,25 @@ const sysc = (s, y, c) => sys(s, 128 - s.length * 4, y, c);
 // --- Numbers (spec 5: by name to decillion, then 1.2E36) ---
 const BIG = ['thousand', 'million', 'billion', 'trillion', 'quadrillion', 'quintillion', 'sextillion', 'septillion',
   'octillion', 'nonillion', 'decillion'];
-function commas(n) { return Math.floor(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function commas(n) { return floor(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
 function fmt(n) {
-  if (!(n >= 1e6)) return commas(Math.max(0, n));
-  const e = Math.floor(Math.log10(n) / 3);
+  if (!(n >= 1e6)) return commas(max(0, n));
+  const e = floor(log10(n) / 3);
   if (e <= BIG.length) return (n / 10 ** (3 * e)).toFixed(2) + ' ' + BIG[e - 1];
   return n.toExponential(1).toUpperCase().replace('+', '');
 }
 const SHORT = ['K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
 /** Short numbers for the panels' counters: 999,999 then 1.24M, 3.50B ... */
 function fmts(n) {
-  if (!(n >= 1e6)) return commas(Math.max(0, n));
-  const e = Math.floor(Math.log10(n) / 3);
+  if (!(n >= 1e6)) return commas(max(0, n));
+  const e = floor(log10(n) / 3);
   if (e <= SHORT.length) return (n / 10 ** (3 * e)).toFixed(2) + SHORT[e - 1];
   return n.toExponential(1).toUpperCase().replace('+', '');
 }
 /** Costs, short: 9,500, then 150K, 2.5M, 100Qa (three figures at most). */
 function fmtc(n) {
   if (n < 1e4) return commas(n);
-  const e = Math.floor(Math.log10(n) / 3), v = n / 10 ** (3 * e);
+  const e = floor(log10(n) / 3), v = n / 10 ** (3 * e);
   return e <= SHORT.length ? +v.toPrecision(3) + SHORT[e - 1] : n.toExponential(1).toUpperCase().replace('+', '');
 }
 const money = (n) => (n < 1000 ? 'L ' + n.toFixed(2) : 'L ' + fmts(n)); // lire
@@ -180,7 +182,7 @@ const derived = (k) => /^m[A-Z]/.test(k) || /On$/.test(k) || ['hand', 'spoolOz',
 let G = null;
 /** The rule a cycle changes (0 Scarce Brass, 1 The Red Sky, 2 Only Music Boxes; -1 none) and how strongly. */
 const ruleOf = (c) => (c > 0 ? (c - 1) % 3 : -1);
-const ruleMul = (c) => 1 + 0.5 * Math.floor(Math.max(0, c - 1) / 3);
+const ruleMul = (c) => 1 + 0.5 * floor(max(0, c - 1) / 3);
 const RULES = ['Scarce Brass', 'The Red Sky', 'Only Music Boxes'];
 const RULE_HINT = ["The market's price for brass is doubled.", 'The Rust comes at a thousand stars, twice as strong.', 'Cogs sell for half, until MUSIC BOXES.'];
 function freshRun(seed, cyc = 0) {
@@ -211,9 +213,9 @@ function rand() {
   t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 }
-const gauss = () => Math.sqrt(-2 * Math.log(1 - rand())) * Math.cos(2 * Math.PI * rand());
+const gauss = () => sqrt(-2 * Math.log(1 - rand())) * cos(2 * Math.PI * rand());
 
-const market = () => (T.mktLow + (T.mktHigh - T.mktLow) * (0.5 - 0.5 * Math.cos((2 * Math.PI * G.day) / T.dayLen))) * G.brassX;
+const market = () => (T.mktLow + (T.mktHigh - T.mktLow) * (0.5 - 0.5 * cos((2 * Math.PI * G.day) / T.dayLen))) * G.brassX;
 /** Cogs the town buys a second, at the current price and sign. */
 const salesRate = () => T.sales0 * T.signMul ** (G.sign - 1) * G.mSales * (T.price0 / G.price) ** T.priceExp;
 const tinkerCost = () => T.tinkerCost * T.tinkerMul ** G.tinkers;
@@ -222,7 +224,7 @@ const signCost = () => (T.signCost * 2 ** (G.sign - 1)) / G.signDiv;
 const tinkerRate = () => G.tinkers * T.tinkerRate * G.mTink * G.mAll;
 const benchRate = () => (G.benchOn ? G.benches * T.benchRate * G.mBench * G.mAll : 0);
 const makeRate = () => tinkerRate() + benchRate();
-const insRate = () => (G.mind ? (G.escapements * T.insPerEsc + (G.act === 2 ? dreamShare() * swarmLog() * T.dreamIns : 0) + (G.mothIns ? Math.log10(Math.max(1, G.moths)) * T.mothIns : 0)) * G.mIns : 0);
+const insRate = () => (G.mind ? (G.escapements * T.insPerEsc + (G.act === 2 ? dreamShare() * swarmLog() * T.dreamIns : 0) + (G.mothIns ? log10(max(1, G.moths)) * T.mothIns : 0)) * G.mIns : 0);
 const insCap = () => G.barrels * T.insPerBarrel * G.mBarrel;
 const freeTrust = () => G.trust - (G.escapements - 1) - (G.barrels - 1);
 const fib = (k) => { let a = 1, b = 2; for (let i = 0; i < k; i++) [a, b] = [b, a + b]; return b; };
@@ -233,9 +235,9 @@ const riddleCost = () => T.riddle0 * T.riddleMul ** G.solved;
 
 /** Make up to n cogs from the brass there is; returns how many. */
 function make(n) {
-  n = Math.min(n, Math.floor(G.brass * G.mOz + 1e-9));
+  n = min(n, floor(G.brass * G.mOz + 1e-9));
   if (n <= 0) { raise('nobrass'); return 0; }
-  G.brass = Math.max(0, G.brass - n / G.mOz); G.cogs += n; G.made += n;
+  G.brass = max(0, G.brass - n / G.mOz); G.cogs += n; G.made += n;
   return n;
 }
 
@@ -248,17 +250,17 @@ function step(dt) {
   G.spool += (market() - G.spool) * (1 - (1 - T.spoolFall) ** dt);
   if (G.contract && G.contractUse) for (let k = 0; k < 5 && G.brass * G.mOz < makeRate() * T.contractLow && G.coin >= G.spool; k++) ACT.brass();
   G.mk += makeRate() * dt;
-  if (G.mk >= 1) { const n = Math.floor(G.mk); G.mk -= n; make(n); }
-  const s = Math.min(G.cogs, salesRate() * dt);
+  if (G.mk >= 1) { const n = floor(G.mk); G.mk -= n; make(n); }
+  const s = min(G.cogs, salesRate() * dt);
   G.cogs -= s; G.sold += s; G.coin += (s * G.price * G.mRev) / (G.boxOnly && !isDone(10) ? 2 * G.boxOnly : 1);
   if (G.cogs >= T.unsold) raise('unsold');
   // the mind: insight up to what the barrels hold; trust from cogs made
   if (!G.mind && G.made >= T.mindAt) { G.mind = 1; raise('mind'); }
-  G.insight = Math.min(insCap(), G.insight + insRate() * dt);
+  G.insight = min(insCap(), G.insight + insRate() * dt);
   while (G.made >= nextTrust()) G.trust++;
   if (G.engine) G.clev += T.engineRate * dt;
   if (G.bank > 0) {
-    const k = RISKS[G.risk], r = (k.mu * dt) / 60 + k.s * Math.sqrt(dt / 60) * gauss();
+    const k = RISKS[G.risk], r = (k.mu * dt) / 60 + k.s * sqrt(dt / 60) * gauss();
     G.bank *= 1 + r;
     if (k.crash && rand() < (k.crash * dt) / 60) { G.bank *= 1 - k.loss; raise('bankdown'); }
     if (r < -0.01) raise('bankdown');
@@ -271,10 +273,10 @@ function step(dt) {
 }
 
 function newOrder() {
-  const r = Math.max(1, makeRate() + salesRate() / 2);
-  G.oNeed = Math.max(50, Math.round(r * (20 + rand() * 40)));
+  const r = max(1, makeRate() + salesRate() / 2);
+  G.oNeed = max(50, round(r * (20 + rand() * 40)));
   G.oPay = G.oNeed * G.price * G.mRev * T.orderPay;
-  G.oLeft = T.orderLife; G.oNext = T.orderEvery; G.oFor = Math.floor(rand() * ORDER_FOR.length);
+  G.oLeft = T.orderLife; G.oNext = T.orderEvery; G.oFor = floor(rand() * ORDER_FOR.length);
   raise('order');
 }
 
@@ -303,12 +305,12 @@ const actOf = (id) => (id <= 40 ? 1 : id <= 80 ? 2 : 3);
 // power, which waterwheels wind (more or less as the river rises and falls) and spring barrels store ---
 const workShare = () => (G.dreamOn ? (10 - G.dream) / 10 : 1);
 const dreamShare = () => (G.dreamOn ? G.dream / 10 : 0);
-const swarmLog = () => Math.log10(Math.max(10, G.swarm));
+const swarmLog = () => log10(max(10, G.swarm));
 const sulking = () => !G.noSulk && G.sulkT >= T.sulkAfter;
 const machines = () => G.diggers + G.foundries + G.mills;
 const powerCap = () => T.power0 + G.sbarrels * T.sbCap * G.mSB;
 const powerNeed = () => machines() * T.draw * G.mDraw;
-const river = () => 1 + T.river * Math.sin((2 * Math.PI * G.time) / T.riverDay);
+const river = () => 1 + T.river * sin((2 * Math.PI * G.time) / T.riverDay);
 const powerGen = () => G.wheels * T.wheelGen * G.mWheel * river();
 const workBoost = () => 1 + workShare() * (sulking() && G.dream === 0 ? 0.5 : 1);
 const machRate = (n, m) => n * T.machRate * m * G.mMach * workBoost();
@@ -322,17 +324,17 @@ function step2(dt) {
   G.time += dt;
   // spring power: wound by the wheels, stored up to the barrels' total, drawn by every machine
   const have = G.power + powerGen() * dt, need = powerNeed() * dt;
-  eff2 = need > 0 ? Math.min(1, have / need) : 1;
-  G.power = Math.min(powerCap(), Math.max(0, have - need * eff2));
+  eff2 = need > 0 ? min(1, have / need) : 1;
+  G.power = min(powerCap(), max(0, have - need * eff2));
   if (need > 0 && eff2 < 0.05) raise('nopower');
   // the chain: dig, smelt, cut
-  const dug = Math.min(G.ore, machRate(G.diggers, G.mDig) * eff2 * dt);
-  G.ore -= dug; G.yard += dug; G.dugT += dug; G.wound = Math.min(1, G.wound + dug / worldOre());
+  const dug = min(G.ore, machRate(G.diggers, G.mDig) * eff2 * dt);
+  G.ore -= dug; G.yard += dug; G.dugT += dug; G.wound = min(1, G.wound + dug / worldOre());
   if (G.ore <= 0 && G.region && G.regDone < G.region) { G.ore = 0; G.regDone = G.region; raise('regdone'); }
   if (G.regDone === 4) G.wound = 1; // every place dug: the world is all cogs
-  const smelt = Math.min(G.yard, machRate(G.foundries, G.mFound) * eff2 * dt);
+  const smelt = min(G.yard, machRate(G.foundries, G.mFound) * eff2 * dt);
   G.yard -= smelt; G.brass += smelt;
-  const cut = Math.min(G.brass, machRate(G.mills, G.mMill) * eff2 * dt);
+  const cut = min(G.brass, machRate(G.mills, G.mMill) * eff2 * dt);
   G.brass -= cut; G.cogs += cut * G.mOz; G.made += cut * G.mOz;
   // the old shop's tinkers and workbenches go on making cogs from Rotella's old clocks, so the chain can always begin again
   const old = makeRate() * dt; G.cogs += old; G.made += old;
@@ -342,29 +344,29 @@ function step2(dt) {
   G.swarm *= 1 + (T.swarmGrow * dt) / 60;
   if (G.dreamOn && (G.dream === 0 || G.dream === 10)) { G.sulkT += dt; if (sulking()) raise('sulk'); } else G.sulkT = 0;
   const ing = ingRate() * dt; G.ingen += ing; G.ingT += ing;
-  G.insight = Math.min(insCap(), G.insight + insRate() * dt);
+  G.insight = min(insCap(), G.insight + insRate() * dt);
   // trust: one for each power of ten of cogs made from 100 million, and at 10, 100, 1,000 ... ingenuity
-  const want = Math.max(0, Math.floor(Math.log10(Math.max(1, G.made))) - 7) + (G.ingT >= 10 ? Math.floor(Math.log10(G.ingT)) : 0);
+  const want = max(0, floor(log10(max(1, G.made))) - 7) + (G.ingT >= 10 ? floor(log10(G.ingT)) : 0);
   while (G.trust2 < want) { G.trust2++; G.trust++; }
   if (G.autoOn && G.auto) autoBuild(dt);
   checkInventions(); checkStory(); checkMiles();
 }
 
 /** How many of a machine a press builds now (the lot, or as many as the cogs allow). */
-const lotOf = (k) => { const n = LOTS[G.lot]; return n || Math.max(1, Math.floor(G.cogs / cost2(k))); };
+const lotOf = (k) => { const n = LOTS[G.lot]; return n || max(1, floor(G.cogs / cost2(k))); };
 function build(k, n) {
-  const c = cost2(k), can = Math.min(n, Math.floor(G.cogs / c));
+  const c = cost2(k), can = min(n, floor(G.cogs / c));
   if (can < 1) return 0;
   G[k] += can; G.cogs -= can * c;
   return can;
 }
 /** The Tinker Works: a share of the cogs each second goes to the machine the chain needs most. */
 function autoBuild(dt) {
-  let spend = G.cogs * (G.auto / 10) * Math.min(1, dt * 2);
+  let spend = G.cogs * (G.auto / 10) * min(1, dt * 2);
   for (let k = 0; k < 4 && spend > 0; k++) {
     const need = powerGen() < powerNeed() * 1.2 ? 'wheels' : powerCap() < powerNeed() * 20 ? 'sbarrels' : G.yard > machRate(G.foundries, G.mFound) * 10 ? 'foundries'
       : G.brass > machRate(G.mills, G.mMill) * 10 ? 'mills' : G.ore > 0 ? 'diggers' : 'mills';
-    const n = Math.floor(spend / 4 / cost2(need));
+    const n = floor(spend / 4 / cost2(need));
     if (n < 1) break;
     spend -= build(need, n) * cost2(need);
   }
@@ -376,8 +378,8 @@ function endAct(from) {
   if (from < 3) playScene(from === 1 ? 'town' : 'launch', () => {});
   if (from === 1) {
     raise('act2'); tab = 0; row = 0; top = 0;
-    G.swarm = Math.max(1000, G.tinkers * 1000 + G.benches * 10000);
-    G.brass = 0; G.cogs = Math.max(G.cogs, 0);
+    G.swarm = max(1000, G.tinkers * 1000 + G.benches * 10000);
+    G.brass = 0; G.cogs = max(G.cogs, 0);
   } else if (from === 2) {
     raise('act3'); tab = 0; row = 0; top = 0;
     G.moths = G.mothsMax = T.moths0; G.yard = 0; G.brass = 0;
@@ -393,14 +395,14 @@ const TRAIT_HINT = ['Reach new stars faster.', 'Wind the stars reached faster.',
   'More cogs from each wound star.', 'Fight the Rust: each point is a sharper sting.', 'Fewer moths lost in the dark.'];
 const tf = (i) => 1 + G['tr' + i]; // a trait's factor: one more for each blueprint in it
 /** Six, one for each power of ten of the most moths there have been (so they never shrink), and inventions'. */
-const blueprints = () => T.bp0 + Math.floor(Math.log10(Math.max(1, G.mothsMax))) + G.bpBonus + G.bpDrawn;
+const blueprints = () => T.bp0 + floor(log10(max(1, G.mothsMax))) + G.bpBonus + G.bpDrawn;
 const drawCost = () => T.draw0 * 2 ** G.bpDrawn;
 const freeBp = () => blueprints() - TRAITS.reduce((s, _, i) => s + G['tr' + i], 0);
 const mothCost = () => T.mothCost * G.mCostM;
 const reachRate = () => G.moths * T.reachRate * tf(0) * G.mSpeed;
 const windRate = () => G.moths * T.windRate * tf(1) * G.mWind;
 /** Moths built a second: as many as the moths can build, and as the nests on the wound stars can hold. */
-const copyRate = () => Math.min(G.moths * T.copyRate, T.nest0 + G.starsW * T.nest) * tf(2) * G.mCopy;
+const copyRate = () => min(G.moths * T.copyRate, T.nest0 + G.starsW * T.nest) * tf(2) * G.mCopy;
 const harvRate = () => G.starsW * T.harvRate * tf(3) * G.mHarv;
 const lossRate = () => (G.moths * T.lossRate * G.mLoss) / (tf(5) * G.mShelter);
 /** The Rust stung away a second: a share of it for each blueprint in WINGS (none in WINGS, no sting). */
@@ -409,30 +411,30 @@ const rustRate = () => G.rust * T.rustKill * G.rustX;
 
 function step3(dt) {
   G.time += dt;
-  G.reached = Math.min(T.stars, G.reached + reachRate() * dt);
-  G.starsW = Math.min(G.reached, G.starsW + windRate() * dt);
+  G.reached = min(T.stars, G.reached + reachRate() * dt);
+  G.starsW = min(G.reached, G.starsW + windRate() * dt);
   if (G.starsW >= T.stars * 0.999999) G.starsW = T.stars;
   G.starsP = G.starsW / T.stars;
   const h = harvRate() * dt; G.cogs += h; G.made += h;
-  const want = copyRate() * dt, n = Math.min(want, G.cogs / mothCost());
+  const want = copyRate() * dt, n = min(want, G.cogs / mothCost());
   G.moths += n; G.cogs -= n * mothCost();
   if (want > 1 && n < want / 2) raise('nocogs');
-  const lost = Math.min(G.moths, lossRate() * dt); G.moths -= lost; G.lostT += lost;
+  const lost = min(G.moths, lossRate() * dt); G.moths -= lost; G.lostT += lost;
   if (!G.rustSeen && G.starsW >= G.rustAt) { G.rustSeen = 1; G.rust = G.moths * 0.01; raise('rust'); fx(SFX.rust); }
   if (G.rust > 0) {
-    const took = Math.min(G.moths, rustRate() * dt), stung = Math.min(G.rust, stingRate() * dt);
+    const took = min(G.moths, rustRate() * dt), stung = min(G.rust, stingRate() * dt);
     G.moths -= took; G.rustT += took;
     // the Rust grows only from the moths it takes and loses, and is never more than twice the moths: a blueprint in
     // WINGS always turns it back
-    G.rust = Math.min(2 * G.moths, G.rust + lost * T.rustFrom + took * T.rustKeep - stung);
+    G.rust = min(2 * G.moths, G.rust + lost * T.rustFrom + took * T.rustKeep - stung);
     if (took > n + stung) raise('rustwins');
     if (G.luciaOn) { const back = G.rust * T.lucia * dt; G.rust -= back; G.moths += back; raise('luciahome'); }
-    G.rust = Math.max(0, G.rust);
+    G.rust = max(0, G.rust);
   }
-  G.moths = Math.max(T.mothsMin, G.moths); // Marco always has a few moths left to begin again
-  G.mothsMax = Math.max(G.mothsMax, G.moths);
-  G.insight = Math.min(insCap(), G.insight + insRate() * dt);
-  const want3 = Math.max(0, Math.floor(Math.log10(Math.max(1, G.starsW))));
+  G.moths = max(T.mothsMin, G.moths); // Marco always has a few moths left to begin again
+  G.mothsMax = max(G.mothsMax, G.moths);
+  G.insight = min(insCap(), G.insight + insRate() * dt);
+  const want3 = max(0, floor(log10(max(1, G.starsW))));
   while (G.trust3 < want3) { G.trust3++; G.trust++; }
   checkInventions(); checkStory(); checkMiles();
 }
@@ -457,7 +459,7 @@ function updateCine() {
   if (fxOn('tick') && clock % 40 === 1) fx(SFX.tick);
   if (pressed(A)) {
     if (typed < s.cap.length) typed = s.cap.length;
-    else { cine.go = true; cine.t = Math.max(cine.t, s.f - HOLD); fx(SFX.move); }
+    else { cine.go = true; cine.t = max(cine.t, s.f - HOLD); fx(SFX.move); }
   }
   const next = pressed(START) ? cine.shots.length : cine.t >= s.f ? cine.k + 1 : cine.k;
   if (next !== cine.k) {
@@ -467,12 +469,12 @@ function updateCine() {
 }
 function drawCine() {
   const s = shot(), p = cine.t / s.f, e = 30 / s.f;
-  brightness(flr(15 * Math.min(1, fxOn('fadein') ? p / e : 1, fxOn('fadeout') ? (1 - p) / e : 1)));
-  mosaic(fxOn('mosaicout') ? 1 + flr(Math.max(0, cine.t - s.f + HOLD) / 2) : fxOn('mosaicin') ? 1 + flr(Math.max(0, 0.5 - p) * 30) : 1);
-  irisR = fxOn('irisclose') ? lerp(150, 26, Math.min(1, p * 1.5)) : fxOn('irisopen') ? lerp(26, 260, p) : 0;
+  brightness(flr(15 * min(1, fxOn('fadein') ? p / e : 1, fxOn('fadeout') ? (1 - p) / e : 1)));
+  mosaic(fxOn('mosaicout') ? 1 + flr(max(0, cine.t - s.f + HOLD) / 2) : fxOn('mosaicin') ? 1 + flr(max(0, 0.5 - p) * 30) : 1);
+  irisR = fxOn('irisclose') ? lerp(150, 26, min(1, p * 1.5)) : fxOn('irisopen') ? lerp(26, 260, p) : 0;
   winmask('screen', irisR ? { w1: 'out' } : null);
   drawView();
-  if (fxOn('launch')) for (let i = 0; i < 24; i++) { const a = i * 2.4, r = 30 + ((clock * (1 + (i % 4))) % 120), y = FULL.y - 4 + Math.sin(a) * r * 0.6; if (y > 0 && y < VIEW_H - 8) sprite((clock + i) % 12 < 6 ? S.moth0 : S.moth1, 124 + Math.cos(a) * r, y); }
+  if (fxOn('launch')) for (let i = 0; i < 24; i++) { const a = i * 2.4, r = 30 + ((clock * (1 + (i % 4))) % 120), y = FULL.y - 4 + sin(a) * r * 0.6; if (y > 0 && y < VIEW_H - 8) sprite((clock + i) % 12 < 6 ? S.moth0 : S.moth1, 124 + cos(a) * r, y); }
   wrap(s.cap.slice(0, typed), 224).forEach((l, i) => txc(l, VY + 104 + i * 11, s.cap.startsWith('ACT ') ? GOLD : INK));
   if (waiting() && typed >= s.cap.length && clock % 50 < 34) txr(`A: on ${RM}`, 248, 210, DIM); // waiting to be read
 }
@@ -485,7 +487,7 @@ function choose(k) {
   G.ending = k + 1; if (k === 0) G.endD = 1; else G.endR = 1;
   dset(ENDS_SLOT, dget(ENDS_SLOT) | (1 << k)); // the endings seen, over every cycle
   checkMiles(); raise(k === 0 ? 'dominion' : 'rest');
-  dset(CYCLE_SLOT, Math.max(dget(CYCLE_SLOT), G.cycle + 1)); putD(ALL_SLOT, getD(ALL_SLOT) + G.made);
+  dset(CYCLE_SLOT, max(dget(CYCLE_SLOT), G.cycle + 1)); putD(ALL_SLOT, getD(ALL_SLOT) + G.made);
   G.act = 5; saveRun(); dset(RUN_SLOT, 0); endSel = 0; // the story is told: nothing to continue
   const end = () => { state = 'ending'; timer = skipTitle ? 0 : CREDITS_AT; };
   if (skipTitle) end(); else playScene(k === 0 ? 'dominion' : 'stop', end);
@@ -498,11 +500,11 @@ const no = (s) => { why = s; return false; };
 const ACT = {
   hand() {
     if (G.act === 3) {
-      const n = Math.min(G.mHand, Math.floor(G.cogs / mothCost()));
+      const n = min(G.mHand, floor(G.cogs / mothCost()));
       if (n < 1) return no(`A moth costs ${fmtc(mothCost())} cogs.`);
       G.moths += n; G.cogs -= n * mothCost(); return true;
     }
-    if (G.act === 2) { if (G.power >= powerCap()) return no('The springs are wound as far as they go.'); G.power = Math.min(powerCap(), G.power + T.handPower * G.mHand); return true; }
+    if (G.act === 2) { if (G.power >= powerCap()) return no('The springs are wound as far as they go.'); G.power = min(powerCap(), G.power + T.handPower * G.mHand); return true; }
     // stranded (no brass, no cogs to sell, not the lire for a spool): the shavings swept off the bench make a cog
     if (G.brass * G.mOz < 1 && G.cogs < 1 && G.coin < G.spool) { G.brass += 1 / G.mOz; raise('shavings'); }
     return make(G.hand) ? true : no('No brass left. Buy a spool from Signore Ferrese.');
@@ -519,7 +521,7 @@ const ACT = {
   },
   auto(d) { const v = G.auto + d; if (v < 0 || v > 10) return no('That is as far as it goes.'); G.auto = v; return true; },
   price(d) {
-    const p = Math.round((G.price + d * T.priceStep) * 100) / 100;
+    const p = round((G.price + d * T.priceStep) * 100) / 100;
     if (p < T.priceMin || p > T.priceMax) return no('That is as far as the price goes.');
     G.price = p; G.priceMoves++; raise(d > 0 ? 'priceup' : 'pricedown');
     return true;
@@ -573,14 +575,14 @@ const ACT = {
     if (G.rTarget) return no('A riddle is already on the bench.');
     const c = riddleCost(); if (G.insight < c) return no(`A riddle costs ${fmt(c)} insight.`);
     G.insight -= c;
-    const two = G.solved >= 5, pick = () => Math.floor(rand() * GEARS.length);
+    const two = G.solved >= 5, pick = () => floor(rand() * GEARS.length);
     let t;
     do {
       const a = pick(), b = pick(), c2 = two ? pick() : 0, d = two ? pick() : 0;
       t = [...ratio(GEARS[a], GEARS[b], GEARS[c2], GEARS[d]), rand() < 0.5 ? 1 : 0];
     } while (t[0] === t[1] || t[0] > 255 || t[1] > 255);
     G.rTarget = t[0] | (t[1] << 8) | (t[2] << 16) | (1 << 20);
-    G.rPicks = 0; G.rReward = Math.round((two ? 10 : 5) * (1 + G.solved / 10)); G.rCost = c;
+    G.rPicks = 0; G.rReward = round((two ? 10 : 5) * (1 + G.solved / 10)); G.rCost = c;
     return true;
   },
   gear(slot, d) {
@@ -598,13 +600,13 @@ const ACT = {
   giveUp() { G.rTarget = 0; return true; },
   risk(d) { const r = G.risk + d; if (r < 0 || r > 2) return no('There is no other risk.'); G.risk = r; return true; },
   deposit(share) {
-    const v = Math.floor(G.coin * share * 100) / 100; if (v <= 0) return no('No lire to put in.');
+    const v = floor(G.coin * share * 100) / 100; if (v <= 0) return no('No lire to put in.');
     G.coin -= v; G.bank += v * (1 - BANK.fee); G.bankIn += v; G.bankAt = G.time; raise('bank1');
     return true;
   },
   withdraw() {
     if (G.bank <= 0) return no('The ledger is empty.');
-    const w = Math.ceil(G.bankAt + BANK.lock - G.time); if (w > 0) return no(`The lire stay in for ${w} s more.`);
+    const w = ceil(G.bankAt + BANK.lock - G.time); if (w > 0) return no(`The lire stay in for ${w} s more.`);
     G.coin += G.bank; G.bank = 0; G.bankIn = 0; return true;
   },
 };
@@ -668,7 +670,7 @@ function raise(ev) { for (let j = 0; j < STORY.length; j++) if (STORY[j].ev === 
 function checkMiles() {
   MILES.forEach((m, j) => {
     if (G.mile[j] || !holds(m.t)) return;
-    G.mile[j] = Math.floor(G.time) + 1; milestoneAt = clock; if (state === 'play') fx(SFX.mile);
+    G.mile[j] = floor(G.time) + 1; milestoneAt = clock; if (state === 'play') fx(SFX.mile);
     const b = BESTS.indexOf(m.name), old = b >= 0 ? dget(BEST_SLOT + b) : 0;
     if (b >= 0 && (!old || G.mile[j] < old)) dset(BEST_SLOT + b, G.mile[j]);
   });
@@ -676,7 +678,7 @@ function checkMiles() {
 let milestoneAt = -999;
 /** The milestone reached last (the latest time). */
 function lastMile() { let b = -1; for (let j = 0; j < MILES.length; j++) if (G.mile[j] && (b < 0 || G.mile[j] >= G.mile[b])) b = j; return b; }
-const clockText = (s) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(Math.floor(s) % 60).padStart(2, '0')}`;
+const clockText = (s) => `${floor(s / 3600)}:${String(floor(s / 60) % 60).padStart(2, '0')}:${String(floor(s) % 60).padStart(2, '0')}`;
 
 // --- The log: the story's lines, wrapped; the newest types itself in ---
 const LOG_W = 246;
@@ -742,8 +744,8 @@ const TABS = [
         { t: `Buy brass, ${fmt(G.spoolOz)} oz`, v: () => money(G.spool), a: ACT.brass, ok: () => G.coin >= G.spool, h: () => `Signore Ferrese's price follows the market: near ${money(market())}.` },
       ];
       if (G.contract) r.push({ t: "Signore Ferrese's contract", v: () => (G.contractUse ? 'ON' : 'OFF'), a: ACT.contract, ok: () => true, h: () => 'When ON, brass is bought by itself before it runs out.' });
-      if (G.oNeed) r.unshift({ t: `Order: ${ORDER_FOR[G.oFor]}, ${fmts(G.oNeed)} cogs`, v: () => money(G.oPay), a: ACT.fill, ok: () => G.cogs >= G.oNeed, h: () => `Fill it from stock: ${Math.ceil(G.oLeft)} s left.` });
-      r.push({ t: `Shop sign, level ${G.sign}`, v: () => (G.sign >= T.signMax ? 'done' : money(signCost())), a: ACT.sign, ok: () => G.sign < T.signMax && G.coin >= signCost(), h: () => `A grander sign: the town buys ${Math.round((T.signMul - 1) * 100)}% more.` });
+      if (G.oNeed) r.unshift({ t: `Order: ${ORDER_FOR[G.oFor]}, ${fmts(G.oNeed)} cogs`, v: () => money(G.oPay), a: ACT.fill, ok: () => G.cogs >= G.oNeed, h: () => `Fill it from stock: ${ceil(G.oLeft)} s left.` });
+      r.push({ t: `Shop sign, level ${G.sign}`, v: () => (G.sign >= T.signMax ? 'done' : money(signCost())), a: ACT.sign, ok: () => G.sign < T.signMax && G.coin >= signCost(), h: () => `A grander sign: the town buys ${round((T.signMul - 1) * 100)}% more.` });
       return r;
     },
   },
@@ -764,7 +766,7 @@ const TABS = [
       { t: 'Ore in the yard', v: () => `${fmts(G.yard)} oz`, ok: () => true, h: () => `Dug ${rate(machRate(G.diggers, G.mDig) * eff2)}/s; foundries smelt it to brass.` },
       { t: 'Brass by the mills', v: () => `${fmts(G.brass)} oz`, ok: () => true, h: () => `Smelted ${rate(machRate(G.foundries, G.mFound) * eff2)}/s; cog mills cut it.` },
       { t: 'Cogs', v: () => fmts(G.cogs), ok: () => true, h: () => `Cut ${rate(machRate(G.mills, G.mMill) * eff2 * G.mOz)}/s, and ${rate(makeRate())}/s from the old shop.` },
-      { t: 'Spring power', v: () => `+${rate(powerGen())} -${rate(powerNeed())}`, ok: () => eff2 > 0.99, h: () => (eff2 < 0.99 ? `Too little: the machines run at ${Math.round(eff2 * 100)}%.` : 'Enough to drive every machine. The river rises and falls.') },
+      { t: 'Spring power', v: () => `+${rate(powerGen())} -${rate(powerNeed())}`, ok: () => eff2 > 0.99, h: () => (eff2 < 0.99 ? `Too little: the machines run at ${round(eff2 * 100)}%.` : 'Enough to drive every machine. The river rises and falls.') },
       { t: 'The world', v: () => `${(G.wound * 100).toFixed(G.wound < 0.01 ? 4 : 1)}% wound`, ok: () => true, h: () => 'How much of the world\'s metal is cogs now.' },
     ],
   },
@@ -805,7 +807,7 @@ const TABS = [
       const r = [
         { t: 'The orrery', v: () => `${(G.starsP * 100).toFixed(G.starsP < 0.01 ? 6 : 2)}% wound`, ok: () => true, h: () => 'Every star in the universe, wound into its place.' },
         { t: 'Stars reached', v: () => `+${rate(reachRate())}/s`, ok: () => true, h: () => 'SPEED reaches them faster.' },
-        { t: 'Stars wound', v: () => `+${rate(Math.min(windRate(), G.reached - G.starsW + windRate()))}/s`, ok: () => G.reached > G.starsW || G.starsW === T.stars, h: () => (G.reached <= G.starsW + 1 ? 'Every star reached is wound: SPEED would find more.' : 'WINDING winds them faster.') },
+        { t: 'Stars wound', v: () => `+${rate(min(windRate(), G.reached - G.starsW + windRate()))}/s`, ok: () => G.reached > G.starsW || G.starsW === T.stars, h: () => (G.reached <= G.starsW + 1 ? 'Every star reached is wound: SPEED would find more.' : 'WINDING winds them faster.') },
       ];
       if (G.rustSeen) r.push({ t: 'The Rust', v: () => (G.rustName ? `${fmts(G.rust)} moths` : '?'), ok: () => stingRate() >= rustRate(), h: () => (G.rustName ? `It takes ${rate(rustRate())} moths/s; wings sting ${rate(stingRate())}.` : 'Red moths, flying against the others.') });
       return r;
@@ -816,7 +818,7 @@ const TABS = [
     info: () => [`${fmts(G.moths)} moths`, `Cogs ${fmts(G.cogs)}`],
     rows: () => [
       { t: 'Launch moths', v: () => 'B', a: ACT.hand, ok: () => G.cogs >= mothCost(), h: () => `B launches up to ${fmts(G.mHand)}, at ${fmtc(mothCost())} cogs each.` },
-      { t: 'Moths built by moths', v: () => `+${rate(Math.min(copyRate(), G.cogs / mothCost() / TICK))}/s`, ok: () => true, h: () => 'COPYING builds more, as long as there are cogs.' },
+      { t: 'Moths built by moths', v: () => `+${rate(min(copyRate(), G.cogs / mothCost() / TICK))}/s`, ok: () => true, h: () => 'COPYING builds more, as long as there are cogs.' },
       { t: 'Cogs from the stars', v: () => `+${rate(harvRate())}/s`, ok: () => true, h: () => 'HARVEST gets more from each wound star.' },
       { t: 'Lost in the dark', v: () => `${rate(lossRate())}/s`, ok: () => true, h: () => `SHELTER keeps them safe. ${fmts(G.lostT)} lost so far.` },
     ],
@@ -863,7 +865,7 @@ const TABS = [
       { t: 'Risk', v: () => val(RISKS[G.risk].n), adj: (d) => ACT.risk(d), ok: () => true, h: () => [`Slow and sure: about +1% a minute.`, `About +2.5% a minute, and some ups and downs.`, `+5% a minute, but now and then it loses half.`][G.risk] },
       { t: 'Put in half your lire', v: () => money(G.coin / 2), a: () => ACT.deposit(0.5), ok: () => G.coin > 0, h: () => `The bank keeps ${BANK.fee * 100}% of each deposit. Locked for ${BANK.lock / 60} min.` },
       { t: 'Put in all your lire', v: () => money(G.coin), a: () => ACT.deposit(1), ok: () => G.coin > 0, h: () => `The bank keeps ${BANK.fee * 100}% of each deposit. Locked for ${BANK.lock / 60} min.` },
-      { t: 'Take it all out', v: () => money(G.bank), a: ACT.withdraw, ok: () => G.bank > 0 && G.time >= G.bankAt + BANK.lock, h: () => (G.time < G.bankAt + BANK.lock ? `Locked for ${Math.ceil(G.bankAt + BANK.lock - G.time)} s more.` : 'Everything in the ledger back into your hand.') },
+      { t: 'Take it all out', v: () => money(G.bank), a: ACT.withdraw, ok: () => G.bank > 0 && G.time >= G.bankAt + BANK.lock, h: () => (G.time < G.bankAt + BANK.lock ? `Locked for ${ceil(G.bankAt + BANK.lock - G.time)} s more.` : 'Everything in the ledger back into your hand.') },
     ],
   },
 ];
@@ -891,13 +893,13 @@ const LAND = [53, 54, 55, 56], STARC = [65, 66, 67], ARMS = [81, 82, 83, 84], LA
 const sceneBg = (n, name, y = 0, wrap = false) => { const c = ART.scenes[name]; bg(n, { mx: c.mx, my: c.my, mw: c.w, mh: c.h, x: 0, y, wrap, show: true }); };
 let view = 1, grad = null, spin = 0, galA = 0;
 /** Tint CGRAM entries from their art.py colours towards brass, by t (0 to 1). */
-function tint(list, t, to = BRASSC) { list.forEach((i, n) => color(i, ...BASE[i].map((v, k) => Math.round(lerp(v, Math.min(31, to[k] * (to === BRASSC ? 0.55 + n * 0.15 : 1)), t))))); }
+function tint(list, t, to = BRASSC) { list.forEach((i, n) => color(i, ...BASE[i].map((v, k) => round(lerp(v, min(31, to[k] * (to === BRASSC ? 0.55 + n * 0.15 : 1)), t))))); }
 function setView() {
   const sv = cine && state === 'cine' ? shot().view : '';
   VY = sv ? 40 : 0;
-  view = sv ? ({ world: 2, orrery: 3, black: 0 }[sv] ?? 1) : state === 'title' || !G ? 1 : Math.min(3, G.act);
+  view = sv ? ({ world: 2, orrery: 3, black: 0 }[sv] ?? 1) : state === 'title' || !G ? 1 : min(3, G.act);
   for (const i of [LAMP, ...ARMS]) color(i, ...BASE[i]);
-  if (fxOn('lampsout')) tint([LAMP], Math.min(1, (cine.t / shot().f) * 1.2 + (shot().view === 'night' ? 0.4 : 0)), [4, 4, 8]);
+  if (fxOn('lampsout')) tint([LAMP], min(1, (cine.t / shot().f) * 1.2 + (shot().view === 'night' ? 0.4 : 0)), [4, 4, 8]);
   if (!view) { bg(0, { show: false }); bg(1, { show: false }); bg(2, { show: false }); grad = null; color(0, 0, 0, 0); return; }
   affine(null); winmask('bg2', null);
   if (view === 1) {
@@ -912,13 +914,13 @@ function setView() {
   grad = ART.gradients.space;
   if (view === 2) {
     sceneBg(2, 'globe', 0, true); affine({ a: 1, b: 0, c: 0, d: 0, cx: 0, cy: 0 }); winmask('bg2', { w0: 'out' }); spin = (clock / 3) % 128;
-    tint(LAND, Math.max(0, Math.min(1, (G.region - 1) * 0.22 + G.wound * 0.34)));
+    tint(LAND, max(0, min(1, (G.region - 1) * 0.22 + G.wound * 0.34)));
   } else {
     sceneBg(2, 'galaxy');
     const gold = fxOn('gold'), out = fxOn('starsout') ? cine.t / shot().f : 0;
     tint(STARC, gold ? 1 : G ? G.starsP : 0); if (gold) tint(ARMS, 0.9); if (out) { tint(STARC, out, [0, 0, 0]); tint(ARMS, out, [0, 0, 0]); }
     galA += fxOn('still') ? 0 : fxOn('spin') ? 0.012 : 1 / 900;
-    const k = GL.k, cs = Math.cos(galA) * k, sn = Math.sin(galA) * k;
+    const k = GL.k, cs = cos(galA) * k, sn = sin(galA) * k;
     affine({ a: cs, b: sn * 2, c: -sn, d: cs * 2, cx: 64, cy: 64 }); bgscroll(2, 64 - GL.x, 64 - GL.y - VY);
   }
 }
@@ -928,8 +930,8 @@ function setView() {
 const FULL = { x: 128, y: 46, r: 40, k: 0.8, hole: 0 }, PORT = { x: 196, y: 36, r: 26, k: 1.2, hole: 31 };
 for (const g of [FULL, PORT]) {
   g.w = []; g.row = []; g.sky = [];
-  for (let y = 0; y < VIEW_H; y++) { const dy = y - g.y, w = dy * dy < g.r * g.r ? Math.sqrt(g.r * g.r - dy * dy) : 0; g.w[y] = w >= 1 ? w : 0; g.row[y] = Math.min(63, Math.max(0, Math.floor((Math.asin(Math.max(-1, Math.min(1, dy / g.r))) / Math.PI + 0.5) * 64))); }
-  for (let i = 0; i < (g.hole ? 40 : 110); i++) g.sky.push(g.hole ? { r: g.hole * Math.sqrt(((i * 0.618) % 1)), a: i * 2.39 } : { x: (i * 97) % 256, y: (i * 53 + ((i * i) % 7)) % VIEW_H });
+  for (let y = 0; y < VIEW_H; y++) { const dy = y - g.y, w = dy * dy < g.r * g.r ? sqrt(g.r * g.r - dy * dy) : 0; g.w[y] = w >= 1 ? w : 0; g.row[y] = min(63, max(0, floor((Math.asin(max(-1, min(1, dy / g.r))) / Math.PI + 0.5) * 64))); }
+  for (let i = 0; i < (g.hole ? 40 : 110); i++) g.sky.push(g.hole ? { r: g.hole * sqrt(((i * 0.618) % 1)), a: i * 2.39 } : { x: (i * 97) % 256, y: (i * 53 + ((i * i) % 7)) % VIEW_H });
 }
 let GL = FULL;
 let bits = []; // cogs dropping in the view: { x, y, vy }
@@ -1040,8 +1042,8 @@ function hint(s) { hintMsg = s; hintT = 150; }
 function dropCog() { if (bits.length < 12) bits.push({ x: 76 + rndi(0, 6), y: 48, vy: -1.5 }); }
 
 function updateMiles() {
-  if (rep(UP)) logScroll = Math.max(0, logScroll - 1);
-  if (rep(DOWN)) logScroll = Math.min(Math.max(0, MILES.length - 16), logScroll + 1);
+  if (rep(UP)) logScroll = max(0, logScroll - 1);
+  if (rep(DOWN)) logScroll = min(max(0, MILES.length - 16), logScroll + 1);
   if (pressed(SELECT) || pressed(B) || pressed(START) || pressed(A)) { state = 'play'; fx(SFX.move); }
 }
 function updateChoice() {
@@ -1068,8 +1070,8 @@ function updateGift() {
 
 function updateLog() {
   const n = logRows.length, page = 17;
-  if (rep(UP)) logScroll = Math.min(Math.max(0, n - page), logScroll + 1);
-  if (rep(DOWN)) logScroll = Math.max(0, logScroll - 1);
+  if (rep(UP)) logScroll = min(max(0, n - page), logScroll + 1);
+  if (rep(DOWN)) logScroll = max(0, logScroll - 1);
   if (pressed(SELECT) || pressed(B) || pressed(START) || pressed(A)) { state = 'play'; fx(SFX.move); }
 }
 
@@ -1120,7 +1122,7 @@ function drawSky(c) {
   const oy = GL.y + VY, gr = view === 2 ? GL.r + 2 : 0;
   GL.sky.forEach((st, i) => {
     let x, y;
-    if (GL.hole) { const a = st.a + c / 3000; x = GL.x + Math.cos(a) * st.r; y = GL.y + Math.sin(a) * st.r; } else { x = (st.x + flr(c / 8)) & 255; y = st.y; }
+    if (GL.hole) { const a = st.a + c / 3000; x = GL.x + cos(a) * st.r; y = GL.y + sin(a) * st.r; } else { x = (st.x + flr(c / 8)) & 255; y = st.y; }
     if (gr && (x - GL.x) ** 2 + (y - GL.y) ** 2 < gr * gr) return;
     if ((flr(c / 9) + i * 7) % 31 === 0) return;     // a twinkle
     pset(flr(x), flr(y) + VY, i % 9 === 4 ? 68 : STARC[i % 3]);
@@ -1132,21 +1134,21 @@ function drawShop(c) {
   const sv = cine && state === 'cine' ? shot().view : '';
   if (sv ? sv !== 'empty' && !fxOn('empty') : !G || !G.watch) sprite(state === 'title' || fxOn('doze') || (c % 900) > 700 ? S.paulo2 : S.paulo, 82, 34);
   if (!G) return;
-  for (let i = 0; i < Math.min(G.tinkers, 14); i++) {
-    const x = 116 + i * 9 + Math.round(Math.sin((c + i * 23) / 20) * 3);
+  for (let i = 0; i < min(G.tinkers, 14); i++) {
+    const x = 116 + i * 9 + round(sin((c + i * 23) / 20) * 3);
     sprite((c + i * 7) % 16 < 8 ? S.tinker0 : S.tinker1, x, VIEW_H - 32);
   }
-  for (let i = 0; i < Math.min(G.benches, 6); i++) sprite(S.workbench, 2 + i * 7, 50 - (i % 2) * 3, { prio: 1 });
+  for (let i = 0; i < min(G.benches, 6); i++) sprite(S.workbench, 2 + i * 7, 50 - (i % 2) * 3, { prio: 1 });
   for (const b of bits) sprite(S.cog, b.x, b.y);
-  const pile = Math.min(6, Math.ceil(G.cogs / 20));
-  for (let i = 0; i < pile; i++) sprite(S.cog, 76 + (i % 3) * 6, VIEW_H - 32 - Math.floor(i / 3) * 4);
+  const pile = min(6, ceil(G.cogs / 20));
+  for (let i = 0; i < pile; i++) sprite(S.cog, 76 + (i % 3) * 6, VIEW_H - 32 - floor(i / 3) * 4);
 }
 /** Act II: the swarm going round the globe, behind it on the far side. */
 function drawWorld(c) {
-  const n = Math.min(GL.hole ? 10 : 18, Math.round(swarmLog() * 2)), rx = GL.r * 1.35 - 2, ry = GL.r * 0.3;
+  const n = min(GL.hole ? 10 : 18, round(swarmLog() * 2)), rx = GL.r * 1.35 - 2, ry = GL.r * 0.3;
   for (let i = 0; i < n; i++) {
-    const a = c / 140 + (i * 2 * Math.PI) / n, x = GL.x - 4 + Math.cos(a) * rx, y = GL.y - 4 + Math.sin(a) * ry + Math.sin(a * 3 + i) * 2;
-    sprite((c + i * 5) % 16 < 8 ? S.tinker0 : S.tinker1, x, y, { prio: Math.sin(a) < 0 ? 0 : 3 });
+    const a = c / 140 + (i * 2 * Math.PI) / n, x = GL.x - 4 + cos(a) * rx, y = GL.y - 4 + sin(a) * ry + sin(a * 3 + i) * 2;
+    sprite((c + i * 5) % 16 < 8 ? S.tinker0 : S.tinker1, x, y, { prio: sin(a) < 0 ? 0 : 3 });
   }
   circ(GL.x, GL.y + VY, GL.r + 1, THINK);
 }
@@ -1156,16 +1158,16 @@ function drawOrrery(c) {
   sprite(S.sun, GL.x - 16, GL.y - 16, { fx: c % 30 < 15 });
   for (let i = 0; i < (GL.hole ? 2 : 3); i++) {
     const a = c / (120 + i * 70) + i * 2, rx = GL.hole ? 17 + i * 8 : 40 + i * 26, ry = GL.hole ? 5 + i * 3 : 12 + i * 8;
-    sprite(S.planet, GL.x - 8 + Math.cos(a) * rx, GL.y - 8 + Math.sin(a) * ry, { fx: c % 20 < 10 });
+    sprite(S.planet, GL.x - 8 + cos(a) * rx, GL.y - 8 + sin(a) * ry, { fx: c % 20 < 10 });
   }
   const moth = (n, f0, f1, seed) => {
     for (let i = 0; i < n; i++) {
-      const a = c / (60 + (i % 5) * 17) + i * seed, x = GL.x + Math.cos(a) * (30 + ((i * 37) % 90)) * z, y = GL.y + Math.sin(a * 1.3 + i) * (18 + ((i * 13) % 26)) * z;
+      const a = c / (60 + (i % 5) * 17) + i * seed, x = GL.x + cos(a) * (30 + ((i * 37) % 90)) * z, y = GL.y + sin(a * 1.3 + i) * (18 + ((i * 13) % 26)) * z;
       sprite((c + i * 3) % 12 < 6 ? f0 : f1, x, y);
     }
   };
-  moth(Math.min(20, Math.round(Math.log10(Math.max(1, G.moths)) * 1.2)), S.moth0, S.moth1, 1.7);
-  if (G.rust > 1) moth(Math.min(12, Math.round(Math.log10(G.rust))), S.rust0, S.rust1, 2.9);
+  moth(min(20, round(log10(max(1, G.moths)) * 1.2)), S.moth0, S.moth1, 1.7);
+  if (G.rust > 1) moth(min(12, round(log10(G.rust))), S.rust0, S.rust1, 2.9);
 }
 function drawView() {
   if (view === 1) drawShop(clock); else if (view) { drawSky(clock); if (!VY) drawBench(clock); if (view === 2) drawWorld(clock); else drawOrrery(clock); }
@@ -1221,7 +1223,7 @@ function drawPanel() {
 function drawLog() {
   rectfill(0, LOG_Y, 256, 224 - LOG_Y, EDGE);
   line(0, LOG_Y, 255, LOG_Y, LINE);
-  const n = logRows.length, from = Math.max(0, n - 3);
+  const n = logRows.length, from = max(0, n - 3);
   let left = typed;
   const firstTyping = n - typing;
   for (let i = from; i < n; i++) {
@@ -1241,7 +1243,7 @@ function drawFullLog() {
   rectfill(0, 0, 256, 224, PAPER);
   sysc('THE STORY SO FAR', 6, BRASS);
   line(8, 18, 247, 18, LINE);
-  const page = 17, n = logRows.length, end = n - logScroll, from = Math.max(0, end - page);
+  const page = 17, n = logRows.length, end = n - logScroll, from = max(0, end - page);
   for (let i = from; i < end; i++) tx(logRows[i].s, 6, 24 + (i - from) * 10, i === n - 1 ? INK : LOGC);
   tx('UP and DOWN to read back.  B to return.', 6, 214, DIM);
 }
@@ -1264,10 +1266,10 @@ function drawChoice() {
   wrap(STORY[STORY.findIndex((e) => e.ev === 'choice')].text, 220).forEach((l, i) => txc(l, 24 + i * 10, LOGC));
   // Paulo's watch: a brass case with its crown and ring, a pale face, twelve marks, the hands a little before twelve,
   // and a second hand that moves on each second, with the tick
-  const X = 128, Y = 106, hand = (a, r, c) => line(X, Y, X + Math.sin(a) * r, Y - Math.cos(a) * r, c);
+  const X = 128, Y = 106, hand = (a, r, c) => line(X, Y, X + sin(a) * r, Y - cos(a) * r, c);
   circ(X, Y - 29, 4, BRASS); rectfill(X - 2, Y - 26, 5, 5, BRASS);
   circfill(X, Y, 22, BRASS); circ(X, Y, 22, GOLD); circfill(X, Y, 18, INK);
-  for (let i = 0; i < 12; i++) pset(X + Math.sin(i * 0.5236) * 15.5, Y - Math.cos(i * 0.5236) * 15.5, EDGE);
+  for (let i = 0; i < 12; i++) pset(X + sin(i * 0.5236) * 15.5, Y - cos(i * 0.5236) * 15.5, EDGE);
   hand(-0.2, 9, EDGE); hand(-0.75, 13, EDGE); hand(flr(timer / 60) * 0.1047, 15, BAD);
   if (timer > 90) CHOICES.forEach((c, i) => sys(`${i === choiceSel ? '>' : ' '} ${c}`, 80, 146 + i * 14, i === choiceSel ? GOLD : DIM));
 }
@@ -1338,7 +1340,7 @@ function drawPause() {
 
 /** Each line: the wall's lamplight in the view, the panel's ink below it. */
 function scanline(sy) {
-  if (irisR) { const d = sy - VY - (MARCO_Y + 14), w = d * d < irisR * irisR ? Math.sqrt(irisR * irisR - d * d) : -1; winpos(1, flr(MARCO_X + 16 - w), flr(MARCO_X + 16 + w)); }
+  if (irisR) { const d = sy - VY - (MARCO_Y + 14), w = d * d < irisR * irisR ? sqrt(irisR * irisR - d * d) : -1; winpos(1, flr(MARCO_X + 16 - w), flr(MARCO_X + 16 + w)); }
   const y = sy - VY;
   if (y < 0) { if (!sy) color(0, 0, 0, 0); return; }
   if (y < VIEW_H) {
