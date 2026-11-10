@@ -220,7 +220,9 @@ async function check() {
       missing.length = 0;
       await page.goto(base + path);
       await page.waitForTimeout(2500);
-      const cards = await page.locator('.lib-cart').count();
+      await page.locator('.lib-card[data-cart="demos"]').click(); // (the tech demos' shelf is one card until it is opened)
+      await page.waitForTimeout(1500);
+      const cards = await page.locator('.lib-card[data-cart] .lib-cart').count();
       const want = JSON.parse(readFileSync(join(pages, 'carts', 'index.json'), 'utf8')).carts.length;
       ok(cards >= want, `${where}: the Library shows every cart`, `${cards} cards for ${want} carts`);
       const withLabel = JSON.parse(readFileSync(join(pages, 'carts', 'index.json'), 'utf8')).carts.filter((c) => c.label).length;

@@ -41,6 +41,24 @@ export function storeSave(id, data) {
 const AUTOSAVE_KEY = `${SCOPE}autosave`;
 
 /** The autosaved working cart as .nova text, or null. */
+const RECENT_KEY = `${SCOPE}recent`, RECENT_MAX = 4;
+/** The names of the Library carts played lately, the latest first. */
+export function recentCarts() {
+  try { const v = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); return Array.isArray(v) ? v.filter((n) => typeof n === 'string') : []; } catch { return []; }
+}
+/** Note that a Library cart was played: it goes to the front of the list (the last four are kept). */
+export function noteRecent(name) {
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify([name, ...recentCarts().filter((n) => n !== name)].slice(0, RECENT_MAX))); } catch { /* no storage: no list */ }
+}
+/** A choice the player made in the console itself (not a cart's save), kept between visits. */
+export function pref(key, value) {
+  try {
+    if (value === undefined) return localStorage.getItem(`${SCOPE}pref.${key}`);
+    localStorage.setItem(`${SCOPE}pref.${key}`, value);
+  } catch { /* no storage */ }
+  return value ?? null;
+}
+
 export function loadAutosave() {
   try {
     return localStorage.getItem(AUTOSAVE_KEY);

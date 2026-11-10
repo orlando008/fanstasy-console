@@ -5,10 +5,12 @@
 // (SPEC 11.4). Make your own game with AI, in the header and on the last shelf,
 // copies instructions for an AI agent (SPEC 11.5). On a phone (style.css: a narrow screen) the shelves are two
 // cartridges a row and the description is a sheet that slides up, opened by a cartridge's (i) or by holding it
-// down; a tap on a cartridge plays it, as everywhere.
+// down; a tap on a cartridge plays it, as everywhere. The first shelf, Continue, is the carts played lately; a row of
+// the shelves' names under the header jumps to each; and the tech demos' shelf is one card until it is opened.
 
 import { PNG_H, PNG_W, drawCartridge, labelBitmap } from './formats/nova-png.js';
 import { GENRES, playersLabel } from './genres.js';
+import { pref, recentCarts } from './storage.js';
 import { button, h } from './ui/dom.js';
 
 const MANIFEST = 'carts/index.json';
@@ -36,6 +38,7 @@ export class Library {
     this.pad = { held: 0, dir: 0, dirFrames: 0, hold: 0 };
 
     this.shelf = h('div', { class: 'lib-shelf' });
+    this.jump = h('nav', { class: 'lib-jump', attrs: { 'aria-label': 'Shelves' } });
     this.detailTitle = h('h2', { class: 'lib-detail-title' });
     this.detailBy = h('p', { class: 'lib-detail-by' });
     this.detailText = h('p', { class: 'lib-detail-text' });
@@ -51,6 +54,7 @@ export class Library {
         h('p', { class: 'lib-sub' }, 'Pick a cart. Arrows or d-pad to choose, Enter or A to play.'),
         button(['✦ ', h('span', { class: 'lib-ai-long' }, 'Make your own game with AI'), h('span', { class: 'lib-ai-short' }, 'Make a game')],
           () => hooks.makeWithAI(() => this.select(this.sel)), { class: 'lib-ai', attrs: { tabindex: '-1' } })),
+      this.jump,
       this.shelf,
       h('div', { class: 'lib-scrim', on: { click: () => this.closeSheet() } }),
       h('footer', { class: 'lib-detail' },
@@ -88,12 +92,19 @@ export class Library {
   shelves() {
     const mine = this.hooks.mine(), carts = this.manifest.map((m) => ({ kind: 'cart', ...m }));
     const known = new Set(GENRES.map((g) => g.id)), demo = GENRES[GENRES.length - 1];
+    // Continue: the carts played lately, the latest first (they stay on their own shelves too)
+    const recent = recentCarts().map((n) => carts.find((c) => c.name === n)).filter(Boolean).map((c) => ({ ...c, recent: true }));
+    // The tech demos are the console's test carts: one card until it is opened (or one of them is the cart loaded)
+    const demos = carts.filter((c) => c.genre === demo.id), current = this.hooks.current();
+    const open = pref('demos') === 'open' || demos.some((c) => c.name === current);
     return [
       { title: 'Your cart', entries: mine ? [{ kind: 'mine', title: mine.meta.title || 'Untitled', author: mine.meta.author || '',
         description: mine.meta.description || '', cart: mine }] : [] },
+      { title: 'Continue', entries: recent },
       ...GENRES.slice(0, -1).map((g) => ({ title: g.shelf, entries: carts.filter((c) => c.genre === g.id) })),
       { title: 'More carts', entries: carts.filter((c) => !known.has(c.genre)) },
-      { title: demo.shelf, entries: carts.filter((c) => c.genre === demo.id) },
+      { title: demo.shelf, entries: !demos.length ? [] : open ? [...demos, { kind: 'demos', open: true, title: 'Hide the tech demos', description: 'Fold this shelf away again.' }]
+        : [{ kind: 'demos', title: `Show the ${demos.length} tech demos`, description: 'The console\'s own test carts: small demos of its picture and sound, not games.' }] },
       { title: 'Make a cart', entries: [
         { kind: 'open', title: 'Open file', description: 'Open a .nova or .nova.png cart from your computer (Ctrl+O). You can also drop one onto the page.' },
         { kind: 'new', title: 'New cart', description: 'Start a new cart in the editor.' },
@@ -111,13 +122,13 @@ export class Library {
       const playing = entry.kind === 'mine' ? current === 'mine' : entry.kind === 'cart' && entry.name === current;
       const art = entry.kind === 'mine' || entry.kind === 'cart'
         ? this.cartridge(entry)
-        : h('div', { class: 'lib-action-art' }, { open: 'OPEN', new: 'NEW', ai: 'AI' }[entry.kind]);
+        : h('div', { class: 'lib-action-art' }, { open: 'OPEN', new: 'NEW', ai: 'AI', demos: entry.open ? 'HIDE' : 'SHOW' }[entry.kind]);
       let held = null, longPressed = false; // a touch held down opens the description instead of playing
       const unhold = () => { clearTimeout(held); held = null; };
       const info = h('span', { class: 'lib-info', text: 'i', attrs: { role: 'button', 'aria-label': `About ${name}`, 'data-info': entry.name || entry.kind } });
       const card = h('button', {
         type: 'button', class: `lib-card${playing ? ' playing' : ''}`,
-        attrs: { role: 'listitem', 'aria-label': name, 'data-cart': entry.name || entry.kind },
+        attrs: { role: 'listitem', 'aria-label': name, [entry.recent ? 'data-recent' : 'data-cart']: entry.name || entry.kind },
         on: {
           click: (e) => {
             if (longPressed) { longPressed = false; return; }
@@ -143,9 +154,18 @@ export class Library {
       h('h2', { class: 'lib-section-title' }, s.title),
       h('div', { class: 'lib-row', attrs: { role: 'list' } }, this.cards.slice(at, at += s.entries.length)))));
     if (this.loadError) this.shelf.prepend(h('p', { class: 'lib-error' }, this.loadError));
-    // Start on the cart that is loaded, or the first one.
+    // The shelves' names, to jump to each: its heading comes to the top and its first cartridge is selected
+    at = 0;
+    this.jump.replaceChildren(...shelves.map((s) => {
+      const first = at; at += s.entries.length;
+      return button(s.title, () => { this.select(first, true, false); this.cards[first].closest('.lib-section').scrollIntoView({ block: 'start' }); },
+        { class: 'lib-jump-to', attrs: { tabindex: '-1', 'data-shelf': s.title } });
+    }));
+    // Start on the cart that is loaded, or the first one (or the card asked for: the tech demos' shelf just opened or shut).
     const playing = this.entries.findIndex((e) => e.playing);
-    this.select(playing >= 0 ? playing : 0);
+    const want = this.wanted ? this.entries.findIndex(this.wanted) : -1;
+    this.wanted = null;
+    this.select(want >= 0 ? want : playing >= 0 ? playing : 0);
   }
 
   /** A canvas drawn as the cart's cartridge; the label fills in once loaded. */
@@ -175,7 +195,7 @@ export class Library {
     this.detailBy.textContent = [entry.author ? `by ${entry.author}` : '', who].filter(Boolean).join('  ·  ');
     this.detailText.textContent = entry.description || '';
     this.detailHint.textContent = entry.kind === 'ai' ? 'Enter or A to copy the instructions'
-      : entry.kind === 'open' || entry.kind === 'new' ? 'Enter or A to choose'
+      : entry.kind === 'open' || entry.kind === 'new' || entry.kind === 'demos' ? 'Enter or A to choose'
       : (entry.playing ? 'Paused: Enter or A to resume' : 'Enter or A to play') + (entry.kind === 'cart' ? '  ·  S or Select to share' : '');
     this.shareBtn.hidden = entry.kind !== 'cart'; // only a Library cart has a link (Your cart lives in this browser)
   }
@@ -184,7 +204,7 @@ export class Library {
   openSheet(i) {
     this.select(i, false);
     this.root.classList.add('sheet');
-    this.playBtn.textContent = { open: 'Open file', new: 'New cart', ai: 'Copy instructions' }[this.entries[this.sel]?.kind] || (this.entries[this.sel]?.playing ? 'Resume' : 'Play');
+    this.playBtn.textContent = { open: 'Open file', new: 'New cart', ai: 'Copy instructions', demos: this.entries[this.sel]?.open ? 'Hide them' : 'Show them' }[this.entries[this.sel]?.kind] || (this.entries[this.sel]?.playing ? 'Resume' : 'Play');
   }
   closeSheet() { this.root.classList.remove('sheet'); }
   get sheetOpen() { return this.root.classList.contains('sheet'); }
@@ -204,6 +224,12 @@ export class Library {
     if (entry.kind === 'open') this.hooks.openFile();
     else if (entry.kind === 'new') this.hooks.newCart();
     else if (entry.kind === 'ai') this.hooks.makeWithAI(() => this.select(this.sel));
+    else if (entry.kind === 'demos') { // open or shut the tech demos' shelf, and stay on it
+      pref('demos', entry.open ? 'shut' : 'open');
+      const demo = GENRES[GENRES.length - 1].id;
+      this.wanted = entry.open ? (e) => e.kind === 'demos' : (e) => e.genre === demo && !e.recent;
+      this.build();
+    }
     else if (entry.playing) this.hooks.resume();
     else this.hooks.play(entry);
   }

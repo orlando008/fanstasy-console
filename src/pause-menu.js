@@ -1,6 +1,6 @@
 // The pause menu (SPEC 11.2): the console's own menu over a running cart, for
-// players. Resume, Restart, Controls, Volume, Share link (for a Library cart),
-// Library and Code editor, by keyboard, mouse or gamepad. While it is open the game and its sound are paused
+// players. Resume, Restart, Controls, Volume, Full screen, Share link (for a Library cart),
+// Library and Code editor (not on a touch screen), by keyboard, mouse or gamepad. While it is open the game and its sound are paused
 // and no key reaches the cart. Also the two corner buttons (Menu and Library)
 // that show over the game while the mouse moves, so a player can always see the
 // way out.
@@ -12,6 +12,7 @@ const ITEMS = [
   ['restart', 'Restart'],
   ['controls', 'Controls'],
   ['volume', 'Volume'],
+  ['fullscreen', 'Full screen'],
   ['share', 'Share link'],
   ['library', 'Library'],
   ['editor', 'Code editor'],
@@ -25,6 +26,13 @@ const CONTROLS = [
 const CONSOLE_KEYS = [
   ['This menu', 'Esc, or hold Select + Start on a gamepad'], ['Library', 'Backspace'],
   ['Volume', '- and =, M mutes'],
+];
+
+// On a touch screen (body.touch, src/touch.js) there are no keys: the Controls page says where the pad's buttons are.
+const TOUCH_CONTROLS = [
+  ['D-pad', 'The cross on the left. The whole left side counts: slide your thumb to change direction'],
+  ['A and B', 'The round buttons on the right. A touch beside them presses the nearer one'],
+  ['Start, Select', 'The two long buttons'], ['This menu', '☰'], ['Library', 'In this menu'],
 ];
 
 const SHOW_MS = 2500; // how long the corner buttons stay after the mouse stops
@@ -52,9 +60,12 @@ export class PauseMenu {
     }));
     this.list.append(...this.buttons);
     const row = ([b, k]) => h('tr', {}, h('th', {}, b), h('td', {}, k));
-    this.controls = h('div', { class: 'pause-controls', hidden: true },
-      h('table', {}, ...CONTROLS.map(row), h('tr', { class: 'pause-gap' }, h('td', { attrs: { colspan: '2' } })), ...CONSOLE_KEYS.map(row)),
-      h('p', { class: 'pause-hint' }, 'Any button goes back'));
+    this.keysTable = h('table', {}, ...CONTROLS.map(row), h('tr', { class: 'pause-gap' }, h('td', { attrs: { colspan: '2' } })), ...CONSOLE_KEYS.map(row));
+    this.touchTable = h('table', { class: 'pause-touch' }, ...TOUCH_CONTROLS.map(row));
+    this.backHint = h('p', { class: 'pause-hint' }, 'Any button goes back');
+    this.controls = h('div', { class: 'pause-controls', hidden: true, on: { click: () => this.showControls(false) } },
+      this.keysTable, this.touchTable, this.backHint);
+    this.screen = screen;
     this.footer = h('p', { class: 'pause-hint' }, 'Esc or B to resume');
     this.el = h('div', { class: 'pause-menu', hidden: true, attrs: { role: 'dialog', 'aria-label': 'Paused' } },
       h('div', { class: 'pause-panel' },
@@ -69,6 +80,7 @@ export class PauseMenu {
     screen.addEventListener('mousemove', wake);
     screen.addEventListener('pointerdown', wake);
 
+    document.addEventListener('fullscreenchange', () => this.updateFullscreen()); // (Esc leaves full screen too)
     const loop = () => { this.pollPads(); requestAnimationFrame(loop); };
     requestAnimationFrame(loop);
   }
@@ -91,6 +103,15 @@ export class PauseMenu {
     this.footer.hidden = false;
     this.title.textContent = this.hooks.title() || '';
     this.buttons[ITEMS.findIndex(([id]) => id === 'share')].hidden = !this.hooks.shareable();
+    // On a touch screen: no keys to list, no editor (it needs a mouse and a keyboard), and words for a finger
+    const touch = this.touch = document.body.classList.contains('touch');
+    this.item('editor').hidden = touch;
+    this.item('fullscreen').hidden = !document.documentElement.requestFullscreen || !document.fullscreenEnabled; // (an iPhone has none: there, Add to Home Screen)
+    this.keysTable.hidden = touch; this.touchTable.hidden = !touch;
+    this.footer.textContent = touch ? 'Tap outside this menu to resume' : 'Esc or B to resume';
+    this.backHint.textContent = touch ? 'Tap to go back' : 'Any button goes back';
+    this.screen.classList.add('menu-open'); // (style.css dims the touch controls under the menu)
+    this.updateFullscreen();
     this.corner.classList.remove('shown');
     this.el.hidden = false;
     this.pad.held = padMask(); // a button held as the menu opens (Start, after Select + Start) is not a press
@@ -104,6 +125,7 @@ export class PauseMenu {
     if (!this.isOpen) return;
     this.isOpen = false;
     this.el.hidden = true;
+    this.screen.classList.remove('menu-open');
     if (!resume) return;
     if (padMask()) this.pad.waitRelease = true;
     else this.hooks.resume();
@@ -130,6 +152,7 @@ export class PauseMenu {
     else if (id === 'restart') { this.close(false); this.hooks.restart(); }
     else if (id === 'controls') this.showControls(true);
     else if (id === 'volume') this.volume('mute');
+    else if (id === 'fullscreen') this.fullscreen();
     else if (id === 'share') this.hooks.share(() => { if (this.isOpen) this.select(this.sel); });
     else if (id === 'library') { this.close(false); this.hooks.library(); }
     else if (id === 'editor') { this.close(false); this.hooks.editor(); }
@@ -147,6 +170,19 @@ export class PauseMenu {
     if (action === 'mute') this.hooks.mute(); else this.hooks.volume(action === 'up' ? 1 : -1);
     this.updateVolume();
   }
+
+  item(id) { return this.buttons[ITEMS.findIndex(([k]) => k === id)]; }
+
+  /** Full screen on or off (the whole page, so the menu and the touch controls stay). */
+  async fullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+    } catch { /* refused: the label says where it is */ }
+    this.updateFullscreen();
+  }
+
+  updateFullscreen() { this.item('fullscreen').textContent = `Full screen: ${document.fullscreenElement ? 'on' : 'off'}`; }
 
   updateVolume() {
     const level = this.hooks.level();

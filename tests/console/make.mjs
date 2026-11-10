@@ -26,6 +26,7 @@ const { base, close } = await serve();
 const browser = await playwright().chromium.launch();
 try {
   const ctx = await browser.newContext({ viewport: { width: 1100, height: 800 } });
+  await ctx.addInitScript(() => localStorage.setItem('nova16.pref.demos', 'open')); // (hello is a tech demo: its shelf open)
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
   const page = await ctx.newPage();
   const errors = [];

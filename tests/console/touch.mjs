@@ -151,6 +151,22 @@ try {
   // ☰: the pause menu, the game paused.
   await page.locator('.t-menu').tap(); await wait(300);
   ok(await page.evaluate(() => !document.querySelector('.pause-menu').hidden), '☰ opens the pause menu');
+  // The menu on a touch screen: words for a finger, no editor, the pad dimmed and dead under it.
+  {
+    const m = await page.evaluate(() => ({
+      items: [...document.querySelectorAll('.pause-item')].filter((b) => !b.hidden).map((b) => b.dataset.item),
+      foot: [...document.querySelectorAll('.pause-panel > .pause-hint')].map((p) => p.textContent).join(' '),
+      dim: Number(getComputedStyle(document.querySelector('.touch-controls')).opacity),
+    }));
+    ok(!m.items.includes('editor') && m.items.includes('library') && m.items.includes('controls'), 'on a touch screen the menu has no Code editor', m.items.join(' '));
+    ok(/Tap outside/.test(m.foot) && !/Esc/.test(m.foot), 'and says to tap outside to resume, not Esc', m.foot);
+    ok(m.dim < 0.5, 'the pad is dimmed while the menu is open', m.dim);
+    await page.locator('.pause-item[data-item=controls]').tap(); await wait(200);
+    const c = await page.evaluate(() => ({ keys: document.querySelector('.pause-controls table:not(.pause-touch)').hidden, text: document.querySelector('.pause-touch').hidden ? '' : document.querySelector('.pause-touch').textContent, hint: document.querySelector('.pause-controls .pause-hint').textContent }));
+    ok(c.keys && /D-pad/.test(c.text) && /☰/.test(c.text) && !/Arrow keys|Backspace/.test(c.text) && /Tap/.test(c.hint), 'Controls says where the pad\'s buttons are, with no keyboard keys', c.hint);
+    await page.locator('.pause-controls').tap(); await wait(200);
+    ok(await page.evaluate(() => document.querySelector('.pause-controls').hidden && !document.querySelector('.pause-items').hidden), 'and a tap goes back to the menu');
+  }
   ok(await page.evaluate(([x, y]) => !document.elementFromPoint(x, y).closest('.touch-controls'), [dpad.x, dpad.y]), 'and it is over the controls (a tap outside its panel resumes, as with a mouse)');
   const b7 = await box(); await wait(400);
   const b8 = await box();

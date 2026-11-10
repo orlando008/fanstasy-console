@@ -207,6 +207,11 @@ body.touch #screen { touch-action: none; }
 .t-btn.on { filter: brightness(1.6); transform: scale(0.94); }
 .t-menu { min-width: 48px; min-height: 36px; padding: 0 14px; border-radius: 999px; font-size: 18px; background: transparent; }
 
+/* Under the pause menu the pad is dimmed: it does nothing until the game goes on */
+#screen.menu-open .touch-controls { opacity: 0.25; pointer-events: none; }
+#screen.menu-open .touch-controls > * { pointer-events: none; }
+.pause-touch th { white-space: nowrap; vertical-align: top; }
+.pause-touch td { white-space: normal; }
 @media (orientation: portrait) {
   body.touch { --touch-h: clamp(250px, 44vh, 380px); --dpad-size: min(45vw, 210px); --ab-size: min(22vw, 100px); }
   body.touch #screen { padding-bottom: var(--touch-h); }
@@ -265,6 +270,10 @@ body[data-mode="library"] #library {
 .lib-sub { margin: 0; color: var(--dim); }
 .lib-ai { margin-left: auto; align-self: center; flex: none; border-color: var(--accent); color: #f0eadf; }
 
+.lib-jump { display: flex; gap: 6px; padding: 0 24px 6px; overflow-x: auto; scrollbar-width: none; flex: none; }
+.lib-jump::-webkit-scrollbar { display: none; }
+.lib-jump-to { flex: none; padding: 4px 12px; border-radius: 999px; font: bold 11px/1.6 var(--code-font); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); background: transparent; }
+.lib-jump-to:hover { color: var(--fg); border-color: var(--accent); }
 .lib-shelf {
   flex: 1;
   overflow-y: auto;
@@ -374,6 +383,8 @@ body[data-mode="library"] #library {
   .lib-ai-short { display: inline; }
   .lib-ai { padding: 6px 10px; font-size: 13px; }
   .lib-shelf { padding: 0 10px max(16px, env(safe-area-inset-bottom)); }
+  .lib-jump { padding: 0 10px 6px; }
+  .lib-jump-to { padding: 6px 12px; }
   .lib-section { margin-top: 8px; }
   .lib-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 4px 0; }
   .lib-card { gap: 4px; padding: 4px; border-radius: 8px; }
