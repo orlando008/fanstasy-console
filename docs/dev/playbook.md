@@ -163,7 +163,7 @@ recommended answer after each question.
 | Command | What it does |
 |---|---|
 | `python3 carts/src/<name>/audio.py carts/src/<name>/audio.json` | Regenerate a game's audio from its script, with the song toolkit in `tools/devkit/music/kit.py` (its header explains `bar()`) |
-| `node tools/devkit/music/loud.mjs carts/<name>.nova [--check]` | Per-section loudness of every song, surges, peak, and **the lead alone**: its RMS, its share of the mix, how much the mix jumps when it enters, and how much it pierces (2 to 5 kHz). `--check` fails on the limits in section 5 (`verify.js` runs it) |
+| `node tools/devkit/music/loud.mjs carts/<name>.nova [--check]` | Per-section loudness of every song, surges, peak, and **the lead alone**: its RMS, its share of the mix, how much the mix jumps when it enters, and how much it pierces (2 to 5 kHz). `--check` fails on the limits in section 5 (`verify.js` runs it). **`--why [--song n]`** says where a song is over a limit and which channel does it: for a surge, the moments (seconds, order position, pattern, row) and each channel's level there against its usual; for the lead's share, level or pierce and for a loud section, the sections; for the median, each channel's level |
 | `node tools/devkit/music/render.mjs carts/<name>.nova out/` | WAV files of the songs, with level and clipping |
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level (both sides together, so a channel's pan does not change it) and pitch (centroid) of effects, on the channel the game uses |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and chords on the beat (drums left out) |

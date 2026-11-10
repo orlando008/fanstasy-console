@@ -87,6 +87,9 @@ def pcm(vals, rate=RATE, loop=None):
     return {'rate': rate, 'loop': loop, 'data': base64.b64encode(bytes((int(round(v / peak * 120)) & 255) for v in vals)).decode()}
 
 def cell(note, i=None, v=None):
+    """A pattern cell: a note (a name or an index), an instrument, a volume. v (0 to 15) scales the instrument's own
+    volume: 15, or none, is the instrument as it is, 8 about half. It never makes a note louder than its instrument."""
+    assert v is None or 0 <= v <= 15, 'a note\'s volume is 0 to 15 (15 is the instrument as it is): %r' % (v,)
     c = {'n': note if isinstance(note, str) else nn(note)}
     if i is not None: c['i'] = i
     if v is not None: c['v'] = v
