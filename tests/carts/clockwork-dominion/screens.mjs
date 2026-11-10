@@ -3,6 +3,8 @@
 // riddle, the choice, the ending, the gifts and the records).
 import { newGame } from './lib.mjs';
 
+export const hero = ['marco', 'marco2', 'marco3'];
+
 export default function screens(shot) {
   const vm = newGame(1, { title: true }), p = vm.probe();
   vm.run(40); shot(vm, 'title');

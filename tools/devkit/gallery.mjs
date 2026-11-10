@@ -13,6 +13,8 @@
 //     p.score = 99999; vm.run(2); shot(vm, 'big score', { zoom: [0, 0, 128, 32] });   // and a crop of it, enlarged
 //   }
 //
+// It may also export `hero`, the names (in art.py) of the main character's sprites, for the art review's size check
+// (tools/devkit/art/critique.mjs):  export const hero = ['hero0', 'hero1'];
 // shot(vm, name, { zoom: [x, y, w, h] }) keeps the screen as it is at that moment (and, with zoom, a crop of it at
 // three times the size, on its own sheets). The tool writes out-dir/sheet-N.png (six screens a sheet by default, each
 // with its name and number), zoom-N.png for the crops, and with --each a PNG for every screen; it prints the files, to
@@ -50,8 +52,10 @@ export async function collect(file, only = null) {
   const keep = (name) => !only || only.some((w) => name.includes(w));
   const shot = (vm, name, { zoom = null } = {}) => {
     if (!keep(name)) return;
-    const px = Uint32Array.from(vm.out32);
-    screens.push({ name, w: W, h: H, px });
+    const px = Uint32Array.from(vm.out32), n = vm.ppu.oamCount;
+    // (with the screen: where the overlay drew and the sprites of that frame, for tools/devkit/art/critique.mjs)
+    const sprites = Array.from({ length: n }, (_, i) => ({ x: vm.ppu.oamX[i], y: vm.ppu.oamY[i], size: vm.ppu.oamSize[i], tile: vm.ppu.oamTile[i], flip: vm.ppu.oamFlip[i] }));
+    screens.push({ name, w: W, h: H, px, overlay: Uint8Array.from(vm.m.overlay.buf), sprites, tiles: vm.cart.tiles });
     if (zoom) {
       const [zx, zy, zw, zh] = zoom, z = new Uint32Array(zw * zh);
       for (let y = 0; y < zh; y++) for (let x = 0; x < zw; x++) z[y * zw + x] = px[(zy + y) * W + zx + x];
@@ -61,7 +65,7 @@ export async function collect(file, only = null) {
   const mod = await import(pathToFileURL(file).href);
   if (typeof mod.default !== 'function') throw new Error(`${file}: the default export must be a function (shot) => ...`);
   await mod.default(shot);
-  return { screens, zooms };
+  return { screens, zooms, hero: mod.hero || null };
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

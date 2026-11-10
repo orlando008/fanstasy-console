@@ -116,6 +116,12 @@ for (const name of [...carts].sort()) {
     if (fast) console.log('skip tests (--fast)');
     else step('tools/test.js', () => { const r = node('tools/test.js', name); return { ok: !r.status, text: r.stdout + r.stderr, note: (r.stdout.match(/\((\d+) checks\)/) || [])[1] + ' checks' }; });
   } else console.log('skip tests (none in tests/carts/' + name + ')');
+  // The art review of the screens the cart lists (tools/devkit/art/critique.mjs): things to look at, never a failure
+  if (existsSync(join(ROOT, 'tests', 'carts', name, 'screens.mjs'))) {
+    const r = node('tools/devkit/art/critique.mjs', name), last = r.stdout.trim().split('\n').at(-1) || r.stderr.trim().split('\n').at(-1);
+    console.log(`note art review: ${last.replace(`${name}: `, '')}`);
+    if (/[1-9]\d* warning/.test(last)) console.log(r.stdout.trim().split('\n').slice(0, -1).map((l) => `       ${l}`).join('\n'));
+  }
   if (problems.length) failed++;
   report.push(`${problems.length ? 'FAIL' : 'ok  '} ${name}${problems.length ? `: ${problems.join('; ')}` : ''}`);
 }

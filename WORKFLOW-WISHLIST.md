@@ -267,6 +267,11 @@ cart runs there is nothing on screen but the game.
 - [x] **`loud.mjs --why`**: for a song over a limit, where (seconds, order position, pattern, row) and which channel, with what to do; built after
   Clockwork Dominion's medleys needed two throwaway scripts to find a surging bass. `kit.py`'s `cell()` now says what a note's volume is (it
   scales the instrument's own) and refuses one outside 0 to 15.
+- [x] **An art review** (`tools/devkit/art/critique.mjs <name>`): findings on every screen of a cart's `screens.mjs` (flat or noisy pictures, text on
+  the picture, sprites under the overlay, a small hero, one picture on most screens); `verify.js` prints the counts. On Clockwork Dominion as first
+  released it finds the 16 px hero; it does not find a grain that is merely too strong.
+- [x] **A starter that draws with the kit**: the generic starter's hero is a 32 px character from `rig.py` with a walk, its gem from `sculpt.py`, its
+  title from `lettering.py`. The puzzle starter still draws its own way.
 - [ ] **A general score importer** (`tools/devkit/music/midi_notes.py`): `carts/src/flow-state/import_score.py` turns one voice of a MIDI file into note text
   (grid, top or bottom voice, legato, a pitch limit, separating a repeated figure). Move it to the tools, give it a test, and let a song cart (not only a rhythm game) start
   from a public domain score.
