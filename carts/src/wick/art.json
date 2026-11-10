@@ -2,32 +2,42 @@
  "colors": {
   "GLASS": 200
  },
- "gradients": [
-  "sky"
- ],
  "palettes": {
   "bg1": {
    "base": 16,
    "colors": {
-    "bloom": 5,
-    "grass0": 1,
-    "grass1": 2,
-    "grass2": 3,
-    "grass3": 4
+    "iron0": 13,
+    "iron1": 14,
+    "stone0": 1,
+    "stone1": 2,
+    "stone2": 3,
+    "stone3": 4,
+    "stone4": 5,
+    "water0": 9,
+    "water1": 10,
+    "water2": 11,
+    "water3": 12,
+    "wood0": 6,
+    "wood1": 7,
+    "wood2": 8
    }
   },
   "bg2": {
    "base": 32,
    "colors": {
-    "hill0": 1,
-    "hill1": 2,
-    "hill2": 3
+    "wall0": 1,
+    "wall1": 2,
+    "wall2": 3,
+    "wall3": 4
    }
   },
   "bg3": {
    "base": 48,
    "colors": {
     "edge": 6,
+    "flame0": 8,
+    "flame1": 9,
+    "flame2": 10,
     "gold0": 1,
     "gold1": 2,
     "gold2": 3,
@@ -39,92 +49,66 @@
   "spr0": {
    "base": 128,
    "colors": {
-    "hair0": 5,
-    "hair1": 6,
-    "hair2": 7,
-    "pants0": 12,
-    "pants1": 13,
-    "pants2": 14,
-    "pants3": 15,
-    "shirt0": 8,
-    "shirt1": 9,
-    "shirt2": 10,
-    "shirt3": 11,
-    "skin0": 1,
-    "skin1": 2,
-    "skin2": 3,
-    "skin3": 4
-   }
-  },
-  "spr1": {
-   "base": 144,
-   "colors": {
-    "edge": 6,
-    "gold0": 1,
-    "gold1": 2,
-    "gold2": 3,
-    "gold3": 4,
-    "gold4": 5,
-    "white": 7
+    "core": 6,
+    "edge": 1,
+    "flame0": 2,
+    "flame1": 3,
+    "flame2": 4,
+    "flame3": 5,
+    "soot0": 10,
+    "soot1": 11,
+    "wax0": 7,
+    "wax1": 8,
+    "wax2": 9
    }
   }
  },
  "scenes": {
-  "field": {
-   "h": 8,
-   "mx": 0,
+  "cells": {
+   "h": 2,
+   "mx": 40,
    "my": 0,
    "pal": 1,
-   "w": 32
-  },
-  "hills": {
-   "h": 8,
-   "mx": 32,
-   "my": 0,
-   "pal": 2,
-   "w": 32
+   "w": 10
   },
   "logo": {
-   "h": 3,
+   "h": 5,
    "mx": 0,
-   "my": 16,
+   "my": 30,
    "pal": 3,
+   "w": 32
+  },
+  "wall": {
+   "h": 26,
+   "mx": 64,
+   "my": 0,
+   "pal": 2,
    "w": 32
   }
  },
  "sprites": {
-  "gem": {
-   "pal": 1,
+  "ember": {
+   "pal": 0,
+   "size": 8,
+   "tile": 518
+  },
+  "puff": {
+   "pal": 0,
    "size": 16,
-   "tile": 324
+   "tile": 516
   },
-  "hero0": {
+  "wick0": {
    "pal": 0,
-   "size": 32,
-   "tile": 256
+   "size": 16,
+   "tile": 512
   },
-  "hero1": {
+  "wick1": {
    "pal": 0,
-   "size": 32,
-   "tile": 260
-  },
-  "hero2": {
-   "pal": 0,
-   "size": 32,
-   "tile": 264
-  },
-  "hero3": {
-   "pal": 0,
-   "size": 32,
-   "tile": 268
-  },
-  "hero4": {
-   "pal": 0,
-   "size": 32,
-   "tile": 320
+   "size": 16,
+   "tile": 514
   }
  },
  "tiles": {},
- "used": 263,
+ "used": 123,
  "version": 1
 }

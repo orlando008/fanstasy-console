@@ -1,33 +1,27 @@
-// The bot for tools/devkit/sweep.mjs: a player that plays Wick by itself, so balance and stuck states can be
-// checked over many seeds without a person.
+// The bot for tools/devkit/sweep.mjs: it plays Wick's rooms in the real game with the runs the solver finds
+// (solve.mjs), so every room is cleared end to end as a player's buttons would: the pure movement and the game's own
+// loop must agree, frame for frame.
 //
-//   node tools/devkit/sweep.mjs wick --seeds 8 --set skill=0,0.5
-//
-// The contract is in the header of tools/devkit/sweep.mjs: pad() gives the buttons each frame, finished() says the
-// run is over, result() gives the numbers to summarise (and `problems` for anything that must not happen).
-// Replace this with a bot for the real game: the same logic a rival or a hint would use, reading the cart's variables
-// through the probe in lib.mjs (add what it needs there). `skill` here is the chance (0 to 1) of dodging a block.
+//   node tools/devkit/sweep.mjs wick --seeds 1
 import { M, newGame as boot } from './lib.mjs';
+import { solve } from './solve.mjs';
 
-export const defaults = { frames: 20000, seeds: 6, set: { skill: [0, 0.5] } };
+export const defaults = { frames: 20000, seeds: 1, set: {} };
+export const newGame = (seed) => boot(seed);
 
-export const newGame = (seed) => boot(seed); // skipTitle: straight into play
-
-let lastFrame = 0;
-export const setup = () => { lastFrame = 0; };
-
-/** Dodge the nearest block that is about to land on the player, with probability `skill` (decided once a block gets close). */
-const decided = new WeakMap();
-export function pad(vm, p, frame, opts) {
-  const near = p.blocks.find((b) => b.y > 120 && b.y < 215 && Math.abs(b.x - p.px) < 22 && !b.hit);
-  if (!near) return 0;
-  if (!decided.has(near)) decided.set(near, ((near.x * 7 + frame) % 100) / 100 < (opts.skill ?? 1));
-  if (!decided.get(near)) return 0;
-  return near.x >= p.px ? M('LEFT') : M('RIGHT');
+let runs = [], cleared = 0, deaths = 0, last = -1;
+export function setup(vm, p) { runs = p.ROOMS.map((R) => { const s = solve(p, R); return s ? s.run.flatMap(([m, f]) => Array(f).fill(m)) : null; }); cleared = 0; deaths = 0; last = -1; }
+export function pad(vm, p) {
+  if (p.state !== 'play') return 0;
+  if (p.W.won && last !== p.room) { last = p.room; cleared++; }
+  deaths = Math.max(deaths, p.deaths);
+  const run = runs[p.room], m = run && !p.W.dead && !p.W.won ? run[p.timer] || 0 : 0; // (the room's own clock: frame 0 is its first update)
+  return (m & p.PAD_L ? M('LEFT') : 0) | (m & p.PAD_R ? M('RIGHT') : 0) | (m & p.PAD_A ? M('A') : 0) | (m & p.PAD_B ? M('B') : 0);
 }
-
-export const finished = (p) => p.state !== 'play';
-
+export const finished = (p) => p.state === 'title';
 export function result(p) {
-  return { score: p.score, lives: p.lives, problems: p.state === 'play' ? ['still playing'] : [] };
+  const problems = [];
+  if (cleared !== p.ROOMS.length) problems.push(`cleared ${cleared} of ${p.ROOMS.length} rooms`);
+  if (deaths) problems.push(`${deaths} deaths on a solved run`);
+  return { cleared, deaths, problems };
 }

@@ -1,7 +1,7 @@
 # Wick: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Scaffolded: the frame of the game (title, play, pause, records, sound cues) works; the game is a placeholder
+**Status:** Step 1 of 9 built: Wick's movement in three test rooms
 **Cart source:** `carts/src/wick/` → `carts/wick.nova`
 
 ---
@@ -61,13 +61,13 @@ the flame above it does not collide).
 | Thing | Number |
 |---|---|
 | Walk / run top speed | 1.5 / 2.6 |
-| Acceleration on the ground / in the air | 0.30 / 0.20 a frame; stopping on the ground 0.40 |
-| Gravity | 0.24 a frame; 0.12 while A is held and Wick is rising (the higher jump) |
+| Acceleration on the ground / in the air | 0.30 / 0.20 a frame; stopping on the ground 0.40, in the air 0.05 |
+| Gravity | 0.30 a frame; 0.156 while A is held and Wick is rising (the higher jump) |
 | Fall speed limit | 4.5; on a wall while pressing towards it 1.0 (the slide) |
-| Jump | −4.2 (about 2.3 cells held, 1.2 cells tapped) |
+| Jump | −3.4 (2.3 cells held, 1.2 cells tapped; a running jump crosses about 6 cells) |
 | Coyote time | a jump still works 6 frames after walking off an edge |
 | Jump buffer | A pressed up to 6 frames before landing jumps on landing |
-| Wall jump | −3.9 up and 2.6 away from the wall; for 9 frames the d-pad cannot turn Wick back |
+| Wall jump | −3.2 up and 2.6 away from the wall; for 9 frames the d-pad cannot turn Wick back. Climbing needs two walls: he cannot climb one alone |
 | Death to restart | 20 frames (a puff, the soot mark, the room as it was) |
 
 - **Cells:** solid stone; a ledge (solid from above only); the start; the lantern (the goal: touching it clears the
@@ -191,6 +191,18 @@ A palette for each world's stone and far wall; one for Wick and the fire (warm),
 
 1. **Vertical slice:** Wick's movement (section 5's numbers) in three test rooms from the rooms text, death and instant
    restart, the lantern. A bot that clears them, and tests of each number.
+   - **Built:** the rooms as text (`carts/src/wick/rooms.txt`, packed into the ROM by `rooms.py`, which checks each);
+     Wick's movement as one pure function, `stepWick(w, pad, room)` (section 5's table is its numbers: the first
+     values of gravity and the jump were wrong by a factor of two and were worked out again from the heights wanted);
+     the room drawn into Map RAM from its cells; death, a 20-frame restart, SELECT to restart, the lantern lit and the
+     next room; a pause. The art is a stand-in until step 2.
+   - **A solver** (`tests/carts/wick/solve.mjs`): a breadth-first search over button choices with the game's own
+     `stepWick`, which says whether a room can be cleared and how fast. It found the first draft of room 1-2
+     impossible (one wall alone cannot be climbed). The bot plays the solver's runs through the real game.
+   - **Results:** 42 checks (`01-flow`: title, death and restart with the music going on, the lantern, the pause,
+     every room solvable with a par at least 1.3 times the run found; `02-moves`: each number of section 5). The
+     three rooms are cleared by the bot in the real game with no deaths (found 1.4, 2.4 and 1.8 s; pars 6, 8, 9 s).
+     The art review warns of a 16 px hero: that is for the art proof.
 2. **The art proof:** the look, agreed before the rest is drawn. The hero (every frame, 24 px or more), the palettes,
    and one screen of the game as it will look, from the recipes of `docs/dev/art-recipes.md`; then
    `node tools/devkit/art/proof.mjs wick`, the picture sent to the user, and what they said written here.
