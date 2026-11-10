@@ -1,6 +1,7 @@
 # {{TITLE}}'s art: carts/src/{{NAME}}/tiles.txt, palette.txt, map.txt and art.json, and the ART block in code.js.
 #   python3 carts/src/{{NAME}}/art.py carts/src/{{NAME}}
-# Written with the art toolkit (tools/devkit/art/kit.py: its header explains the pieces). This cart owns those files:
+# Written with the art toolkit (tools/devkit/art/kit.py: its header explains the pieces; docs/dev/art-recipes.md shows what
+# each part of it draws, with the lines that drew it: start a new picture from the nearest recipe). This cart owns those files:
 # change the pictures here, not in them. Then look at the result with
 #   node tools/devkit/art/sprites.mjs carts/{{NAME}}.nova out.png      the sprites, at their real sizes and palettes
 #   node tools/devkit/art/scene.mjs carts/{{NAME}}.nova out.png --scene field --holes     the background, with gaps marked
@@ -49,12 +50,8 @@ art.scene('hills', back, pal=far, at=(32, 0))
 # the ramps or the poses (pose(STAND, arm_n=60)); to add an action, add its poses (JUMP, PUNCH, HIT). Look at them all
 # with filmstrip('/tmp/hero.png', hero, poses, hero_pal), or in the packed cart with tools/devkit/art/sprites.mjs.
 hero = Rig('hero', height=26, skin=hero_pal.skin, hair=hero_pal.hair, shirt=hero_pal.shirt, pants=hero_pal.pants, shoes=hero_pal.hair, margin=1)
-def frame(p):
-    """A pose as a 32 x 32 sprite picture: the figure's feet on the bottom row, centred."""
-    img, out = hero.render(p), Img(32, 32)
-    out.blit(img, (32 - img.w) // 2, 32 - img.h)
-    return out
-for k, p in enumerate([STAND] + hero.animate(WALK, 8)[::2]): art.sprite('hero%d' % k, frame(p), pal=hero_pal, region='spr')
+for k, p in enumerate([STAND] + hero.animate(WALK, 8)[::2]):
+    art.sprite('hero%d' % k, hero.render(p).fit(32, 32), pal=hero_pal, region='spr')   # fit: feet on the bottom row, centred
 
 # --- A gem to dodge: a ball sculpted from a 3D shape (sculpt.py), lit, glossy and outlined by the kit ---
 ball = Sculpt(16, 16)

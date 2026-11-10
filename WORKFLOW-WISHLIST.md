@@ -272,6 +272,8 @@ cart runs there is nothing on screen but the game.
   released it finds the 16 px hero; it does not find a grain that is merely too strong.
 - [x] **A starter that draws with the kit**: the generic starter's hero is a 32 px character from `rig.py` with a walk, its gem from `sculpt.py`, its
   title from `lettering.py`. The puzzle starter still draws its own way.
+- [x] **An art recipe book** (`docs/dev/art-recipes.md`, written by `tools/devkit/art/recipes.py`): ten recipes, each a picture and the code that
+  made it, checked in CI. More to add as games need them: an enemy, a vehicle, a top-down room, a portrait from `figure.py`, an animated effect.
 - [ ] **A general score importer** (`tools/devkit/music/midi_notes.py`): `carts/src/flow-state/import_score.py` turns one voice of a MIDI file into note text
   (grid, top or bottom voice, legato, a pitch limit, separating a repeated figure). Move it to the tools, give it a test, and let a song cart (not only a rhythm game) start
   from a public domain score.

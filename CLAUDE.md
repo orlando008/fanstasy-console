@@ -18,7 +18,8 @@
   and `shots.mjs` (open the PNGs with the Read tool). `node tools/devkit/gallery.mjs <name>` puts every screen the cart lists in
   its `tests/carts/<name>/screens.mjs` on contact sheets: keep that list up to date, and look through the sheets before a release. `node tools/devkit/art/critique.mjs <name>` reviews those
   screens (a small hero, flat or noisy pictures, text that is hard to read). Draw with the kit's modules (`rig.py` for characters, `sculpt.py`,
-  `texture.py`, `scenery.py`, `lettering.py`) before placing pixels by hand: the starter's `art.py` shows how.
+  `texture.py`, `scenery.py`, `lettering.py`) before placing pixels by hand: `docs/dev/art-recipes.md` has a picture and the code for each (a hero, a big character, sculpted things, textures,
+  a landscape, a room, a title), and the starter's `art.py` uses them.
 - Commit and push after every build step. Open a pull request only when the user asks, and merge only when told to.
   When you open one, give the user its preview link (`https://orlando008.github.io/fanstasy-console/pr/<number>/`) and
   what to try in it.

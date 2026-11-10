@@ -224,6 +224,13 @@ class Img:
         return s
     def replace(s, a, b):
         s.px = [[b if v == a else v for v in r] for r in s.px]; return s
+    def fit(s, w, h):
+        """This picture on a canvas of w x h: centred across, its bottom row on the canvas's bottom row (a figure's feet
+        on the ground of its sprite). For a rig's or a sculpt's picture that is to be a 16 or 32 px sprite."""
+        if s.w > w or s.h > h: raise ValueError('fit: a %d x %d picture does not fit %d x %d' % (s.w, s.h, w, h))
+        out = Img(w, h)
+        out.blit(s, (w - s.w) // 2, h - s.h)
+        return out
     def blit(s, src, x, y):
         """Draw another picture here at (x, y); its transparent pixels leave this one as it is."""
         for j in range(src.h):
