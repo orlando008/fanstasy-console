@@ -2,7 +2,8 @@
 // player 1 like the keyboard, and a button for the pause menu. They appear on a touch screen (the first touch, or a
 // device whose main pointer is coarse) and only over a running cart. Several fingers at once; the d-pad reads eight
 // directions from where the thumb is; a finger can slide from one button to the next; a tap shorter than a frame
-// still counts.
+// still counts. A thumb does not have to hit a button: the whole left part of the controls is the d-pad (the direction
+// is read from its middle), and anywhere in the right part presses whichever of A and B is nearer.
 
 import { h } from './ui/dom.js';
 
@@ -33,14 +34,17 @@ export class TouchControls {
       h('div', { class: 't-right' }, btn('b', 'B'), btn('a', 'A')));
     screen.append(this.el);
 
-    const own = (e) => e.target.closest?.('.t-dpad, [data-btn]');
+    this.ab = [...this.el.querySelectorAll('.t-a, .t-b')];
+    const own = (e) => e.target.closest?.('.t-left, .t-right, [data-btn]');
     this.el.addEventListener('pointerdown', (e) => {
       const t = own(e);
       if (!t) return;
       e.preventDefault();
       e.stopPropagation(); // a press on the controls is not a tap on the game (which shows the corner buttons)
       try { this.el.setPointerCapture(e.pointerId); } catch { /* not a live pointer: no capture, the finger still counts */ }
-      this.pointers.set(e.pointerId, t === this.dpad ? { dpad: true, x: e.clientX, y: e.clientY } : { btn: t.dataset.btn });
+      const face = t.matches('.t-right') || t.matches('.t-a, .t-b'); // A or B, or the room round them
+      this.pointers.set(e.pointerId, t.matches('.t-left') ? { dpad: true, x: e.clientX, y: e.clientY }
+        : face ? { face, btn: this.nearest(e.clientX, e.clientY) } : { btn: t.dataset.btn });
       this.update(true);
     });
     this.el.addEventListener('pointermove', (e) => {
@@ -48,7 +52,8 @@ export class TouchControls {
       if (!p) return;
       e.preventDefault();
       if (p.dpad) { p.x = e.clientX; p.y = e.clientY; }
-      else { // a finger slides from one button to the next, as on a real pad
+      else if (p.face) p.btn = this.nearest(e.clientX, e.clientY); // a thumb rolls from B to A, as on a real pad
+      else { // a finger slides from one button to the next
         const under = document.elementFromPoint(e.clientX, e.clientY)?.closest?.('[data-btn]');
         if (under && under.dataset.btn !== p.btn) p.btn = under.dataset.btn;
       }
@@ -83,6 +88,12 @@ export class TouchControls {
     if (pressed && mask & ~before) navigator.vibrate?.(8); // a short buzz for each new press, where phones allow it
     for (const b of this.el.querySelectorAll('[data-btn]')) b.classList.toggle('on', !!(mask & BIT[b.dataset.btn]));
     for (const d of ['up', 'down', 'left', 'right']) this.dpad.classList.toggle(`on-${d}`, !!(dir & BIT[d]));
+  }
+
+  /** Whichever of A and B a point is nearer to. */
+  nearest(x, y) {
+    const d = (el) => { const r = el.getBoundingClientRect(); return Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2)); };
+    return (d(this.ab[0]) <= d(this.ab[1]) ? this.ab[0] : this.ab[1]).dataset.btn;
   }
 
   /** The d-pad bits for a point: none in the middle, else one of eight directions by angle. */

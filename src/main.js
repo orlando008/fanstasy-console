@@ -17,7 +17,7 @@ import { SharePanel } from './share.js';
 import { TouchControls } from './touch.js';
 import { CLIP_MAX_SECONDS, ClipRecorder } from './record/clip.js';
 import { InputLog } from './record/replay.js';
-import { loadAutosave, loadSave, storeAutosave, storeSave } from './storage.js';
+import { loadAutosave, loadSave, noteRecent, storeAutosave, storeSave } from './storage.js';
 
 const AUTOSAVE_MS = 10000;
 
@@ -462,6 +462,7 @@ function menuHint() {
 function loadCart(cart, { fileName = '', handle = null, autosave = false, current = null } = {}) {
   if (app.mode === 'library') setMode('run');
   app.current = current;
+  if (current && current !== 'mine') noteRecent(current); // for the Library's Continue shelf
   app.fromEditor = false;
   app.cart = cart;
   app.fileHandle = handle;
