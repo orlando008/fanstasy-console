@@ -14,6 +14,12 @@
 //   node tools/devkit/music/loud.mjs carts/my-game.nova           report
 //   node tools/devkit/music/loud.mjs carts/my-game.nova --check   also exit 1 if a song is over the limits below
 //   node tools/devkit/music/loud.mjs --all [--check]              every cart in carts/ that has songs
+//   node tools/devkit/music/loud.mjs carts/my-game.nova --why [--song 3]
+//                                 for each song over a limit (or the one named): where and which channel. For a surge,
+//                                 the moments (seconds, order position, row) and each channel's level there against its
+//                                 own usual level; for a lead that is too much of the mix, too loud or piercing, and for
+//                                 a loud section, the sections and where they are; for a quiet or loud median, each
+//                                 channel's level. It renders each channel alone, so it takes a few times as long.
 //
 // Limits (--check), for songs of 12 s or more: a section at most 1.6x the median, the median between 0.03 and 0.15, the
 // loudest 250 ms at most 2.2x the median, peak at most 0.45, and for the lead: RMS at most 0.07, at most 0.75 of the mix,
@@ -30,11 +36,12 @@ import { fileURLToPath } from 'node:url';
 import { loadCart, render, rms, peak, songSeconds, songSpeed, SR } from './lib.mjs';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
-const argv = process.argv.slice(2), check = argv.includes('--check');
+const argv = process.argv.slice(2), check = argv.includes('--check'), why = argv.includes('--why');
+const onlySong = argv.includes('--song') ? Number(argv[argv.indexOf('--song') + 1]) : null;
 const paths = argv.includes('--all')
   ? readdirSync(join(ROOT, 'carts')).filter((f) => f.endsWith('.nova')).map((f) => join(ROOT, 'carts', f))
-  : argv.filter((a) => !a.startsWith('--'));
-if (!paths.length) { console.error('usage: node tools/devkit/music/loud.mjs <cart.nova> [--check] | --all [--check]'); process.exit(1); }
+  : argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--song');
+if (!paths.length) { console.error('usage: node tools/devkit/music/loud.mjs <cart.nova> [--check] [--why [--song n]] | --all [--check]'); process.exit(1); }
 const LIMITS = { section: 1.6, surge: 2.2, peak: 0.45, medianLo: 0.03, medianHi: 0.15, leadRms: 0.07, leadShare: 0.75, jump: 1.5, pierce: 0.012 };
 
 /** x through a band-pass of lo to hi Hz (two 12 dB/octave biquads): the band an ear finds piercing is 2 to 5 kHz. */
@@ -60,6 +67,52 @@ function brightness(x, a, b) {
   return e ? d / e : 0;
 }
 
+/** Where in a song a time is: its order position, pattern and row (the rows at their speeds, as songSeconds counts). */
+export function whereAt(cart, s, t) {
+  let speed = 6, ticks = 0;
+  const order = cart.songs[s].order, want = t * 60;
+  for (let pos = 0; pos < order.length; pos++) for (let row = 0; row < cart.patterns[order[pos]].length; row++) {
+    const f = cart.patterns[order[pos]][row].find((c) => c && (c.fx >> 8) === 0xF && (c.fx & 255));
+    if (f) speed = f.fx & 255;
+    ticks += speed;
+    if (ticks > want) return { pos, pattern: order[pos], row };
+  }
+  return { pos: order.length - 1, pattern: order.at(-1), row: 63 };
+}
+const at = (cart, s, t) => { const w = whereAt(cart, s, t); return `${t.toFixed(1)} s (order ${w.pos}, pattern ${w.pattern}, row ${w.row})`; };
+/** The song with only channel ch sounding (the tempo effects kept), rendered. */
+function solo(cart, s, ch, sec) {
+  const c = structuredClone(cart);
+  for (const p of c.patterns) for (const row of p) for (let k = 0; k < row.length; k++) if (k !== ch) row[k] = row[k] && (row[k].fx >> 8) === 0xF ? { n: null, i: null, v: null, fx: row[k].fx } : null;
+  return render(c, [['music', s, 0]], sec)[0];
+}
+/** Explain a song's faults: print where each is and which channels make it. x: what the report measured. */
+function explain(cart, s, x) {
+  const { L, Ld, Lp, w, parts, med, sec, win, hop, short, smed } = x, song = cart.songs[s];
+  const used = [...new Set(song.order.flatMap((n) => cart.patterns[n].flatMap((row) => row.map((c, k) => (c && c.n != null ? k : -1)).filter((k) => k >= 0))))].sort();
+  const inst = (ch, t) => { const { pos, row } = whereAt(cart, s, t); for (let r = row; r >= 0; r--) { const c = cart.patterns[song.order[pos]][r][ch]; if (c && c.i != null) return c.i; } return null; };
+  const solos = new Map(), one = (ch) => { if (!solos.has(ch)) solos.set(ch, solo(cart, s, ch, sec)); return solos.get(ch); };
+  const usual = (ch) => { const v = []; for (let i = 0; i + win <= L.length; i += hop) v.push(rms(one(ch), i, i + win)); v.sort((a, b) => a - b); return v[v.length >> 1] || 0; };
+  const say = (t) => console.log('       ' + t);
+  if (x.surge > LIMITS.surge) {
+    const order = short.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]), picked = [];
+    for (const [v, i] of order) { if (picked.length < 3 && picked.every((p) => Math.abs(p[1] - i) * hop > SR)) picked.push([v, i]); }
+    say(`why the surge: the loudest quarter seconds, and each channel there against its own usual level (the median quarter second of the mix is ${smed.toFixed(3)})`);
+    for (const [v, i] of picked) {
+      const t = (i * hop) / SR, chans = used.map((ch) => ({ ch, v: rms(one(ch), i * hop, i * hop + win), u: usual(ch) })).sort((a, b) => b.v - a.v);
+      say(`  ${(v / smed).toFixed(2)}x at ${at(cart, s, t)}: ` + chans.filter((c) => c.v > 0.002).map((c) => `ch ${c.ch} (instrument ${inst(c.ch, t + 0.12) ?? '?'}) ${c.v.toFixed(3)}${c.u > 0.0005 ? `, ${(c.v / c.u).toFixed(1)}x its usual` : ', usually silent'}`).join('; '));
+    }
+    say('  -> a channel many times its usual level is a hard attack on a quiet part: lower that note\'s volume, or hold a soft voice (strings) under it so the median rises; several channels striking together: stagger them, or thin the chord');
+  }
+  const sections = (test) => parts.map((p, k) => ({ k, t: (k * w) / SR, l: rms(Ld, k * w, Math.min(L.length, (k + 1) * w)), m: p.rms, pc: rms(Lp, k * w, Math.min(L.length, (k + 1) * w)) })).filter(test);
+  const list = (xs, f) => xs.slice(0, 6).map((q) => `${at(cart, s, q.t)} ${f(q)}`).join('; ') + (xs.length > 6 ? `; and ${xs.length - 6} more` : '');
+  if (x.leadShare > LIMITS.leadShare) { const xs = sections((q) => q.m > 0.3 * med && q.l / q.m > LIMITS.leadShare); say(`why the lead's share: in ${xs.length} section(s) channel 0 is most of the mix: ${list(xs, (q) => `${(q.l / q.m).toFixed(2)}`)}`); say('  -> the lead plays nearly alone there: lower its note volume in that piece, or give the accompaniment more (a held voice, a doubling on another channel)'); }
+  if (x.leadRms > LIMITS.leadRms) { const xs = sections((q) => q.l > LIMITS.leadRms); say(`why the lead's level: channel 0 alone is over ${LIMITS.leadRms} in: ${list(xs, (q) => q.l.toFixed(3))}`); }
+  if (cart.chip !== 1 && x.pierce > LIMITS.pierce) { const xs = sections((q) => q.pc > LIMITS.pierce); say(`why it pierces: channel 0 has over ${LIMITS.pierce} at 2 to 5 kHz in: ${list(xs, (q) => `${q.pc.toFixed(4)} (instrument ${inst(0, q.t + w / SR / 2) ?? '?'})`)}`); say('  -> the lead is high and bright there: an octave lower, a darker instrument, or a lower note volume for that piece'); }
+  if (x.section > LIMITS.section) { const xs = sections((q) => q.m > LIMITS.section * med).sort((a, b) => b.m - a.m); say(`why the loud section: over ${LIMITS.section}x the median (${med.toFixed(3)}) in: ${list(xs, (q) => `${(q.m / med).toFixed(2)}x`)}`); say('  -> either that part is too loud, or the rest of the song is quiet and pulls the median down: compare the channels\' levels below'); }
+  if (x.section > LIMITS.section || med < LIMITS.medianLo || med > LIMITS.medianHi) say(`the channels' usual levels (median quarter second, alone): ${used.map((ch) => `ch ${ch} ${usual(ch).toFixed(3)}`).join(', ')}; the mix's median section ${med.toFixed(3)} (wanted ${LIMITS.medianLo} to ${LIMITS.medianHi})`);
+}
+
 let failed = 0;
 for (const path of paths) {
   const cart = loadCart(path);
@@ -67,6 +120,7 @@ for (const path of paths) {
   if (!songs.length) continue;
   console.log(path.replace(/^.*\//, ''));
   for (const s of songs) {
+    if (onlySong !== null && s !== onlySong) continue;
     const song = cart.songs[s], sec = songSeconds(cart, s), [L] = render(cart, [['music', s, 0]], sec);
     const w = Math.floor(L.length / (song.order.length * 4)), parts = [];
     for (let k = 0; k * w < L.length; k++) parts.push({ rms: rms(L, k * w, Math.min(L.length, (k + 1) * w)), pk: peak(L.subarray(k * w, Math.min(L.length, (k + 1) * w))), br: brightness(L, k * w, Math.min(L.length, (k + 1) * w)) });
@@ -103,6 +157,7 @@ for (const path of paths) {
     if (pk > LIMITS.peak) bad.push(`peak ${pk.toFixed(2)} (limit ${LIMITS.peak})`);
     console.log(`  song ${s} (speed ${songSpeed(cart, s)}, ${sec.toFixed(1)} s): median ${med.toFixed(3)}, loudest/median ${section.toFixed(2)}, surge ${surge.toFixed(2)}, peak ${pk.toFixed(2)}, brightness ${br.toFixed(2)}; lead ${leadRms.toFixed(3)} = ${leadShare.toFixed(2)} of the mix, entrance ${jump ? jump.toFixed(2) + 'x' : '-'}, pierce ${pierce.toFixed(4)}${bad.length ? '   <-- ' + bad.join('; ') : ''}`);
     console.log('     ' + parts.map((p) => `${p.rms.toFixed(3)}/${p.pk.toFixed(2)}`).join(' '));
+    if (why && (onlySong === s || (onlySong === null && bad.length))) explain(cart, s, { L, Ld, Lp, w, parts, med, sec, win, hop, short, smed, surge, section, leadShare, leadRms, pierce });
     if (bad.length) failed++;
   }
 }

@@ -16,14 +16,15 @@
 #   5 the Rust        Grieg, Troldtog (March of the Dwarfs): plucked and quick
 #   6 Dominion        Bach, The Art of Fugue, the canon at the octave; the theme's variation, grand, with strings
 #   7 Rest, credits   Satie, Gymnopedie No. 1; Marco's theme on the music box alone, slowing as it runs down
-# Each loops (code.js rests after each pass: PASS there is each song's length in frames, which this prints). Each piece
-# starts a pattern, with its own speed (the F effect on its patterns' first row), so a reprise of the theme in another
-# song is the same patterns, and free. After a change: node tools/devkit/music/loud.mjs carts/clockwork-dominion.nova
+# Each loops (code.js rests after each pass: PASS there is each song's length in frames, which this prints). The songs
+# are medleys (tools/devkit/music/medley.py): each piece starts a pattern with its own speed, so a reprise of the theme
+# in another song is the same patterns, and free. After a change: node tools/devkit/music/loud.mjs carts/clockwork-dominion.nova
 # --check, and node tools/devkit/music/sfx.mjs carts/clockwork-dominion.nova 6 for the effects.
 import json, math, os, random, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/music'))
 from kit import *
 from samples import additive, looped, oneshot
+from medley import Medley
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 a = Audio(chip=2)
@@ -81,61 +82,13 @@ a.voice('FXCHOIR', 'choir', 7, 0.0, a=6)
 a.voice('FXBRASS', 'brass', 6, 0.0, a=2)
 
 
-def read(name):
-    """The voices of a piece from scores/<name>.txt: {voice: [(row, pitch, rows)]} and its rows."""
-    lines = open(os.path.join(HERE, 'scores', name + '.txt')).read().split('\n')
-    rows = int(lines[0].split()[-2])
-    out = {}
-    for l in lines[1:]:
-        if not l.strip(): continue
-        v, *toks = l.split()
-        out[v] = [tuple(int(x) for x in t.split(':')) for t in toks]
-    return out, rows
-
-
-def piece(names, speed, parts, tick=0, slow=None):
-    """A piece of a song: the scores named played one after another, each voice on a channel with an instrument (parts:
-    {voice: (channel, instrument, semitones[, volume 0-15])}; 'lead@2' is a second part from the same voice); a note that ends before its
-    voice's next one is let go (OFF). tick: a clock's tick on channel 5 every that many rows (tick and tock in turn).
-    Its rows are made up to whole patterns; slow: a speed for each of them (a ritardando), or all at `speed`."""
-    played, base = [], 0
-    for name in names:
-        voices, n = read(name)
-        played.append((voices, base)); base += n
-    total = -(-base // 64) * 64
-    rows = [[None] * 8 for _ in range(total)]
-    for voices, off in played:
-        for key, (ch, inst, vs, *vol) in parts.items():
-            notes = voices.get(key.split('@')[0], [])
-            for k, (r, p, d) in enumerate(notes):
-                r += off
-                if r >= total: break
-                rows[r][ch] = cell(p + vs - 12, a.I[inst], *vol)                            # (MIDI 60 is C4: the chip's C-4 is index 48)
-                nxt = notes[k + 1][0] + off if k + 1 < len(notes) else total
-                if r + d < nxt and r + d < total: rows[r + d][ch] = {'n': 'OFF'}
-    if tick:
-        for r in range(0, base, tick): rows[r][5] = cell(84 if (r // tick) % 2 else 79, a.I['TICK' if (r // tick) % 2 else 'TOCK'])
-    return rows, slow or [speed] * (total // 64)
-
-
+# The songs: pieces in turn (tools/devkit/music/medley.py plays the note text of scores/), each with its own speed
+m = Medley(a, os.path.join(HERE, 'scores'))
+TICKS = lambda every: ('TOCK', 'TICK', every)
+def piece(names, speed, parts, tick=0, slow=None): return m.piece(names, speed, parts, tick=TICKS(tick) if tick else None, slow=slow)
 def song(pieces, echo):
-    """A song: its pieces in turn, then back to the first. Each pattern starts with its piece's speed (F on channel 7),
-    so the same piece in two songs is the same patterns. Prints the song's length in frames (code.js PASS)."""
-    S = a.song(Key('C', MAJOR), pieces[0][1][0], echo=echo)
-    order, frames = [], 0
-    for rows, speeds in pieces:
-        for k, sp in enumerate(speeds):
-            pat = [list(r) for r in rows[k * 64:(k + 1) * 64]]
-            pat[0][7] = {'fx': 'F%02X' % sp}
-            key = json.dumps(pat)
-            if key not in a.index:
-                a.index[key] = len(a.patterns)
-                a.patterns.append({'rows': pat})
-            order.append(a.index[key]); frames += 64 * sp
-    tune = {'order': order, 'loop': 0}
-    if S.echo: tune['echo'] = dict(zip(('delay', 'feedback', 'volume', 'tone'), S.echo))
-    a.songs.append(tune)
-    print('song %d: %d patterns in order, %d frames (%.0f s)' % (len(a.songs) - 1, len(order), frames, frames / 60))
+    frames = m.song(pieces, echo)
+    print('song %d: %d patterns in order, %d frames (%.0f s)' % (len(a.songs) - 1, len(a.songs[-1]['order']), frames, frames / 60))
 
 SHOP, ROOM, HALL, SPACE = (5, 4, 5, 9), (6, 5, 6, 8), (10, 6, 7, 7), (14, 9, 8, 6)
 THEME = piece(['marco'], 9, {'lead': (0, 'MBOX', 12), 'bass': (1, 'STR', 12), 'bass@2': (4, 'MBOXL', 0, 5), 'inner': (2, 'CELQ', 0), 'tenor': (3, 'CELQ', 0)}, tick=6)

@@ -9,7 +9,7 @@
 //   carts/src/<name>/code.js, meta.json, audio.py (and the audio.json it makes), art.py (and the tiles.txt, palette.txt,
 //                    map.txt and art.json it makes, and the ART block in code.js)
 //   carts/<name>.nova                the packed cart
-//   tests/carts/<name>/lib.mjs, 01-flow.mjs, 02-art.mjs, bot.mjs (a bot for tools/devkit/sweep.mjs), and a kind's own tests
+//   tests/carts/<name>/lib.mjs, 01-flow.mjs, 02-art.mjs, bot.mjs (a bot for tools/devkit/sweep.mjs), screens.mjs (for tools/devkit/gallery.mjs), and a kind's own tests
 //   docs/carts/<name>.md             the spec template, with the implementation plan
 // Then: write the spec, replace the placeholder game, and build step by step (docs/dev/playbook.md). The template files
 // are plain text with {{NAME}}, {{TITLE}}, {{TITLE_UPPER}} and {{GENRE}} (the Library's shelf: the kind's, or Arcade; see
@@ -21,6 +21,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -52,7 +53,7 @@ function scaffold(name, title, kind = null) {
   const put = (file, to) => { mkdirSync(join(to, '..'), { recursive: true }); writeFileSync(to, fill(readFileSync(source(file), 'utf8'))); };
   for (const f of ['code.js', 'meta.json', 'audio.py', 'art.py']) put(f, join(dirs.src, f));
   put('spec.md', dirs.spec);
-  const tests = new Set([...readdirSync(TEMPLATES), ...(kindDir ? readdirSync(kindDir) : [])].filter((f) => f === 'lib.mjs' || f === 'bot.mjs' || /^\d\d-.*\.mjs$/.test(f)));
+  const tests = new Set([...readdirSync(TEMPLATES), ...(kindDir ? readdirSync(kindDir) : [])].filter((f) => f === 'lib.mjs' || f === 'bot.mjs' || f === 'screens.mjs' || /^\d\d-.*\.mjs$/.test(f)));
   for (const f of [...tests].sort()) put(f, join(dirs.tests, f));
   run('python3', join(dirs.src, 'audio.py'), join(dirs.src, 'audio.json'));
   run('python3', join(dirs.src, 'art.py'), dirs.src); // tiles.txt, palette.txt, map.txt, art.json and the ART block of code.js
@@ -60,7 +61,7 @@ function scaffold(name, title, kind = null) {
   console.log(`Created ${title} (${name})${kind ? ` as a ${kind} game` : ''}:
   carts/src/${name}/       code.js, meta.json, audio.py + audio.json, art.py + tiles.txt, palette.txt, map.txt, art.json
   carts/${name}.nova       packed
-  tests/carts/${name}/     lib.mjs, ${[...tests].filter((f) => /^\d/.test(f)).sort().join(', ')}, bot.mjs (for node tools/devkit/sweep.mjs ${name})
+  tests/carts/${name}/     lib.mjs, ${[...tests].filter((f) => /^\d/.test(f)).sort().join(', ')}, bot.mjs (for node tools/devkit/sweep.mjs ${name}), screens.mjs (for node tools/devkit/gallery.mjs ${name})
   docs/carts/${name}.md    the spec to fill in
 
 Next:
@@ -86,9 +87,10 @@ async function selftest() {
       console.log(run('node', 'tools/test.js', name));
       console.log(run('node', 'tools/devkit/soak.mjs', `carts/${name}.nova`, '--frames', '3000', '--seeds', '1'));
       console.log(run('node', 'tools/devkit/sweep.mjs', name, '--seeds', '3'));
+      console.log(run('node', 'tools/devkit/gallery.mjs', name, join(tmpdir(), 'zz-selftest-gallery')).split('\n').slice(-1)[0]);
       console.log(run('node', 'tools/devkit/music/loud.mjs', `carts/${name}.nova`, '--check').split('\n').slice(-2).join('\n'));
     }
-    console.log('\nthe starters scaffold, pack, pass their checks and tests, a soak run, a sweep and the music levels');
+    console.log('\nthe starters scaffold, pack, pass their checks and tests, a soak run, a sweep, the gallery and the music levels');
     return 0;
   } catch (e) {
     console.error(String(e.stdout || ''), String(e.stderr || ''), e.message);

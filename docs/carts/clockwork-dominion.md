@@ -604,6 +604,10 @@ again by applying the effects of the inventions made, in order.
       - `06-act3`, `08-scenes` and `11-text` check these. `08-scenes` timed a scene by its three slowest frames of
         200, which are Node compiling a path, not the cart: it uses the 95th percentile (a frame is about 2 ms).
 
+    - **Room in the code:** the size report (`tools/devkit/size.mjs`, built after this game ran out of room) found Math's
+      functions written 151 times; by their own names, declared once, the packed code is 64,318 bytes (723 fewer, 1,218
+      left). `node tools/devkit/gallery.mjs clockwork-dominion` shows the 56 screens of `screens.mjs`.
+
 Each step: build it, run `node tools/verify.js` (and `smoke.mjs`; `sweep.mjs` after a rules change), write its
 **Built** and **Results** notes under its number here, commit and push.
 
