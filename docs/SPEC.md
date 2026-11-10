@@ -294,8 +294,12 @@ player 0, alongside the keyboard: the cart sees ordinary button presses and need
 - **The buttons.** A d-pad, A and B (A to the right, as on the pad), Start and Select, and ☰ for the pause menu
   (section 11.2). There are no X, Y, L or R: a game meant for phones plays on the d-pad, A, B, Start and Select, and
   keeps the other buttons for extras.
-- **Layout.** In portrait the game is at the top and the pad fills the space under it (the d-pad on the left, B and A on
-  the right, Select, Start and ☰ between). In landscape the game is in the middle with the d-pad to its left, B and A
+- **Sizes, and misses.** The pad is made for thumbs: on a phone the d-pad is about 45% of the screen's width (up to
+  210 px) and A and B 22% each (up to 100 px), on a diagonal, B low and A high. A thumb does not have to land on a
+  button: the whole left part of the pad is the d-pad (the direction is read from its middle), and a touch anywhere in
+  A and B's box presses the nearer of the two, so a thumb rolls from one to the other.
+- **Layout.** In portrait the game is at the top and the pad fills the space under it (Select, Start and ☰ in a row
+  along its top, the d-pad on the left under them, B and A on the right). In landscape the game is in the middle with the d-pad to its left, B and A
   to its right and Select, Start and ☰ in the top right corner; nothing covers the game either way. With room for less
   than twice the size, the picture is scaled to fill its space at any factor rather than a whole one.
 - **Fingers.** Several at once (the d-pad and A together). The d-pad reads eight directions from where the thumb is,

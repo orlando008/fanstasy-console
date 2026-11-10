@@ -197,20 +197,27 @@ body.touch #screen { touch-action: none; }
   border: 1px solid var(--line);
   touch-action: none;
 }
-.t-a, .t-b { width: var(--ab-size, 68px); height: var(--ab-size, 68px); border-radius: 50%; }
-.t-a { background: #8c2a3a; border-color: #d04648; margin-bottom: calc(var(--ab-size, 68px) * 0.7); }
-.t-b { background: #2c3f6e; border-color: #597dce; margin-right: 8px; }
-.t-select, .t-start { padding: 6px 12px; border-radius: 999px; font-size: 11px; letter-spacing: 0.08em; }
+/* A and B sit on a diagonal (B low and left, A high and right) in a box that is all theirs: a touch anywhere in it
+   presses the nearer one (src/touch.js), and the same goes for the d-pad's side */
+.t-right { position: relative; width: calc(var(--ab-size, 84px) * 1.85); height: calc(var(--ab-size, 84px) * 1.6); }
+.t-a, .t-b { position: absolute; width: var(--ab-size, 84px); height: var(--ab-size, 84px); border-radius: 50%; font-size: calc(var(--ab-size, 84px) * 0.3); }
+.t-a { background: #8c2a3a; border-color: #d04648; right: 0; top: 0; }
+.t-b { background: #2c3f6e; border-color: #597dce; left: 0; bottom: 0; }
+.t-select, .t-start { min-width: 76px; min-height: 36px; padding: 0 14px; border-radius: 999px; font-size: 12px; letter-spacing: 0.08em; }
 .t-btn.on { filter: brightness(1.6); transform: scale(0.94); }
-.t-menu { padding: 4px 14px; border-radius: 999px; font-size: 16px; background: transparent; }
+.t-menu { min-width: 48px; min-height: 36px; padding: 0 14px; border-radius: 999px; font-size: 18px; background: transparent; }
 
 @media (orientation: portrait) {
-  body.touch { --touch-h: clamp(190px, 38vh, 320px); --dpad-size: min(34vw, 170px); --ab-size: min(14vw, 74px); }
+  body.touch { --touch-h: clamp(250px, 44vh, 380px); --dpad-size: min(45vw, 210px); --ab-size: min(22vw, 100px); }
   body.touch #screen { padding-bottom: var(--touch-h); }
-  body.touch .touch-controls { left: 0; right: 0; bottom: 0; height: var(--touch-h); gap: 8px; padding: 0 max(12px, 4vw) max(12px, env(safe-area-inset-bottom)); }
+  body.touch .touch-controls { left: 0; right: 0; bottom: 0; height: var(--touch-h); gap: 8px; padding: 52px max(8px, 2.5vw) max(12px, env(safe-area-inset-bottom)); }
+  /* Select, Start and the menu in a row along the top of the pad, so the d-pad and A and B have the whole width */
+  body.touch .t-middle { position: absolute; top: 6px; left: 0; right: 0; flex-direction: row; justify-content: center; gap: 12px; }
+  body.touch .t-left, body.touch .t-right { align-self: stretch; }
+  body.touch .t-left { flex: 1; justify-content: flex-start; }
 }
 @media (orientation: landscape) {
-  body.touch { --dpad-size: min(36vh, 160px); --ab-size: min(15vh, 66px); }
+  body.touch { --dpad-size: min(46vh, 190px); --ab-size: min(22vh, 88px); }
   body.touch .touch-controls { inset: 0; padding: 0 max(16px, env(safe-area-inset-left)) 5vh; align-items: flex-end; pointer-events: none; }
   body.touch .touch-controls > * { pointer-events: auto; opacity: 0.85; }
   /* Select, Start and the menu go to the top of the right-hand margin, above A and B, clear of the game */
