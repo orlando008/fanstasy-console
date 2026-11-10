@@ -152,6 +152,8 @@ recommended answer after each question.
 | `node tools/devkit/art/snes.mjs carts/<name>.nova` | **Does it look like a SNES game?** Plays the cart and scores its screens 0 to 100 (shades per colour, colours, sprite size, layers, parallax, a gradient sky, effects), each low measure with what to do about it in the kit; `--all` ranks every cart. Information, not a gate: calibrated so Operation Ironstorm scores 62 and Summit Rush 13 |
 | `node tools/devkit/art/colors.mjs carts/<name>.nova [--png out.png] [--check]` | How the colours read: plays the cart with random buttons and measures its screens in OKLab. Muddy panels (dull brown or grey on overlay panels; limit 0.3), palette ramps out of order (`art.json`), and as information mud, contrast, faint edges and the overlay's default colours; `--png` marks mud magenta and faint edges cyan (in the PNG only); `--extra "src"` as in `shots.mjs` |
 | `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons, `--extra "skipTitle = true;"`) |
+| `node tools/devkit/gallery.mjs <name> [out-dir]` | **Every screen of the game on contact sheets**, from the list in `tests/carts/<name>/screens.mjs` (the starter has one: add a `shot(vm, 'name')` for each new screen and each state worth a look; `{ zoom: [x, y, w, h] }` adds an enlarged crop). Run it before a release, after changing the art, and for a polish pass: looking at all of Clockwork Dominion's 56 screens found a wrong tint, an iris that stopped short and a box across the logo that no test had caught |
+| `python3 tools/devkit/music/score.py file.mid [bar-ticks] [from] [to]` | The bars of a MIDI file (to pick an excerpt), and as a module the reader that turns a piece into note text for a cart (a tune, a bass and two inner voices); `medley.py` plays that text as songs of several pieces |
 | `node tools/devkit/gif.mjs carts/<name>.nova out.gif --from 60 --to 240` | An animated GIF of the cart (`--hold`, `--crop x,y,w,h`, `--every 2`): to show a person an animation you cannot watch |
 | `python3 tools/devkit/art/selftest.py` | The kit's own checks (CI runs it) |
 
@@ -308,8 +310,9 @@ unit. Games made before it are carts for the old chip (format version 1) until e
   only an `audio.json` gets a script with `python3 tools/devkit/music/script.py carts/src/<name>/audio.json
   carts/src/<name>/audio.py` (every pattern as tracker text), which packs to the same cart.
 - **A long stretch of play wants a medley, not one short loop.** A song can be several pieces in turn, each starting a
-  pattern with its own speed (an `Fxx` on the pattern's first row): Clockwork Dominion's `audio.py` (`piece()` and
-  `song()`) does this, and a piece used in two songs is the same patterns, so a reprise (a theme coming back) costs
+  pattern with its own speed (an `Fxx` on the pattern's first row): `tools/devkit/music/medley.py` does this (`Medley(a,
+  folder).piece(...)` and `.song([...])`, from note text that `score.py` reads out of a public domain MIDI file or that
+  is written by hand; Clockwork Dominion's `audio.py` and `scores.py` are the example), and a piece used in two songs is the same patterns, so a reprise (a theme coming back) costs
   nothing. `loud.mjs` times a song by the speed of each row, so it measures a medley whole; give the code each song's
   length in frames (that cart's `PASS`) if it rests between passes. A note's volume (`v`, 0 to 15) scales its
   instrument's: 15 is the instrument as it is, anything less is softer.

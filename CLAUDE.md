@@ -15,7 +15,8 @@
   game: `node tools/release.js <name> --keep-label`, so the `.nova.png` and the Library entry match.
 - You cannot hear or see a cart directly: measure the audio (`tools/devkit/music/`), make the art in code (a cart's
   `art.py`, with `tools/devkit/art/kit.py`) and look at it with `tools/devkit/art/sprites.mjs`, `scene.mjs`, `tiles.mjs`
-  and `shots.mjs` (open the PNGs with the Read tool).
+  and `shots.mjs` (open the PNGs with the Read tool). `node tools/devkit/gallery.mjs <name>` puts every screen the cart lists in
+  its `tests/carts/<name>/screens.mjs` on contact sheets: keep that list up to date, and look through the sheets before a release.
 - Commit and push after every build step. Open a pull request only when the user asks, and merge only when told to.
   When you open one, give the user its preview link (`https://orlando008.github.io/fanstasy-console/pr/<number>/`) and
   what to try in it.

@@ -87,7 +87,9 @@ that gap.
 - [ ] **A `blit()` helper in the starter.**
   - **What:** draw a sprite on the overlay a pixel at a time, from the tile sheet (`sget`).
   - **Why:** sprites can never appear over an overlay panel, so this is how characters stand on results and menu panels.
-- [ ] **A one-command screen gallery** (`tools/devkit/gallery.mjs`).
+- [x] **A one-command screen gallery** (`tools/devkit/gallery.mjs`). Built: `node tools/devkit/gallery.mjs <name>` writes contact sheets
+  (and enlarged crops) of the screens a cart lists in its `screens.mjs`; the starter has one, and Clockwork Dominion's lists 56.
+  The older games still need a `screens.mjs` each.
   - **What:** each cart lists its screens in `tests/carts/<name>/screens.mjs` (title, lobby, mid-game, results, initials,
     pause...); the tool writes one contact sheet and zoomed crops.
   - **Why:** for Tricksy Towerz I wrote a throwaway gallery script and used Python's image library (PIL) to zoom.
@@ -255,6 +257,10 @@ cart runs there is nothing on screen but the game.
 - [x] **An onset check for rhythm games** (`tools/devkit/music/onset.mjs`): when each song's first lead note reaches a quarter of its level, so a slowly swelling voice
   is caught before a player taps late against it. Done in [orlando008/fanstasy-console#60](https://github.com/orlando008/fanstasy-console/pull/60); the playbook's
   section 10 has the rule.
+- [x] **Scores and medleys in the music kit** (`tools/devkit/music/score.py`, `medley.py`): a piece read from a MIDI file into note text (a tune,
+  a bass and two inner voices; `score.py file.mid` prints its bars, to pick an excerpt), and songs made of pieces in turn, each with its own speed,
+  a reprise sharing patterns. Clockwork Dominion uses both. The other carts with their own `scores.py` (Riddlewick Manor, Lantern Keeper, Royal
+  Chess, Tabletop Grand Prix) could move to it.
 - [ ] **A general score importer** (`tools/devkit/music/midi_notes.py`): `carts/src/flow-state/import_score.py` turns one voice of a MIDI file into note text
   (grid, top or bottom voice, legato, a pitch limit, separating a repeated figure). Move it to the tools, give it a test, and let a song cart (not only a rhythm game) start
   from a public domain score.
