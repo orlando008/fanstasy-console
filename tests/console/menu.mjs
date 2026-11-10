@@ -64,6 +64,18 @@ try {
   ok(await page.locator('.pause-controls').isVisible() && /Arrow keys/.test(await page.locator('.pause-controls').textContent()), 'Controls shows the keys for the console\'s buttons');
   await page.keyboard.press('x'); await wait(100);
   ok(!(await page.locator('.pause-controls').isVisible()) && await selected() === 'controls', 'any key goes back to the menu');
+  // Full screen: an item that says where it is, and follows the browser (Esc leaves full screen by itself).
+  {
+    const label = () => page.locator('.pause-item[data-item=fullscreen]').textContent();
+    const was = await label();
+    await page.evaluate(() => { document.exitFullscreen = async () => { document.__fs = false; document.dispatchEvent(new Event('fullscreenchange')); };
+      document.documentElement.requestFullscreen = async () => { document.__fs = true; document.dispatchEvent(new Event('fullscreenchange')); };
+      Object.defineProperty(document, 'fullscreenElement', { get: () => (document.__fs ? document.documentElement : null), configurable: true }); });
+    await page.locator('.pause-item[data-item=fullscreen]').click(); await wait(100); const on = await label();
+    await page.locator('.pause-item[data-item=fullscreen]').click(); await wait(100);
+    ok(was === 'Full screen: off' && on === 'Full screen: on' && await label() === 'Full screen: off' && await menuOpen(), 'Full screen turns it on and off, says which, and leaves the menu open', `${was} / ${on}`);
+    await page.locator('.pause-item[data-item=controls]').hover(); await wait(50);
+  }
   await page.keyboard.press('ArrowDown');
   const v0 = await page.locator('[data-item=volume]').textContent();
   await page.keyboard.press('ArrowLeft'); await wait(50);
@@ -85,20 +97,20 @@ try {
 
   // The ways back to the Library.
   await page.keyboard.press('Escape'); await wait(100);
-  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowDown'); // past Share link (SPEC 11.4: tests/console/share.mjs)
+  for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowDown'); // past Full screen and Share link (SPEC 11.4: tests/console/share.mjs)
   ok(await selected() === 'library', 'the menu has Library');
   await page.keyboard.press('Enter'); await wait(800);
   ok(await mode() === 'library' && !(await menuOpen()), 'which goes to the Library');
-  ok(/PAUSED/.test(await page.locator('.lib-card.playing').textContent()), 'with the game paused there');
-  await page.locator('.lib-card.playing').click(); await wait(800);
+  ok(/PAUSED/.test(await page.locator('.lib-card.playing[data-cart]').textContent()), 'with the game paused there');
+  await page.locator('.lib-card.playing[data-cart]').click(); await wait(800);
   ok(await mode() === 'run', 'choosing it resumes the game');
   await page.mouse.move(300, 300); await page.mouse.move(310, 310); await wait(100);
   await page.locator('[data-corner=library]').click(); await wait(800);
   ok(await mode() === 'library', 'the corner Library button goes to the Library');
-  await page.locator('.lib-card.playing').click(); await wait(800);
+  await page.locator('.lib-card.playing[data-cart]').click(); await wait(800);
   await page.keyboard.press('Backspace'); await wait(800);
   ok(await mode() === 'library', 'so does Backspace');
-  await page.locator('.lib-card.playing').click(); await wait(800);
+  await page.locator('.lib-card.playing[data-cart]').click(); await wait(800);
   await page.goBack(); await wait(800);
   ok(await mode() === 'library', 'and the browser\'s Back button');
   await page.goForward(); await wait(1000);
@@ -127,7 +139,7 @@ try {
 
   // The editor: from the menu, and Esc as a developer's toggle once the game was started from there.
   await page.keyboard.press('Escape'); await wait(100);
-  for (let i = 0; i < 6; i++) await page.keyboard.press('ArrowDown');
+  for (let i = 0; i < 7; i++) await page.keyboard.press('ArrowDown');
   ok(await selected() === 'editor', 'the last item is the code editor');
   await page.keyboard.press('Enter'); await wait(500);
   ok(await mode() === 'edit' && !(await menuOpen()), 'which opens the editor');

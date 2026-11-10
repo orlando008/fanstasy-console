@@ -1,7 +1,8 @@
 // The touch controls, in the real console (headless Chromium, as a phone): the controls show on a touch screen and not
 // on a desktop, the game is not covered by them in portrait or landscape, a thumb on the d-pad moves the hello cart's
 // box, a tap on A shorter than a frame still counts, two fingers at once (d-pad and A) both count, a finger sliding
-// off the d-pad's middle reads the direction it is in, the presses do not show the corner buttons, and ☰ opens the
+// off the d-pad's middle reads the direction it is in, a thumb that misses a button still presses the nearest, the
+// buttons are thumb-sized, the presses do not show the corner buttons, and ☰ opens the
 // pause menu with the game paused. The fingers are real touches (CDP), so pointer capture and multi-touch are the
 // browser's own.
 //
@@ -130,9 +131,42 @@ try {
     ok(lit && !(await page.evaluate((s) => document.querySelector(`[data-btn=${s}]`).classList.contains('on'), k)), `${k.toUpperCase()} lights while it is held and not after`);
   }
 
+  // A thumb that misses still counts: beside A in its corner of the box presses A, beside B presses B, a roll from one
+  // to the other changes the button, and a touch outside the d-pad's circle, on its side, is a direction.
+  {
+    const on = (sel, c = 'on') => page.evaluate(([s, k]) => document.querySelector(s).classList.contains(k), [sel, c]);
+    const a = await centre('.t-right', 0.97, 0.04), b = await centre('.t-right', 0.03, 0.96);
+    await touch([{ id: 8, ...a }]); await wait(80); const nearA = await on('[data-btn=a]') && !(await on('[data-btn=b]'));
+    await touch([{ id: 8, ...b }]); await wait(80); const rolled = await on('[data-btn=b]') && !(await on('[data-btn=a]'));
+    await touch([]); await wait(80);
+    ok(nearA && rolled, 'a touch beside A or B presses the nearer one, and a thumb rolls from A to B');
+    const d = await page.evaluate(() => { const r = document.querySelector('.t-dpad').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top - 14 }; });
+    await touch([{ id: 9, ...d }]); await wait(80); const up = await on('.t-dpad', 'on-up');
+    await touch([]); await wait(80);
+    ok(up, 'a thumb just above the d-pad still presses UP');
+    const sizes = await page.evaluate(() => ['.t-dpad', '.t-a', '.t-b'].map((s) => document.querySelector(s).getBoundingClientRect().width));
+    ok(sizes[0] >= 165 && sizes[1] >= 80 && sizes[2] >= 80, 'on a phone the d-pad is at least 165 px across and A and B at least 80', sizes.map(Math.round).join(' '));
+  }
+
   // ☰: the pause menu, the game paused.
   await page.locator('.t-menu').tap(); await wait(300);
   ok(await page.evaluate(() => !document.querySelector('.pause-menu').hidden), '☰ opens the pause menu');
+  // The menu on a touch screen: words for a finger, no editor, the pad dimmed and dead under it.
+  {
+    const m = await page.evaluate(() => ({
+      items: [...document.querySelectorAll('.pause-item')].filter((b) => !b.hidden).map((b) => b.dataset.item),
+      foot: [...document.querySelectorAll('.pause-panel > .pause-hint')].map((p) => p.textContent).join(' '),
+      dim: Number(getComputedStyle(document.querySelector('.touch-controls')).opacity),
+    }));
+    ok(!m.items.includes('editor') && m.items.includes('library') && m.items.includes('controls'), 'on a touch screen the menu has no Code editor', m.items.join(' '));
+    ok(/Tap outside/.test(m.foot) && !/Esc/.test(m.foot), 'and says to tap outside to resume, not Esc', m.foot);
+    ok(m.dim < 0.5, 'the pad is dimmed while the menu is open', m.dim);
+    await page.locator('.pause-item[data-item=controls]').tap(); await wait(200);
+    const c = await page.evaluate(() => ({ keys: document.querySelector('.pause-controls table:not(.pause-touch)').hidden, text: document.querySelector('.pause-touch').hidden ? '' : document.querySelector('.pause-touch').textContent, hint: document.querySelector('.pause-controls .pause-hint').textContent }));
+    ok(c.keys && /D-pad/.test(c.text) && /☰/.test(c.text) && !/Arrow keys|Backspace/.test(c.text) && /Tap/.test(c.hint), 'Controls says where the pad\'s buttons are, with no keyboard keys', c.hint);
+    await page.locator('.pause-controls').tap(); await wait(200);
+    ok(await page.evaluate(() => document.querySelector('.pause-controls').hidden && !document.querySelector('.pause-items').hidden), 'and a tap goes back to the menu');
+  }
   ok(await page.evaluate(([x, y]) => !document.elementFromPoint(x, y).closest('.touch-controls'), [dpad.x, dpad.y]), 'and it is over the controls (a tap outside its panel resumes, as with a mouse)');
   const b7 = await box(); await wait(400);
   const b8 = await box();

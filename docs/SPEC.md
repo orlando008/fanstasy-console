@@ -294,8 +294,12 @@ player 0, alongside the keyboard: the cart sees ordinary button presses and need
 - **The buttons.** A d-pad, A and B (A to the right, as on the pad), Start and Select, and ☰ for the pause menu
   (section 11.2). There are no X, Y, L or R: a game meant for phones plays on the d-pad, A, B, Start and Select, and
   keeps the other buttons for extras.
-- **Layout.** In portrait the game is at the top and the pad fills the space under it (the d-pad on the left, B and A on
-  the right, Select, Start and ☰ between). In landscape the game is in the middle with the d-pad to its left, B and A
+- **Sizes, and misses.** The pad is made for thumbs: on a phone the d-pad is about 45% of the screen's width (up to
+  210 px) and A and B 22% each (up to 100 px), on a diagonal, B low and A high. A thumb does not have to land on a
+  button: the whole left part of the pad is the d-pad (the direction is read from its middle), and a touch anywhere in
+  A and B's box presses the nearer of the two, so a thumb rolls from one to the other.
+- **Layout.** In portrait the game is at the top and the pad fills the space under it (Select, Start and ☰ in a row
+  along its top, the d-pad on the left under them, B and A on the right). In landscape the game is in the middle with the d-pad to its left, B and A
   to its right and Select, Start and ☰ in the top right corner; nothing covers the game either way. With room for less
   than twice the size, the picture is scaled to fill its space at any factor rather than a whole one.
 - **Fingers.** Several at once (the d-pad and A together). The d-pad reads eight directions from where the thumb is,
@@ -586,9 +590,15 @@ built in HTML like the editor, not inside the console.
   play (`1 PLAYER`, or `1–4 PLAYERS` marked out in green for a game for several;
   the tech demos have none), and the detail below says it too. First comes
   **Your cart**, the autosaved working cart,
-  when there is one; **Open file**, **New cart** and **Make it with AI**
+  when there is one; then **Continue**, the last four Library carts played in this browser, the latest first (they
+  stay on their own shelves too; a cart is noted when it loads, from the Library or from a `?cart=` link); **Open file**, **New cart** and **Make it with AI**
   (section 11.5) are on the last shelf, Make a cart. Dropping a `.nova` or `.nova.png` onto the page still loads and runs
   it.
+- **The tech demos' shelf** is one card, **Show the 10 tech demos**, until it is chosen: they are the console's test
+  carts, and the page is for players first. Open, it ends with **Hide the tech demos**. The choice is kept in the
+  browser, and the shelf is open whenever the loaded cart is one of them.
+- **Jumping to a shelf.** Under the header is a row of the shelves' names; a click or tap on one brings that shelf to
+  the top and selects its first cartridge. On a phone the row scrolls sideways.
 - **Controls.** Arrows or a gamepad's d-pad and left stick move between
   cartridges, from shelf to shelf (up and down keep to the nearest column, and a
   shelf's heading scrolls into view with its first row); Enter, Space or a gamepad's A, B or Start plays the selected
@@ -632,8 +642,13 @@ own pause menu (on its START) is separate.
 - **While it is open** the game and its sound are paused, and no key or gamepad button reaches the cart.
 - **Items.** **Resume**; **Restart**; **Controls** (the keyboard key of each console button, and the console's own
   keys); **Volume** (left and right step the player's volume, choosing it mutes; with the mouse, the left and right
-  thirds of the row turn it down and up); **Share link** (section 11.4; only for a Library cart, and the arrows step
-  over it otherwise); **Library**; **Code editor**.
+  thirds of the row turn it down and up); **Full screen** (the whole page, on or off, the item saying which; not shown
+  where the browser has none, as on an iPhone, where installing the app does the same); **Share link** (section 11.4;
+  only for a Library cart, and the arrows step over it otherwise); **Library**; **Code editor**.
+- **On a touch screen** (section 6.1) the menu is for a finger: there is no **Code editor** (the editors need a mouse
+  and a keyboard), **Controls** says where the pad's buttons are in place of the keyboard's keys (a tap goes back), the
+  line under the items says to tap outside the menu to resume, and the touch controls are dimmed and do nothing while
+  the menu is open.
 - **Controls.** Arrows or the d-pad move, Enter, Space, X or a gamepad's A choose, Esc, Z, or a gamepad's B or Start
   resume, Backspace goes to the Library; `-`, `=` and `M` still set the volume. The mouse picks and clicks; a click
   outside the panel resumes. The menu opens on Resume, and a mouse resting where it opens does not move the selection.

@@ -57,7 +57,8 @@ try {
     }
     return out;
   }, PREFIX);
-  const cards = () => page.locator('.lib-cart').count();
+  // (every cartridge on its own shelf: the tech demos' shelf opened first, and the copies on Continue not counted)
+  const cards = async () => { const more = page.locator('.lib-card[data-cart="demos"]'); if (/Show/.test(await more.textContent().catch(() => ''))) { await more.click(); await wait(800); } return page.locator('.lib-card[data-cart] .lib-cart').count(); };
   const shot = async () => (await page.locator('#screen canvas').first().screenshot()).toString('base64');
 
   // The first visit, online: the worker installs and keeps a copy of the whole site.

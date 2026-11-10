@@ -22,6 +22,7 @@ const fakes = () => {
 };
 try {
   const ctx = await browser.newContext({ viewport: { width: 1100, height: 800 } });
+  await ctx.addInitScript(() => localStorage.setItem('nova16.pref.demos', 'open')); // (hello is a tech demo: its shelf open)
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
   await ctx.addInitScript(fakes);
   const page = await ctx.newPage();
@@ -74,8 +75,8 @@ try {
   await page.goto(`${link('tricksy-towerz')}&seed=1`); await wait(1500);
   await page.keyboard.press('Escape'); await wait(200);
   const items = () => page.evaluate(() => [...document.querySelectorAll('.pause-item')].filter((b) => !b.hidden).map((b) => b.dataset.item));
-  ok(JSON.stringify(await items()) === '["resume","restart","controls","volume","share","library","editor"]', 'the pause menu has Share link, for a Library cart', (await items()).join(' '));
-  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowDown');
+  ok(JSON.stringify(await items()) === '["resume","restart","controls","volume","fullscreen","share","library","editor"]', 'the pause menu has Share link, for a Library cart', (await items()).join(' '));
+  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter'); await wait(300);
   ok(await open() && await page.locator('.share-link').inputValue() === link('tricksy-towerz'), 'which shares the game being played');
   await page.keyboard.press('Escape'); await wait(150);
@@ -89,17 +90,18 @@ try {
   await page.locator('.lib-card[data-cart="mine"]').click(); await wait(1500);
   await page.keyboard.press('Escape'); await wait(200);
   ok(!(await items()).includes('share'), 'nor in the pause menu', (await items()).join(' '));
-  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowDown');
+  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowDown');
   const at = await page.evaluate(() => document.querySelector('.pause-item.selected')?.dataset.item);
   await page.keyboard.press('ArrowUp');
   const back = await page.evaluate(() => document.querySelector('.pause-item.selected')?.dataset.item);
-  ok(at === 'library' && back === 'volume', 'and the arrows step over it', `${at}, then ${back}`);
+  ok(at === 'library' && back === 'fullscreen', 'and the arrows step over it', `${at}, then ${back}`);
   ok(errors.length === 0, 'no page errors', errors.slice(0, 3).join(' | '));
   await ctx.close();
 
   // Where the browser will not copy: the link is selected to copy by hand.
   {
     const c2 = await browser.newContext({ viewport: { width: 1100, height: 800 } });
+    await c2.addInitScript(() => localStorage.setItem('nova16.pref.demos', 'open')); // (hello is a tech demo: its shelf open)
     await c2.addInitScript(() => { navigator.clipboard.writeText = () => Promise.reject(new DOMException('no', 'NotAllowedError')); });
     const p2 = await c2.newPage();
     await p2.goto(`${base}/`); await p2.waitForTimeout(1500);
@@ -113,6 +115,7 @@ try {
   // A phone: the share sheet, no panel.
   {
     const c3 = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    await c3.addInitScript(() => localStorage.setItem('nova16.pref.demos', 'open')); // (hello is a tech demo: its shelf open)
     await c3.addInitScript(fakes);
     const p3 = await c3.newPage();
     await p3.goto(`${link('ice-breakers')}`); await p3.waitForTimeout(1500);

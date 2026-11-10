@@ -27,6 +27,22 @@ try {
   let s = await shelves();
   const want = [...GENRES.map((g) => g.shelf).filter((t) => manifest.some((c) => GENRES.find((g) => g.shelf === t).id === c.genre)), 'Make a cart'];
   ok(JSON.stringify(s.map((x) => x.title)) === JSON.stringify(want), 'a shelf for each genre, in order, the tech demos last and Make a cart at the end', s.map((x) => x.title).join(', '));
+  // The tech demos are one card until it is chosen; the choice is kept.
+  const nDemos = manifest.filter((c) => c.genre === 'Demo').length;
+  ok(JSON.stringify(s.find((x) => x.title === 'Tech demos').carts) === '["demos"]' && new RegExp(`Show the ${nDemos} tech demos`).test(await page.locator('.lib-card[data-cart="demos"]').textContent()), 'the tech demos\' shelf is one card at first, saying how many there are');
+  await page.locator('.lib-card[data-cart="demos"]').click(); await page.waitForTimeout(300);
+  s = await shelves();
+  let now = await selected();
+  ok(s.find((x) => x.title === 'Tech demos').carts.length === nDemos + 1 && manifest.find((c) => c.name === now)?.genre === 'Demo', 'choosing it shows them, and selects the first', await selected());
+  await page.reload(); await page.waitForTimeout(1500);
+  ok((await shelves()).find((x) => x.title === 'Tech demos').carts.length === nDemos + 1, 'and the shelf stays open on the next visit');
+  // The row of shelf names jumps to a shelf.
+  ok(JSON.stringify(await page.locator('.lib-jump-to').allTextContents()) === JSON.stringify(want), 'under the header, a button for each shelf', (await page.locator('.lib-jump-to').allTextContents()).join(', '));
+  await page.locator('.lib-jump-to[data-shelf="Strategy"]').click(); await page.waitForTimeout(300);
+  const jumped = await page.evaluate(() => { const box = document.querySelector('.lib-shelf').getBoundingClientRect(), head = [...document.querySelectorAll('.lib-section-title')].find((h) => h.textContent === 'Strategy').getBoundingClientRect(); return head.top >= box.top - 2 && head.top < box.top + 80; });
+  now = await selected();
+  ok(jumped && manifest.find((c) => c.name === now)?.genre === 'Strategy', 'Strategy\'s button brings that shelf to the top and selects its first cart', await selected());
+  await page.locator('.lib-jump-to').first().click(); await page.waitForTimeout(300);
   const shelfOf = (name) => s.find((x) => x.carts.includes(name))?.title;
   const misplaced = manifest.filter((c) => shelfOf(c.name) !== GENRES.find((g) => g.id === c.genre).shelf);
   ok(manifest.length > 0 && !misplaced.length, 'every cart is on the shelf of its genre', misplaced.map((c) => c.name).join(', '));
@@ -74,13 +90,20 @@ try {
   await page.locator(`.lib-card[data-cart="${pick}"]`).click(); await page.waitForTimeout(1500);
   ok(await page.evaluate(() => document.body.dataset.mode) === 'run', `choosing a cart plays it (${pick})`);
   await page.keyboard.press('Backspace'); await page.waitForTimeout(800);
-  ok(await selected() === pick && /PAUSED/.test(await page.locator(`.lib-card[data-cart="${pick}"]`).textContent()), 'back in the Library it is selected on its shelf, marked PAUSED');
+  ok(/PAUSED/.test(await page.locator(`.lib-card[data-cart="${pick}"]`).textContent()), 'back in the Library it is marked PAUSED on its shelf');
+  const top = await page.evaluate(() => { const c = document.querySelector('.lib-card.selected'); return { recent: c.dataset.recent, shelf: c.closest('.lib-section').querySelector('.lib-section-title').textContent, paused: /PAUSED/.test(c.textContent) }; });
+  s = await shelves();
+  ok(s[0].title === 'Continue' && top.shelf === 'Continue' && top.recent === pick && top.paused, 'and it is selected on a new first shelf, Continue', JSON.stringify(top));
+  const played2 = s.find((x) => x.title === 'Arcade').carts[0];
+  await page.locator(`.lib-card[data-cart="${played2}"]`).click(); await page.waitForTimeout(1200); await page.keyboard.press('Backspace'); await page.waitForTimeout(800);
+  const recents = await page.evaluate(() => [...document.querySelectorAll('.lib-card[data-recent]')].map((c) => c.dataset.recent));
+  ok(JSON.stringify(recents) === JSON.stringify([played2, pick]), 'Continue lists the carts played, the latest first', recents.join(', '));
 
   // An autosaved working cart: its own shelf first.
   await page.evaluate((nova) => localStorage.setItem('nova16.autosave', nova), readFileSync(`${ROOT}carts/hello.nova`, 'utf8'));
   await page.goto(`${base}/`); await page.waitForTimeout(1500);
   s = await shelves();
-  ok(s[0].title === 'Your cart' && JSON.stringify(s[0].carts) === '["mine"]', 'an autosaved cart has the first shelf, Your cart', s[0].title);
+  ok(s[0].title === 'Your cart' && JSON.stringify(s[0].carts) === '["mine"]' && s[1].title === 'Continue', 'an autosaved cart has the first shelf, Your cart, before Continue', s[0].title);
   ok(errors.length === 0, 'no page errors', errors.slice(0, 3).join(' | '));
   ok(await page.locator('.lib-info').first().isHidden() && await page.locator('.lib-detail').isVisible(), 'on a wide screen: no (i) on the cartridges, the description always there');
 
