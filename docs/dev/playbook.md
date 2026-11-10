@@ -72,7 +72,7 @@ recommended answer after each question.
 4. **Fill in `carts/src/<name>/meta.json`**: the title, a description of two or three sentences for the Library, the
    genre and the players.
 5. **Write the spec** `docs/carts/<name>.md` from the answers (section 1, step 1): every section of the template, the
-   rules with numbers, and an implementation plan of about 8 steps. Where you chose a default the user did not confirm,
+   rules with numbers, and an implementation plan of about 9 steps (the second is the art proof). Where you chose a default the user did not confirm,
    list it under **Open questions** so it is easy to change.
 6. **Check the scaffold**: `node tools/verify.js --fast` and `node tools/devkit/smoke.mjs <name>`. Commit and push (the
    scaffold and the spec together).
@@ -103,11 +103,17 @@ recommended answer after each question.
 1. **Write the spec first** (`docs/carts/<name>.md`, scaffolded): concept, controls (playable on the d-pad, A, B, Start
    and Select, the buttons a phone's touch controls have; X, Y, L and R only for extras), screen layout, the rules with
    numbers, scoring, screens and flow, audio, video layers, save slots, asset budget, and a numbered
-   **implementation plan** of about 8 steps. Ask the user the few design questions that really change the
+   **implementation plan** of about 9 steps. Ask the user the few design questions that really change the
    game (modes, number of levels, features; the list is in the kickoff above); choose sensible defaults for the rest.
 2. **Build one step at a time.** The user says "go ahead" for each. A typical plan: 1 vertical slice,
-   2 the core mechanics, 3 opponents or enemies, 4 content (levels, tracks), 5 the flow (title, menus,
-   modes, saves), 6 art, 7 audio, 8 balance, polish, label, PNG cart, Library entry, README.
+   2 the art proof (below), 3 the core mechanics, 4 opponents or enemies, 5 content (levels, tracks), 6 the flow
+   (title, menus, modes, saves), 7 the rest of the art, 8 audio, 9 balance, polish, label, PNG cart, Library entry, README.
+   - **The art proof comes early, and the user agrees it.** Art that arrives with the finished game is expensive to
+     change (Clockwork Dominion's hero was doubled in size after its release). So as soon as the game runs, draw only
+     the hero (every frame), the palettes and one real screen, from the recipes of `docs/dev/art-recipes.md`; run
+     `node tools/devkit/art/proof.mjs <name>` (one picture of all three); look at it yourself, then send it to the user
+     (SendUserFile) and ask what to change. Write what they said under that step in the spec, and draw the rest in
+     that look. A second proof after their changes is cheap; a redraw at the end is not.
 3. **A step is done when**: its checks pass (`node tools/verify.js`, then `smoke.mjs`; `sweep.mjs` after changes to
    the rules or the AI), the step's **Built** and **Results** notes are in the spec (the spec is the memory that
    survives a long session), and it is committed and pushed to the branch. Do not open a pull request until
@@ -153,6 +159,9 @@ recommended answer after each question.
 | `node tools/devkit/art/colors.mjs carts/<name>.nova [--png out.png] [--check]` | How the colours read: plays the cart with random buttons and measures its screens in OKLab. Muddy panels (dull brown or grey on overlay panels; limit 0.3), palette ramps out of order (`art.json`), and as information mud, contrast, faint edges and the overlay's default colours; `--png` marks mud magenta and faint edges cyan (in the PNG only); `--extra "src"` as in `shots.mjs` |
 | `node tools/devkit/shots.mjs carts/<name>.nova out/ --at 60,300` | Screenshots from the command line (`--hold A:100-400` to press buttons, `--extra "skipTitle = true;"`) |
 | `node tools/devkit/gallery.mjs <name> [out-dir]` | **Every screen of the game on contact sheets**, from the list in `tests/carts/<name>/screens.mjs` (the starter has one: add a `shot(vm, 'name')` for each new screen and each state worth a look; `{ zoom: [x, y, w, h] }` adds an enlarged crop). Run it before a release, after changing the art, and for a polish pass: looking at all of Clockwork Dominion's 56 screens found a wrong tint, an iris that stopped short and a box across the logo that no test had caught |
+| `docs/dev/art-recipes.md` (`python3 tools/devkit/art/recipes.py`) | **The art kit's recipe book**: a picture of each thing the kit draws (a hero that walks, a big character with a face, sculpted things, shaded shapes, textures, a landscape in layers, a room, a title and HUD, small icons) with the lines of `art.py` that made it. Start a picture from the nearest recipe; add a recipe to `recipes.py` when a game works out something worth keeping (CI checks the page is what the recipes make) |
+| `node tools/devkit/art/proof.mjs <name> [out.png] [--screen word]` | **The art proof**: one picture of the cart's characters (the hero's frames first, at four times and at their real size), its palettes (each ramp dark to light) and a mock-up (a real screen from `screens.mjs`), to send to the user and agree before the rest is drawn (section 1) |
+| `node tools/devkit/art/critique.mjs <name>` | **A critical look at those screens**: flat or noisy pictures, text over the picture with little contrast, a sprite under the overlay, few or stray colours, a hero under 24 px (`screens.mjs` exports the hero's sprite names), most screens showing one picture. Things to look at, not rules; `verify.js` prints its counts. It cannot judge taste (a grain that is too strong, a dull design): the sheets are for that |
 | `python3 tools/devkit/music/score.py file.mid [bar-ticks] [from] [to]` | The bars of a MIDI file (to pick an excerpt), and as a module the reader that turns a piece into note text for a cart (a tune, a bass and two inner voices); `medley.py` plays that text as songs of several pieces |
 | `node tools/devkit/size.mjs <name>` | **Where the code's bytes go** when a game nears its 64 KB: the packed size and what is left, the biggest top-level pieces, the text (longest and repeated strings), the cart's long property names, and what each would save (see the size pass below) |
 | `node tools/devkit/gif.mjs carts/<name>.nova out.gif --from 60 --to 240` | An animated GIF of the cart (`--hold`, `--crop x,y,w,h`, `--every 2`): to show a person an animation you cannot watch |

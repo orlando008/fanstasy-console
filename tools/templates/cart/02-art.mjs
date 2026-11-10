@@ -18,11 +18,19 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
   const { sprites, scenes } = p.ART;
   ok(Object.keys(sprites).length >= 2 && Object.keys(scenes).length >= 1, 'art.py made sprites and a scene (the ART block in code.js)', Object.keys(sprites).join(', '));
   ok(Object.values(sprites).every((s) => [8, 16, 32].includes(s.size) && s.tile >= 256), 'every sprite has a size of 8, 16 or 32 and sits in the sprite region of the sheet');
-  ok(Object.values(sprites).every((s) => { for (let j = 0; j < s.size / 8; j++) for (let i = 0; i < s.size / 8; i++) if (tileEmpty(vm, s.tile + j * 16 + i) && j + i === 0) return false; return true; }), 'and its first tile is drawn (not an empty tile)');
+  ok(Object.values(sprites).every((s) => { for (let j = 0; j < s.size / 8; j++) for (let i = 0; i < s.size / 8; i++) if (!tileEmpty(vm, s.tile + j * 16 + i)) return true; return false; }), 'and is drawn (not all empty tiles)');
   ok(tileEmpty(vm, 0), 'tile 0 is empty (the console keeps it so)');
   const f = scenes.field; let holes = 0;
   for (let y = 0; y < f.h; y++) for (let x = 0; x < f.w; x++) if (!p.mget(f.mx + x, f.my + y)) holes++;
   ok(holes === 0, 'the field fills its whole map region (no holes)', `${holes} empty cells`);
+}
+
+// The title: the game's name in big letters on its own layer, only on the title.
+{
+  const vm = newGame(1, { title: true }); vm.run(3);
+  ok(vm.ppu.layers[2].show && has(vm, color('bg3', 'gold3'), 0, 30, 256, 100), 'the title shows the game\'s name in big letters (layer 2)');
+  vm.press('A'); vm.run(3);
+  ok(!vm.ppu.layers[2].show, 'and the game does not');
 }
 
 // 2. On the screen.
@@ -33,10 +41,15 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
   ok(has(vm, color('bg1', 'grass3'), 0, 160, 256, 164), 'the ground\'s lit edge runs along the bottom of the screen');
   const sky = [2, 60, 120].map((y) => vm.out32[y * 256 + 4] >>> 0);
   ok(new Set(sky).size === 3, 'the sky is a gradient: a different colour down the screen (scanline())', sky.map((v) => v.toString(16)).join(' '));
-  ok(has(vm, color('spr0', 'hull2'), p.px - 10, 194, p.px + 10, 214), 'the player\'s sprite is drawn where the player is', `px ${p.px}`);
+  ok(has(vm, color('spr0', 'shirt2'), p.px - 12, 184, p.px + 12, 212) && has(vm, color('spr0', 'skin2'), p.px - 12, 180, p.px + 12, 200), 'the hero is drawn where the player is', `px ${p.px}`);
+  ok(p.ART.sprites.hero0.size === 32 && ['hero1', 'hero2', 'hero3', 'hero4'].every((n) => p.ART.sprites[n]), 'the hero is a 32 px character with a walk of four frames (from the kit\'s rig)');
+  const tiles = () => Array.from(vm.ppu.oamTile.slice(0, vm.ppu.oamCount)), walk = new Set();
+  for (let i = 0; i < 24; i++) { vm.run(1, 1 << 3); tiles().forEach((t) => walk.add(t)); }
+  ok([1, 2, 3, 4].every((k) => walk.has(p.ART.sprites['hero' + k].tile)) && (vm.ppu.oamFlip[0] & 1) === 0, 'walking right plays the four frames, facing right');
+  vm.run(2, 1 << 2); ok((vm.ppu.oamFlip[0] & 1) === 1, 'and walking left turns it round'); vm.run(2);
   const before = vm.ppu.oamCount;
   p.blocks.push({ x: 60, y: 100 }); vm.run(1);
-  ok(vm.ppu.oamCount === before + 1 && has(vm, color('spr0', 'gold1'), 50, 90, 70, 125), 'a falling gem is a sprite too', `${before} -> ${vm.ppu.oamCount} sprites`);
+  ok(vm.ppu.oamCount === before + 1 && has(vm, color('spr1', 'gold2'), 50, 90, 70, 125), 'a falling gem is a sprite too', `${before} -> ${vm.ppu.oamCount} sprites`);
   ok(vm.ppu.oamCount <= 128, 'and the sprites stay within the 128 of the console');
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

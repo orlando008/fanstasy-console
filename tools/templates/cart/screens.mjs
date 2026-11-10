@@ -3,6 +3,9 @@
 // level); { zoom: [x, y, w, h] } also keeps an enlarged crop.
 import { newGame } from './lib.mjs';
 
+/** The main character's sprites (their names in art.py): the art review checks they are big enough to read. */
+export const hero = ['hero0', 'hero1', 'hero2', 'hero3', 'hero4'];
+
 export default function screens(shot) {
   const vm = newGame(1, { title: true });
   vm.run(30); shot(vm, 'title');

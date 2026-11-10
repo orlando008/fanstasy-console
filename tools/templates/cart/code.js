@@ -68,6 +68,7 @@ let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let score = 0, lives = 3, px = 120, blocks = [];
+let facing = false, walked = 0; // the hero: looking left, and the frames it has walked (for its walk cycle)
 const HOME = { x: 120 };
 
 function init() {
@@ -80,6 +81,8 @@ function init() {
   const f = ART.scenes.field, h = ART.scenes.hills;
   bg(0, { mx: f.mx, my: f.my, mw: f.w, mh: f.h, x: 0, y: -(224 - f.h * 8), wrap: false, show: true });
   bg(1, { mx: h.mx, my: h.my, mw: h.w, mh: h.h, x: 0, y: -(224 - f.h * 8 - h.h * 8 + 8), wrap: false, show: true });
+  const lg = ART.scenes.logo; // the title's lettering, on layer 2, shown only on the title (draw() turns it on and off)
+  bg(2, { mx: lg.mx, my: lg.my, mw: lg.w, mh: lg.h, x: 0, y: -36, wrap: false, show: false });
   blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (ART.colors.GLASS) are see-through
   if (skipTitle) startGame(); else toTitle();
 }
@@ -116,12 +119,13 @@ function updateTitle() {
 /** The game itself: replace this. Left and right move; blocks fall; a hit costs a life. */
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (btn(LEFT)) px = Math.max(8, px - 3);
-  if (btn(RIGHT)) px = Math.min(248, px + 3);
+  if (btn(LEFT)) { px = Math.max(8, px - 3); facing = true; }
+  if (btn(RIGHT)) { px = Math.min(248, px + 3); facing = false; }
+  walked = btn(LEFT) || btn(RIGHT) ? walked + 1 : 0;
   if (timer % 30 === 0) blocks.push({ x: rndi(8, 248), y: -8 });
   for (const b of blocks) {
     b.y += 2 + Math.min(3, score / 40);
-    if (b.y > 196 && b.y < 212 && Math.abs(b.x - px) < 12 && !b.hit) { b.hit = true; lives--; fx(SFX.hit); }
+    if (b.y > 184 && b.y < 212 && Math.abs(b.x - px) < 12 && !b.hit) { b.hit = true; lives--; fx(SFX.hit); }
     if (b.y > 224 && !b.hit && !b.done) { b.done = true; score += 10; fx(SFX.point); }
   }
   blocks = blocks.filter((b) => b.y < 232);
@@ -176,6 +180,7 @@ function updatePause() {
 
 function draw() {
   cls();
+  bg(2, { show: state === 'title' }); // the title's lettering
   if (state === 'play' || state === 'over') drawPlay();
   else if (state === 'title') drawTitle();
   else if (state === 'initials') drawInitials();
@@ -185,14 +190,15 @@ function draw() {
 }
 
 function drawPlay() {
-  sprite(ART.sprites.player, px - 8, 196);
+  // the hero: standing, or a walk of four frames (a new one every 5 frames), drawn facing the way it goes; its feet at y 212
+  const S = ART.sprites, hero = walked ? [S.hero1, S.hero2, S.hero3, S.hero4][Math.floor(walked / 5) % 4] : S.hero0;
+  sprite(hero, px - 16, 180, { fx: facing });
   for (const b of blocks) if (!b.hit) sprite(ART.sprites.gem, b.x - 8, b.y - 2);
   txt(`SCORE ${score}`, 8, 6, WHITE);
   txt(`LIVES ${lives}`, 192, 6, lives > 1 ? WHITE : RED);
 }
 
 function drawTitle() {
-  ctxt('{{TITLE_UPPER}}', 50, GOLD);
   ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
 }
 
