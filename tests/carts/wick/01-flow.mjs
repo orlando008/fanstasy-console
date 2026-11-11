@@ -12,9 +12,9 @@ import { solve } from './solve.mjs';
 // 1. The title, then the first room.
 {
   const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3);
-  ok(p.state === 'title' && p.playing === p.SONG.title && vm.ppu.layers[0].show, 'the cart starts on the title, with its lettering and its song');
+  ok(p.state === 'title' && p.playing === p.SONG.title && vm.ppu.layers[0].mx === p.ART.scenes.logo.mx && vm.ppu.layers[0].my === p.ART.scenes.logo.my, 'the cart starts on the title, with its lettering and its song');
   vm.press('A'); vm.run(2);
-  ok(p.state === 'play' && p.room === 0 && p.playing === p.SONG.play && !vm.ppu.layers[0].show, 'A starts the first room, with the game\'s song');
+  ok(p.state === 'play' && p.room === 0 && p.playing === p.SONG.play && vm.ppu.layers[0].my === p.ART.scenes.dark.my, 'A starts the first room, with the game\'s song');
   ok(p.W.x === p.R.sx && p.W.y <= p.R.sy + 2 && p.frames === 0 && !p.started, 'Wick stands at the start, the clock at nothing until he moves', `${p.W.x},${p.W.y}`);
   vm.run(30); ok(p.frames === 0, 'and it waits for the first input');
   vm.run(10, M('RIGHT')); ok(p.frames === 10 && p.W.x > p.R.sx, 'which starts the clock');
@@ -37,7 +37,7 @@ import { solve } from './solve.mjs';
   for (const [m, f] of run) vm.run(f, pad(m));
   ok(p.W.won && p.lit && p.room === 0, 'reaching the lantern lights it', `${p.frames} frames`);
   const { cells } = p.ART.scenes;
-  ok(p.mget(p.R.lx * 2, p.R.ly * 2) === p.mget(cells.mx + 8, cells.my), 'and its picture in the room is the lit one');
+  ok(p.mget(p.R.lx * 2, p.R.ly * 2) === p.mget(cells.mx + 12, cells.my), 'and its picture in the room is the lit one');
   vm.run(60); ok(p.room === 1 && p.state === 'play' && p.deaths === 0 && !p.W.won, 'then the next room begins');
 }
 // 4. The pause, and SELECT.

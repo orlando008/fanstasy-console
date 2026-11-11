@@ -1,7 +1,7 @@
 # Wick: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 1 of 9 built: Wick's movement in three test rooms
+**Status:** Step 2 of 9: the art proof is with the user
 **Cart source:** `carts/src/wick/` → `carts/wick.nova`
 
 ---
@@ -206,7 +206,14 @@ A palette for each world's stone and far wall; one for Wick and the fire (warm),
 2. **The art proof:** the look, agreed before the rest is drawn. The hero (every frame, 24 px or more), the palettes,
    and one screen of the game as it will look, from the recipes of `docs/dev/art-recipes.md`; then
    `node tools/devkit/art/proof.mjs wick`, the picture sent to the user, and what they said written here.
-   - **Agreed:** TODO (the date, and the changes asked for)
+   - **Built:** Wick as a stub of candle with two eyes under his flame, in 32 px frames (his body is still the lower
+     10 × 12): standing (two frames of flicker), running (the flame streams back), rising (drawn out), falling (pressed
+     flat), sliding on a wall (bent away from it, his eyes shut), landing (squashed), and a puff of smoke. The Cellar:
+     cold blue-grey stone lit along its tops, wooden ledges on brackets, water with a surface, a pale iron lantern, a
+     far wall of dark bricks with pillars and a barred window on the night. **The dark:** layer 0 is one dark tile
+     mixed half and half with the room, cut away in a ragged circle round Wick (44 px) and round a lit lantern, so
+     his light is the only warm thing in the room and the hazards still show in the dark.
+   - **Agreed:** not yet: the proof was sent to the user on 2026-11-11.
 3. **Core mechanics:** the map, saves and best times, soot and the replay, embers.
 4. **Hazards:** each of section 7, with a test room for each.
 5. **Content:** the 44 rooms and the 5 bonus rooms, each cleared by a recorded run kept as a test, with par times.

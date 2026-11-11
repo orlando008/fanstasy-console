@@ -6,6 +6,7 @@
   "bg1": {
    "base": 16,
    "colors": {
+    "glow": 15,
     "iron0": 13,
     "iron1": 14,
     "stone0": 1,
@@ -25,6 +26,9 @@
   "bg2": {
    "base": 32,
    "colors": {
+    "moon": 7,
+    "night0": 5,
+    "night1": 6,
     "wall0": 1,
     "wall1": 2,
     "wall2": 3,
@@ -35,9 +39,6 @@
    "base": 48,
    "colors": {
     "edge": 6,
-    "flame0": 8,
-    "flame1": 9,
-    "flame2": 10,
     "gold0": 1,
     "gold1": 2,
     "gold2": 3,
@@ -46,20 +47,36 @@
     "shade": 7
    }
   },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "dark": 1
+   }
+  },
   "spr0": {
    "base": 128,
    "colors": {
     "core": 6,
     "edge": 1,
+    "eye": 10,
     "flame0": 2,
     "flame1": 3,
     "flame2": 4,
     "flame3": 5,
-    "soot0": 10,
-    "soot1": 11,
+    "soot0": 11,
+    "soot1": 12,
     "wax0": 7,
     "wax1": 8,
     "wax2": 9
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "water0": 1,
+    "water1": 2,
+    "water2": 3,
+    "water3": 4
    }
   }
  },
@@ -69,7 +86,14 @@
    "mx": 40,
    "my": 0,
    "pal": 1,
-   "w": 10
+   "w": 14
+  },
+  "dark": {
+   "h": 1,
+   "mx": 40,
+   "my": 4,
+   "pal": 4,
+   "w": 1
   },
   "logo": {
    "h": 5,
@@ -87,28 +111,68 @@
   }
  },
  "sprites": {
+  "drip": {
+   "pal": 1,
+   "size": 8,
+   "tile": 646
+  },
   "ember": {
    "pal": 0,
    "size": 8,
-   "tile": 518
+   "tile": 644
+  },
+  "fall": {
+   "pal": 0,
+   "size": 32,
+   "tile": 580
+  },
+  "jump": {
+   "pal": 0,
+   "size": 32,
+   "tile": 576
+  },
+  "land": {
+   "pal": 0,
+   "size": 32,
+   "tile": 588
   },
   "puff": {
    "pal": 0,
-   "size": 16,
-   "tile": 516
+   "size": 32,
+   "tile": 640
+  },
+  "run0": {
+   "pal": 0,
+   "size": 32,
+   "tile": 520
+  },
+  "run1": {
+   "pal": 0,
+   "size": 32,
+   "tile": 524
+  },
+  "slide": {
+   "pal": 0,
+   "size": 32,
+   "tile": 584
+  },
+  "soot": {
+   "pal": 0,
+   "size": 8,
+   "tile": 645
   },
   "wick0": {
    "pal": 0,
-   "size": 16,
+   "size": 32,
    "tile": 512
   },
   "wick1": {
    "pal": 0,
-   "size": 16,
-   "tile": 514
+   "size": 32,
+   "tile": 516
   }
  },
  "tiles": {},
- "used": 123,
+ "used": 298,
  "version": 1
 }
