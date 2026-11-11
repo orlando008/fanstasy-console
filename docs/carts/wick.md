@@ -84,8 +84,8 @@ Rooms are text, 16 × 13 characters each, packed into the ROM by a script (a roo
 
 | World | Rooms | What it teaches and adds |
 |---|---|---|
-| 1 The Cellar | 10 + chase | running, jumping, the wall slide and wall jump; water pools; drips |
-| 2 The Kitchen | 10 + chase | ledges; steam jets (on and off); shelves that crumble |
+| 1 The Dungeon | 10 + chase | running, jumping, the wall slide and wall jump; water pools; drips |
+| 2 The Laboratory | 10 + chase | ledges; steam jets (on and off); shelves that crumble |
 | 3 The Clock Tower | 10 + chase | moving platforms (gears); swinging pendulums |
 | 4 The Rooftops | 10 + chase | wind that pushes; rain that falls in bands, on and off |
 | The Chimney (bonus) | 5 | everything; opened by 12 embers |
@@ -142,8 +142,8 @@ confirmed with the user and against a public domain file (section 16):
 | Song | Where | First choice |
 |---|---|---|
 | 0 | Title, the map | Bach, Toccata and Fugue in D minor (the opening) |
-| 1 | The Cellar | Bach, Invention No. 4 in D minor and No. 13 in A minor |
-| 2 | The Kitchen | Scarlatti, Sonata in D minor K. 141; Sonata K. 1 |
+| 1 | The Dungeon | Bach, Invention No. 4 in D minor and No. 13 in A minor |
+| 2 | The Laboratory | Scarlatti, Sonata in D minor K. 141; Sonata K. 1 |
 | 3 | The Clock Tower | Bach, Prelude in C minor (WTC I); Handel, the Harmonious Blacksmith |
 | 4 | The Rooftops | Vivaldi, Summer: the storm (Presto) |
 | 5 | The chase | Bach, the "Little" Fugue in G minor |
@@ -212,7 +212,7 @@ A palette for each world's stone and far wall; one for Wick and the fire (warm),
    `node tools/devkit/art/proof.mjs wick`, the picture sent to the user, and what they said written here.
    - **Built:** Wick as a stub of candle with two eyes under his flame, in 32 px frames (his body is still the lower
      10 × 12): standing (two frames of flicker), running (the flame streams back), rising (drawn out), falling (pressed
-     flat), sliding on a wall (bent away from it, his eyes shut), landing (squashed), and a puff of smoke. The Cellar:
+     flat), sliding on a wall (bent away from it, his eyes shut), landing (squashed), and a puff of smoke. The Dungeon:
      cold blue-grey stone lit along its tops, wooden ledges on brackets, water with a surface, a pale iron lantern, a
      far wall of dark bricks with pillars and a barred window on the night. **The dark:** layer 0 is one dark tile
      mixed half and half with the room, cut away in a ragged circle round Wick (44 px) and round a lit lantern, so
@@ -263,8 +263,12 @@ Each step: build it, run `node tools/check.js wick` and `node tools/test.js wick
 
 ## 16. Open questions
 
-**Names to confirm with the user** before they go into the game: the worlds (the Cellar, the Kitchen, the Clock Tower,
-the Rooftops, the Chimney), the Snuffer, and each piece of music in section 11.
+**Names the user has chosen** (2026-11-11): world 1 is the Dungeon ("Cellar" did not read as a castle) and world 2 is
+the Laboratory, an alchemist's workroom ("Kitchen" did not either): steam from retorts and pipes, rotten shelves of
+jars, green and purple tints.
+
+**Names still to confirm with the user** before they go into the game: the Clock Tower, the Rooftops, the Chimney,
+the Snuffer, and each piece of music in section 11.
 
 Defaults chosen that are easy to change:
 - **Wick's size:** his body is 10 × 12 px in rooms of 16 px cells (16 × 13 a screen), which is what one-screen rooms

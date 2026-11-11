@@ -7,7 +7,7 @@
 #   P  a pendulum's pivot (in the stone above): its weight swings on a 3-cell arm
 #   ( )  wind, blowing left or right                       r      a grate in the stone: rain falls from it, most of the time
 # rooms.py packs them into rom/rooms.bin and checks each (one start, one lantern, 13 x 16). So far: three rooms of the
-# Cellar, and one room for each world's hazards to try them in.
+# Dungeon, and one room for each world's hazards to try them in.
 
 @ 1-1 | 6.0 | A step and a gap
 ................

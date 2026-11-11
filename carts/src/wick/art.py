@@ -1,7 +1,7 @@
 # Wick's art: carts/src/wick/tiles.txt, palette.txt, map.txt and art.json, and the ART block in code.js.
 #   python3 carts/src/wick/art.py carts/src/wick
 # Written with the art toolkit (tools/devkit/art/kit.py; docs/dev/art-recipes.md shows what each part draws). Step 2: the
-# look for the art proof (Wick's frames, the palettes, the Cellar's cells and far wall); the other worlds follow it.
+# look for the art proof (Wick's frames, the palettes, the Dungeon's cells and far wall); the other worlds follow it.
 # Map RAM: the room being played at (0, 0), 32 x 26 tiles, written by code.js from the cells' pictures at (40, 0); the far
 # wall at (64, 0); the title's lettering at (0, 30); the darkness (one tile, repeated by the layer) at (40, 4).
 import math, os, sys
@@ -13,7 +13,7 @@ art.region('bg', 1, 511)
 art.region('spr', 512, 1023)
 
 art.color(200, '0c0a18', 'GLASS')                                   # the panels' fill (see-through: code.js blends it)
-# The Cellar: cold blue-grey stone, so Wick's warm light is the only warm thing in the room
+# The Dungeon: cold blue-grey stone, so Wick's warm light is the only warm thing in the room
 castle = art.palette(1, {'stone': ramp('5a6078', 5), 'wood': ramp('7a4a26', 3), 'water': ramp('2a6aa8', 4), 'iron': ramp('8a8478', 2), 'glow': 'ffd870'})   # (the lantern's iron is pale, to be found in the dark)
 far = art.palette(2, {'wall': recede(ramp('2c3048', 4), 0.5, '0a0a18'), 'night': ramp('1a2a5a', 2), 'moon': 'c8d8f0'})
 fire = art.palette(3, {'gold': ramp('e0a030', 5), 'edge': '1c1020', 'shade': '2a2040'})
@@ -75,7 +75,7 @@ for k, im in enumerate([fixture(spout), fixture(nozzle), shelf, fixture(grate), 
 both = Img(16 * 12, 16); both.blit(strip, 0, 0); both.blit(strip2, 16 * 7, 0)
 art.scene('cells', both, pal=castle, at=(40, 0))
 
-# --- The far wall of the Cellar: dark bricks, two pillars, a barred window with the night in it ---
+# --- The far wall of the Dungeon: dark bricks, two pillars, a barred window with the night in it ---
 back = Img(256, 208)
 bricks = texture('brick', 64, 32, far.wall[:3], bw=32, bh=16)
 for y in range(0, 208, 32):
