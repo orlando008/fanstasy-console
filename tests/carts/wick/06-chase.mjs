@@ -1,6 +1,6 @@
 // Wick: the chase rooms and the end of a world (spec sections 7 and 10): the Snuffer on Wick's path 150 frames
 // behind, a world's card, the ending, the records. One PASS/FAIL line for each behaviour.
-import { newGame, M, ok, playRun, runOf, walk } from './lib.mjs';
+import { newGame, M, ok, playRun, runOf, sfxLog, walk } from './lib.mjs';
 
 const vm = newGame(1), p = vm.probe(); vm.run(2);
 const { PAD_L: L, PAD_R: R, PAD_A: A, PAD_B: B } = p, LAG = p.H.lag;
@@ -54,5 +54,29 @@ const chase = p.ROOMS.find((r) => r.chase), plain = p.ROOMS[0];
   e.run(35); e.press('A'); e.run(3); ok(g.state === 'title' && g.titleItems().join() === 'CONTINUE,NEW GAME,RECORDS', 'and then the title, which has RECORDS');
   e.press('UP'); e.press('A'); e.run(3); ok(g.state === 'records', 'RECORDS opens the records');
   e.press('B'); e.run(3); ok(g.state === 'title' && g.titleSel === 2, 'B goes back to the title, on RECORDS');
+}
+// 5. The music and the effects (spec section 11): a song a world, the fugue for a chase, the ending's; each event its sound.
+{
+  const v = newGame(1), q = v.probe(); v.run(2);
+  const songOf = (w, chase) => { q.enterRoom(q.ROOMS.findIndex((r) => r.world === w && r.chase === chase)); v.run(2); return q.playing; };
+  const S = q.SONG;
+  ok([1, 2, 3, 4, 5].map((w) => songOf(w, false)).join() === [S.play, S.lab, S.clock, S.roofs, S.play].join(), 'each world has its song (the Chimney the Dungeon\'s)');
+  ok([1, 2, 3, 4].every((w) => songOf(w, true) === S.chase), 'a chase room has the fugue');
+  q.toMap(0); v.run(2); ok(q.playing === S.title, 'the map has the title\'s');
+  ok(new Set(Object.values(S)).size === 7 && new Set(Object.values(q.SFX)).size === 13, 'seven songs and thirteen effects');
+  // the effects of a room: a jump, a landing, the lantern
+  q.enterRoom(0); v.run(2); sfxLog(v);
+  v.run(2, M('A')); v.run(60);
+  const heard = sfxLog(v).map(([n]) => n);
+  ok(heard.includes(q.SFX.jump) && heard.includes(q.SFX.land), 'a jump and its landing have their sounds', heard.join(' '));
+  playRun(v, q, runOf(q.ROOMS[0])); v.run(2);
+  ok(sfxLog(v).some(([n]) => n === q.SFX.lit), 'and the lantern, lit, its chime');
+  // an ember, and a shelf cracking
+  const e = q.ROOMS.findIndex((r) => r.ember >= 0); q.enterRoom(e); v.run(2); sfxLog(v);
+  q.W.x = q.R.ex * 16 + 3; q.W.y = q.R.ey * 16 + 2; q.W.vy = 0; v.run(1);
+  ok(sfxLog(v).some(([n]) => n === q.SFX.ember), 'picking up an ember has its sound');
+  const c = q.ROOMS.findIndex((r) => r.rawText.includes('=')), k = q.ROOMS[c].rawText.indexOf('=');
+  q.enterRoom(c); v.run(2); sfxLog(v); q.W.x = (k % 16) * 16 + 3; q.W.y = Math.floor(k / 16) * 16 - 14; q.W.vy = 0; v.run(8);
+  ok(sfxLog(v).some(([n]) => n === q.SFX.crack), 'a shelf cracks as he lands on it');
 }
 ok.done();

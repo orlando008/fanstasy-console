@@ -1,7 +1,7 @@
 # Wick: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 7 of 9 built: the art pass
+**Status:** Step 8 of 9 built: the audio
 **Cart source:** `carts/src/wick/` → `carts/wick.nova`
 
 ---
@@ -201,21 +201,26 @@ times for each world, the rooms cleared, the embers found and the deaths in all.
 On the new sound chip (SPEC 5). Songs on channels 0 to 5, effects in turn on 6 and 7. **Dark baroque, public domain**:
 harpsichord and organ pieces in their own notes, read from public domain engravings with
 `tools/devkit/music/score.py` and played as medleys (`medley.py`), each source and licence in the cart folder's
-`scores/SOURCES.md`. The music does not restart on a death: a room's tries are one flow. First choices, each to be
-confirmed with the user and against a public domain file (section 16):
+`scores/SOURCES.md`. The music does not restart on a death: a room's tries are one flow. The pieces, agreed with the
+user on 2026-11-11 (four first choices had no public domain file and were replaced: `SOURCES.md` says which):
 
-| Song | Where | First choice |
-|---|---|---|
-| 0 | Title, the map | Bach, Toccata and Fugue in D minor (the opening) |
-| 1 | The Dungeon | Bach, Invention No. 4 in D minor and No. 13 in A minor |
-| 2 | The Laboratory | Scarlatti, Sonata in D minor K. 141; Sonata K. 1 |
-| 3 | The Clock Tower | Bach, Prelude in C minor (WTC I); Handel, the Harmonious Blacksmith |
-| 4 | The Rooftops | Vivaldi, Summer: the storm (Presto) |
-| 5 | The chase | Bach, the "Little" Fugue in G minor |
-| 6 | The ending | Bach, Prelude in C major (WTC I) |
+| Song | Where | Piece | Played on |
+|---|---|---|---|
+| 0 | Title, the map, the records | Bach, Toccata in D minor (BWV 565): the opening, then its running triplets | organ |
+| 1 | The Dungeon (and the Chimney) | Bach, Inventions No. 4 in D minor and No. 13 in A minor, whole | harpsichord |
+| 2 | The Laboratory | Scarlatti, Sonata in C minor K. 11 (first half); Bach, Prelude in D minor (WTC I), bars 1 to 8 | harpsichord |
+| 3 | The Clock Tower | Bach, Prelude in C minor (WTC I), bars 1 to 24 | harpsichord |
+| 4 | The Rooftops | Bach, Fantasia in G minor (BWV 542), bars 1 to 10 | organ |
+| 5 | The chase rooms | Bach, the Fugue in D minor (BWV 565), its first 24 bars | organ |
+| 6 | The ending | Bach, Prelude in C major (WTC I), whole | harpsichord over a soft organ |
 
-Effects: a jump, a wall jump, a landing, the slide (a soft loop), snuffed out (a hiss), the lantern lit, an ember, a
-steam warning, a shelf cracking, a menu move and select, a new best time.
+The harpsichord and the organ are made in `audio.py` (a plucked string whose high partials die at once; pipes at the
+octave and the twelfth). The tune is doubled an octave down on a quieter second stop, as both instruments do: a fugue's
+or an invention's voice that begins alone is then not one thin channel by itself.
+
+Effects (`SFX` in `code.js`): a menu move, select, pause, snuffed out (a hiss), a jump, a wall jump, the lantern lit, a
+landing, an ember, a shelf cracking, a new best time, the Snuffer starting after him, a world lit. (Not made: a loop
+for the slide, and a steam warning: the wisp is seen.)
 
 Levels: the lead alone at most 0.07 RMS and 0.75 of the mix, no vibrato (`node tools/devkit/music/loud.mjs
 carts/wick.nova --check`; `--why` when a song is over).
@@ -257,7 +262,7 @@ after its tenth, which moved the later rooms along); a save of another version i
 | ROM | 49 rooms × about 230 bytes: 12 KB of 128 KB |
 | Tiles | 825 of 1,023 (the cells once, five far walls, the hazards, Wick, the Snuffer) |
 | Sprites | at most about 50 at once (the replay); 32 on a line is the limit, so the replay's flames are 8 px |
-| Songs / SFX | 7 songs (medleys within the 64 patterns), about 12 effects |
+| Songs / SFX | 7 songs (50 of the 64 patterns), 13 effects |
 
 ## 15. Implementation plan
 
@@ -367,6 +372,14 @@ after its tenth, which moved the later rooms along); a save of another version i
      warnings (the Rooftops' sky was flat at first: it has a dithered gradient and clouds now). **For the user to
      look at:** each world in the preview; the first look was agreed for the Dungeon only.
 8. **Audio pass.**
+   - **Built:** seven songs from ten excerpts (`scores.py` reads the eight public domain files into `scores/`;
+     `audio.py` plays them as medleys on a harpsichord and an organ made there), 50 patterns of the 64; thirteen
+     effects; a song for each world, the fugue for the chase rooms, the C major prelude for the ending.
+   - **Results:** 150 checks (which song plays where, and the sounds of a jump, a landing, the lantern, an ember, a
+     shelf). `loud.mjs --check`: every song inside the limits (medians 0.039 to 0.069, the lead 0.37 to 0.55 of the
+     mix). At first the tune alone was the whole mix wherever a voice enters by itself: the octave doubling fixed it.
+     **Not known:** how it sounds. Nobody has heard it yet: the levels are measured, the notes are the engravings',
+     and the user's ears in the preview are the test.
 9. **Balance and polish:** check with an automatic player, then the label, the PNG cart and the Library
    (`node tools/release.js wick`) and a README row.
 
@@ -380,7 +393,7 @@ the Laboratory, an alchemist's workroom ("Kitchen" did not either): steam from r
 jars, green and purple tints.
 
 **Names still to confirm with the user** before they go into the game: the Clock Tower, the Rooftops, the Chimney,
-the Snuffer, each piece of music in section 11, the 49 room names (the table in section 6) and the ending's words.
+the Snuffer, the 49 room names (the table in section 6) and the ending's words.
 
 Defaults chosen that are easy to change:
 - **Wick's size:** his body is 10 × 12 px in rooms of 16 px cells (16 × 13 a screen), which is what one-screen rooms

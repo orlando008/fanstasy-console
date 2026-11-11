@@ -39,8 +39,10 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 
 // --- Sound (SPEC 5). Songs use channels 0 to 5; effects take turns on 6 and 7. ---
 
-const SFX = { move: 0, select: 1, pause: 2, hit: 3, over: 4, point: 5, record: 6 };
-const SONG = { title: 0, play: 1 };
+const SFX = { move: 0, select: 1, pause: 2, hit: 3, jump: 4, walljump: 5, lit: 6, land: 7, ember: 8, crack: 9, best: 10, snuffer: 11, world: 12 };
+// The songs: the title and the map; a world each (play: the Dungeon's, and the Chimney's); the chase rooms; the ending
+const SONG = { title: 0, play: 1, lab: 2, clock: 3, roofs: 4, chase: 5, ending: 6 };
+const WORLD_SONG = { 1: SONG.play, 2: SONG.lab, 3: SONG.clock, 4: SONG.roofs, 5: SONG.play };
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -353,7 +355,7 @@ function startRoom(n) {
   room = n; startRoomPicture(n);
   frames = 0; started = false; deadFor = 0; wonFor = 0; lit = false; paused = false; timer = 0; state = 'play';
   track = [];
-  play(SONG.play);
+  play(cur.chase ? SONG.chase : WORLD_SONG[cur.world]);
 }
 /** A try is over (snuffed out, or the lantern lit): keep its path for the replay. */
 function endTry(won) {
@@ -422,16 +424,20 @@ function updatePlay() {
   const pad = padOf(inputMask);
   if (pad) started = true;
   if (started) frames++;
+  const hadEmber = wick.ember, shelves = wick.cr, chased = cur.chase && wick.trail ? snufferAt(wick).on : false;
   stepWick(wick, pad, cur);
+  if (wick.ember && !hadEmber) fx(SFX.ember);
+  if (wick.cr !== shelves) fx(SFX.crack);          // (a shelf he has just set crumbling)
+  if (cur.chase && !chased && wick.trail && snufferAt(wick).on) fx(SFX.snuffer);
   if (track.length < TRY_FRAMES * 2) track.push(wick.x, wick.y);
-  if (wick.ev === 'jump' || wick.ev === 'walljump') fx(SFX.move);
-  if (wick.ev === 'land') landT = 6; else if (landT) landT--;
+  if (wick.ev === 'jump') fx(SFX.jump); else if (wick.ev === 'walljump') fx(SFX.walljump);
+  if (wick.ev === 'land') { landT = 6; fx(SFX.land); } else if (landT) landT--;
   if (wick.dead) {
     deaths++; dset(DEATHS_SLOT, dget(DEATHS_SLOT) + 1); fx(SFX.hit);
     soot.push({ x: wick.x + 1, y: Math.min(wick.y, ROWS * CELL - 10) + 2 }); if (soot.length > SOOT_MAX) soot.shift();
     endTry(false);
   }
-  if (wick.won) { lit = true; drawRoom(cur, true); fx(SFX.record); endTry(true); clearRoom(); }
+  if (wick.won) { lit = true; drawRoom(cur, true); fx(SFX.lit); endTry(true); clearRoom(); }
 }
 /** The lantern is lit: the room is cleared, its best time and its ember kept. */
 function clearRoom() {
@@ -443,18 +449,20 @@ function clearRoom() {
 }
 /** Every try of this visit again, together from the start (when there was more than the one that won). */
 function toReplay() {
-  if (tries.length < 2) { state = 'result'; timer = 0; return; }
+  if (tries.length < 2) { toResult(); return; }
   state = 'replay'; timer = 0; replayT = 0; replayEnd = Math.max(...tries.map((t) => t.track.length / 2)) + 30;
 }
+/** The result: with its chime when the time is a new best over an old one. */
+function toResult() { state = 'result'; timer = 0; if (result.newBest && result.best) fx(SFX.best); }
 function updateReplay() {
   replayT++;
-  if (replayT >= replayEnd || pressed(A) || pressed(START)) { state = 'result'; timer = 0; }
+  if (replayT >= replayEnd || pressed(A) || pressed(START)) toResult();
 }
 function updateResult() {
   if (timer > 15 && (pressed(A) || pressed(START))) {
     fx(SFX.select);
     const next = room + 1;
-    if (next < ROOMS.length && ROOMS[next].world === cur.world) enterRoom(next); else { state = 'card'; timer = 0; } // a world's last room: its card
+    if (next < ROOMS.length && ROOMS[next].world === cur.world) enterRoom(next); else { state = 'card'; timer = 0; fx(SFX.world); } // a world's last room: its card
   } else if (pressed(B)) toMap(room);
 }
 
@@ -471,7 +479,7 @@ const STORY = 4; // the last world of the story: after it, the ending
 function updateCard() {
   if (timer > 20 && (pressed(A) || pressed(START))) {
     fx(SFX.select);
-    if (cur.world === STORY) { state = 'ending'; timer = 0; endPage = 0; } else toMap(isOpen(room + 1) ? room + 1 : room);
+    if (cur.world === STORY) { state = 'ending'; timer = 0; endPage = 0; play(SONG.ending); } else toMap(isOpen(room + 1) ? room + 1 : room);
   }
 }
 // The ending: a few pages, A for the next; then the title.
