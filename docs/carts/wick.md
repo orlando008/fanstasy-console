@@ -224,6 +224,14 @@ A palette for each world's stone and far wall; one for Wick and the fire (warm),
      result (the time, a new best or the best, the deaths, an ember kept; A the next room of the world, or the map
      after its last; B the map); embers (picked up for the try, kept when the room is then cleared; the HUD shows the
      room's ember found or its empty place). The pause's third item is THE MAP.
+   - **Room 1-2 could not be beaten** (the user, in the preview). Its floor stopped before the shaft and the left
+     wall hung low, so the only way in was a long low jump under the wall onto the far one, over water: the solver
+     cleared it, a person could not. Rebuilt: the floor runs under the shaft, there is no water in the room (a missed
+     wall jump costs nothing), and the lantern's ledge is one cell from the wall's top. A room's name shows until
+     Wick first moves, and 1-2's is its lesson ("Jump from wall to wall"). The solver now also searches with the
+     buttons held 8 frames at a time, and scores a room's sturdiest run under a person's timing (`fair()`: presses a
+     few frames out, jumps made on sight). The score is a warning for runs that only work to the frame; it does not
+     measure how hard a room is, which still needs a person to play it.
    - **Results:** 71 checks (`03-progress` is new). The bot clears the three rooms through the replay and the result
      to the map. `screens.mjs` lists 14 screens; the art review's two warnings (the replay's words over the picture,
      the HUD's ember sprite under the strip) are fixed: 0 now.

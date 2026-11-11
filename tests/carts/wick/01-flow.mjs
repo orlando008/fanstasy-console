@@ -2,7 +2,7 @@
 // and the next room, the pause, SELECT. One PASS/FAIL line for each behaviour.
 import { execFileSync } from 'node:child_process';
 import { newGame, M, ok, playRun, sfxLog } from './lib.mjs';
-import { solve } from './solve.mjs';
+import { TOO_EXACT, fair, solve } from './solve.mjs';
 
 // 0. The ROM's rooms are what rooms.txt makes.
 {
@@ -57,6 +57,9 @@ import { solve } from './solve.mjs';
   const vm = newGame(1), p = vm.probe(); vm.run(2);
   const res = p.ROOMS.map((R) => ({ R, s: solve(p, R) }));
   ok(res.every((r) => r.s), 'the solver finds a way to the lantern in every room', res.filter((r) => !r.s).map((r) => `${r.R.world}-${r.R.n}`).join(', '));
+  // ...and not only to the frame (a run that falls apart when its presses come a few frames out is no way for a player)
+  const exact = p.ROOMS.map((R) => ({ R, f: fair(p, R) })).filter((r) => r.f.sturdy < TOO_EXACT);
+  ok(!exact.length, 'every room has a run that survives a person\'s timing', exact.map((r) => `${r.R.world}-${r.R.n} ${Math.round(r.f.sturdy * 100)}%`).join(', '));
   const tight = res.filter((r) => r.s && r.R.par * 6 < r.s.frames * 1.3);
   ok(!tight.length, 'and no par is under 1.3 times the run found', tight.map((r) => `${r.R.world}-${r.R.n}`).join(', '));
 }

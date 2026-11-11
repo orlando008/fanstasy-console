@@ -386,6 +386,7 @@ function drawPlay() {
   txt(clockText(frames), 100, 4, WHITE);
   txt(`DEATHS ${deaths}`, 168, 4, deaths ? RED : DIM);
   if (cur.ember >= 0) { if (wick.ember || hasEmber(cur.ember)) rectfill(245, 5, 5, 5, GOLD); else rect(245, 5, 5, 5, DIM); } // the room's ember: found, or its empty place
+  if (state === 'play' && !started && !deaths) { const w = cur.name.length * 8 + 16; panel(128 - w / 2, 198, w, 18); ctxt(cur.name.toUpperCase(), 203, WHITE); } // the room's name, until he first moves
   if (state === 'replay') { panel(56, 198, 144, 18); ctxt(`${tries.length} TRIES   A: ON`, 203, GOLD); }
 }
 
