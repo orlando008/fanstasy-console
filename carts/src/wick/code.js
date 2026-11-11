@@ -33,6 +33,11 @@ function play(song) { if (song === playing) return; playing = song; music(song);
 // --- Save slots (SPEC 13) ---
 
 const VERSION_SLOT = 0, SAVE_VERSION = 1;
+const LAST_SLOT = 1, CLEAR_SLOT = 2, EMBER_SLOT = 4, DEATHS_SLOT = 5, BEST_SLOT = 10; // cleared: a bit a room over two slots; best times in frames
+const isCleared = (n) => (dget(CLEAR_SLOT + (n >> 5)) >> (n & 31)) & 1;
+const hasEmber = (k) => k >= 0 && (dget(EMBER_SLOT) >> k) & 1;
+const bestOf = (n) => dget(BEST_SLOT + n);
+const anyProgress = () => dget(CLEAR_SLOT) || dget(CLEAR_SLOT + 1) || dget(DEATHS_SLOT);
 
 // --- Input: edge-triggered presses (btnp repeats; menus want one press) ---
 
@@ -45,9 +50,9 @@ const pressed = (b) => (inputMask & (1 << b)) !== 0 && (prevMask & (1 << b)) ===
 
 const COLS = 16, ROWS = 13, CELL = 16, ROOM_Y = 16;
 const AIR = 0, STONE = 1, LEDGE = 2, WATER = 3, START_CELL = 4, LANTERN = 5, EMBER = 6;
-let ROOMS = [];
+let ROOMS = [], WORLDS = []; // the rooms in the ROM's order (a room's number here is its place in the save), and the worlds they make
 function loadRooms() {
-  const b = rom('rooms'); let at = 1;
+  const b = rom('rooms'); let at = 1, embers = 0;
   ROOMS = [];
   for (let k = 0; k < b[0]; k++) {
     const world = b[at], n = b[at + 1], par = b[at + 2] | (b[at + 3] << 8), len = b[at + 4];
@@ -55,8 +60,11 @@ function loadRooms() {
     at += 5 + len;
     const cells = Array.from(b.slice(at, at + COLS * ROWS)); at += COLS * ROWS;
     const s = cells.indexOf(START_CELL), l = cells.indexOf(LANTERN);
-    ROOMS.push({ world, n, par, name, cells, sx: (s % COLS) * CELL + 3, sy: Math.floor(s / COLS) * CELL + 4, lx: l % COLS, ly: Math.floor(l / COLS) });
+    const e = cells.indexOf(EMBER);
+    ROOMS.push({ world, n, par, name, cells, sx: (s % COLS) * CELL + 3, sy: Math.floor(s / COLS) * CELL + 4, lx: l % COLS, ly: Math.floor(l / COLS),
+      ember: e < 0 ? -1 : embers++, ex: e % COLS, ey: Math.floor(e / COLS) });
   }
+  WORLDS = [...new Set(ROOMS.map((r) => r.world))];
 }
 /** The cell at column cx, row cy of a room: beyond the sides and the top is stone, below the bottom is air (a fall). */
 const cellAt = (R, cx, cy) => (cx < 0 || cx >= COLS || cy < 0 ? STONE : cy >= ROWS ? AIR : R.cells[cy * COLS + cx]);
@@ -145,9 +153,12 @@ function stepWick(w, pad, R) {
 
 let skipTitle = false; // tests set this to land straight in the first room
 let state = 'title', paused = false, timer = 0, clock = 0;
-let titleSel = 0, pauseSel = 0;
+let titleSel = 0, pauseSel = 0, confirm = false, mapSel = 0;
 let room = 0, cur = null, wick = null; // the room's number, the room, Wick
 let frames = 0, started = false, deaths = 0, deadFor = 0, wonFor = 0, lit = false, landT = 0;
+// This visit to the room: where Wick was snuffed out (the soot), and every try's path, for the replay
+const SOOT_MAX = 40, TRIES_MAX = 30, TRY_FRAMES = 2700;
+let soot = [], tries = [], track = null, replayT = 0, replayEnd = 0, result = null;
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { for (let i = 0; i < 256; i++) dset(i, 0); dset(VERSION_SLOT, SAVE_VERSION); }
@@ -158,10 +169,14 @@ function init() {
   bg(1, { mx: 0, my: 0, mw: COLS * 2, mh: ROWS * 2, x: 0, y: -ROOM_Y, wrap: false, show: true });
   bg(2, { mx: wl.mx, my: wl.my, mw: wl.w, mh: wl.h, x: 0, y: -ROOM_Y, wrap: false, show: true });
   color(0, 1, 1, 3);
-  if (skipTitle) startRoom(0); else toTitle();
+  if (skipTitle) enterRoom(0); else toTitle();
 }
 
-function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; startRoomPicture(0); play(SONG.title); }
+function toTitle() { state = 'title'; timer = 0; titleSel = 0; confirm = false; paused = false; startRoomPicture(0); play(SONG.title); }
+/** The map of the rooms, on the room last played (or the first not cleared). */
+function toMap(n = dget(LAST_SLOT)) { state = 'map'; timer = 0; paused = false; mapSel = Math.min(n, openRooms() - 1); startRoomPicture(mapSel); play(SONG.title); }
+/** How many rooms can be chosen: every one up to the first not cleared. */
+function openRooms() { let n = 0; while (n < ROOMS.length && isCleared(n)) n++; return Math.min(ROOMS.length, n + 1); }
 
 /** Write a room's cells into Map RAM: each cell is four tiles of its picture in ART.scenes.cells. */
 // (the pictures, in order: stone, stone lit along its top, a ledge, water, the water's surface, the lantern, lit)
@@ -175,12 +190,19 @@ function drawRoom(Rm, lanternLit) {
   }
 }
 function startRoomPicture(n) { cur = ROOMS[n]; drawRoom(cur, false); wick = newWick(cur); }
-/** Begin (or begin again) room n: Wick at its start, the clock at nothing until he first moves. */
-function startRoom(n, keepDeaths = false) {
+/** Come into room n (from the map, the title or the room before): no soot, no tries yet. */
+function enterRoom(n) { soot = []; tries = []; deaths = 0; dset(LAST_SLOT, n); startRoom(n); }
+/** Begin a try at room n: Wick at its start, the clock at nothing until he first moves. */
+function startRoom(n) {
   room = n; startRoomPicture(n);
   frames = 0; started = false; deadFor = 0; wonFor = 0; lit = false; paused = false; timer = 0; state = 'play';
-  if (!keepDeaths) deaths = 0;
+  track = [];
   play(SONG.play);
+}
+/** A try is over (snuffed out, or the lantern lit): keep its path for the replay. */
+function endTry(won) {
+  tries.push({ track, won });
+  if (tries.length > TRIES_MAX) tries.splice(0, tries.length - TRIES_MAX); // the oldest go (never the one that won: it is the last)
 }
 
 // --- Update ---
@@ -190,12 +212,43 @@ function update() {
   if (!paused) timer++;
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
+  else if (state === 'map') updateMap();
   else if (state === 'play') updatePlay();
+  else if (state === 'replay') updateReplay();
+  else if (state === 'result') updateResult();
   prevMask = inputMask;
 }
 
+const titleItems = () => (anyProgress() ? ['CONTINUE', 'NEW GAME'] : ['NEW GAME']);
 function updateTitle() {
-  if (pressed(A) || pressed(START)) { fx(SFX.select); startRoom(0); }
+  const items = titleItems();
+  if (pressed(UP) || pressed(DOWN)) { titleSel = confirm ? titleSel ^ 1 : (titleSel + 1) % items.length; fx(SFX.move); }
+  if (confirm) {
+    if (pressed(B)) { confirm = false; titleSel = 1; fx(SFX.move); }
+    else if (pressed(A) || pressed(START)) { fx(SFX.select); if (titleSel === 1) newGame(); else { confirm = false; titleSel = 0; } }
+    return;
+  }
+  if (pressed(A) || pressed(START)) {
+    fx(SFX.select);
+    if (items[titleSel] === 'CONTINUE') toMap();
+    else if (anyProgress()) { confirm = true; titleSel = 0; } // KEEP MY GAME is first
+    else newGame();
+  }
+}
+/** A new game: nothing cleared, no times, no embers; straight into the first room. */
+function newGame() { for (let i = 1; i < 256; i++) dset(i, 0); enterRoom(0); }
+
+function updateMap() {
+  const open = openRooms(), before = mapSel;
+  if (pressed(LEFT) && mapSel > 0) mapSel--;
+  if (pressed(RIGHT) && mapSel < open - 1) mapSel++;
+  if (pressed(UP) || pressed(DOWN) || pressed(L) || pressed(R)) { // the next or the last world: its first room, if it is open
+    const w = WORLDS.indexOf(ROOMS[mapSel].world) + (pressed(DOWN) || pressed(R) ? 1 : -1), to = ROOMS.findIndex((r) => r.world === WORLDS[w]);
+    if (to >= 0 && to < open) mapSel = to;
+  }
+  if (mapSel !== before) { fx(SFX.move); startRoomPicture(mapSel); }
+  if (pressed(A) || pressed(START)) { fx(SFX.select); enterRoom(mapSel); }
+  else if (pressed(B)) { fx(SFX.move); toTitle(); }
 }
 
 /** The buttons as stepWick takes them. */
@@ -203,19 +256,49 @@ const padOf = (m) => (m & (1 << LEFT) ? PAD_L : 0) | (m & (1 << RIGHT) ? PAD_R :
 
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
-  if (wick.dead) { if (++deadFor >= T.restart) startRoom(room, true); return; }
-  if (wick.won) { if (++wonFor >= 50) { if (room + 1 < ROOMS.length) startRoom(room + 1); else toTitle(); } return; }
-  if (pressed(SELECT)) { startRoom(room, true); return; }
+  if (wick.dead) { if (++deadFor >= T.restart) startRoom(room); return; }
+  if (wick.won) { if (++wonFor >= 40) toReplay(); return; }
+  if (pressed(SELECT)) { if (track.length) endTry(false); startRoom(room); return; }
   const pad = padOf(inputMask);
   if (pad) started = true;
   if (started) frames++;
   stepWick(wick, pad, cur);
+  if (track.length < TRY_FRAMES * 2) track.push(wick.x, wick.y);
   if (wick.ev === 'jump' || wick.ev === 'walljump') fx(SFX.move);
   if (wick.ev === 'land') landT = 6; else if (landT) landT--;
-  if (wick.dead) { deaths++; fx(SFX.hit); }
-  if (wick.won) { lit = true; drawRoom(cur, true); fx(SFX.record); }
+  if (wick.dead) {
+    deaths++; dset(DEATHS_SLOT, dget(DEATHS_SLOT) + 1); fx(SFX.hit);
+    soot.push({ x: wick.x + 1, y: Math.min(wick.y, ROWS * CELL - 10) + 2 }); if (soot.length > SOOT_MAX) soot.shift();
+    endTry(false);
+  }
+  if (wick.won) { lit = true; drawRoom(cur, true); fx(SFX.record); endTry(true); clearRoom(); }
+}
+/** The lantern is lit: the room is cleared, its best time and its ember kept. */
+function clearRoom() {
+  const best = bestOf(room), newBest = !best || frames < best, ember = wick.ember && cur.ember >= 0 && !hasEmber(cur.ember);
+  dset(CLEAR_SLOT + (room >> 5), dget(CLEAR_SLOT + (room >> 5)) | (1 << (room & 31)));
+  if (newBest) dset(BEST_SLOT + room, frames);
+  if (ember) dset(EMBER_SLOT, dget(EMBER_SLOT) | (1 << cur.ember));
+  result = { frames, best, newBest, ember, deaths };
+}
+/** Every try of this visit again, together from the start (when there was more than the one that won). */
+function toReplay() {
+  if (tries.length < 2) { state = 'result'; timer = 0; return; }
+  state = 'replay'; timer = 0; replayT = 0; replayEnd = Math.max(...tries.map((t) => t.track.length / 2)) + 30;
+}
+function updateReplay() {
+  replayT++;
+  if (replayT >= replayEnd || pressed(A) || pressed(START)) { state = 'result'; timer = 0; }
+}
+function updateResult() {
+  if (timer > 15 && (pressed(A) || pressed(START))) {
+    fx(SFX.select);
+    const next = room + 1;
+    if (next < ROOMS.length && ROOMS[next].world === cur.world) enterRoom(next); else toMap(Math.min(next, ROOMS.length - 1));
+  } else if (pressed(B)) toMap(room);
 }
 
+const PAUSE_ITEMS = ['RESUME', 'RESTART ROOM', 'THE MAP'];
 function updatePause() {
   if (pressed(START) || pressed(B)) { paused = false; return; }
   if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
@@ -223,8 +306,8 @@ function updatePause() {
   if (pressed(A)) {
     fx(SFX.select);
     if (pauseSel === 0) paused = false;
-    else if (pauseSel === 1) startRoom(room, true);
-    else toTitle();
+    else if (pauseSel === 1) { if (track.length && !wick.dead && !wick.won) endTry(false); startRoom(room); }
+    else toMap(room);
   }
 }
 
@@ -248,8 +331,8 @@ function scanline(y) {
     if (d * d >= rr * rr) { winpos(n, 1, 0); return; }
     const w = flr(sqrt2(rr * rr - d * d)); winpos(n, clamp(cx - w, 0, 255), clamp(cx + w, 0, 255));
   };
-  if (wick.dead) winpos(0, 1, 0); else span(0, flr(wick.x) + 5, ROOM_Y + flr(wick.y) - 2, LIGHT + (clock % 12 < 6 ? 0 : 2));
-  if (lit) span(1, cur.lx * CELL + 8, ROOM_Y + cur.ly * CELL + 8, LANTERN_LIGHT + min2(30, wonFor)); else winpos(1, 1, 0);
+  if (wick.dead || state === 'map') winpos(0, 1, 0); else span(0, flr(wick.x) + 5, ROOM_Y + flr(wick.y) - 2, LIGHT + (clock % 12 < 6 ? 0 : 2));
+  if (lit && state !== 'map') span(1, cur.lx * CELL + 8, ROOM_Y + cur.ly * CELL + 8, LANTERN_LIGHT + min2(30, wonFor)); else winpos(1, 1, 0);
 }
 // (scanline may only call the console's own maths: these are tables and plain arithmetic)
 const ROOTS = Array.from({ length: 128 * 128 }, (_, i) => Math.sqrt(i));
@@ -258,7 +341,9 @@ const sqrt2 = (v) => ROOTS[v > 16383 ? 16383 : v], min2 = (a, b) => (a < b ? a :
 function draw() {
   cls();
   setLayers();
-  if (state === 'play') drawPlay(); else drawTitle();
+  if (state === 'title') drawTitle();
+  else if (state === 'map') drawMap();
+  else { drawPlay(); if (state === 'result') drawResult(); }
   if (paused) drawPause();
 }
 
@@ -275,27 +360,84 @@ function drawWick() {
   else if (Math.abs(wick.vx) > 0.4) f = clock % 10 < 5 ? S.run0 : S.run1;
   sprite(f, x, y, { fx: flip });
 }
+/** The room's ember (until it is picked up in this try; dim if it was kept before), and the soot of this visit. */
+function drawThings() {
+  const S = ART.sprites;
+  if (cur.ember >= 0 && !wick.ember && (!hasEmber(cur.ember) || clock % 4 < 2)) sprite(S.ember, cur.ex * CELL + 4, ROOM_Y + cur.ey * CELL + 4 + (clock % 40 < 20 ? 0 : 1));
+  for (const s of soot) sprite(S.soot, s.x, ROOM_Y + s.y, { prio: 2 });
+}
+/** The replay: every try as a small flame at where it was at this frame; a try that was snuffed out stops there. */
+function drawReplay() {
+  const S = ART.sprites;
+  for (const t of tries) {
+    const n = t.track.length / 2, k = Math.min(replayT, n - 1);
+    if (!t.won && replayT >= n + 8) continue;
+    const x = t.track[k * 2], y = t.track[k * 2 + 1];
+    if (t.won) sprite(replayT % 16 < 8 ? S.wick0 : S.wick1, x - 11, ROOM_Y + y - 20);
+    else sprite(S.ember, x + 1, ROOM_Y + y + 2);
+  }
+}
 
 function drawPlay() {
-  drawWick();
+  drawThings();
+  if (state === 'replay') drawReplay(); else if (state !== 'result') drawWick(); else sprite(ART.sprites.wick0, wick.x - 11, ROOM_Y + wick.y - 20);
   rectfill(0, 0, 256, ROOM_Y, SHADOW);
   txt(`${cur.world}-${cur.n}`, 6, 4, GOLD);
   txt(clockText(frames), 100, 4, WHITE);
-  txt(`DEATHS ${deaths}`, 176, 4, deaths ? RED : DIM);
-  if (wick.won && wonFor > 10) { panel(64, 96, 128, 30); ctxt('LIT!', 102, GOLD); ctxt(clockText(frames), 114, WHITE); }
+  txt(`DEATHS ${deaths}`, 168, 4, deaths ? RED : DIM);
+  if (cur.ember >= 0) { if (wick.ember || hasEmber(cur.ember)) rectfill(245, 5, 5, 5, GOLD); else rect(245, 5, 5, 5, DIM); } // the room's ember: found, or its empty place
+  if (state === 'replay') { panel(56, 198, 144, 18); ctxt(`${tries.length} TRIES   A: ON`, 203, GOLD); }
+}
+
+function drawResult() {
+  const r = result;
+  panel(56, 72, 144, 84);
+  ctxt('LIT!', 80, GOLD);
+  ctxt(clockText(r.frames), 96, WHITE);
+  ctxt(r.newBest ? (r.best ? 'A NEW BEST' : 'FIRST TIME') : `BEST ${clockText(r.best)}`, 110, r.newBest ? GREEN : DIM);
+  ctxt(r.deaths ? `${r.deaths} SNUFFED OUT` : 'FIRST TRY', 124, r.deaths ? DIM : GREEN);
+  if (r.ember) ctxt('AN EMBER KEPT', 138, GOLD);
+  if (timer > 15 && clock % 60 < 40) ctxt('A: ON', 160, DIM);
+}
+
+/** The map: the rooms of the chosen room's world in a row, each lit when cleared, with its best time and its ember. */
+function drawMap() {
+  const w = ROOMS[mapSel].world, list = ROOMS.map((r, i) => ({ r, i })).filter((x) => x.r.world === w), open = openRooms();
+  rectfill(0, 0, 256, ROOM_Y, SHADOW);
+  txt(`WORLD ${w}`, 6, 4, GOLD);
+  txt(`DEATHS ${dget(DEATHS_SLOT)}`, 160, 4, DIM);
+  panel(8, 150, 240, 66);
+  list.forEach(({ r, i }, k) => {
+    const x = 16 + k * 20, on = i === mapSel, can = i < open;
+    if (on) rectfill(x - 2, 156, 20, 22, PANEL);
+    txt(String(r.n), x + (r.n > 9 ? 0 : 4), 158, !can ? SHADOW : isCleared(i) ? GOLD : WHITE);
+    if (isCleared(i)) rectfill(x + 5, 169, 6, 6, GOLD);            // a lit lantern
+    else if (can) rect(x + 5, 169, 6, 6, DIM);
+    if (r.ember >= 0 && hasEmber(r.ember)) rectfill(x + 13, 169, 2, 2, RED);
+  });
+  const r = ROOMS[mapSel];
+  txt(`${r.world}-${r.n} ${r.name.toUpperCase()}`, 16, 184, WHITE);
+  txt(bestOf(mapSel) ? `BEST ${clockText(bestOf(mapSel))}` : 'NOT LIT YET', 16, 198, bestOf(mapSel) ? GREEN : DIM);
+  txt('A: PLAY', 184, 198, DIM);
 }
 
 function drawTitle() {
   drawWick();
-  panel(40, 132, 176, 40);
-  ctxt('A: PLAY', 140, WHITE);
-  ctxt('A CANDLE IN THE DARK', 156, CYAN);
+  if (confirm) {
+    panel(40, 124, 176, 60);
+    ctxt('START A NEW GAME?', 132, WHITE); ctxt('YOUR ROOMS WILL BE LOST', 144, DIM);
+    ['KEEP MY GAME', 'START AGAIN'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 72, 158 + i * 12, i === titleSel ? WHITE : DIM));
+    return;
+  }
+  const items = titleItems();
+  panel(56, 132, 144, 24 + items.length * 14);
+  items.forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 80, 142 + i * 14, i === titleSel ? WHITE : DIM));
 }
 
 function drawPause() {
   panel(64, 72, 128, 76);
   ctxt('PAUSED', 80, GOLD);
-  ['RESUME', 'RESTART ROOM', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '> ' : '  '}${s}`, 76, 98 + i * 14, i === pauseSel ? WHITE : DIM));
+  PAUSE_ITEMS.forEach((s, i) => txt(`${i === pauseSel ? '> ' : '  '}${s}`, 76, 98 + i * 14, i === pauseSel ? WHITE : DIM));
 }
 
 function panel(x, y, w, h) { rectfill(x, y, w, h, ART.colors.GLASS); rect(x, y, w, h, PANEL); }

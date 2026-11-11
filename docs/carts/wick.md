@@ -1,7 +1,7 @@
 # Wick: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 2 of 9: the art proof is with the user
+**Status:** Step 3 of 9 built: the map, saves, soot, the replay and embers
 **Cart source:** `carts/src/wick/` → `carts/wick.nova`
 
 ---
@@ -36,7 +36,7 @@ Two things mark the tries: every death leaves a **soot mark** on the wall where 
 | Button | Use |
 |---|---|
 | LEFT / RIGHT | Move. Against a wall in the air: slide down it slowly |
-| A | Jump; held, a higher jump. On a wall in the air: a wall jump, up and away from it |
+| A | Jump; held, a higher jump. On a wall in the air: a wall jump, up and away from it. In menus: choose |
 | B | Held: run (faster, and longer jumps) |
 | START | Pause (RESUME, RESTART ROOM, THE MAP) |
 | SELECT | Restart the room at once |
@@ -213,8 +213,20 @@ A palette for each world's stone and far wall; one for Wick and the fire (warm),
      far wall of dark bricks with pillars and a barred window on the night. **The dark:** layer 0 is one dark tile
      mixed half and half with the room, cut away in a ragged circle round Wick (44 px) and round a lit lantern, so
      his light is the only warm thing in the room and the hazards still show in the dark.
-   - **Agreed:** not yet: the proof was sent to the user on 2026-11-11.
+   - **Agreed** by the user on 2026-11-11, as sent ("Looks awesome"): no changes asked for.
 3. **Core mechanics:** the map, saves and best times, soot and the replay, embers.
+   - **Built:** the save (section 13: the last room, cleared rooms, embers, deaths in all, each room's best time in
+     frames); the title's CONTINUE and NEW GAME (which asks first over a save); the map (the rooms of a world in a row,
+     each lit when cleared, its name, its best time, its ember; the room itself is shown behind; LEFT and RIGHT to any
+     room up to the first not cleared, UP and DOWN or L and R a world, B the title); a visit's soot (40 marks at most)
+     and its tries (30 at most, each a path; a restart with SELECT or from the pause is a try too); the replay when a
+     room is cleared after more than one try (every try a small flame, the one that won as Wick; A skips it); the
+     result (the time, a new best or the best, the deaths, an ember kept; A the next room of the world, or the map
+     after its last; B the map); embers (picked up for the try, kept when the room is then cleared; the HUD shows the
+     room's ember found or its empty place). The pause's third item is THE MAP.
+   - **Results:** 71 checks (`03-progress` is new). The bot clears the three rooms through the replay and the result
+     to the map. `screens.mjs` lists 14 screens; the art review's two warnings (the replay's words over the picture,
+     the HUD's ember sprite under the strip) are fixed: 0 now.
 4. **Hazards:** each of section 7, with a test room for each.
 5. **Content:** the 44 rooms and the 5 bonus rooms, each cleared by a recorded run kept as a test, with par times.
 6. **Flow:** the chase rooms, the world cards, the ending, records.

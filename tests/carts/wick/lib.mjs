@@ -10,6 +10,9 @@ const PROBE = `__expose(() => ({
   get room() { return room; }, get R() { return cur; }, get W() { return wick; }, set W(v) { wick = v; }, get ROOMS() { return ROOMS; },
   get frames() { return frames; }, get deaths() { return deaths; }, get started() { return started; }, get lit() { return lit; },
   get pauseSel() { return pauseSel; }, get ART() { return ART; }, mget: (x, y) => mget(x, y),
+  get titleSel() { return titleSel; }, get confirm() { return confirm; }, get mapSel() { return mapSel; }, get soot() { return soot; }, get tries() { return tries; },
+  get result() { return result; }, get replayT() { return replayT; }, get WORLDS() { return WORLDS; },
+  isCleared, bestOf, hasEmber, openRooms, enterRoom, toMap, titleItems, LAST_SLOT, CLEAR_SLOT, EMBER_SLOT, DEATHS_SLOT, BEST_SLOT, SOOT_MAX, TRIES_MAX,
   T, SFX, SONG, stepWick, newWick, cellAt, startRoom, PAD_L, PAD_R, PAD_A, PAD_B, STONE, LEDGE, WATER, LANTERN, EMBER, COLS, ROWS, CELL, ROOM_Y,
 }));`;
 
@@ -33,3 +36,8 @@ export function walk(p, R, pads, w = p.newWick(R)) {
   for (const [pad, n] of pads) for (let i = 0; i < n && !w.dead && !w.won; i++) { p.stepWick(w, pad, R); track.push([w.x, w.y]); }
   return { w, track };
 }
+
+/** The buttons of the console for a pad of stepWick's (PAD_L ...). */
+export const padMask = (p, m) => (m & p.PAD_L ? M('LEFT') : 0) | (m & p.PAD_R ? M('RIGHT') : 0) | (m & p.PAD_A ? M('A') : 0) | (m & p.PAD_B ? M('B') : 0);
+/** Play a run ([[pad, frames], ...], as the solver gives) in the real game. */
+export function playRun(vm, p, run) { for (const [m, f] of run) vm.run(f, padMask(p, m)); }
