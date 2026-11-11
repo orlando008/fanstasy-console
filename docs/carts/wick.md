@@ -1,7 +1,7 @@
 # Wick: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 5 of 9 built: the rooms
+**Status:** Step 6 of 9 built: the chase rooms and the flow
 **Cart source:** `carts/src/wick/` → `carts/wick.nova`
 
 ---
@@ -102,7 +102,7 @@ Rooms are text, 16 × 13 characters each, packed into the ROM by a script (a roo
 
 ### The rooms
 
-Built in step 5. A room's name shows under the HUD strip until Wick moves; **the names are a first proposal, for the user to
+Built in steps 5 and 6. A room's name shows under the HUD strip until Wick moves; **the names are a first proposal, for the user to
 change**. An ember: the room has one. The run found is the solver's (a counted, frame-exact run: a person takes
 several times as long); the par is 2.5 times it, to the second above.
 
@@ -118,6 +118,7 @@ several times as long); the par is 2.5 times it, to the second above.
 | 1-8 | Drips in the shaft |  | 2.4 s | 6 s |
 | 1-9 | The dripping stair | yes | 1.6 s | 4 s |
 | 1-10 | The dungeon gate | yes | 3.0 s | 8 s |
+| 1-11 | The Snuffer (chase) |  | 5.5 s | 14 s |
 | 2-1 | Mind the steam |  | 1.7 s | 5 s |
 | 2-2 | Old shelves | yes | 1.4 s | 4 s |
 | 2-3 | Steam and old shelves |  | 1.4 s | 4 s |
@@ -128,6 +129,7 @@ several times as long); the par is 2.5 times it, to the second above.
 | 2-8 | The steam shaft |  | 3.3 s | 9 s |
 | 2-9 | The furnace | yes | 1.8 s | 5 s |
 | 2-10 | The alchemist's stair | yes | 3.5 s | 9 s |
+| 2-11 | It follows (chase) |  | 4.6 s | 12 s |
 | 3-1 | Ride the gears |  | 1.6 s | 4 s |
 | 3-2 | Mind the weights |  | 1.5 s | 4 s |
 | 3-3 | Gears and a weight |  | 1.6 s | 4 s |
@@ -138,6 +140,7 @@ several times as long); the par is 2.5 times it, to the second above.
 | 3-8 | The escapement | yes | 2.7 s | 7 s |
 | 3-9 | The mainspring |  | 1.8 s | 5 s |
 | 3-10 | The clock face | yes | 5.4 s | 14 s |
+| 3-11 | No time to wait (chase) |  | 3.3 s | 9 s |
 | 4-1 | A stiff breeze |  | 1.5 s | 4 s |
 | 4-2 | Between showers |  | 2.3 s | 6 s |
 | 4-3 | Wind and rain |  | 2.7 s | 7 s |
@@ -148,6 +151,7 @@ several times as long); the par is 2.5 times it, to the second above.
 | 4-8 | Loose tiles |  | 1.6 s | 5 s |
 | 4-9 | The storm | yes | 2.7 s | 7 s |
 | 4-10 | The weathercock | yes | 4.2 s | 11 s |
+| 4-11 | Over the roofs (chase) |  | 3.0 s | 8 s |
 | 5-1 | Soot and steam |  | 3.1 s | 8 s |
 | 5-2 | The damper |  | 2.5 s | 7 s |
 | 5-3 | The draught |  | 2.3 s | 6 s |
@@ -168,7 +172,7 @@ Anything here snuffs Wick out at a touch (wind only pushes).
 | Pendulum | an iron weight (6 px radius) on a 3-cell arm from a pivot in the stone, swinging 60° to each side, there and back in a cycle |
 | Wind | cells of moving air that carry Wick sideways at 0.9 px a frame on top of his own speed, on the ground and in the air (it does not snuff him out) |
 | Rain | a column from a grate in the stone to the first stone below: falling for 72 frames of the cycle, a pause of 48 |
-| The chase | in a world's last room, the **Snuffer** (a brass candle snuffer) follows the path Wick took, 150 frames behind: stop, and it arrives (step 6) |
+| The chase | in a world's eleventh room, the **Snuffer** (a brass candle snuffer) follows the path Wick took, 150 frames (2.5 s) behind, counted from his first move: until then it waits where he began. Stop for that long, or go back onto where he was 150 frames ago, and it has him |
 
 **One clock.** Every timed hazard runs on a cycle of 120 frames from the start of the try, so a room is the same every
 try and can be learned. Where a hazard is in the cycle comes from its column (a quarter of the cycle later for each
@@ -176,7 +180,7 @@ column along), so two drips side by side fall one after the other. The room's le
 
 ## 8. Modes
 
-One: the story of 44 rooms (40 built in step 5; each world's chase room comes in step 6) and the bonus 5. No difficulty levels. (An assist option is an open question.)
+One: the story of 44 rooms and the bonus 5. No difficulty levels. (An assist option is an open question.)
 
 ## 9. Scoring
 
@@ -241,8 +245,8 @@ A palette for each world's stone and far wall; one for Wick and the fire (warm),
 | 5 | Deaths in all |
 | 10–58 | Best time of each room, in frames (0: none) |
 
-A room's place in the ROM is its place in the save. Step 6 puts each world's chase room after its tenth, which moves
-the later rooms along: a save from before that is from an unreleased build, and the format version goes up with it.
+A room's place in the ROM is its place in the save. The format version is 2 (step 6 put each world's chase room
+after its tenth, which moved the later rooms along); a save of another version is cleared.
 | 59–255 | Reserved |
 
 ## 14. Asset budget
@@ -335,6 +339,19 @@ the later rooms along: a save from before that is from an unreleased build, and 
      The bot clears all 45 rooms in the real game with all 20 embers. **Not known:** how hard each room is for a
      person, and whether the order feels right: the solver cannot say, the user's play in the preview can.
 6. **Flow:** the chase rooms, the world cards, the ending, records.
+   - **Built:** the Snuffer (`snufferAt`, inside `stepWick`: Wick keeps his path as a chain of places that tries
+     share, so the solver can branch without copying it) and four chase rooms, each world's eleventh: 1-11 "The
+     Snuffer", 2-11 "It follows", 3-11 "No time to wait", 4-11 "Over the roofs". They are the longest rooms (the
+     run found is 3 to 5.5 s), going through the screen two or three times. A world's card after its last room
+     (lanterns lit, the total of its best times, its embers, what is next); after the Rooftops' the ending (three
+     pages and what was done), then the title; RECORDS on the title (a line a world, and the deaths). UP on the
+     title now goes up.
+   - **Changed from the plan:** the Laboratory's chase has steam in its middle floor where it first had crumbling
+     shelves: with shelves, jets and the room's size the solver needed two and a half minutes and 5 million states.
+   - **Results:** 139 checks (`06-chase` is new: the Snuffer waits, follows at 150 frames, catches a Wick who stops
+     or goes to and fro; the card, the ending's pages, the records). The bot clears all 49 rooms in the real game,
+     through the cards and the ending and on to the Chimney. **To agree with the user:** the Snuffer's name, the
+     chase rooms' names and the ending's words (`ENDING` in `code.js`).
 7. **Art pass:** the rest of the art, in the look agreed in step 2 (`gallery.mjs` and `critique.mjs` over every screen).
 8. **Audio pass.**
 9. **Balance and polish:** check with an automatic player, then the label, the PNG cart and the Library
@@ -350,7 +367,7 @@ the Laboratory, an alchemist's workroom ("Kitchen" did not either): steam from r
 jars, green and purple tints.
 
 **Names still to confirm with the user** before they go into the game: the Clock Tower, the Rooftops, the Chimney,
-the Snuffer, each piece of music in section 11, and the 45 room names (the table in section 6).
+the Snuffer, each piece of music in section 11, the 49 room names (the table in section 6) and the ending's words.
 
 Defaults chosen that are easy to change:
 - **Wick's size:** his body is 10 × 12 px in rooms of 16 px cells (16 × 13 a screen), which is what one-screen rooms

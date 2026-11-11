@@ -169,6 +169,21 @@ plat.px[3][7] = haz.edge; plat.px[3][8] = haz.edge
 art.sprite('gear', plat, pal=haz, region='spr')
 ball = Sculpt(16, 16); ball.sphere(8, 8, 0, 6.5, Mat(haz.iron, gloss=0.6))
 art.sprite('bob', ball.render(), pal=haz, region='spr')              # a pendulum's weight
+# The Snuffer: a brass candle snuffer, a cone with a dark mouth, on its hooked handle (it follows Wick in a chase room)
+snf = Img(16, 16)
+for y in range(3, 13):
+    half = 1 + (y - 3) * 5 // 9
+    for x in range(8 - half, 8 + half):
+        t = (x - (8 - half)) / max(1, 2 * half - 1)
+        snf.px[y][x] = haz.brass[2 if t < 0.3 else 1 if t < 0.7 else 0]
+    snf.px[y][8 - half - 1] = haz.edge; snf.px[y][8 + half] = haz.edge
+for x in range(2, 14): snf.px[13][x] = haz.edge if x in (2, 13) else haz.brass[2 if x < 6 else 1]
+for x in range(3, 13): snf.px[14][x] = haz.edge
+for x in range(4, 12): snf.px[12][x] = haz.edge                         # its dark mouth
+snf.px[2][7] = haz.brass[2]; snf.px[2][8] = haz.brass[1]; snf.px[1][8] = haz.brass[1]
+for x in range(9, 13): snf.px[0][x] = haz.brass[1]
+snf.px[1][13] = haz.brass[0]; snf.px[2][13] = haz.brass[0]            # the hook
+art.sprite('snuffer', snf, pal=haz, region='spr')
 link = Img(8, 8); link.rect(3, 0, 2, 8, haz.iron[1]); link.px[3][3] = haz.edge; link.px[7][4] = haz.edge
 art.sprite('link', link, pal=haz, region='spr')                      # a piece of its arm
 rain = Img(16, 16)

@@ -2,7 +2,7 @@
 # (loadRooms):
 #   python3 carts/src/wick/rooms.py            write rom/rooms.bin
 #   python3 carts/src/wick/rooms.py --check    exit 1 if it is not up to date
-# rooms.bin: a count byte, then for each room: world, number, par in tenths of a second (2 bytes, little-endian), the
+# rooms.bin: a count byte, then for each room: world (128 more for a chase room), number, par in tenths of a second (2 bytes, little-endian), the
 # name (a length byte and ASCII), and 208 cells, a byte each, row by row (the codes of CELLS below).
 import os, sys
 
@@ -16,9 +16,9 @@ def read():
     for n, line in enumerate(open(os.path.join(HERE, 'rooms.txt')).read().split('\n'), 1):
         if line.startswith('#') and cur is None or (line.startswith('# ') and cur is not None and len(cur['rows']) == ROWS): continue
         if line.startswith('@'):
-            wn, par, name = [p.strip() for p in line[1:].split('|')]
+            wn, par, name, *more = [p.strip() for p in line[1:].split('|')]
             w, k = wn.split('-')
-            cur = {'world': int(w), 'n': int(k), 'par': round(float(par) * 10), 'name': name, 'rows': [], 'line': n}
+            cur = {'world': int(w), 'n': int(k), 'chase': 'chase' in more, 'par': round(float(par) * 10), 'name': name, 'rows': [], 'line': n}
             rooms.append(cur)
         elif line.strip() and cur is not None:
             cur['rows'].append(line)
@@ -36,7 +36,7 @@ def read():
 def pack(rooms):
     out = bytearray([len(rooms)])
     for r in rooms:
-        out += bytes([r['world'], r['n'], r['par'] & 255, r['par'] >> 8, len(r['name'])]) + r['name'].encode('ascii')
+        out += bytes([r['world'] | (128 if r['chase'] else 0), r['n'], r['par'] & 255, r['par'] >> 8, len(r['name'])]) + r['name'].encode('ascii')
         out += bytes(CELLS.index(c) for c in ''.join(r['rows']))
     return bytes(out)
 

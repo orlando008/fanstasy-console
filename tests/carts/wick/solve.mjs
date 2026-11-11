@@ -16,14 +16,14 @@ import { newGame } from './lib.mjs';
 /** A person's hands: a choice of buttons held for 8 frames at least (about 130 ms). A room must be clearable this way
  * too: a way that needs a button changed on one exact frame is not a way for a player (the first 1-2 had only that). */
 export const HUMAN = 8;
-const MOST = 1500000; // states a search may reach before it gives up
+const MOST = Number(process.env.WICK_MOST) || 1500000; // states a search may reach before it gives up (WICK_MOST=4000000 for a big room; give node the memory)
 /** Solve room R with probe p. Returns { frames, run: [[pad, frames], ...] } or null. limit: frames to search to;
  * hold: the frames each choice of buttons is held (4: the fastest run; HUMAN: can a person do it?). */
 export function solve(p, R, limit = 1800, HOLD = 4, { ember = false, grain = 4, from = null, stopAtEmber = false } = {}) {
   const { PAD_L: L, PAD_R: Rt, PAD_A: A, PAD_B: B } = p;
   const pads = [0, L | B, Rt | B, A, L | A | B, Rt | A | B, L, Rt, L | A, Rt | A];
   // (in a room with timed hazards the same place at another moment of their cycle is another state; so is a shelf gone)
-  const key = (w) => `${Math.round(w.x / grain)},${Math.round(w.y / grain)},${Math.round(w.vx)},${Math.round(w.vy)},${w.ground ? 1 : 0}${w.wall},${w.a},${w.lock ? 1 : 0}${ember && w.ember ? 'e' : ''}${R.timed ? ',' + (w.t % p.CYCLE >> 2) : ''}${Object.keys(w.cr).join('.')}`;
+  const key = (w) => `${Math.round(w.x / grain)},${Math.round(w.y / grain)},${Math.round(w.vx)},${Math.round(w.vy)},${w.ground ? 1 : 0}${w.wall},${w.a},${w.lock ? 1 : 0}${ember && w.ember ? 'e' : ''}${R.timed ? ',' + (w.t % p.CYCLE >> (grain > 4 ? 3 : 2)) : ''}${Object.keys(w.cr).join('.')}`;
   let front = from || [{ w: p.newWick(R), from: null, pad: 0 }];
   const seen = new Set(front.map((n) => key(n.w))), found = [];
   const t0 = from ? Math.min(...from.map((n) => n.w.t)) : 0;

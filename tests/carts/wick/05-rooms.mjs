@@ -12,7 +12,8 @@ const ROOMS = p.ROOMS, list = (rs) => rs.map(roomId).join(', ');
 // 1. The worlds.
 {
   const of = (w) => ROOMS.filter((r) => r.world === w);
-  ok([1, 2, 3, 4].every((w) => of(w).map((r) => r.n).join() === '1,2,3,4,5,6,7,8,9,10') && of(5).map((r) => r.n).join() === '1,2,3,4,5' && ROOMS.length === 45, 'four worlds of ten rooms, and the Chimney\'s five', `${ROOMS.length} rooms`);
+  ok([1, 2, 3, 4].every((w) => of(w).map((r) => r.n).join() === '1,2,3,4,5,6,7,8,9,10,11') && of(5).map((r) => r.n).join() === '1,2,3,4,5' && ROOMS.length === 49, 'four worlds of ten rooms and a chase room, and the Chimney\'s five', `${ROOMS.length} rooms`);
+  ok(ROOMS.every((r) => r.chase === (r.n === 11)) && !ROOMS.some((r) => r.chase && r.ember >= 0), 'the chase room is each world\'s eleventh, and has no ember');
   ok(ROOMS.every((r, i) => i === 0 || r.world > ROOMS[i - 1].world || (r.world === ROOMS[i - 1].world && r.n === ROOMS[i - 1].n + 1)), 'in order in the ROM (a room\'s place there is its place in the save)');
   const embers = ROOMS.filter((r) => r.ember >= 0);
   ok(embers.length === 20 && [1, 2, 3, 4].every((w) => of(w).filter((r) => r.ember >= 0).length === 5) && !of(5).some((r) => r.ember >= 0), '20 embers: one in half the rooms of each world, none in the Chimney', `${embers.length}`);
@@ -40,7 +41,7 @@ const ROOMS = p.ROOMS, list = (rs) => rs.map(roomId).join(', ');
 // 4. The Chimney opens with 12 embers.
 {
   const first = ROOMS.findIndex((r) => r.world === p.BONUS), story = first; // (the rooms before it are the four worlds)
-  const save = (embers, cleared) => { const s = new Int32Array(256); s[0] = 1; for (let n = 0; n < cleared; n++) s[p.CLEAR_SLOT + (n >> 5)] |= 1 << (n & 31); s[p.EMBER_SLOT] = (1 << embers) - 1; return s; };
+  const save = (embers, cleared) => { const s = new Int32Array(256); s[0] = 2; for (let n = 0; n < cleared; n++) s[p.CLEAR_SLOT + (n >> 5)] |= 1 << (n & 31); s[p.EMBER_SLOT] = (1 << embers) - 1; return s; };
   const g = (s) => { const v = newGame(1, { save: s }), q = v.probe(); v.run(2); return { v, q }; };
   let { q } = g(save(11, story));
   ok(!q.isOpen(first) && q.isOpen(story - 1) && q.embersKept() === 11, 'with 11 embers the Chimney is shut, even with every other room cleared');
@@ -54,12 +55,13 @@ const ROOMS = p.ROOMS, list = (rs) => rs.map(roomId).join(', ');
 }
 // 5. In the real game: the last room of a world goes back to the map, on the next world's first room.
 {
-  const last = ROOMS.findIndex((r) => r.world === 2) - 1, s = new Int32Array(256); s[0] = 1; // (the save's format version)
+  const last = ROOMS.findIndex((r) => r.world === 2) - 1, s = new Int32Array(256); s[0] = 2; // (the save's format version)
   for (let n = 0; n < last; n++) s[p.CLEAR_SLOT + (n >> 5)] |= 1 << (n & 31);
   const v = newGame(1, { save: s }), q = v.probe(); v.run(2); q.enterRoom(last); v.run(2);
   playRun(v, q, runOf(ROOMS[last])); v.run(50);
-  ok(q.state === 'result' && q.isCleared(last), 'the last room of the Dungeon is cleared with its recorded run in the real game');
+  ok(q.state === 'result' && q.isCleared(last), 'the last room of the Dungeon (its chase) is cleared with its recorded run in the real game');
   v.run(20); v.press('A'); v.run(3);
-  ok(q.state === 'map' && q.mapSel === last + 1 && q.ROOMS[q.mapSel].world === 2, 'and A goes to the map, on the Laboratory\'s first room');
+  ok(q.state === 'card', 'A goes to the world\'s card'); v.run(25); v.press('A'); v.run(3);
+  ok(q.state === 'map' && q.mapSel === last + 1 && q.ROOMS[q.mapSel].world === 2, 'and A there goes to the map, on the Laboratory\'s first room');
 }
 ok.done();

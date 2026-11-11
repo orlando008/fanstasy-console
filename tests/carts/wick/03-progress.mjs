@@ -69,7 +69,7 @@ const die = (vm, p) => { let n = 0; while (!p.W.dead && n++ < 400) vm.run(1, M('
   const vm = newGame(1), p = vm.probe(); vm.run(2); clear(vm, p);
   const best = p.bestOf(0);
   const v2 = newGame(2, { title: true, save: Int32Array.from(vm.m.save) }), q = v2.probe(); v2.run(3);
-  ok(q.isCleared(0) && q.bestOf(0) === best && q.titleItems().join() === 'CONTINUE,NEW GAME', 'a saved game comes back: the room cleared, its time, CONTINUE on the title');
+  ok(q.isCleared(0) && q.bestOf(0) === best && q.titleItems().join() === 'CONTINUE,NEW GAME,RECORDS', 'a saved game comes back: the room cleared, its time, CONTINUE on the title');
   v2.press('DOWN'); v2.press('A'); v2.run(2);
   ok(q.confirm && q.state === 'title', 'NEW GAME over a save asks first');
   v2.press('A'); v2.run(2); ok(!q.confirm && q.isCleared(0), 'KEEP MY GAME keeps it');

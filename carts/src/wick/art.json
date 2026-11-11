@@ -180,12 +180,12 @@
   "rain0": {
    "pal": 1,
    "size": 16,
-   "tile": 676
+   "tile": 678
   },
   "rain1": {
    "pal": 1,
    "size": 16,
-   "tile": 678
+   "tile": 680
   },
   "run0": {
    "pal": 0,
@@ -201,6 +201,11 @@
    "pal": 0,
    "size": 32,
    "tile": 584
+  },
+  "snuffer": {
+   "pal": 2,
+   "size": 16,
+   "tile": 676
   },
   "soot": {
    "pal": 0,
@@ -234,6 +239,6 @@
   }
  },
  "tiles": {},
- "used": 337,
+ "used": 341,
  "version": 1
 }
