@@ -53,6 +53,14 @@ const ROOMS = p.ROOMS, list = (rs) => rs.map(roomId).join(', ');
   t.q.toMap(first); t.v.run(2);
   ok(t.q.mapSel === first && t.q.WORLD_NAMES[t.q.ROOMS[first].world] === 'THE CHIMNEY', 'and the Chimney can be chosen there');
 }
+// 4b. Each world has its own look: its colours in the rooms' and the far wall's palettes, and its own far wall.
+{
+  const v = newGame(1), q = v.probe(); v.run(2);
+  const seen = q.WORLDS.map((w) => { q.enterRoom(q.ROOMS.findIndex((r) => r.world === w)); v.run(2); return { w, look: q.lookOf, stone: v.ppu.cgram ? String(v.ppu.cgram[19]) : '', wall: v.ppu.layers[2].mx }; });
+  ok(seen.every((s) => s.look === s.w) && new Set(seen.map((s) => s.wall)).size === 5, 'a room of each world puts up that world\'s far wall', seen.map((s) => s.wall).join(' '));
+  ok(Object.keys(q.WORLD_PAL).length === 5 && Object.values(q.WORLD_PAL).every(([a, b]) => a.length === 90 && b.length === 42) && new Set(Object.values(q.WORLD_PAL).map((x) => x.join())).size === 5, 'and its colours: 15 for the rooms and 7 for the wall, different in every world');
+  q.enterRoom(0); v.run(2); ok(q.lookOf === 1 && v.ppu.layers[2].mx === q.ART.scenes.wall.mx, 'and going back to the Dungeon puts its own back');
+}
 // 5. In the real game: the last room of a world goes back to the map, on the next world's first room.
 {
   const last = ROOMS.findIndex((r) => r.world === 2) - 1, s = new Int32Array(256); s[0] = 2; // (the save's format version)

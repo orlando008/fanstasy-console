@@ -3,19 +3,33 @@
 # Written with the art toolkit (tools/devkit/art/kit.py; docs/dev/art-recipes.md shows what each part draws). Step 2: the
 # look for the art proof (Wick's frames, the palettes, the Dungeon's cells and far wall); the other worlds follow it.
 # Map RAM: the room being played at (0, 0), 32 x 26 tiles, written by code.js from the cells' pictures at (40, 0); the far
-# wall at (64, 0); the title's lettering at (0, 30); the darkness (one tile, repeated by the layer) at (40, 4).
+# walls at (64, 0) and every 32 tiles along, a world each; the title's lettering at (0, 30); the darkness (one tile, repeated by the layer) at (40, 4).
 import math, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *
 
 art = Art()
-art.region('bg', 1, 511)
-art.region('spr', 512, 1023)
+art.region('bg', 1, 767)
+art.region('spr', 768, 1023)
 
 art.color(200, '0c0a18', 'GLASS')                                   # the panels' fill (see-through: code.js blends it)
 # The Dungeon: cold blue-grey stone, so Wick's warm light is the only warm thing in the room
-castle = art.palette(1, {'stone': ramp('5a6078', 5), 'wood': ramp('7a4a26', 3), 'water': ramp('2a6aa8', 4), 'iron': ramp('8a8478', 2), 'glow': 'ffd870'})   # (the lantern's iron is pale, to be found in the dark)
-far = art.palette(2, {'wall': recede(ramp('2c3048', 4), 0.5, '0a0a18'), 'night': ramp('1a2a5a', 2), 'moon': 'c8d8f0'})
+# Each world has its own colours for the same pictures: the stone (and wood, water, iron) of its rooms, and its far
+# wall (the wall, what is seen through or on it, and its one bright thing). The tiles are drawn once with the Dungeon's
+# palettes; code.js puts a world's colours into the same CGRAM entries when a room of it comes up (WORLD_PAL below).
+def room_colours(stone, wood='7a4a26', water='2a6aa8', iron='8a8478', glow='ffd870'):
+    return {'stone': ramp(stone, 5), 'wood': ramp(wood, 3), 'water': ramp(water, 4), 'iron': ramp(iron, 2), 'glow': glow}   # (the lantern's iron is pale, to be found in the dark)
+def far_colours(wall, night, moon, haze='0a0a18'):
+    return {'wall': recede(ramp(wall, 4), 0.5, haze), 'night': ramp(night, 2), 'moon': moon}
+WORLDS = {
+    1: (room_colours('5a6078'), far_colours('2c3048', '1a2a5a', 'c8d8f0')),                                   # the Dungeon: cold blue-grey
+    2: (room_colours('6a5c7c', wood='6a4a3a', water='2a8a5a'), far_colours('3a2c4c', '2a7a4a', 'b8f0c0', '100a18')),   # the Laboratory: purple stone, green in the glass
+    3: (room_colours('786a58', wood='8a5a2a', iron='a89048'), far_colours('3c3226', '4a3a22', 'e8d090', '120c08')),    # the Clock Tower: warm stone and brass
+    4: (room_colours('56687e', wood='5a3a30', water='3a6a9a'), far_colours('34405c', '1c2a5c', 'e0e8f8', '101a38')),   # the Rooftops: slate, under the night sky
+    5: (room_colours('705048', wood='5a3a26'), far_colours('34221c', '5a2a14', 'f0a040', '100808')),                   # the Chimney: sooty brick, a glow from below
+}
+castle = art.palette(1, WORLDS[1][0])
+far = art.palette(2, WORLDS[1][1])
 fire = art.palette(3, {'gold': ramp('e0a030', 5), 'edge': '1c1020', 'shade': '2a2040'})
 dark = art.palette(4, {'dark': '0a0c20'})
 wick_pal = art.sprite_palette(0, {'edge': '3a1808', 'flame': ramp('f08a28', 4), 'core': 'fff6c8', 'wax': ramp('e0d8c0', 3), 'eye': '2a1a10', 'soot': ramp('4a4450', 2)})
@@ -93,6 +107,98 @@ for y in range(40, 96):                                              # the windo
         if not edge and (x - 104) % 12 == 0: back.px[y][x] = far.wall[0]
 art.scene('wall', back, pal=far, at=(64, 0), solid=True)
 
+def brick_wall(seed=0):
+    im = Img(256, 208)
+    for y in range(0, 208, 32):
+        for x in range(0, 256, 64): im.blit(bricks.crop(0, 0, 64, min(32, 208 - y)), x, y)
+    return im
+# --- The Laboratory's far wall: shelves of jars and flasks, with pipes along the top ---
+lab = brick_wall()
+for y in (20, 28): lab.rect(0, y, 256, 3, far.wall[3]); lab.rect(0, y + 3, 256, 1, far.wall[0])     # two pipes
+for x in range(24, 256, 80): lab.rect(x, 16, 6, 18, far.wall[2]); lab.rect(x, 16, 1, 18, far.wall[3])   # their collars
+def jar(im, x, y, w, h, level, kind):
+    """A jar on a shelf, its foot at (x, y): glass (the wall's light shade), what is in it (night), a glint (moon)."""
+    if kind == 'flask':                                                   # a round flask with a neck
+        r = w // 2
+        im.disc(x + r, y - r, r, far.wall[3]); im.disc(x + r, y - r, r - 1, far.wall[0])
+        for yy in range(y - 2 * r, y):
+            for xx in range(x, x + w):
+                if (xx - x - r) ** 2 + (yy - y + r) ** 2 < (r - 1) ** 2 and yy > y - level: im.px[yy][xx] = far.night[1 if yy == y - level + 1 else 0]
+        im.rect(x + r - 1, y - 2 * r - 5, 3, 6, far.wall[3]); im.px[y - r - 2][x + 2] = far.moon
+    else:
+        im.rect(x, y - h, w, h, far.wall[3]); im.rect(x + 1, y - h + 1, w - 2, h - 2, far.wall[0])
+        im.rect(x + 1, y - level, w - 2, level - 1, far.night[0]); im.rect(x + 1, y - level, w - 2, 1, far.night[1])
+        im.rect(x - 1, y - h - 2, w + 2, 2, far.wall[2]); im.px[y - h + 2][x + 1] = far.moon
+# (a few jars, each on the tile grid and used again and again along the shelves: the same tiles serve them all)
+JARS = [('jar', 9, 14, 8), ('flask', 12, 0, 7), ('jar', 7, 20, 13), ('jar', 11, 11, 4), ('flask', 12, 0, 10), ('jar', 8, 17, 6)]
+for row, sy in enumerate((72, 120, 168)):
+    lab.rect(0, sy, 256, 3, far.wall[3]); lab.rect(0, sy + 3, 256, 2, far.wall[0])                 # a shelf and its shadow
+    for bx in (16, 80, 144, 208): lab.rect(bx, sy + 3, 3, 5, far.wall[2])                         # its brackets
+    for k in range(16):
+        which = int(hsh(k * 7 + row * 31 + 2) % 8)
+        if which >= len(JARS): continue                                                           # a gap on the shelf
+        kind, w, h, level = JARS[which]
+        jar(lab, k * 16 + 2, sy, w, h, level, kind)
+art.scene('wall2', lab, pal=far, at=(96, 0), solid=True, region='bg')
+
+# --- The Clock Tower's: the back of a great clock face, and the wheels that drive it ---
+# (on plain boards, and each wheel the same in its four quarters and centred on the tile grid, so a quarter's tiles
+# are used four times over)
+clock = Img(256, 208)
+for y in range(208):
+    for x in range(256): clock.px[y][x] = far.wall[0] if y % 16 in (7, 8) else far.wall[1]
+def wheel(im, cx, cy, r, teeth, shade, face=False):
+    for y in range(max(0, cy - r - 4), min(208, cy + r + 4)):
+        for x in range(max(0, cx - r - 4), min(256, cx + r + 4)):
+            dx, dy = abs(x - cx + 0.5), abs(y - cy + 0.5)                 # (the centre between four pixels: every quarter alike)
+            d = math.hypot(dx, dy); a = math.atan2(dy, dx)
+            if face:
+                if d < r: im.px[y][x] = far.wall[3] if d > r - 4 else far.night[0] if d > r - 8 else far.wall[0]
+                if r - 16 < d < r - 9 and (a < 0.05 or a > math.pi / 2 - 0.05 or abs(a - math.pi / 6) < 0.035 or abs(a - math.pi / 3) < 0.035): im.px[y][x] = far.moon if a < 0.05 or a > 1.5 else far.night[1]
+                continue
+            tooth = 3 if math.cos(a * teeth) > 0 else 0
+            if r - 5 < d < r + tooth: im.px[y][x] = far.wall[min(3, shade + 1)] if d > r + tooth - 1.5 else far.wall[shade]
+            elif d < 5 or (d < r - 5 and min(dx, dy) < 1.5): im.px[y][x] = far.wall[shade]
+wheel(clock, 40, 152, 34, 12, 2); wheel(clock, 224, 56, 28, 12, 2); wheel(clock, 216, 168, 18, 8, 3); wheel(clock, 56, 40, 14, 8, 3)
+wheel(clock, 128, 104, 54, 0, 0, face=True)
+clock.line(128, 104, 150, 84, far.moon); clock.line(127, 103, 119, 70, far.moon); clock.line(128, 103, 120, 70, far.night[1])   # its hands
+clock.disc(128, 104, 3, far.moon)
+art.scene('wall3', clock, pal=far, at=(128, 0), solid=True, region='bg')
+
+# --- The Rooftops': the night sky, the moon, and the roofs and chimneys of the castle below ---
+sky = Img(256, 208)
+for y in range(208):
+    for x in range(256): sky.px[y][x] = far.night[1] if dither(x, y, 0.08 + (y / 208) ** 1.5 * 0.85) else far.night[0]
+for k in range(60):
+    x, y = int(hsh(k * 31 + 7) % 256), int(hsh(k * 17 + 3) % 130)
+    sky.px[y][x] = far.moon if k % 4 == 0 else far.night[1]
+for cx, cy, w in ((40, 30, 70), (150, 78, 90), (60, 110, 60), (220, 100, 50), (110, 18, 40)):   # long thin clouds
+    for x in range(cx - w // 2, cx + w // 2):
+        t = 1 - abs(x - cx) / (w / 2)
+        for y in range(cy - int(3 * t), cy + int(2 * t) + 1):
+            if dither(x, y, 0.35 + 0.5 * t): sky.px[y % 208][x % 256] = far.wall[2 if y < cy else 1]
+sky.disc(196, 44, 15, far.moon); sky.disc(190, 40, 4, far.night[1]); sky.disc(201, 50, 2, far.night[1]); sky.disc(203, 38, 2, far.night[1])
+def roof(im, x, w, top, shade, pitch=True):
+    for xx in range(x, x + w):
+        rise = int(min(xx - x, x + w - 1 - xx) * 0.7) if pitch else 0
+        for yy in range(max(0, top - rise), 208): im.px[yy][xx % 256] = far.wall[shade + 1 if yy == top - rise and shade < 3 else shade]
+for x, w, top, sh in ((0, 70, 168, 0), (60, 50, 150, 0), (120, 90, 176, 0), (200, 56, 158, 0)): roof(sky, x, w, top, sh)
+for x, w, top, sh, pitch in ((20, 60, 188, 1, True), (96, 44, 180, 1, True), (150, 70, 192, 1, True), (224, 32, 184, 1, True), (84, 10, 150, 1, False), (176, 12, 166, 1, False), (40, 8, 170, 1, False)): roof(sky, x, w, top, sh, pitch)
+for x, y in ((30, 196), (52, 198), (108, 190), (170, 200), (196, 199), (236, 194)): sky.rect(x, y, 3, 4, far.moon)   # lit windows
+art.scene('wall4', sky, pal=far, at=(160, 0), solid=True, region='bg')
+
+# --- The Chimney's: the inside of the flue, soot thick on the bricks, iron rungs, a glow from the fire far below ---
+flue = brick_wall()
+for y in range(208):
+    for x in range(256):
+        side = min(x, 255 - x)
+        if side < 28 and dither(x, y, 1 - side / 28): flue.px[y][x] = far.wall[0]                  # soot towards the sides
+        if y > 150 and dither(x, y, (y - 150) / 90): flue.px[y][x] = far.night[1 if y > 190 and dither(x + 3, y, (y - 190) / 30) else 0]   # the glow
+for y in range(16, 150, 24):                                          # rungs up the middle
+    flue.rect(112, y, 32, 2, far.wall[3]); flue.rect(112, y + 2, 32, 1, far.wall[0]); flue.rect(112, y, 2, 6, far.wall[3]); flue.rect(142, y, 2, 6, far.wall[3])
+for k in range(14): flue.px[int(160 + hsh(k * 7) % 44)][int(hsh(k * 13 + 5) % 256)] = far.moon       # sparks
+art.scene('wall5', flue, pal=far, at=(192, 0), solid=True, region='bg')
+
 # --- The darkness: one tile of the dark, which the layer repeats over the room and blends half and half with it ---
 d = Img(8, 8)
 for y in range(8):
@@ -169,20 +275,21 @@ plat.px[3][7] = haz.edge; plat.px[3][8] = haz.edge
 art.sprite('gear', plat, pal=haz, region='spr')
 ball = Sculpt(16, 16); ball.sphere(8, 8, 0, 6.5, Mat(haz.iron, gloss=0.6))
 art.sprite('bob', ball.render(), pal=haz, region='spr')              # a pendulum's weight
-# The Snuffer: a brass candle snuffer, a cone with a dark mouth, on its hooked handle (it follows Wick in a chase room)
-snf = Img(16, 16)
-for y in range(3, 13):
-    half = 1 + (y - 3) * 5 // 9
-    for x in range(8 - half, 8 + half):
-        t = (x - (8 - half)) / max(1, 2 * half - 1)
-        snf.px[y][x] = haz.brass[2 if t < 0.3 else 1 if t < 0.7 else 0]
-    snf.px[y][8 - half - 1] = haz.edge; snf.px[y][8 + half] = haz.edge
-for x in range(2, 14): snf.px[13][x] = haz.edge if x in (2, 13) else haz.brass[2 if x < 6 else 1]
-for x in range(3, 13): snf.px[14][x] = haz.edge
-for x in range(4, 12): snf.px[12][x] = haz.edge                         # its dark mouth
-snf.px[2][7] = haz.brass[2]; snf.px[2][8] = haz.brass[1]; snf.px[1][8] = haz.brass[1]
-for x in range(9, 13): snf.px[0][x] = haz.brass[1]
-snf.px[1][13] = haz.brass[0]; snf.px[2][13] = haz.brass[0]            # the hook
+# The Snuffer: a brass candle snuffer, a tall cone with a dark mouth and a long hooked handle (it follows Wick in a
+# chase room). 32 x 32, as he is: the cone over where his body was, the mouth open towards the floor.
+sm = Img(32, 32)
+for y in range(8, 29):
+    half = 1.5 + (y - 8) * 7.5 / 20
+    for x in range(32):
+        if abs(x - 15.5) <= half: sm.px[y][x] = 1
+snf = shaded(sm, haz.brass, kind='cylinder-y', dither=0.3)
+snf.rect(6, 28, 20, 2, haz.brass[2]); snf.rect(6, 30, 20, 1, haz.brass[0])        # the rim
+snf.rect(9, 26, 14, 2, haz.edge)                                                # the dark of its mouth
+snf.px[25][12] = haz.steam[2]; snf.px[25][19] = haz.steam[2]                      # two pale glints in it: it is looking
+snf.rect(15, 4, 2, 4, haz.brass[1])                                             # the handle: up, over, and a hook
+for x in range(16, 25): snf.px[3][x] = haz.brass[2]; snf.px[4][x] = haz.brass[0]
+snf.rect(24, 4, 2, 5, haz.brass[1]); snf.px[9][23] = haz.brass[1]; snf.px[9][22] = haz.brass[0]
+snf = outline_sel(snf, haz, colour=haz.edge)
 art.sprite('snuffer', snf, pal=haz, region='spr')
 link = Img(8, 8); link.rect(3, 0, 2, 8, haz.iron[1]); link.px[3][3] = haz.edge; link.px[7][4] = haz.edge
 art.sprite('link', link, pal=haz, region='spr')                      # a piece of its arm
@@ -207,3 +314,19 @@ logo.blit(t, (256 - t.w) // 2, 1)
 art.scene('logo', logo, pal=fire, at=(0, 30))
 
 art.write(sys.argv[1])
+
+# The worlds' colours for code.js: for each world the 15 entries of BG palette 1 and the 7 of palette 2, as 'rrggbb'
+# one after the other, in the entries' order (rewritten between the WORLD_PAL marks each time this runs).
+def entries(roles, colours):
+    flat = {}
+    for name, v in colours.items():
+        if isinstance(v, (list, tuple)):
+            for k, c in enumerate(v): flat['%s%d' % (name, k)] = c
+        else: flat[name] = v
+    names = sorted(roles.names().items(), key=lambda kv: kv[1])
+    assert [i for _, i in names] == list(range(1, len(names) + 1))
+    return ''.join(flat[n].lower() for n, _ in names)
+lines = ['const WORLD_PAL = {'] + ["  %d: ['%s', '%s']," % (w, entries(castle, c), entries(far, f)) for w, (c, f) in WORLDS.items()] + ['};']
+path = os.path.join(sys.argv[1], 'code.js'); code = open(path).read()
+a, b = code.index('// WORLD_PAL (generated by art.py: do not edit)'), code.index('// END WORLD_PAL')
+open(path, 'w').write(code[:a] + '// WORLD_PAL (generated by art.py: do not edit)\n' + '\n'.join(lines) + '\n' + code[b:])

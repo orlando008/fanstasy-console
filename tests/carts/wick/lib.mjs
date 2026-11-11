@@ -13,7 +13,7 @@ const PROBE = `__expose(() => ({
   get pauseSel() { return pauseSel; }, get ART() { return ART; }, mget: (x, y) => mget(x, y),
   get titleSel() { return titleSel; }, get confirm() { return confirm; }, get mapSel() { return mapSel; }, get soot() { return soot; }, get tries() { return tries; },
   get result() { return result; }, get replayT() { return replayT; }, get WORLDS() { return WORLDS; },
-  isCleared, bestOf, hasEmber, openRooms, isOpen, embersKept, snufferAt, worldStats, get endPage() { return endPage; }, ENDING, STORY, BONUS, BONUS_EMBERS, WORLD_NAMES, enterRoom, toMap, titleItems, LAST_SLOT, CLEAR_SLOT, EMBER_SLOT, DEATHS_SLOT, BEST_SLOT, SOOT_MAX, TRIES_MAX,
+  isCleared, bestOf, hasEmber, openRooms, isOpen, embersKept, snufferAt, worldStats, WORLD_PAL, get lookOf() { return lookOf; }, get endPage() { return endPage; }, ENDING, STORY, BONUS, BONUS_EMBERS, WORLD_NAMES, enterRoom, toMap, titleItems, LAST_SLOT, CLEAR_SLOT, EMBER_SLOT, DEATHS_SLOT, BEST_SLOT, SOOT_MAX, TRIES_MAX,
   T, H, CYCLE, SFX, SONG, stepWick, newWick, cellAt, makeRoom, gearAt, bobAt, dripAt, jetOn, jetWarn, rainOn, shelfThere, phase, startRoom, PAD_L, PAD_R, PAD_A, PAD_B, STONE, LEDGE, WATER, LANTERN, EMBER, COLS, ROWS, CELL, ROOM_Y,
 }));`;
 

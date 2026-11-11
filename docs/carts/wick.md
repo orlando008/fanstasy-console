@@ -1,7 +1,7 @@
 # Wick: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 6 of 9 built: the chase rooms and the flow
+**Status:** Step 7 of 9 built: the art pass
 **Cart source:** `carts/src/wick/` → `carts/wick.nova`
 
 ---
@@ -255,7 +255,7 @@ after its tenth, which moved the later rooms along); a save of another version i
 |---|---|
 | Code | under 48 KB of the 64 KB limit (`node tools/devkit/size.mjs wick`); the rooms are in the ROM, not the code |
 | ROM | 49 rooms × about 230 bytes: 12 KB of 128 KB |
-| Tiles | about 500 of 1,024 (four worlds' stone and far walls, the hazards, Wick) |
+| Tiles | 825 of 1,023 (the cells once, five far walls, the hazards, Wick, the Snuffer) |
 | Sprites | at most about 50 at once (the replay); 32 on a line is the limit, so the replay's flames are 8 px |
 | Songs / SFX | 7 songs (medleys within the 64 patterns), about 12 effects |
 
@@ -353,6 +353,19 @@ after its tenth, which moved the later rooms along); a save of another version i
      through the cards and the ending and on to the Chimney. **To agree with the user:** the Snuffer's name, the
      chase rooms' names and the ending's words (`ENDING` in `code.js`).
 7. **Art pass:** the rest of the art, in the look agreed in step 2 (`gallery.mjs` and `critique.mjs` over every screen).
+   - **Built:** a look for each world. The cells are drawn once; a world's colours go into the same palette entries
+     when one of its rooms comes up (`setLook`, from `WORLD_PAL`, which `art.py` writes into `code.js`), and BG2
+     shows that world's far wall. The Dungeon: cold blue-grey, the barred window. The Laboratory: purple stone,
+     green liquid for water, shelves of jars and flasks under two pipes. The Clock Tower: warm stone and brass, the
+     back of a great clock face and four wheels on boards. The Rooftops: slate under a night sky with a moon,
+     clouds, and the castle's roofs and lit windows below. The Chimney: sooty red brick, rungs, a glow from below.
+     The Snuffer is 32 px now: a tall brass cone on its hooked handle, two glints in its dark mouth.
+   - **How it fits:** five far walls are 4,160 tiles of picture in 472 (jars on the tile grid and used again; wheels
+     the same in their four quarters, so a quarter's tiles serve four times). The tile regions moved (background 1 to
+     767, sprites 768 to 1023): 635 and 190 used.
+   - **Results:** 142 checks (the look changes with the world and comes back). The art review: 76 screens, 0
+     warnings (the Rooftops' sky was flat at first: it has a dithered gradient and clouds now). **For the user to
+     look at:** each world in the preview; the first look was agreed for the Dungeon only.
 8. **Audio pass.**
 9. **Balance and polish:** check with an automatic player, then the label, the PNG cart and the Library
    (`node tools/release.js wick`) and a README row.

@@ -124,121 +124,149 @@
    "my": 0,
    "pal": 2,
    "w": 32
+  },
+  "wall2": {
+   "h": 26,
+   "mx": 96,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "wall3": {
+   "h": 26,
+   "mx": 128,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "wall4": {
+   "h": 26,
+   "mx": 160,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "wall5": {
+   "h": 26,
+   "mx": 192,
+   "my": 0,
+   "pal": 2,
+   "w": 32
   }
  },
  "sprites": {
   "bob": {
    "pal": 2,
    "size": 16,
-   "tile": 654
+   "tile": 910
   },
   "drip": {
    "pal": 1,
    "size": 8,
-   "tile": 646
+   "tile": 902
   },
   "ember": {
    "pal": 0,
    "size": 8,
-   "tile": 644
+   "tile": 900
   },
   "fall": {
    "pal": 0,
    "size": 32,
-   "tile": 580
+   "tile": 836
   },
   "gear": {
    "pal": 2,
    "size": 16,
-   "tile": 652
+   "tile": 908
   },
   "gust": {
    "pal": 2,
    "size": 8,
-   "tile": 661
+   "tile": 917
   },
   "jump": {
    "pal": 0,
    "size": 32,
-   "tile": 576
+   "tile": 832
   },
   "land": {
    "pal": 0,
    "size": 32,
-   "tile": 588
+   "tile": 844
   },
   "link": {
    "pal": 2,
    "size": 8,
-   "tile": 660
+   "tile": 916
   },
   "puff": {
    "pal": 0,
    "size": 32,
-   "tile": 640
+   "tile": 896
   },
   "rain0": {
    "pal": 1,
    "size": 16,
-   "tile": 678
+   "tile": 932
   },
   "rain1": {
    "pal": 1,
    "size": 16,
-   "tile": 680
+   "tile": 934
   },
   "run0": {
    "pal": 0,
    "size": 32,
-   "tile": 520
+   "tile": 776
   },
   "run1": {
    "pal": 0,
    "size": 32,
-   "tile": 524
+   "tile": 780
   },
   "slide": {
    "pal": 0,
    "size": 32,
-   "tile": 584
+   "tile": 840
   },
   "snuffer": {
    "pal": 2,
-   "size": 16,
-   "tile": 676
+   "size": 32,
+   "tile": 960
   },
   "soot": {
    "pal": 0,
    "size": 8,
-   "tile": 645
+   "tile": 901
   },
   "steam0": {
    "pal": 2,
    "size": 16,
-   "tile": 648
+   "tile": 904
   },
   "steam1": {
    "pal": 2,
    "size": 16,
-   "tile": 650
+   "tile": 906
   },
   "wick0": {
    "pal": 0,
    "size": 32,
-   "tile": 512
+   "tile": 768
   },
   "wick1": {
    "pal": 0,
    "size": 32,
-   "tile": 516
+   "tile": 772
   },
   "wisp": {
    "pal": 2,
    "size": 8,
-   "tile": 647
+   "tile": 903
   }
  },
  "tiles": {},
- "used": 341,
+ "used": 825,
  "version": 1
 }
