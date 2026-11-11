@@ -7,7 +7,7 @@
 import os, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CELLS = '.#-~SL*'      # code.js: AIR 0, STONE 1, LEDGE 2, WATER 3, START 4, LANTERN 5, EMBER 6
+CELLS = '.#-~SL*d^><=HVP()r'   # code.js: AIR 0, STONE 1, LEDGE 2, WATER 3, START 4, LANTERN 5, EMBER 6, then the hazards (DRIP 7 ...)
 COLS, ROWS = 16, 13
 
 

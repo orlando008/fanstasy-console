@@ -1,7 +1,7 @@
 # Wick: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 3 of 9 built: the map, saves, soot, the replay and embers
+**Status:** Step 4 of 9 built: the hazards
 **Cart source:** `carts/src/wick/` → `carts/wick.nova`
 
 ---
@@ -100,14 +100,18 @@ Anything here snuffs Wick out at a touch (wind only pushes).
 | Hazard | Behaviour |
 |---|---|
 | Water pool | a cell of water: still |
-| Drip | from a ceiling cell: a drop every 90 frames (the room sets the offset), falling at 3; gone at the first solid cell |
-| Steam jet | from a cell, 3 cells long, up or sideways: 60 frames on, 60 off (offset set by the room); it hisses 20 frames before |
-| Crumbling shelf | a ledge that shakes for 24 frames after Wick lands, then falls; back when the room restarts |
-| Gear | a platform moving between two points at 1 px a frame, carrying Wick |
-| Pendulum | a weight swinging through 120° on a 3-cell arm, a swing every 120 frames |
-| Wind | a band of cells that pushes Wick sideways at 0.12 a frame while he is in it (in the air and on the ground) |
-| Rain | a column 1 cell wide falling from the top: 90 frames on, 60 off |
-| The chase | in a world's last room, the **Snuffer** (a brass candle snuffer) follows the path Wick took, 150 frames behind: stop, and it arrives |
+| Drip | from a spout in the stone: one drop a cycle, falling at 3 px a frame; gone at the first stone below |
+| Steam jet | from a plate in the stone, 3 cells long (less if stone is in the way), up or to a side: on for 60 frames of the cycle, with a wisp for the 20 frames before |
+| Crumbling shelf | a ledge that holds for 24 frames after Wick lands on it, then is gone until the room starts again |
+| Gear | a brass bar to stand on that moves 3 cells and back in a cycle (0.8 px a frame), across or up and down, carrying Wick; one that rises under his feet takes him up |
+| Pendulum | an iron weight (6 px radius) on a 3-cell arm from a pivot in the stone, swinging 60° to each side, there and back in a cycle |
+| Wind | cells of moving air that carry Wick sideways at 0.9 px a frame on top of his own speed, on the ground and in the air (it does not snuff him out) |
+| Rain | a column from a grate in the stone to the first stone below: falling for 72 frames of the cycle, a pause of 48 |
+| The chase | in a world's last room, the **Snuffer** (a brass candle snuffer) follows the path Wick took, 150 frames behind: stop, and it arrives (step 6) |
+
+**One clock.** Every timed hazard runs on a cycle of 120 frames from the start of the try, so a room is the same every
+try and can be learned. Where a hazard is in the cycle comes from its column (a quarter of the cycle later for each
+column along), so two drips side by side fall one after the other. The room's letters for them are in `rooms.txt`.
 
 ## 8. Modes
 
@@ -236,6 +240,17 @@ A palette for each world's stone and far wall; one for Wick and the fire (warm),
      to the map. `screens.mjs` lists 14 screens; the art review's two warnings (the replay's words over the picture,
      the HUD's ember sprite under the strip) are fixed: 0 now.
 4. **Hazards:** each of section 7, with a test room for each.
+   - **Built:** the seven hazards of section 7, all inside `stepWick` (so the solver and the tests play them as the
+     game does), on one clock of 120 frames; their letters in `rooms.txt`; their pictures (a spout, a steam plate, a
+     cracked shelf, a grate and a pivot in the stone; drops, steam, gears, a weight on its arm, rain and streaks of
+     wind as sprites, which the dark does not dim). Four rooms to try them in, one a world: 1-4 (drips), 2-1 (steam
+     and shelves), 3-1 (gears and a pendulum), 4-1 (wind and rain). A room's name now shows under the HUD strip.
+   - **Changed from the first plan:** every period is 120 frames (drips were 90, rain 150), so the solver's states
+     repeat; wind carries Wick at a fixed 0.9 px a frame (as a push on his speed, walking simply beat it).
+   - **Results:** 106 checks (`04-hazards` is new: each hazard in a room made for it). The solver clears all seven
+     rooms (about 4 s a room), and the bot plays its runs through the real game, room after room and world after
+     world. The solver's "sturdy" score is no longer a test: it called 1-2, which the user cleared happily, too
+     exact. It stays as `solve.mjs --sturdy`, a number to look at.
 5. **Content:** the 44 rooms and the 5 bonus rooms, each cleared by a recorded run kept as a test, with par times.
 6. **Flow:** the chase rooms, the world cards, the ending, records.
 7. **Art pass:** the rest of the art, in the look agreed in step 2 (`gallery.mjs` and `critique.mjs` over every screen).

@@ -55,7 +55,25 @@ def lantern(lit):
     im.rect(3, 13, 10, 2, castle.iron[1]); im.rect(3, 15, 10, 1, castle.iron[0])                                     # the foot
     return im
 strip.blit(lantern(False), 80, 0); strip.blit(lantern(True), 96, 0)  # 5 the lantern, unlit; 6 lit
-art.scene('cells', strip, pal=castle, at=(40, 0))
+def fixture(draw):
+    im = Img(16, 16); im.blit(stone, 0, 0); draw(im); return im
+def spout(im):                                                       # 7 a drip's spout: a pipe's mouth under the stone
+    im.rect(5, 10, 6, 4, castle.iron[0]); im.rect(6, 14, 4, 2, castle.iron[1]); im.rect(7, 15, 2, 1, castle.water[3])
+def nozzle(im):                                                      # 8 a steam jet: an iron plate with a hole
+    im.rect(3, 3, 10, 10, castle.iron[0]); im.rect(4, 4, 8, 8, castle.iron[1]); im.rect(6, 6, 4, 4, castle.stone[0])
+def grate(im):                                                       # 10 the rain's grate: bars along the bottom of the stone
+    im.rect(0, 12, 16, 4, castle.stone[0])
+    for x in range(1, 16, 3): im.rect(x, 12, 1, 4, castle.iron[1])
+def bracket(im):                                                     # 11 a pendulum's pivot: an iron bracket and its pin
+    im.rect(4, 8, 8, 8, castle.iron[0]); im.rect(6, 11, 4, 4, castle.iron[1]); im.px[13][7] = castle.wood[0]; im.px[13][8] = castle.wood[0]
+shelf = Img(16, 16)                                                  # 9 a shelf that crumbles: an old board, cracked, no brackets
+for x in range(16):
+    shelf.px[0][x] = castle.wood[2]; shelf.px[1][x] = castle.wood[0] if x in (4, 5, 10) else castle.wood[2]; shelf.px[2][x] = castle.wood[1]
+    if x % 5 == 2: shelf.px[3][x] = castle.wood[0]
+strip2 = Img(16 * 5, 16)
+for k, im in enumerate([fixture(spout), fixture(nozzle), shelf, fixture(grate), fixture(bracket)]): strip2.blit(im, k * 16, 0)
+both = Img(16 * 12, 16); both.blit(strip, 0, 0); both.blit(strip2, 16 * 7, 0)
+art.scene('cells', both, pal=castle, at=(40, 0))
 
 # --- The far wall of the Cellar: dark bricks, two pillars, a barred window with the night in it ---
 back = Img(256, 208)
@@ -134,6 +152,38 @@ drop = Img(8, 8); drop.disc(4, 5, 2, 1)
 drop.px[2][4] = 1; drop.px[1][4] = 1
 water_spr = art.sprite_palette(1, {'water': ramp('2a6aa8', 4)})
 art.sprite('drip', shaded(drop, water_spr.water, kind='dome'), pal=water_spr, region='spr')
+# --- The hazards that move (the cold palette: water and iron; steam pale) ---
+haz = art.sprite_palette(2, {'iron': ramp('7a7888', 4), 'steam': ramp('c8d0e0', 3), 'edge': '181420', 'brass': ramp('b08a3a', 3)})
+def steam(seed):
+    m = Img(16, 16)
+    for k in range(5): m.disc(int(4 + hsh(seed * 7 + k) % 9), int(4 + hsh(seed * 13 + k * 3) % 9), int(3 + hsh(seed + k * 5) % 3), 1)
+    return shaded(m, haz.steam, kind='dome', dither=0.4)
+art.sprite('steam0', steam(1), pal=haz, region='spr'); art.sprite('steam1', steam(2), pal=haz, region='spr')
+wisp = Img(8, 8); wisp.disc(4, 4, 2, haz.steam[1]); wisp.px[3][3] = haz.steam[2]
+art.sprite('wisp', wisp, pal=haz, region='spr')                      # the warning before a jet
+plat = Img(16, 16)                                                   # a gear, seen edge on: a toothed brass bar to stand on
+for x in range(16):
+    plat.px[0][x] = haz.brass[2] if x % 4 < 2 else 0
+    for y in range(1, 6): plat.px[y][x] = haz.edge if x in (0, 15) or y == 5 else haz.brass[2 if y == 1 else 1 if y < 4 else 0]
+plat.px[3][7] = haz.edge; plat.px[3][8] = haz.edge
+art.sprite('gear', plat, pal=haz, region='spr')
+ball = Sculpt(16, 16); ball.sphere(8, 8, 0, 6.5, Mat(haz.iron, gloss=0.6))
+art.sprite('bob', ball.render(), pal=haz, region='spr')              # a pendulum's weight
+link = Img(8, 8); link.rect(3, 0, 2, 8, haz.iron[1]); link.px[3][3] = haz.edge; link.px[7][4] = haz.edge
+art.sprite('link', link, pal=haz, region='spr')                      # a piece of its arm
+rain = Img(16, 16)
+for k in range(7):
+    x, y = int(hsh(k * 11 + 3) % 9) + 3, int(hsh(k * 7 + 1) % 12)
+    for d in range(4): rain.px[(y + d) % 16][x] = water_spr.water[3 if d == 3 else 2]
+art.sprite('rain0', rain, pal=water_spr, region='spr')
+rain2 = Img(16, 16)
+for y in range(16):
+    for x in range(16): rain2.px[y][x] = rain.px[(y + 8) % 16][x]
+art.sprite('rain1', rain2, pal=water_spr, region='spr')
+gust = Img(8, 8)
+for x in range(1, 7): gust.px[4][x] = haz.steam[1 if x < 5 else 2]
+gust.px[3][6] = haz.steam[2]
+art.sprite('gust', gust, pal=haz, region='spr')                      # a streak of wind (it blows to the right; flipped for left)
 
 # --- The title's lettering, on layer 0 ---
 logo = Img(256, 40)

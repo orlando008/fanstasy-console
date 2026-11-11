@@ -78,6 +78,22 @@
     "water2": 3,
     "water3": 4
    }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "brass0": 9,
+    "brass1": 10,
+    "brass2": 11,
+    "edge": 8,
+    "iron0": 1,
+    "iron1": 2,
+    "iron2": 3,
+    "iron3": 4,
+    "steam0": 5,
+    "steam1": 6,
+    "steam2": 7
+   }
   }
  },
  "scenes": {
@@ -86,7 +102,7 @@
    "mx": 40,
    "my": 0,
    "pal": 1,
-   "w": 14
+   "w": 24
   },
   "dark": {
    "h": 1,
@@ -111,6 +127,11 @@
   }
  },
  "sprites": {
+  "bob": {
+   "pal": 2,
+   "size": 16,
+   "tile": 654
+  },
   "drip": {
    "pal": 1,
    "size": 8,
@@ -126,6 +147,16 @@
    "size": 32,
    "tile": 580
   },
+  "gear": {
+   "pal": 2,
+   "size": 16,
+   "tile": 652
+  },
+  "gust": {
+   "pal": 2,
+   "size": 8,
+   "tile": 661
+  },
   "jump": {
    "pal": 0,
    "size": 32,
@@ -136,10 +167,25 @@
    "size": 32,
    "tile": 588
   },
+  "link": {
+   "pal": 2,
+   "size": 8,
+   "tile": 660
+  },
   "puff": {
    "pal": 0,
    "size": 32,
    "tile": 640
+  },
+  "rain0": {
+   "pal": 1,
+   "size": 16,
+   "tile": 676
+  },
+  "rain1": {
+   "pal": 1,
+   "size": 16,
+   "tile": 678
   },
   "run0": {
    "pal": 0,
@@ -161,6 +207,16 @@
    "size": 8,
    "tile": 645
   },
+  "steam0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 648
+  },
+  "steam1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 650
+  },
   "wick0": {
    "pal": 0,
    "size": 32,
@@ -170,9 +226,14 @@
    "pal": 0,
    "size": 32,
    "tile": 516
+  },
+  "wisp": {
+   "pal": 2,
+   "size": 8,
+   "tile": 647
   }
  },
  "tiles": {},
- "used": 298,
+ "used": 337,
  "version": 1
 }

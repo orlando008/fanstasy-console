@@ -3,6 +3,7 @@
 //
 //   node tests/carts/wick/solve.mjs            every room: frames of the run found, against its par
 //   node tests/carts/wick/solve.mjs 2          one room (by its place in the ROM, from 0), with the run
+//   node tests/carts/wick/solve.mjs --sturdy   also how each room's runs hold up under loose timing (slow; a number to look at)
 //
 // It tries one of nine pads (still, left, right, each with A, the runs with B) for 4 frames at a time, breadth first,
 // keeping one state for each (cell quarter, speed, on the ground or a wall) it reaches: the first to light the lantern
@@ -19,7 +20,8 @@ export const HUMAN = 8;
 export function solve(p, R, limit = 1800, HOLD = 4) {
   const { PAD_L: L, PAD_R: Rt, PAD_A: A, PAD_B: B } = p;
   const pads = [0, L | B, Rt | B, A, L | A | B, Rt | A | B, L, Rt, L | A, Rt | A];
-  const key = (w) => `${Math.round(w.x / 4)},${Math.round(w.y / 4)},${Math.round(w.vx * 2)},${Math.round(w.vy * 2)},${w.ground ? 1 : 0}${w.wall},${w.a},${w.lock ? 1 : 0}`;
+  // (in a room with timed hazards the same place at another moment of their cycle is another state; so is a shelf gone)
+  const key = (w) => `${Math.round(w.x / 4)},${Math.round(w.y / 4)},${Math.round(w.vx)},${Math.round(w.vy)},${w.ground ? 1 : 0}${w.wall},${w.a},${w.lock ? 1 : 0}${R.timed ? ',' + (w.t % p.CYCLE >> 2) : ''}${Object.keys(w.cr).join('.')}`;
   let front = [{ w: p.newWick(R), from: null, pad: 0 }];
   const seen = new Set([key(front[0].w)]);
   for (let t = 0; t < limit && front.length; t += HOLD) {
@@ -96,24 +98,27 @@ export function reactive(p, R, run, late = 3, tries = 40) {
  * either is one that asks for presses to the frame. */
 export const sturdy = (p, R, run) => Math.max(loose(p, R, run), reactive(p, R, run));
 export const TOO_EXACT = 0.1;
-/** The sturdiest run found for a room, of the searches at 4, 6, 8 and 12 frames a choice. { frames, run, sturdy } or null. */
+/** The sturdiest run found for a room, of the searches at 4 and at 8 frames a choice. { frames, run, sturdy, fastest } or
+ * null (fastest: the frames of the quickest run found, for the par). */
 export function fair(p, R) {
-  const cands = [4, 6, HUMAN, 12].map((h) => solve(p, R, 3600, h)).filter(Boolean).map((s) => ({ ...s, sturdy: sturdy(p, R, s.run) }));
-  return cands.sort((a, b) => b.sturdy - a.sturdy)[0] || null;
+  const cands = [4, HUMAN].map((h) => solve(p, R, h === 4 ? 1800 : 3600, h)).filter(Boolean).map((s) => ({ ...s, sturdy: sturdy(p, R, s.run) }));
+  if (!cands.length) return null;
+  const fastest = Math.min(...cands.map((c) => c.frames));
+  return { ...cands.sort((a, b) => b.sturdy - a.sturdy)[0], fastest };
 }
 
 if (process.argv[1] && process.argv[1].endsWith('solve.mjs')) {
-  const vm = newGame(1), p = vm.probe(), only = process.argv[2];
+  const vm = newGame(1), p = vm.probe(), only = process.argv.slice(2).find((a) => /^\d+$/.test(a));
   let bad = 0;
   p.ROOMS.forEach((R, i) => {
     if (only !== undefined && Number(only) !== i) return;
-    const s = solve(p, R), h = solve(p, R, 3600, HUMAN);
+    const s = solve(p, R);
     if (!s) { bad++; console.log(`${R.world}-${R.n} ${R.name}: NO WAY TO THE LANTERN FOUND`); return; }
-    if (!h) { bad++; console.log(`${R.world}-${R.n} ${R.name}: ONLY A FRAME-PERFECT WAY (none with buttons held ${HUMAN} frames at a time)`); return; }
-    const sec = s.frames / 60, par = R.par / 10;
-    const f = fair(p, R); if (f.sturdy < TOO_EXACT) bad++;
-    console.log(`   with a person's timing its sturdiest run still lights the lantern ${Math.round(f.sturdy * 100)}% of the time${f.sturdy < TOO_EXACT ? '  <-- TOO EXACT: the room needs presses to the frame' : ''}`);
-    console.log(`${R.world}-${R.n} ${R.name}: ${sec.toFixed(1)} s found (${(h.frames / 60).toFixed(1)} s with a person's hands), par ${par.toFixed(1)} s (${(par / sec).toFixed(2)}x)${par < sec * 1.3 ? '  <-- par is tight: under 1.3x the run found' : ''}`);
+    const sec = s.frames / 60, par = R.par / 10, tight = par < sec * 1.3;
+    // (--sturdy: how the runs found hold up under a person's timing. A number to look at, not a verdict: it called a room
+    // the user cleared happily "too exact", and it does not measure how hard a room is. A person playing does.)
+    const f = process.argv.includes('--sturdy') ? fair(p, R) : null;
+    console.log(`${R.world}-${R.n} ${R.name}: ${sec.toFixed(1)} s found, par ${par.toFixed(1)} s (${(par / sec).toFixed(2)}x)${tight ? '  <-- par is tight: under 1.3x the run found' : ''}${f ? `; sturdiest run lit ${Math.round(f.sturdy * 100)}% of the time with loose timing` : ''}`);
     if (only !== undefined) console.log(JSON.stringify(s.run));
   });
   process.exit(bad ? 1 : 0);

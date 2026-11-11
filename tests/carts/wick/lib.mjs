@@ -13,7 +13,7 @@ const PROBE = `__expose(() => ({
   get titleSel() { return titleSel; }, get confirm() { return confirm; }, get mapSel() { return mapSel; }, get soot() { return soot; }, get tries() { return tries; },
   get result() { return result; }, get replayT() { return replayT; }, get WORLDS() { return WORLDS; },
   isCleared, bestOf, hasEmber, openRooms, enterRoom, toMap, titleItems, LAST_SLOT, CLEAR_SLOT, EMBER_SLOT, DEATHS_SLOT, BEST_SLOT, SOOT_MAX, TRIES_MAX,
-  T, SFX, SONG, stepWick, newWick, cellAt, startRoom, PAD_L, PAD_R, PAD_A, PAD_B, STONE, LEDGE, WATER, LANTERN, EMBER, COLS, ROWS, CELL, ROOM_Y,
+  T, H, CYCLE, SFX, SONG, stepWick, newWick, cellAt, makeRoom, gearAt, bobAt, dripAt, jetOn, jetWarn, rainOn, shelfThere, phase, startRoom, PAD_L, PAD_R, PAD_A, PAD_B, STONE, LEDGE, WATER, LANTERN, EMBER, COLS, ROWS, CELL, ROOM_Y,
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight into the first room). save: a save to start from. */
@@ -27,8 +27,7 @@ export const ok = (() => { let fails = 0; const f = (c, name, extra = '') => { c
 
 /** A room made from 13 rows of text (rooms.txt's letters), for a test of the movement alone. */
 export function roomOf(p, rows) {
-  const cells = rows.join('').split('').map((c) => '.#-~SL*'.indexOf(c)), s = cells.indexOf(4), l = cells.indexOf(5);
-  return { world: 0, n: 0, par: 0, name: 'test', cells, sx: (s % 16) * 16 + 3, sy: Math.floor(s / 16) * 16 + 4, lx: l % 16, ly: Math.floor(l / 16) };
+  return p.makeRoom(0, 0, 0, 'test', rows.join('').split('').map((c) => '.#-~SL*d^><=HVP()r'.indexOf(c)));
 }
 /** Play Wick alone (no screen): pads is a list of [pad, frames]. Returns Wick, and the track of his positions. */
 export function walk(p, R, pads, w = p.newWick(R)) {
