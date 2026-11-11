@@ -1,5 +1,6 @@
 // The test helpers for Wick: boot the cart with its variables exposed.
 import { fileURLToPath } from 'node:url';
+import { existsSync, readFileSync } from 'node:fs';
 import { BTN, boot } from '../../../tools/devkit/harness.mjs';
 export { BTN };
 export const CART = fileURLToPath(new URL('../../../carts/wick.nova', import.meta.url));
@@ -12,7 +13,7 @@ const PROBE = `__expose(() => ({
   get pauseSel() { return pauseSel; }, get ART() { return ART; }, mget: (x, y) => mget(x, y),
   get titleSel() { return titleSel; }, get confirm() { return confirm; }, get mapSel() { return mapSel; }, get soot() { return soot; }, get tries() { return tries; },
   get result() { return result; }, get replayT() { return replayT; }, get WORLDS() { return WORLDS; },
-  isCleared, bestOf, hasEmber, openRooms, enterRoom, toMap, titleItems, LAST_SLOT, CLEAR_SLOT, EMBER_SLOT, DEATHS_SLOT, BEST_SLOT, SOOT_MAX, TRIES_MAX,
+  isCleared, bestOf, hasEmber, openRooms, isOpen, embersKept, BONUS, BONUS_EMBERS, WORLD_NAMES, enterRoom, toMap, titleItems, LAST_SLOT, CLEAR_SLOT, EMBER_SLOT, DEATHS_SLOT, BEST_SLOT, SOOT_MAX, TRIES_MAX,
   T, H, CYCLE, SFX, SONG, stepWick, newWick, cellAt, makeRoom, gearAt, bobAt, dripAt, jetOn, jetWarn, rainOn, shelfThere, phase, startRoom, PAD_L, PAD_R, PAD_A, PAD_B, STONE, LEDGE, WATER, LANTERN, EMBER, COLS, ROWS, CELL, ROOM_Y,
 }));`;
 
@@ -40,3 +41,17 @@ export function walk(p, R, pads, w = p.newWick(R)) {
 export const padMask = (p, m) => (m & p.PAD_L ? M('LEFT') : 0) | (m & p.PAD_R ? M('RIGHT') : 0) | (m & p.PAD_A ? M('A') : 0) | (m & p.PAD_B ? M('B') : 0);
 /** Play a run ([[pad, frames], ...], as the solver gives) in the real game. */
 export function playRun(vm, p, run) { for (const [m, f] of run) vm.run(f, padMask(p, m)); }
+
+// The recorded runs (runs.json, written by `node tests/carts/wick/solve.mjs --record`): for each room the buttons that
+// light its lantern, and for a room with an ember the buttons that take the ember there. Each is for the room as it
+// was when recorded (`room`: its letters), so a room that has changed since has no run until it is recorded again.
+const RUNS_FILE = new URL('./runs.json', import.meta.url);
+export const RUNS = existsSync(RUNS_FILE) ? JSON.parse(readFileSync(RUNS_FILE, 'utf8')) : {};
+export const roomId = (R) => `${R.world}-${R.n}`;
+/** The recorded run for room R ([[pad, frames], ...]), or null if there is none for the room as it is now.
+ * ember: the run that takes the room's ember (the plain run when the room has none). */
+export function runOf(R, ember = false) {
+  const r = RUNS[roomId(R)];
+  if (!r || r.room !== `${roomId(R)}:${R.rawText}`) return null;
+  return ember && r.emberRun ? r.emberRun : r.run;
+}

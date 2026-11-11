@@ -1,9 +1,8 @@
 // Wick: what is kept (spec sections 2, 5, 9 and 13): cleared rooms and best times, the map and what it opens, embers,
 // the soot of a visit and the replay of its tries, CONTINUE and NEW GAME. One PASS/FAIL line for each behaviour.
-import { newGame, M, ok, playRun } from './lib.mjs';
-import { solve } from './solve.mjs';
+import { newGame, M, ok, playRun, runOf } from './lib.mjs';
 
-const clear = (vm, p) => { playRun(vm, p, solve(p, p.R).run); vm.run(1); };
+const clear = (vm, p) => { playRun(vm, p, runOf(p.R)); vm.run(1); };
 const die = (vm, p) => { let n = 0; while (!p.W.dead && n++ < 400) vm.run(1, M('RIGHT')); vm.run(p.T.restart + 1); };
 
 // 1. Clearing a room: kept, with its time.
@@ -17,7 +16,7 @@ const die = (vm, p) => { let n = 0; while (!p.W.dead && n++ < 400) vm.run(1, M('
   ok(p.state === 'map' && p.mapSel === 0, 'B there goes to the map');
   // a slower run does not replace the best
   const best = p.bestOf(0); vm.press('A'); vm.run(2); vm.run(40, M('LEFT')); clear2(vm, p);
-  function clear2(v, q) { q.W.x = q.R.sx; playRun(v, q, solve(q, q.R).run); v.run(1); }
+  function clear2(v, q) { q.W.x = q.R.sx; playRun(v, q, runOf(q.R)); v.run(1); }
   ok(p.W.won && p.frames > best && p.bestOf(0) === best && !p.result.newBest && p.result.best === best, 'a slower time leaves the best as it was', `${p.frames} against ${best}`);
 }
 // 2. The map: what can be chosen, and the worlds.

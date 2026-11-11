@@ -1,7 +1,7 @@
 # Wick: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 4 of 9 built: the hazards
+**Status:** Step 5 of 9 built: the rooms
 **Cart source:** `carts/src/wick/` → `carts/wick.nova`
 
 ---
@@ -90,8 +90,69 @@ Rooms are text, 16 × 13 characters each, packed into the ROM by a script (a roo
 | 4 The Rooftops | 10 + chase | wind that pushes; rain that falls in bands, on and off |
 | The Chimney (bonus) | 5 | everything; opened by 12 embers |
 
-- **Embers:** 20, one in half the rooms, off the main route. Touching one and then clearing the room keeps it.
-- **Order of difficulty:** each world's first two rooms have its new hazard alone, with nothing else to fail on.
+- **Embers:** 20, one in half the rooms of each of the four worlds (none in the Chimney), most of them off the quickest
+  route (some need a kick off a wall, or a high jump through a hazard's path). Touching one and then clearing the room keeps it.
+- **Order of difficulty:** each world's first two rooms have its new hazards alone, with nothing else to fail on
+  (steam, then shelves; gears, then weights; wind, then rain); its third room puts the two together.
+- **The Chimney** opens when 12 embers are kept, whatever else is cleared; its five rooms open one after the other.
+- **Kicks are allowed:** a jump at any wall (the screen's edges too) and a kick off it gains about 4 cells. Rooms do
+  not try to forbid it: where it skips part of a room, that is a quicker way for a player who finds it. Where it
+  would skip the room's whole idea (a lift nobody needs), the room is laid out so it cannot (ledges have no sides to
+  kick from; the floor is too far below).
+
+### The rooms
+
+Built in step 5. A room's name shows under the HUD strip until Wick moves; **the names are a first proposal, for the user to
+change**. An ember: the room has one. The run found is the solver's (a counted, frame-exact run: a person takes
+several times as long); the par is 2.5 times it, to the second above.
+
+| Room | Name | Ember | Run found | Par |
+|---|---|---|---|---|
+| 1-1 | A step and a gap |  | 1.4 s | 4 s |
+| 1-2 | Jump from wall to wall |  | 2.1 s | 6 s |
+| 1-3 | The shaft | yes | 1.7 s | 5 s |
+| 1-4 | Mind the drips |  | 1.5 s | 4 s |
+| 1-5 | Stepping stones | yes | 1.5 s | 4 s |
+| 1-6 | The long way down | yes | 1.5 s | 4 s |
+| 1-7 | Kick off the wall |  | 1.8 s | 5 s |
+| 1-8 | Drips in the shaft |  | 2.4 s | 6 s |
+| 1-9 | The dripping stair | yes | 1.6 s | 4 s |
+| 1-10 | The dungeon gate | yes | 3.0 s | 8 s |
+| 2-1 | Mind the steam |  | 1.7 s | 5 s |
+| 2-2 | Old shelves | yes | 1.4 s | 4 s |
+| 2-3 | Steam and old shelves |  | 1.4 s | 4 s |
+| 2-4 | The pipes |  | 1.7 s | 5 s |
+| 2-5 | Shelves over the vat | yes | 2.5 s | 7 s |
+| 2-6 | Run while it is quiet |  | 1.6 s | 5 s |
+| 2-7 | The condenser | yes | 2.4 s | 6 s |
+| 2-8 | The steam shaft |  | 3.3 s | 9 s |
+| 2-9 | The furnace | yes | 1.8 s | 5 s |
+| 2-10 | The alchemist's stair | yes | 3.5 s | 9 s |
+| 3-1 | Ride the gears |  | 1.6 s | 4 s |
+| 3-2 | Mind the weights |  | 1.5 s | 4 s |
+| 3-3 | Gears and a weight |  | 1.6 s | 4 s |
+| 3-4 | Tick, tock | yes | 1.8 s | 5 s |
+| 3-5 | The lift | yes | 2.0 s | 5 s |
+| 3-6 | Between the weights | yes | 1.5 s | 4 s |
+| 3-7 | Two gears up |  | 2.3 s | 6 s |
+| 3-8 | The escapement | yes | 2.7 s | 7 s |
+| 3-9 | The mainspring |  | 1.8 s | 5 s |
+| 3-10 | The clock face | yes | 5.4 s | 14 s |
+| 4-1 | A stiff breeze |  | 1.5 s | 4 s |
+| 4-2 | Between showers |  | 2.3 s | 6 s |
+| 4-3 | Wind and rain |  | 2.7 s | 7 s |
+| 4-4 | Chimney pots | yes | 1.5 s | 4 s |
+| 4-5 | The downpour | yes | 1.4 s | 4 s |
+| 4-6 | The windy stair |  | 2.7 s | 7 s |
+| 4-7 | Gutters | yes | 2.7 s | 7 s |
+| 4-8 | Loose tiles |  | 1.6 s | 5 s |
+| 4-9 | The storm | yes | 2.7 s | 7 s |
+| 4-10 | The weathercock | yes | 4.2 s | 11 s |
+| 5-1 | Soot and steam |  | 3.1 s | 8 s |
+| 5-2 | The damper |  | 2.5 s | 7 s |
+| 5-3 | The draught |  | 2.3 s | 6 s |
+| 5-4 | Loose bricks |  | 2.7 s | 7 s |
+| 5-5 | The chimney top |  | 3.4 s | 9 s |
 
 ## 7. Opponents or hazards
 
@@ -115,7 +176,7 @@ column along), so two drips side by side fall one after the other. The room's le
 
 ## 8. Modes
 
-One: the story of 44 rooms and the bonus 5. No difficulty levels. (An assist option is an open question.)
+One: the story of 44 rooms (40 built in step 5; each world's chase room comes in step 6) and the bonus 5. No difficulty levels. (An assist option is an open question.)
 
 ## 9. Scoring
 
@@ -179,6 +240,9 @@ A palette for each world's stone and far wall; one for Wick and the fire (warm),
 | 4 | Embers kept, a bit each (20) |
 | 5 | Deaths in all |
 | 10–58 | Best time of each room, in frames (0: none) |
+
+A room's place in the ROM is its place in the save. Step 6 puts each world's chase room after its tenth, which moves
+the later rooms along: a save from before that is from an unreleased build, and the format version goes up with it.
 | 59–255 | Reserved |
 
 ## 14. Asset budget
@@ -252,6 +316,24 @@ A palette for each world's stone and far wall; one for Wick and the fire (warm),
      world. The solver's "sturdy" score is no longer a test: it called 1-2, which the user cleared happily, too
      exact. It stays as `solve.mjs --sturdy`, a number to look at.
 5. **Content:** the 44 rooms and the 5 bonus rooms, each cleared by a recorded run kept as a test, with par times.
+   - **Built:** 45 rooms: ten for each of the four worlds and the Chimney's five (the table in section 6). The four
+     chase rooms are left for step 6, with the Snuffer. The Chimney opens with 12 embers (`isOpen`); the map shows a
+     world's name, the embers kept of the 20, and goes from world to world only where a room is open. 20 embers.
+   - **Recorded runs:** `tests/carts/wick/runs.json` has, for every room, the buttons that light its lantern, and
+     for every ember the buttons that carry it there, each tied to the room's letters as they were. `node
+     tests/carts/wick/solve.mjs --record` writes it (four rooms at a time; rooms that have not changed keep their
+     run), `--path` draws the way found on the room's letters. The tests and the bot replay the runs, so the tests
+     take seconds, not minutes.
+   - **The solver** got a quick pass first (places 8 px apart, then 4), a way by the ember in two legs (to the ember,
+     then on to the lantern), and a limit on how far it looks: a room of crumbling shelves or with many hazards on
+     the clock has far more states than a plain one.
+   - **What the routes showed:** a jump and a kick off the screen's edge reached a lift's upper gear in 3-5 and 5-2,
+     and the upper half of the ladders in 5-3 and 5-4, in a second or two: those four were laid out again. Every
+     room also has a way with the buttons held 8 frames at a time (no press to the frame).
+   - **Results:** 120 checks (`05-rooms` is new: the shape of the worlds, a run for every room and ember that still
+     lights the lantern on the room as it is, the pars, the Chimney's 12 embers, a world's last room to the map).
+     The bot clears all 45 rooms in the real game with all 20 embers. **Not known:** how hard each room is for a
+     person, and whether the order feels right: the solver cannot say, the user's play in the preview can.
 6. **Flow:** the chase rooms, the world cards, the ending, records.
 7. **Art pass:** the rest of the art, in the look agreed in step 2 (`gallery.mjs` and `critique.mjs` over every screen).
 8. **Audio pass.**
@@ -268,7 +350,7 @@ the Laboratory, an alchemist's workroom ("Kitchen" did not either): steam from r
 jars, green and purple tints.
 
 **Names still to confirm with the user** before they go into the game: the Clock Tower, the Rooftops, the Chimney,
-the Snuffer, and each piece of music in section 11.
+the Snuffer, each piece of music in section 11, and the 45 room names (the table in section 6).
 
 Defaults chosen that are easy to change:
 - **Wick's size:** his body is 10 × 12 px in rooms of 16 px cells (16 × 13 a screen), which is what one-screen rooms

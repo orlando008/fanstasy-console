@@ -65,6 +65,7 @@ const H = {
   wind: 0.9,                         // wind carries him this many pixels a frame while he is in it (on top of his own speed)
   rainOn: 72,                        // rain: frames falling in a cycle
 };
+const LETTERS = '.#-~SL*d^><=HVP()r'; // rooms.txt's letter for each cell
 let ROOMS = [], WORLDS = []; // the rooms in the ROM's order (a room's number here is its place in the save), and the worlds they make
 function loadRooms() {
   const b = rom('rooms'); let at = 1, embers = 0;
@@ -86,7 +87,7 @@ function makeRoom(world, n, par, name, raw) {
   const cells = raw.slice(), at = (k) => ({ cx: k % COLS, cy: Math.floor(k / COLS) });
   const s = raw.indexOf(START_CELL), l = raw.indexOf(LANTERN), e = raw.indexOf(EMBER);
   const Rm = { world, n, par, name, cells, sx: (s % COLS) * CELL + 3, sy: Math.floor(s / COLS) * CELL + 4, lx: l % COLS, ly: Math.floor(l / COLS),
-    ember: e < 0 ? -1 : 0, ex: e < 0 ? -1 : e % COLS, ey: Math.floor(e / COLS), drips: [], jets: [], gears: [], bobs: [], rains: [], fixtures: [], timed: false };
+    rawText: raw.map((c) => LETTERS[c]).join(''), ember: e < 0 ? -1 : 0, ex: e < 0 ? -1 : e % COLS, ey: Math.floor(e / COLS), drips: [], jets: [], gears: [], bobs: [], rains: [], fixtures: [], timed: false };
   const solid = (c) => c === STONE || c === DRIP || c === JET_U || c === JET_R || c === JET_L || c === PIVOT || c === RAIN;
   /** How many cells of air from (cx, cy) going (dx, dy), up to `most`. */
   const run = (cx, cy, dx, dy, most) => { let k = 0; while (k < most && cx >= 0 && cx < COLS && cy >= 0 && cy < ROWS && !solid(raw[cy * COLS + cx])) { k++; cx += dx; cy += dy; } return k; };
@@ -246,9 +247,22 @@ function init() {
 
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; confirm = false; paused = false; startRoomPicture(0); play(SONG.title); }
 /** The map of the rooms, on the room last played (or the first not cleared). */
-function toMap(n = dget(LAST_SLOT)) { state = 'map'; timer = 0; paused = false; mapSel = Math.min(n, openRooms() - 1); startRoomPicture(mapSel); play(SONG.title); }
-/** How many rooms can be chosen: every one up to the first not cleared. */
-function openRooms() { let n = 0; while (n < ROOMS.length && isCleared(n)) n++; return Math.min(ROOMS.length, n + 1); }
+function toMap(n = dget(LAST_SLOT)) { state = 'map'; timer = 0; paused = false; mapSel = openAt(n); startRoomPicture(mapSel); play(SONG.title); }
+/** Can room n be chosen? A room of the four worlds once the one before it is cleared; the Chimney's (the bonus world)
+ * once 12 embers are kept, and then one after the other. */
+const BONUS = 5, BONUS_EMBERS = 12;
+const WORLD_NAMES = { 1: 'THE DUNGEON', 2: 'THE LABORATORY', 3: 'THE CLOCK TOWER', 4: 'THE ROOFTOPS', 5: 'THE CHIMNEY' };
+function embersKept() { let n = 0; for (let v = dget(EMBER_SLOT); v; v >>>= 1) n += v & 1; return n; }
+function isOpen(n) {
+  const r = ROOMS[n]; if (!r) return false;
+  const first = n === 0 || ROOMS[n - 1].world !== r.world;
+  if (r.world === BONUS) return embersKept() >= BONUS_EMBERS && (first || isCleared(n - 1));
+  return n === 0 || isCleared(n - 1);
+}
+/** How many rooms can be chosen. */
+function openRooms() { let k = 0; for (let n = 0; n < ROOMS.length; n++) if (isOpen(n)) k++; return k; }
+/** The open room nearest to n, going back. */
+function openAt(n) { n = Math.max(0, Math.min(n, ROOMS.length - 1)); while (n > 0 && !isOpen(n)) n--; return n; }
 
 /** Write a room's cells into Map RAM: each cell is four tiles of its picture in ART.scenes.cells. */
 // (the pictures, in order: stone, stone lit along its top, a ledge, water, the water's surface, the lantern, lit; then
@@ -344,12 +358,12 @@ function updateTitle() {
 function newGame() { for (let i = 1; i < 256; i++) dset(i, 0); enterRoom(0); }
 
 function updateMap() {
-  const open = openRooms(), before = mapSel;
+  const before = mapSel;
   if (pressed(LEFT) && mapSel > 0) mapSel--;
-  if (pressed(RIGHT) && mapSel < open - 1) mapSel++;
+  if (pressed(RIGHT) && isOpen(mapSel + 1)) mapSel++;
   if (pressed(UP) || pressed(DOWN) || pressed(L) || pressed(R)) { // the next or the last world: its first room, if it is open
     const w = WORLDS.indexOf(ROOMS[mapSel].world) + (pressed(DOWN) || pressed(R) ? 1 : -1), to = ROOMS.findIndex((r) => r.world === WORLDS[w]);
-    if (to >= 0 && to < open) mapSel = to;
+    if (to >= 0 && isOpen(to)) mapSel = to;
   }
   if (mapSel !== before) { fx(SFX.move); startRoomPicture(mapSel); }
   if (pressed(A) || pressed(START)) { fx(SFX.select); enterRoom(mapSel); }
@@ -399,7 +413,7 @@ function updateResult() {
   if (timer > 15 && (pressed(A) || pressed(START))) {
     fx(SFX.select);
     const next = room + 1;
-    if (next < ROOMS.length && ROOMS[next].world === cur.world) enterRoom(next); else toMap(Math.min(next, ROOMS.length - 1));
+    if (next < ROOMS.length && ROOMS[next].world === cur.world) enterRoom(next); else toMap(isOpen(next) ? next : room);
   } else if (pressed(B)) toMap(room);
 }
 
@@ -508,13 +522,13 @@ function drawResult() {
 
 /** The map: the rooms of the chosen room's world in a row, each lit when cleared, with its best time and its ember. */
 function drawMap() {
-  const w = ROOMS[mapSel].world, list = ROOMS.map((r, i) => ({ r, i })).filter((x) => x.r.world === w), open = openRooms();
+  const w = ROOMS[mapSel].world, list = ROOMS.map((r, i) => ({ r, i })).filter((x) => x.r.world === w);
   rectfill(0, 0, 256, ROOM_Y, SHADOW);
-  txt(`WORLD ${w}`, 6, 4, GOLD);
+  txt(WORLD_NAMES[w] || `WORLD ${w}`, 6, 4, GOLD);
   txt(`DEATHS ${dget(DEATHS_SLOT)}`, 160, 4, DIM);
   panel(8, 150, 240, 66);
   list.forEach(({ r, i }, k) => {
-    const x = 16 + k * 20, on = i === mapSel, can = i < open;
+    const x = 16 + k * 20, on = i === mapSel, can = isOpen(i);
     if (on) rectfill(x - 2, 156, 20, 22, PANEL);
     txt(String(r.n), x + (r.n > 9 ? 0 : 4), 158, !can ? SHADOW : isCleared(i) ? GOLD : WHITE);
     if (isCleared(i)) rectfill(x + 5, 169, 6, 6, GOLD);            // a lit lantern
@@ -525,6 +539,7 @@ function drawMap() {
   txt(`${r.world}-${r.n} ${r.name.toUpperCase()}`, 16, 184, WHITE);
   txt(bestOf(mapSel) ? `BEST ${clockText(bestOf(mapSel))}` : 'NOT LIT YET', 16, 198, bestOf(mapSel) ? GREEN : DIM);
   txt('A: PLAY', 184, 198, DIM);
+  rectfill(122, 200, 4, 4, RED); txt(`${embersKept()}/${ROOMS.filter((x) => x.ember >= 0).length}`, 130, 198, embersKept() >= BONUS_EMBERS ? GOLD : DIM); // the embers kept, of all there are
 }
 
 function drawTitle() {
