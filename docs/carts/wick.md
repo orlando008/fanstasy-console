@@ -1,7 +1,7 @@
 # Wick: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Step 8 of 9 built: the audio
+**Version:** 1.0
+**Status:** Released (step 9 of 9): in the Library, on the Arcade shelf
 **Cart source:** `carts/src/wick/` → `carts/wick.nova`
 
 ---
@@ -382,6 +382,14 @@ after its tenth, which moved the later rooms along); a save of another version i
      and the user's ears in the preview are the test.
 9. **Balance and polish:** check with an automatic player, then the label, the PNG cart and the Library
    (`node tools/release.js wick`) and a README row.
+   - **Built:** the release: the label (the title), `carts/wick.nova.png`, the Library's entry on the Arcade shelf,
+     the README row. The records say what opens the Chimney while it is shut.
+   - **Balance:** what a machine can check is checked: every room and ember has a recorded run, every room a way
+     with the buttons held 8 frames at a time, and the bot plays all 49 rooms through the real game. What it cannot:
+     how hard each room is for a person, whether the order is right, and whether the Snuffer's 2.5 seconds is the
+     right gap. Those wait for play; the numbers are `T` and `H` in `code.js`, the rooms are text, and after a
+     room changes `node tests/carts/wick/solve.mjs --record` and `node tools/release.js wick --keep-label`.
+   - **Results:** 150 checks; `check.js` with no warnings (code 67% of 64 KB, ROM 8.5%, the PNG's payload 41%).
 
 Each step: build it, run `node tools/check.js wick` and `node tools/test.js wick`, write its **Built** and
 **Results** notes under its number here, commit and push.

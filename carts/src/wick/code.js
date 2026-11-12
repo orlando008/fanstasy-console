@@ -658,6 +658,7 @@ function drawRecords() {
   WORLDS.forEach((w, k) => {
     const st = worldStats(w), y = 54 + k * 26;
     txt(WORLD_NAMES[w] || `WORLD ${w}`, 16, y, st.lit === st.of ? GOLD : WHITE);
+    if (w === BONUS && embersKept() < BONUS_EMBERS) { txt(`OPENS WITH ${BONUS_EMBERS} EMBERS`, 88, y + 11, DIM); return; }
     txt(`${st.lit}/${st.of}`, 88, y + 11, st.lit === st.of ? GOLD : WHITE);
     txt(st.time ? clockText(st.time) : '-:--.-', 136, y + 11, st.time ? GREEN : DIM);
     if (st.embersOf) txt(`${st.embers}/${st.embersOf}`, 200, y + 11, st.embers === st.embersOf ? GOLD : DIM);
