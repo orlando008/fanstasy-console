@@ -1,0 +1,277 @@
+{
+ "colors": {
+  "GLASS": 200
+ },
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "glow": 15,
+    "iron0": 13,
+    "iron1": 14,
+    "stone0": 1,
+    "stone1": 2,
+    "stone2": 3,
+    "stone3": 4,
+    "stone4": 5,
+    "water0": 9,
+    "water1": 10,
+    "water2": 11,
+    "water3": 12,
+    "wood0": 6,
+    "wood1": 7,
+    "wood2": 8
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "moon": 7,
+    "night0": 5,
+    "night1": 6,
+    "wall0": 1,
+    "wall1": 2,
+    "wall2": 3,
+    "wall3": 4
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "core": 10,
+    "edge": 11,
+    "flame0": 6,
+    "flame1": 7,
+    "flame2": 8,
+    "flame3": 9,
+    "wax0": 1,
+    "wax1": 2,
+    "wax2": 3,
+    "wax3": 4,
+    "wax4": 5,
+    "wick": 12
+   }
+  },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "dark": 1
+   }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "core": 6,
+    "edge": 1,
+    "eye": 10,
+    "flame0": 2,
+    "flame1": 3,
+    "flame2": 4,
+    "flame3": 5,
+    "soot0": 11,
+    "soot1": 12,
+    "wax0": 7,
+    "wax1": 8,
+    "wax2": 9
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "water0": 1,
+    "water1": 2,
+    "water2": 3,
+    "water3": 4
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "brass0": 9,
+    "brass1": 10,
+    "brass2": 11,
+    "edge": 8,
+    "iron0": 1,
+    "iron1": 2,
+    "iron2": 3,
+    "iron3": 4,
+    "steam0": 5,
+    "steam1": 6,
+    "steam2": 7
+   }
+  }
+ },
+ "scenes": {
+  "cells": {
+   "h": 2,
+   "mx": 40,
+   "my": 0,
+   "pal": 1,
+   "w": 24
+  },
+  "dark": {
+   "h": 1,
+   "mx": 40,
+   "my": 4,
+   "pal": 4,
+   "w": 1
+  },
+  "logo": {
+   "h": 8,
+   "mx": 0,
+   "my": 30,
+   "pal": 3,
+   "w": 32
+  },
+  "wall": {
+   "h": 26,
+   "mx": 64,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "wall2": {
+   "h": 26,
+   "mx": 96,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "wall3": {
+   "h": 26,
+   "mx": 128,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "wall4": {
+   "h": 26,
+   "mx": 160,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "wall5": {
+   "h": 26,
+   "mx": 192,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  }
+ },
+ "sprites": {
+  "bob": {
+   "pal": 2,
+   "size": 16,
+   "tile": 910
+  },
+  "drip": {
+   "pal": 1,
+   "size": 8,
+   "tile": 902
+  },
+  "ember": {
+   "pal": 0,
+   "size": 8,
+   "tile": 900
+  },
+  "fall": {
+   "pal": 0,
+   "size": 32,
+   "tile": 836
+  },
+  "gear": {
+   "pal": 2,
+   "size": 16,
+   "tile": 908
+  },
+  "gust": {
+   "pal": 2,
+   "size": 8,
+   "tile": 917
+  },
+  "jump": {
+   "pal": 0,
+   "size": 32,
+   "tile": 832
+  },
+  "land": {
+   "pal": 0,
+   "size": 32,
+   "tile": 844
+  },
+  "link": {
+   "pal": 2,
+   "size": 8,
+   "tile": 916
+  },
+  "puff": {
+   "pal": 0,
+   "size": 32,
+   "tile": 896
+  },
+  "rain0": {
+   "pal": 1,
+   "size": 16,
+   "tile": 932
+  },
+  "rain1": {
+   "pal": 1,
+   "size": 16,
+   "tile": 934
+  },
+  "run0": {
+   "pal": 0,
+   "size": 32,
+   "tile": 776
+  },
+  "run1": {
+   "pal": 0,
+   "size": 32,
+   "tile": 780
+  },
+  "slide": {
+   "pal": 0,
+   "size": 32,
+   "tile": 840
+  },
+  "snuffer": {
+   "pal": 2,
+   "size": 32,
+   "tile": 960
+  },
+  "soot": {
+   "pal": 0,
+   "size": 8,
+   "tile": 901
+  },
+  "steam0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 904
+  },
+  "steam1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 906
+  },
+  "wick0": {
+   "pal": 0,
+   "size": 32,
+   "tile": 768
+  },
+  "wick1": {
+   "pal": 0,
+   "size": 32,
+   "tile": 772
+  },
+  "wisp": {
+   "pal": 2,
+   "size": 8,
+   "tile": 903
+  }
+ },
+ "tiles": {},
+ "used": 859,
+ "version": 1
+}
