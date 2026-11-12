@@ -101,6 +101,16 @@
       "png": "carts/vertical-fall.nova.png"
     },
     {
+      "name": "wick",
+      "title": "Wick",
+      "author": "NOVA-16",
+      "description": "You are Wick, a candle flame alone in a dark castle. Run, jump and wall-jump through 49 short rooms of water, steam, clockwork and wind, where one touch snuffs you out and the next try starts at once. Every death leaves its soot, every room cleared replays all your flames together, and at the end of each world the Snuffer comes after you.",
+      "genre": "Arcade",
+      "players": "1",
+      "label": "carts/labels/wick.png",
+      "png": "carts/wick.nova.png"
+    },
+    {
       "name": "block-wizard",
       "title": "Block Wizard",
       "author": "NOVA-16",
