@@ -38,13 +38,18 @@
   "bg3": {
    "base": 48,
    "colors": {
-    "edge": 6,
-    "gold0": 1,
-    "gold1": 2,
-    "gold2": 3,
-    "gold3": 4,
-    "gold4": 5,
-    "shade": 7
+    "core": 10,
+    "edge": 11,
+    "flame0": 6,
+    "flame1": 7,
+    "flame2": 8,
+    "flame3": 9,
+    "wax0": 1,
+    "wax1": 2,
+    "wax2": 3,
+    "wax3": 4,
+    "wax4": 5,
+    "wick": 12
    }
   },
   "bg4": {
@@ -112,7 +117,7 @@
    "w": 1
   },
   "logo": {
-   "h": 5,
+   "h": 8,
    "mx": 0,
    "my": 30,
    "pal": 3,
@@ -267,6 +272,6 @@
   }
  },
  "tiles": {},
- "used": 825,
+ "used": 859,
  "version": 1
 }

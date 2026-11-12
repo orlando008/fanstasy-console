@@ -389,6 +389,9 @@ after its tenth, which moved the later rooms along); a save of another version i
      how hard each room is for a person, whether the order is right, and whether the Snuffer's 2.5 seconds is the
      right gap. Those wait for play; the numbers are `T` and `H` in `code.js`, the rooms are text, and after a
      room changes `node tests/carts/wick/solve.mjs --record` and `node tools/release.js wick --keep-label`.
+   - **After the release (2026-11-12), the user's note on the title:** its letters were plain gold capitals, oddly
+     spaced. They are candle wax now (`art.py`: thick round strokes, shaded as if they bulged, with drips running
+     down), "Wick" with a small i that is a candle: a wick and a flame where its dot would be.
    - **Results:** 150 checks; `check.js` with no warnings (code 67% of 64 KB, ROM 8.5%, the PNG's payload 41%).
 
 Each step: build it, run `node tools/check.js wick` and `node tools/test.js wick`, write its **Built** and

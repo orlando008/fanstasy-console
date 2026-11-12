@@ -30,7 +30,7 @@ WORLDS = {
 }
 castle = art.palette(1, WORLDS[1][0])
 far = art.palette(2, WORLDS[1][1])
-fire = art.palette(3, {'gold': ramp('e0a030', 5), 'edge': '1c1020', 'shade': '2a2040'})
+fire = art.palette(3, {'wax': ramp('e6dcc2', 5), 'flame': ramp('f08a28', 4), 'core': 'fff6c8', 'edge': '241420', 'wick': '3a2a20'})   # the title's letters: candle wax, and the flame on the i
 dark = art.palette(4, {'dark': '0a0c20'})
 wick_pal = art.sprite_palette(0, {'edge': '3a1808', 'flame': ramp('f08a28', 4), 'core': 'fff6c8', 'wax': ramp('e0d8c0', 3), 'eye': '2a1a10', 'soot': ramp('4a4450', 2)})
 
@@ -308,9 +308,48 @@ gust.px[3][6] = haz.steam[2]
 art.sprite('gust', gust, pal=haz, region='spr')                      # a streak of wind (it blows to the right; flipped for left)
 
 # --- The title's lettering, on layer 0 ---
-logo = Img(256, 40)
-t = big_text('WICK', fire.gold, scale=4, outline=fire.edge, shadow=fire.shade)
-logo.blit(t, (256 - t.w) // 2, 1)
+# The letters are candle wax: thick round strokes drawn with a round brush, shaded as if they bulged, their tops a
+# little slumped and wax running down from them in drips; the i is a candle, a wick and a flame where its dot would be.
+LW, LH, BRUSH = 256, 64, 5.2
+def stroke(m, pts, r=BRUSH):
+    """A thick line through the points, with round ends and joints."""
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+        n = int(max(abs(x1 - x0), abs(y1 - y0)) * 2) + 1
+        for k in range(n + 1):
+            t = k / n; cx, cy = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+            for y in range(int(cy - r - 1), int(cy + r + 2)):
+                for x in range(int(cx - r - 1), int(cx + r + 2)):
+                    if 0 <= x < m.w and 0 <= y < m.h and (x - cx) ** 2 + (y - cy) ** 2 <= r * r: m.px[y][x] = 1
+def drip(m, x, y, length, r=2):
+    """Wax that has run down from (x, y): a thin run and the drop at its end."""
+    for yy in range(y, y + length):
+        for xx in range(x - 1, x + 2): m.px[min(m.h - 1, yy)][xx] = 1
+    m.disc(x, min(m.h - 3, y + length), r, 1)
+wax = Img(LW, LH)
+BASE, XH, CAP = 46, 26, 13                                            # the line the letters stand on, the small letters' top, the tall ones'
+stroke(wax, [(61, CAP + 1), (71, BASE), (83, XH - 2), (95, BASE), (105, CAP + 1)])                     # W
+stroke(wax, [(121, XH + 4), (121, BASE)], BRUSH + 0.6)                                                # i: a candle's stub, a little thicker
+stroke(wax, [(147 + 11 * math.cos(a / 10), 36 + 10.5 * math.sin(a / 10)) for a in range(9, 55)])     # c
+stroke(wax, [(173, CAP), (173, BASE)]); stroke(wax, [(190, XH + 1), (175, 37), (191, BASE)])          # k
+for x, y, n in ((58, 20, 7), (71, BASE + 3, 9), (95, BASE + 3, 5), (108, 22, 5), (117, BASE + 2, 6), (125, XH + 8, 9), (141, 42, 11), (153, BASE + 1, 5), (170, BASE + 2, 8), (177, 24, 6), (191, BASE + 3, 6)):
+    drip(wax, x, y, n, 2 if n > 5 else 1)
+for x in range(114, 129):                                             # the i's top: a rim of melted wax, slumped to one side
+    for y in range(XH - 1 + (1 if x > 124 else 0), XH + 3): wax.px[y][x] = 1
+logo = outline_sel(shaded(wax, fire.wax, kind='dome', dither=0.08), fire, colour=fire.edge)
+for y in range(XH - 5, XH - 1): logo.px[y][121] = fire.wick              # its wick
+fl = Img(LW, LH)                                                      # and its flame, leaning a little
+for y in range(4, XH - 3):
+    t = (XH - 4 - y) / 19
+    half = 5.6 * math.sin(min(1, t * 1.25) * math.pi * 0.5) * (1 - t) ** 0.55 + 0.4
+    cx = 121.5 + 2.5 * t * t
+    for x in range(108, 136):
+        if abs(x - cx) <= half: fl.px[y][x] = 1
+fl2 = shaded(fl, fire.flame, kind='dome')
+for y in range(LH):
+    for x in range(LW):
+        if fl2.px[y][x]:
+            t = (XH - 4 - y) / 19
+            logo.px[y][x] = fire.core if 0.08 < t < 0.5 and abs(x - (121.5 + 2.5 * t * t)) < 2.4 - t * 2.2 else fl2.px[y][x]
 art.scene('logo', logo, pal=fire, at=(0, 30))
 
 art.write(sys.argv[1])

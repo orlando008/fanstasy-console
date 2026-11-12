@@ -12,7 +12,7 @@ const SHADOW = 1, PANEL = 3, RED = 6, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14
 const ART = {
   tiles: {},
   sprites: {"bob": {"pal": 2, "size": 16, "tile": 910}, "drip": {"pal": 1, "size": 8, "tile": 902}, "ember": {"pal": 0, "size": 8, "tile": 900}, "fall": {"pal": 0, "size": 32, "tile": 836}, "gear": {"pal": 2, "size": 16, "tile": 908}, "gust": {"pal": 2, "size": 8, "tile": 917}, "jump": {"pal": 0, "size": 32, "tile": 832}, "land": {"pal": 0, "size": 32, "tile": 844}, "link": {"pal": 2, "size": 8, "tile": 916}, "puff": {"pal": 0, "size": 32, "tile": 896}, "rain0": {"pal": 1, "size": 16, "tile": 932}, "rain1": {"pal": 1, "size": 16, "tile": 934}, "run0": {"pal": 0, "size": 32, "tile": 776}, "run1": {"pal": 0, "size": 32, "tile": 780}, "slide": {"pal": 0, "size": 32, "tile": 840}, "snuffer": {"pal": 2, "size": 32, "tile": 960}, "soot": {"pal": 0, "size": 8, "tile": 901}, "steam0": {"pal": 2, "size": 16, "tile": 904}, "steam1": {"pal": 2, "size": 16, "tile": 906}, "wick0": {"pal": 0, "size": 32, "tile": 768}, "wick1": {"pal": 0, "size": 32, "tile": 772}, "wisp": {"pal": 2, "size": 8, "tile": 903}},
-  scenes: {"cells": {"h": 2, "mx": 40, "my": 0, "pal": 1, "w": 24}, "dark": {"h": 1, "mx": 40, "my": 4, "pal": 4, "w": 1}, "logo": {"h": 5, "mx": 0, "my": 30, "pal": 3, "w": 32}, "wall": {"h": 26, "mx": 64, "my": 0, "pal": 2, "w": 32}, "wall2": {"h": 26, "mx": 96, "my": 0, "pal": 2, "w": 32}, "wall3": {"h": 26, "mx": 128, "my": 0, "pal": 2, "w": 32}, "wall4": {"h": 26, "mx": 160, "my": 0, "pal": 2, "w": 32}, "wall5": {"h": 26, "mx": 192, "my": 0, "pal": 2, "w": 32}},
+  scenes: {"cells": {"h": 2, "mx": 40, "my": 0, "pal": 1, "w": 24}, "dark": {"h": 1, "mx": 40, "my": 4, "pal": 4, "w": 1}, "logo": {"h": 8, "mx": 0, "my": 30, "pal": 3, "w": 32}, "wall": {"h": 26, "mx": 64, "my": 0, "pal": 2, "w": 32}, "wall2": {"h": 26, "mx": 96, "my": 0, "pal": 2, "w": 32}, "wall3": {"h": 26, "mx": 128, "my": 0, "pal": 2, "w": 32}, "wall4": {"h": 26, "mx": 160, "my": 0, "pal": 2, "w": 32}, "wall5": {"h": 26, "mx": 192, "my": 0, "pal": 2, "w": 32}},
   colors: {"GLASS": 200},
 };
 // END ART
@@ -513,7 +513,7 @@ function updatePause() {
  * and a lit lantern (scanline). */
 function setLayers() {
   const lg = ART.scenes.logo, dk = ART.scenes.dark, title = state === 'title';
-  if (title) bg(0, { mx: lg.mx, my: lg.my, mw: lg.w, mh: lg.h, x: 0, y: -40, wrap: false, show: true });
+  if (title) bg(0, { mx: lg.mx, my: lg.my, mw: lg.w, mh: lg.h, x: 0, y: -30, wrap: false, show: true });
   else bg(0, { mx: dk.mx, my: dk.my, mw: 1, mh: 1, x: 0, y: 0, wrap: true, show: true });
   blend({ layers: title ? ['overlay'] : ['overlay', 'bg0'], half: true }); // (overlay colours from 192 up, GLASS, are see-through too)
   winmask('bg0', title ? null : { w0: 'in', w1: 'in' });
@@ -670,7 +670,7 @@ function drawRecords() {
 function drawTitle() {
   drawWick();
   if (confirm) {
-    panel(40, 124, 176, 60);
+    panel(28, 124, 200, 60);
     ctxt('START A NEW GAME?', 132, WHITE); ctxt('YOUR ROOMS WILL BE LOST', 144, DIM);
     ['KEEP MY GAME', 'START AGAIN'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 72, 158 + i * 12, i === titleSel ? WHITE : DIM));
     return;
