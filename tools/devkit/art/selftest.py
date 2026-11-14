@@ -515,6 +515,20 @@ for name in icons.ICONS:
             if (im.w, im.h) != (size, size) or not used or not used <= set(range(1, 16)): bad.append('%s %d %s' % (name, size, c))
 ok(not bad, 'icons.py: every icon (%d) is drawn at 8 and 16 px in every colour, inside its square and its palette' % len(icons.ICONS), ', '.join(bad[:5]))
 for name in ('heart', 'coin', 'skull'): iart.sprite(name, icons.icon(name, 16, items), pal=items)
+bad = []
+for name in icons.ANIMS:
+    for size in (8, 16):
+        for k, f in enumerate(icons.anim(name, size, items)):
+            if (f.w, f.h) != (size, size) or not {v for r in f.px for v in r} - {0}: bad.append('%s %d frame %d' % (name, size, k))
+for size in (8, 16):
+    for k, d in enumerate(icons.digits(items, size)):
+        if (d.w, d.h) != (size, size) or not {v for r in d.px for v in r} - {0}: bad.append('digit %d %d' % (k, size))
+for name in icons.BUTTONS:
+    for size in (8, 16):
+        try: b = icons.button(name, size, items)
+        except KeyError: continue          # some buttons are drawn at one size only
+        if not {v for r in b.px for v in r} - {0}: bad.append('button %s %d' % (name, size))
+ok(not bad, 'animations, digits and buttons build at 8 and 16 px (the frames, the ten figures, the prompts)', ', '.join(bad[:5]))
 ok(len(iart.sprites) == 3, 'and an icon is placed as a sprite with the items palette')
 
 print('\n%s' % ('SOME FAILED' if fails else 'ALL PASS'))

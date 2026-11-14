@@ -109,7 +109,16 @@ for name in ['heart', 'heart_half', 'coin', 'star', 'gem', 'key', 'potion', 'sku
 sheet.add('gem, blue', icon('gem', 16, items, colour='blue'), items, scale=4)     # most icons take another ramp
 sheet.add('heart 8 px', icon('heart', 8, items), items, scale=8)                 # 8 px: placed by hand
 '''),
-('icons', 'Small icons by hand', 'For an icon the library does not have: the one place for pixels typed by hand, 8 and 16 px icons where every pixel is a decision. Anything bigger: a recipe above.', '''
+('motion', 'Ready-made animations, score digits and button prompts', 'Frames that move on their own (a coin spinning, a star twinkling, a sparkle, dust, an explosion, a hit), score digits 0 to 9, and button prompts for "press A" screens: all from the icon library, in the same shared palette. Check here before drawing them.', '''
+items = items_palette(art, 5)
+for name in ANIMS:
+    for k, f in enumerate(anim(name, 16, items)): sheet.add('%s %d' % (name, k), f, items, scale=4)
+    sheet.row()
+for k, d in enumerate(digits(items, 16, 'gold')): sheet.add('digit %d' % k, d, items, scale=4)
+sheet.row()
+for name in ('a', 'b', 'start', 'dpad'): sheet.add('button ' + name, button(name, 16, items), items, scale=4)
+'''),
+('icons','Small icons by hand', 'For an icon the library does not have: the one place for pixels typed by hand, 8 and 16 px icons where every pixel is a decision. Anything bigger: a recipe above.', '''
 pal = art.sprite_palette(3, {'edge': '140c1c', 'red': ramp('d04648', 3), 'gold': ramp('dad45e', 3)})
 K = {'o': pal.edge, 'd': pal.red[0], 'r': pal.red[1], 'l': pal.red[2], 'g': pal.gold[1], 'y': pal.gold[2]}
 heart = Img.from_rows(['.oo.oo..', 'olroro..', 'orrrrdo.', 'orrrrdo.', '.orrdo..', '..odo...', '...o....', '........'], key=K)
