@@ -442,6 +442,112 @@ def anim(name, size, pal, colour=None):
     return _ANIM[name](size, pal, colour)
 
 
+# --- UI: score digits and button prompts ------------------------------------------------------------------------------
+# Digits 0-9 in 8 x 8: a 5 px wide, 7 px tall bold figure (l) with a dark edge (d) round it, so they read on any background.
+DIGITS = [
+    ['.ddddd..', 'dllllld.', 'dlddlld.', 'dlddlld.', 'dlddlld.', 'dllllld.', '.ddddd..', '........'],
+    ['..ddd...', '.dlld...', '..dld...', '..dld...', '..dld...', '.dllld..', '.ddddd..', '........'],
+    ['.ddddd..', 'dllllld.', '.dddlld.', '.dllld..', 'dlldddd.', 'dllllld.', '.ddddd..', '........'],
+    ['.ddddd..', 'dllllld.', '.ddllld.', '..dllld.', '.dddlld.', 'dllllld.', '.ddddd..', '........'],
+    ['.dd.dd..', 'dld.dld.', 'dld.dld.', 'dllllld.', '.dddlld.', '...dld..', '...ddd..', '........'],
+    ['.ddddd..', 'dllllld.', 'dlldddd.', 'dllllld.', '.dddlld.', 'dllllld.', '.ddddd..', '........'],
+    ['.ddddd..', 'dllllld.', 'dlldddd.', 'dllllld.', 'dlddlld.', 'dllllld.', '.ddddd..', '........'],
+    ['.ddddd..', 'dllllld.', '.dddlld.', '..dlld..', '..dld...', '..dld...', '..ddd...', '........'],
+    ['.ddddd..', 'dllllld.', 'dlddlld.', '.dllld..', 'dlddlld.', 'dllllld.', '.ddddd..', '........'],
+    ['.ddddd..', 'dllllld.', 'dlddlld.', 'dllllld.', '.dddlld.', 'dllllld.', '.ddddd..', '........'],
+]
+
+
+def digits(pal, size=8, colour='grey'):
+    """The figures 0 to 9 (a list of ten pictures) for a score or a timer: 8 px, or 16 (smoothly doubled). Their fill is
+    the light step of `colour` (grey: white) and their edge its dark step."""
+    out = [small('digit', pal, colour, rows) for rows in DIGITS]
+    if size == 8: return out
+    rp = getattr(pal, colour)
+    big = []
+    for rows in DIGITS:                    # the figure alone doubled pixel for pixel (crisp), then a fresh 1 px edge round it
+        m = _img().from_rows([r.replace('d', '.').replace('l', '1') for r in rows])
+        b = _img().make(16, 16, lambda x, y: m.get(x // 2, y // 2))
+        im = _img().make(16, 16, lambda x, y: (rp[2] if y < 7 else rp[1]) if b.get(x, y) else 0)
+        for y in range(16):
+            for x in range(16):
+                if not b.get(x, y) and any(b.get(x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)): im.px[y][x] = rp[0]
+        big.append(im)
+    return big
+
+
+# Button prompts. 16 px: round A and B, a START pill, a d-pad with one arm lit. 8 px: A and B, and four arrows.
+_BTN16 = ['.....dddddd.....', '...ddmmmmmmdd...', '..dmmllllllmmd..', '.dmllllllllllmd.', '.dmllllllllllmd.', 'dmlllllllllllmmd',
+          'dmlllllllllllmmd', 'dmlllllllllllmmd', 'dmlllllllllllmmd', 'dmlllllllllllmmd', 'dmmllllllllllmmd', '.dmmllllllllmmd.',
+          '.dmmmmmmmmmmmmd.', '..ddmmmmmmmmdd..', '...dddddddddd...', '................']
+_GLYPH16 = {'a': ['..dd..', '.d..d.', '.dddd.', '.d..d.', '.d..d.'], 'b': ['.ddd..', '.d..d.', '.ddd..', '.d..d.', '.ddd..']}
+_BTN8 = ['..dddd..', '.dllllm.', 'dlllllmd', 'dlllllmd', 'dlllllmd', 'dmllllmd', '.dmmmmd.', '..dddd..']
+_GLYPH8 = {'a': ['.d.', 'd.d', 'ddd', 'd.d'], 'b': ['dd.', 'ddd', 'd.d', 'dd.']}
+_START = ['................', '................', '................', '..dddddddddddd..', '.dllllllllllllmd', 'dllllllllllllllmd'[:16],
+          'dlllllllllllllmd', 'dlllllllllllllmd', 'dmllllllllllllmd', '.dmmmmmmmmmmmmd.', '..dddddddddddd..', '................',
+          '................', '................', '................', '................']
+_DPAD = ['......dddd......', '......dMMd......', '......dMMd......', '......dMMd......', '......dMMd......', '......dMMd......',
+         'ddddddMMMMdddddd', 'dMMMMMMkkMMMMMMd', 'dMMMMMMkkMMMMMMd', 'ddddddMMMMdddddd', '......dMMd......', '......dMMd......',
+         '......dMMd......', '......dMMd......', '......dMMd......', '......dddd......']
+_ARMS = {'up': lambda x, y: 6 <= x <= 9 and 1 <= y <= 5, 'down': lambda x, y: 6 <= x <= 9 and 10 <= y <= 14,
+         'left': lambda x, y: 1 <= x <= 5 and 6 <= y <= 9, 'right': lambda x, y: 10 <= x <= 14 and 6 <= y <= 9}
+_ARROW8 = {'up': ['...dd...', '..dlld..', '.dllllм.'.replace('м', 'd'), 'dddlldd.'[:8], '..dlld..', '..dlld..', '..dddd..', '........'],
+           'right': ['...d....', '...dd...', 'ddddld..', 'dllllld.', 'dllllld.', 'ddddld..', '...dd...', '...d....']}
+_ARROW8['up'] = ['...dd...', '..dlld..', '.dlllld.', 'dddllddd', '..dlld..', '..dlld..', '..dddd..', '........']
+_ARROW8['down'] = _ARROW8['up'][::-1][1:] + ['........']
+_ARROW8['left'] = [r[::-1] for r in _ARROW8['right']]
+BUTTONS = ['a', 'b', 'start', 'dpad', 'up', 'down', 'left', 'right']
+
+
+def _letters(im, text, x0, y0, pal):
+    """`text` in the console's 8 x 8 font on `im` at (x0, y0): white, with a dark shadow down and right."""
+    m = _img().make(len(text) * 8, 8, lambda x, y: 0)
+    for k, ch in enumerate(text): m.text(ch, k * 8, 0, 1)
+    for y in range(8):
+        for x in range(m.w):
+            if m.px[y][x]:
+                for dx, dy, c in ((1, 1, pal.grey[0]), (0, 0, pal.grey[2])):
+                    if 0 <= x0 + x + dx < im.w and 0 <= y0 + y + dy < im.h and (c == pal.grey[2] or not m.get(x + dx, y + dy)):
+                        im.px[y0 + y + dy][x0 + x + dx] = c
+    return im
+
+
+def button(name, size, pal, colour=None):
+    """A button prompt (one of BUTTONS) for 'press A' screens and tutorials: at 16 px a round A or B, a START pill (48 x 16), the
+    d-pad, or the d-pad with the arm `up`, `down`, `left` or `right` lit; at 8 px A, B and four arrows (no START or d-pad).
+    A and B are red and blue unless colour= says; the lit arm is gold."""
+    if name not in BUTTONS: raise KeyError('no button %r: %s' % (name, ', '.join(BUTTONS)))
+    Img = _img()
+    if size == 8:
+        if name in ('a', 'b'):
+            im = small('btn', pal, colour or ('red' if name == 'a' else 'blue'), _BTN8)
+            g = _GLYPH8[name]; dark = pal.grey[0]
+            for y, r in enumerate(g):
+                for x, ch in enumerate(r):
+                    if ch == 'd': im.px[2 + y][2 + x] = dark
+            return im
+        if name in _ARROW8: return small('arrow', pal, colour or 'grey', _ARROW8[name])
+        raise KeyError('%s is drawn at 16 px only' % name)
+    if size != 16: raise ValueError('buttons are 8 or 16 px')
+    if name in ('a', 'b'):
+        im = small('btn', pal, colour or ('red' if name == 'a' else 'blue'), _BTN16)
+        return _letters(im, name.upper(), 4, 3, pal)
+    if name == 'start':                    # 48 x 16: the word needs 40 px (art.big_sprite, or a scene)
+        rp = getattr(pal, colour or 'grey')
+        im = _img().make(48, 16, lambda x, y: 0)
+        pill = lambda x, y: 1 <= y <= 14 and (7 <= x <= 40 or (x - 7.5) ** 2 + (y - 7.5) ** 2 <= 42 or (x - 40.5) ** 2 + (y - 7.5) ** 2 <= 42)
+        for y in range(16):
+            for x in range(48):
+                if pill(x, y): im.px[y][x] = rp[0] if not all(pill(x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)) else (rp[2] if y < 6 else rp[1])
+        return _letters(im, 'START', 4, 4, pal)
+    im = small('btn', pal, colour or 'grey', _DPAD)
+    if name in _ARMS:
+        for y in range(16):
+            for x in range(16):
+                if _ARMS[name](x, y) and im.px[y][x] == pal.grey[1]: im.px[y][x] = pal.gold[2]
+    return im
+
+
 if __name__ == '__main__':
     import sys
     if len(sys.argv) != 3 or sys.argv[1] != '--sheet': sys.exit('usage: python3 tools/devkit/art/icons.py --sheet <file.png>')
@@ -455,6 +561,14 @@ if __name__ == '__main__':
             sheet.add('%s %d' % (name, size), icon(name, size, pal), pal, scale=4 if size == 16 else 8)
             if k % 8 == 7: sheet.row()
     for c in RAMPS: sheet.add('gem ' + c, icon('gem', 16, pal, colour=c), pal)
+    sheet.row()
+    for k, d in enumerate(digits(pal)): sheet.add('%d' % k, d, pal, scale=8)
+    sheet.row()
+    for k, d in enumerate(digits(pal, 16, 'gold')): sheet.add('%d 16' % k, d, pal, scale=4)
+    sheet.row()
+    for name in BUTTONS: sheet.add(name + ' 16', button(name, 16, pal), pal, scale=4)
+    sheet.row()
+    for name in ('a', 'b', 'up', 'down', 'left', 'right'): sheet.add(name + ' 8', button(name, 8, pal), pal, scale=8)
     for size in (16, 8):
         for name in ANIMS:
             sheet.row()
