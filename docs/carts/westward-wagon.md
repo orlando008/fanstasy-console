@@ -253,10 +253,11 @@ The art is made in code by `carts/src/westward-wagon/art.py` with the kit (`scen
 | Slots | Contents |
 |---|---|
 | 0 | Format version |
-| 1 to 80 | The journey in progress: date, miles, money, supplies, pace, rations, the party (names, health, illness), the oxen, the route chosen, the random seed's state |
+| 1 to 35 | The journey in progress, written each day on the trail: 1 a flag, 2 a random seed (drawn and set as it is saved, so a resumed journey goes on as it would have), 3 the background, date, route, pace, rations, weather, region (packed), 4 the mile and the next landmark, 5 the days, 6 the oxen and spare parts, 7 food, 8 bullets, 9 money in cents, 10 to 24 the party's health (x 10), illness and life, 25 to 34 their names (packed), 35 clothing. Cleared at the journey's end |
 | 100 to 139 | The top 10: score, the leader's name (packed), the background, the date of arrival |
-| 140 to 199 | The graves: 12, each with a mile, a date, a name and the epitaph (packed, 16 characters) |
-| 200 to 255 | Reserved (the diary is in RAM, for the journey being played; a resumed journey starts a new page) |
+| 140 to 199 | The graves: 12, five slots each, a bit stream of 30 bits a slot: the mile (11 bits), the month (4), the day (5), the name (10 letters) and the epitaph (16), 5 bits a letter |
+| 200 | The next grave to write (the oldest goes) |
+| 201 to 255 | Reserved (the diary is in RAM, for the journey being played; a resumed journey starts a new page) |
 
 ## 14. Asset budget
 
@@ -333,6 +334,10 @@ The weather now varies around each month's average (a step either way): the firs
 **Step 5, built:** the book (`book.py` writes `rom/book.bin`, 8.4 KB; `loadBook` reads it at the start): for each of the 17 places a paragraph (up to 8 lines of 28 letters) and three people met there (a storekeeper, a ferryman, soldiers, emigrants, children; a Kansa hunter, Pawnee, Lakota, Shoshone, Nez Perce and Wasco traders and guides, each speaking of their own country and trade), and a card for each region (the prairie, the bluffs, the Rocky Mountains, the high desert, the forests of Oregon), shown on first entering it. A landmark's card offers LOOK AROUND, TALK TO SOMEONE (each person in turn), BUY SUPPLIES at a fort, and GO ON, CROSS THE RIVER or CHOOSE THE WAY; leaving Independence's store shows a card about setting out. The Snake River offers a Shoshone guide (a set of clothing, a day, a safe crossing). Results longer than a line are wrapped to the card (`wrapText`). The events' texts stay in the code, since each carries its numbers. `book.py` checks every line fits a card, and `--check` that the ROM is up to date (run by `05-book.mjs`). Tests: `05-book.mjs` (every place's paragraph and three people, every line fits, look, talk in turn, a fort's store at its prices, a region's card, the guide, setting out). The bot goes on at landmarks, buys at forts, and hires the guide when it has clothing to spare.
 
 **Step 5, results** (6 seeds each, April): unchanged in balance: a banker and a carpenter arrive with all five, a farmer with 2.8 (1 to 5); every run finishes cleanly through the new cards.
+
+**Step 6, built:** the keyboard (`toKeys`, `updateKeys`: the 26 letters, `.`, `-`, `'` and a space in three rows, DEL and END; the d-pad moves, A types, B deletes, START is done), used to name the party after the background (each name starts as MARY, JOHN, SARAH, WILL, ELLA; START keeps it; B on an empty name goes back) and to write epitaphs. The title offers CONTINUE JOURNEY when one is saved: the journey is saved each day on the trail (slots 1 to 35, section 13), with a fresh random seed set as it is saved, so a resumed journey goes on exactly as it would have; the end clears it. Graves: each death (illness, a river) asks for one, REST IN PEACE or an epitaph of up to 16 letters, kept with the mile and the date in five slots (12 graves, the oldest replaced); later journeys pass the graves as pale wooden markers in front of the trail, with a blinking A to read them (HERE LIES, the name, the date, the epitaph). The diary: every line of the journey's log is dated (`note`), rests are written too, and it is read from the menu (READ THE DIARY) and from the end (B), a page of 15 lines, UP and DOWN by a line, LEFT and RIGHT by a page. The code is packed without its comments (`"strip": true`: 59 KB of 64). Tests: `06-save.mjs` (a grave in five slots and back, twelve kept, a death's grave and epitaph, the next journey passing and reading it, the journey resumed as it was and going on the same way from either seed, the end clearing it, the diary's dated lines); `01-flow` names the party on the keyboard.
+
+**Step 6, results** (6 seeds each, April): a banker and a carpenter arrive every time with 4.8 of 5, a farmer with 2 (1 to 4), within the noise of step 5 (the random sequence changed, since each day's save sets a new seed). The bot keeps the names and lays its dead to rest in peace.
 
 Each step: build it, run `node tools/check.js westward-wagon` and `node tools/test.js westward-wagon`, write its **Built** and **Results** notes under its number here, commit and push.
 

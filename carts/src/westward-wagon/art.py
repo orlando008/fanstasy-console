@@ -158,6 +158,13 @@ def animal(kind, f):
         return d.render(outline=fur)
 for k in ('rabbit', 'squirrel'):
     for f in (0, 1): art.sprite('%s%d' % (k, f), animal(k, f), pal=fur, region='spr')
+
+# A grave by the trail (spec 5.6): a wooden headboard over a mound of earth, passed by later journeys.
+art.sprite('grave', Img.from_rows([
+    '................', '......1111......', '.....122231.....', '.....122231.....', '.....122231.....', '.....122231.....',
+    '.....122231.....', '.....122221.....', '.....122221.....', '.....111111.....', '......1221......', '......1221......',
+    '....55555555....', '..554444444455..', '.54444444444445.', '................'],
+    key={'1': wag.iron[0], '2': wag.canvas[1], '3': wag.canvas[3], '4': wag.wood[0], '5': wag.wood[2]}), pal=wag, region='spr')   # weathered pale boards, to stand out from the trail
 for k in ('deer', 'elk', 'bear', 'buffalo'):                  # in 16 px pieces: the body's are shared by both frames, and no 32 px spot is needed
     art.anims[k] = [art.big_sprite('%s%d' % (k, f), animal(k, f), pal=fur, region='spr', piece=16) and '%s%d' % (k, f) for f in (0, 1)]
 

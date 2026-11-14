@@ -45,7 +45,7 @@ ok(all.every((l) => l.length <= 28), 'every line fits a card (28 letters)', `${a
 }
 { // setting out from Independence
   const t = newGame(5, { title: true }), q = t.probe();
-  t.press('A'); t.run(2); t.press('A'); t.run(2); t.press('A'); t.run(2); t.press('RIGHT'); for (let i = 0; i < q.GOODS.length; i++) t.press('DOWN'); t.press('A'); t.run(2);
+  t.press('A'); t.run(2); t.press('A'); t.run(2); for (let i = 0; i < 5; i++) t.press('START'); t.press('A'); t.run(2); t.press('RIGHT'); for (let i = 0; i < q.GOODS.length; i++) t.press('DOWN'); t.press('A'); t.run(2);
   ok(q.state === 'trail' && q.card && q.card.title === 'INDEPENDENCE, MISSOURI', 'leaving the store, a card about setting out');
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

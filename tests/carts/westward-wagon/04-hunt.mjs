@@ -6,7 +6,7 @@ const toMenuItem = (vm, p, item) => { vm.press('A'); vm.run(2); for (let i = 0; 
 
 { // the store sells ammunition by the box, kept in rounds
   const vm = newGame(3, { title: true }), p = vm.probe();
-  vm.press('A'); vm.run(3); vm.press('A'); vm.run(3); vm.press('A'); vm.run(3);   // a banker, in April
+  vm.press('A'); vm.run(3); vm.press('A'); vm.run(3); for (let i = 0; i < 5; i++) vm.press('START'); vm.press('A'); vm.run(3);   // a banker, the names as they are, in April
   ok(p.state === 'store', 'at the store');
   const i = p.GOODS.findIndex((g) => g.key === 'bullets'); for (let k = 0; k < i; k++) vm.press('DOWN');
   vm.press('RIGHT'); vm.press('RIGHT'); vm.run(2);

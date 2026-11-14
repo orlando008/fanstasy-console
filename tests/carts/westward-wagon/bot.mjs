@@ -60,6 +60,7 @@ export function pad(vm, p) {
     if (i >= 0) { const before = p.cart[p.GOODS[i].key]; return press('RIGHT'); }
     return press('A');
   }
+  if (p.state === 'keys') return press('START');                  // the names as they are
   if (p.state === 'hunt') return huntPad(p);
   if (p.state === 'float') return floatPad(p);
   if (p.state === 'trail') {

@@ -12,7 +12,8 @@ const PROBE = `__expose(() => ({
   EVENTS, EVENT_RATE, rollEvent, loseDays, rollWeather,
   newJourney, alive, healthWord, dateText, nextMark, markMile, regionAt, dayOnTrail, scoreOf, crossRiver, costOf, topTen, insertTop, packName, unpackName,
   get hunt() { return hunt; }, get flt() { return flt; }, MEAT, GAME, BIG, HUNT_FRAMES, CARRY, LANES, MENU, FLOAT_Y, WORTH, TRADERS,
-  get BOOK() { return BOOK; }, wrapText, floatOutcome, tradeOffer, applyTrade, goodText, animalBox, banks, toHunt: () => toHunt(), toFloat: (...a) => toFloat(...a),
+  get BOOK() { return BOOK; }, get kbd() { return kbd; }, get diary() { return diary; }, get graveList() { return graveList; }, MENU_DIARY: 7, SAVE_SLOT, GRAVE_SLOT, GRAVES,
+  packGrave, unpackGrave, graves, saveGrave, saveJourney, loadJourney, graveX, graveInView, note, wrapText, floatOutcome, tradeOffer, applyTrade, goodText, animalBox, banks, toHunt: () => toHunt(), toFloat: (...a) => toFloat(...a),
   reach: (k) => reach(k), toStore: (m) => toStore(m), endJourney: () => endJourney(),
 }));`;
 

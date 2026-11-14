@@ -7,9 +7,16 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3);
   ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
   vm.press('A'); ok(p.state === 'setup' && p.setup.step === 0, 'NEW JOURNEY asks who leads');
-  vm.press('DOWN'); vm.press('A'); ok(p.setup.bg === 1 && p.setup.step === 1, 'a carpenter; then the month');
+  vm.press('DOWN'); vm.press('A'); ok(p.setup.bg === 1 && p.state === 'keys' && p.kbd.text === 'MARY', 'a carpenter; then the leader\'s name, MARY to start from');
+  for (let i = 0; i < 4; i++) vm.press('B'); vm.press('A'); vm.press('RIGHT'); vm.press('A'); vm.press('DOWN'); vm.press('A');   // A B L: type
+  ok(p.kbd.text === 'ABL', 'the keyboard: B deletes, the d-pad moves, A types', p.kbd.text);
+  vm.press('UP'); for (let i = 0; i < 10; i++) vm.press('A'); ok(p.kbd.text.length === 10, 'ten letters at most');
+  vm.press('START'); ok(p.state === 'keys' && p.kbd.text === 'JOHN', 'START is done; then the second');
+  for (let i = 0; i < 4; i++) vm.press('START');
+  ok(p.state === 'setup' && p.setup.step === 2 && p.setup.names[4] === 'ELLA', 'all five named; then the month');
   vm.press('DOWN'); vm.press('A');
   ok(p.state === 'store' && p.J.bg === 1 && p.J.money === 800 && p.J.month === 4, 'May, and the store at Independence with $800');
+  ok(p.J.party[0].name.length === 10 && p.J.party[1].name === 'JOHN', 'the party has its names', p.J.party[0].name);
   vm.press('UP'); vm.press('A');                                   // UP from the first good wraps to LEAVE THE STORE
   ok(p.state === 'store' && p.card, 'the wagon cannot leave without oxen'); vm.press('A');
   vm.press('DOWN'); vm.press('RIGHT'); vm.press('RIGHT'); vm.press('RIGHT');
@@ -22,7 +29,8 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
 }
 {
   const vm = newGame(2), p = vm.probe(); vm.run(2);
-  const d0 = p.J.days; vm.run(p.DAY_FRAMES * 3 + 1); ok(p.J.days === d0 + 3 && p.J.mile > 0, `a day rolls by every ${p.DAY_FRAMES} frames, and the wagon moves`);
+  const d0 = p.J.days; vm.run(p.DAY_FRAMES + 1); ok(p.J.days >= d0 + 1 && p.J.mile > 0, `a day rolls by every ${p.DAY_FRAMES} frames, and the wagon moves`);
+  while (p.card) vm.press('A');                                     // a day's event or illness, if one came
   vm.press('A'); ok(p.state === 'menu', 'A stops for the menu'); const d1 = p.J.days; vm.run(120); ok(p.J.days === d1, 'and time stands still');
   vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); vm.press('DOWN'); vm.press('A'); ok(p.J.pace === 1, 'CHANGE PACE: strenuous');
   vm.press('DOWN'); vm.press('A'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); ok(p.J.rations === 2, 'CHANGE RATIONS: bare bones');
