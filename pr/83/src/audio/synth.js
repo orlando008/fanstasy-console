@@ -542,9 +542,11 @@ export class Engine {
   /** Mix samples [from, to) into the left and right buffers. */
   render(L, R, from, to) {
     const echo = this.echoLen > 0;
-    if (echo && (!this.sendL || this.sendL.length < to)) {
-      this.sendL = new Float32Array(Math.max(to, 1024));
-      this.sendR = new Float32Array(Math.max(to, 1024));
+    // The echo's send holds this block only, from `from` (an offline render asks for ever later samples: a buffer as long
+    // as the song so far, made anew each block, made a long song's render take the square of its length)
+    if (echo && (!this.sendL || this.sendL.length < to - from)) {
+      this.sendL = new Float32Array(Math.max(to - from, 1024));
+      this.sendR = new Float32Array(Math.max(to - from, 1024));
     }
     for (let k = 0; k < this.channels.length; k++) {
       const c = this.channels[k];
@@ -561,8 +563,8 @@ export class Engine {
         L[i] += s * gl;
         R[i] += s * gr;
         if (send) {
-          this.sendL[i] += s * gl * send;
-          this.sendR[i] += s * gr * send;
+          this.sendL[i - from] += s * gl * send;
+          this.sendR[i - from] += s * gr * send;
         }
       }
     }
@@ -579,10 +581,10 @@ export class Engine {
       lpR += (br[r] - lpR) * a;
       L[i] += lpL * vol;
       R[i] += lpR * vol;
-      bl[w] = sl[i] + lpL * fb;
-      br[w] = sr[i] + lpR * fb;
-      sl[i] = 0;
-      sr[i] = 0;
+      bl[w] = sl[i - from] + lpL * fb;
+      br[w] = sr[i - from] + lpR * fb;
+      sl[i - from] = 0;
+      sr[i - from] = 0;
       if (++w === N) w = 0;
       if (++r === N) r = 0;
     }
