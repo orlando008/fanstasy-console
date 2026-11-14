@@ -242,7 +242,7 @@ SMALL = {
     'lock': ['..kkk...', '.k...k..', '.k...k..', 'dddddddd', 'dlmmmmmd', 'dmmddmmd', 'dmmmmmmd', 'dddddddd'],
     'potion': ['...GG...', '...kk...', '..kwwk..', '.kwmmmk.', 'kwmmmmmk', 'kmmmmmdk', '.kmmmdk.', '..kkkk..'],
     'bomb': ['......R.', '.....G..', '..ddGd..', '.dlmmmd.', 'dlmmmmmd', 'dmmmmmdd', '.dmmmdd.', '..dddd..'],
-    'skull': ['..dddd..', '.dllmmd.', 'dlmmmmmd', 'dkkmmkkd', 'dmmmmmmd', '.dmkkmd.', '.dmdmdd.', '..dddd..'],
+    'skull': ['.dddddd.', 'dllmmmmd', 'lddmmddm', 'lddmmddm', 'dmmmdmmd', '.dmmmmd.', '.dmdmdd.', '..dddd..'],
     'trophy': ['dddddddd', 'dllmmmmd', '.dlmmmd.', '..dmmd..', '...dd...', '...md...', '..dmmd..', '.dddddd.'],
     'crown': ['........', 'd..dd..d', 'dd.dd.dd', 'dlmmmmmd', 'dmRmmBmd', 'dmmmmmmd', 'dddddddd', '........'],
     'shield': ['dddddddd', 'dlmGGmmd', 'dlGGGGmd', 'dlmGGmmd', 'dmmGGmmd', '.dmGGmd.', '..dmmd..', '...dd...'],
@@ -265,12 +265,20 @@ OWN = {'heart': 'red', 'heart_half': 'red', 'heart_empty': 'red', 'coin': 'gold'
        'cross': 'red', 'note': 'blue', 'bolt': 'gold'}
 
 
-def small(name, pal, colour):
+# --- 16 px placed by hand, where a built shape did not read well (the same letters as SMALL) ---------------------------
+LARGE = {
+    'skull': ['....dddddddd....', '..ddllllllmmdd..', '.dllllllllmmmmd.', '.dllllllmmmmmmd.', 'dlllllmmmmmmmmmd',
+              'dlllmmmmmmmmmmmd', 'dllddddmmmddddmd', 'dldddddmmdddddmd', 'dldddddmmdddddmd', 'dlmdddmmmmdddmmd',
+              '.dmmmmmddmmmmmd.', '.ddmmmmddmmmmdd.', '..dmdmdmdmdmmd..', '..dmdmdmdmdmmd..', '...dddddddddd...', '................'],
+}
+
+
+def small(name, pal, colour, rows=None):
     """The 8 px icon from its rows: the main ramp's d, m, l, and fixed greys and accents (upper-case D, M, L: grey)."""
     rp = getattr(pal, colour or OWN[name])
     key = {'d': rp[0], 'm': rp[1], 'l': rp[2], 'D': pal.grey[0], 'M': pal.grey[1], 'L': pal.grey[2], 'k': pal.grey[0],
            'w': pal.grey[2], 'G': pal.gold[1], 'Y': pal.gold[2], 'R': pal.red[1], 'B': pal.blue[1]}
-    return Img.from_rows(SMALL[name], key=key)
+    return Img.from_rows(rows or SMALL[name], key=key)
 
 
 _DRAW = {'heart': _heart, 'heart_half': lambda S, p, c: _heart(S, p, c, 'half'), 'heart_empty': lambda S, p, c: _heart(S, p, c, 'empty'),
@@ -287,6 +295,7 @@ def icon(name, size, pal, colour=None):
     if name not in _DRAW: raise KeyError('no icon %r: %s' % (name, ', '.join(ICONS)))
     if colour is not None and colour not in RAMPS: raise KeyError('colour is one of %s' % ', '.join(RAMPS))
     if size == 8: return small(name, pal, colour)
+    if size == 16 and name in LARGE: return small(name, pal, colour, LARGE[name])
     im = _DRAW[name](size, pal, colour)
     return outline_sel(im, pal)
 
