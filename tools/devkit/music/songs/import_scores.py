@@ -90,12 +90,47 @@ def ode():
     up = [(r, p + 12, d) for r, p, d in tune]
     return {'lead': tune, 'bass': bass, 'inner': inner, 'tenor': tenor}, {'lead': up, 'bass': bass2, 'inner': arp}
 
+# Greensleeves (traditional, English, 16th century), in A minor, 6/8: 12 rows a bar (a sixteenth a row, a dotted
+# quarter 6). The verse (8 bars), then the refrain that leaps to the high G (8 bars); None is a rest. Bar 16 ends with
+# the verse's pickup, so the song loops into it.
+GV = [[(72, 4), (74, 2), (76, 3), (77, 1), (76, 2)], [(74, 4), (71, 2), (67, 3), (69, 1), (71, 2)],
+      [(72, 4), (69, 2), (69, 3), (68, 1), (69, 2)], [(71, 4), (68, 2), (64, 4), (69, 2)]]
+GV_END = [[(72, 3), (71, 1), (69, 2), (68, 3), (66, 1), (68, 2)]]
+GREEN = (GV + GV[:2] + GV_END + [[(69, 6), (None, 6)]] +
+         [[(79, 6), (79, 3), (78, 1), (76, 2)], GV[1], GV[2], [(71, 4), (68, 2), (64, 6)],
+          [(79, 6), (79, 3), (78, 1), (76, 2)], GV[1]] + GV_END + [[(69, 6), (None, 4), (69, 2)]])
+GCHORD = {'Am': (45, 60, 64), 'G': (43, 59, 62), 'E': (40, 56, 59), 'C': (48, 55, 60)}
+GREEN_CHORDS = ['Am Am', 'G G', 'Am Am', 'E E', 'Am Am', 'G G', 'Am E', 'Am Am',
+                'C C', 'G G', 'Am Am', 'E E', 'C C', 'G G', 'Am E', 'Am Am']
+
+
+def greensleeves():
+    """Plain: the tune over a bass a dotted quarter and a harp's eighths up the chord. The variation: the same tune over a
+    bass in eighths and a running arpeggio of sixteenths (the drums are added by classics.py)."""
+    tune, bass, harp, bass2, arp = [], [], [], [], []
+    for b, (notes, halves) in enumerate(zip(GREEN, GREEN_CHORDS)):
+        r = b * 12
+        for p, d in notes:
+            if p: tune.append((r, p, d))
+            r += d
+        for h, c in enumerate(halves.split()):
+            lo, c1, c2 = GCHORD[c]; r = b * 12 + h * 6
+            bass.append((r, lo, 6))
+            for k, p in enumerate((c1, c2, c1 + 12)): harp.append((r + k * 2, p, 2))
+            for k in range(3): bass2.append((r + k * 2, lo + 12 * (k % 2), 2))
+            for k, p in enumerate((c1, c2, c1 + 12, c2 + 12, c1 + 12, c2)): arp.append((r + k, p, 1))
+    return {'lead': tune, 'bass': bass, 'inner': harp}, {'lead': tune, 'bass': bass2, 'inner': arp}
+
 
 def by_hand():
     plain, var = ode()
     write_score(os.path.join(HERE, 'scores', 'ode.txt'), 'ode', "Beethoven's Ode to Joy (by hand), 16 bars of 4/4, a row a sixteenth", plain, 256)
     write_score(os.path.join(HERE, 'scores', 'ode2.txt'), 'ode2', "the Ode to Joy, the variation over an arpeggio (by hand), a row a sixteenth", var, 256)
     print('ode, ode2: 256 rows each (by hand)')
+    plain, var = greensleeves()
+    write_score(os.path.join(HERE, 'scores', 'green.txt'), 'green', 'Greensleeves (by hand), 16 bars of 6/8, a row a sixteenth', plain, 192)
+    write_score(os.path.join(HERE, 'scores', 'green2.txt'), 'green2', 'Greensleeves, the variation over an arpeggio (by hand), a row a sixteenth', var, 192)
+    print('green, green2: 192 rows each (by hand)')
 
 
 def main(folder):

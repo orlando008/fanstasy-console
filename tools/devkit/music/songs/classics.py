@@ -1,4 +1,4 @@
-"""Seven public domain classics arranged for the NOVA-16 sound chip, from the note text in scores/ (import_scores.py
+"""Eight public domain classics arranged for the NOVA-16 sound chip, from the note text in scores/ (import_scores.py
 reads it out of public domain engravings; scores/SOURCES.md has each source and its licence):
 
     song 0  Mozart, Rondo alla Turca (K. 331), bars 1 to 32       a quick level, an action scene, a rhythm game
@@ -8,10 +8,11 @@ reads it out of public domain engravings; scores/SOURCES.md has each source and 
     song 4  Pachelbel, Canon in D, bars 1 to 24                   a title, a credits roll, a peaceful place
     song 5  Bach, Jesu, Joy of Man's Desiring (BWV 147), all      an ending, a church, a hall of heroes
     song 6  Beethoven, Ode to Joy (Symphony No. 9), by hand       a victory, a level cleared, a festival
+    song 7  Greensleeves (traditional), by hand                   a village, a tavern, a forest, a sad scene
 
     python3 tools/devkit/music/songs/classics.py carts/src/<name>/audio.json
 
-It writes a whole audio.json with these seven songs. To use one beside a cart's own songs, copy its instruments and its
+It writes a whole audio.json with these eight songs. To use one beside a cart's own songs, copy its instruments and its
 piece() into the cart's audio.py (a Medley, tools/devkit/music/medley.py). Songs use channels 0 to 6 (channel 7 holds
 the speed), so an SFX on channel 6 mutes the hats while it plays.
 """
@@ -73,4 +74,9 @@ four4 = {0: 'KICK', 4: 'HAT', 8: 'SNARE', 12: 'HAT'}
 m.song([m.piece(['ode'], 7, ode_parts), stop(beat(m.piece(['ode2'], 7, var_parts), 16, four4), [4]),
         stop(beat(m.piece(['ode2'], 6, up_parts), 16, four4), [4])],
        echo=(5, 4, 5, 8))
-a.write(sys.argv[1], songs=7)
+# Greensleeves twice: plain over a harp's eighths; then the tune doubled an octave down, over a running arpeggio and drums.
+green_parts = {'lead': (0, 'LEAD', 0), 'bass': (2, 'BASS', 0), 'inner': (3, 'KEYS', 0, 11)}
+green_var = {'lead': (0, 'LEAD', 0), 'lead@2': (1, 'KEYS2', -12, 11), 'bass': (2, 'BASS', 0), 'inner': (3, 'KEYS', 0, 10)}
+six8 = {0: 'KICK', 2: 'HAT', 4: 'HAT', 6: 'SNARE', 8: 'HAT', 10: 'HAT'}
+m.song([stop(m.piece(['green'], 8, green_parts), [1]), beat(m.piece(['green2'], 7, green_var), 12, six8)], echo=(7, 5, 6, 7))
+a.write(sys.argv[1], songs=8)
