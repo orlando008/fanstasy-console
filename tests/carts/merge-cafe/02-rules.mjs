@@ -57,6 +57,13 @@ ok([1, 2, 3, 4, 5, 6].map((t) => p.valueOf(item(0, t))).join() === '1,4,9,16,25,
   ok(coinAt(14) && coinAt(20), 'a crate beside open space wears its price, with a coin');
   ok(!coinAt(28) && !coinAt(34), 'a crate further in does not');
 }
+// The generators' badge: a sparkle in the corner of every generator's cell, and of nothing else.
+{
+  const v = newGame(4), q = v.probe(); v.run(3);
+  const sparkAt = (i) => { for (let y = 0; y < 28; y++) for (let x = 0; x < 32; x++) if (q.pget(16 + (i % 7) * 32 + x, 84 + Math.floor(i / 7) * 28 + y) === q.SPARK_C) return true; return false; };
+  ok(sparkAt(8) && sparkAt(12), 'every generator wears the sparkle');
+  ok(!sparkAt(2) && !sparkAt(14), 'items and crates do not');
+}
 // The cursor and the buttons.
 {
   const v2 = newGame(2), q = v2.probe(); v2.run(2);

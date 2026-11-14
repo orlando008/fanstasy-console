@@ -525,7 +525,7 @@ function draw() {
   if (state === 'recipes') drawRecipes();
   else drawPeople();
   drawProps();
-  if (state === 'play') { drawCrateTags(); drawHud(); }
+  if (state === 'play') { drawGenBadges(); drawCrateTags(); drawHud(); }
   else if (state === 'title') drawTitle();
   else if (state === 'cafe') drawCafeScreen();
   else if (state === 'ending') drawEnding();
@@ -635,6 +635,22 @@ function drawCoin(x, y, small) {
   line(x + 5, y + 3, x + 5, y + 7, COIN_RIM); pset(x + 3, y + 3, WHITE);
 }
 /** A crate the cursor can open now (beside open space) wears its price: a small coin and the coins it costs, gold when there are enough. */
+const SPARK = ['...#...', '...#...', '..#+#..', '##+++##', '..#+#..', '...#...', '...#...'], SPARK_C = 120, SPARK_HI = 121;
+/** A generator's badge: a small light-blue sparkle in the corner of its cell, the same on every generator (the user's idea), twinkling
+ * gently, each a little out of step with the others. */
+function drawSparkle(i, x, y) {
+  color(SPARK_C, 12, 24, 31); color(SPARK_HI, 29, 31, 31);
+  const big = ((clock + i * 23) % 90) < 60;
+  for (let j = 0; j < 7; j++) for (let k = 0; k < 7; k++) {
+    const c = SPARK[j][k];
+    if (c === '.' || (!big && (j === 0 || j === 6 || k === 0 || k === 6))) continue;
+    pset(x + k, y + j, c === '+' ? SPARK_HI : SPARK_C);
+  }
+  pset(x - 2, y + 7, SPARK_C);                                       // and a speck beside it
+}
+/** The generators' badges, on the board. */
+function drawGenBadges() { for (let i = 0; i < CELLS; i++) if (isGen(board[i]) && i !== held) drawSparkle(i, cellX(i) + 23, cellY(i) + 17); }
+
 function drawCrateTags() {
   const price = crateCost(), have = coins >= price, t = String(price), w = 7 + 2 + t.length * 8;
   for (let i = 0; i < CELLS; i++) {
@@ -714,7 +730,7 @@ function drawRecipes() {
     else if (st === 1) drawPic(picOf(item(line, tier)), cellX(cell), cellY(cell) - 1, { prio: 2, pal: 7 });   // a silhouette (palette 7 all dark)
     else print('?', cellX(cell) + 13, cellY(cell) + 10, DIM);
   }
-  for (let line = 0; line < 5; line++) drawPic(30 + line, cellX(line * COLS), cellY(line * COLS) - 1, { prio: 2 });
+  for (let line = 0; line < 5; line++) { drawPic(30 + line, cellX(line * COLS), cellY(line * COLS) - 1, { prio: 2 }); drawSparkle(line, cellX(line * COLS) + 23, cellY(line * COLS) + 17); }
   const sel = recSel, line = (sel / 6) | 0, tier = sel % 6 + 1, cell = line * COLS + tier, st = recState(line, tier);
   sprite(ART.sprites[(clock >> 4) & 1 ? 'cursor1' : 'cursor0'], cellX(cell), cellY(cell) - 2, { prio: 3 });
   panel(8, 30, 240, 50);
