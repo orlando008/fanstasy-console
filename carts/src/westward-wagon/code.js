@@ -548,7 +548,7 @@ function reach(k) {
       const how = ['ford', 'float', m.ferry ? 'ferry' : 'wait', 'wait'][c];
       if (how === 'wait') { dayOnTrail(J, true); return ask(); }
       const done = (r) => { fx(/LOST|DROWN|NO MONEY/.test(r) ? SFX.bad : SFX.good); if (/NO MONEY/.test(r)) return showCard(m.name, [r], null, ask); showCard(m.name, sentences(r), null, () => { if (J.done) endJourney(); }); };
-      if (how === 'float') return toFloat(m.name, clamp(Math.round(m.width * 0.6), 360, 660), Math.max(14, Math.round(40 - m.depth * 4)), 1.6 + m.depth * 0.1, (hits) => done(crossRiver(J, 'float', m, hits)));
+      if (how === 'float') return toFloat(m.name, clamp(Math.round(m.width * 0.6), 360, 660), Math.max(18, Math.round(40 - m.depth * 4)), 1.6 + m.depth * 0.1, (hits) => done(crossRiver(J, 'float', m, hits)));
       done(crossRiver(J, how, m));
     });
     return ask();
@@ -557,7 +557,7 @@ function reach(k) {
     return showCard(m.name, ['THE TRAIL DIVIDES.'], m.choices, (c) => {
       if (m.name === 'SOUTH PASS') J.route = c + 1;
       else if (c === 1) { J.money = Math.max(0, J.money - BARLOW_TOLL); for (let d = 0; d < BARLOW_DAYS; d++) dayOnTrail(J, true); J.log.push('TOOK THE BARLOW ROAD.'); }
-      else { J.log.push('RAFTED DOWN THE COLUMBIA.'); toFloat('THE COLUMBIA RIVER', 1200, 15, 2.4, (hits) => { const r = floatOutcome(J, hits, true); fx(hits ? SFX.bad : SFX.good); showCard('THE COLUMBIA RIVER', sentences(r), null, () => { if (J.done) endJourney(); }); }); }
+      else { J.log.push('RAFTED DOWN THE COLUMBIA.'); toFloat('THE COLUMBIA RIVER', 1200, 18, 2.4, (hits) => { const r = floatOutcome(J, hits, true); fx(hits ? SFX.bad : SFX.good); showCard('THE COLUMBIA RIVER', sentences(r), null, () => { if (J.done) endJourney(); }); }); }
     });
   }
   showScene(m.name);                                                // its painted scene, when it has one (step 7 paints the rest)

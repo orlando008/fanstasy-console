@@ -64,7 +64,7 @@ export function pad(vm, p) {
   if (p.state === 'float') return floatPad(p);
   if (p.state === 'trail') {
     const left = 2040 - J.mile, days = left / 14, need = 3 * p.alive(J).length * days;
-    if ((opts.hunt ?? 1) && J.bullets >= 5 && J.food < Math.min(need, 400) && p.huntedOn !== J.days) { p.huntedOn = J.days; return goMenu(p, 5); }   // hunt when the food runs short
+    if ((opts.hunt ?? 1) && J.bullets >= 5 && J.food < need && J.days - (p.huntedOn ?? -9) >= 3) { p.huntedOn = J.days; return goMenu(p, 5); }   // hunt (every third day at most) when the food will not last
     const ill = J.party.some((x) => x.alive && (x.ill || x.health < 40));
     const wantRations = J.food > need ? 0 : J.food > need * 0.6 ? 1 : 2;
     p.rested = p.rested || 0;
@@ -101,13 +101,20 @@ function huntPad(p) {
   if (!cool && Math.abs(tx - h.aim[0]) < 5 && Math.abs(ty - h.aim[1]) < 5) { cool = 18; tap = 0; return m | press('A'); }
   return m;
 }
-// The float: steer away from the nearest rock coming at the wagon, towards the side with more water; otherwise drift to the middle.
+// The float: of the lanes across the water, steer for the one that the rocks coming (the nearer, the more) leave clearest, and near
+// where the wagon is: what a player looking ahead does.
 function floatPad(p) {
   const f = p.flt, Y = p.FLOAT_Y, [l, r] = p.banks(f, Y);
-  const threat = f.rocks.filter((o) => !o.hit && o.y < Y + 4 && o.y > Y - 80 && Math.abs(o.x - f.x) < o.r + 12).sort((a, b) => b.y - a.y)[0];
-  let goal = (l + r) / 2;
-  if (threat) goal = threat.x - l > r - threat.x ? threat.x - threat.r - 16 : threat.x + threat.r + 16;
-  if (goal < f.x - 3) return M('LEFT'); if (goal > f.x + 3) return M('RIGHT');
+  const ahead = f.rocks.filter((o) => !o.hit && o.y < Y + 6 && o.y > Y - 110);
+  let best = f.x, bestCost = Infinity;
+  for (let x = l + 10; x <= r - 10; x += 3) {
+    let cost = Math.abs(x - f.x) * 0.01;
+    for (const o of ahead) { const gap = Math.abs(o.x - x) - o.r - 8; if (gap < 6) cost += (6 - gap) * (130 - (Y - o.y)) / 20; }
+    const reach = Math.abs(x - f.x) / 2.2, soon = ahead.filter((o) => (Y - o.y) / f.current < reach && Math.abs(o.x - (x + f.x) / 2) < o.r + 10).length;   // a rock in the way of getting there
+    cost += soon * 30;
+    if (cost < bestCost) { bestCost = cost; best = x; }
+  }
+  if (best < f.x - 3) return M('LEFT'); if (best > f.x + 3) return M('RIGHT');
   return 0;
 }
 
