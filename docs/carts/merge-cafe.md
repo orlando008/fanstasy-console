@@ -1,7 +1,7 @@
 # Merge Café: Cart Specification
 
-**Version:** 0.3 (step 1 built; the art proof sent to the user)
-**Status:** Playable board: merging, generators, crates, selling and the save; the bakery line drawn, the other lines placeholders. Next: the user's answer on the art proof (step 2)
+**Version:** 1.0 (built: all nine steps of section 15)
+**Status:** Released in the Library (`carts/merge-cafe.nova.png`). Open: a person's check of the pace and of the feel (section 16)
 **Cart source:** `carts/src/merge-cafe/` → `carts/merge-cafe.nova`
 
 ---
@@ -91,41 +91,45 @@ Generators come in as the café grows (5.5): the grain sack and the grinder from
 ### 5.3 The board, crates and selling
 
 - **35 cells.** At the start, the top two rows (14 cells) are open, with the two generators on the second row and two wheat to merge, and the other 21 are under **crates**. A new café starts with 10 coins.
-- **Crates:** A on a crate next to an open cell shows its price, and A again opens it. The price is `10 + 5 x crates opened so far` coins, so the board grows in steps through the game, and the last of the 21 crates costs 110.
+- **Crates:** A on a crate next to an open cell shows its price, and A again opens it. The price is `10 + 10 x crates opened so far` coins, so the board grows in steps through the game, and the last of the 21 crates costs 210 (2,310 coins for all of them).
 - **Selling:** SELECT, then A, on an item gives its value in coins. The cell empties.
 - **No game over:** a full board means sell something, serve an order or open a crate.
 
 ### 5.4 Orders and customers
 
 - **Three customers** stand at the counter, each with an **order** of 1 or 2 items, from the lines that are open.
-- **The tiers wanted** grow with the café: in area `a`, from 1 to 6 areas, a wanted tier is `1 + rndi(0, min(5, a + 1))`, weighted towards the middle.
-- **Reward:** coins equal to the sum of the items' values x 2, and **stars**: 1 for an order whose tiers add up to 4 or less, 2 up to 7, 3 above.
+- **The tiers wanted** grow with the café: with `a` areas done, a tier between `TIER_LOW[a]` and `TIER_TOP[a]` (1 to 3 at first; 1 to 4, 1 to 5, 2 to 6, 2 to 6, 3 to 6 as the areas are done), the mean of two random picks, so the middle is likelier. From two areas done, a passer-by asks for **two items** three times in ten.
+- **Reward:** coins equal to the items' value (5.1), and **stars**: 1 for an order whose tiers add up to 4 or less, 2 up to 7, 3 above.
 - **Serving:** drop the item on the bubble. An order of two takes the items one at a time; the bubble ticks off the first.
-- **A customer leaves when served,** and a new one comes in after 3 seconds. Nobody leaves unserved: an order waits as long as it takes.
-- **B on a bubble** shows the order's reward, and SELECT on it **swaps** the order for a new one (free, at most once every 30 seconds), so the game never blocks on an order the board cannot make yet.
+- **A customer leaves when served,** and a new one comes in after 3 seconds (180 frames). Nobody leaves unserved: an order waits as long as it takes.
+- **UP from the top row** puts the cursor on the bubble of the nearest place; A on it with an item in hand hands it over (the wrong item is refused with a knock); A or B with nothing in hand shows the order (who, what, the reward), and SELECT on it **swaps** the order for a new one (free, at most once every 30 seconds), so the game never blocks on an order the board cannot make yet.
 
-**Regulars.** There are five named regulars, one a line, each met when their line opens. Each comes back every few orders with their **favourite** (the top tiers of their line), which gives **double stars**. Each time a regular is served they say the next of their **6 story lines**, so their story unfolds over the campaign:
+**Regulars.** There are five named regulars, one a line, each met when their line opens. Every **third** customer is a regular (taking turns among those whose line is open), with their **favourite**: the best of their line the café is asked for now (`TIER_TOP`), which gives **a star more**. Each time a regular is served they say the next of their **6 story lines**, so their story unfolds over the campaign:
 - Mabel, a retired baker.
 - Theo, a sleepy night-shift nurse who lives on coffee.
 - Pip, a child with a sweet tooth.
 - Rosa, who runs the market's fruit stall.
 - Mr. Finch, a fussy collector of teacups.
 
-**The daily special.** Every **10 orders** served, the next customer is the **daily special**: a gold bubble asking for one item two tiers above the usual, worth **3 x** the coins and stars.
+**The daily special.** Every **10 orders** served, the next customer is the **daily special**: a gold bubble asking for one item two tiers above the usual, worth **twice** the coins and stars.
 
 ### 5.5 The café: areas, tasks and decorating
 
-- **Six areas, restored in order:**
-  1. the counter
-  2. the tables and chairs
-  3. the windows and curtains
-  4. the floor and walls
-  5. the lights and plants
-  6. the terrace
-- **Tasks:** each area has **4 tasks**, 24 in all, such as "fix the counter top", "a new coffee machine" or "hang the lamps". A task costs stars, from 2 in area 1 to 8 in area 6: about 300 stars over the campaign.
-- **The picture:** a task paid for changes the café's picture: a part of the room is redrawn, shabby to restored.
-- **Decorating:** when a task is done the player chooses its **style**, from 2 or 3 (a wooden or a marble counter; striped or lace curtains). The style can be changed at any time from the café screen, for free.
-- **Finishing an area** opens the next one with a short story card, brings in a new generator and its regular (5.2), and gives 10 coins.
+- **Six areas of four tasks, restored in order** (the tasks of an area in any order):
+
+| Area | Tasks (styles) | Stars a task |
+|---|---|---|
+| The counter | mend the counter (oak, walnut, mint), a coffee machine (copper, chrome), a cake display, a cash register | 8 |
+| The walls | patch the cracks, paint the walls (sage, butter, rose), stain the wood (honey, walnut, white), a menu board | 12 |
+| The window | new glass, curtains (stripes, lace), a flower box, an open sign | 16 |
+| The lights | sweep the cobwebs, a new lamp (brass, glass), fairy lights, a plant | 24 |
+| The shelf | fix the shelf, jars of sweets, a clock, pictures (flowers, the sea) | 32 |
+| The reopening | a record player, bunting, a doorbell (it chimes when a customer comes in), the grand reopening | 40 |
+
+  528 stars in all.
+- **The picture:** each task changes the café. A **repair** (the cracks, the glass, the cobwebs, the bulb under the new lamp, the shelf) swaps a few of the café's tiles for their repaired version (art.py draws the room again with each repair and keeps the tiles that changed: `rom/fixes.bin` says where they go). **Paint, stain and the counter** are colours (a ramp made from the style's colour). **Furniture** (the machine, the register, the curtains, the flower box, the lamp, the plant, the jars, the record player; the cake display is the layer cake itself) are pictures in the pool, on the counter, the wall and the shelf. **Decorations** (the menu board on the counter's front with today's special, the open sign, fairy lights, a clock that moves, pictures, bunting) are drawn on the overlay.
+- **Decorating:** a task with styles is done in its first style; LEFT and RIGHT on it in the café screen change it, at any time, for free.
+- **Finishing an area** gives 20 coins and a card, and opens the next line: its generator comes onto the board (on the empty cell nearest the middle, as soon as there is one) and its regular starts coming in (5.2).
 - **The reopening:** after area 6, the ending. Then **free play**: the orders go on, with all six tiers wanted.
 
 ### 5.6 The encyclopedia
@@ -164,10 +168,12 @@ There is no score. Progress is the café, the stars and the encyclopedia. The ti
 
 ## 11. Audio
 
-**Songs** (cosy café jazz on the new chip: the electric piano, the sampled bass walking, brushed drums from soft hats and snare, a little echo):
-- 0: the title.
-- 1 and 2: the café, two calm loops in turn, a medley so a long session is not one short loop.
-- 3: the reopening.
+**Songs** (cosy café jazz on the new chip, written by `audio.py` from chord charts: a bar is 12 rows, three to a beat, so the eighths swing; speed 12, 100 bpm):
+- 0: the title: the first piece, the piano and bass alone, then a quiet flute.
+- 1: the café: two pieces in turn (F major, then B flat), 2 minutes 34 before it loops, so a long session is not one short loop.
+- 2: the grand reopening (C major, a little quicker, the whole band).
+
+The band: a flute's tune from the chord tones (attack soft, octave 4 to 5), the electric piano comping the shell of each chord (the third and the seventh, a sixth for a major chord so it does not rub against the tune) on the Charleston rhythm, a walking bass (root, third or fifth, fifth, a step into the next chord), a ride from the hats (ding, ding-ga), brushes on 2 and 4 from a soft snare, a soft kick every four bars. Measured: medians 0.038 to 0.044 RMS, the flute 0.026 and 0.58 to 0.61 of the mix, pierce at most 0.008 (`loud.mjs --check` passes); `clash.py` finds no clash (it found the major sevenths and notes held across the bar line, both fixed).
 
 Songs use channels 0 to 5, and effects take turns on 6 and 7.
 
@@ -211,8 +217,9 @@ The art is made in code by `carts/src/merge-cafe/art.py`. The items use `sculpt.
 | 16 | Orders served (the daily special counts from it) |
 | 17 | The crates opened |
 | 18 | Each regular's story line heard (3 bits each, 5 regulars) |
-| 20 to 31 | The three orders (each: who, up to 2 items, what is ticked off) |
-| 32 | The seed of the order stream |
+| 20 to 22 | The three places' orders (each in one slot: who, up to 2 items, what was handed over, special, someone there) |
+| 23 | Customers come in so far (every third is a regular) |
+| 24 | Flags: the next customer is the special; the café has reopened |
 | 40 to 255 | Reserved |
 
 The game saves after every change (a merge, an order, a task), so turning the console off loses nothing.
@@ -221,11 +228,11 @@ The game saves after every change (a merge, an order, a task), so turning the co
 
 | Asset | Budget |
 |---|---|
-| Code | about 35 KB of the 64 KB limit (`node tools/check.js merge-cafe`); the story text in the ROM |
-| Tiles | **the tight one**, solved by a **picture pool**: every 32 x 32 picture (items, generators, the crate, the customers) is in the ROM (`rom/pics.bin`, written by `art.py`: a palette byte and 512 bytes each), and `code.js` copies the ones the screen needs into 36 sprite slots (`sset`), the least recently used first. 30 items at 16 tiles each would have taken 480 tiles; any number of pictures now costs the 576 tiles of the pool. After step 1: BG 268 of 383 (the café 150, the board 70, the logo, the bubble), sprites 609 of 640 (the pool, the cursor, a spark). The café's restored versions (step 5) have the 115 BG tiles left, so they must repeat (planks, tiles) or be palette changes |
-| Sprites | one 32 px sprite a cell (35 at most, 14 on a line where the 28 px rows overlap), the held item, the cursor, the customers and their orders, sparks: about 50 of 128. If a screen ever needs more than 36 different pictures at once (every item and generator on the board, and the customers), the last ones wait a frame (`picSlot` returns -1) |
-| ROM | the pictures, 19.5 KB for 38 (about 30 KB with every customer); the story text, about 4 KB |
-| Songs / SFX | 4 songs; about 30 of 64 patterns; about 25 effects; sample RAM: the electric piano, the bass, the drums, about 12 KB |
+| Code | 45 KB of source, 38 KB in the cart with `"strip": true` (comments and indentation left out), of the 64 KB limit (`node tools/check.js merge-cafe`); the regulars' 30 story lines are in the code (2 KB) |
+| Tiles | **the tight one**, solved by a **picture pool**: every 32 x 32 picture (items, generators, the crate, the customers, the café's furniture) is in the ROM (`rom/pics.bin`, written by `art.py`: a palette byte and 512 bytes each), and `code.js` copies the ones the screen needs into 36 sprite slots (`sset`), the least recently used first. 63 pictures at 16 tiles each would have taken 1,008 tiles, the whole sheet; they cost the 576 tiles of the pool. In all 896 of 1,024: BG 287 of 383 (the café 150, its repairs 19, the counter, the board 70, the logo, the bubble), sprites 609 of 640 (the pool, the cursor, a spark) |
+| Sprites | one 32 px sprite a cell (35 at most, 14 on a line where the 28 px rows overlap), the held item, the cursor, three customers, three orders, up to nine pieces of furniture, sparks: about 60 of 128. The pool is drawn board first, so if a screen ever needs more than 36 different pictures at once (every item and generator on the board, the customers and the furniture), it is a piece of furniture that waits a frame (`picSlot` returns -1) |
+| ROM | 32 KB: the pictures 32.3 KB (63), the customers' colours 240 bytes, the repairs' places 31 bytes |
+| Songs / SFX | 3 songs; 17 of 64 patterns; 19 effects; sample RAM 11.7 KB (the flute, the electric piano, the bass, the snare and hats, a kick, and the effects' celesta, marimba and pluck) |
 
 ## 15. Implementation plan
 
@@ -256,6 +263,14 @@ The game saves after every change (a merge, an order, a task), so turning the co
 
 **Step 3, built:** the other four lines and their generators (`items.py`), each line in a sprite palette of three or four ramps: coffee (beans, a scoop of grounds, an espresso, a cappuccino, a latte in a glass, a pot with a cup; a box grinder with a brass hopper), dairy (a drop of milk, a cream jug, whipped cream, an ice cream cone, a sundae, a parfait; a milk churn), fruit (cherries, strawberries, a berry bowl, a jam jar, a fruit tart, a lattice pie; a wicker basket), tableware (a spoon, a teacup, a teapot, a tray, a cake stand, a tea service; a painted dresser). Six were redrawn after a first look: the latte read as a box, the pot as a figure, the grinder as a gourd, the strawberries as one blob, the cup as a gravy boat and the dresser as a ball. They cost no tiles (the picture pool): 38 pictures in 19.5 KB of ROM.
 
+**Steps 4 to 6, built:** the customers and their orders (5.4): three places at the counter, a customer every 3 seconds where one has left, every third a regular, the special every 10 orders, two items from the third area; the cursor goes UP from the board to the bubbles; serving, the rewards, swapping, the order's card. The regulars' 30 story lines, a card each time one is served. The café (5.5): the six areas and their tasks, bought in the café screen (from the pause menu: CAFE), the repairs, colours, furniture and decorations, the styles, a new line and its generator with each area, the grand reopening (its own screen and song) and the café going on after it. The recipes (5.6), from the pause menu or the title: every item found, the next of each line as a silhouette (sprite palette 7 made dark while it shows), the regulars met. To fit them, the sprite palettes were shared out again: 0 to 4 the item lines (the crate, the cursor and the furniture are drawn in them), 5 to 7 the three places at the counter, each loaded with its customer's colours (`rom/people.bin`) when they come in. The eight customers (five regulars, three passers-by) are busts drawn from one template (hair, glasses, a cap, an apron or a tie). Tests: `04-orders` (who comes, what they ask for, the rewards, serving, two items, the wrong item refused, stories, the special, swapping, the regulars' turns), `05-cafe` (the costs, buying, a new line, a repair changing the map, the styles through the café screen, the reopening, the save, the recipes).
+
+**Step 7, the art pass:** the gallery (11 screens) was looked through and these fixed: the coins and stars went under the third bubble (now on the counter's front), a cream text colour was translucent (an overlay colour over 192), the item and order cards were hidden by a test's held item, the menu board's lines overlapped, the café screen's help ran off its panel, the restored sage paint was too close to the shabby one, and "a new sign" had no place on a wall full of customers: it is now **a doorbell** that chimes when a customer comes in.
+
+**Step 8, the audio:** the three jazz songs and 19 effects of section 11.
+
+**Step 9, built:** the bot plays the whole campaign with the buttons at a person's pace (`pace` 12: five presses a second), serving, merging towards what is wanted, opening crates, closing the cards, buying each task when it can (through the probe). Prices were tuned from it: at first (tasks 3 to 12 stars, rewards twice the value, the favourite and special doubling and tripling) it reopened the café in **21 minutes**; now (tasks 8 to 40 stars, 528 in all; coins the value; a star more for a favourite, the special doubled; crates 10 more each) it takes **86 minutes** (two seeds: the areas done at 2, 6, 11 or 12, 29, 53 or 54 and 86 minutes; about 230 orders served, 9 crates opened, 3,200 merges). A person who stops to think will take about twice that: 2 to 3 hours. Nothing ever left it stuck. The label (the title), the PNG cart, the Library entry, a README row and the playbook's section 14.
+
 Each step: build it, run `node tools/check.js merge-cafe` and `node tools/test.js merge-cafe`, write its **Built** and **Results** notes under its number here, commit and push.
 
 ## 16. Open questions
@@ -275,4 +290,6 @@ Defaults I chose that you did not confirm (all easy to change):
   - the campaign is aimed at 2 to 3 hours.
 - **Swapping an order** is free, once every 30 seconds, so the game never blocks on an order the board cannot make.
 - **No energy:** you chose board space only. If generators feel too free, a gentle cooldown is the first thing to try.
-- **The tile budget** is tight (section 14): customers may have to be streamed from the ROM.
+- **The tile budget** was solved with the picture pool (section 14).
+- **Coins pile up** once the crates are open (the bot ends with about 5,700): a use for them later in the campaign (a decoration shop, a generator that gives two at once) would give them meaning. Not built: say if you want one.
+- **A new sign** became **a doorbell** (there was nowhere on the wall for a sign that the customers would not cover).

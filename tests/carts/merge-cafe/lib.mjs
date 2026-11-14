@@ -8,11 +8,15 @@ const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; }, get clock() { return clock; },
   get board() { return board; }, set board(b) { board = b; }, get coins() { return coins; }, set coins(v) { coins = v; }, get stars() { return stars; }, set stars(v) { stars = v; },
   get found() { return found; }, set found(v) { found = v; }, get cratesOpened() { return cratesOpened; }, set cratesOpened(v) { cratesOpened = v; },
-  get cur() { return cur; }, set cur(v) { cur = v; }, get held() { return held; }, get card() { return card; }, get ask() { return ask; }, get msg() { return msg; },
+  get cur() { return cur; }, set cur(v) { cur = v; }, get held() { return held; }, get card() { return card; }, get orderCard() { return orderCard; },
+  get spots() { return spots; }, set spots(v) { spots = v; }, get served() { return served; }, get tasks() { return tasks; }, set tasks(v) { tasks = v; }, get story() { return story; }, get storyCard() { return storyCard; }, set storyCard(v) { storyCard = v; },
+  get arrived() { return arrived; }, get specialDue() { return specialDue; }, get reopened() { return reopened; }, get swapAt() { return swapAt; }, get nextAt() { return nextAt; }, get cafePage() { return cafePage; }, get cafeSel() { return cafeSel; }, get recSel() { return recSel; }, get ask() { return ask; }, get msg() { return msg; },
   get titleSel() { return titleSel; }, get pauseSel() { return pauseSel; }, get confirm() { return confirm; }, get picLoads() { return picLoads; }, get slotPic() { return slotPic; },
-  get ART() { return ART; },
+  get ART() { return ART; }, mget: (x, y) => mget(x, y),
   SFX, SONG, COLS, ROWS, CELLS, EMPTY, GEN0, CRATE, NAMES, POOL, TIER2_CHANCE, CRATE_BASE, CRATE_STEP, START_COINS, BOARD_SLOT, COINS_SLOT,
   item, isItem, isGen, lineOf, tierOf, nameOf, valueOf, picOf, newBoard, nearestEmpty, dropKind, crateOpenable, crateCost,
+  PEOPLE, AREAS, TASK_COST, TIER_TOP, TIER_LOW, SPECIAL_EVERY, REGULAR_EVERY, SWAP_WAIT, ARRIVE, SPOT_COL, areasDone, linesOpen, makeOrder, reward, taskDone, styleOf, doneKind, styleName,
+  arrive: (k) => arrive(k), hand: (k) => hand(k), serve: (k) => serve(k), swapOrder: (k) => swapOrder(k), buyTask: (t) => buyTask(t), applyCafe: () => applyCafe(), toCafe: () => toCafe(), toRecipes: (f) => toRecipes(f), setHeld: (i) => { held = i; },
   generate: (i) => generate(i), drop: (a, t) => drop(a, t), sell: (i) => sell(i), press: (i) => press(i), saveGame: () => saveGame(), loadGame: () => loadGame(), newCafe: () => newCafe(),
 }));`;
 

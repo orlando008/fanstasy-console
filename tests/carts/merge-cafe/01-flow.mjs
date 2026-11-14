@@ -12,7 +12,7 @@ let save;
   p.cur = 2; vm.press('A'); p.cur = 4; vm.press('A');
   ok(p.board[4] === p.item(0, 2), 'a merge on the board (two wheat into flour)');
   vm.press('START'); ok(p.paused, 'START pauses');
-  vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); ok(p.state === 'title', 'QUIT TO TITLE');
+  vm.press('DOWN'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); ok(p.state === 'title', 'QUIT TO TITLE (the fourth line of the pause menu)');
   save = Int32Array.from(vm.m.save);
 }
 {

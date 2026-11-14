@@ -46,7 +46,7 @@ ok([1, 2, 3, 4, 5, 6].map((t) => p.valueOf(item(0, t))).join() === '1,4,9,16,25,
   ok(!p.crateOpenable(p.board, 28) && p.crateOpenable(p.board, 14), 'a crate opens only next to an open cell');
   p.press(14); ok(p.ask && p.ask.kind === 'crate' && p.board[14] === CRATE, 'A on a crate asks first, with its price');
   p.press(14); ok(p.board[14] === EMPTY && p.coins === 90 && p.cratesOpened === 1, 'A again opens it for 10 coins');
-  ok(p.crateCost() === 15, 'and the next costs 5 more');
+  ok(p.crateCost() === 20, 'and the next costs 10 more');
   p.coins = 3; p.press(15); p.press(15); ok(p.board[15] === CRATE && p.coins === 3, 'not without the coins');
   p.board[20] = item(4, 3); const c0 = p.coins; p.sell(20); ok(p.coins === c0 + 9 && p.board[20] === EMPTY, 'selling a teapot gives 9 coins and empties its cell');
 }
