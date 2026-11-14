@@ -515,7 +515,7 @@ def _letters(im, text, x0, y0, pal):
 def button(name, size, pal, colour=None):
     """A button prompt (one of BUTTONS) for 'press A' screens and tutorials: at 16 px a round A or B, a START pill (48 x 16), the
     d-pad, or the d-pad with the arm `up`, `down`, `left` or `right` lit; at 8 px A, B and four arrows (no START or d-pad).
-    A and B are red and blue unless colour= says; the lit arm is gold."""
+    A and B are red and blue, START blue, unless colour= says; the lit arm is gold."""
     if name not in BUTTONS: raise KeyError('no button %r: %s' % (name, ', '.join(BUTTONS)))
     Img = _img()
     if size == 8:
@@ -533,12 +533,13 @@ def button(name, size, pal, colour=None):
         im = small('btn', pal, colour or ('red' if name == 'a' else 'blue'), _BTN16)
         return _letters(im, name.upper(), 4, 3, pal)
     if name == 'start':                    # 48 x 16: the word needs 40 px (art.big_sprite, or a scene)
-        rp = getattr(pal, colour or 'grey')
+        rp = getattr(pal, colour or 'blue')    # blue by default: light letters on grey are hard to read
         im = _img().make(48, 16, lambda x, y: 0)
         pill = lambda x, y: 1 <= y <= 14 and (7 <= x <= 40 or (x - 7.5) ** 2 + (y - 7.5) ** 2 <= 42 or (x - 40.5) ** 2 + (y - 7.5) ** 2 <= 42)
         for y in range(16):
             for x in range(48):
-                if pill(x, y): im.px[y][x] = rp[0] if not all(pill(x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)) else (rp[2] if y < 6 else rp[1])
+                # mid grey under the white letters (a light top half washed their tops out), a thin light rim along the top
+                if pill(x, y): im.px[y][x] = rp[0] if not all(pill(x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1)) else (rp[2] if not pill(x, y - 2) else rp[1])
         return _letters(im, 'START', 4, 4, pal)
     im = small('btn', pal, colour or 'grey', _DPAD)
     if name in _ARMS:
