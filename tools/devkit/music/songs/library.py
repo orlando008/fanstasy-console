@@ -112,7 +112,18 @@ def greensleeves(a, m):
     m.song([stop(m.piece(['green'], 8, parts(plain)), [1]), beat(a, m.piece(['green2'], 7, parts(var)), 12, six8)], echo=(7, 5, 6, 7))
 
 
-CLASSICS = {f.__name__: f for f in (alla_turca, entertainer, toccata, minute_waltz, canon, jesu, ode_to_joy, greensleeves)}
+def william_tell(a, m):
+    """Three times through the gallop: plain over its oom-pa; with drums and the tune doubled an octave down; with drums
+    and a second voice a third under the tune."""
+    plain = {'lead': (0, 'LEAD', 0, 13), 'bass': (2, 'BASS', 0), 'inner': (3, 'KEYS', 0, 10), 'tenor': (4, 'KEYS2', 0, 10)}
+    doubled = dict(plain, **{'lead@2': (1, 'KEYS', -12, 11)})
+    thirds = dict(plain, harm=(1, 'KEYS', 0, 12))
+    hits = {0: 'KICK', 1: 'HAT', 2: 'SNARE', 4: 'KICK', 5: 'HAT', 6: 'SNARE'}       # the drums gallop too
+    m.song([stop(m.piece(['tell'], 5, parts(plain)), [1, 5, 6]), beat(a, m.piece(['tell'], 5, parts(doubled)), 8, hits),
+            beat(a, m.piece(['tell'], 5, parts(thirds)), 8, hits)], echo=(4, 3, 4, 9))
+
+
+CLASSICS = {f.__name__: f for f in (alla_turca, entertainer, toccata, minute_waltz, canon, jesu, ode_to_joy, greensleeves, william_tell)}
 SONGS = ['rush_d'] + list(CLASSICS)
 
 

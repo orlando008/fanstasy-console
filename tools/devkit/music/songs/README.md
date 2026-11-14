@@ -14,6 +14,7 @@ game's `audio.py`; it comes in with its own instruments and plays as one of the 
 | `jesu` | Bach, *Jesu, Joy of Man's Desiring* (BWV 147), the whole piece | 2 min 32 s | an ending, a church, a hall of heroes |
 | `ode_to_joy` | Beethoven, the *Ode to Joy* (Symphony No. 9): plain, a variation over drums, then a step up | 85 s | a victory, a level cleared, a festival |
 | `greensleeves` | *Greensleeves* (traditional): plain over a harp, then a variation over drums | 48 s | a village, a tavern, a forest, a sad scene |
+| `william_tell` | Rossini, the *William Tell* overture's gallop, 8 bars three times: plain, doubled over galloping drums, in thirds | 16 s | a chase, a race, a horse ride, a cartoon dash |
 
 Every song loops. Before a game ships one, check its licence in `scores/SOURCES.md`: the *Canon*'s notes come from a
 CC BY file, so the game credits its engraver, and the source of *Jesu, Joy*'s file is still to be confirmed.
@@ -51,7 +52,7 @@ a.write(sys.argv[1], songs=4)
 
 1. **The notes.** For a public domain piece with a public domain file (Mutopia, as collected in `marmooo/classical-midi-db`),
    add the excerpt to `PIECES` in `import_scores.py` (or `PLAYED` for a performance played in by hand). For a tune
-   written out by hand, add it there as `ODE` and `GREEN` are. Run `python3 tools/devkit/music/songs/import_scores.py
+   written out by hand, add it there as `ODE`, `GREEN` and `TELL` are. Run `python3 tools/devkit/music/songs/import_scores.py
    [folder with the MIDI files]` to write `scores/<name>.txt`, and record the source and licence in `scores/SOURCES.md`.
 2. **The arrangement.** Add a function to `library.py` (which voice plays on which channel, with which instrument, at
    what speed) and put it in `CLASSICS`; a song made another way (as `rush_d.py` is) needs an `add(a)` of its own.

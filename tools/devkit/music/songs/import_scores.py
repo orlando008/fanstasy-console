@@ -121,6 +121,37 @@ def greensleeves():
             for k, p in enumerate((c1, c2, c1 + 12, c2 + 12, c1 + 12, c2)): arp.append((r + k, p, 1))
     return {'lead': tune, 'bass': bass, 'inner': harp}, {'lead': tune, 'bass': bass2, 'inner': arp}
 
+# Rossini, the William Tell overture (1829), the finale's gallop, in E, 2/4: 8 rows a bar (a sixteenth a row). Its
+# "da-da-dum" is two sixteenths and an eighth on one note. Bars 1 to 6 are the gallop's head as it is always heard;
+# bars 7 and 8, the cadence, are the part least sure from memory (up the chord of E, then down to it through the dominant).
+def gallop(p): return [(p, 1), (p, 1), (p, 2)]
+TELL = [gallop(71) + gallop(71), [(71, 1), (71, 1), (76, 2), (78, 2), (80, 2)],
+        gallop(71) + gallop(71), [(71, 1), (71, 1), (80, 2), (76, 2), (80, 2)],
+        gallop(71) + gallop(71), [(71, 1), (71, 1), (76, 2), (78, 2), (80, 2)],
+        [(76, 2), (80, 2), (83, 2), (81, 2)], [(78, 2), (75, 2), (76, 4)]]
+TCHORD = {'E': (40, 56, 59), 'B7': (47, 51, 57), 'A': (45, 57, 61)}
+TELL_CHORDS = ['E E', 'E E', 'B7 B7', 'E E', 'E E', 'E E', 'E A', 'B7 E']
+E_MAJOR = [4, 6, 8, 9, 11, 1, 3]
+
+
+def william_tell():
+    """The gallop over an oom-pa (the bass on the beat, the chord on the off-beat eighths), with a second voice a third
+    under the tune in E major (`harm`, for the last time through)."""
+    tune, bass, inner, tenor, harm = [], [], [], [], []
+    for b, (notes, halves) in enumerate(zip(TELL, TELL_CHORDS)):
+        r = b * 8
+        for p, d in notes:
+            tune.append((r, p, d))
+            q = p - 1
+            while q % 12 not in E_MAJOR: q -= 1
+            q -= 1
+            while q % 12 not in E_MAJOR: q -= 1
+            harm.append((r, q, d)); r += d
+        for h, c in enumerate(halves.split()):
+            lo, c1, c2 = TCHORD[c]; r = b * 8 + h * 4
+            bass.append((r, lo, 2)); inner.append((r + 2, c2, 2)); tenor.append((r + 2, c1, 2))
+    return {'lead': tune, 'bass': bass, 'inner': inner, 'tenor': tenor, 'harm': harm}
+
 
 def by_hand():
     plain, var = ode()
@@ -131,6 +162,8 @@ def by_hand():
     write_score(os.path.join(HERE, 'scores', 'green.txt'), 'green', 'Greensleeves (by hand), 16 bars of 6/8, a row a sixteenth', plain, 192)
     write_score(os.path.join(HERE, 'scores', 'green2.txt'), 'green2', 'Greensleeves, the variation over an arpeggio (by hand), a row a sixteenth', var, 192)
     print('green, green2: 192 rows each (by hand)')
+    write_score(os.path.join(HERE, 'scores', 'tell.txt'), 'tell', "Rossini's William Tell gallop (by hand), 8 bars of 2/4, a row a sixteenth", william_tell(), 64)
+    print('tell: 64 rows (by hand)')
 
 
 def main(folder):
