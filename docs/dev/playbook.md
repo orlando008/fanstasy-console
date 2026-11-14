@@ -354,6 +354,10 @@ sound test, so `verify.js` only warns for it).
 
 ## 6. Art
 
+**Check the icon library first** for small things (hearts, coins, stars, gems, keys, potions, a cursor...):
+`tools/devkit/art/icons.py`, all of them on `docs/dev/art-recipes/icons-library.png`. `icon('heart', 16, items)` with
+`items = items_palette(art, n)` (one sprite palette for all of them). Draw only what it does not have.
+
 Write the art as code, in `carts/src/<name>/art.py`, with the toolkit (`tools/devkit/art/kit.py`: read its header). The
 starter has a small `art.py` (a gradient sky, hills, a ground, a ship, a gem) to start from. A cart's art script owns `tiles.txt`, `palette.txt`,
 `map.txt` and `art.json`, and the `ART` block in `code.js`; `verify.js` fails if they are not what it makes.

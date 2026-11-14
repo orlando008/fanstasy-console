@@ -7,6 +7,8 @@
 #   node tools/devkit/art/scene.mjs carts/{{NAME}}.nova out.png --scene field --holes     the background, with gaps marked
 #   node tools/devkit/tiles.mjs carts/{{NAME}}.nova out.png --from 0 --count 64 --pal 1   the tiles, with their numbers
 # (pack first: node tools/pack.js carts/src/{{NAME}} carts/{{NAME}}.nova). Pixel values are palette indices; 0 is transparent.
+# Hearts, coins, stars, keys, a cursor...: ready-made in the icon library (icon(), items_palette(); all of them on
+# docs/dev/art-recipes/icons-library.png): art.sprite('heart', icon('heart', 16, items), pal=items).
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *

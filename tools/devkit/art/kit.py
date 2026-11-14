@@ -38,6 +38,9 @@ of it). Each is a module of its own here, and comes with `from kit import *`:
   scenery.py    sky(), stars(), orb(), clouds(), mountains(), hills(), treeline(), floor(), rope(), ellipse()
   lettering.py  big_text(), hud_bar(), frame(), scale2x()
   rig.py        Rig, pose(), filmstrip(), WALK, PUNCH, KICK ...: characters on a skeleton, posed and animated
+  icons.py      icon(name, size, pal), items_palette(art, n), ICONS: ready-made icons (hearts, coins, stars, gems, keys...);
+                anim(name, size, pal) and ANIMS: animation frames; digits(pal, size) and button(name, size, pal): score
+                digits 0 to 9 and button prompts
   detail.py     face(), hair(), crease(), stroke(), bunch(): the hand-drawn layer on top of the volumes
   draw.py       Canvas, oval(), blob(), brush() ...: figures drawn in designed shapes and flat tones, a pixel at a time
                 where it matters (the way to draw characters; speckle() measures what is left to clean)
@@ -1012,3 +1015,4 @@ from rig import Rig, pose, filmstrip, lerp_pose, mirror_sides, STAND, GUARD, WAL
 from draw import Canvas, oval, blob, curve, poly, brush, speckle  # noqa: E402  drawing figures in designed shapes and flat tones
 from figure import head, Figure, tones  # noqa: E402  drawn heads (three views, expressions, hair) and bodies on a rig
 from review import review, findings_text  # noqa: E402  the checks a person makes by eye, as findings an agent can read
+from icons import icon, items_palette, ICONS, anim, ANIMS, digits, button, BUTTONS  # noqa: E402  ready-made icons, animations, score digits and button prompts

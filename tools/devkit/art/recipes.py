@@ -101,7 +101,24 @@ logo = Img(256, 24); logo.blit(title, (256 - title.w) // 2, 1)
 art.scene('logo', logo, pal=pal, at=(0, 0))                           # on its own layer, shown on the title
 sheet.add('big_text', title, pal, scale=2); sheet.add('hud_bar', bar, pal, scale=3); sheet.add('frame', box, pal, scale=2)
 '''),
-('icons', 'Small icons by hand', 'The one place for pixels typed by hand: 8 and 16 px icons (a heart, a key, a cursor), where every pixel is a decision. Anything bigger: a recipe above.', '''
+('library', 'Ready-made icons', 'Check here before drawing a small thing: the icon library has %d icons games keep needing (%s), at 16 and 8 px, in one shared palette of five colour ramps. All of them: docs/dev/art-recipes/icons-library.png.' % (len(__import__('icons').ICONS), ', '.join(__import__('icons').ICONS)), '''
+items = items_palette(art, 5)                                         # sprite palette 5: red, gold, blue, green, grey
+for name in ['heart', 'heart_half', 'coin', 'star', 'gem', 'key', 'potion', 'skull']:
+    art.sprite(name, icon(name, 16, items), pal=items)
+    sheet.add(name, icon(name, 16, items), items, scale=4)
+sheet.add('gem, blue', icon('gem', 16, items, colour='blue'), items, scale=4)     # most icons take another ramp
+sheet.add('heart 8 px', icon('heart', 8, items), items, scale=8)                 # 8 px: placed by hand
+'''),
+('motion', 'Ready-made animations, score digits and button prompts', 'Frames that move on their own (a coin spinning, a star twinkling, a sparkle, dust, an explosion, a hit), score digits 0 to 9, and button prompts for "press A" screens: all from the icon library, in the same shared palette. Check here before drawing them.', '''
+items = items_palette(art, 5)
+for name in ANIMS:
+    for k, f in enumerate(anim(name, 16, items)): sheet.add('%s %d' % (name, k), f, items, scale=4)
+    sheet.row()
+for k, d in enumerate(digits(items, 16, 'gold')): sheet.add('digit %d' % k, d, items, scale=4)
+sheet.row()
+for name in ('a', 'b', 'start', 'dpad'): sheet.add('button ' + name, button(name, 16, items), items, scale=4)
+'''),
+('icons','Small icons by hand', 'For an icon the library does not have: the one place for pixels typed by hand, 8 and 16 px icons where every pixel is a decision. Anything bigger: a recipe above.', '''
 pal = art.sprite_palette(3, {'edge': '140c1c', 'red': ramp('d04648', 3), 'gold': ramp('dad45e', 3)})
 K = {'o': pal.edge, 'd': pal.red[0], 'r': pal.red[1], 'l': pal.red[2], 'g': pal.gold[1], 'y': pal.gold[2]}
 heart = Img.from_rows(['.oo.oo..', 'olroro..', 'orrrrdo.', 'orrrrdo.', '.orrdo..', '..odo...', '...o....', '........'], key=K)
@@ -141,7 +158,7 @@ def build(page, pics):
     out = ['# Art recipes', '',
            'How to draw the things games need with the art kit (`tools/devkit/art/`), each with its picture and the lines of',
            '`art.py` that made it. Start a new picture from the nearest recipe and change it; place pixels by hand only for',
-           'the small icons of the last one. This page is written by `python3 tools/devkit/art/recipes.py` from the recipes',
+           'the ready-made icons and small icons of the last ones. This page is written by `python3 tools/devkit/art/recipes.py` from the recipes',
            'in that file (CI checks it is up to date): to add one, add it there.', '',
            'Every recipe runs after `from kit import *` and `art = Art()` (with its `bg` and `spr` regions), as a cart\'s',
            '`art.py` does. `sheet.add(...)` is only how the recipe shows its picture here (`preview.py`: a `Sheet` works in',
