@@ -32,6 +32,21 @@ ok(p.board.includes(p.GEN0 + 2), 'the milk churn comes onto the board');
   q.cur = q.BUTTON; v.press('LEFT'); ok(q.cur === -3, 'LEFT goes back to the last order'); q.cur = q.BUTTON; v.press('DOWN'); ok(q.cur === q.SPOT_COL[2], 'DOWN to the board');
 }
 
+// Each colour style changes the café's colours: the counter (palette 4), the wood stain and the paint (palette 1).
+{
+  const v = newGame(6), q = v.probe(); v.run(30);
+  const cg = (e) => v.ppu.cgram[e];
+  const shabby = { counter: cg(66), wood: cg(21), wall: cg(18) };
+  q.stars = 1000; for (const t of [0, 1, 2, 3]) q.buyTask(t); q.storyCard = null; for (const t of [0, 1, 2, 3]) q.buyTask(t); q.storyCard = null; v.run(1);
+  ok(cg(66) !== shabby.counter && cg(21) !== shabby.wood && cg(18) !== shabby.wall, 'mending the counter, staining the wood and painting the walls each change their colours');
+  q.cur = 17; v.run(1);
+  for (const [a, t, kind, e] of [[0, 0, 'counter', 66], [1, 2, 'wood', 21], [1, 1, 'wall', 18]]) {
+    const cols = new Set();
+    for (let st = 0; st < 3; st++) { q.setStyle(a, t, st); q.applyCafe(); cols.add(cg(e)); }
+    ok(cols.size === 3, `each of the three ${kind} styles looks different`);
+  }
+}
+
 // Styles through the café screen.
 {
   p.toCafe(); vm.run(1); ok(p.state === 'cafe' && p.cafePage === 1, 'the café screen opens on the current area');

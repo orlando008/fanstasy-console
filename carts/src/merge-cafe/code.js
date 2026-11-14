@@ -279,7 +279,11 @@ function applyCafe() {
   });
   const put = (first, n, c) => { const r = c ? rampOf(c, n) : null; for (let i = 0; i < n; i++) { const v = r ? r[i] : shabbyCols[first + i]; color(first + i, v[0], v[1], v[2]); } };
   put(17, 3, WALL[styleName('wall')]);
-  if (doneKind('wall')) for (const e of [17, 19]) { const v = color(18); color(e, v[0], v[1], v[2]); }   // fresh paint: the stains (the darker step) and the patches (the lighter) are gone put(20, 4, WOOD[styleName('wood')]); put(65, 4, COUNTER[styleName('counter')]);
+  if (doneKind('wall')) for (const e of [17, 19]) { const v = color(18); color(e, v[0], v[1], v[2]); }   // fresh paint: the stains (the darker step) and the patches (the lighter) are gone
+  put(20, 4, WOOD[styleName('wood')]); put(65, 4, COUNTER[styleName('counter')]);
+  const ct = COUNTER[styleName('counter')];                          // the counter's lit top edge (entries 70, 71) follows its wood
+  if (ct) [1.0, 1.2].forEach((k, i) => color(70 + i, ...ct.map((v) => clamp(Math.round(v * k + (k > 1 ? 3 : 0)), 0, 31))));
+  else for (const e of [70, 71]) { const v = shabbyCols[e]; color(e, v[0], v[1], v[2]); }
   if (doneKind('fix:window')) { color(24, 18, 24, 27); color(25, 22, 27, 29); color(26, 29, 31, 31); } else for (let e = 24; e <= 26; e++) { const v = shabbyCols[e]; color(e, v[0], v[1], v[2]); }
 }
 
