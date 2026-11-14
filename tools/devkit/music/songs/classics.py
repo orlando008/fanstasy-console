@@ -54,7 +54,8 @@ m.song([beat(m.piece(['minute_waltz'], 3, waltz), 12, {0: 'KICK', 4: 'HAT', 8: '
 # The Canon: the ground bass on the triangle, the three violins (each the same tune, two bars apart) on three pulses.
 m.song([m.piece(['canon'], 7, {'lead': (0, 'LEAD', -12), 'inner': (3, 'KEYS', -12, 13), 'tenor': (4, 'KEYS2', -12, 13), 'bass': (2, 'BASS', 0)})],
        echo=(8, 6, 6, 7))
-# Jesu, Joy: the triplet line (and the chorale's top note where it is played as chords) on the lead, a row a triplet.
-m.song([m.piece(['jesu'], 13, {'lead': (0, 'LEAD', -12), 'inner': (3, 'KEYS', -12, 13), 'tenor': (4, 'KEYS2', 0, 13), 'bass': (2, 'BASS', 0)})],
+# Jesu, Joy: the triplet line (and the chorale's top note where it is played as chords) on the lead in its own octave,
+# the left hand's bass on the triangle, and the right hand's other notes quieter under the tune, at their own pitch.
+m.song([m.piece(['jesu'], 13, {'lead': (0, 'LEAD', 0, 13), 'inner': (3, 'KEYS', 0, 9), 'tenor': (4, 'KEYS2', 0, 9), 'bass': (2, 'BASS', 0)})],
        echo=(8, 6, 6, 7))
 a.write(sys.argv[1], songs=6)
