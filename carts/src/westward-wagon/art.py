@@ -131,6 +131,11 @@ def chimney_rock():
     for y in range(118, 152, 6):
         for x in range(0, 256, 2):
             if hsh(x * 13 + y) % 7 == 0: im.px[y][x] = P.grass[2]
+    for k in range(3):                                         # far bluffs on the horizon, first: the rock stands in front of them
+        bx = [30, 210, 240][k]
+        for y in range(96, 104):
+            for x in range(bx - (y - 96) * 2 - 6, bx + (y - 96) * 2 + 6):
+                if 0 <= x < 256: im.px[y][x] = P.rock[1]
     # the rock: a broad cone of clay, and on it the tall spire of sandstone, lit from the left (strata as dark lines)
     cx, base = 150, 112
     for y in range(18, base):
@@ -153,11 +158,6 @@ def chimney_rock():
             if hsh(g * 31 + y) % 3: im.px[y][x] = P.rock[0] if g > 0 else P.sand[1]
     for y in range(70, base, 7):                               # gullies down the cone
         for x in range(int(cx - 8 - (y - 70) * 1.25), int(cx + 8 + (y - 70) * 1.25), 6): im.px[y][x] = P.rock[0]; im.px[min(y + 1, 151)][x + 1] = P.rock[0]
-    for k in range(3):                                         # far bluffs on the horizon
-        bx = [30, 210, 240][k]
-        for y in range(96, 104):
-            for x in range(bx - (y - 96) * 2 - 6, bx + (y - 96) * 2 + 6):
-                if 0 <= x < 256: im.px[y][x] = P.rock[1]
     return im
 
 def pack_scene(im, P):
