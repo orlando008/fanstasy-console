@@ -50,6 +50,13 @@ ok([1, 2, 3, 4, 5, 6].map((t) => p.valueOf(item(0, t))).join() === '1,4,9,16,25,
   p.coins = 3; p.press(15); p.press(15); ok(p.board[15] === CRATE && p.coins === 3, 'not without the coins');
   p.board[20] = item(4, 3); const c0 = p.coins; p.sell(20); ok(p.coins === c0 + 9 && p.board[20] === EMPTY, 'selling a teapot gives 9 coins and empties its cell');
 }
+// The crates' price tags: a small coin and the price, only on the crates that can be opened now (beside open space).
+{
+  const v = newGame(3), q = v.probe(); v.run(3);
+  const coinAt = (i) => { for (let y = 0; y < 12; y++) for (let x = 0; x < 32; x++) if (q.pget(16 + (i % 7) * 32 + x, 84 + Math.floor(i / 7) * 28 + 16 + y) === q.COIN_FILL) return true; return false; };
+  ok(coinAt(14) && coinAt(20), 'a crate beside open space wears its price, with a coin');
+  ok(!coinAt(28) && !coinAt(34), 'a crate further in does not');
+}
 // The cursor and the buttons.
 {
   const v2 = newGame(2), q = v2.probe(); v2.run(2);

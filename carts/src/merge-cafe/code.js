@@ -525,7 +525,7 @@ function draw() {
   if (state === 'recipes') drawRecipes();
   else drawPeople();
   drawProps();
-  if (state === 'play') drawHud();
+  if (state === 'play') { drawCrateTags(); drawHud(); }
   else if (state === 'title') drawTitle();
   else if (state === 'cafe') drawCafeScreen();
   else if (state === 'ending') drawEnding();
@@ -604,8 +604,8 @@ function drawBoard() {
 }
 
 function drawHud() {
-  const cs = `COINS ${coins}`, st = String(stars), on = cur === BUTTON;   // on the counter's front, clear of the bubbles, each on a chalkboard tag
-  rectfill(1, 62, cs.length * 8 + 6, 12, SOLID); txt(cs, 4, 64, GOLD);
+  const cs = String(coins), st = String(stars), on = cur === BUTTON;   // on the counter's front, clear of the bubbles, each on a chalkboard tag
+  rectfill(1, 61, cs.length * 8 + 21, 14, SOLID); drawCoin(5, 63, false); txt(cs, 19, 64, GOLD);   // the coins: a coin and its number (the crates' price tags show the same coin)
   const sx = 252 - st.length * 8 - 16;                              // the star, then its number
   rectfill(sx - 4, 61, 256 - sx + 1, 14, SOLID); if (on) rect(sx - 4, 61, 256 - sx + 1, 14, WHITE);
   drawStar(sx, 63, canBuy()); txt(st, sx + 15, 64, CREAM);
@@ -622,6 +622,29 @@ function drawHud() {
 
 /** B on a cell: what it is (spec section 3). */
 const STAR = ['.....#.....', '....###....', '....###....', '###########', '.#########.', '..#######..', '..#######..', '.####.####.', '.###...###.', '.#.......#.'];
+const COIN = ['..###..', '.#####.', '###+###', '##+++##', '###+###', '.#####.', '..###..'];
+const COIN_FILL = 118, COIN_RIM = 119;
+/** A coin at (x, y): 11 x 11, or 7 x 7 for the crates' price tags (small). */
+function drawCoin(x, y, small) {
+  color(COIN_FILL, 31, 25, 6); color(COIN_RIM, 22, 13, 2);
+  if (small) {
+    for (let j = 0; j < 7; j++) for (let i = 0; i < 7; i++) { const c = COIN[j][i]; if (c !== '.') pset(x + i, y + j, c === '+' ? COIN_RIM : COIN_FILL); }
+    return;
+  }
+  circfill(x + 5, y + 5, 5, SHADOW); circfill(x + 5, y + 5, 4, COIN_RIM); circfill(x + 5, y + 5, 3, COIN_FILL);
+  line(x + 5, y + 3, x + 5, y + 7, COIN_RIM); pset(x + 3, y + 3, WHITE);
+}
+/** A crate the cursor can open now (beside open space) wears its price: a small coin and the coins it costs, gold when there are enough. */
+function drawCrateTags() {
+  const price = crateCost(), have = coins >= price, t = String(price), w = 7 + 2 + t.length * 8;
+  for (let i = 0; i < CELLS; i++) {
+    if (!crateOpenable(board, i)) continue;
+    const x = cellX(i) + 16 - ((w + 4) >> 1), y = cellY(i) + 16;
+    rectfill(x, y, w + 4, 11, SOLID); rect(x, y, w + 4, 11, have ? GOLD : CHALK);
+    drawCoin(x + 2, y + 2, true); print(t, x + 11, y + 2, have ? GOLD : DIM);
+  }
+}
+
 const STAR_FILL = 116, STAR_RIM = 117;
 /** The star icon (11 x 10) at (x, y): gold with a dark outline; bold (a task can be bought): it pulses slowly, in a thicker, glowing rim. */
 function drawStar(x, y, bold) {
