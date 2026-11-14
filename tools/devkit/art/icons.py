@@ -308,6 +308,140 @@ def icon(name, size, pal, colour=None):
     return outline_sel(im, pal)
 
 
+# --- animations: lists of frames (each a size x size Img), for things that move on their own ---------------------------
+def _frames(S, pal, shapes, rp, kind='pillow'):
+    return [outline_sel(fill(S, f, rp, kind), pal) for f in shapes]
+
+
+def _coin_spin(S, p, c):
+    rp = getattr(p, c or 'gold')
+    out = []
+    for w in (0.48, 0.36, 0.2, 0.06, 0.2, 0.36):
+        im = fill(S, ellipse(0.5, 0.5, max(w, 0.08), 0.48), rp, 'cylinder-y')
+        if w > 0.3: paint(im, S, rect(0.5 - w * 0.12, 0.33, 0.5 + w * 0.12, 0.67), rp[2])      # the bar on its face
+        if w < 0.1: paint(im, S, lambda u, v: True, rp[0])                                     # edge on: the rim alone
+        out.append(outline_sel(im, p))
+    return out
+
+def _star_twinkle(S, p, c):
+    rp = getattr(p, c or 'gold')
+    out = []
+    for r, glint in ((0.47, False), (0.5, True), (0.47, False), (0.43, False)):
+        im = fill(S, star_shape(r=r), rp, 'cone')
+        if glint: paint(im, S, circle(0.4, 0.38, 0.08), p.grey[2])
+        out.append(outline_sel(im, p))
+    return out
+
+def _heart_pulse(S, p, c):
+    rp = getattr(p, c or 'red')
+    out = []
+    for k in (0.4, 0.45, 0.4, 0.36):
+        im = fill(S, heart_shape(s=k), rp, 'pillow')
+        paint(im, S, ellipse(0.32, 0.36, 0.07, 0.06), p.grey[2])
+        out.append(outline_sel(im, p))
+    return out
+
+def _sparkle(S, p, c):
+    """A four-pointed glint that opens and closes: no outline (it is light)."""
+    rp = getattr(p, c or 'gold')
+    out = []
+    for r in (0.22, 0.36, 0.5, 0.36, 0.22):
+        w = max(0.08, r * 0.26)
+        shape = union(poly((0.5, 0.5 - r), (0.5 + w, 0.5), (0.5, 0.5 + r), (0.5 - w, 0.5)),
+                      poly((0.5 - r, 0.5), (0.5, 0.5 - w), (0.5 + r, 0.5), (0.5, 0.5 + w)))
+        im = mask(S, shape, inset=0)
+        im = _img().make(S, S, lambda x, y: (p.grey[2] if abs(x + 0.5 - S / 2) + abs(y + 0.5 - S / 2) < S * r * 0.35 else rp[2]) if im.px[y][x] else 0)
+        out.append(im)
+    return out
+
+def _puff(S, p, c):
+    """Dust: a few round clouds that grow and thin out (dithered away)."""
+    rp = getattr(p, c or 'grey')
+    out = []
+    for k, (r, keep) in enumerate(((0.16, 1.0), (0.26, 1.0), (0.34, 0.75), (0.4, 0.5), (0.44, 0.25))):
+        blobs = union(circle(0.5, 0.62, r), circle(0.5 - r * 0.8, 0.66, r * 0.7), circle(0.5 + r * 0.8, 0.66, r * 0.7))
+        im = fill(S, blobs, rp, 'pillow')
+        for y in range(S):
+            for x in range(S):
+                if im.px[y][x] and _BAYER4[y & 3][x & 3] >= keep * 16: im.px[y][x] = 0
+        out.append(im)
+    return out
+
+def _explosion(S, p, c):
+    """A burst: a hot core that grows, then smoke that breaks up."""
+    out = []
+    steps = ((0.18, 'hot'), (0.32, 'hot'), (0.44, 'fire'), (0.46, 'smoke'), (0.48, 'thin'))
+    for r, stage in steps:
+        spikes = poly(*[(0.5 + (r if i % 2 == 0 else r * 0.62) * math.cos(i * math.pi / 6), 0.5 + (r if i % 2 == 0 else r * 0.62) * math.sin(i * math.pi / 6)) for i in range(12)])
+        if stage in ('hot', 'fire'):
+            im = fill(S, spikes, p.red, 'pillow')
+            paint(im, S, circle(0.5, 0.5, r * 0.65), p.gold[1]); paint(im, S, circle(0.5, 0.5, r * 0.35), p.gold[2] if stage == 'fire' else p.grey[2])
+        else:
+            im = fill(S, union(circle(0.5, 0.5, r * 0.8), circle(0.32, 0.4, r * 0.5), circle(0.68, 0.42, r * 0.5)), p.grey, 'pillow')
+            if stage == 'thin':
+                for y in range(S):
+                    for x in range(S):
+                        if im.px[y][x] and _BAYER4[y & 3][x & 3] >= 7: im.px[y][x] = 0
+        out.append(im)
+    return out
+
+def _hit(S, p, c):
+    """A hit: a white burst of rays, then smaller and gold."""
+    out = []
+    for r, col in ((0.48, p.grey[2]), (0.38, (c and getattr(p, c)[2]) or p.gold[2]), (0.22, (c and getattr(p, c)[1]) or p.gold[1])):
+        rays = poly(*[(0.5 + (r if i % 2 == 0 else r * 0.3) * math.cos(i * math.pi / 8 + 0.2), 0.5 + (r if i % 2 == 0 else r * 0.3) * math.sin(i * math.pi / 8 + 0.2)) for i in range(16)])
+        im = mask(S, rays, inset=0)
+        out.append(_img().make(S, S, lambda x, y, col=col: col if im.px[y][x] else 0))
+    return out
+
+# 8 px animations, placed by hand (the same letters as SMALL)
+_W6 = ['..dddd..', '.dllmmd.', '.dlmmmd.', '.dlmmmd.', '.dlmmmd.', '.dmmmdd.', '.dmmmdd.', '..dddd..']
+_W4 = ['...dd...', '..dlmd..', '..dlmd..', '..dlmd..', '..dlmd..', '..dmmd..', '..dmdd..', '...dd...']
+_W2 = ['...dd...'] * 8
+_STAR_GLINT = ['...dd...', '...wd...', 'ddllmmdd', '.dlmmmd.', '..dmmd..', '.dmddmd.', '.dd..dd.', '........']
+_STAR_GLINT2 = ['...dd...', '...ld...', 'ddllmmdd', '.dlmwmd.', '..dmmd..', '.dmddmd.', '.dd..dd.', '........']
+_HEART_BIG = ['.dd..dd.', 'dlmddmmd', 'dlmmmmmd', 'dmmmmmmd', '.dmmmmd.', '..dmmd..', '...dd...', '........']
+_HEART_LOW = ['........', '.dd.dd..', 'dlmdmmd.', 'dmmmmmd.', '.dmmmd..', '..dmd...', '...d....', '........']
+_E = '........'
+ANIM_SMALL = {
+    'coin_spin': [None, _W6, _W4, _W2, _W4, _W6],
+    'star_twinkle': [None, _STAR_GLINT, None, _STAR_GLINT2],
+    'heart_pulse': [None, _HEART_BIG, None, _HEART_LOW],
+    'sparkle': [[_E, _E, _E, '...l....', _E, _E, _E, _E], [_E, _E, '...l....', '..lwl...', '...l....', _E, _E, _E],
+                [_E, '...l....', '...l....', '.llwll..', '...l....', '...l....', _E, _E],
+                [_E, _E, '...l....', '..lwl...', '...l....', _E, _E, _E], [_E, _E, _E, '...l....', _E, _E, _E, _E]],
+    'puff': [[_E, _E, _E, _E, _E, '...MM...', '..MLMM..', _E], [_E, _E, _E, _E, '...MM...', '.MMLLMM.', '.MMMMMk.', '..kkkk..'],
+             [_E, _E, _E, '..M.M...', '.M.LM.M.', 'M.MLM.Mk', '.M.M.k..', '..k.k...'], [_E, _E, '..M...M.', '.......', 'M..L..M.', '...M...k', '.M...k..', _E],
+             [_E, '.M....M.', _E, '.......', 'M......M', _E, '..k...k.', _E]],
+    'explosion': [[_E, _E, '...Y....', '..YwY...', '...Y....', _E, _E, _E],
+                  [_E, '..R.R...', '.RGYGR..', '..YwY...', '.RGYGR..', '..R.R...', _E, _E],
+                  ['.R...R..', '..RGR...', '.RGYGR..', 'RGYwYGR.', '.RGYGR..', '..RGR...', '.R...R..', _E],
+                  [_E, '..MMM...', '.MLLMM..', '.MLMMMk.', '.MMMMk..', '..kkk...', _E, _E],
+                  [_E, '..M.M...', '.L.M.M..', '..M.M.k.', '.M.M.k..', '..k.k...', _E, _E]],
+    'hit': [['w..w..w.', '.w.w.w..', '..www...', 'wwwwwww.', '..www...', '.w.w.w..', 'w..w..w.', _E],
+            [_E, '.Y.Y.Y..', '..YYY...', '.YYYYY..', '..YYY...', '.Y.Y.Y..', _E, _E],
+            [_E, _E, '...G....', '..GYG...', '...G....', _E, _E, _E]],
+}
+OWN.update({'coin_spin': 'gold', 'star_twinkle': 'gold', 'heart_pulse': 'red', 'sparkle': 'gold', 'puff': 'grey',
+            'explosion': 'red', 'hit': 'gold'})
+_BASE = {'coin_spin': 'coin', 'star_twinkle': 'star', 'heart_pulse': 'heart'}
+
+_BAYER4 = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
+_ANIM = {'coin_spin': _coin_spin, 'star_twinkle': _star_twinkle, 'heart_pulse': _heart_pulse, 'sparkle': _sparkle,
+         'puff': _puff, 'explosion': _explosion, 'hit': _hit}
+ANIMS = list(_ANIM)
+
+
+def anim(name, size, pal, colour=None):
+    """The frames of the animation `name` (one of ANIMS), each a size x size picture in `pal` (8 or 16 px). Play them in
+    turn, a few frames of the console each (coin_spin and star_twinkle loop; puff, explosion and hit play once)."""
+    if name not in _ANIM: raise KeyError('no animation %r: %s' % (name, ', '.join(ANIMS)))
+    if colour is not None and colour not in RAMPS: raise KeyError('colour is one of %s' % ', '.join(RAMPS))
+    if size == 8:
+        return [small(_BASE.get(name, name), pal, colour or OWN[name], rows) if rows else small(_BASE[name], pal, colour) for rows in ANIM_SMALL[name]]
+    return _ANIM[name](size, pal, colour)
+
+
 if __name__ == '__main__':
     import sys
     if len(sys.argv) != 3 or sys.argv[1] != '--sheet': sys.exit('usage: python3 tools/devkit/art/icons.py --sheet <file.png>')
@@ -321,5 +455,9 @@ if __name__ == '__main__':
             sheet.add('%s %d' % (name, size), icon(name, size, pal), pal, scale=4 if size == 16 else 8)
             if k % 8 == 7: sheet.row()
     for c in RAMPS: sheet.add('gem ' + c, icon('gem', 16, pal, colour=c), pal)
+    for size in (16, 8):
+        for name in ANIMS:
+            sheet.row()
+            for k, f in enumerate(anim(name, size, pal)): sheet.add('%s %d.%d' % (name, size, k), f, pal, scale=4 if size == 16 else 8)
     sheet.save(sys.argv[2])
     print('wrote', sys.argv[2])
