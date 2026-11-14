@@ -250,7 +250,7 @@ SMALL = {
     'clock': ['..dddd..', '.dwwwwd.', 'dwwkwwwd', 'dwwkwwwd', 'dwwkkkwd', 'dwwwwwwd', '.dwwwwd.', '..dddd..'],
     'flag': ['km......', 'kmmmd...', 'kmlmmmd.', 'kmmmd...', 'kd......', 'k.......', 'k.......', 'k.......'],
     'arrow': ['....d...', '....dd..', 'ddddlmd.', 'dllllmmd', 'dmmmmmdd', 'ddddmdd.', '....dd..', '....d...'],
-    'cursor': ['d.......', 'dd......', 'dld.....', 'dlld....', 'dllld...', 'dlldd...', 'dd.ld...', '....d...'],
+    'cursor': ['dd......', 'dld.....', 'dlld....', 'dllld...', 'dlddd...', 'dd.dld..', '....dld.', '.....dd.'],
     'chest': ['........', '.dddddd.', 'dllmmmmd', 'dddwwddd', 'dmmwwmmd', 'dmmmmmmd', 'dddddddd', '........'],
     'check': ['.......d', '......dl', '.....dld', 'd...dld.', 'dd.dld..', '.dlld...', '..dd....', '........'],
     'cross': ['dd....dd', 'dld..dld', '.dlddld.', '..dmmd..', '..dmmd..', '.dmddmd.', 'dmd..dmd', 'dd....dd'],
