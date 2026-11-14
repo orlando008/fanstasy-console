@@ -35,7 +35,7 @@ and a working scaffold to react to.
 - **Build each round on the last answers.** The second round's options follow from the first round's choices.
 - **Use multiple choice for lists** (the extras in round 3), and a preview where it helps to compare options (a control
   scheme, a screen layout).
-- **Skip a question the user has already answered**, and do not ask more than the three rounds below.
+- **Skip a question the user has already answered** (a round can shrink to what is left), and do not ask more than the three rounds below.
 
 **First, the pitch, in plain words.** If the user has not said what the game is, ask in one sentence: what is it, and
 is there a game it is like? This is the one question options cannot cover. Then:
@@ -96,6 +96,15 @@ recommended answer after each question.
 | `tools/templates/kinds/<kind>/` | A whole game for a kind of game (`--kind`) |
 | `CLAUDE.md`, `docs/dev/playbook.md` | Notes for agents (short) and this guide |
 
+## Terms
+
+- **OAM**: the console's table of sprites (128 at once, 32 on one line of the screen).
+- **Scanline**: one line of the screen; `scanline()` sets things line by line.
+- **F7 label**: press F7 while a game runs to make the current frame its Library cover (the cart editor's "Capture now" does the same).
+- **Lead**: a song's main melody channel. **Pierce**: the energy of a lead in the 2 to 5 kHz band, which the ear finds piercing (`loud.mjs`).
+- **Fxx**: an effect on a pattern's first row that sets a song's speed, in ticks a row.
+- **Commit reminder**: the harness asks for a commit after each step (section 8). Agents without that harness commit by hand.
+
 ## 1. The shape of a game build
 
 0. **Start from the starter**: `node tools/new-cart.js <name> "Title"` creates the cart, its tests, its art and audio scripts and
@@ -113,7 +122,7 @@ recommended answer after each question.
      change (Clockwork Dominion's hero was doubled in size after its release). So as soon as the game runs, draw only
      the hero (every frame), the palettes and one real screen, from the recipes of `docs/dev/art-recipes.md`; run
      `node tools/devkit/art/proof.mjs <name>` (one picture of all three); look at it yourself, then send it to the user
-     (SendUserFile) and ask what to change. Write what they said under that step in the spec, and draw the rest in
+     (attach the PNG, or use your session's file-sharing tool) and ask what to change. Write what they said under that step in the spec, and draw the rest in
      that look. A second proof after their changes is cheap; a redraw at the end is not.
 3. **A step is done when**: its checks pass (`node tools/verify.js`, then `smoke.mjs`; `sweep.mjs` after changes to
    the rules or the AI), the step's **Built** and **Results** notes are in the spec (the spec is the memory that
@@ -133,7 +142,7 @@ recommended answer after each question.
 | `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an art script (a gradient sky, receded hills, a ground, a ship and a gem, in ramps, with see-through panels: the SNES look from the start), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--kind puzzle` starts from a whole match-3 game instead (see "Starters by kind"). `--selftest` checks every starter (CI does) |
 | `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder |
 | `node tools/unpack.js <cart.nova> carts/src/<name>` | The reverse, for a cart made elsewhere (the console's editors, a friend) that is to join the Library: writes its source folder and checks it packs back to the same cart. Then add the `genre` and `players` to its `meta.json`, write its spec and release it (Operation Ironstorm came in this way) |
-| `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the music levels (`loud.mjs --check`), the docs check, and the cart's tests (`--fast` skips them). CI runs it on pull requests |
+| `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the music levels (`loud.mjs --check`), the docs check, and the cart's tests (`--fast` skips them). Carts run two at a time (`--jobs n`). A change under `src/` or `tools/devkit/` selects every cart; `art.py` and `audio.py` rerun only for carts whose own files changed, or after a change to the art or music kit. CI runs it on pull requests |
 | `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser), the spec (header, TODOs in a released cart, code size in the budget table), label and description, and a `genre` and `players` in `meta.json` (the Library's shelf, one of `src/genres.js`, and the badge on the cartridge) that `carts/index.json` matches |
 | `node tools/test.js <name> [filter] [-v]` | Run `tests/carts/<name>/NN-*.mjs` one at a time (about 3 minutes for Moto Crosser: run it in the background) |
 | `node tools/site.js check` | The hosted site (GitHub Pages, `.github/workflows/pages.yml`): builds it as it is published (`index.html`, `style.css`, `src/`, `carts/` without the sources, the manifest and icons, and `sw.js` with the offline copy's list of files), lays it out as the gh-pages branch (main at the root, previews in `pr/<n>/`), publishes it through git to a throwaway remote, and loads the main site and a preview in headless Chromium under a subpath: the Library, the labels, a cart running, the preview's own saves, no errors; and that the offline copy holds every cart and label and the icons are up to date. Run it after changing what the site loads, and `tests/console/offline.mjs` after changing `sw.js` |
@@ -143,7 +152,7 @@ recommended answer after each question.
 
 | Command | What it does |
 |---|---|
-| `node tools/devkit/soak.mjs carts/<name>.nova [--frames 20000] [--seeds 3]` | **Soak test**: random play in the harness for a long time. Fails on an exception, an effect on the wrong voice's channel, or a frozen screen (a soft lock, with the state named); reports frame times, sprites (OAM and per scanline), the states reached and the effects and songs never played. `--all` does every cart (CI) |
+| `node tools/devkit/soak.mjs carts/<name>.nova [--frames 20000] [--seeds 3]` | **Soak test**: random play in the harness for a long time. Fails on an exception, an effect on the wrong voice's channel, or a frozen screen (a soft lock, with the state named); reports frame times, sprites (OAM and per scanline), the states reached and the effects and songs never played. `--all` does every cart (CI), one process per cart, `--jobs n` at a time; with `--all` a frame time over 14 ms is only a warning, because the carts share the machine |
 | `node tools/devkit/sweep.mjs <name> --seeds 8 --set skill=0.9,1` | **Run the cart's bot** (`tests/carts/<name>/bot.mjs`) over many seeds and variants and summarise (win rates, times, crashes); fails on an exception, a frozen screen, a run that never finishes, or a problem the bot reports (a rival stuck). How balance is checked |
 | `node tools/devkit/smoke.mjs <name> [--seconds 12] [--shot f.png]` | **Smoke test in the real console** (headless Chromium): loads the cart, plays with random keys, and reports page and console errors, the cart's logged errors (a cart that throws is stopped), fps, and a frozen or blank screen. Catches what the Node harness cannot |
 | `tools/devkit/harness.mjs` | The headless console for tests (see its header comment); `pad.mjs` is the random player |
@@ -176,7 +185,7 @@ recommended answer after each question.
 | `node tools/devkit/music/loud.mjs carts/<name>.nova [--check]` | Per-section loudness of every song, surges, peak, and **the lead alone**: its RMS, its share of the mix, how much the mix jumps when it enters, and how much it pierces (2 to 5 kHz). `--check` fails on the limits in section 5 (`verify.js` runs it). **`--why [--song n]`** says where a song is over a limit and which channel does it: for a surge, the moments (seconds, order position, pattern, row) and each channel's level there against its usual; for the lead's share, level or pierce and for a loud section, the sections; for the median, each channel's level |
 | `node tools/devkit/music/render.mjs carts/<name>.nova out/` | WAV files of the songs, with level and clipping |
 | `node tools/devkit/music/sfx.mjs carts/<name>.nova <channel> [n...]` | Length, level (both sides together, so a channel's pan does not change it) and pitch (centroid) of effects, on the channel the game uses |
-| `node tools/devkit/music/songs/listen.mjs out/ [name ...]` | **The song library** (`tools/devkit/music/songs/README.md`): ready-made songs any game can take, a WAV of each to hear them. Rush D (the toolkit's own, an escalating piece), and public domain classics: Mozart's *Rondo alla Turca*, Joplin's *The Entertainer*, Bach's *Toccata and Fugue in D minor* and *Jesu, Joy of Man's Desiring*, Chopin's *Minute Waltz*, Pachelbel's *Canon in D*, Beethoven's *Ode to Joy*, *Greensleeves* and Rossini's *William Tell* gallop. A game's `audio.py` adds one with `library.add(a, 'toccata')`, which returns its song number; the README says how, and how to add a song to the library (`songs/import_scores.py`, `songs/scores/SOURCES.md` with each source and licence) |
+| `node tools/devkit/music/songs/listen.mjs out/ [name ...]` | **The song library**: ready-made songs any game can take (`library.add(a, name)` in its `audio.py`), with a WAV of each to hear them. The catalogue, how to plug a song in and how to add one are in `tools/devkit/music/songs/README.md` |
 | `python3 tools/devkit/music/clash.py carts/src/<name>/audio.json` | Lead against bass and chords on the beat (drums left out) |
 | `python3 tools/devkit/music/script.py carts/src/<name>/audio.json carts/src/<name>/audio.py` | An audio script, with every pattern and effect as tracker text, for a game that has only an `audio.json`; it packs to the same cart |
 | `node tools/devkit/music/compat.mjs [carts/<name>.nova...] [--converted]` | Carts in the old format (version 1) played on the frozen old chip (`tests/audio/legacy-synth.js`) and on the console's: they must give the same samples. `--converted` converts them to the new chip first (interpolation off) and checks the same. Run it, and `node tests/audio/chip.mjs`, after any change to `src/audio/` or `src/formats/audio.js` (CI does). See `docs/dev/sound-chip.md` |
@@ -199,8 +208,9 @@ tests green as you go, and delete what you do not use. The kinds so far:
 
 | Kind | The game | What it gives you |
 | --- | --- | --- |
-| `puzzle` | A match-3 board (8 × 8, six gems, swap two neighbours, runs of three or more pop, the gems above fall, chains) with moves, a goal and levels | The board rules as pure functions (`findRuns`, `matched`, `swapped`, `hasMoves`) with tests; a cursor, pick-and-push input; pop, fall and chain scoring; a stuck board dealt again; six gems in six shapes and palettes; sound for every action; a bot (`skill`) whose sweep tunes the goals | Examples of a full build: `tests/carts/moto-crosser/` (seven
-suites, a `lib.mjs` and a bot) and `carts/src/moto-crosser/audio.py` (songs and effects with the kit).
+| `puzzle` | A match-3 board (8 × 8, six gems, swap two neighbours, runs of three or more pop, the gems above fall, chains) with moves, a goal and levels | The board rules as pure functions (`findRuns`, `matched`, `swapped`, `hasMoves`) with tests; a cursor, pick-and-push input; pop, fall and chain scoring; a stuck board dealt again; six gems in six shapes and palettes; sound for every action; a bot (`skill`) whose sweep tunes the goals |
+
+Examples of a full build: `tests/carts/moto-crosser/` (seven suites, a `lib.mjs` and a bot) and `carts/src/moto-crosser/audio.py` (songs and effects with the kit).
 
 **CI** (`.github/workflows/check.yml`): syntax of `src/`, `tools/` and `tests/`; the docs check; `check.js --all`; the
 starter's self-test; `soak.mjs --all`; and, on pull requests, `verify.js` for the carts the PR changes. The smoke
@@ -265,7 +275,8 @@ Checks that proved their worth (the test files in `tests/carts/moto-crosser/` ar
 - **numbers from the spec** asserted in the test (speeds, costs, scores), so a spec change is a visible failure;
 - **flow checks** that walk the screens in order (title, menu, game, results, back), including quitting from
   the pause menu and a championship forced through with set results;
-- **timing** as the 99th percentile of frame time (under 8 ms), not the worst frame (a garbage collection or
+- **timing** as the 99th percentile of frame time (under 8 ms in a test; three times that where `CI=true`, which CI sets; the soak
+  warns over 8 ms and fails over 14 ms), not the worst frame (a garbage collection or
   another process spoils one frame); and one suite at a time (`tools/test.js` does this);
 - **audio cues** from `vm.audioLog` (which song and which SFX on which channel, when), not by ear;
 - **a test that fails without the fix**: after fixing a bug, put the fix back out and check the new test fails.
@@ -522,7 +533,10 @@ tiles for three settings by designing a tile-aligned vocabulary, after an image-
   functions in one game): put each operand in parentheses.
 - A tool call stops after 2 minutes: run long jobs in the background (`run_in_background`) and wait for the
   notification, rather than sleeping.
-- Do not run suites in parallel (frame-time checks fail under load); `test.js` and `verify.js` run them one at a time.
+- **Parallel runs, and which are safe.** `verify.js` runs carts two at a time (`--jobs n`; half the cores by default), and
+  `soak.mjs --all` and `tests/console/effects.mjs` play the carts one process each (`--jobs n`). Those are the only parallel
+  steps. Inside one cart, `tools/test.js` runs its suites one at a time, because they time frames. Two carts' tests can still
+  run side by side under `verify.js`: if a frame-time failure appears only there, run that cart alone (`verify.js <name>`).
   Sweeps do not time frames, so a big grid can be split over several `sweep.mjs` processes (one per group of levels, no
   more than there are cores) and the outputs put together.
 - A fix to the console's behaviour, to a cart's physics or to the AI changes what the sweep and the tests see: run both,
@@ -532,7 +546,7 @@ tiles for three settings by designing a tile-aligned vocabulary, after an image-
 
 ## 8. Git
 
-- Work on the branch you are given; commit after every step (the stop hook asks for it) and push.
+- Work on the branch you are given; commit after every step (the harness's commit reminder asks for it) and push.
 - Never open a pull request until asked. When asked, open it, then merge when the user says so. A merged
   branch is finished: start follow-up work from the latest `main` on the same branch name.
 - **Every pull request gets a playable preview** at `https://orlando008.github.io/fanstasy-console/pr/<number>/`
@@ -572,7 +586,7 @@ What building `flow-state` taught (its spec is `docs/carts/flow-state.md`; every
 - **A chart follows one thing the player can hear.** Pads on both the bass and the melody ornaments of the Air could not be tapped to; pads on the bass alone, played as
   a clear tick, could. Say on the menu what each chart follows. Make a slow melody playable with a second voice (`extra_src`, `extra_mod`), and a hard chart with
   every note, but not faster than a person can tap (no two pads closer than 9 frames).
-- **Scores from public domain files.** `carts/src/flow-state/import_score.py` turns one voice of a MIDI file (Mutopia has engravings; the `marmooo/classical-midi-db`
+- **Scores from public domain files.** `carts/src/flow-state/import_score.py` (not `tools/devkit/music/songs/import_scores.py`, which reads the song library's pieces) turns one voice of a MIDI file (Mutopia has engravings; the `marmooo/classical-midi-db`
   repository collects them) into note text; `scores/SOURCES.md` records where each came from and its licence. The first versions written from memory were wrong in
   the Air, the Moonlight and the Minuet's second half: take the notes from a score.
 - **The calibration is a number of frames.** Tap to a tick on a steady beat, take the **median** of how late the taps are (a stray tap does not spoil it), limit it
