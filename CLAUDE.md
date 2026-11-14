@@ -15,6 +15,9 @@
   game: `node tools/release.js <name> --keep-label`, so the `.nova.png` and the Library entry match.
 - **Music: check the song library before composing.** `tools/devkit/music/songs/README.md` lists ready-made songs (a boss theme, a chase, a
   victory, a town, public domain classics); a game's `audio.py` takes one with `library.add(a, name)`.
+- **Small art: check the icon library before drawing.** `tools/devkit/art/icons.py` has hearts, coins, stars, gems,
+  keys, potions, a cursor and more at 16 and 8 px (`docs/dev/art-recipes/icons-library.png` shows them all):
+  `art.sprite('heart', icon('heart', 16, items), pal=items)` with `items = items_palette(art, n)`.
 - You cannot hear or see a cart directly: measure the audio (`tools/devkit/music/`), make the art in code (a cart's
   `art.py`, with `tools/devkit/art/kit.py`) and look at it with `tools/devkit/art/sprites.mjs`, `scene.mjs`, `tiles.mjs`
   and `shots.mjs` (open the PNGs with the Read tool). `node tools/devkit/gallery.mjs <name>` puts every screen the cart lists in

@@ -15,9 +15,13 @@ outline_sel() (each outline pixel the darkest step of the ramp it touches). The 
 plain so a game can use them as they are or as the start of its own.
 """
 import math
-from kit import Img
 from colour import ramp
 from shade import shaded, outline_sel
+
+def _img():
+    from kit import Img          # here, not at the top: kit imports this module, as it does its others
+    return Img
+
 
 RAMPS = {'red': 'd04648', 'gold': 'dab23a', 'blue': '4a7ad8', 'green': '4ca83c', 'grey': 'a8acb8'}
 
@@ -59,7 +63,7 @@ def star_shape(cx=0.5, cy=0.53, r=0.47, k=0.45, n=5):
 def mask(S, f, inset=1):
     """The silhouette as a picture: the pixels whose centres are inside, in the square S - 2*inset (room for the outline)."""
     a = S - 2 * inset
-    return Img.make(S, S, lambda x, y: 1 if f((x - inset + 0.5) / a, (y - inset + 0.5) / a) else 0)
+    return _img().make(S, S, lambda x, y: 1 if f((x - inset + 0.5) / a, (y - inset + 0.5) / a) else 0)
 
 
 def paint(img, S, f, colour, inset=1, only=True):
@@ -211,7 +215,7 @@ def _chest(S, p, c):
     rp = getattr(p, c or 'gold')
     lid = fill(S, union(ellipse(0.5, 0.42, 0.48, 0.3), rect(0.02, 0.42, 0.98, 0.5)), rp, 'cylinder-x')
     paint(lid, S, rect(0, 0.6, 1, 1), 0, only=False) if False else None
-    lid = Img.make(S, S, lambda x, y: lid.px[y][x] if (y - 0.5) / (S - 2) < 0.5 else 0)
+    lid = _img().make(S, S, lambda x, y: lid.px[y][x] if (y - 0.5) / (S - 2) < 0.5 else 0)
     box = fill(S, rect(0.02, 0.5, 0.98, 0.96), rp, 'flat')
     im = merge(box, lid)
     paint(im, S, rect(0.02, 0.48, 0.98, 0.54), rp[0])                                    # the seam
@@ -282,7 +286,7 @@ def small(name, pal, colour, rows=None):
     rp = getattr(pal, colour or OWN[name])
     key = {'d': rp[0], 'm': rp[1], 'l': rp[2], 'D': pal.grey[0], 'M': pal.grey[1], 'L': pal.grey[2], 'k': pal.grey[0],
            'w': pal.grey[2], 'G': pal.gold[1], 'Y': pal.gold[2], 'R': pal.red[1], 'B': pal.blue[1]}
-    return Img.from_rows(rows or SMALL[name], key=key)
+    return _img().from_rows(rows or SMALL[name], key=key)
 
 
 _DRAW = {'heart': _heart, 'heart_half': lambda S, p, c: _heart(S, p, c, 'half'), 'heart_empty': lambda S, p, c: _heart(S, p, c, 'empty'),

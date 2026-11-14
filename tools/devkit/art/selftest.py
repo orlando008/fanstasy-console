@@ -503,5 +503,19 @@ console.log(JSON.stringify({ body: at(108, 80), eye: at(111, 61), eyeR: at(160 +
 finally:
     shutil.rmtree(work, ignore_errors=True)
 
+# --- the icon library: every icon at 8 and 16 px, in its own colour and in each ramp ------------------------------------
+import icons
+iart = Art(); items = icons.items_palette(iart, 5)
+bad = []
+for name in icons.ICONS:
+    for size in (8, 16):
+        for c in [None] + list(icons.RAMPS):
+            im = icons.icon(name, size, items, colour=c)
+            used = {v for r in im.px for v in r} - {0}
+            if (im.w, im.h) != (size, size) or not used or not used <= set(range(1, 16)): bad.append('%s %d %s' % (name, size, c))
+ok(not bad, 'icons.py: every icon (%d) is drawn at 8 and 16 px in every colour, inside its square and its palette' % len(icons.ICONS), ', '.join(bad[:5]))
+for name in ('heart', 'coin', 'skull'): iart.sprite(name, icons.icon(name, 16, items), pal=items)
+ok(len(iart.sprites) == 3, 'and an icon is placed as a sprite with the items palette')
+
 print('\n%s' % ('SOME FAILED' if fails else 'ALL PASS'))
 sys.exit(1 if fails else 0)
