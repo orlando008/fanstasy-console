@@ -7,7 +7,7 @@ the repository), and a few written out here by hand. Reading the files needs the
 Without a folder it writes only the pieces by hand.
 
 Each piece is an excerpt (bars `from` to the bar before `to`, `bar` ticks long) on a grid (`grid` ticks a row), dealt
-out to a tune, a bass and two inner voices by tools/devkit/music/score.py. classics.py makes the songs from the text.
+out to a tune, a bass and two inner voices by tools/devkit/music/score.py. library.py makes the songs from the text.
 """
 import os, statistics, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
@@ -77,7 +77,7 @@ ODE_CHORDS = 'DD DA DD DA DD DA DD AD AD AD AA DA DD DA DD AD'.split()
 
 def ode():
     """The theme plain (half-note chords under it), and a variation: the tune an octave up over a bass in eighths and
-    the chord as a running arpeggio of sixteenths (the drums are added by classics.py)."""
+    the chord as a running arpeggio of sixteenths (the drums are added by library.py)."""
     tune, bass, inner, tenor, bass2, arp = [], [], [], [], [], []
     for b, (notes, halves) in enumerate(zip(ODE, ODE_CHORDS)):
         r = b * 16
@@ -106,7 +106,7 @@ GREEN_CHORDS = ['Am Am', 'G G', 'Am Am', 'E E', 'Am Am', 'G G', 'Am E', 'Am Am',
 
 def greensleeves():
     """Plain: the tune over a bass a dotted quarter and a harp's eighths up the chord. The variation: the same tune over a
-    bass in eighths and a running arpeggio of sixteenths (the drums are added by classics.py)."""
+    bass in eighths and a running arpeggio of sixteenths (the drums are added by library.py)."""
     tune, bass, harp, bass2, arp = [], [], [], [], []
     for b, (notes, halves) in enumerate(zip(GREEN, GREEN_CHORDS)):
         r = b * 12
