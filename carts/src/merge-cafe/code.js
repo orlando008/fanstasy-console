@@ -406,13 +406,12 @@ function placeGenerators() {
   }
 }
 
-/** The cursor: cells 0 to 34, -1 to -3 the orders of the three places at the counter (UP from the top row), or BUTTON, the [!] that
- * shows when a café task can be bought (RIGHT from the last order). */
-const BUTTON = -4, BTN_X = 222, BTN_Y = 74;
+/** The cursor: cells 0 to 34, -1 to -3 the orders of the three places at the counter (UP from the top row), or BUTTON, the star on the
+ * counter (RIGHT from the last order): A on it opens the café. The star pulses, with a bold outline, while a task can be bought. */
+const BUTTON = -4;
 const canBuy = () => { const a = areasDone(); return a < 6 && stars >= TASK_COST[a]; };
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = canBuy() ? 1 : 0; fx(SFX.pause); return; }   // with the [!] showing, the menu opens on CAFE
-  if (cur === BUTTON && !canBuy()) cur = SPOT_COL[2];              // the button went (a task was bought): back to the board
   for (let k = 0; k < 3; k++) if (!spots[k] && clock >= nextAt[k]) arrive(k);
   placeGenerators();
   if (storyCard) { if (pressed(A) || pressed(B)) { storyCard = null; fx(SFX.move); } return; }
@@ -422,7 +421,7 @@ function updatePlay() {
     return;
   }
   if (card !== -1 || orderCard !== -1) { if (pressed(A) || pressed(B) || pressed(SELECT)) card = orderCard = -1; return; }
-  if (cur === BUTTON) {                                             // on the [!] button: A opens the café
+  if (cur === BUTTON) {                                             // on the star: A opens the café
     if (pressed(A)) { fx(SFX.select); toCafe(); }
     else if (stepped(LEFT) || stepped(UP)) { cur = -3; fx(SFX.move); }
     else if (stepped(DOWN)) { cur = SPOT_COL[2]; fx(SFX.move); }
@@ -432,7 +431,7 @@ function updatePlay() {
     const k = -1 - cur;
     if (stepped(LEFT) && k > 0) { cur++; fx(SFX.move); }
     if (stepped(RIGHT) && k < 2) { cur--; fx(SFX.move); }
-    else if (stepped(RIGHT) && canBuy() && held < 0) { cur = BUTTON; fx(SFX.move); }   // past the last bubble: the [!] button
+    else if (stepped(RIGHT) && held < 0) { cur = BUTTON; fx(SFX.move); }   // past the last bubble: the star
     if (stepped(DOWN)) { cur = SPOT_COL[k]; fx(SFX.move); }
     if (pressed(A)) { if (held >= 0) hand(k); else if (spots[k]) orderCard = k; }
     else if (pressed(B)) { if (held >= 0) { held = -1; fx(SFX.drop); } else if (spots[k]) orderCard = k; }
@@ -596,16 +595,12 @@ function drawBoard() {
 }
 
 function drawHud() {
-  const cs = `COINS ${coins}`, st = `STARS ${stars}`;                 // on the counter's front, clear of the bubbles, each on a chalkboard tag
+  const cs = `COINS ${coins}`, st = String(stars), on = cur === BUTTON;   // on the counter's front, clear of the bubbles, each on a chalkboard tag
   rectfill(1, 62, cs.length * 8 + 6, 12, SOLID); txt(cs, 4, 64, GOLD);
-  rectfill(249 - st.length * 8, 62, st.length * 8 + 6, 12, SOLID); txt(st, 252 - st.length * 8, 64, CREAM);
-  const a = areasDone();
-  if (canBuy()) {                                                   // a café task can be bought: the [!] button, under the stars
-    const on = cur === BUTTON;
-    rectfill(BTN_X, BTN_Y, 30, 10, on ? GOLD : SOLID); rect(BTN_X - 1, BTN_Y - 1, 32, 12, on ? WHITE : GOLD);
-    print('[!]', BTN_X + 3, BTN_Y + 1, on ? SHADOW : GOLD);
-    if (on) { const t = 'A: THE CAFE'; rectfill(BTN_X - 96, BTN_Y, 92, 10, SOLID); txt(t, BTN_X - 92, BTN_Y + 1, WHITE); }
-  }
+  const sx = 252 - st.length * 8 - 16;                              // the star, then its number
+  rectfill(sx - 4, 61, 256 - sx + 1, 14, SOLID); if (on) rect(sx - 4, 61, 256 - sx + 1, 14, WHITE);
+  drawStar(sx, 63, canBuy()); txt(st, sx + 15, 64, CREAM);
+  if (on) { const t = 'A: THE CAFE'; rectfill(252 - t.length * 8 - 2, 75, t.length * 8 + 4, 9, SOLID); txt(t, 252 - t.length * 8, 76, WHITE); }
   if (ask) {
     const v = board[ask.i];
     panel(24, 120, 208, 40);
@@ -617,6 +612,23 @@ function drawHud() {
 }
 
 /** B on a cell: what it is (spec section 3). */
+const STAR = ['.....#.....', '....###....', '....###....', '###########', '.#########.', '..#######..', '..#######..', '.####.####.', '.###...###.', '.#.......#.'];
+const STAR_FILL = 116, STAR_RIM = 117;
+/** The star icon (11 x 10) at (x, y): gold with a dark outline; bold (a task can be bought): it pulses slowly, in a thicker, glowing rim. */
+function drawStar(x, y, bold) {
+  const k = bold ? 0.5 + 0.5 * Math.sin(clock / 22) : 0;
+  color(STAR_FILL, 31, Math.round(24 + 6 * k), Math.round(4 + 22 * k));
+  color(STAR_RIM, Math.round(26 + 5 * k), Math.round(18 + 13 * k), Math.round(2 + 20 * k));
+  const inStar = (i, j) => j >= 0 && j < 10 && i >= 0 && i < 11 && STAR[j][i] === '#';
+  for (let j = -2; j < 12; j++) for (let i = -2; i < 13; i++) {
+    if (inStar(i, j)) { pset(x + i, y + j, STAR_FILL); continue; }
+    let d = 9;
+    for (let dj = -2; dj <= 2; dj++) for (let di = -2; di <= 2; di++) if (inStar(i + di, j + dj)) d = Math.min(d, Math.max(Math.abs(di), Math.abs(dj)));
+    if (d === 1) pset(x + i, y + j, bold ? STAR_RIM : SHADOW);
+    else if (d === 2 && bold) pset(x + i, y + j, SHADOW);
+  }
+}
+
 function drawCard(v) {
   panel(24, 96, 208, 72);
   ctxt(nameOf(v), 104, GOLD);
@@ -650,7 +662,7 @@ function drawCafeScreen() {
   const a = cafePage, done = areasDone();
   panel(8, 88, 240, 128);
   txt(`${cafeSel === -1 ? '<' : ' '} ${AREAS[a][0]} ${cafeSel === -1 ? '>' : ' '}`, 16, 96, cafeSel === -1 ? WHITE : GOLD);
-  txt(`STARS ${stars}`, 240 - `STARS ${stars}`.length * 8, 96, CREAM);
+  const ss = String(stars); drawStar(240 - ss.length * 8 - 15, 95, false); txt(ss, 240 - ss.length * 8, 96, CREAM);
   AREAS[a][1].forEach(([name, kind, sty], t) => {
     const y = 116 + t * 18, on = t === cafeSel, d = taskDone(a, t);
     if (on) rectfill(12, y - 3, 232, 14, PANEL);

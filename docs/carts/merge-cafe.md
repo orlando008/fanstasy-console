@@ -43,8 +43,8 @@ As the board fills up, decide what to keep for later orders, what to merge and w
 | A | On a generator: make an item. On an item: **pick it up**. While holding: **drop** it on an empty cell (it moves), on an identical item (they **merge**), on an order that wants it (**served**), or back where it came from |
 | B | While holding: put it back. Otherwise: **show what the item is** (its name, its tier, what it makes next, what it sells for) |
 | SELECT | Sell the item under the cursor (asks once: A to confirm) |
-| START | The menu: RESUME, CAFE (the tasks and the decorating), RECIPES (the encyclopedia), QUIT TO TITLE; it opens on CAFE while the **[!]** shows |
-| [!] | A small button on the counter, under the stars, shown (steady, not blinking) while a café task can be bought: the cursor reaches it with RIGHT from the last order bubble, and A on it opens the café (the user's idea, 14 November 2026: it replaced a blinking START: CAFE) |
+| START | The menu: RESUME, CAFE (the tasks and the decorating), RECIPES (the encyclopedia), QUIT TO TITLE; it opens on CAFE while a task can be bought |
+| The star | The stars are a star icon and a number on the counter, under the third bubble. The cursor reaches the star with RIGHT from the last order bubble, and A on it opens the café's tasks. While a task can be bought the star has a bold, glowing outline and pulses slowly (the user's design, 14 November 2026: it replaced a blinking START: CAFE, then a [!] button) |
 
 Only the d-pad, A, B, START and SELECT, so it is playable on a phone's touch controls.
 
@@ -272,7 +272,7 @@ The game saves after every change (a merge, an order, a task), so turning the co
 
 **Fixes from the user's look at the gallery (14 November 2026):** an order did not look centred in its bubble (a picture is drawn sitting on its plate, so a short cup sat low): `art.py` writes each picture's middle to `rom/centres.bin` and the bubbles centre on it. The walls kept their stains after the paint: paint now makes the wall one colour (the darker and lighter steps take the middle one). The overlay's decorations were drawn over the bubbles (the overlay is above everything): the picture and the clock moved to the gap between the first bubble and the lamp, and the fairy lights and bunting leave out the bubbles' width. The OPEN sign was narrower than its word, half of it on the glass: it is a red sign hung in the window, wider than the word.
 
-**The [!] button (14 November 2026, the user's request):** "START: CAFE" blinked whenever a task could be bought, which late in the game was nearly always. It is now a steady **[!]** button under the stars: the cursor reaches it from the last order bubble (RIGHT), A on it opens the café, and START opens the menu with CAFE already chosen. `05-cafe.mjs` checks it.
+**The star (14 November 2026, the user's design):** "START: CAFE" blinked whenever a task could be bought, which late in the game was nearly always. The stars are now a **star icon** with the number beside it (`drawStar`, an 11 x 10 shape drawn on the overlay, its two colours set each frame); while a task can be bought it pulses slowly, with a bold, glowing outline. The cursor reaches it with RIGHT from the last order bubble, A on it opens the café (always: to look at the tasks), and START opens the menu with CAFE chosen. `05-cafe.mjs` checks it.
 
 **Step 8, the audio:** the three jazz songs and 19 effects of section 11.
 
