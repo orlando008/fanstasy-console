@@ -110,7 +110,11 @@ const VERSION_SLOT = 0, SAVE_VERSION = 1, BOARD_SLOT = 1, COINS_SLOT = 10, STARS
   SERVED_SLOT = 16, CRATES_SLOT = 17, STORY_SLOT = 18, SPOT_SLOT = 20, ARRIVED_SLOT = 23, FLAGS_SLOT = 24;
 /** An order in one slot: who (4 bits), two items (5 bits each), what has been handed over (2 bits), special, present. */
 const packSpot = (c) => (c ? (c.who | (c.items[0] << 4) | ((c.items[1] || 0) << 9) | ((c.got[0] ? 1 : 0) << 14) | ((c.got[1] ? 1 : 0) << 15) | ((c.special ? 1 : 0) << 16) | (1 << 17)) : 0);
-const unpackSpot = (v) => (v & (1 << 17) ? { who: v & 15, items: [(v >> 4) & 31, (v >> 9) & 31].filter((x) => x), got: [!!(v & (1 << 14)), !!(v & (1 << 15))], special: !!(v & (1 << 16)) } : null);
+function unpackSpot(v) {
+  if (!(v & (1 << 17))) return null;
+  const items = [(v >> 4) & 31, (v >> 9) & 31].filter((x) => x);
+  return { who: v & 15, items, got: [!!(v & (1 << 14)), !!(v & (1 << 15))].slice(0, items.length), special: !!(v & (1 << 16)) };   // one flag an item: a second, empty flag kept a one-item order from ever being done
+}
 function saveGame() {
   for (let k = 0; k < 9; k++) {
     let v = 0;
@@ -417,6 +421,7 @@ const canBuy = () => { const a = areasDone(); return a < 6 && stars >= TASK_COST
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = canBuy() ? 1 : 0; fx(SFX.pause); return; }   // with the [!] showing, the menu opens on CAFE
   for (let k = 0; k < 3; k++) if (!spots[k] && clock >= nextAt[k]) arrive(k);
+  for (let k = 0; k < 3; k++) if (spots[k] && spots[k].got.every((g) => g)) serve(k);   // an order with everything handed over is served (mends saves from before the fix above)
   placeGenerators();
   if (storyCard) { if (pressed(A) || pressed(B)) { storyCard = null; fx(SFX.move); } return; }
   if (ask) {                                                        // a question waiting: A yes, anything else no
@@ -427,8 +432,8 @@ function updatePlay() {
   if (card !== -1 || orderCard !== -1) { if (pressed(A) || pressed(B) || pressed(SELECT)) card = orderCard = -1; return; }
   if (cur === BUTTON) {                                             // on the star: A opens the café
     if (pressed(A)) { fx(SFX.select); toCafe(); }
-    else if (stepped(LEFT) || stepped(UP)) { cur = -3; fx(SFX.move); }
-    else if (stepped(DOWN)) { cur = SPOT_COL[2]; fx(SFX.move); }
+    else if (stepped(LEFT) || stepped(UP)) { cur = -3; fx(SFX.move); }         // up to the last bubble
+    else if (stepped(DOWN)) { cur = COLS - 1; fx(SFX.move); }                 // down to the top-right cell
     return;
   }
   if (cur < 0) {                                                    // on the orders
@@ -436,7 +441,7 @@ function updatePlay() {
     if (stepped(LEFT) && k > 0) { cur++; fx(SFX.move); }
     if (stepped(RIGHT) && k < 2) { cur--; fx(SFX.move); }
     else if (stepped(RIGHT) && held < 0) { cur = BUTTON; fx(SFX.move); }   // past the last bubble: the star
-    if (stepped(DOWN)) { cur = SPOT_COL[k]; fx(SFX.move); }
+    if (stepped(DOWN)) { cur = k === 2 ? BUTTON : SPOT_COL[k]; fx(SFX.move); }   // the last bubble's way down is the star
     if (pressed(A)) { if (held >= 0) hand(k); else if (spots[k]) orderCard = k; }
     else if (pressed(B)) { if (held >= 0) { held = -1; fx(SFX.drop); } else if (spots[k]) orderCard = k; }
     else if (pressed(SELECT)) swapOrder(k);
@@ -445,7 +450,7 @@ function updatePlay() {
   const c = colOf(cur), r = rowOf(cur);
   if (stepped(LEFT) && c > 0) { cur--; fx(SFX.move); }
   if (stepped(RIGHT) && c < COLS - 1) { cur++; fx(SFX.move); }
-  if (stepped(UP)) { if (r > 0) cur -= COLS; else cur = -1 - (c <= 2 ? 0 : c <= 4 ? 1 : 2); fx(SFX.move); }
+  if (stepped(UP)) { if (r > 0) cur -= COLS; else cur = c === COLS - 1 ? BUTTON : -1 - (c <= 2 ? 0 : c <= 4 ? 1 : 2); fx(SFX.move); }   // the top-right cell's way up is the star
   if (stepped(DOWN) && r < ROWS - 1) { cur += COLS; fx(SFX.move); }
   if (pressed(A)) press(cur);
   else if (pressed(B)) { if (held >= 0) { held = -1; fx(SFX.drop); } else if (board[cur] !== EMPTY) card = cur; }

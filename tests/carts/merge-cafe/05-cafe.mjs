@@ -29,7 +29,11 @@ ok(p.board.includes(p.GEN0 + 2), 'the milk churn comes onto the board');
   v.press('A'); ok(q.state === 'cafe', 'A on it opens the café, to see the tasks'); v.press('B');
   q.stars = q.TASK_COST[0]; v.run(1); ok(q.canBuy(), 'with the stars for a task, it pulses');
   v.press('START'); ok(q.paused && q.pauseSelNow === 1, 'START opens the menu with CAFE chosen'); v.press('B');
-  q.cur = q.BUTTON; v.press('LEFT'); ok(q.cur === -3, 'LEFT goes back to the last order'); q.cur = q.BUTTON; v.press('DOWN'); ok(q.cur === q.SPOT_COL[2], 'DOWN to the board');
+  q.cur = q.BUTTON; v.press('LEFT'); ok(q.cur === -3, 'LEFT goes back to the last order'); q.cur = q.BUTTON; v.press('UP'); ok(q.cur === -3, 'and UP');
+  q.cur = q.BUTTON; v.press('DOWN'); ok(q.cur === q.COLS - 1, 'DOWN from the star goes to the top-right cell');
+  q.cur = q.COLS - 1; v.press('UP'); ok(q.cur === q.BUTTON, 'UP from the top-right cell goes to the star');
+  q.cur = -3; v.press('DOWN'); ok(q.cur === q.BUTTON, 'DOWN from the last bubble goes to the star');
+  q.cur = q.COLS - 2; v.press('UP'); ok(q.cur === -3, 'UP from the cell beside it still goes to the last bubble');
 }
 
 // Each colour style changes the café's colours: the counter (palette 4), the wood stain and the paint (palette 1).

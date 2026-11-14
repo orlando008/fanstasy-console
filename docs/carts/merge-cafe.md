@@ -44,7 +44,7 @@ As the board fills up, decide what to keep for later orders, what to merge and w
 | B | While holding: put it back. Otherwise: **show what the item is** (its name, its tier, what it makes next, what it sells for) |
 | SELECT | Sell the item under the cursor (asks once: A to confirm) |
 | START | The menu: RESUME, CAFE (the tasks and the decorating), RECIPES (the encyclopedia), QUIT TO TITLE; it opens on CAFE while a task can be bought |
-| The star | The stars are a star icon and a number on the counter, under the third bubble. The cursor reaches the star with RIGHT from the last order bubble, and A on it opens the café's tasks. While a task can be bought the star has a bold, glowing outline and pulses slowly (the user's design, 14 November 2026: it replaced a blinking START: CAFE, then a [!] button) |
+| The star | The stars are a star icon and a number on the counter, under the third bubble. The cursor reaches the star with UP from the top-right cell, DOWN or RIGHT from the last order bubble; A on it opens the café's tasks. While a task can be bought the star has a bold, glowing outline and pulses slowly (the user's design, 14 November 2026: it replaced a blinking START: CAFE, then a [!] button) |
 
 Only the d-pad, A, B, START and SELECT, so it is playable on a phone's touch controls.
 
@@ -277,6 +277,8 @@ The game saves after every change (a merge, an order, a task), so turning the co
 **Fix (14 November 2026, the user: "mend the counter... I can't see any visual change"):** the fix for clean paint above had been put into the middle of a line, and its comment swallowed the two calls after it, which set the wood stain's and the counter's colours: since then neither style showed. Repaired, and the counter's lit top edge now follows its style too. `05-cafe.mjs` now checks that every colour style changes the colours (it fails without the repair).
 
 **Text that was cut off (14 November 2026, the user found one in the recipes):** a new test, `06-text.mjs`, watches every print while it walks every screen, card, question and message with the longest names and numbers, and fails on a line that runs off the screen or past its panel. It found ten: the recipes' hint (now "MAKE IT: 2 X ROLL", or "FROM THE GRAIN SACK" for a first tier), a passer-by's daily special and the sale of a coffee pot set (wider panels), two messages (shorter: "OPEN A CRATE BESIDE OPEN SPACE", "THE CAFE IS OPEN FOR GOOD!"), the title's question (on two lines) and the title's help (its shadow a pixel off the screen).
+
+**Fixes from the user's play (14 November 2026):** (1) customers stayed at the counter with empty bubbles after being served. An order's "handed over" flags are saved as two bits, and a one-item order came back from a save with two flags; handing over its item ticked the first, and the empty second kept it from ever being complete. The loader now keeps one flag an item, and an order with everything handed over is served at once (which also frees the customers stuck in a save from before). (2) The star was only reached by going up to the last bubble and then RIGHT: now UP from the top-right cell and DOWN from the last bubble go to it too (and DOWN from the star to the top-right cell, UP back to the bubble). Tests in `04-orders.mjs` (they fail without the fix) and `05-cafe.mjs`; the bot walks to the third bubble from the column beside the corner now.
 
 **Step 8, the audio:** the three jazz songs and 19 effects of section 11.
 

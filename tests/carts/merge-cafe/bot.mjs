@@ -48,7 +48,7 @@ function towards(p, where) {
   if (where < 0) {
     const k = -1 - where;
     if (cur < 0) return (-1 - cur) < k ? 'RIGHT' : 'LEFT';
-    const col = p.SPOT_COL[k], c = cur % p.COLS, r = Math.floor(cur / p.COLS);
+    const col = [2, 4, 5][k], c = cur % p.COLS, r = Math.floor(cur / p.COLS);   // the column whose UP reaches the bubble (the top-right cell's goes to the star)
     return c !== col ? (c < col ? 'RIGHT' : 'LEFT') : 'UP';
   }
   if (cur < 0) return 'DOWN';

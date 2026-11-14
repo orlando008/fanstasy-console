@@ -58,4 +58,15 @@ ok(p.spots.every((c) => c.items.every((v) => p.lineOf(v) < 2 && p.tierOf(v) <= 3
   const regs = []; for (let k = 0; k < 30; k++) { q.spots = [null, null, null]; q.arrive(0); regs.push(q.spots[0].who); }
   ok(regs.filter((w) => w < 5).length === 10 && regs.filter((w) => w < 5).every((w) => w < 2), 'every third customer is a regular, from the lines open (Marion and James at first)', regs.join(''));
 }
+// A one-item order kept through a save is served when its item is handed over (it was not: the save gave it a second, empty flag).
+{
+  const v4 = newGame(4), q = v4.probe(); v4.run(100);
+  q.spots = [{ who: 5, items: [item(0, 2)], got: [false], special: false }, null, null]; q.saveGame();
+  const save = Int32Array.from(v4.m.save), v5 = newGame(5, { save }), r = v5.probe(); v5.run(2);
+  ok(r.spots[0] && r.spots[0].got.length === 1, 'a one-item order comes back from the save with one flag');
+  const bb = r.board.slice(); bb[0] = item(0, 2); r.board = bb; r.setHeld(0); r.hand(0);
+  ok(!r.spots[0], 'and is served when its item is handed over');
+  r.spots = [{ who: 5, items: [item(0, 2)], got: [true], special: false }, null, null]; v5.run(2);   // how an old save's stuck order now loads
+  ok(!r.spots[0], 'an order already all handed over (an old save\'s) is served at once');
+}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);
