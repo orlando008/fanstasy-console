@@ -1,4 +1,4 @@
-"""Five public domain classics arranged for the NOVA-16 sound chip, from the note text in scores/ (import_scores.py
+"""Six public domain classics arranged for the NOVA-16 sound chip, from the note text in scores/ (import_scores.py
 reads it out of public domain engravings; scores/SOURCES.md has each source and its licence):
 
     song 0  Mozart, Rondo alla Turca (K. 331), bars 1 to 32       a quick level, an action scene, a rhythm game
@@ -6,10 +6,11 @@ reads it out of public domain engravings; scores/SOURCES.md has each source and 
     song 2  Bach, Toccata and Fugue in D minor, bars 1 to 16      a boss, a castle, a villain's entrance
     song 3  Chopin, Minute Waltz (Op. 64 No. 1), bars 1 to 36     a chase, a timer running out
     song 4  Pachelbel, Canon in D, bars 1 to 24                   a title, a credits roll, a peaceful place
+    song 5  Bach, Jesu, Joy of Man's Desiring (BWV 147), all      an ending, a church, a hall of heroes
 
     python3 tools/devkit/music/songs/classics.py carts/src/<name>/audio.json
 
-It writes a whole audio.json with these five songs. To use one beside a cart's own songs, copy its instruments and its
+It writes a whole audio.json with these six songs. To use one beside a cart's own songs, copy its instruments and its
 piece() into the cart's audio.py (a Medley, tools/devkit/music/medley.py). Songs use channels 0 to 6 (channel 7 holds
 the speed), so an SFX on channel 6 mutes the hats while it plays.
 """
@@ -53,4 +54,7 @@ m.song([beat(m.piece(['minute_waltz'], 3, waltz), 12, {0: 'KICK', 4: 'HAT', 8: '
 # The Canon: the ground bass on the triangle, the three violins (each the same tune, two bars apart) on three pulses.
 m.song([m.piece(['canon'], 7, {'lead': (0, 'LEAD', -12), 'inner': (3, 'KEYS', -12, 13), 'tenor': (4, 'KEYS2', -12, 13), 'bass': (2, 'BASS', 0)})],
        echo=(8, 6, 6, 7))
-a.write(sys.argv[1], songs=5)
+# Jesu, Joy: the triplet line (and the chorale's top note where it is played as chords) on the lead, a row a triplet.
+m.song([m.piece(['jesu'], 13, {'lead': (0, 'LEAD', -12), 'inner': (3, 'KEYS', -12, 13), 'tenor': (4, 'KEYS2', 0, 13), 'bass': (2, 'BASS', 0)})],
+       echo=(8, 6, 6, 7))
+a.write(sys.argv[1], songs=6)

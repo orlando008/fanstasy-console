@@ -9,6 +9,11 @@ lengths, as an excerpt on a grid. Four of the files are **Public Domain**; the C
 allows any use with credit: a game that ships it credits the engraving to Michael Fischer v. Mollard (Mutopia Project). The MIDI files are not in the repository. **Rush D** (`../rush_d.py`) is the
 toolkit's own, an original piece written in code.
 
+*Jesu, Joy of Man's Desiring* is read from a MIDI file the repository's owner supplied, not from the collection: a
+piano performance (one track, played in by hand, with no source or licence in the file), which `import_scores.py`
+puts on a grid of its triplets. **Its source and licence are not recorded yet: confirm them, and add them here,
+before a game ships the song.**
+
 | Song (`classics.py`) | Text file | Piece | Source (in the collection's mutopia folder) | Licence |
 |---|---|---|---|---|
 | 0 | `alla_turca.txt` | Mozart, Piano Sonata No. 11 (K. 331), *Rondo alla Turca*, bars 1 to 32 | `MozartWA/KV331/KV331_3_RondoAllaTurca/KV331_3_RondoAllaTurca-lys/KV331_3_RondoAllaTurca.mid` | Public domain (Mutopia-2015/08/13-108; from IMSLP) |
@@ -16,3 +21,4 @@ toolkit's own, an original piece written in code.
 | 2 | `toccata.txt` | Bach, *Toccata and Fugue in D minor* (BWV 565), bars 1 to 16 | `BachJS/BWV565/ToccataFugue/ToccataFugue.mid` | Public domain (Mutopia-2011/09/11-1780; Bach-Gesellschaft Ausgabe, 1867) |
 | 3 | `minute_waltz.txt` | Chopin, Waltz in D-flat (Op. 64 No. 1, the "Minute Waltz"), bars 1 to 36 | `ChopinFF/O64/chopin_valse_op64_no1/chopin_valse_op64_no1-lys/chopin_valse_op64_no1.m2.mid` | Public domain (Mutopia-2015/01/17-483; Edition Peters) |
 | 4 | `canon.txt` | Pachelbel, *Canon per 3 Violini e Basso* (the Canon in D), bars 1 to 24 | `PachelbelJ/Canon_per_3_Violini_e_Basso/Canon_per_3_Violini_e_Basso-lys/canon_per_3_violini_e_basso.mid` (tracks 1 to 4; 5 to 8 repeat them) | **CC BY 4.0**: credit Michael Fischer v. Mollard, Mutopia Project (Mutopia-2015/09/02-2047; from IMSLP) |
+| 5 | `jesu.txt` | Bach, *Jesu, Joy of Man's Desiring* (Cantata BWV 147, the chorale "Jesus bleibet meine Freude"), a piano arrangement, all of it | `Jesu-Joy-Of-Man-Desiring.mid`, supplied by the repository's owner | **Not known yet** (the composition is public domain; the file's own licence is to be confirmed) |
