@@ -113,14 +113,20 @@ def greensleeves(a, m):
 
 
 def william_tell(a, m):
-    """Three times through the gallop: plain over its oom-pa; with drums and the tune doubled an octave down; with drums
-    and a second voice a third under the tune."""
-    plain = {'lead': (0, 'LEAD', 0, 13), 'bass': (2, 'BASS', 0), 'inner': (3, 'KEYS', 0, 10), 'tenor': (4, 'KEYS2', 0, 10)}
+    """About a minute: Rossini's 8-bar gallop six times (plain, doubled, in thirds, in A major and back in E), between
+    parts that are the toolkit's own: an intro, a bridge in C# minor, a run up to A, the way back to E, and a coda."""
+    plain = {'lead': (0, 'LEAD', 0, 11), 'bass': (2, 'BASS', 0), 'inner': (3, 'KEYS', 0, 10), 'tenor': (4, 'KEYS2', 0, 10)}
     doubled = dict(plain, **{'lead@2': (1, 'KEYS', -12, 11)})
     thirds = dict(plain, harm=(1, 'KEYS', 0, 12))
+    in_a = lambda ps: {k: (ch, inst, semis - 7, *vol) for k, (ch, inst, semis, *vol) in ps.items()}   # down a fifth: A major
     hits = {0: 'KICK', 1: 'HAT', 2: 'SNARE', 4: 'KICK', 5: 'HAT', 6: 'SNARE'}       # the drums gallop too
-    m.song([stop(m.piece(['tell'], 5, parts(plain)), [1, 5, 6]), beat(a, m.piece(['tell'], 5, parts(doubled)), 8, hits),
-            beat(a, m.piece(['tell'], 5, parts(thirds)), 8, hits)], echo=(4, 3, 4, 9))
+    def go(name, ps, drums=True):
+        # each part lets go of what the part before left ringing (its last notes run to the end of its rows)
+        piece = stop(m.piece([name], 5, parts(ps)), [1, 3, 4] + ([] if drums else [5, 6]))
+        return beat(a, piece, 8, hits) if drums else piece
+    m.song([go('tell_intro', plain, False), go('tell', plain, False), go('tell', doubled), go('tell_bridge', doubled),
+            go('tell_run', plain), go('tell', in_a(thirds)), go('tell', in_a(doubled)), go('tell_back', doubled),
+            go('tell', thirds), go('tell', doubled), go('tell_coda', thirds)], echo=(4, 3, 4, 9))
 
 
 CLASSICS = {f.__name__: f for f in (alla_turca, entertainer, toccata, minute_waltz, canon, jesu, ode_to_joy, greensleeves, william_tell)}

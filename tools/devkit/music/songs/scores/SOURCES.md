@@ -13,6 +13,9 @@ The *Ode to Joy* (`ode.txt`, `ode2.txt`), *Greensleeves* (`green.txt`, `green2.t
 (`tell.txt`) are read from no file: their tunes are written out by hand in `../import_scores.py` (`ODE`, `GREEN`,
 `TELL`), from memory, with simple harmonies, so there is no file licence to respect. The gallop's last two bars (its
 cadence) are the least sure of these from memory; the collection has no file of the overture to check them against.
+The rest of the *William Tell* song (`tell_intro.txt`, `tell_bridge.txt`, `tell_run.txt`, `tell_back.txt`,
+`tell_coda.txt`) is not Rossini's: it is the toolkit's own, written around his theme in its style, since the rest of
+the overture is not known well enough from memory to write out.
 
 *Jesu, Joy of Man's Desiring* is read from a MIDI file the repository's owner supplied, not from the collection: a
 piano performance (one track, played in by hand, with no source or licence in the file), which `import_scores.py`
@@ -29,4 +32,4 @@ before a game ships the song.**
 | `jesu` | `jesu.txt` | Bach, *Jesu, Joy of Man's Desiring* (Cantata BWV 147, the chorale "Jesus bleibet meine Freude"), a piano arrangement, all of it | `Jesu-Joy-Of-Man-Desiring.mid`, supplied by the repository's owner | **Not known yet** (the composition is public domain; the file's own licence is to be confirmed) |
 | `ode_to_joy` | `ode.txt`, `ode2.txt` | Beethoven, Symphony No. 9 (Op. 125), the finale's *Ode to Joy* theme, 16 bars: plain, a variation, the variation a step up | — (written by hand from memory, in `import_scores.py`) | Public domain (Beethoven died in 1827); the arrangement is the toolkit's own |
 | `greensleeves` | `green.txt`, `green2.txt` | *Greensleeves* (traditional, English, 16th century), the verse and the refrain, 16 bars of 6/8: plain, then a variation | — (written by hand from memory, in `import_scores.py`) | Public domain (traditional); the arrangement is the toolkit's own |
-| `william_tell` | `tell.txt` | Rossini, *Guillaume Tell* overture (1829), the finale's gallop, 8 bars, three times | — (written by hand from memory, in `import_scores.py`) | Public domain (Rossini died in 1868); the arrangement is the toolkit's own |
+| `william_tell` | `tell.txt` (and the toolkit's own `tell_*.txt`) | Rossini, *Guillaume Tell* overture (1829), the finale's gallop, 8 bars, six times, between parts of the toolkit's own | — (written by hand from memory, in `import_scores.py`) | Public domain (Rossini died in 1868); the arrangement is the toolkit's own |

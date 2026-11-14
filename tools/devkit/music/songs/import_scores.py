@@ -129,24 +129,48 @@ TELL = [gallop(71) + gallop(71), [(71, 1), (71, 1), (76, 2), (78, 2), (80, 2)],
         gallop(71) + gallop(71), [(71, 1), (71, 1), (80, 2), (76, 2), (80, 2)],
         gallop(71) + gallop(71), [(71, 1), (71, 1), (76, 2), (78, 2), (80, 2)],
         [(76, 2), (80, 2), (83, 2), (81, 2)], [(78, 2), (75, 2), (76, 4)]]
-TCHORD = {'E': (40, 56, 59), 'B7': (47, 51, 57), 'A': (45, 57, 61)}
 TELL_CHORDS = ['E E', 'E E', 'B7 B7', 'E E', 'E E', 'E E', 'E A', 'B7 E']
+# The rest of the song is the toolkit's own, around Rossini's theme (the overture's other music is not known well
+# enough from memory to write out): an intro, a bridge in C# minor, a run up to A major, a way back to E, and a coda.
+R = None
+TELL_INTRO = ([gallop(64) + gallop(68), gallop(71) + [(76, 4)], gallop(64) + gallop(68), gallop(71) + [(80, 4)]] +
+              [[(R, 8)]] * 4, ['E E'] * 4 + ['B7 B7'] * 4)
+TELL_BRIDGE = ([gallop(73) + gallop(73), [(73, 1), (73, 1), (76, 2), (80, 2), (78, 2)],
+                gallop(71) + gallop(71), [(71, 1), (71, 1), (75, 2), (78, 2), (76, 2)],
+                gallop(69) + gallop(69), [(69, 1), (69, 1), (73, 2), (76, 2), (75, 2)],
+                gallop(68) + gallop(68), [(68, 1), (68, 1), (71, 2), (75, 2), (71, 2)]],
+               ['C#m C#m', 'C#m C#m', 'B B', 'B B', 'A A', 'A A', 'G# G#', 'G# G#'])
+TELL_RUN = ([[(p, 1) for p in (64, 66, 68, 69, 71, 73, 74, 76)], gallop(76) + gallop(76),
+             [(p, 1) for p in (66, 68, 69, 71, 73, 74, 76, 78)], gallop(78) + gallop(78),
+             [(p, 1) for p in (68, 69, 71, 73, 74, 76, 78, 80)], gallop(80) + gallop(80), gallop(83) + gallop(83), [(83, 4), (R, 4)]],
+            ['E7 E7'] * 8)
+TELL_BACK = ([gallop(69) + gallop(69), [(69, 1), (69, 1), (73, 2), (71, 2), (69, 2)],
+              gallop(71) + gallop(71), [(71, 1), (71, 1), (75, 2), (73, 2), (71, 2)],
+              gallop(71) + gallop(71), gallop(75) + gallop(75), gallop(78) + gallop(78), [(83, 4), (R, 4)]],
+             ['A A', 'A A', 'B B', 'B B', 'B7 B7', 'B7 B7', 'B7 B7', 'B7 B7'])
+TELL_CODA = ([gallop(76) + gallop(80), gallop(83) + gallop(80), gallop(76) + gallop(80), gallop(83) + [(83, 4)],
+              [(76, 2), (R, 2), (75, 2), (R, 2)], [(76, 2), (R, 2), (75, 2), (R, 2)], [(76, 8)], [(R, 8)]],
+             ['E E', 'E E', 'E E', 'E E', 'E B7', 'E B7', 'E E', 'E E'])
+TCHORD = {'E': (40, 56, 59), 'B7': (47, 51, 57), 'A': (45, 57, 61), 'C#m': (49, 52, 56), 'B': (47, 51, 54),
+          'G#': (44, 48, 51), 'E7': (40, 56, 62)}
 E_MAJOR = [4, 6, 8, 9, 11, 1, 3]
 
 
-def william_tell():
-    """The gallop over an oom-pa (the bass on the beat, the chord on the off-beat eighths), with a second voice a third
-    under the tune in E major (`harm`, for the last time through)."""
+def tell_score(bars, chords):
+    """A part of the gallop on 8 rows a bar: the tune (None a rest) over an oom-pa (the bass on the beat, the chord on
+    the off-beat eighths), with a second voice a third under the tune in E major (`harm`)."""
     tune, bass, inner, tenor, harm = [], [], [], [], []
-    for b, (notes, halves) in enumerate(zip(TELL, TELL_CHORDS)):
+    for b, (notes, halves) in enumerate(zip(bars, chords)):
         r = b * 8
         for p, d in notes:
-            tune.append((r, p, d))
-            q = p - 1
-            while q % 12 not in E_MAJOR: q -= 1
-            q -= 1
-            while q % 12 not in E_MAJOR: q -= 1
-            harm.append((r, q, d)); r += d
+            if p:
+                tune.append((r, p, d))
+                q = p - 1
+                while q % 12 not in E_MAJOR: q -= 1
+                q -= 1
+                while q % 12 not in E_MAJOR: q -= 1
+                harm.append((r, q, d))
+            r += d
         for h, c in enumerate(halves.split()):
             lo, c1, c2 = TCHORD[c]; r = b * 8 + h * 4
             bass.append((r, lo, 2)); inner.append((r + 2, c2, 2)); tenor.append((r + 2, c1, 2))
@@ -162,8 +186,12 @@ def by_hand():
     write_score(os.path.join(HERE, 'scores', 'green.txt'), 'green', 'Greensleeves (by hand), 16 bars of 6/8, a row a sixteenth', plain, 192)
     write_score(os.path.join(HERE, 'scores', 'green2.txt'), 'green2', 'Greensleeves, the variation over an arpeggio (by hand), a row a sixteenth', var, 192)
     print('green, green2: 192 rows each (by hand)')
-    write_score(os.path.join(HERE, 'scores', 'tell.txt'), 'tell', "Rossini's William Tell gallop (by hand), 8 bars of 2/4, a row a sixteenth", william_tell(), 64)
-    print('tell: 64 rows (by hand)')
+    write_score(os.path.join(HERE, 'scores', 'tell.txt'), 'tell', "Rossini's William Tell gallop (by hand), 8 bars of 2/4, a row a sixteenth", tell_score(TELL, TELL_CHORDS), 64)
+    for name, (bars, chords), what in (('tell_intro', TELL_INTRO, 'an intro'), ('tell_bridge', TELL_BRIDGE, 'a bridge in C# minor'),
+                                       ('tell_run', TELL_RUN, 'a run up to A major'), ('tell_back', TELL_BACK, 'the way back to E'),
+                                       ('tell_coda', TELL_CODA, 'a coda')):
+        write_score(os.path.join(HERE, 'scores', name + '.txt'), name, "the William Tell gallop's %s (the toolkit's own, by hand), 8 bars of 2/4, a row a sixteenth" % what, tell_score(bars, chords), 64)
+    print('tell and its five parts: 64 rows each (by hand)')
 
 
 def main(folder):

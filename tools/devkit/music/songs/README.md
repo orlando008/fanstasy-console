@@ -14,7 +14,7 @@ game's `audio.py`; it comes in with its own instruments and plays as one of the 
 | `jesu` | Bach, *Jesu, Joy of Man's Desiring* (BWV 147), the whole piece | 2 min 32 s | an ending, a church, a hall of heroes |
 | `ode_to_joy` | Beethoven, the *Ode to Joy* (Symphony No. 9): plain, a variation over drums, then a step up | 85 s | a victory, a level cleared, a festival |
 | `greensleeves` | *Greensleeves* (traditional): plain over a harp, then a variation over drums | 48 s | a village, a tavern, a forest, a sad scene |
-| `william_tell` | Rossini, the *William Tell* overture's gallop, 8 bars three times: plain, doubled over galloping drums, in thirds | 16 s | a chase, a race, a horse ride, a cartoon dash |
+| `william_tell` | Rossini, the *William Tell* overture's gallop: his 8-bar theme six times (plain, doubled, in thirds, in A major, back in E), between an intro, a bridge in C# minor, a run, a way back and a coda that are the toolkit's own | 59 s | a chase, a race, a horse ride, a cartoon dash |
 
 Every song loops. Before a game ships one, check its licence in `scores/SOURCES.md`: the *Canon*'s notes come from a
 CC BY file, so the game credits its engraver, and the source of *Jesu, Joy*'s file is still to be confirmed.
