@@ -28,7 +28,7 @@ const same = (tile, pic) => {
     drawn++; if (same(t, p.slotPic[k])) right++;
   }
   ok(drawn >= 35 && right === drawn, 'a board of 35 different things is all drawn, each from its own picture', `${drawn} drawn, ${right} right`);
-  vm.run(20); const loads = p.picLoads; vm.run(60);                  // away from Mabel's blink (a second picture of her)
+  vm.run(20); const loads = p.picLoads; vm.run(60);                  // away from Marion's blink (a second picture of her)
   ok(p.picLoads === loads, 'and nothing is copied again while the board does not change');
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

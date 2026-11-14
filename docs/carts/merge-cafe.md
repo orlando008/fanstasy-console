@@ -105,11 +105,11 @@ Generators come in as the café grows (5.5): the grain sack and the grinder from
 - **UP from the top row** puts the cursor on the bubble of the nearest place; A on it with an item in hand hands it over (the wrong item is refused with a knock); A or B with nothing in hand shows the order (who, what, the reward), and SELECT on it **swaps** the order for a new one (free, at most once every 30 seconds), so the game never blocks on an order the board cannot make yet.
 
 **Regulars.** There are five named regulars, one a line, each met when their line opens. Every **third** customer is a regular (taking turns among those whose line is open), with their **favourite**: the best of their line the café is asked for now (`TIER_TOP`), which gives **a star more**. Each time a regular is served they say the next of their **6 story lines**, so their story unfolds over the campaign:
-- Mabel, a retired baker.
-- Theo, a sleepy night-shift nurse who lives on coffee.
-- Pip, a child with a sweet tooth.
-- Rosa, who runs the market's fruit stall.
-- Mr. Finch, a fussy collector of teacups.
+- Marion, a retired baker.
+- James, a sleepy night-shift nurse who lives on coffee.
+- Benny, a child with a sweet tooth.
+- Gina, who runs the market's fruit stall.
+- Mr. Fisk, a fussy collector of teacups.
 
 **The daily special.** Every **10 orders** served, the next customer is the **daily special**: a gold bubble asking for one item two tiers above the usual, worth **twice** the coins and stars.
 
@@ -239,12 +239,12 @@ The game saves after every change (a merge, an order, a task), so turning the co
 1. **Vertical slice:** the board (7 x 5), the cursor, pick up, drop, move and merge (5.1), one generator and its line in plain shapes, NO ROOM, selling, the save. Tests for every rule of 5.1 to 5.3, and a **bot** that taps, merges and sells.
 2. **The art proof:** the look, agreed before the rest is drawn:
    - the bakery line (wheat to the layer cake) and its grain sack;
-   - one regular (Mabel, both frames);
+   - one regular (Marion, both frames);
    - the palettes;
    - the play screen: the café shabby, with the board.
 
    From the recipes of `docs/dev/art-recipes.md`; then `node tools/devkit/art/proof.mjs merge-cafe`, the picture sent to the user, and what they said written here.
-   - **Sent** on 14 November 2026: the bakery line and the grain sack, Mabel, the palettes, the play screen with the café shabby.
+   - **Sent** on 14 November 2026: the bakery line and the grain sack, Marion, the palettes, the play screen with the café shabby.
    - **Agreed** on 14 November 2026: "Looks good, proceed". No changes asked for: the other lines are drawn in the same way (sculpted, outlined, lit from the upper left, a palette of three or four ramps a line).
 3. **All five lines:** the items and generators, the crates and their prices, the board filling and growing.
 4. **Customers and orders:** the three customers, the orders and their rewards, serving, swapping, the regulars and their favourites, the daily special.
@@ -257,7 +257,7 @@ The game saves after every change (a merge, an order, a task), so turning the co
    - the prices and rewards tuned to about 2 to 3 hours;
    - the label, the PNG cart and the Library (`node tools/release.js merge-cafe`), and a README row.
 
-**Step 1, built:** the board as pure rules (`newBoard`, `nearestEmpty`, `dropKind`, `crateOpenable`, `crateCost`) and the actions on it (`press`: make, pick up, drop, open; `generate`; `drop`: move, merge, swap, refuse; `sell`), the cursor with a repeating d-pad, the item card (B), the sell and crate questions, found items and their star, the save after every change (section 13), the title (CONTINUE, NEW CAFE with a question), pause. The art: the café shabby (BG1, its counter in high-priority tiles so customers stand behind it), the board's counter top and 35 plates (BG0), an order bubble, the logo, the bakery line and its grain sack, the crate, the cursor, Mabel (two frames: a blink), and placeholders (a ball that grows with the tier) for the other four lines. The picture pool (section 14). The effects for every action (a merge's chime rises with the tier). Tests: `01-flow` (the title, a new café, continuing, NEW CAFE asks, frame time), `02-rules` (every number of 5.1 to 5.3 and the buttons), `03-pool` (a board of 35 different pictures all drawn right, nothing reloaded while it stands still). `bot.mjs` plays with the buttons: merge a pair, else tap a generator, else open a crate it can pay for, else sell the cheapest.
+**Step 1, built:** the board as pure rules (`newBoard`, `nearestEmpty`, `dropKind`, `crateOpenable`, `crateCost`) and the actions on it (`press`: make, pick up, drop, open; `generate`; `drop`: move, merge, swap, refuse; `sell`), the cursor with a repeating d-pad, the item card (B), the sell and crate questions, found items and their star, the save after every change (section 13), the title (CONTINUE, NEW CAFE with a question), pause. The art: the café shabby (BG1, its counter in high-priority tiles so customers stand behind it), the board's counter top and 35 plates (BG0), an order bubble, the logo, the bakery line and its grain sack, the crate, the cursor, Marion (two frames: a blink), and placeholders (a ball that grows with the tier) for the other four lines. The picture pool (section 14). The effects for every action (a merge's chime rises with the tier). Tests: `01-flow` (the title, a new café, continuing, NEW CAFE asks, frame time), `02-rules` (every number of 5.1 to 5.3 and the buttons), `03-pool` (a board of 35 different pictures all drawn right, nothing reloaded while it stands still). `bot.mjs` plays with the buttons: merge a pair, else tap a generator, else open a crate it can pay for, else sell the cheapest.
 
 **Step 1, results:** the bot, in 20,000 frames (5.5 minutes), makes 475 merges from 910 taps, sells 410 items, opens 11 or 12 crates and reaches a layer cake; nothing ever leaves it with nothing to do. Selling is the only income until the orders of step 4, which is why the crates come slowly. Frames 99th percentile well under 8 ms.
 
@@ -279,7 +279,7 @@ Defaults I chose that you did not confirm (all easy to change):
 
 - **The board:** 7 x 5 cells of 28 px, with 12 open at the start and 23 under crates; crates cost `10 + 5 x opened` coins.
 - **The items:** the 30 items' names and the five lines (bakery, coffee, dairy, fruit, tableware), and the order the generators come in.
-- **The regulars:** their names and characters (Mabel, Theo, Pip, Rosa and Mr. Finch), and the 6 café areas.
+- **The regulars:** renamed by the user on 14 November 2026 (they were Mabel, Theo, Pip, Rosa and Mr. Finch; the clerk is now a lawyer): Marion, James, Benny, Gina and Mr. Fisk. Their characters and stories are as they were. The 6 café areas are my choice.
 - **The numbers:**
   - a generator gives tier 2 with a 10 % chance;
   - a sale is worth `tier^2` coins;

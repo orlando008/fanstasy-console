@@ -36,10 +36,10 @@ LINE_PALS = [bake, coffee_pal, dairy_pal, fruit_pal, table_pal]
 # Sprite palettes 5 to 7 are the three places at the counter: the same roles in each, and code.js loads a customer's colours (rom/people.bin)
 # into the palette of the place they stand at. Everything else (the crate, the cursor, the café's furniture) is drawn in the item palettes.
 PEOPLE = [   # name, skin, hair, shirt, apron or trousers: the regulars (one a line), then three passers-by
-    ('MABEL', 'e8b088', 'c8c8d0', '5878c0', 'f0e8d8'), ('THEO', 'c08860', '403028', '40a8a0', 'e8f0f0'),
-    ('PIP', 'f0c098', 'e0a040', 'e04848', '4060b0'), ('ROSA', 'a87050', '302020', '58a050', 'f0e0c8'),
-    ('FINCH', 'e8c0a0', 'b0b0b8', '806040', 'f0f0e8'), ('STUDENT', 'd8a078', '603820', '8060c0', '404860'),
-    ('CLERK', 'b88060', '282020', '506070', 'e0e0e8'), ('TOURIST', 'f0c8a0', 'c08040', 'f0a040', '60a0d0')]
+    ('MARION', 'e8b088', 'c8c8d0', '5878c0', 'f0e8d8'), ('JAMES', 'c08860', '403028', '40a8a0', 'e8f0f0'),
+    ('BENNY', 'f0c098', 'e0a040', 'e04848', '4060b0'), ('GINA', 'a87050', '302020', '58a050', 'f0e0c8'),
+    ('FISK', 'e8c0a0', 'b0b0b8', '806040', 'f0f0e8'), ('STUDENT', 'd8a078', '603820', '8060c0', '404860'),
+    ('LAWYER', 'b88060', '282020', '506070', 'e0e0e8'), ('TOURIST', 'f0c8a0', 'c08040', 'f0a040', '60a0d0')]
 def person_pal(sub, k):
     _, skin, hair, shirt, low = PEOPLE[k]
     return art.sprite_palette(sub, {'skin': ramp(skin, 4), 'hair': ramp(hair, 4), 'shirt': ramp(shirt, 4), 'pants': ramp(low, 3)})
@@ -241,7 +241,7 @@ def bust(k, shut=False):
     P, style = mab, HAIR[k]
     child = k == 2
     d = Canvas(32, 32)
-    top = 4 if child else 0                                   # Pip is a child: lower behind the counter
+    top = 4 if child else 0                                   # Benny is a child: lower behind the counter
     d.fill(blob([(3, 32), (5, 24 + top), (11, 20 + top), (21, 20 + top), (27, 24 + top), (29, 32)]), P.shirt[2], part='body')
     d.shadow('body', P.shirt[1], light=(-1, -1), depth=3)
     if k in (0, 3): d.fill(blob([(10, 32), (11, 24 + top), (16, 23 + top), (21, 24 + top), (22, 32)]), P.pants[2], part='apron'); d.shadow('apron', P.pants[1], light=(-1, -1), depth=2)
@@ -258,7 +258,7 @@ def bust(k, shut=False):
         for x in (12, 13, 14, 18, 19, 20): d.dot(x, y, P.hair[0])
         for x in (12, 14, 18, 20): d.dot(x, y + 1, P.hair[0])
         for x in (15, 16, 17): d.dot(x, y, P.hair[0])
-    if k == 3: d.fill(oval(22, 5, 2, 2), P.shirt[3], part='flower')                     # Rosa's flower
+    if k == 3: d.fill(oval(22, 5, 2, 2), P.shirt[3], part='flower')                     # Gina's flower
     im = d.render(outline=P)
     face = 12 + top
     for x in range(13, 20):                                    # a small face at this size: a one-pixel nose, a gap, a smile
@@ -270,7 +270,7 @@ def bust(k, shut=False):
     if shut:
         for x in (12, 13, 14, 18, 19, 20):
             if im.px[face + 1][x] not in (0,) and x not in (12, 14, 18, 20): im.px[face + 1][x] = P.skin[1]
-    if k == 1 and not shut: im.px[face][13] = im.px[face][19] = P.skin[1]          # Theo: sleepy lids
+    if k == 1 and not shut: im.px[face][13] = im.px[face][19] = P.skin[1]          # James: sleepy lids
     return im
 for k in range(len(PEOPLE)): PICS += [(bust(k), mab), (bust(k, shut=True), mab)]
 people_blob = bytearray()

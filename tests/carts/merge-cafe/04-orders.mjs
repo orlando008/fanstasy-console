@@ -9,7 +9,7 @@ vm.run(100);
 ok(p.spots.every((c) => c), 'three customers come in at the start, one after another');
 ok(p.spots.every((c) => c.items.every((v) => p.lineOf(v) < 2 && p.tierOf(v) <= 3)), 'at first they ask for the bakery and coffee lines, tiers 1 to 3', p.spots.map((c) => c.items.map(p.nameOf).join('+')).join(', '));
 {
-  const reg = p.makeOrder(0, false); ok(reg.items.length === 1 && reg.items[0] === item(0, p.TIER_TOP[0]), 'a regular asks for the best of their own line the café can make (Mabel: dough at first)');
+  const reg = p.makeOrder(0, false); ok(reg.items.length === 1 && reg.items[0] === item(0, p.TIER_TOP[0]), 'a regular asks for the best of their own line the café can make (Marion: dough at first)');
   const sp = p.makeOrder(6, true); ok(p.tierOf(sp.items[0]) >= 3, 'the special asks for two tiers more');
   p.tasks = 0xff; ok(p.areasDone() === 2 && p.linesOpen() === 4, 'two areas done: four lines open'); p.tasks = 0;
 }
@@ -56,6 +56,6 @@ ok(p.spots.every((c) => c.items.every((v) => p.lineOf(v) < 2 && p.tierOf(v) <= 3
 {
   const v3 = newGame(3), q = v3.probe(); v3.run(100);
   const regs = []; for (let k = 0; k < 30; k++) { q.spots = [null, null, null]; q.arrive(0); regs.push(q.spots[0].who); }
-  ok(regs.filter((w) => w < 5).length === 10 && regs.filter((w) => w < 5).every((w) => w < 2), 'every third customer is a regular, from the lines open (Mabel and Theo at first)', regs.join(''));
+  ok(regs.filter((w) => w < 5).length === 10 && regs.filter((w) => w < 5).every((w) => w < 2), 'every third customer is a regular, from the lines open (Marion and James at first)', regs.join(''));
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

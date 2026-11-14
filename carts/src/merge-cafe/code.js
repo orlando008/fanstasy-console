@@ -147,7 +147,7 @@ const stepped = (b) => pressed(b) || (btnp(b) && (inputMask & (1 << b)) !== 0);
 
 // --- Customers and orders (spec 5.4) ---
 
-const PEOPLE = ['MABEL', 'THEO', 'PIP', 'ROSA', 'MR. FINCH', 'A STUDENT', 'A CLERK', 'A TOURIST'];   // 0 to 4 the regulars (one a line), then passers-by
+const PEOPLE = ['MARION', 'JAMES', 'BENNY', 'GINA', 'MR. FISK', 'A STUDENT', 'A LAWYER', 'A TOURIST'];   // 0 to 4 the regulars (one a line), then passers-by
 const SPOT_X = [40, 112, 184], SPOT_Y = 26, BUBBLE_TX = [9, 18, 27], SPOT_COL = [2, 4, 6];
 const ARRIVE = 180, REGULAR_EVERY = 3, SPECIAL_EVERY = 10, SWAP_WAIT = 1800, TWO_ITEMS = 0.3;
 const TIER_TOP = [3, 4, 5, 6, 6, 6, 6], TIER_LOW = [1, 1, 1, 2, 2, 3, 3];   // the tiers asked for, by the areas done (5.4)
@@ -671,7 +671,7 @@ function drawTitle() {
 function drawEnding() {
   panel(8, 90, 240, 112);
   ctxt('THE GRAND REOPENING', 98, GOLD);
-  ['THE LIGHTS ARE ON, THE GLASS', 'SHINES AND THE BREAD IS WARM.', 'MABEL, THEO, PIP, ROSA AND', 'MR. FINCH RAISE THEIR CUPS:', 'TO THE MERGE CAFE!', '', `${served} ORDERS SERVED`].forEach((l, i) => ctxt(l, 114 + i * 11, i === 4 ? CREAM : i === 6 ? DIM : WHITE));
+  ['THE LIGHTS ARE ON, THE GLASS', 'SHINES AND THE BREAD IS WARM.', 'MARION, JAMES, BENNY, GINA', 'AND MR. FISK RAISE A CUP:', 'TO THE MERGE CAFE!', '', `${served} ORDERS SERVED`].forEach((l, i) => ctxt(l, 114 + i * 11, i === 4 ? CREAM : i === 6 ? DIM : WHITE));
   if (timer > 120 && (clock >> 4) & 1) ctxt('A: KEEP THE CAFE GOING', 192, DIM);
 }
 
