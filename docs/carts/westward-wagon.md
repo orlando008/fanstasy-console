@@ -284,7 +284,9 @@ The art is made in code by `carts/src/westward-wagon/art.py` with the kit (`scen
    - the palettes.
    
    Then `node tools/devkit/art/proof.mjs westward-wagon`, the picture sent to the user, and what they said written here.
-   - **Agreed:** TODO (the date, and the changes asked for)
+   - **Built:** the prairie's trail in layers (a sky gradient set line by line; BG2 fair-weather clouds and far hills, BG1 near hills with cottonwoods, BG0 the grass and the trail's ruts, each 256 px wide and wrapping, scrolled at its own speed), the wagon (canvas over hoops, a wooden box, spoked wheels turning in 4 frames) and a yoke of oxen (walking in 4 frames) as big sprites, the logo, and **Chimney Rock as a landmark scene in the ROM**: `art.py` packs it (181 tiles with flips shared, its map and its colours) into `rom/scenes.bin`, and `loadScene` copies it into the 256 tiles reserved from tile 768 and a stretch of Map RAM, shown on BG2. The technique the fifteen scenes need works.
+   - **Sent** on 14 November 2026: the wagon and oxen frames, the trail, Chimney Rock, the title.
+   - **Agreed:** TODO (what the user says, and the changes asked for)
 3. **The trail's dangers:** illness, events (5.3), weather and seasons, the forts' prices, the fork.
 4. **Rivers, the float, the hunt and trading** (5.4, 5.5).
 5. **Content:** every landmark and its text, the regions, the events' texts, the people met.

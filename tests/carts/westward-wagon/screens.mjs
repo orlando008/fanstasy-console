@@ -1,16 +1,14 @@
-// Westward Wagon: its screens, for node tools/devkit/gallery.mjs westward-wagon (contact sheets of every screen, to look the
-// whole game over). Add a shot for each new screen and each state worth a look (big numbers, a full board, the last
-// level); { zoom: [x, y, w, h] } also keeps an enlarged crop.
+// Westward Wagon: its screens, for node tools/devkit/gallery.mjs westward-wagon and the art proof.
 import { newGame } from './lib.mjs';
 
-/** The main character's sprites (their names in art.py): the art review checks they are big enough to read. */
-export const hero = ['hero0', 'hero1', 'hero2', 'hero3', 'hero4'];
+/** The main character: the wagon (and its oxen), big sprites in four frames. */
+export const hero = ['wagon0', 'wagon1', 'wagon2', 'wagon3', 'oxen0', 'oxen1', 'oxen2', 'oxen3'];
 
 export default function screens(shot) {
-  const vm = newGame(1, { title: true });
-  vm.run(30); shot(vm, 'title');
-  vm.press('DOWN'); vm.press('A'); vm.run(30); shot(vm, 'records'); vm.press('START'); vm.run(5);
-  const play = newGame(1);
-  play.run(120); shot(play, 'play');
-  play.press('START'); play.run(5); shot(play, 'pause');
+  const t = newGame(1, { title: true }); t.run(90); shot(t, 'title');
+  t.press('A'); t.run(3); shot(t, 'setup'); t.press('A'); t.run(3); shot(t, 'month'); t.press('A'); t.run(3); shot(t, 'store');
+  const vm = newGame(2), p = vm.probe(); vm.run(200); shot(vm, 'trail', { zoom: [64, 96, 128, 56] });
+  vm.press('A'); vm.run(3); shot(vm, 'menu'); vm.press('B');
+  p.J.mile = 550; p.J.next = 4; vm.run(p.DAY_FRAMES + 2); shot(vm, 'chimney-rock'); vm.press('A');
+  p.J.mile = 97; p.J.next = 1; vm.run(p.DAY_FRAMES * 2 + 2); shot(vm, 'river');
 }
