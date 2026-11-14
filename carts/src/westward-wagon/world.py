@@ -364,12 +364,15 @@ def blue_mountains(P):
 
 def the_dalles(P):
     im = Img(256, 152)
-    for y in range(30, 96):                                         # Mount Hood, far down the gorge
-        half = (y - 30) * 0.9 + 1
-        for x in range(int(70 - half), int(70 + half) + 1):
+    for y in range(30, 104):                                        # Mount Hood, far down the gorge, its foot flaring into foothills
+        half = (y - 30) * 0.9 + 1 + max(0, y - 76) ** 1.5 * 0.35
+        for x in range(max(0, int(70 - half)), min(256, int(70 + half) + 1)):
             u = (x - (70 - half)) / max(1, 2 * half)
             snow = y < 54 + hsh(x // 2 * 7) % 7 + (3 if (x // 5) % 3 == 0 else 0)   # a ragged snowline
             im.px[y][x] = (P.snow[1] if u < 0.5 else P.snow[0]) if snow else (P.peak[1] if u < 0.45 else P.peak[0])
+    for x in range(256):                                            # the far bank: a dark wooded ridge across the gorge, down to the water
+        top = int(91 + 3 * math.sin(x / 13) + 2 * math.sin(x / 5.3) + hsh(x // 2) % 2)
+        for y in range(top, 104): im.px[y][x] = P.peak[0] if y > top or hsh(x * 3) % 3 else P.peak[1]
     for side in (0, 1):                                             # the basalt walls of the gorge: columns of uneven width
         x, col = 0, 0
         while x < 112:
