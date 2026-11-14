@@ -346,7 +346,7 @@ def south_pass(P):
 def blue_mountains(P):
     im = Img(256, 152)
     half = Img(128, 152)
-    mountains(half, P.far, base=84, height=36, seed=41, period=128)
+    mountains(half, P.far, base=110, height=60, seed=41, period=128)   # down behind the ridge: no sky beneath it
     def ridge(m):
         crest = hills(m, P.mid, base=108, amp=10, period=128, seed=42, rim=False)
         for k in range(8):
@@ -429,6 +429,9 @@ def fort(P):
 
 def river(P):
     im = Img(256, 152)
+    for y in range(84, 100):                                        # the wood's shade behind and under the crowns, down to the bank
+        for x in range(256):
+            if y > 88 + 3 * math.sin(x / 9) + hsh(x // 3) % 3: im.px[y][x] = P.tree[0]
     for k in range(24):                                             # cottonwoods along the far bank
         x = k * 11 + hsh(k) % 6
         r = 9 + hsh(k * 3) % 6
@@ -437,6 +440,11 @@ def river(P):
                 u = (xx - x) / r; v = (y - (96 - r * 0.8)) / (r * 0.9)
                 if u * u + v * v < 1 and 0 <= xx < 256:
                     im.px[y][xx] = P.tree[2 if u < -0.3 and v < 0 else 1 if u < 0.3 else 0]
+    for k in range(24):                                             # their trunks, and the bank's grass at their feet
+        x = k * 11 + hsh(k) % 6
+        for y in range(94, 100):
+            if 0 <= x < 256: im.px[y][x] = P.trunk
+    for x in range(256): im.px[99][x] = P.grass[0] if hsh(x) % 3 else P.trunk
     fill_rows(im, 100, 104, lambda x, y: P.sand[1])
     for y in range(104, 136):                                       # the water: the far bank's reflection, then ripples
         for x in range(256):

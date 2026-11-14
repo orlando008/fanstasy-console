@@ -835,7 +835,7 @@ function setLayers(trailOn) {
   const fr = ART.scenes.far;
   if (sceneOn >= 0) {
     bg(0, { show: false }); bg(1, { show: false });
-    bg(2, { mx: SCENE_MAP[0], my: SCENE_MAP[1], mw: 32, mh: 19, x: 0, y: 0, wrap: false, show: true });
+    bg(2, { mx: SCENE_MAP[0], my: SCENE_MAP[1], mw: 32, mh: 28, x: 0, y: 0, wrap: false, show: true });
     return;
   }
   bg(0, { show: trailOn }); bg(1, { show: trailOn });
@@ -892,6 +892,7 @@ function loadScene(k) {
     const v = d[o + i * 2] | (d[o + i * 2 + 1] << 8), t = v & 1023;
     mset(SCENE_MAP[0] + (i % 32), SCENE_MAP[1] + ((i / 32) | 0), t ? tile(sceneTile(t - 1), 5, !!(v & 8192), !!(v & 16384)) : 0);
   }
+  for (let y = 19; y < 28; y++) for (let x = 0; x < 32; x++) mset(SCENE_MAP[0] + x, SCENE_MAP[1] + y, mget(SCENE_MAP[0] + x, SCENE_MAP[1] + 18));   // the ground carries on to the foot of the screen
   sceneLoaded = k;
 }
 function showScene(name) { const k = sceneOf(name); if (k < 0) return; if (sceneLoaded !== k) loadScene(k); sceneOn = k; }
