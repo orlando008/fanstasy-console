@@ -13,6 +13,8 @@
   `node tools/devkit/smoke.mjs <name>` (the real console). After a change to the rules, the physics or the AI:
   `node tools/devkit/sweep.mjs <name>` (the cart's bot over many seeds). If you changed the code or art of a released
   game: `node tools/release.js <name> --keep-label`, so the `.nova.png` and the Library entry match.
+- **Music: check the song library before composing.** `tools/devkit/music/songs/README.md` lists ready-made songs (a boss theme, a chase, a
+  victory, a town, public domain classics); a game's `audio.py` takes one with `library.add(a, name)`.
 - You cannot hear or see a cart directly: measure the audio (`tools/devkit/music/`), make the art in code (a cart's
   `art.py`, with `tools/devkit/art/kit.py`) and look at it with `tools/devkit/art/sprites.mjs`, `scene.mjs`, `tiles.mjs`
   and `shots.mjs` (open the PNGs with the Read tool). `node tools/devkit/gallery.mjs <name>` puts every screen the cart lists in

@@ -55,6 +55,7 @@ is there a game it is like? This is the one question options cannot cover. Then:
 **Round 3: how it looks and sounds.**
 1. **The look.** The setting and the mood, and the view (side-on, top-down, a floor in perspective, a table).
 2. **The sound.** The style of music (chiptune, orchestral, jazz, public domain classics...) and its mood.
+   Offer the song library's ready-made songs (`tools/devkit/music/songs/README.md`) as choices where they fit the mood.
 3. **Extras** (multiple choice). Features beyond the core game: modes, unlockables, a two-player mode, a level editor...
    Anything not picked goes under **Open questions** in the spec, for later.
 
@@ -283,6 +284,9 @@ Checks that proved their worth (the test files in `tests/carts/moto-crosser/` ar
 
 ## 5. Audio
 
+**Check the song library first** (`tools/devkit/music/songs/README.md`): ready-made songs a game takes with `library.add(a, name)` after
+its own songs, each returning its song number. Compose only what the library does not have.
+
 You cannot hear the result, so measure it, and follow the rules that keep players happy. The console has an SNES-style
 sound chip (SPEC 5): 8 channels that play any instrument, sampled instruments read with a soft interpolation, and an echo
 unit. Games made before it are carts for the old chip (format version 1) until each is converted
@@ -296,7 +300,8 @@ unit. Games made before it are carts for the old chip (format version 1) until e
 - **Channels by convention**: songs on 0 to 5 (the kit: lead 0, counter-melody 1, bass 2, pad or arpeggio 3, the pad's
   fifth or the hats 4, drums 5; the tempo on row 0 of channel 7), effects on 6 and 7. The starter's `fx(n)` takes turns
   between 6 and 7, so two effects can sound at once and neither cuts into the music. `check.js` warns about an
-  `SFX_CH` under 6, and lists the channels each song uses.
+  `SFX_CH` under 6, and lists the channels each song uses. The library's songs also use channel 6 (hats; Rush D all 8),
+  so an effect there mutes a part of them while it plays.
 - **Echo**: give each song its own (`a.song(key, speed, echo=(delay, feedback, volume, tone))`, SPEC 5.6) and send the
   instruments that should ring into it (`echo=` on the instrument): pads, leads, snare, bells; not the bass or the kick,
   which turn to mud. About (5, 4, 5, 9) is a room; (12, 8, 9, 7) a hall. A cart can change it in code with `echo()`
