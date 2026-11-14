@@ -654,3 +654,27 @@ What building `neon-drift` taught (its spec is `docs/carts/neon-drift.md`; every
   should; then the aim error is what separates a good player from a poor one (`05-balance.mjs`).
 - **A bass that does not release rings on into the break.** A rolling bass (no note-off) held its last note into a section without bass, a
   semitone from the next chord: `clash.py` found it. Release every held part a section does not play.
+
+## 14. A merge game on this console (Merge Café)
+
+What building `merge-cafe` taught (its spec is `docs/carts/merge-cafe.md`; every point has a test in `tests/carts/merge-cafe/`):
+
+- **When the pictures do not fit the tile sheet, keep them in the ROM and copy them in as they are needed.** Sixty-three 32 px pictures
+  (items, generators, customers, furniture) would take 1,008 tiles. `art.py` writes them to `rom/pics.bin` (a palette byte and 512 bytes each)
+  and reserves 36 sprite slots; `drawPic(p, x, y)` finds the picture's slot or takes the least recently used one not drawn this frame and copies
+  it in with `sset` (1,024 pixels, no measurable time). A screen rarely shows more than 30 different pictures; draw the important ones first so
+  that, if it ever runs out, it is a decoration that waits a frame. A test checks a board of 35 different pictures is all drawn right.
+- **Eight sprite palettes go fast: give them to places, not to characters.** Five item lines took palettes 0 to 4; the three places at the
+  counter take 5 to 7, and a customer's colours (`rom/people.bin`, the same roles for everyone) are loaded into their place's palette when they
+  come in. Any number of customers, three palettes. Everything else (the crate, the cursor, furniture) is drawn in the item palettes.
+- **A picture that changes in parts: draw it again with each change and keep only the tiles that differ.** `art.py` draws the café shabby, then
+  once with each repair, finds the tiles each repair changes (and fails if two repairs touch the same tile), and stores just those as scenes to the
+  side of Map RAM; `code.js` copies them in with `mset`. Five repairs cost 19 tiles. Paint and wood are colours (a ramp made from one colour).
+- **Do not overload a special value.** `-1` meant both "no card" and "the order of the first place": the first order's card opened by itself.
+- **An overlay colour from 192 up is see-through** when the overlay blends: a text colour put there by habit came out dim. Keep text colours under 192.
+- **Measure a long game at a person's pace.** A bot that presses every second frame finished the campaign in 3 minutes; at five presses a second
+  (`pace` 12) the same bot took 21 minutes, which was what showed the prices were a fifth of what they needed to be. Report minutes at that pace,
+  and expect a person who stops to think to take about twice as long.
+- **Jazz on the chip:** a bar of 12 rows (three to a beat) swings the eighths; voice a major chord with its sixth, not its seventh, under a tune
+  that sits on the root, and stop a tune's note at the bar line when the next bar's tune starts late (`clash.py` found both).
+
