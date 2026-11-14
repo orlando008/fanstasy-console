@@ -631,3 +631,26 @@ What building `ivory-tower` taught (its spec is `docs/carts/ivory-tower.md`; eve
   under the fanfare, which hides the change. The loudness measured as a gentle build (0.037, 0.039, 0.049, 0.051). An effect for every note of a ladder (20 chimes of 34 effects) is cheap: a note is a few hundred bytes of one sample.
 - **Make the title the game's first picture.** A tower of the best's height standing over a courtyard (raised so the menu has room below), a slab sliding over it for ever; the label is that screen (`release.js --wait 2500`);
   the demo (a player that errs by a few pixels and ends by itself) starts after 20 idle seconds and records nothing.
+
+## 13. A tunnel game on this console (Neon Drift)
+
+What building `neon-drift` taught (its spec is `docs/carts/neon-drift.md`; every point has a test in `tests/carts/neon-drift/`):
+
+- **A tunnel that flows forever is one matrix a frame, not one a line.** Draw rings at radii that shrink by a fixed ratio (`160 / 1.6^k`) and
+  zoom the picture by that ratio over a beat (`affine` with `a = d = cos/s`, `b = -sin/s`, `c = sin/s`): at the end of the beat it looks the same, so
+  the phase can wrap. Rolling it is the same matrix. Centre the picture on a tile corner and its four quarters are flips of each other (232 tiles).
+- **Colour what moves by where it is now, not by what it is.** Each ring (and the rails out to the next) has a line and a glow colour of its own,
+  set every frame from the ring's radius on the screen: the colour is a function of the radius only, so the loop is seamless (a test compares a
+  ring at the end of a beat with the next one at its start). A thing that rides the tunnel (a light) uses the same exponential distance, so it
+  arrives with a ring.
+- **Let go should not mean stop.** A diamond that stopped when the button was released could only go full speed or not at all; a slow drift
+  (`DEC 0.12` a frame) and braking by the other button made the glide steerable. Write the chart builder against the same numbers
+  (`tracks.py`: no jump further than `0.7 x VMAX x frames + 12`) and test every chart with a perfect player simulated on the chart alone (fast:
+  no console needed).
+- **Do not let the chart zig-zag faster than the controls can turn.** A pitch wiggle on every 16th note of an arpeggio that leaps an octave made
+  the spiral stop and start every 6 frames; nothing that accelerates can follow it. Keep the fast level's steps one way round.
+- **A bot with a reaction delay must predict, as a person does.** Pressing 10 frames late without looking ahead made the bot oscillate (CHILL came
+  out harder than OVERDRIVE). Simulate the presses already decided, plan from where they will have put the diamond, and the delay costs what it
+  should; then the aim error is what separates a good player from a poor one (`05-balance.mjs`).
+- **A bass that does not release rings on into the break.** A rolling bass (no note-off) held its last note into a section without bass, a
+  semitone from the next chord: `clash.py` found it. Release every held part a section does not play.
