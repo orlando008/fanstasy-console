@@ -50,5 +50,7 @@ a.effect(3, ['C-4', 'G-3', 'D-3', 'A-2', 'OFF'], 'CRUNCH')         # 3 a hit (no
 a.effect(6, ['G-4', 'E-4', 'C-4', None, 'D-4', None, 'C-4', 'OFF'], 'FANFARE')   # 4 game over
 a.effect(1, ['C-6', 'G-6', 'OFF'], 'BLIP')                         # 5 a point
 a.effect(4, ['C-5', 'E-5', 'G-5', 'C-6', None, 'G-5', 'C-6', 'OFF'], 'FANFARE')  # 6 a record
+a.effect(1, ['A-5', 'D-4', 'OFF'], 'CRUNCH')                     # 7 a shot
+a.effect(2, ['G-3', 'E-3', 'C-3', 'A-2', 'OFF'], 'CRUNCH')       # 8 a rock struck in the river
 
 a.write(sys.argv[1], songs=2)

@@ -17,11 +17,11 @@ import math, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *
 
-SCENE_BASE, SCENE_TILES = 768, 256                          # code.js has the same
+SCENE_BASE, SCENE_TILES = 800, 224                          # code.js has the same
 
 art = Art()
-art.region('bg', 1, 479)
-art.region('spr', 480, SCENE_BASE - 1)
+art.region('bg', 1, 431)
+art.region('spr', 432, SCENE_BASE - 1)
 art.color(200, '2a1810', 'GLASS')
 
 # --- Palettes ---
@@ -110,6 +110,56 @@ def oxen(step):
     return out
 art.animation('wagon', [wagon(k * math.pi / 12) for k in range(4)], pal=wag, region='spr')
 art.animation('oxen', [oxen(k) for k in range(4)], pal=ox, region='spr')
+
+# --- The hunt's animals (spec 5.5): side views facing right, two running frames; the small ones 16 px sprites, the big ones big sprites
+# that share the parts of their frames that do not move ---
+fur = art.sprite_palette(2, {'brown': ramp('8a5a32', 4), 'tan': ramp('c8a070', 3), 'grey': ramp('8a8a90', 3), 'dark': ramp('3a2a20', 2), 'white': 'f0ece0', 'horn': 'd8c8a0'})
+def leg(d, x, y, s, n, c, len_=7, w=1.4):
+    d.fill(brush([(x, y), (x + s, y + len_)], w, w * 0.8), c, part='leg%d' % n)
+def animal(kind, f):
+    sw = 2 if f else -2
+    if kind == 'rabbit':
+        d = Canvas(16, 16)
+        d.fill(oval(7, 10, 5, 3.5), fur.grey[1], part='body'); d.shadow('body', fur.grey[0], light=(-1, -1), depth=1.5)
+        d.fill(oval(12, 8, 2.6, 2.2), fur.grey[1], part='head'); d.fill(oval(11.5, 4, 0.9, 2.6, rot=-15), fur.grey[2], part='ear')
+        d.fill(oval(2.5, 9, 1.4, 1.4), fur.white, part='tail')
+        leg(d, 5, 12, -2 * (f * 2 - 1), 0, fur.grey[0], 3); leg(d, 10, 12, 2 * (f * 2 - 1), 1, fur.grey[0], 3)
+        d.dot(13, 7, fur.dark[0]); return d.render(outline=fur)
+    if kind == 'squirrel':
+        d = Canvas(16, 16)
+        d.fill(oval(8, 11, 4, 2.6), fur.brown[2], part='body'); d.fill(oval(12, 9, 2.2, 2), fur.brown[2], part='head')
+        d.fill(blob([(4, 11), (1, 6), (3, 3), (6, 6)]), fur.brown[3], part='tail')
+        leg(d, 7, 13, -1 * (f * 2 - 1), 0, fur.brown[0], 2); leg(d, 10, 13, 1 * (f * 2 - 1), 1, fur.brown[0], 2)
+        d.dot(13, 8, fur.dark[0]); return d.render(outline=fur)
+    d = Canvas(32, 24)
+    if kind == 'deer':
+        d.fill(blob([(6, 9), (12, 7), (22, 7), (26, 10), (22, 14), (8, 14)]), fur.tan[1], part='body'); d.shadow('body', fur.tan[0], light=(-1, -1), depth=2)
+        d.fill(brush([(23, 9), (26, 5)], 2.4, 1.8), fur.tan[1], part='neck'); d.fill(oval(27.5, 5, 2.8, 1.9), fur.tan[1], part='head'); d.fill(oval(26, 2.5, 0.8, 1.6), fur.tan[0], part='ear')
+        d.fill(oval(5.5, 8, 1.4, 1.6), fur.white, part='tail')
+        for i, (x, s) in enumerate(((9, sw), (12, -sw), (21, -sw), (24, sw))): leg(d, x, 13, s, i, fur.tan[0], 9, 1.1)
+        d.dot(28, 4, fur.dark[0]); return d.render(outline=fur)
+    if kind == 'elk':
+        d.fill(blob([(4, 10), (10, 7), (22, 7), (26, 10), (22, 15), (6, 15)]), fur.brown[2], part='body'); d.shadow('body', fur.brown[1], light=(-1, -1), depth=2)
+        d.fill(brush([(23, 9), (26, 4)], 2.6, 2), fur.brown[1], part='neck'); d.fill(oval(28, 4.5, 2.8, 2), fur.brown[1], part='head')
+        for a in (-0.6, -0.2, 0.2): d.ink([(26, 3), (26 + 5 * math.sin(a) - 2, 0 - 0)], fur.horn) if False else None
+        d.ink([(26, 3), (23, 0)], fur.horn); d.ink([(27, 3), (29, 0)], fur.horn); d.ink([(24, 1), (25, 0)], fur.horn)
+        for i, (x, s) in enumerate(((8, sw), (11, -sw), (20, -sw), (23, sw))): leg(d, x, 14, s, i, fur.brown[0], 8, 1.3)
+        return d.render(outline=fur)
+    if kind == 'bear':
+        d.fill(blob([(3, 12), (8, 6), (20, 5), (26, 9), (26, 16), (6, 17)]), fur.dark[1], part='body'); d.shadow('body', fur.dark[0], light=(-1, -1), depth=2)
+        d.fill(oval(27, 11, 3.6, 3), fur.dark[1], part='head'); d.fill(oval(29.5, 12, 2.2, 1.5), fur.brown[2], part='snout'); d.dot(27, 10, fur.white); d.fill(oval(25.5, 8, 1.2, 1.2), fur.dark[1], part='ear')
+        for i, (x, s) in enumerate(((7, sw), (11, -sw), (19, -sw), (23, sw))): leg(d, x, 16, s * 0.7, i, fur.dark[0], 6, 2)
+        return d.render(outline=fur)
+    if kind == 'buffalo':
+        d.fill(blob([(3, 11), (8, 8), (16, 3), (24, 4), (28, 9), (26, 16), (6, 16)]), fur.brown[1], part='body'); d.shadow('body', fur.brown[0], light=(-1, -1), depth=3)
+        d.fill(blob([(16, 3), (24, 3), (28, 8), (26, 14), (18, 12)]), fur.dark[1], part='hump')
+        d.fill(oval(28, 12, 3, 3.4), fur.dark[1], part='head'); d.fill(brush([(28, 9), (31, 8)], 0.8, 0.6), fur.horn, part='horn')
+        for i, (x, s) in enumerate(((7, sw), (11, -sw), (20, -sw), (24, sw))): leg(d, x, 15, s * 0.7, i, fur.dark[0], 7, 1.6)
+        return d.render(outline=fur)
+for k in ('rabbit', 'squirrel'):
+    for f in (0, 1): art.sprite('%s%d' % (k, f), animal(k, f), pal=fur, region='spr')
+for k in ('deer', 'elk', 'bear', 'buffalo'):                  # in 16 px pieces: the body's are shared by both frames, and no 32 px spot is needed
+    art.anims[k] = [art.big_sprite('%s%d' % (k, f), animal(k, f), pal=fur, region='spr', piece=16) and '%s%d' % (k, f) for f in (0, 1)]
 
 # --- The title: WESTWARD WAGON in big letters (BG2, on the title) ---
 logo = Img(256, 56)

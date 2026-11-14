@@ -34,7 +34,7 @@ ok(p.PACES.map((x) => x.miles).join() === '15,19,24' && p.RATIONS.map((x) => x.l
   const J = fresh(); J.money = 10; const r = p.crossRiver(J, 'ferry', deep); ok(J.money === 5 && /FERRY/.test(r), 'the ferry costs its fee');
 }
 {
-  const J = fresh({ money: 100, oxen: 2, food: 250, clothes: 4, bullets: 5, wheel: 1, axle: 0, tongue: 0 });
+  const J = fresh({ money: 100, oxen: 2, food: 250, clothes: 4, bullets: 100, wheel: 1, axle: 0, tongue: 0 });
   J.party.forEach((x) => (x.health = 100)); J.party[4].alive = false;
   ok(p.scoreOf(J) === 4 * 500 * 4 + 50 + 8 + 2 + 8 + 2 + 10 + 20, 'the score: 500 x 4 for each alive in good health, and what is left', `${p.scoreOf(J)}`);
   J.bg = 2; ok(p.scoreOf(J) === 3 * (4 * 2000 + 100), 'times the background\'s multiplier');

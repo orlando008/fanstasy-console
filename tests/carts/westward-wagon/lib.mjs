@@ -11,6 +11,8 @@ const PROBE = `__expose(() => ({
   SFX, SONG, BACKGROUNDS, MONTHS, START_MONTHS, GOODS, PACES, RATIONS, TRAIL, ILLS, WEATHERS, TERRAIN, WEATHER_MILES, STARVING, REST_GAIN, EASY_GAIN, DAY_FRAMES, NAMES, CUTOFF_SAVES, BARLOW_TOLL, BARLOW_DAYS,
   EVENTS, EVENT_RATE, rollEvent, loseDays, rollWeather,
   newJourney, alive, healthWord, dateText, nextMark, markMile, regionAt, dayOnTrail, scoreOf, crossRiver, costOf, topTen, insertTop, packName, unpackName,
+  get hunt() { return hunt; }, get flt() { return flt; }, MEAT, GAME, BIG, HUNT_FRAMES, CARRY, LANES, MENU, FLOAT_Y, WORTH, TRADERS,
+  floatOutcome, tradeOffer, applyTrade, goodText, animalBox, banks, toHunt: () => toHunt(), toFloat: (...a) => toFloat(...a),
   reach: (k) => reach(k), toStore: (m) => toStore(m), endJourney: () => endJourney(),
 }));`;
 

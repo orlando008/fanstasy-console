@@ -5,8 +5,8 @@
 //
 // It outfits the wagon (4 yokes of oxen, 2 sets of clothing each, spares, a box of bullets, the rest in food), crosses rivers by the ford
 // when they are shallow and the ferry or the float when not, rests when the party's health is poor (care 1) or never (care 0), eats less
-// when the food will not last, and buys food at the forts. Options: bg (0 banker, 1 carpenter, 2 farmer), month (0 March to 5 August),
-// care (0 or 1), route (0 or 1 at South Pass), pace (0 to 2).
+// when the food will not last, buys food at the forts, hunts when the food runs short, and steers the float between the rocks. Options: bg (0 banker, 1 carpenter, 2 farmer), month (0 March to 5 August),
+// care (0 or 1), route (0 or 1 at South Pass), pace (0 to 2), hunt (0 or 1: hunt when the food runs short).
 import { M, newGame as boot } from './lib.mjs';
 
 export const defaults = { frames: 200000, seeds: 6, set: { bg: [0, 1, 2] } };
@@ -21,8 +21,8 @@ function storeTarget(p) {
   if (first) {
     let money = J.money;
     const buy = (key, n) => { const g = p.GOODS.find((x) => x.key === key), c = p.costOf(g, n, 1); if (c <= money) { want[key] = n; money -= c; } else want[key] = Math.floor(money / (g.price)); };
-    if (J.money >= 800) { buy('oxen', 4); buy('clothes', 10); buy('wheel', 1); buy('axle', 1); buy('tongue', 1); buy('bullets', 5); }
-    else { buy('oxen', 3); buy('clothes', 5); buy('bullets', 2); }                // a farmer's $400: the food first
+    if (J.money >= 800) { buy('oxen', 4); buy('clothes', 10); buy('wheel', 1); buy('axle', 1); buy('tongue', 1); buy('bullets', 8); }
+    else { buy('oxen', 3); buy('clothes', 5); buy('bullets', 6); }                // a farmer's $400: the food first, and bullets to hunt
     want.food = Math.min(2000, Math.floor(money * 0.9 / 0.2 / 50) * 50);
   } else want.food = Math.min(Math.max(0, 1000 - J.food), Math.floor(J.money * 0.9 / (0.2 * p.storeMult) / 50) * 50);   // at a fort: up to 1,000 lb
   return want;
@@ -60,8 +60,11 @@ export function pad(vm, p) {
     if (i >= 0) { const before = p.cart[p.GOODS[i].key]; return press('RIGHT'); }
     return press('A');
   }
+  if (p.state === 'hunt') return huntPad(p);
+  if (p.state === 'float') return floatPad(p);
   if (p.state === 'trail') {
     const left = 2040 - J.mile, days = left / 14, need = 3 * p.alive(J).length * days;
+    if ((opts.hunt ?? 1) && J.bullets >= 5 && J.food < Math.min(need, 400) && p.huntedOn !== J.days) { p.huntedOn = J.days; return goMenu(p, 5); }   // hunt when the food runs short
     const ill = J.party.some((x) => x.alive && (x.ill || x.health < 40));
     const wantRations = J.food > need ? 0 : J.food > need * 0.6 ? 1 : 2;
     p.rested = p.rested || 0;
@@ -80,6 +83,33 @@ export function pad(vm, p) {
   return 0;
 }
 function goMenu(p, item) { p.menuWant = item; return press('A'); }
+
+// The hunt: pick the nearest live animal (the big ones first), lead it a little, move the aim at the human's speed (2 px a frame), and
+// fire when on it, waiting between shots; stop once 100 lb is shot.
+let cool = 0;
+function huntPad(p) {
+  const h = p.hunt; if (cool > 0) cool--;
+  if (h.meat >= p.CARRY || p.J.bullets <= 0) return press('B');
+  const live = h.animals.filter((a) => !a.dead && a.x > -8 && a.x < 240);
+  if (!live.length) return 0;
+  const score = (a) => Math.hypot(a.x + a.w / 2 - h.aim[0], a.y + a.h / 2 - h.aim[1]) - (p.BIG[a.kind] ? 80 : 0);
+  const a = live.reduce((b, c) => (score(c) < score(b) ? c : b));
+  const [bx, by, bw, bh] = p.animalBox(a), tx = bx + bw / 2 + a.v * a.dir * 6, ty = by + bh / 2;
+  let m = 0;
+  if (tx < h.aim[0] - 2) m |= M('LEFT'); else if (tx > h.aim[0] + 2) m |= M('RIGHT');
+  if (ty < h.aim[1] - 2) m |= M('UP'); else if (ty > h.aim[1] + 2) m |= M('DOWN');
+  if (!cool && Math.abs(tx - h.aim[0]) < 5 && Math.abs(ty - h.aim[1]) < 5) { cool = 18; tap = 0; return m | press('A'); }
+  return m;
+}
+// The float: steer away from the nearest rock coming at the wagon, towards the side with more water; otherwise drift to the middle.
+function floatPad(p) {
+  const f = p.flt, Y = p.FLOAT_Y, [l, r] = p.banks(f, Y);
+  const threat = f.rocks.filter((o) => !o.hit && o.y < Y + 4 && o.y > Y - 80 && Math.abs(o.x - f.x) < o.r + 12).sort((a, b) => b.y - a.y)[0];
+  let goal = (l + r) / 2;
+  if (threat) goal = threat.x - l > r - threat.x ? threat.x - threat.r - 16 : threat.x + threat.r + 16;
+  if (goal < f.x - 3) return M('LEFT'); if (goal > f.x + 3) return M('RIGHT');
+  return 0;
+}
 
 export const finished = (p) => p.state === 'end' || p.state === 'records';
 

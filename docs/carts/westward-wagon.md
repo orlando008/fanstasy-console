@@ -77,8 +77,8 @@ Naming people uses an on-screen keyboard, as in the console's other games: the d
 | Menu | Continue, the supplies, the map, the pace, the rations, rest, trade, hunt, the diary |
 | Landmark | A painted scene, a paragraph about the place (history, freely told), the fort's store if it has one |
 | River | Its width and depth, and the choices: ford, caulk and float, take the ferry, wait a day |
-| Hunt | A prairie scene. Animals cross; the d-pad aims and A fires. Bullets are limited and the time is 30 seconds |
-| Float | Steer the wagon down the current between rocks for about 10 seconds |
+| Hunt | The region's scene. Animals cross in three lanes; the d-pad aims and A fires, B stops. Bullets are limited and the time is 30 seconds |
+| Float | From above: steer the caulked wagon (LEFT, RIGHT) down the current between rocks and eddies, 6 to 11 seconds at a river and 20 down the Columbia |
 | Event | A picture and a line ("Ella has dysentery." "A wagon wheel broke.") with the choice it asks, if any |
 | Grave | When someone dies: their name, the date, and your epitaph |
 | End | The arrival scene and the score, or the last grave; then the diary, and the top 10 |
@@ -144,7 +144,7 @@ Events and their texts are data in the ROM (section 14).
 
 Each river has a **width** and a **depth** that change with the season and the rain. The choices:
 - **Ford:** safe under 2.5 ft; risky to 3 ft; worse beyond (supplies lost, the wagon tips, a person may drown).
-- **Caulk and float:** the **float**, a steering sequence of about 10 seconds. Steer between rocks and eddies; a hit loses supplies or worse.
+- **Caulk and float:** the **float**, a steering sequence of 6 to 11 seconds (0.6 frames a foot of width), rocks coming more often in deeper water and eddies pushing the wagon sideways. No rock struck: safe. One: 8 % of the food. Two: 15 % of the food, clothing and bullets, and a 15 % chance someone drowns. Three or more: the wagon swamps, 35 % and a 35 % chance. **Rafting down the Columbia** at The Dalles is the same game, 20 seconds and faster, with 25 % and 50 %.
 - **The ferry** where there is one: $5 to $20, and a day or more of waiting.
 - **A guide** where one offers: they lead the crossing for a set of clothing.
 - **Wait a day** for the water to fall.
@@ -152,7 +152,8 @@ Each river has a **width** and a **depth** that change with the season and the r
 ### 5.5 Hunting and trading
 
 - **The hunt:** 30 seconds in a prairie or forest scene. Animals (rabbits, squirrels, deer, buffalo, bear, elk, by region) cross at their own speeds. The d-pad aims and A fires; a shot uses a bullet. Meat shot: rabbit 2 lb, squirrel 1, deer 50, elk 80, bear 100, buffalo 400. **At most 100 pounds can be carried back.** Hunting takes a day.
-- **Trading:** a passer-by (or the fort's trader) offers one good for another: "a spare axle for 50 pounds of food". Accept or decline, and come back another day for a new offer.
+- **Trading:** TRADE in the menu spends a day waiting by the trail; then (85 % of days) a trader comes: one of the region's people (a Pawnee, Lakota, Shoshone or Nez Perce trader, 60 %) or another traveller (a settler, a French trapper, a mountain man, a family going east). They offer one good for another the party has, worth 0.8 to 1.6 times as much (oxen $40 a yoke, food 20 cents a pound, clothing $10 a set, bullets 10 cents, spare parts $10), never the party's last yoke. Accept or decline.
+- **Ammunition** is sold in boxes of 20 and kept, and shown, in bullets.
 
 ### 5.6 The journey's end, score and graves
 
@@ -323,6 +324,8 @@ The art is made in code by `carts/src/westward-wagon/art.py` with the kit (`scen
 The weather now varies around each month's average (a step either way): the first version made midsummer very hot on every dry day, and that, not the events, was killing parties in the desert. **The weather you can see:** rain and heavy rain fall as streaks, snow drifts down and whitens the ground, fog washes the far hills out (a translucent overlay), the clouds go grey and the sky dims in bad weather (the sky's gradient scaled line by line); and the grass browns from September to November. Tests: `03-events.mjs` (a spare used, the carpenter's odds, days lost, about 8 events in 150 days, a blizzard only in snow, July and December's weather).
 
 **Step 3, results** (6 seeds each, April): a banker arrives every time, with 4.7 of 5 alive when resting when needed (3.8 when never); a carpenter 2.5 and a farmer 0.2 to 0.7, both short of food: the deaths left are starvation in the last 300 miles, in October. Hunting (step 4) is the food the poorer backgrounds need, as in the classic game. The bot now buys up to 1,000 lb at a fort.
+
+**Step 4, built:** the hunt (`toHunt`, `updateHunt`, `endHunt`): over the trail's layers, animals of the region (`GAME`: the prairie and bluffs rabbits, squirrels, deer, buffalo; the mountains and forest squirrels, deer, elk, bear; the desert rabbits, deer, elk; fewer in winter) walk across three lanes at their own speeds (rabbit 1.5 px a frame to buffalo 0.5), at most five at once; the aim moves 2 px a frame and is drawn on the overlay; a shot uses a bullet, a hit blinks the animal out with its meat rising, a miss startles those near it (x 1.8 speed); 30 seconds or B; then a card, the meat (at most 100 lb) and a day. The float (`toFloat`, `updateFloat`, `floatOutcome`): from above, on the overlay, the banks winding, rocks and eddies coming down the current, a wagon that steers with momentum; it is the CAULK AND FLOAT of every river and the raft down the Columbia. Trading (`tradeOffer`, `applyTrade`, `seekTrade`) from the menu, which is now continue, supplies, pace, rations, rest, hunt, trade. Two effects: a shot, a rock struck. Long river results are split into a line a sentence. The art: the six animals in two frames (the four big ones in 16 px pieces, shared between frames, so they fit the sprite region). Tests: `04-hunt.mjs` (bullets by the box, the hunt from the menu, a shot's meat and bullet, the aim's speed, 100 lb carried back and a day, no bullets no hunt; the float's steering, rocks struck or passed, what the hits cost, a river's float; fair trade offers, a trade, TRADE from the menu with lines that fit). The bot hunts when the food runs short (aiming at the human's speed, a shot at most every 18 frames, the big animals first) and steers the float away from the rock coming at it.
 
 Each step: build it, run `node tools/check.js westward-wagon` and `node tools/test.js westward-wagon`, write its **Built** and **Results** notes under its number here, commit and push.
 

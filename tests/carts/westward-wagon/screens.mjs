@@ -11,4 +11,8 @@ export default function screens(shot) {
   vm.press('A'); vm.run(3); shot(vm, 'menu'); vm.press('B');
   p.J.mile = 550; p.J.next = 4; vm.run(p.DAY_FRAMES + 2); shot(vm, 'chimney-rock'); vm.press('A');
   p.J.mile = 97; p.J.next = 1; vm.run(p.DAY_FRAMES * 2 + 2); shot(vm, 'river');
+  const hn = newGame(4), q = hn.probe(); hn.run(3); q.toHunt(); hn.run(500);
+  const a = q.hunt.animals.find((x) => q.BIG[x.kind]) || q.hunt.animals[0]; if (a) { q.hunt.aim[0] = a.x + 16; q.hunt.aim[1] = a.y + 12; } hn.run(1); shot(hn, 'hunt');
+  const f = newGame(6), r = f.probe(); f.run(3); r.toFloat('BIG BLUE RIVER', 600, 18, 2, () => {}); f.run(240); shot(f, 'float');
+  const g = newGame(8), s = g.probe(); g.run(3); g.press('A'); g.run(2); for (let i = 0; i < 6; i++) g.press('DOWN'); g.press('A'); g.run(3); shot(g, 'trade');
 }
