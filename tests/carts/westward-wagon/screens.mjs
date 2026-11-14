@@ -22,5 +22,12 @@ export default function screens(shot) {
   gp.J.party[2].health = 0.2; gp.J.party[2].ill = 2; for (let i = 0; i < 300 && !(gp.card && gp.card.title === 'A GRAVE BY THE TRAIL'); i++) { gv.step(0); if (gp.card && gp.card.title !== 'A GRAVE BY THE TRAIL') gv.press('A'); }
   shot(gv, 'grave-card'); gv.press('DOWN'); gv.press('A'); for (const k of ['A', 'RIGHT', 'A', 'DOWN', 'A']) gv.press(k); shot(gv, 'epitaph'); gv.press('START');
   gv.press('A'); for (let i = 0; i < 7; i++) gv.press('DOWN'); gv.press('A'); shot(gv, 'diary'); gv.press('B');
+  for (const [mile, name] of [[600, 'bluffs'], [1000, 'mountains'], [1300, 'desert'], [1700, 'forest']]) {   // each region's trail
+    const r = newGame(20), q = r.probe(); r.run(3); q.J.mile = mile; q.J.next = q.TRAIL.findIndex((m) => m.mile > mile); q.J.region = q.regionAt(mile); q.loadRegion(q.J.region); r.run(30); shot(r, `trail-${name}`);
+  }
+  for (const name of ['INDEPENDENCE ROCK', 'SODA SPRINGS', 'SOUTH PASS', 'BLUE MOUNTAINS', 'THE DALLES', 'FORT LARAMIE', 'KANSAS RIVER']) {   // the landmarks' scenes
+    const r = newGame(21), q = r.probe(); r.run(3); const k = q.TRAIL.findIndex((m) => m.name === name); q.J.mile = q.TRAIL[k].mile; q.reach(k); r.run(3); shot(r, `scene-${name.toLowerCase().replace(/ /g, '-')}`);
+  }
+  { const r = newGame(22), q = r.probe(); r.run(3); q.J.mile = 2035; q.J.next = 16; q.J.route = 1; r.run(q.DAY_FRAMES + 2); for (let i = 0; i < 9 && q.card; i++) r.press('A'); r.run(80); shot(r, 'the-end'); }
   const g = newGame(8), s = g.probe(); g.run(3); g.press('A'); g.run(2); for (let i = 0; i < 6; i++) g.press('DOWN'); g.press('A'); g.run(3); shot(g, 'trade');
 }

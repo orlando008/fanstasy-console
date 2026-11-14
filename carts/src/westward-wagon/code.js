@@ -10,7 +10,7 @@ const SHADOW = 1, PANEL = 3, BROWN = 4, RED = 6, ORANGE = 9, DIM = 10, GREEN = 1
 const ART = {
   tiles: {},
   sprites: {"grave": {"pal": 0, "size": 16, "tile": 646}, "rabbit0": {"pal": 2, "size": 16, "tile": 610}, "rabbit1": {"pal": 2, "size": 16, "tile": 616}, "squirrel0": {"pal": 2, "size": 16, "tile": 618}, "squirrel1": {"pal": 2, "size": 16, "tile": 644}},
-  scenes: {"far": {"h": 32, "mx": 0, "my": 0, "pal": 3, "w": 32}, "ground": {"h": 32, "mx": 64, "my": 0, "pal": 1, "w": 32}, "logo": {"h": 7, "mx": 96, "my": 0, "pal": 4, "w": 32}, "near": {"h": 32, "mx": 32, "my": 0, "pal": 2, "w": 32}},
+  scenes: {"far": {"h": 32, "mx": 0, "my": 0, "pal": 3, "w": 32}, "ground": {"h": 32, "mx": 64, "my": 0, "pal": 1, "w": 32}, "near": {"h": 32, "mx": 32, "my": 0, "pal": 2, "w": 32}},
   colors: {"GLASS": 200},
   big: {"bear0": {"h": 24, "parts": [[0, 0, 716, 16, 2, 0], [16, 0, 718, 16, 2, 0], [0, 16, 736, 16, 2, 0], [16, 16, 738, 16, 2, 0]], "w": 32}, "bear1": {"h": 24, "parts": [[0, 0, 716, 16, 2, 0], [16, 0, 718, 16, 2, 0], [0, 16, 740, 16, 2, 0], [16, 16, 742, 16, 2, 0]], "w": 32}, "buffalo0": {"h": 24, "parts": [[0, 0, 744, 16, 2, 0], [16, 0, 746, 16, 2, 0], [0, 16, 748, 16, 2, 0], [16, 16, 750, 16, 2, 0]], "w": 32}, "buffalo1": {"h": 24, "parts": [[0, 0, 744, 16, 2, 0], [16, 0, 746, 16, 2, 0], [0, 16, 768, 16, 2, 0], [16, 16, 770, 16, 2, 0]], "w": 32}, "deer0": {"h": 24, "parts": [[0, 0, 648, 16, 2, 0], [16, 0, 650, 16, 2, 0], [0, 16, 652, 16, 2, 0], [16, 16, 654, 16, 2, 0]], "w": 32}, "deer1": {"h": 24, "parts": [[0, 0, 676, 16, 2, 0], [16, 0, 678, 16, 2, 0], [0, 16, 680, 16, 2, 0], [16, 16, 682, 16, 2, 0]], "w": 32}, "elk0": {"h": 24, "parts": [[0, 0, 684, 16, 2, 0], [16, 0, 686, 16, 2, 0], [0, 16, 704, 16, 2, 0], [16, 16, 706, 16, 2, 0]], "w": 32}, "elk1": {"h": 24, "parts": [[0, 0, 708, 16, 2, 0], [16, 0, 710, 16, 2, 0], [0, 16, 712, 16, 2, 0], [16, 16, 714, 16, 2, 0]], "w": 32}, "oxen0": {"h": 32, "parts": [[0, 0, 580, 32, 1, 0], [32, 0, 578, 16, 1, 0], [32, 16, 584, 16, 1, 0]], "w": 48}, "oxen1": {"h": 32, "parts": [[0, 0, 588, 32, 1, 0], [32, 0, 578, 16, 1, 0], [32, 16, 586, 16, 1, 0]], "w": 48}, "oxen2": {"h": 32, "parts": [[0, 0, 580, 32, 1, 0], [32, 0, 578, 16, 1, 0], [32, 16, 584, 16, 1, 0]], "w": 48}, "oxen3": {"h": 32, "parts": [[0, 0, 640, 32, 1, 0], [32, 0, 578, 16, 1, 0], [32, 16, 608, 16, 1, 0]], "w": 48}, "wagon0": {"h": 40, "parts": [[0, 0, 448, 32, 0, 0], [32, 0, 452, 32, 0, 0], [0, 32, 432, 8, 0, 0], [8, 32, 433, 8, 0, 0], [16, 32, 434, 8, 0, 0], [32, 32, 435, 8, 0, 0], [40, 32, 436, 8, 0, 0], [48, 32, 437, 8, 0, 0]], "w": 56}, "wagon1": {"h": 40, "parts": [[0, 0, 456, 32, 0, 0], [32, 0, 460, 32, 0, 0], [0, 32, 432, 8, 0, 0], [8, 32, 438, 8, 0, 0], [16, 32, 439, 8, 0, 0], [32, 32, 440, 8, 0, 0], [40, 32, 441, 8, 0, 0], [48, 32, 437, 8, 0, 0]], "w": 56}, "wagon2": {"h": 40, "parts": [[0, 0, 512, 32, 0, 0], [32, 0, 516, 32, 0, 0], [0, 32, 432, 8, 0, 0], [8, 32, 442, 8, 0, 0], [16, 32, 443, 8, 0, 0], [32, 32, 444, 8, 0, 0], [40, 32, 445, 8, 0, 0], [48, 32, 437, 8, 0, 0]], "w": 56}, "wagon3": {"h": 40, "parts": [[0, 0, 520, 32, 0, 0], [32, 0, 524, 32, 0, 0], [0, 32, 432, 8, 0, 0], [8, 32, 446, 8, 0, 0], [16, 32, 447, 8, 0, 0], [32, 32, 576, 8, 0, 0], [40, 32, 577, 8, 0, 0], [48, 32, 437, 8, 0, 0]], "w": 56}},
   anims: {"bear": ["bear0", "bear1"], "buffalo": ["buffalo0", "buffalo1"], "deer": ["deer0", "deer1"], "elk": ["elk0", "elk1"], "oxen": ["oxen0", "oxen1", "oxen2", "oxen3"], "wagon": ["wagon0", "wagon1", "wagon2", "wagon3"]},
@@ -420,7 +420,7 @@ function loadJourney() {
     food: r(6), bullets: r(7), money: r(8) / 100, clothes: r(34),
   });
   J.party.forEach((p, i) => { p.health = r(9 + i * 3) / 10; p.ill = r(10 + i * 3); p.alive = !!r(11 + i * 3); });
-  srand(r(1)); savedDay = J.days; graveList = graves();
+  srand(r(1)); savedDay = J.days; graveList = graves(); loadRegion(J.region);
   note(J, 'THE JOURNEY RESUMED. A NEW PAGE.');
 }
 
@@ -542,7 +542,7 @@ function loadBook() {
 }
 
 function init() {
-  loadBook(); graveList = graves();
+  loadBook(); graveList = graves(); loadRegion(0);
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { for (let i = 0; i < 256; i++) dset(i, 0); dset(VERSION_SLOT, SAVE_VERSION); }
   for (const [layer, name] of [[0, 'ground'], [1, 'near'], [2, 'far']]) { const sc = ART.scenes[name]; bg(layer, { mx: sc.mx, my: sc.my, mw: sc.w, mh: sc.h, x: 0, y: 0, wrap: true, show: true }); }
   color(SOLID, 6, 4, 2); color(BOARD, 14, 9, 5);
@@ -552,13 +552,13 @@ function init() {
   else toTitle();
 }
 
-function toTitle() { state = 'title'; timer = 0; sel = 0; paused = false; play(SONG.title); }
+function toTitle() { state = 'title'; timer = 0; sel = 0; paused = false; sceneOn = -1; loadRegion(0); play(SONG.title); }
 function toSetup() { state = 'setup'; timer = 0; setup = { bg: 0, month: 1, step: 0, names: NAMES.slice() }; }
 function toStore(mult = 1) { state = 'store'; timer = 0; sel = 0; storeMult = mult; cart = {}; for (const g of GOODS) cart[g.key] = 0; }
 function toTrail() { state = 'trail'; timer = 0; paused = false; card = null; dayTimer = 0; play(SONG.trail); }
 function toMenu() { state = 'menu'; timer = 0; sel = 0; }
 /** A card over the trail: a title, lines, and choices (or none: A continues). then(choice) runs when one is made. */
-function showCard(title, lines, choices = null, then = null) { card = { title, lines, choices, then, sel: 0 }; }
+function showCard(title, lines, choices = null, then = null) { card = { title, lines: lines.flatMap((l) => (l.length > 28 ? wrapText(l) : [l])), choices, then, sel: 0 }; }   // long lines wrapped to the card
 
 // --- Update ---
 
@@ -709,7 +709,7 @@ function travel(resting) {
   const after = () => {
     if (J.done) return endJourney();
     const go = () => { if (out.arrived >= 0) reach(out.arrived); };
-    if (newRegion) { const r = BOOK.regions[reg]; showCard(r.name, r.lines, null, go); } else go();   // a card on entering a new region
+    if (newRegion) { loadRegion(reg); const r = BOOK.regions[reg]; showCard(r.name, r.lines, null, go); } else go();   // a card on entering a new region, and its layers
   };
   const evCard = () => { if (ev) { fx(/DIED|LOST|BROKE|THIEF|LAME|STORM|BLIZZARD|FIRE|BAD|ROUGH|LITTLE/.test(ev[0]) ? SFX.bad : SFX.good); showCard(dateText(J), ev, null, after); } else after(); };
   if (lines.length) { fx(out.died.length ? SFX.over : SFX.bad); showCard(dateText(J), lines, null, evCard); }
@@ -724,7 +724,7 @@ function reach(k) {
   if (m.kind === 'end') { J.arrived = true; J.done = true; return endJourney(); }
   showScene(m.name);                                                // its painted scene, when it has one (step 7 paints the rest)
   const page = BOOK.places[m.name], off = () => { sceneOn = -1; };
-  const line = m.kind === 'river' ? `${m.width} FEET ACROSS, ${riverDepth(J, m).toFixed(1)} FEET DEEP.` : m.kind === 'fort' ? 'A FORT, WITH A STORE.' : m.kind === 'fork' ? 'THE TRAIL DIVIDES HERE.' : 'A LANDMARK ON THE TRAIL.';
+  const line = m.kind === 'river' ? `${m.width} FT ACROSS, ${riverDepth(J, m).toFixed(1)} FT DEEP.` : m.kind === 'fort' ? 'A FORT, WITH A STORE.' : m.kind === 'fork' ? 'THE TRAIL DIVIDES HERE.' : 'A LANDMARK ON THE TRAIL.';
   const look = () => showCard(m.name, page.about, null, arrive);
   const talk = () => {
     if (!page.talk.length) return showCard(m.name, ['NOBODY IS ABOUT.'], null, arrive);
@@ -742,7 +742,7 @@ const riverDepth = (J, m) => m.depth * (J.month >= 6 ? 0.7 : 1);    // lower wat
 function crossing(m) {
   const ways = [['FORD THE RIVER', 'ford'], ['CAULK THE WAGON AND FLOAT', 'float']].concat(m.ferry ? [[`TAKE THE FERRY ($${m.ferry})`, 'ferry']] : [])
     .concat(m.guide ? [['HIRE A GUIDE (1 CLOTHING)', 'guide']] : []).concat([['WAIT A DAY', 'wait']]);
-  const ask = () => showCard(m.name, [`${m.width} FEET ACROSS, ${riverDepth(J, m).toFixed(1)} FEET DEEP.`], ways.map((w) => w[0]), (c) => {
+  const ask = () => showCard(m.name, [`${m.width} FT ACROSS, ${riverDepth(J, m).toFixed(1)} FT DEEP.`], ways.map((w) => w[0]), (c) => {
     const how = ways[c][1];
     if (how === 'wait') { dayOnTrail(J, true); return ask(); }
     const done = (r) => { fx(/LOST|DROWN|NO MONEY|NO CLOTHING/.test(r) ? SFX.bad : SFX.good); if (/^NO /.test(r)) return showCard(m.name, [r], null, ask); showCard(m.name, wrapText(r), null, () => { if (J.done) endJourney(); }); };
@@ -772,6 +772,7 @@ function endJourney() {
   rank = J.arrived ? insertTop({ score: sc, name: J.party[0].name, bg: J.bg }) : -1;
   J.score = sc; fx(J.arrived ? SFX.record : SFX.over);
   dset(SAVE_SLOT, 0);                                               // the journey is over: nothing to continue
+  if (J.arrived) showScene('WILLAMETTE VALLEY');
 }
 function updateEnd() {
   if (timer > 60 && (pressed(A) || pressed(START))) { fx(SFX.select); state = 'records'; timer = 0; }
@@ -831,14 +832,14 @@ function draw() {
 /** The layers (spec 12): on the trail BG2 the far hills, BG1 the near, BG0 the ground, scrolled at their own speeds (parallax); on the
  * title BG2 is the logo; at a landmark with a scene, BG2 shows the scene (from the ROM) and the others hide. */
 function setLayers(trailOn) {
-  const lg = ART.scenes.logo, fr = ART.scenes.far;
+  const fr = ART.scenes.far;
   if (sceneOn >= 0) {
     bg(0, { show: false }); bg(1, { show: false });
     bg(2, { mx: SCENE_MAP[0], my: SCENE_MAP[1], mw: 32, mh: 19, x: 0, y: 0, wrap: false, show: true });
     return;
   }
   bg(0, { show: trailOn }); bg(1, { show: trailOn });
-  if (state === 'title') bg(2, { mx: lg.mx, my: lg.my, mw: lg.w, mh: lg.h, x: 0, y: -24, wrap: false, show: true });
+  if (state === 'title') { if (sceneLoaded !== SCENES.length - 1) loadScene(SCENES.length - 1); bg(2, { mx: SCENE_MAP[0], my: SCENE_MAP[1], mw: 32, mh: 7, x: 0, y: -24, wrap: false, show: true }); }   // the logo, from the ROM
   else bg(2, { mx: fr.mx, my: fr.my, mw: fr.w, mh: fr.h, x: scroll >> 3, y: 0, wrap: true, show: trailOn });
   bgscroll(1, (scroll * 3) >> 3, 0); bgscroll(0, scroll, 0);
 }
@@ -849,26 +850,51 @@ function drawWagon() {
   bigSprite(ART.big[ART.anims.oxen[rolling ? (scroll >> 2) & 3 : 0]], 144, 114, { prio: 3 });
 }
 
-// --- The landmark scenes (art.py: rom/scenes.bin): one at a time, its tiles into the reserved block from SCENE_BASE, its map into Map RAM
-// at SCENE_MAP, its colours into BG palette 5. ---
-const SCENE_BASE = 800, SCENE_MAP = [128, 32], SCENE_OF = { 'CHIMNEY ROCK': 0 };
-let sceneOn = -1, sceneLoaded = -1;
-function loadScene(k) {
-  const b = rom('scenes'); let o = 1;
-  for (let i = 0; i < k; i++) { const n = b[o + 30] | (b[o + 31] << 8); o += 32 + n * 32 + 32 * 19 * 2; }
-  for (let i = 0; i < 15; i++) { const v = b[o + i * 2] | (b[o + i * 2 + 1] << 8); color(81 + i, v & 31, (v >> 5) & 31, v >> 10); }
-  o += 30; const n = b[o] | (b[o + 1] << 8); o += 2;
-  for (let t = 0; t < n; t++) {
-    const tn = SCENE_BASE + t, x0 = (tn % 16) * 8, y0 = (tn >> 4) * 8;
-    for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x += 2) { const v = b[o++]; sset(x0 + x, y0 + y, v & 15); sset(x0 + x + 1, y0 + y, v >> 4); }
+// --- The world in the ROM (art.py and world.py): LZ-packed entries. A region's layers go into tiles from 1 and the three layers' maps,
+// its colours into BG palettes 1 to 3 and its sky into skyLines; a landmark's scene into the scene buffer (SCENE_TILES from SCENE_BASE, then
+// the end of the regions' range) and the map at SCENE_MAP, its colours into BG palette 5. ---
+const SCENE_BASE = 800, SCENE_MAP = [128, 32], REGION_TILES = 380;
+const SCENES = ['CHIMNEY ROCK', 'INDEPENDENCE ROCK', 'SODA SPRINGS', 'SOUTH PASS', 'BLUE MOUNTAINS', 'THE DALLES', 'FORT', 'RIVER', 'WILLAMETTE VALLEY', 'LOGO'];
+const sceneOf = (name) => { const k = SCENES.indexOf(name); if (k >= 0) return k; const m = TRAIL.find((x) => x.name === name); return m ? SCENES.indexOf(m.kind === 'fort' ? 'FORT' : m.kind === 'river' ? 'RIVER' : '') : -1; };
+let sceneOn = -1, sceneLoaded = -1, regionLoaded = -1, skyLines = ART.gradients.sky.lines;
+/** Unpack an LZ stream (world.py's lz): c < 128 is c + 1 literal bytes; else c - 125 bytes copied from an offset back. */
+function lz(b, o, n) {
+  const out = [], end = o + n;
+  while (o < end) {
+    const c = b[o++];
+    if (c < 128) for (let k = 0; k <= c; k++) out.push(b[o++]);
+    else { const len = c - 125, off = b[o] | (b[o + 1] << 8); o += 2; for (let k = 0; k < len; k++) out.push(out[out.length - off]); }
   }
+  return out;
+}
+/** Entry k of a ROM blob of packed entries (a count, then each one's length and bytes), unpacked. */
+function romEntry(name, k) { const b = rom(name); let o = 1; for (let i = 0; i < k; i++) o += 2 + (b[o] | (b[o + 1] << 8)); return lz(b, o + 2, b[o] | (b[o + 1] << 8)); }
+function putTile(d, o, tn) { const x0 = (tn % 16) * 8, y0 = (tn >> 4) * 8; for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x += 2) { const v = d[o++]; sset(x0 + x, y0 + y, v & 15); sset(x0 + x + 1, y0 + y, v >> 4); } }
+function readColours(d, o, first) { for (let i = 0; i < 15; i++) { const v = d[o + i * 2] | (d[o + i * 2 + 1] << 8); color(first + i, v & 31, (v >> 5) & 31, v >> 10); } }
+/** A region's layers (spec 6, 12): on entering it, and at the start. */
+function loadRegion(k) {
+  if (regionLoaded === k) return;
+  const d = romEntry('regions', k); let o = 0;
+  const u16 = () => { const v = d[o] | (d[o + 1] << 8); o += 2; return v; };
+  skyLines = []; for (let n = d[o++]; n > 0; n--) skyLines.push(u16());
+  for (let p = 1; p <= 3; p++) { readColours(d, o, p * 16 + 1); o += 30; }
+  const n = u16(); for (let t = 0; t < n; t++) { putTile(d, o, 1 + t); o += 32; }
+  for (const [mx, pal] of [[0, 3], [32, 2], [64, 1]]) for (let i = 0; i < 1024; i++) { const v = u16(), t = v & 1023; mset(mx + (i & 31), i >> 5, t ? tile(t, pal, !!(v & 8192), !!(v & 16384)) : 0); }
+  regionLoaded = k; baseCols = null;                                // the weather's tints start again from the new colours
+}
+const sceneTile = (t) => (t < 224 ? SCENE_BASE + t : 1 + REGION_TILES + t - 224);   // the scene buffer, then the end of the regions' range
+function loadScene(k) {
+  const d = romEntry('scenes', k); let o = 0;
+  readColours(d, 0, 81); o = 30;
+  const n = d[o] | (d[o + 1] << 8); o += 2;
+  for (let t = 0; t < n; t++) { putTile(d, o, sceneTile(t)); o += 32; }
   for (let i = 0; i < 32 * 19; i++) {
-    const v = b[o + i * 2] | (b[o + i * 2 + 1] << 8), t = v & 1023;
-    mset(SCENE_MAP[0] + (i % 32), SCENE_MAP[1] + ((i / 32) | 0), t ? tile(SCENE_BASE + t - 1, 5, !!(v & (1 << 13)), !!(v & (1 << 14))) : 0);
+    const v = d[o + i * 2] | (d[o + i * 2 + 1] << 8), t = v & 1023;
+    mset(SCENE_MAP[0] + (i % 32), SCENE_MAP[1] + ((i / 32) | 0), t ? tile(sceneTile(t - 1), 5, !!(v & 8192), !!(v & 16384)) : 0);
   }
   sceneLoaded = k;
 }
-function showScene(name) { const k = SCENE_OF[name]; if (k === undefined) return; if (sceneLoaded !== k) loadScene(k); sceneOn = k; }
+function showScene(name) { const k = sceneOf(name); if (k < 0) return; if (sceneLoaded !== k) loadScene(k); sceneOn = k; }
 
 // --- The weather you can see, and the season (spec 5.2): rain, snow and fog on the overlay, grey clouds and a dimmer sky in bad weather,
 // the grass browning through the autumn. The colours are set from the art's own (kept at the start). ---
@@ -904,7 +930,8 @@ function drawHudBoard() {
 }
 
 function drawTitle() {
-  titleItems().forEach((s, i) => txt(`${i === sel ? '> ' : '  '}${s}`, 72, 166 + i * 14, i === sel ? WHITE : DIM));   // under the trail, clear of the wagon
+  const items = titleItems(); panel(56, 158, 144, items.length * 14 + 14);
+  items.forEach((s, i) => txt(`${i === sel ? '> ' : '  '}${s}`, 64, 166 + i * 14, i === sel ? WHITE : DIM));   // under the trail, clear of the wagon, on a panel
 }
 function drawSetup() {
   panel(8, 16, 240, 192);
@@ -976,13 +1003,16 @@ function drawFloat() {
   txt('LEFT/RIGHT: STEER', 8, 208, DIM);
 }
 function drawEnd() {
+  if (J.arrived) {                                                  // under the valley's picture
+    panel(8, 153, 240, 68);
+    ctxt('THE WILLAMETTE VALLEY!', 160, GOLD);
+    ctxt(`${alive(J).length} OF 5 MADE IT, ${dateText(J)}`, 173, WHITE);
+    ctxt(`SCORE ${J.score}${rank >= 0 ? `   TOP 10: #${rank + 1}` : ''}`, 186, rank >= 0 ? CYAN : GOLD);
+    if (timer > 60 && (clock >> 5) & 1) ctxt('A: CONTINUE   B: THE DIARY', 204, DIM);
+    return;
+  }
   panel(16, 24, 224, 120);
-  if (J.arrived) {
-    ctxt('YOU HAVE REACHED', 34, WHITE); ctxt('THE WILLAMETTE VALLEY!', 46, GOLD);
-    ctxt(`${alive(J).length} OF 5 MADE IT, ${dateText(J)}`, 66, WHITE);
-    ctxt(`SCORE ${J.score}`, 86, GOLD);
-    if (rank >= 0) ctxt(`TOP 10: #${rank + 1}`, 100, CYAN);
-  } else { ctxt('THE WHOLE PARTY', 50, WHITE); ctxt('HAS DIED ON THE TRAIL.', 62, RED); ctxt(`${J.mile} MILES FROM INDEPENDENCE`, 82, DIM); }
+  ctxt('THE WHOLE PARTY', 50, WHITE); ctxt('HAS DIED ON THE TRAIL.', 62, RED); ctxt(`${J.mile} MILES FROM INDEPENDENCE`, 82, DIM);
   if (timer > 60 && (clock >> 5) & 1) ctxt('A: CONTINUE   B: THE DIARY', 124, DIM);
 }
 function drawRecords() {
@@ -1012,6 +1042,6 @@ const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
 
 /** Each line of the screen: the sky's colour (the SNES did its skies this way, with HDMA). */
 function scanline(y) {
-  const v = ART.gradients.sky.lines[y];
+  const v = skyLines[y];
   if (v !== undefined) color(0, flr((v & 31) * skyDim), flr(((v >> 5) & 31) * skyDim), flr((v >> 10) * skyDim));   // dimmer under rain and snow
 }

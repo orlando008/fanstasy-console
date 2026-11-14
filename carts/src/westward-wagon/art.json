@@ -779,18 +779,6 @@
     "hill2": 3
    }
   },
-  "bg4": {
-   "base": 64,
-   "colors": {
-    "edge": 6,
-    "gold0": 1,
-    "gold1": 2,
-    "gold2": 3,
-    "gold3": 4,
-    "gold4": 5,
-    "shade": 7
-   }
-  },
   "bg5": {
    "base": 80,
    "colors": {
@@ -865,6 +853,10 @@
    }
   }
  },
+ "rom": [
+  "regions",
+  "scenes"
+ ],
  "scenes": {
   "far": {
    "h": 32,
@@ -878,13 +870,6 @@
    "mx": 64,
    "my": 0,
    "pal": 1,
-   "w": 32
-  },
-  "logo": {
-   "h": 7,
-   "mx": 96,
-   "my": 0,
-   "pal": 4,
    "w": 32
   },
   "near": {
@@ -923,6 +908,6 @@
   }
  },
  "tiles": {},
- "used": 759,
+ "used": 680,
  "version": 1
 }

@@ -37,7 +37,7 @@ export function pad(vm, p) {
     const has = (s) => c.choices.findIndex((x) => x.startsWith(s));
     if (has('LOOK AROUND') >= 0) want = has('BUY SUPPLIES') >= 0 && J.food < 800 && J.money > 20 ? has('BUY SUPPLIES') : c.choices.length - 1;   // a landmark: buy at a fort, or go on
     else if (has('FORD THE RIVER') >= 0) {
-      const depth = parseFloat((c.lines[0].match(/([0-9.]+) FEET DEEP/) || [0, 9])[1]);
+      const depth = parseFloat((c.lines[0].match(/([0-9.]+) FT DEEP/) || [0, 9])[1]);
       want = depth < 2.5 ? 0 : has('TAKE THE FERRY') >= 0 && J.money > 25 ? has('TAKE THE FERRY') : has('HIRE A GUIDE') >= 0 && J.clothes > 2 * p.alive(J).length ? has('HIRE A GUIDE') : 1;
     } else if (has('FORT BRIDGER') >= 0) want = opts.route ?? 0;
     else if (has('RAFT') >= 0) want = J.money > 40 ? 1 : 0;

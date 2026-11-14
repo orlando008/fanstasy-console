@@ -8,58 +8,60 @@
 # each a 256 px wide picture that wraps across as the wagon goes (256 tall, transparent above its band, so it does not repeat down the
 # screen). The wagon and the oxen are big sprites, animated.
 #
-# The landmark scenes are too many for the tile sheet, so they live in the ROM (rom/scenes.bin, written here) and code.js copies one at a
-# time into a reserved block of tiles (SCENE_TILES from SCENE_BASE) and a reserved stretch of Map RAM, the way Merge Café's picture pool
-# does for sprites. rom/scenes.bin: a count; then for each scene: its 15 colours (RGB555, little-endian), its tile count (u16), the tiles
-# (32 bytes each: 8 x 8 pixels, two to a byte, the left one in the low four bits), and its 32 x 19 map (u16 each: 0 empty, else the tile's
-# number from 1 and the flips in bits 13 and 14).
+# The five regions and the landmark scenes are too many for the tile sheet, so they live in the ROM, LZ-packed (world.py), and code.js
+# copies one at a time into the tile sheet and Map RAM, the way Merge Café's picture pool does for sprites:
+#   rom/regions.bin, an entry a region (into tiles from 1, REGION_TILES at most, and the maps of the three layers): the sky's lines
+#     (a count byte, RGB555 each), the 15 colours of BG palettes 1 (ground), 2 (near) and 3 (far), the tile count (u16), the tiles (32 bytes
+#     each: 8 x 8 pixels, two to a byte, the left one in the low four bits), and the far, near and ground maps (32 x 32, u16 each: 0 empty,
+#     else the tile's number from 1 and the flips in bits 13 and 14). The prairie is also drawn into the sheet here, for the tools.
+#   rom/scenes.bin, an entry a scene (into SCENE_TILES from SCENE_BASE and the map at SCENE_MAP, BG palette 5): its 15 colours, the tile
+#     count, the tiles and its 32 x 19 map. The title's logo is one of them.
 import math, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
 from kit import *
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from world import REGION_LOOKS, SCENE_PALS, SCENE_PAINT, far_layer, near_layer, ground_layer, tiles_and_map, tile_bytes, colours, pack_blob, u16
 
-SCENE_BASE, SCENE_TILES = 800, 224                          # code.js has the same
+SCENE_BASE, SCENE_TILES, REGION_TILES = 800, 224 + 51, 380   # code.js has the same: a scene's tiles go from SCENE_BASE to the end, then after the regions' 380
 
 art = Art()
-art.region('bg', 1, 431)
+art.region('bg', 1, REGION_TILES)
 art.region('spr', 432, SCENE_BASE - 1)
 art.color(200, '2a1810', 'GLASS')
 
-# --- Palettes ---
-art.gradient('sky', ['4a78c8', '8ab8e8', 'e8e0c8'], y0=0, y1=130)           # the prairie's sky: deep blue to a pale horizon
-ground = art.palette(1, {'grass': ramp('6a9a3a', 4), 'dirt': ramp('a07848', 3), 'flower': 'e8d060', 'stone': 'b0a898'})
-near = art.palette(2, {'hill': recede(ramp('5a8a3a', 4), 0.25, 'e8e0c8'), 'tree': recede(ramp('3a6a2a', 3), 0.2, 'e8e0c8')})
-far = art.palette(3, {'hill': recede(ramp('6a8a6a', 3), 0.65, 'e8e0c8'), 'cloud': ramp('f4f4f8', 3, shift=0.4)})
-logo_pal = art.palette(4, {'gold': ramp('f0c060', 5), 'edge': '2a1408', 'shade': '6a3820'})
+# --- Palettes (the prairie's are the sheet's; the other regions' come from the ROM) ---
+P0 = REGION_LOOKS[0]
+art.gradient('sky', P0['sky'], y0=0, y1=130)                 # the prairie's sky: deep blue to a pale horizon
+ground = art.palette(1, P0['ground'])
+near = art.palette(2, P0['near'])
+far = art.palette(3, P0['far'])
 wag = art.sprite_palette(0, {'canvas': ramp('ece4cc', 4), 'wood': ramp('8a5a30', 4), 'iron': ramp('3a3440', 3)})
 ox = art.sprite_palette(1, {'hide': ramp('9a6a3a', 5), 'dark': ramp('5a3a22', 3), 'horn': ramp('e8dcc0', 2), 'yoke': ramp('7a5030', 3)})
 
-# --- The trail's layers (the prairie: step 7 adds the other regions) ---
-def layer(draw):
-    im = Img(256, 256); draw(im); return im
-def far_hills(im):
-    clouds(im, far.cloud, count=4, y0=14, y1=64, size=(20, 44), seed=5)        # fair-weather clouds, drifting with the far hills
-    hills(im, far.hill, base=104, amp=10, period=256, seed=3, rim=False)
-def near_hills(im):
-    crest = hills(im, near.hill, base=128, amp=14, period=256, seed=9)
-    for k, x in enumerate((20, 58, 140, 200)):                 # a few cottonwoods on the crests
-        t = Img(16, 18); treeline(t, near.tree, base=16, size=10, spacing=16, seed=k)
-        cy = min(crest[(x + i) % 256] for i in range(16))
-        im.blit(t, x, cy - 14)
-def ground_band(im):
-    tex = texture('grass', 64, 40, ground.grass)
-    for x in range(0, 256, 64): im.blit(tex, x, 124)
-    for x in range(256):                                       # the trail: two ruts of bare earth, a worn strip between
-        for y, c in ((136, ground.dirt[1]), (137, ground.dirt[0]), (141, ground.dirt[2]), (145, ground.dirt[1]), (146, ground.dirt[0])):
-            im.px[y][x] = c
-        for y in range(138, 145):
-            if hsh(x * 7 + y * 13) % 5: im.px[y][x] = ground.dirt[2] if hsh(x + y * 31) % 3 else ground.grass[1]
-        im.px[124][x] = ground.grass[3]
-    for k in range(18):                                        # flowers and stones in the grass
-        x, y = hsh(k * 31 + 3) % 256, 126 + hsh(k * 17) % 9
-        im.px[y][x] = ground.flower if k % 3 else ground.stone
-art.scene('far', layer(far_hills), pal=far, at=(0, 0))
-art.scene('near', layer(near_hills), pal=near, at=(32, 0))
-art.scene('ground', layer(ground_band), pal=ground, at=(64, 0))
+# --- The trail's layers: the prairie in the sheet (the tools show it); every region, the prairie too, in rom/regions.bin ---
+art.scene('far', far_layer(far, 'prairie'), pal=far, at=(0, 0))
+art.scene('near', near_layer(near, 'prairie'), pal=near, at=(32, 0))
+art.scene('ground', ground_layer(ground, 'prairie'), pal=ground, at=(64, 0))
+regions = []
+for look in REGION_LOOKS:
+    ra = Art()
+    G, N, F = ra.palette(1, look['ground']), ra.palette(2, look['near']), ra.palette(3, look['far'])
+    sky = ra.gradient('sky', look['sky'], y0=0, y1=130)['lines']
+    tiles, maps, index = [], [], {}
+    for im in (far_layer(F, look['name']), near_layer(N, look['name']), ground_layer(G, look['name'])):
+        t, mp = tiles_and_map(im, 32, None, look['name'])
+        remap = []                                             # one tile set for the three layers: share across them
+        for k, cell in enumerate(t):
+            key = cell.key()
+            if key not in index: tiles.append(cell); index[key] = len(tiles)
+            remap.append(index[key])
+        maps.append([(remap[(v & 1023) - 1] | (v & ~1023)) if v else 0 for v in mp])
+    if len(tiles) > REGION_TILES: raise ValueError('region %s needs %d tiles; %d fit' % (look['name'], len(tiles), REGION_TILES))
+    e = bytearray([len(sky)]) + b''.join(u16(v) for v in sky) + colours(G) + colours(N) + colours(F) + u16(len(tiles)) + tile_bytes(tiles)
+    for mp in maps: e += b''.join(u16(v) for v in mp)
+    regions.append(e)
+    print('region %s: %d tiles' % (look['name'], len(tiles)))
+art.rom['regions'] = pack_blob(regions)
 
 # --- The wagon (four turns of its wheels) and the oxen (four steps), big sprites sharing their unchanging parts ---
 def wheel(d, cx, cy, r, phase, part):
@@ -168,12 +170,13 @@ art.sprite('grave', Img.from_rows([
 for k in ('deer', 'elk', 'bear', 'buffalo'):                  # in 16 px pieces: the body's are shared by both frames, and no 32 px spot is needed
     art.anims[k] = [art.big_sprite('%s%d' % (k, f), animal(k, f), pal=fur, region='spr', piece=16) and '%s%d' % (k, f) for f in (0, 1)]
 
-# --- The title: WESTWARD WAGON in big letters (BG2, on the title) ---
-logo = Img(256, 56)
+# --- The title: WESTWARD WAGON in big letters (a scene in the ROM, shown on BG2 on the title) ---
+logo_art = Art()
+logo_pal = logo_art.palette(5, {'gold': ramp('f0c060', 5), 'edge': '2a1408', 'shade': '6a3820'})
+logo = Img(256, 152)
 for k, word in enumerate(('WESTWARD', 'WAGON')):
     t = big_text(word, logo_pal.gold, scale=2, outline=logo_pal.edge, shadow=logo_pal.shade)
     logo.blit(t, (256 - t.w) // 2, k * 26 + 1)
-art.scene('logo', logo, pal=logo_pal, at=(96, 0))
 
 # --- The landmark scenes, in the ROM (BG palette 5 is theirs: code.js sets its colours from the scene) ---
 SCENE_PAL = {'sand': ramp('c89860', 5), 'rock': ramp('a87850', 3, shift=0.5), 'plain': recede(ramp('a8a070', 3), 0.6, 'e8e0c8'), 'grass': ramp('7a9a48', 3), 'dark': '3a2a1a'}
@@ -217,39 +220,15 @@ def chimney_rock():
         for x in range(int(cx - 8 - (y - 70) * 1.25), int(cx + 8 + (y - 70) * 1.25), 6): im.px[y][x] = P.rock[0]; im.px[min(y + 1, 151)][x + 1] = P.rock[0]
     return im
 
-def pack_scene(im, P):
-    """A scene's tiles (identical and flipped ones stored once) and its map, for rom/scenes.bin."""
-    tiles, index, mp = [], {}, []
-    for ty in range(19):
-        for tx in range(32):
-            cell = im.crop(tx * 8, ty * 8, 8, 8)
-            if cell.is_empty(): mp.append(0); continue
-            found = None
-            for fx_, fy_, c in ((0, 0, cell), (1, 0, cell.flip_h()), (0, 1, cell.flip_v()), (1, 1, cell.flip_h().flip_v())):
-                if c.key() in index: found = (index[c.key()], fx_, fy_); break
-            if not found:
-                tiles.append(cell); index[cell.key()] = len(tiles); found = (len(tiles), 0, 0)
-            mp.append(found[0] | (found[1] << 13) | (found[2] << 14))
-    if len(tiles) > SCENE_TILES: raise ValueError('a landmark scene needs %d tiles; the buffer holds %d' % (len(tiles), SCENE_TILES))
-    out = bytearray()
-    for name in P.names():                                     # the 15 colours by index
-        pass
-    cols = [0] * 15
-    for name, i in P.names().items():
-        h = P.hex_of(i); r, g, b = (int(h[k:k + 2], 16) >> 3 for k in (0, 2, 4)); cols[i - 1] = r | (g << 5) | (b << 10)
-    for v in cols: out += bytes([v & 255, v >> 8])
-    out += bytes([len(tiles) & 255, len(tiles) >> 8])
-    for t in tiles:
-        for y in range(8):
-            for x in range(0, 8, 2): out.append(t.px[y][x] | (t.px[y][x + 1] << 4))
-    for v in mp: out += bytes([v & 255, v >> 8])
-    return bytes(out), len(tiles)
-SCENES = [('CHIMNEY ROCK', chimney_rock())]                  # code.js: the scene of each landmark (step 7 adds the others)
-blob_ = bytearray([len(SCENES)])
-for name, im in SCENES:
-    b, n = pack_scene(im, scene_pal); blob_ += b
-    print('scene %s: %d tiles' % (name, n))
-os.makedirs(os.path.join(sys.argv[1], 'rom'), exist_ok=True)
-open(os.path.join(sys.argv[1], 'rom', 'scenes.bin'), 'wb').write(bytes(blob_))
+def pack_scene(name, im, P):
+    tiles, mp = tiles_and_map(im, 19, SCENE_TILES, name)
+    if len(tiles) > SCENE_TILES: raise ValueError('the scene %s needs %d tiles; the buffer holds %d' % (name, len(tiles), SCENE_TILES))
+    print('scene %s: %d tiles' % (name, len(tiles)))
+    return colours(P) + u16(len(tiles)) + tile_bytes(tiles) + b''.join(u16(v) for v in mp)
+SCENES = [('CHIMNEY ROCK', chimney_rock(), scene_pal)]           # code.js's SCENE_OF has the same order
+for name in SCENE_PAINT:
+    sa = Art(); P = sa.palette(5, SCENE_PALS[name]); SCENES.append((name, SCENE_PAINT[name](P), P))
+SCENES.append(('LOGO', logo, logo_pal))
+art.rom['scenes'] = pack_blob([pack_scene(n, im, P) for n, im, P in SCENES])
 
 art.write(sys.argv[1])
