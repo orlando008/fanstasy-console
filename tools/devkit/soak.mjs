@@ -10,7 +10,9 @@
 //   * an effect sent to a channel whose voice does not suit it (the channel decides the voice)    FAIL
 //   * a frozen screen: the picture did not change for 15 s (900 frames) while buttons were being pressed;
 //     a soft lock. The state the cart was in is named if it has a variable called `state`          FAIL
-//   * frame time: median, 99th percentile and worst (a 99th percentile over 8 ms is a warning; over 14, a failure)
+//   * frame time: median, 99th percentile and worst (a 99th percentile over 8 ms is a warning; over 14, a failure;
+//     with --all, carts play side by side and slow each other, so over 14 is only a warning there: one cart's soak,
+//     as verify.js runs it, is the judge)
 //   * the most sprites in OAM, and the most on one scanline (the limit is 32; more are dropped)    warn if > 32
 //   * the states reached (if the cart has `state`) and the effects and songs never played, a hint of what the random
 //     player could not reach: write a test or a bot for those
@@ -28,10 +30,11 @@ const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const argv = process.argv.slice(2);
 const opt = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const all = argv.includes('--all');
+const shared = argv.includes('--shared');   // a child of --all: frame time is only a warning (see the top)
 const frames = Number(opt('--frames', all ? 3000 : 20000)), seeds = Number(opt('--seeds', all ? 1 : 3)), from = Number(opt('--from', 1)), extra = opt('--extra', '');
 const paths = all
   ? readdirSync(join(ROOT, 'carts')).filter((f) => f.endsWith('.nova')).map((f) => join(ROOT, 'carts', f))
-  : [argv[0]].filter((a) => a && !a.startsWith('--'));
+  : argv.filter((a, i) => !a.startsWith('--') && (i === 0 || !argv[i - 1].startsWith('--') || argv[i - 1] === '--shared')).slice(0, 1);
 if (!paths.length) { console.error('usage: node tools/devkit/soak.mjs <cart.nova> | --all [--frames n] [--seeds n] [--from seed] [--extra "src"]'); process.exit(1); }
 
 // What the harness can read of the cart without it being written for tests: its `state` variable, if it has one.
@@ -84,7 +87,7 @@ function soak(path, seed) {
   if (worstFreeze.n >= FREEZE) fails.push(`the screen did not change for ${worstFreeze.n} frames (to frame ${worstFreeze.at})${worstFreeze.state !== undefined ? `, in state "${worstFreeze.state}"` : ''}: a soft lock?`);
   cpu.sort((a, b) => a - b);
   const q = (p) => cpu[Math.min(cpu.length - 1, Math.floor(cpu.length * p))] ?? 0, p99 = q(0.99);
-  if (p99 > 14) fails.push(`frame time: 99th percentile ${p99.toFixed(1)} ms`); else if (p99 > 8) warns.push(`frame time: 99th percentile ${p99.toFixed(1)} ms (over 8)`);
+  if (p99 > 14) (shared ? warns : fails).push(`frame time: 99th percentile ${p99.toFixed(1)} ms`); else if (p99 > 8) warns.push(`frame time: 99th percentile ${p99.toFixed(1)} ms (over 8)`);
   if (maxLine > 32) warns.push(`${maxLine} sprites on one scanline (the limit is 32: the rest are dropped)`);
   const usedSfx = vm.cart.sfx.map((e, i) => (e.rows.some(Boolean) ? i : -1)).filter((i) => i >= 0);
   const usedSongs = vm.cart.songs.map((s, i) => (s.order.length ? i : -1)).filter((i) => i >= 0);
@@ -100,7 +103,7 @@ function soak(path, seed) {
  * Returns the number of carts that failed. */
 async function soakAll() {
   const jobs = Math.max(1, Number(opt('--jobs', availableParallelism())));
-  const args = ['--frames', String(frames), '--seeds', String(seeds), '--from', String(from)].concat(extra ? ['--extra', extra] : []);
+  const args = ['--shared', '--frames', String(frames), '--seeds', String(seeds), '--from', String(from)].concat(extra ? ['--extra', extra] : []);
   const queue = [...paths];
   let bad = 0;
   const run = (path) => new Promise((done) => {
