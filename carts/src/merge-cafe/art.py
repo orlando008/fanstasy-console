@@ -12,6 +12,7 @@
 # palette and 32 x 32 palette indices, two to a byte (the left pixel in the low four bits).
 import math, os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from kit import *
 
 COLS, ROWS, CW, CH, BX, BY = 7, 5, 32, 28, 16, 84          # the board: 7 x 5 cells of 32 x 28 px from (16, 84) (code.js has the same)
@@ -27,9 +28,11 @@ cafe = art.palette(1, {'wall': ramp('7a9a80', 3, shift=0.4), 'wood': ramp('7a503
 board = art.palette(2, {'top': ramp('c08850', 4), 'plate': ramp('f0e4cc', 3), 'ink': '2a1810'})
 logo_pal = art.palette(3, {'gold': ramp('f0b860', 5), 'edge': '2a1408', 'shade': '6a3820'})
 bake = art.sprite_palette(0, {'gold': ramp('e0b048', 5), 'crust': ramp('a05a28', 4), 'cream': ramp('f4e4c4', 3), 'pink': ramp('f070a0', 3)})
-LINE_PALS = [bake]
-for sub, base in ((1, '7a4a2a'), (2, 'e8e0f0'), (3, 'd83848'), (4, '6890c8')):   # coffee, dairy, fruit, tableware: placeholders until step 3
-    LINE_PALS.append(art.sprite_palette(sub, {'main': ramp(base, 5), 'ink': '201410'}))
+coffee_pal = art.sprite_palette(1, {'bean': ramp('6a3c20', 4), 'china': ramp('f0ece4', 3), 'crema': ramp('d8a060', 4), 'metal': ramp('c09040', 3)})
+dairy_pal = art.sprite_palette(2, {'milk': ramp('f4f0f8', 4), 'pink': ramp('f08ab0', 3), 'choc': ramp('8a5030', 4), 'glass': ramp('a8c4d8', 3)})
+fruit_pal = art.sprite_palette(3, {'red': ramp('d83040', 4), 'leaf': ramp('58a040', 3), 'berry': ramp('5a50b0', 3), 'crust': ramp('d8a060', 4)})
+table_pal = art.sprite_palette(4, {'china': ramp('f0f0f4', 4), 'blue': ramp('4870c0', 3), 'silver': ramp('b8c0c8', 4), 'gold': ramp('e0b040', 3)})
+LINE_PALS = [bake, coffee_pal, dairy_pal, fruit_pal, table_pal]
 mab = art.sprite_palette(5, {'skin': ramp('e8b088', 4), 'hair': ramp('c8c8d0', 4), 'shirt': ramp('5878c0', 4), 'pants': ramp('f0e8d8', 3)})
 crate_pal = art.sprite_palette(6, {'wood': ramp('8a6038', 5), 'nail': 'c8c0b0', 'web': 'e8e8e0', 'shadow': '3a2418'})
 fx = art.sprite_palette(7, {'spark': ramp('fff0a0', 3), 'cursor': ramp('ffffff', 2), 'cross': 'e04040'})
@@ -169,18 +172,13 @@ def boxed(im):
 
 BAKERY = [boxed(f()) for f in (wheat, flour, dough, roll, loaf, cake)]
 
-# --- The other lines: placeholders until step 3 (a ball that grows with the tier, a box for the generator) ---
-def placeholder(P, t):
-    s = Sculpt(24, 24); s.sphere(12, 13, 0, 3.5 + t * 1.3, Mat(P.main, gloss=0.5)); im = s.render()
-    for k in range(t): im.pset(6 + k * 2 + (6 - t), 22, P.ink)
-    return boxed(im)
-def placeholder_gen(P):
-    s = Sculpt(24, 24); s.ellipsoid(12, 13, 0, 10, 9, 6, Mat(P.main, rough=0.4)); return boxed(s.render())
+# --- The other four lines (items.py) ---
+import items
+LINES = [(BAKERY, boxed(sack()))] + [([boxed(im) for im in its], boxed(gen)) for its, gen in
+         (items.coffee(coffee_pal), items.dairy(dairy_pal), items.fruit(fruit_pal), items.tableware(table_pal))]
 # The pictures in ROM order: the items (line x 6 + tier - 1: 0 to 29), the generators (30 to 34), the crate (35), the regulars (36 on).
-for line in range(5):
-    for t in range(1, 7): PICS.append((BAKERY[t - 1] if line == 0 else placeholder(LINE_PALS[line], t), LINE_PALS[line]))
-PICS.append((boxed(sack()), bake))
-for line in range(1, 5): PICS.append((placeholder_gen(LINE_PALS[line]), LINE_PALS[line]))
+for line in range(5): PICS.extend((im, LINE_PALS[line]) for im in LINES[line][0])
+for line in range(5): PICS.append((LINES[line][1], LINE_PALS[line]))
 
 # --- A crate over a closed cell ---
 cr = Img(32, 32)

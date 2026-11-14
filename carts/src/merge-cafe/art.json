@@ -69,45 +69,77 @@
   "spr1": {
    "base": 144,
    "colors": {
-    "ink": 6,
-    "main0": 1,
-    "main1": 2,
-    "main2": 3,
-    "main3": 4,
-    "main4": 5
+    "bean0": 1,
+    "bean1": 2,
+    "bean2": 3,
+    "bean3": 4,
+    "china0": 5,
+    "china1": 6,
+    "china2": 7,
+    "crema0": 8,
+    "crema1": 9,
+    "crema2": 10,
+    "crema3": 11,
+    "metal0": 12,
+    "metal1": 13,
+    "metal2": 14
    }
   },
   "spr2": {
    "base": 160,
    "colors": {
-    "ink": 6,
-    "main0": 1,
-    "main1": 2,
-    "main2": 3,
-    "main3": 4,
-    "main4": 5
+    "choc0": 8,
+    "choc1": 9,
+    "choc2": 10,
+    "choc3": 11,
+    "glass0": 12,
+    "glass1": 13,
+    "glass2": 14,
+    "milk0": 1,
+    "milk1": 2,
+    "milk2": 3,
+    "milk3": 4,
+    "pink0": 5,
+    "pink1": 6,
+    "pink2": 7
    }
   },
   "spr3": {
    "base": 176,
    "colors": {
-    "ink": 6,
-    "main0": 1,
-    "main1": 2,
-    "main2": 3,
-    "main3": 4,
-    "main4": 5
+    "berry0": 8,
+    "berry1": 9,
+    "berry2": 10,
+    "crust0": 11,
+    "crust1": 12,
+    "crust2": 13,
+    "crust3": 14,
+    "leaf0": 5,
+    "leaf1": 6,
+    "leaf2": 7,
+    "red0": 1,
+    "red1": 2,
+    "red2": 3,
+    "red3": 4
    }
   },
   "spr4": {
    "base": 192,
    "colors": {
-    "ink": 6,
-    "main0": 1,
-    "main1": 2,
-    "main2": 3,
-    "main3": 4,
-    "main4": 5
+    "blue0": 5,
+    "blue1": 6,
+    "blue2": 7,
+    "china0": 1,
+    "china1": 2,
+    "china2": 3,
+    "china3": 4,
+    "gold0": 12,
+    "gold1": 13,
+    "gold2": 14,
+    "silver0": 8,
+    "silver1": 9,
+    "silver2": 10,
+    "silver3": 11
    }
   },
   "spr5": {
