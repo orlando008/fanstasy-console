@@ -120,8 +120,8 @@ def _key(S, p, c):
 
 def _lock(S, p, c):
     rp = getattr(p, c or 'gold')
-    shackle = fill(S, minus(ellipse(0.5, 0.36, 0.3, 0.32), ellipse(0.5, 0.36, 0.17, 0.2), rect(0, 0.42, 1, 1)), p.grey, 'pillow')
-    body = fill(S, rect(0.1, 0.42, 0.9, 0.98), rp, 'pillow')
+    shackle = fill(S, minus(ellipse(0.5, 0.38, 0.33, 0.34), ellipse(0.5, 0.38, 0.14, 0.17), rect(0, 0.44, 1, 1)), p.grey, 'pillow')
+    body = fill(S, rect(0.1, 0.44, 0.9, 0.98), rp, 'cylinder-y')
     im = merge(shackle, body)
     paint(im, S, union(circle(0.5, 0.62, 0.08), rect(0.46, 0.62, 0.54, 0.82)), rp[0])  # the keyhole
     return im
@@ -194,7 +194,11 @@ def _clock(S, p, c):
 
 def _flag(S, p, c):
     pole = fill(S, rect(0.08, 0.04, 0.18, 0.98), p.grey, 'cylinder-y')
-    cloth = fill(S, poly((0.18, 0.06), (0.95, 0.24), (0.18, 0.56)), getattr(p, c or 'red'), 'pillow')
+    rp = getattr(p, c or 'red')
+    wave = lambda u, v: 0.18 <= u <= 0.96 and 0.06 + 0.06 * math.sin((u - 0.18) * 7) <= v <= 0.5 + 0.06 * math.sin((u - 0.18) * 7)
+    cloth = fill(S, wave, rp, 'pillow')
+    paint(cloth, S, lambda u, v: 0.5 <= u <= 0.62, rp[0])                               # a fold in shadow
+    paint(cloth, S, lambda u, v: 0.26 <= u <= 0.36 and v < 0.3, rp[2])                  # light on the near ripple
     return merge(pole, cloth)
 
 def _arrow(S, p, c):
@@ -238,7 +242,7 @@ SMALL = {
     'coin': ['..dddd..', '.dllmmd.', 'dlmlmmmd', 'dlmlmmmd', 'dmmlmmmd', 'dmmlmmdd', '.dmmmdd.', '..dddd..'],
     'star': ['...dd...', '...ld...', 'ddllmmdd', '.dlmmmd.', '..dmmd..', '.dmddmd.', '.dd..dd.', '........'],
     'gem': ['........', '.dddddd.', 'dllllmmd', 'dlmmmmdd', '.dmmmdd.', '..dmdd..', '...dd...', '........'],
-    'key': ['.ddd....', 'dlmmd...', 'dm.md...', 'dlmmdddd', '.ddd.mmd', '....d.dd', '........', '........'],
+    'key': ['........', '.ddd....', 'dlmld...', 'dm.mdddd', 'dlmlllld', '.ddddmdm', '.....d.d', '........'],
     'lock': ['..kkk...', '.k...k..', '.k...k..', 'dddddddd', 'dlmmmmmd', 'dmmddmmd', 'dmmmmmmd', 'dddddddd'],
     'potion': ['...GG...', '...kk...', '..kwwk..', '.kwmmmk.', 'kwmmmmmk', 'kmmmmmdk', '.kmmmdk.', '..kkkk..'],
     'bomb': ['......R.', '.....G..', '..ddGd..', '.dlmmmd.', 'dlmmmmmd', 'dmmmmmdd', '.dmmmdd.', '..dddd..'],
