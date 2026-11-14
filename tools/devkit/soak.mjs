@@ -2,7 +2,8 @@
 // player could hit that a short test would not.
 //
 //   node tools/devkit/soak.mjs carts/my-game.nova [--frames 20000] [--seeds 3] [--extra "skipTitle = true;"]
-//   node tools/devkit/soak.mjs --all [--frames 3000]       every cart in carts/ (CI runs this)
+//   node tools/devkit/soak.mjs --all [--frames 3000] [--jobs n]   every cart in carts/ (CI runs this), n at once
+//     (one process each; the number of CPU cores by default), each cart's report printed whole as it finishes
 //
 // Reports, for each seed, and fails (exit 1) on the first three:
 //   * an uncaught exception (the frame, the message, where it was thrown)                         FAIL
@@ -14,7 +15,9 @@
 //   * the states reached (if the cart has `state`) and the effects and songs never played, a hint of what the random
 //     player could not reach: write a test or a bot for those
 // Seeds 1 to N are used, so a failure reproduces: add --seeds 1 and the failing seed's number with --from.
+import { spawn } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { availableParallelism } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { V1_VOICES, waveVoice } from '../../src/formats/audio.js';
@@ -35,7 +38,8 @@ if (!paths.length) { console.error('usage: node tools/devkit/soak.mjs <cart.nova
 const PEEK = 'try { __expose(() => ({ get state() { return typeof state === "undefined" ? undefined : state; } })); } catch (e) { /* no state */ }';
 const FREEZE = 900;
 let failed = 0;
-for (const path of paths) for (let seed = from; seed < from + seeds; seed++) if (!soak(path, seed)) failed++;
+if (all) failed = await soakAll();
+else for (const path of paths) for (let seed = from; seed < from + seeds; seed++) if (!soak(path, seed)) failed++;
 console.log(failed ? `\n${failed} soak run(s) failed` : '\nall soak runs clean');
 process.exit(failed ? 1 : 0);
 
@@ -90,4 +94,25 @@ function soak(path, seed) {
   for (const w of warns) console.log(`  warning ${w}`);
   for (const f of fails) console.log(`  FAIL ${f}`);
   return !fails.length;
+}
+
+/** --all: each cart in a process of its own, `--jobs` at a time; a cart's output is printed whole when it ends.
+ * Returns the number of carts that failed. */
+async function soakAll() {
+  const jobs = Math.max(1, Number(opt('--jobs', availableParallelism())));
+  const args = ['--frames', String(frames), '--seeds', String(seeds), '--from', String(from)].concat(extra ? ['--extra', extra] : []);
+  const queue = [...paths];
+  let bad = 0;
+  const run = (path) => new Promise((done) => {
+    const child = spawn(process.execPath, [fileURLToPath(import.meta.url), path, ...args]);
+    let out = '';
+    child.stdout.on('data', (d) => { out += d; }); child.stderr.on('data', (d) => { out += d; });
+    child.on('close', (code) => {
+      process.stdout.write(out.replace(/\n+(all soak runs clean|\d+ soak run\(s\) failed)\n*$/, '\n'));
+      if (code) bad++;
+      done();
+    });
+  });
+  await Promise.all(Array.from({ length: Math.min(jobs, queue.length) }, async () => { while (queue.length) await run(queue.shift()); }));
+  return bad;
 }

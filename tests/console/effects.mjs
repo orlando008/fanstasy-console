@@ -2,8 +2,11 @@
 // render exactly as before: every cart, played with random buttons, renders the same through the effects path (with
 // no effect on) as through the plain one. CI runs it.
 //
-//   node tests/console/effects.mjs [--frames 600]
+//   node tests/console/effects.mjs [--frames 600] [--jobs n]     (the carts n at once: the CPU cores by default)
+import { spawn } from 'node:child_process';
 import { readdirSync } from 'node:fs';
+import { availableParallelism } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { buildApi } from '../../src/console/api.js';
 import { Overlay, SCREEN_W } from '../../src/console/overlay.js';
 import { Ppu } from '../../src/console/ppu.js';
@@ -11,7 +14,11 @@ import { boot } from '../../tools/devkit/harness.mjs';
 import { makePad } from '../../tools/devkit/pad.mjs';
 
 const argv = process.argv.slice(2);
-const frames = Number(argv[argv.indexOf('--frames') + 1] || 600);
+const frames = argv.includes('--frames') ? Number(argv[argv.indexOf('--frames') + 1]) : 600;
+const one = argv.includes('--cart') ? argv[argv.indexOf('--cart') + 1] : null;
+
+// One cart (a child of the run below): print the first frame that differs, or -1.
+if (one) { console.log(firstDiff(one)); process.exit(0); }
 let fails = 0;
 const ok = (cond, what, extra = '') => { console.log(`${cond ? 'PASS' : 'FAIL'} ${what} ${extra}`); if (!cond) fails++; };
 const raises = (fn, text) => { try { fn(); } catch (e) { return e.message.includes(text); } return false; };
@@ -167,21 +174,37 @@ ok(two('or') === 'true,true,true,false' && two('and') === 'false,true,false,fals
 
 // --- Every cart: the effects path with no effect on is the plain path, pixel for pixel ---------------------------------
 const carts = readdirSync(new URL('../../carts/', import.meta.url)).filter((f) => f.endsWith('.nova')).sort();
-let bad = [];
-for (const f of carts) {
-  const path = new URL(`../../carts/${f}`, import.meta.url).pathname;
-  const a = boot(path, { seed: 1 }), b = boot(path, { seed: 1 }), pad = makePad(1);
-  b.ppu.forceEffects = true;
-  let diff = -1;
-  for (let i = 0; i < frames && diff < 0; i++) {
-    const mask = pad(i);
-    a.step(mask); b.step(mask);
-    a.m.stats.cpu = b.m.stats.cpu = 0;   // some carts print the frame's CPU time, which differs from run to run
-    for (let k = 0; k < a.out32.length; k++) if (a.out32[k] !== b.out32[k]) { diff = i; break; }
-  }
-  if (diff >= 0) bad.push(`${f} (frame ${diff})`);
-}
+const bad = [];
+const jobs = Math.max(1, Number(argv.includes('--jobs') ? argv[argv.indexOf('--jobs') + 1] : availableParallelism()));
+const queue = [...carts];
+const check = (f) => new Promise((done) => {
+  const child = spawn(process.execPath, [fileURLToPath(import.meta.url), '--cart', f, '--frames', String(frames)]);
+  let out = '';
+  child.stdout.on('data', (d) => { out += d; }); child.stderr.on('data', (d) => { out += d; });
+  child.on('close', (code) => {
+    const diff = Number(out.trim().split('\n').pop());   // the last line: a cart may print its own before it
+    if (code || !Number.isInteger(diff)) bad.push(`${f} (${out.trim().split('\n').pop() || 'exit ' + code})`);
+    else if (diff >= 0) bad.push(`${f} (frame ${diff})`);
+    done();
+  });
+});
+await Promise.all(Array.from({ length: Math.min(jobs, queue.length) }, async () => { while (queue.length) await check(queue.shift()); }));
+bad.sort();
 ok(!bad.length, `the effects path with no effect on renders every cart as the plain path does (${carts.length} carts, ${frames} frames)`, bad.join(', '));
 
 console.log(`\n${fails ? 'SOME FAILED' : 'ALL PASS'}`);
 process.exit(fails ? 1 : 0);
+
+/** The first frame at which the effects path (no effect on) and the plain path draw a cart differently, or -1. */
+function firstDiff(f) {
+  const path = new URL(`../../carts/${f}`, import.meta.url).pathname;
+  const a = boot(path, { seed: 1 }), b = boot(path, { seed: 1 }), pad = makePad(1);
+  b.ppu.forceEffects = true;
+  for (let i = 0; i < frames; i++) {
+    const mask = pad(i);
+    a.step(mask); b.step(mask);
+    a.m.stats.cpu = b.m.stats.cpu = 0;   // some carts print the frame's CPU time, which differs from run to run
+    for (let k = 0; k < a.out32.length; k++) if (a.out32[k] !== b.out32[k]) return i;
+  }
+  return -1;
+}
