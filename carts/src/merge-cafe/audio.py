@@ -22,11 +22,12 @@ a.voice('ARP', 'pluck', 13, 0.25)
 a.instrument('KICK', 'sample', 0, 0, 15, 0, 12, sample=0, echo=2)
 a.instrument('SNARE', 'sample', 0, 0, 15, 0, 10, sample=1, echo=5)
 a.voice('SOFTHORN', 'brass', 6, -0.15, a=6)
-a.instrument('BLIP', 'pulse12', 0, 3, 0, 0, 8)                 # effects from here on
-a.instrument('CHIME', 'pulse50', 0, 6, 5, 6, 9)
-a.instrument('THUD', 'pulse50', 0, 4, 0, 0, 11)
-a.instrument('CRUNCH', 'noise', 0, 8, 3, 6, 9)
-a.instrument('FANFARE', 'pulse25', 0, 6, 11, 6, 9)
+a.voice('CEL', 'celesta', 6, 0.15)                             # effects from here on: soft, sampled
+a.voice('CELQ', 'celesta', 4, 0.15)
+a.voice('MAR', 'marimba', 9, -0.1)
+a.voice('MARQ', 'marimba', 6, -0.1)
+a.voice('KEYS', 'epiano', 8, 0.0)
+a.voice('PLK', 'pluck', 9, 0.1)
 
 # --- 0 The title: A minor, 150 bpm ---
 S = a.song(Key('A', MINOR), 6, echo=(5, 4, 5, 9))
@@ -43,12 +44,20 @@ bars(S, 16, CH, ['G4 - E4 - C4 - E4 -', 'B4 - G4 - D4 - G4 -', 'A4 - C5 - E5 - C
 S.finish()
 
 # --- Effects: the order is the SFX table in code.js ---
-a.effect(1, ['E-6', 'OFF'], 'BLIP')                                # 0 menu move
-a.effect(2, ['C-6', 'G-6', 'OFF'], 'CHIME')                        # 1 select
-a.effect(2, ['E-5', 'B-5', 'OFF'], 'CHIME')                        # 2 pause
-a.effect(3, ['C-4', 'G-3', 'D-3', 'A-2', 'OFF'], 'CRUNCH')         # 3 a hit (noise)
-a.effect(6, ['G-4', 'E-4', 'C-4', None, 'D-4', None, 'C-4', 'OFF'], 'FANFARE')   # 4 game over
-a.effect(1, ['C-6', 'G-6', 'OFF'], 'BLIP')                         # 5 a point
-a.effect(4, ['C-5', 'E-5', 'G-5', 'C-6', None, 'G-5', 'C-6', 'OFF'], 'FANFARE')  # 6 a record
+a.effect(1, ['E-5', None, 'OFF'], 'MARQ')                          # 0 the cursor moves
+a.effect(2, ['C-6', 'G-6', None, 'OFF'], 'CEL')                    # 1 select
+a.effect(2, ['G-5', 'C-5', None, 'OFF'], 'CELQ')                   # 2 pause
+a.effect(2, ['C-3', None, None, 'OFF'], 'MAR')                     # 3 a knock: no room, or not here
+a.effect(1, ['G-4', 'C-5', None, 'OFF'], 'MARQ')                   # 4 pick up
+a.effect(1, ['C-5', 'G-4', None, 'OFF'], 'MARQ')                   # 5 put down
+a.effect(1, ['C-4', 'G-4', 'C-5', None, 'OFF'], 'PLK')             # 6 a generator pops out an item
+for k, (r1, r2) in enumerate((('C-5', 'E-5'), ('D-5', 'G-5'), ('E-5', 'A-5'), ('G-5', 'C-6'), ('C-6', 'E-6'))):   # 7 to 11: a merge, tier 2 to 6, rising
+    a.effect(2, [r1, r2, None, None, 'OFF'] if k < 4 else [r1, r2, 'G-6', 'C-7', None, None, 'OFF'], 'CEL')
+a.effect(2, ['A-5', 'E-6', None, 'OFF'], 'KEYS')                   # 12 a sale: coins
+a.effect(2, ['C-4', 'E-4', 'G-4', 'C-5', None, 'OFF'], 'MAR')      # 13 a crate opens
+a.effect(2, ['E-6', 'G-6', 'C-7', None, None, 'OFF'], 'CEL')       # 14 a new item found
+a.effect(2, ['C-6', None, 'G-6', None, None, 'OFF'], 'KEYS')       # 15 an order served: the till
+a.effect(2, ['G-5', 'C-6', 'E-6', 'G-6', None, None, 'OFF'], 'CELQ')   # 16 stars
+a.effect(3, ['C-5', 'E-5', 'G-5', 'C-6', None, 'G-5', 'C-6', None, None, 'OFF'], 'KEYS')   # 17 a task done: a little fanfare
 
 a.write(sys.argv[1], songs=2)

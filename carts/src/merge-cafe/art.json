@@ -2,26 +2,36 @@
  "colors": {
   "GLASS": 200
  },
- "gradients": [
-  "sky"
- ],
  "palettes": {
   "bg1": {
    "base": 16,
    "colors": {
-    "bloom": 5,
-    "grass0": 1,
-    "grass1": 2,
-    "grass2": 3,
-    "grass3": 4
+    "glass0": 8,
+    "glass1": 9,
+    "glass2": 10,
+    "glow": 13,
+    "ink": 11,
+    "wall0": 1,
+    "wall1": 2,
+    "wall2": 3,
+    "web": 12,
+    "wood0": 4,
+    "wood1": 5,
+    "wood2": 6,
+    "wood3": 7
    }
   },
   "bg2": {
    "base": 32,
    "colors": {
-    "hill0": 1,
-    "hill1": 2,
-    "hill2": 3
+    "ink": 8,
+    "plate0": 5,
+    "plate1": 6,
+    "plate2": 7,
+    "top0": 1,
+    "top1": 2,
+    "top2": 3,
+    "top3": 4
    }
   },
   "bg3": {
@@ -39,92 +49,347 @@
   "spr0": {
    "base": 128,
    "colors": {
+    "cream0": 10,
+    "cream1": 11,
+    "cream2": 12,
+    "crust0": 6,
+    "crust1": 7,
+    "crust2": 8,
+    "crust3": 9,
+    "gold0": 1,
+    "gold1": 2,
+    "gold2": 3,
+    "gold3": 4,
+    "gold4": 5,
+    "pink0": 13,
+    "pink1": 14,
+    "pink2": 15
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "ink": 6,
+    "main0": 1,
+    "main1": 2,
+    "main2": 3,
+    "main3": 4,
+    "main4": 5
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "ink": 6,
+    "main0": 1,
+    "main1": 2,
+    "main2": 3,
+    "main3": 4,
+    "main4": 5
+   }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "ink": 6,
+    "main0": 1,
+    "main1": 2,
+    "main2": 3,
+    "main3": 4,
+    "main4": 5
+   }
+  },
+  "spr4": {
+   "base": 192,
+   "colors": {
+    "ink": 6,
+    "main0": 1,
+    "main1": 2,
+    "main2": 3,
+    "main3": 4,
+    "main4": 5
+   }
+  },
+  "spr5": {
+   "base": 208,
+   "colors": {
     "hair0": 5,
     "hair1": 6,
     "hair2": 7,
-    "pants0": 12,
-    "pants1": 13,
-    "pants2": 14,
-    "pants3": 15,
-    "shirt0": 8,
-    "shirt1": 9,
-    "shirt2": 10,
-    "shirt3": 11,
+    "hair3": 8,
+    "pants0": 13,
+    "pants1": 14,
+    "pants2": 15,
+    "shirt0": 9,
+    "shirt1": 10,
+    "shirt2": 11,
+    "shirt3": 12,
     "skin0": 1,
     "skin1": 2,
     "skin2": 3,
     "skin3": 4
    }
   },
-  "spr1": {
-   "base": 144,
+  "spr6": {
+   "base": 224,
    "colors": {
-    "edge": 6,
-    "gold0": 1,
-    "gold1": 2,
-    "gold2": 3,
-    "gold3": 4,
-    "gold4": 5,
-    "white": 7
+    "nail": 6,
+    "shadow": 8,
+    "web": 7,
+    "wood0": 1,
+    "wood1": 2,
+    "wood2": 3,
+    "wood3": 4,
+    "wood4": 5
+   }
+  },
+  "spr7": {
+   "base": 240,
+   "colors": {
+    "cross": 6,
+    "cursor0": 4,
+    "cursor1": 5,
+    "spark0": 1,
+    "spark1": 2,
+    "spark2": 3
    }
   }
  },
  "scenes": {
-  "field": {
-   "h": 8,
+  "board": {
+   "h": 28,
    "mx": 0,
-   "my": 0,
-   "pal": 1,
-   "w": 32
-  },
-  "hills": {
-   "h": 8,
-   "mx": 32,
    "my": 0,
    "pal": 2,
    "w": 32
   },
-  "logo": {
-   "h": 3,
+  "bubble": {
+   "h": 4,
+   "mx": 64,
+   "my": 0,
+   "pal": 2,
+   "w": 4
+  },
+  "cafe": {
+   "h": 7,
    "mx": 0,
-   "my": 16,
+   "my": 48,
+   "pal": 1,
+   "w": 32
+  },
+  "counter": {
+   "h": 4,
+   "mx": 0,
+   "my": 55,
+   "pal": 1,
+   "w": 32
+  },
+  "logo": {
+   "h": 7,
+   "mx": 96,
+   "my": 0,
    "pal": 3,
    "w": 32
   }
  },
  "sprites": {
-  "gem": {
-   "pal": 1,
-   "size": 16,
-   "tile": 324
-  },
-  "hero0": {
-   "pal": 0,
+  "cursor0": {
+   "pal": 7,
    "size": 32,
-   "tile": 256
+   "tile": 384
   },
-  "hero1": {
-   "pal": 0,
+  "cursor1": {
+   "pal": 7,
    "size": 32,
-   "tile": 260
+   "tile": 388
   },
-  "hero2": {
-   "pal": 0,
+  "slot0": {
+   "pal": 7,
    "size": 32,
-   "tile": 264
+   "tile": 396
   },
-  "hero3": {
-   "pal": 0,
+  "slot1": {
+   "pal": 7,
    "size": 32,
-   "tile": 268
+   "tile": 448
   },
-  "hero4": {
-   "pal": 0,
+  "slot10": {
+   "pal": 7,
    "size": 32,
-   "tile": 320
+   "tile": 580
+  },
+  "slot11": {
+   "pal": 7,
+   "size": 32,
+   "tile": 584
+  },
+  "slot12": {
+   "pal": 7,
+   "size": 32,
+   "tile": 588
+  },
+  "slot13": {
+   "pal": 7,
+   "size": 32,
+   "tile": 640
+  },
+  "slot14": {
+   "pal": 7,
+   "size": 32,
+   "tile": 644
+  },
+  "slot15": {
+   "pal": 7,
+   "size": 32,
+   "tile": 648
+  },
+  "slot16": {
+   "pal": 7,
+   "size": 32,
+   "tile": 652
+  },
+  "slot17": {
+   "pal": 7,
+   "size": 32,
+   "tile": 704
+  },
+  "slot18": {
+   "pal": 7,
+   "size": 32,
+   "tile": 708
+  },
+  "slot19": {
+   "pal": 7,
+   "size": 32,
+   "tile": 712
+  },
+  "slot2": {
+   "pal": 7,
+   "size": 32,
+   "tile": 452
+  },
+  "slot20": {
+   "pal": 7,
+   "size": 32,
+   "tile": 716
+  },
+  "slot21": {
+   "pal": 7,
+   "size": 32,
+   "tile": 768
+  },
+  "slot22": {
+   "pal": 7,
+   "size": 32,
+   "tile": 772
+  },
+  "slot23": {
+   "pal": 7,
+   "size": 32,
+   "tile": 776
+  },
+  "slot24": {
+   "pal": 7,
+   "size": 32,
+   "tile": 780
+  },
+  "slot25": {
+   "pal": 7,
+   "size": 32,
+   "tile": 832
+  },
+  "slot26": {
+   "pal": 7,
+   "size": 32,
+   "tile": 836
+  },
+  "slot27": {
+   "pal": 7,
+   "size": 32,
+   "tile": 840
+  },
+  "slot28": {
+   "pal": 7,
+   "size": 32,
+   "tile": 844
+  },
+  "slot29": {
+   "pal": 7,
+   "size": 32,
+   "tile": 896
+  },
+  "slot3": {
+   "pal": 7,
+   "size": 32,
+   "tile": 456
+  },
+  "slot30": {
+   "pal": 7,
+   "size": 32,
+   "tile": 900
+  },
+  "slot31": {
+   "pal": 7,
+   "size": 32,
+   "tile": 904
+  },
+  "slot32": {
+   "pal": 7,
+   "size": 32,
+   "tile": 908
+  },
+  "slot33": {
+   "pal": 7,
+   "size": 32,
+   "tile": 960
+  },
+  "slot34": {
+   "pal": 7,
+   "size": 32,
+   "tile": 964
+  },
+  "slot35": {
+   "pal": 7,
+   "size": 32,
+   "tile": 968
+  },
+  "slot4": {
+   "pal": 7,
+   "size": 32,
+   "tile": 460
+  },
+  "slot5": {
+   "pal": 7,
+   "size": 32,
+   "tile": 512
+  },
+  "slot6": {
+   "pal": 7,
+   "size": 32,
+   "tile": 516
+  },
+  "slot7": {
+   "pal": 7,
+   "size": 32,
+   "tile": 520
+  },
+  "slot8": {
+   "pal": 7,
+   "size": 32,
+   "tile": 524
+  },
+  "slot9": {
+   "pal": 7,
+   "size": 32,
+   "tile": 576
+  },
+  "spark": {
+   "pal": 7,
+   "size": 8,
+   "tile": 392
   }
  },
  "tiles": {},
- "used": 280,
+ "used": 877,
  "version": 1
 }

@@ -1,7 +1,7 @@
 # Merge Café: Cart Specification
 
-**Version:** 0.2 (design agreed with the user, not built)
-**Status:** Scaffolded (`node tools/new-cart.js merge-cafe "Merge Café"`: the frame of the game works, the game is a placeholder). Next: step 1 of section 15
+**Version:** 0.3 (step 1 built; the art proof sent to the user)
+**Status:** Playable board: merging, generators, crates, selling and the save; the bakery line drawn, the other lines placeholders. Next: the user's answer on the art proof (step 2)
 **Cart source:** `carts/src/merge-cafe/` → `carts/merge-cafe.nova`
 
 ---
@@ -84,14 +84,14 @@ An item of tier `t` is worth `2^(t-1)` tier-1 items. Its **value** (the sale pri
 
 ### 5.2 Generators
 
-A generator is a board item (it takes a cell, and it can be moved but not merged). A on it puts an item of its line in the **empty cell nearest it** (the shortest walk across cells; ties go up, then left). That item is tier 1, or tier 2 with a 10 % chance (`rnd`, seeded). With no empty cell, nothing happens: a soft knock and NO ROOM. Generators have **no limit and no cooldown** (the user's choice): the board's space is the only limit.
+A generator is a board item: it takes a cell, and it is not merged or moved (A on it always makes an item). A on it puts an item of its line in the **empty cell nearest it** (the shortest walk across cells; ties go up, then left). That item is tier 1, or tier 2 with a 10 % chance (`rnd`, seeded). With no empty cell, nothing happens: a soft knock and NO ROOM. Generators have **no limit and no cooldown** (the user's choice): the board's space is the only limit.
 
 Generators come in as the café grows (5.5): the grain sack and the grinder from the start, the churn with area 2, the basket with area 3 and the cupboard with area 4.
 
 ### 5.3 The board, crates and selling
 
-- **35 cells.** At the start, 12 are open (with the two generators on them) and 23 are under **crates**.
-- **Crates:** A on a crate next to an open cell shows its price, and A again opens it. The price is `10 + 5 x crates opened so far` coins, so the board grows in steps through the game, and the last crate costs 120.
+- **35 cells.** At the start, the top two rows (14 cells) are open, with the two generators on the second row and two wheat to merge, and the other 21 are under **crates**. A new café starts with 10 coins.
+- **Crates:** A on a crate next to an open cell shows its price, and A again opens it. The price is `10 + 5 x crates opened so far` coins, so the board grows in steps through the game, and the last of the 21 crates costs 110.
 - **Selling:** SELECT, then A, on an item gives its value in coins. The cell empties.
 - **No game over:** a full board means sell something, serve an order or open a crate.
 
@@ -222,9 +222,9 @@ The game saves after every change (a merge, an order, a task), so turning the co
 | Asset | Budget |
 |---|---|
 | Code | about 35 KB of the 64 KB limit (`node tools/check.js merge-cafe`); the story text in the ROM |
-| Tiles | **the tight one.** 30 items and 5 generators at 9 tiles each (about 300, fewer where tiles are shared); 5 regulars and 3 passers-by at 2 frames of 16 tiles (about 250); the café picture with its task versions (about 300 if tile-aligned and repeating: planks, tiles, brick); the board (about 30); the logo and HUD (about 60). About 940 of 1,024. If it does not fit, the customers' frames go to the ROM as a stream (`art.stream(..., rom=True)`, as Streets of Woe does) |
-| Sprites | about 50 in OAM at most (35 cells of 3 x 3 parts can be 315 sprites, so items are drawn as one 32 px sprite each where a 24 px picture fits in its 32 px box: 35 sprites, 7 on a line); fewer than 32 on a line |
-| ROM | the story text, about 4 KB |
+| Tiles | **the tight one**, solved by a **picture pool**: every 32 x 32 picture (items, generators, the crate, the customers) is in the ROM (`rom/pics.bin`, written by `art.py`: a palette byte and 512 bytes each), and `code.js` copies the ones the screen needs into 36 sprite slots (`sset`), the least recently used first. 30 items at 16 tiles each would have taken 480 tiles; any number of pictures now costs the 576 tiles of the pool. After step 1: BG 268 of 383 (the café 150, the board 70, the logo, the bubble), sprites 609 of 640 (the pool, the cursor, a spark). The café's restored versions (step 5) have the 115 BG tiles left, so they must repeat (planks, tiles) or be palette changes |
+| Sprites | one 32 px sprite a cell (35 at most, 14 on a line where the 28 px rows overlap), the held item, the cursor, the customers and their orders, sparks: about 50 of 128. If a screen ever needs more than 36 different pictures at once (every item and generator on the board, and the customers), the last ones wait a frame (`picSlot` returns -1) |
+| ROM | the pictures, 19.5 KB for 38 (about 30 KB with every customer); the story text, about 4 KB |
 | Songs / SFX | 4 songs; about 30 of 64 patterns; about 25 effects; sample RAM: the electric piano, the bass, the drums, about 12 KB |
 
 ## 15. Implementation plan
@@ -237,7 +237,8 @@ The game saves after every change (a merge, an order, a task), so turning the co
    - the play screen: the café shabby, with the board.
 
    From the recipes of `docs/dev/art-recipes.md`; then `node tools/devkit/art/proof.mjs merge-cafe`, the picture sent to the user, and what they said written here.
-   - **Agreed:** TODO (the date, and the changes asked for)
+   - **Sent** on 14 November 2026: the bakery line and the grain sack, Mabel, the palettes, the play screen with the café shabby.
+   - **Agreed:** TODO (what the user says, and the changes asked for)
 3. **All five lines:** the items and generators, the crates and their prices, the board filling and growing.
 4. **Customers and orders:** the three customers, the orders and their rewards, serving, swapping, the regulars and their favourites, the daily special.
 5. **The café:** the 6 areas and 24 tasks, stars, the picture changing, decorating, the story cards, the reopening and free play.
@@ -248,6 +249,10 @@ The game saves after every change (a merge, an order, a task), so turning the co
    - the bot plays the whole campaign over many seeds: the time to each area, the board's fullness, no stuck state;
    - the prices and rewards tuned to about 2 to 3 hours;
    - the label, the PNG cart and the Library (`node tools/release.js merge-cafe`), and a README row.
+
+**Step 1, built:** the board as pure rules (`newBoard`, `nearestEmpty`, `dropKind`, `crateOpenable`, `crateCost`) and the actions on it (`press`: make, pick up, drop, open; `generate`; `drop`: move, merge, swap, refuse; `sell`), the cursor with a repeating d-pad, the item card (B), the sell and crate questions, found items and their star, the save after every change (section 13), the title (CONTINUE, NEW CAFE with a question), pause. The art: the café shabby (BG1, its counter in high-priority tiles so customers stand behind it), the board's counter top and 35 plates (BG0), an order bubble, the logo, the bakery line and its grain sack, the crate, the cursor, Mabel (two frames: a blink), and placeholders (a ball that grows with the tier) for the other four lines. The picture pool (section 14). The effects for every action (a merge's chime rises with the tier). Tests: `01-flow` (the title, a new café, continuing, NEW CAFE asks, frame time), `02-rules` (every number of 5.1 to 5.3 and the buttons), `03-pool` (a board of 35 different pictures all drawn right, nothing reloaded while it stands still). `bot.mjs` plays with the buttons: merge a pair, else tap a generator, else open a crate it can pay for, else sell the cheapest.
+
+**Step 1, results:** the bot, in 20,000 frames (5.5 minutes), makes 475 merges from 910 taps, sells 410 items, opens 11 or 12 crates and reaches a layer cake; nothing ever leaves it with nothing to do. Selling is the only income until the orders of step 4, which is why the crates come slowly. Frames 99th percentile well under 8 ms.
 
 Each step: build it, run `node tools/check.js merge-cafe` and `node tools/test.js merge-cafe`, write its **Built** and **Results** notes under its number here, commit and push.
 
