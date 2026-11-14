@@ -1,67 +1,45 @@
-// Westward Wagon: the frame (title, play, pause, game over, initials, records, saves) and its sound cues.
-// One PASS/FAIL line for each behaviour, written as a sentence. Add a file for each step of the build (02-..., 03-...).
-import { newGame, M, sfxLog, musicLog } from './lib.mjs';
+// Westward Wagon: the screens in order: title, setup, the store, the trail, the menu, a landmark, the end, the top 10.
+import { newGame, M } from './lib.mjs';
 let fails = 0;
 const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
 
-// 1. The title and its menu.
 {
   const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3);
   ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
-  vm.press('DOWN'); ok(p.titleSel === 1, 'DOWN moves down the menu'); vm.press('UP'); ok(p.titleSel === 0, 'and UP back');
-  vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
-  vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
-  sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
-}
-
-// 2. Playing: movement, blocks, a hit costs a life.
-{
-  const vm = newGame(1), p = vm.probe(), x0 = p.px;
-  vm.run(10, M('LEFT')); ok(p.px < x0, 'LEFT moves the player');
-  vm.run(20, M('RIGHT')); ok(p.px > x0 - 30, 'and RIGHT');
-  const lives = p.lives; sfxLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.lives === lives - 1, 'a block that lands on the player costs a life');
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch >= 6), 'with the hit sound, on an effects channel (6 or 7)');
-}
-
-// 3. Pause.
-{
-  const vm = newGame(2), p = vm.probe(); vm.run(30);
-  vm.press('START'); ok(p.paused, 'START pauses');
-  const y = p.blocks.map((b) => b.y).join(); vm.run(30); ok(p.blocks.map((b) => b.y).join() === y, 'and the game stands still');
-  const t = p.timer; vm.press('DOWN'); vm.press('A'); vm.run(2);
-  ok(!p.paused && p.score === 0 && p.timer < t, 'RESTART starts the game again');
-  vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
-}
-
-// 4. Game over, the top 10 and initials.
-{
-  const vm = newGame(3), p = vm.probe(); p.score = 120; p.lives = 1; musicLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.state === 'over' && p.rank === 0, 'the last life ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
-  ok(musicLog(vm).includes(-1), 'the game song stops');
-  vm.run(70); vm.press('A');
-  ok(p.state === 'initials', 'A asks for initials');
-  vm.run(25); // START is ignored for a moment, so a press from the game does not skip it
-  vm.press('UP'); vm.press('RIGHT'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT'); vm.press('DOWN'); vm.press('START');
-  ok(p.state === 'records', 'START saves them and shows the records');
-  const e = p.topTen()[0];
-  ok(e.score === 120 && e.initials === 'BC9', 'the score is saved with the initials as typed (UP is the next letter, DOWN from A wraps to 9)', `${e.score} ${e.initials}`);
-  ok(vm.m.save[p.TOP_SLOT] === 120, 'in the save slots');
+  vm.press('A'); ok(p.state === 'setup' && p.setup.step === 0, 'NEW JOURNEY asks who leads');
+  vm.press('DOWN'); vm.press('A'); ok(p.setup.bg === 1 && p.setup.step === 1, 'a carpenter; then the month');
+  vm.press('DOWN'); vm.press('A');
+  ok(p.state === 'store' && p.J.bg === 1 && p.J.money === 800 && p.J.month === 4, 'May, and the store at Independence with $800');
+  vm.press('UP'); vm.press('A');                                   // UP from the first good wraps to LEAVE THE STORE
+  ok(p.state === 'store' && p.card, 'the wagon cannot leave without oxen'); vm.press('A');
+  vm.press('DOWN'); vm.press('RIGHT'); vm.press('RIGHT'); vm.press('RIGHT');
+  ok(p.cart.oxen === 3, 'RIGHT buys a yoke of oxen at a time');
+  vm.press('DOWN'); for (let i = 0; i < 10; i++) vm.press('RIGHT');
+  ok(p.cart.food === 500, 'and food 50 lb at a time');
+  vm.press('UP'); vm.press('UP'); vm.press('A');
+  ok(p.state === 'trail' && p.J.oxen === 3 && p.J.food === 500 && Math.abs(p.J.money - (800 - 120 - 100)) < 0.01, 'leaving pays the bill: $120 of oxen and $100 of food');
+  ok(p.playing === p.SONG.trail, 'the trail has its song');
 }
 {
-  const vm = newGame(4), p = vm.probe();
-  const list = [50, 20, 90, 10, 70, 30, 100, 60, 40, 80].map((s) => p.insertTop({ score: s, initials: 'AAA' }));
-  ok(p.topTen().map((e) => e.score).join() === '100,90,80,70,60,50,40,30,20,10', 'the top 10 is kept best first');
-  ok(p.insertTop({ score: 5, initials: 'ZZZ' }) === -1 && p.insertTop({ score: 0, initials: 'ZZZ' }) === -1, 'a score below the tenth, or nothing, does not get in');
+  const vm = newGame(2), p = vm.probe(); vm.run(2);
+  const d0 = p.J.days; vm.run(p.DAY_FRAMES * 3 + 1); ok(p.J.days === d0 + 3 && p.J.mile > 0, `a day rolls by every ${p.DAY_FRAMES} frames, and the wagon moves`);
+  vm.press('A'); ok(p.state === 'menu', 'A stops for the menu'); const d1 = p.J.days; vm.run(120); ok(p.J.days === d1, 'and time stands still');
+  vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); vm.press('DOWN'); vm.press('A'); ok(p.J.pace === 1, 'CHANGE PACE: strenuous');
+  vm.press('DOWN'); vm.press('A'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); ok(p.J.rations === 2, 'CHANGE RATIONS: bare bones');
+  vm.press('DOWN'); vm.press('A'); const d2 = p.J.days, m2 = p.J.mile; vm.press('DOWN'); vm.press('A'); ok(p.J.days === d2 + 3 && p.J.mile === m2, 'STOP TO REST: three days, no miles');
+  vm.press('B'); ok(p.state === 'trail', 'B goes back on the trail');
+  p.J.mile = 101; p.J.next = 1; vm.run(p.DAY_FRAMES + 1); ok(p.card && /KANSAS RIVER/.test(p.card.title) && p.card.choices.length === 4, 'a river stops the wagon and asks how to cross (four ways at the Kansas)');
 }
-
-// 5. Frames are quick.
 {
-  const vm = newGame(5), times = [];
-  for (let i = 0; i < 600; i++) { vm.step(i % 40 < 20 ? M('LEFT') : M('RIGHT')); times.push(vm.m.stats.cpu); }
+  const vm = newGame(3), p = vm.probe(); vm.run(2);
+  p.J.mile = 2035; p.J.next = 16; p.J.route = 1; vm.run(p.DAY_FRAMES + 1); while (p.card) vm.press('A');
+  ok(p.state === 'end' && p.J.arrived && p.J.score > 0, 'reaching the Willamette Valley ends the journey with a score', `${p.J.score}`);
+  ok(p.rank === 0 && p.topTen()[0].score === p.J.score && p.topTen()[0].name === 'MARY', 'which goes in the top 10 with the leader\'s name');
+  vm.run(70); vm.press('A'); ok(p.state === 'records', 'then the top 10');
+}
+{
+  const vm = newGame(4), p = vm.probe(), times = [];
+  for (let i = 0; i < 1200; i++) { vm.step(0); times.push(vm.m.stats.cpu); if (p.card) vm.press('A'); }
   times.sort((a, b) => a - b); const p99 = times[Math.floor(times.length * 0.99)];
   ok(p99 < 8 * (process.env.CI ? 3 : 1), 'frames are quick', `99th percentile ${p99.toFixed(2)} ms`);
 }

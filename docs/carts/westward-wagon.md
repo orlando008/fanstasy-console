@@ -113,18 +113,18 @@ All numbers are first values. Step 9 tunes them with the bot, and the tests asse
 ### 5.2 A day on the trail
 
 - **Miles a day:**
-  - by the pace: 12 at steady, 16 at strenuous, 20 at grueling;
+  - by the pace: 15 at steady, 19 at strenuous, 24 at grueling (history: 15 to 20);
   - x the oxen (each yoke beyond 2 adds 5 %, fewer than 2 yokes halves it, tired or hurt oxen less);
   - x the terrain (plains 1, bluffs 0.9, mountains 0.6);
   - x the weather (rain or snow 0.7, deep snow 0.3).
 - **Food a day** for each person alive: 3 pounds at filling, 2 at meager, 1 at bare bones.
-- **Health a day:** a person loses health from:
-  - the pace (strenuous 1, grueling 3);
-  - the rations (meager 1, bare bones 3, none 8);
-  - the weather (heat or cold without enough clothing 2 to 5);
-  - an illness (2 to 6 a day, by the illness).
+- **Health a day** (tenths of a point; tuned in step 1, when whole points killed a party on meager rations in five months): a person loses health from:
+  - the pace (strenuous 0.5, grueling 1.5);
+  - the rations (meager 0.4, bare bones 1.2, none 4);
+  - the weather (very hot 1, hot 0.3; cold 1 to 3 a degree of cold, less with one set of clothing each, none with two);
+  - an illness (1 to 4 a day by the illness: cholera worst).
 
-  They gain 2 to 4 from resting, and 1 when the day is easy. At 0 they die.
+  They gain 3 a day of rest (4 on filling rations), and 0.6 on an easy day (steady, filling, well). At 0 they die. A well person falls ill on a day with a chance of 0.6 % x (1 + the pace + the rations + 2 if their health is under 50 + 1 in the cold), half that resting; an illness passes with a chance of 12 % a day, 30 % resting.
 - **Clothing:** without 2 sets each in the cold months, the cold hurts.
 - **The date:** each day moves the date. The month and the place set the **weather**: very hot, hot, warm, cool, cold, very cold, rain, heavy rain, snow, heavy snow, fog.
 
@@ -292,6 +292,10 @@ The art is made in code by `carts/src/westward-wagon/art.py` with the kit (`scen
 7. **Art pass:** the other regions, the landmark scenes (ROM), the event pictures, the hunt's animals (`gallery.mjs` and `critique.mjs` over every screen).
 8. **Audio:** the folk tunes from public-domain scores, and the effects.
 9. **Balance and release:** the bot over many seeds and strategies (how many arrive, how many survive, by background and month, choices that matter), the label, the PNG cart, the Library (`node tools/release.js westward-wagon`) and a README row.
+
+**Step 1, built:** the journey as pure functions on one object (`newJourney`, `dayOnTrail`, `personDay`, `rollWeather`, `nextMark` and `markMile` with the two routes after South Pass, `crossRiver`, `scoreOf`), and the screens that drive it: the title, the setup (the background, the month; the names fixed as MARY, JOHN, SARAH, WILL and ELLA until step 6), the store (Independence's, and the forts' at their prices), the trail (a day every 50 frames; A stops), the menu (continue, supplies, pace, rations, rest 1, 3 or 5 days), cards for deaths, illnesses and landmarks, the rivers' four choices (fording by the depth, caulking and floating by chance until step 4's float, the ferry, waiting), the forks (South Pass: Fort Bridger or the Sublette Cutoff; The Dalles: the raft or the Barlow Road, its toll and days), the end with the score and the top 10 (the leader's name, packed in two slots). The trail is drawn with the starter's art and a wagon of rectangles until the art proof. Tests: `01-flow` (the screens in order, the store's bill, the days rolling, the menu's choices, a river's card, the end and the top 10), `02-rules` (every number of 5.1, 5.2, 5.4, 5.6). `bot.mjs` makes a whole journey with the buttons: it outfits the wagon, crosses by the depth, eats less when the food will not last, rests when the party is poor or ill (`care`), buys food at the forts.
+
+**Step 1, results** (the bot, 4 seeds each, leaving in April): a banker arrives every time, with 3.75 of 5 alive resting never and 4.5 resting when needed, in 177 to 205 days; a carpenter the same (twice the score); a farmer, whose $400 buys about 1,200 lb of food for a trip that eats 2,600, arrives a quarter to half of the time with one or two: the hunt (step 4) is how a farmer eats. Two bugs found by the bot: a menu's choice was dropped on the frame the button was let go, and a person who fell ill and got better the same day crashed the day's card.
 
 Each step: build it, run `node tools/check.js westward-wagon` and `node tools/test.js westward-wagon`, write its **Built** and **Results** notes under its number here, commit and push.
 
