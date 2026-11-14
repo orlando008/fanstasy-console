@@ -228,7 +228,7 @@ The game saves after every change (a merge, an order, a task), so turning the co
 
 | Asset | Budget |
 |---|---|
-| Code | 45 KB of source, 38 KB in the cart with `"strip": true` (comments and indentation left out), of the 64 KB limit (`node tools/check.js merge-cafe`); the regulars' 30 story lines are in the code (2 KB) |
+| Code | 37.6 KB in the cart (45 KB of source) with `"strip": true` (comments and indentation left out), of the 64 KB limit (`node tools/check.js merge-cafe`); the regulars' 30 story lines are in the code (2 KB) |
 | Tiles | **the tight one**, solved by a **picture pool**: every 32 x 32 picture (items, generators, the crate, the customers, the café's furniture) is in the ROM (`rom/pics.bin`, written by `art.py`: a palette byte and 512 bytes each), and `code.js` copies the ones the screen needs into 36 sprite slots (`sset`), the least recently used first. 63 pictures at 16 tiles each would have taken 1,008 tiles, the whole sheet; they cost the 576 tiles of the pool. In all 896 of 1,024: BG 287 of 383 (the café 150, its repairs 19, the counter, the board 70, the logo, the bubble), sprites 609 of 640 (the pool, the cursor, a spark) |
 | Sprites | one 32 px sprite a cell (35 at most, 14 on a line where the 28 px rows overlap), the held item, the cursor, three customers, three orders, up to nine pieces of furniture, sparks: about 60 of 128. The pool is drawn board first, so if a screen ever needs more than 36 different pictures at once (every item and generator on the board, the customers and the furniture), it is a piece of furniture that waits a frame (`picSlot` returns -1) |
 | ROM | 32 KB: the pictures 32.3 KB (63), the customers' colours 240 bytes, the repairs' places 31 bytes |
