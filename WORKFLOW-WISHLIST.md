@@ -77,6 +77,12 @@ that gap.
 - [ ] **A richer starter `audio.py`** (`tools/templates/cart/audio.py`): songs with more than one section, a counter
   line and fills, so a new game starts above "basic".
 
+- [x] **A ready-made song library** (`tools/devkit/music/songs/`). Built: `library.add(a, name)` puts a song into a game's audio
+  after its own songs; nine songs (Rush D and eight public domain pieces), `listen.mjs` makes a WAV of each, and `README.md` is
+  the catalogue. Instruments and drum samples are shared, and the library stops with a message when a game runs out of room.
+  - **What:** songs any game can take instead of composing its own boss, chase or victory theme.
+  - **Why:** a new game should pick up a song, not write one, when the library has what it needs.
+
 ## 4. Art: better defaults, better ways to look
 
 - [ ] **Fix the starter's panel colours.**
@@ -136,6 +142,12 @@ tile grid, and its `outline` grows a 16 px sprite to 18 px), but these parts of 
     indices, without rulers.
   - **Built:** role letters, rulers and a legend that is a `key` for `Img.from_rows`; `--ascii --tile n --size s` for
     games without `art.json`; a round trip in `selftest.py`.
+
+- [x] **A ready-made icon library** (`tools/devkit/art/icons.py`). Built: 24 icons at 16 and 8 px, seven animations, score digits
+  and button prompts, all in one shared sprite palette (`items_palette`). `docs/dev/art-recipes/icons-library.png` shows them;
+  the recipe book and the art self-test cover them.
+  - **What:** hearts, coins, stars, gems, keys, a cursor, and the other small things games keep drawing.
+  - **Why:** games had each drawn their own (stars in nine art scripts, cursors in four).
 
 ## 5. Make the older games safe to polish
 
