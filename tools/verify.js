@@ -5,6 +5,8 @@
 //   node tools/verify.js --all              every cart
 //   node tools/verify.js --fast             skip the cart's test scripts (they take minutes; on CI, where CI=true, the frame-time limits are 3x)
 //   node tools/verify.js --base main        compare against another base
+//   node tools/verify.js --jobs 2           carts at once, each in a process of its own (half the CPU cores by default: some
+//                                           tests time their frames, and carts side by side slow each other)
 //
 // For each cart, in order (the first problem is reported, the rest still run):
 //   1. audio.py regenerates exactly the audio.json in the source folder (if the cart has an audio script), and art.py exactly
@@ -16,13 +18,16 @@
 //      lead's loudness and entrance (a warning only for the carts listed in LEGACY_LOUD: the chiptune demo)
 //   5. tools/test.js: the cart's test scripts, if tests/carts/<name>/ exists (skipped by --fast)
 // and once, first: tools/check-docs.js (the documentation mentions only files that exist)
-// A change under src/ (the console itself) or tools/devkit/ selects every cart. CI runs this on pull requests.
+// A change under src/ (the console itself) or tools/devkit/ selects every cart. CI runs this on pull requests. Step 1 runs
+// only where it can find something: for a cart whose own files changed, after a change to the art or music kit
+// (tools/devkit/art/, tools/devkit/music/), and for carts named or --all; a change to the console alone cannot change
+// what a cart's art.py or audio.py makes.
 // Does not do what needs a browser: node tools/devkit/smoke.mjs <name>, and node tools/release.js <name> to
 // regenerate the label and PNG cart.
 
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { availableParallelism, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -30,14 +35,17 @@ const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const argv = process.argv.slice(2);
 const opt = (f, d) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : d; };
 const fast = argv.includes('--fast'), all = argv.includes('--all');
-const named = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--base');
+const named = argv.filter((a, i) => !a.startsWith('--') && !['--base', '--jobs'].includes(argv[i - 1]));
+const one = argv.includes('--one'), noRegen = argv.includes('--no-regen');   // a child of the run below: one cart, its report only
 // A mistyped option or cart name must not be taken for a cart (it used to be: `-v` made a cart `-v`, and packed it).
-const unknown = argv.filter((a, i) => (a.startsWith('-') && !['--fast', '--all', '--base'].includes(a)) || (!a.startsWith('-') && argv[i - 1] !== '--base' && !existsSync(join(ROOT, 'carts', 'src', a)) && !existsSync(join(ROOT, 'carts', `${a}.nova`))));
-if (unknown.length) { console.error(`verify.js: not an option or a cart: ${unknown.join(', ')} (options: --fast, --all, --base <ref>; a cart is a name in carts/)`); process.exit(2); }
+const VALUED = ['--base', '--jobs'];
+const unknown = argv.filter((a, i) => (a.startsWith('-') && !['--fast', '--all', '--base', '--jobs', '--one', '--no-regen'].includes(a)) || (!a.startsWith('-') && !VALUED.includes(argv[i - 1]) && !existsSync(join(ROOT, 'carts', 'src', a)) && !existsSync(join(ROOT, 'carts', `${a}.nova`))));
+if (unknown.length) { console.error(`verify.js: not an option or a cart: ${unknown.join(', ')} (options: --fast, --all, --base <ref>, --jobs <n>; a cart is a name in carts/)`); process.exit(2); }
 const git = (...a) => { try { return execFileSync('git', a, { cwd: ROOT, stdio: ['ignore', 'pipe', 'ignore'] }).toString(); } catch { return ''; } };
 
 const allCarts = readdirSync(join(ROOT, 'carts', 'src')).filter((n) => existsSync(join(ROOT, 'carts', 'src', n, 'code.js')));
 let carts = new Set(named);
+let regen = null;   // the carts whose art.py and audio.py are run again (null: all of them)
 if (all) carts = new Set(allCarts);
 else if (!named.length) {
   const base = opt('--base', git('rev-parse', '--verify', '-q', 'origin/main').trim() ? 'origin/main' : 'main');
@@ -45,18 +53,23 @@ else if (!named.length) {
     ...git('diff', '--name-only', `${base}...HEAD`).split('\n'), ...git('diff', '--name-only', 'HEAD').split('\n'),
     ...git('ls-files', '-o', '--exclude-standard').split('\n'),
   ].filter(Boolean));
-  let everything = false;
+  let everything = false, kit = false;
   for (const f of files) {
     const m = /^(?:carts\/src|tests\/carts|docs\/carts)\/([^/.]+)/.exec(f) || /^carts\/([^/]+?)\.nova(?:\.png)?$/.exec(f) || /^carts\/labels\/([^/]+)\.png$/.exec(f);
     if (m && allCarts.includes(m[1])) carts.add(m[1]);
     else if (/^src\//.test(f) || /^tools\/devkit\/(harness|pad|soak|pngcart)/.test(f) || f === 'tools/pack.js') everything = true;
+    if (/^tools\/devkit\/(art|music)\//.test(f)) kit = true;
   }
-  if (everything) { console.log('The console or the kit changed: verifying every cart.'); carts = new Set(allCarts); }
+  if (everything) {
+    console.log('The console or the kit changed: verifying every cart.');
+    if (!kit) regen = new Set(carts);
+    carts = new Set(allCarts);
+  }
   console.log(`Changed since ${base}: ${[...carts].join(', ') || 'no cart'}`);
 }
-const docs = spawnSync('node', ['tools/check-docs.js'], { cwd: ROOT, encoding: 'utf8' });
-console.log(`${docs.status ? 'FAIL' : 'ok  '} tools/check-docs.js (the documentation mentions only files that exist)`);
-if (docs.status) console.log(docs.stdout.trim().split('\n').map((l) => `       ${l}`).join('\n'));
+const docs = one ? { status: 0 } : spawnSync('node', ['tools/check-docs.js'], { cwd: ROOT, encoding: 'utf8' });
+if (!one) console.log(`${docs.status ? 'FAIL' : 'ok  '} tools/check-docs.js (the documentation mentions only files that exist)`);
+if (!one && docs.status) console.log(docs.stdout.trim().split('\n').map((l) => `       ${l}`).join('\n'));
 if (!carts.size) { console.log('Nothing more to verify.'); process.exit(docs.status ? 1 : 0); }
 
 // Carts whose songs are over the limits in tools/devkit/music/loud.mjs and are left as they are (the chiptune demo is
@@ -65,6 +78,30 @@ const LEGACY_LOUD = ['chiptune'];
 const node = (...a) => spawnSync('node', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 });
 let failed = 0;
 const report = [];
+if (!one && carts.size > 1) {
+  // Each cart in a process of its own, `--jobs` at a time; its report printed whole, in the carts' order.
+  const jobs = Math.max(1, Number(opt('--jobs', Math.max(1, Math.floor(availableParallelism() / 2)))));
+  const names = [...carts].sort(), outs = new Map(), queue = [...names];
+  let printed = 0;
+  const flush = () => { while (printed < names.length && outs.has(names[printed])) process.stdout.write(outs.get(names[printed++]).text); };
+  const run = (name) => new Promise((done) => {
+    const args = [fileURLToPath(import.meta.url), '--one', name].concat(fast ? ['--fast'] : [], regen && !regen.has(name) ? ['--no-regen'] : []);
+    const child = spawn(process.execPath, args, { cwd: ROOT });
+    let text = '';
+    child.stdout.on('data', (d) => { text += d; }); child.stderr.on('data', (d) => { text += d; });
+    child.on('close', (code) => {
+      const line = text.trim().split('\n').at(-1);
+      outs.set(name, { text: text.replace(/\n(ok  |FAIL) [^\n]*\s*$/, '\n') });
+      report.push({ name, line: /^(ok  |FAIL) /.test(line) ? line : `FAIL ${name}: exit ${code}` });
+      if (code) failed++;
+      flush(); done();
+    });
+  });
+  await Promise.all(Array.from({ length: Math.min(jobs, queue.length) }, async () => { while (queue.length) await run(queue.shift()); }));
+  const lines = report.sort((a, b) => a.name.localeCompare(b.name)).map((r) => r.line);
+  console.log(`\n${lines.join('\n')}\n\n${failed || docs.status ? `${failed} cart(s) failed${docs.status ? ' and the documentation check failed' : ''}` : 'all verified'}`);
+  process.exit(failed || docs.status ? 1 : 0);
+}
 for (const name of [...carts].sort()) {
   console.log(`\n== ${name}`);
   const problems = [];
@@ -76,7 +113,8 @@ for (const name of [...carts].sort()) {
   };
   const src = join(ROOT, 'carts', 'src', name), nova = join(ROOT, 'carts', `${name}.nova`);
 
-  if (existsSync(join(src, 'audio.py'))) step('audio.py regenerates audio.json', () => {
+  if (noRegen && (existsSync(join(src, 'audio.py')) || existsSync(join(src, 'art.py')))) console.log('skip art.py and audio.py (only the console changed: they cannot make anything different)');
+  if (!noRegen && existsSync(join(src, 'audio.py'))) step('audio.py regenerates audio.json', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'verify-')); try {
       const r = spawnSync('python3', [join(src, 'audio.py'), join(tmp, 'a.json')], { cwd: ROOT, encoding: 'utf8' });
       if (r.status) return { ok: false, text: r.stderr };
@@ -85,7 +123,7 @@ for (const name of [...carts].sort()) {
     } finally { rmSync(tmp, { recursive: true, force: true }); }
   });
 
-  if (existsSync(join(src, 'art.py'))) step('art.py regenerates the art files', () => {
+  if (!noRegen && existsSync(join(src, 'art.py'))) step('art.py regenerates the art files', () => {
     const tmp = mkdtempSync(join(tmpdir(), 'verify-')); try {
       cpSync(src, join(tmp, 'src'), { recursive: true });
       const r = spawnSync('python3', [join(src, 'art.py'), join(tmp, 'src')], { cwd: ROOT, encoding: 'utf8' });
@@ -125,5 +163,6 @@ for (const name of [...carts].sort()) {
   if (problems.length) failed++;
   report.push(`${problems.length ? 'FAIL' : 'ok  '} ${name}${problems.length ? `: ${problems.join('; ')}` : ''}`);
 }
+if (one) { console.log(report.join('\n')); process.exit(failed ? 1 : 0); }
 console.log(`\n${report.join('\n')}\n\n${failed || docs.status ? `${failed} cart(s) failed${docs.status ? ' and the documentation check failed' : ''}` : 'all verified'}`);
 process.exit(failed || docs.status ? 1 : 0);

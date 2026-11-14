@@ -20,7 +20,8 @@ jobs:
       - run: node tools/check.js --all
       # The console's synth: a song that plays once falls silent at its end
       - run: node tests/console/song-end.mjs
-      # The PPU's effects (colour blending, brightness), and every cart renders through them as it did without
+      # The PPU's effects (colour blending, brightness), and every cart renders through them as it did without (the
+      # carts a CPU core at once)
       - run: node tests/console/effects.mjs
       - run: node tests/console/rom.mjs
       - run: node tests/console/strip.mjs
@@ -45,7 +46,15 @@ jobs:
       - run: node tools/devkit/art/snes.mjs --selftest
       # The starter: scaffolds a throwaway cart, packs, checks and tests it, and deletes it
       - run: node tools/new-cart.js --selftest
-      # Random play for 3,000 frames on every cart: exceptions, wrong-voice effects, soft locks, frame time
+  soak:
+    # A job of its own, so it runs beside the checks above rather than after them
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      # Random play for 3,000 frames on every cart, a cart a CPU core at once: exceptions, wrong-voice effects, soft
+      # locks, frame time
       - run: node tools/devkit/soak.mjs --all
   verify:
     # The carts a pull request changes: audio script, packed cart, checks, soak and the cart's own tests.
