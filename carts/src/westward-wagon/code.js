@@ -82,7 +82,7 @@ const TRAIL = [
   { mile: 989, name: 'GREEN RIVER', kind: 'river', width: 400, depth: 3.2, ferry: 10, route: 2 },
   { mile: 1151, name: 'SODA SPRINGS', kind: 'sight' },
   { mile: 1208, name: 'FORT HALL', kind: 'fort', prices: 1.6 },
-  { mile: 1390, name: 'SNAKE RIVER', kind: 'river', width: 1000, depth: 6.4 },
+  { mile: 1390, name: 'SNAKE RIVER', kind: 'river', width: 1000, depth: 6.4, guide: 1 },
   { mile: 1504, name: 'FORT BOISE', kind: 'fort', prices: 2 },
   { mile: 1600, name: 'BLUE MOUNTAINS', kind: 'sight' },
   { mile: 1800, name: 'THE DALLES', kind: 'fork', choices: ['RAFT DOWN THE COLUMBIA', 'THE BARLOW ROAD'] },
@@ -103,7 +103,7 @@ function newJourney(bg, month, names) {
     bg, money: BACKGROUNDS[bg].money, month, day: 1, mile: 0, next: 1, route: 0, days: 0,
     oxen: 0, food: 0, clothes: 0, bullets: 0, wheel: 0, axle: 0, tongue: 0,
     pace: 0, rations: 0, weather: 3, party: names.map((name) => ({ name, health: 100, ill: 0, alive: true })),
-    done: false, arrived: false, log: [],
+    done: false, arrived: false, log: [], region: 0, talked: {}, departed: false,
   };
 }
 const alive = (J) => J.party.filter((p) => p.alive);
@@ -227,7 +227,8 @@ function scoreOf(J) {
 }
 /** Crossing a river (5.4): what the depth does to a ford; the ferry; caulking and floating, by the float's hits. */
 function crossRiver(J, how, river, hits = 0) {
-  const d = river.depth * (J.month >= 6 ? 0.7 : 1);              // lower water in late summer
+  const d = riverDepth(J, river);
+  if (how === 'guide') { if (J.clothes < 1) return 'NO CLOTHING TO TRADE FOR A GUIDE.'; J.clothes--; advanceDate(J); return 'A SHOSHONE GUIDE LED THE WAGON ACROSS BY THE SHALLOWS, SAFELY.'; }
   if (how === 'ferry') { const fee = river.ferry || 0; if (J.money < fee) return 'NO MONEY FOR THE FERRY'; J.money -= fee; advanceDate(J); return 'THE FERRY TOOK YOU ACROSS.'; }
   if (how === 'ford') {
     if (d < 2.5) return 'YOU FORDED THE RIVER SAFELY.';
@@ -427,13 +428,25 @@ let J = null, setup = { bg: 0, month: 1, step: 0 }, cart = {}, storeMult = 1, ca
 const DAY_FRAMES = 50;                                              // a day rolls by in this many frames (spec: about a second)
 const NAMES = ['MARY', 'JOHN', 'SARAH', 'WILL', 'ELLA'];            // step 6 adds naming them
 
+// --- The book (rom/book.bin, from book.py): each place's paragraph and its people, the regions' cards ---
+let BOOK = null;
+function loadBook() {
+  const b = rom('book'); let i = 3;
+  const str = () => { const n = b[i++]; let t = ''; for (let k = 0; k < n; k++) t += String.fromCharCode(b[i++]); return t; };
+  const places = {}, regions = [];
+  for (let n = b[i++]; n > 0; n--) { const name = str(), about = str().split('|'), talk = []; for (let t = b[i++]; t > 0; t--) talk.push({ who: str(), lines: str().split('|') }); places[name] = { about, talk }; }
+  for (let n = b[i++]; n > 0; n--) regions.push({ name: str(), lines: str().split('|') });
+  BOOK = { places, regions };
+}
+
 function init() {
+  loadBook();
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { for (let i = 0; i < 256; i++) dset(i, 0); dset(VERSION_SLOT, SAVE_VERSION); }
   for (const [layer, name] of [[0, 'ground'], [1, 'near'], [2, 'far']]) { const sc = ART.scenes[name]; bg(layer, { mx: sc.mx, my: sc.my, mw: sc.w, mh: sc.h, x: 0, y: 0, wrap: true, show: true }); }
   color(SOLID, 6, 4, 2); color(BOARD, 14, 9, 5);
   color(WATER, 6, 12, 18); color(WATER2, 14, 21, 26); color(ROCK, 10, 9, 9); color(ROCK2, 17, 16, 15); color(BANK, 9, 14, 6); color(BANK2, 20, 17, 10); color(CANVAS, 29, 28, 24); color(WOOD, 13, 8, 4);
   blend({ layers: ['overlay'], half: true });
-  if (skipTitle) { J = newJourney(0, 3, NAMES); Object.assign(J, { oxen: 4, food: 900, clothes: 10, bullets: 200, wheel: 1, axle: 1, tongue: 1, money: 1600 - 4 * 40 - 180 - 100 - 20 - 30 }); toTrail(); }
+  if (skipTitle) { J = newJourney(0, 3, NAMES); Object.assign(J, { departed: true, oxen: 4, food: 900, clothes: 10, bullets: 200, wheel: 1, axle: 1, tongue: 1, money: 1600 - 4 * 40 - 180 - 100 - 20 - 30 }); toTrail(); }
   else toTitle();
 }
 
@@ -512,6 +525,7 @@ function updateStore() {
     J.money = Math.round((J.money - cartCost()) * 100) / 100;
     for (const g of GOODS) J[g.key] += cart[g.key] * (g.per || 1);
     fx(SFX.select); toTrail();
+    if (!J.departed) { J.departed = true; showCard('INDEPENDENCE, MISSOURI', BOOK.places.INDEPENDENCE.about); }   // setting out
   } else if (pressed(B) && J.mile > 0) { fx(SFX.move); toTrail(); }
 }
 
@@ -530,43 +544,67 @@ function travel(resting) {
   for (const n of out.died) lines.push(`${n} HAS DIED.`);
   for (const t of out.ill) if (!out.died.some((n) => t.startsWith(n + ' '))) lines.push(t);   // the illness as it struck (it may have passed by the evening)
   const ev = !resting && out.arrived < 0 && !J.done ? rollEvent(J) : null;   // an event on a day of travel that reached no landmark
-  const after = () => { if (J.done) return endJourney(); if (out.arrived >= 0) reach(out.arrived); };
+  const reg = regionAt(J.mile), newRegion = reg > J.region; J.region = Math.max(J.region, reg);
+  const after = () => {
+    if (J.done) return endJourney();
+    const go = () => { if (out.arrived >= 0) reach(out.arrived); };
+    if (newRegion) { const r = BOOK.regions[reg]; showCard(r.name, r.lines, null, go); } else go();   // a card on entering a new region
+  };
   const evCard = () => { if (ev) { fx(/DIED|LOST|BROKE|THIEF|LAME|STORM|BLIZZARD|FIRE|BAD|ROUGH|LITTLE/.test(ev[0]) ? SFX.bad : SFX.good); showCard(dateText(J), ev, null, after); } else after(); };
   if (lines.length) { fx(out.died.length ? SFX.over : SFX.bad); showCard(dateText(J), lines, null, evCard); }
   else evCard();
   return out;
 }
-/** Reaching a landmark (5.3 to 5.4): its card; a river asks how to cross, a fork which way, a fort offers its store, the end ends. */
+/** Reaching a landmark (5.3 to 5.4, 6): its scene and card, where you can look around (the book's paragraph), talk to the people there
+ * (a different one each time) and, at a fort, buy supplies; then a river asks how to cross, a fork which way; the end ends. */
 function reach(k) {
   const m = TRAIL[k]; J.next = k + 1; fx(SFX.good);
   J.log.push(`REACHED ${m.name}.`);
   if (m.kind === 'end') { J.arrived = true; J.done = true; return endJourney(); }
-  if (m.kind === 'river') {
-    const d = (m.depth * (J.month >= 6 ? 0.7 : 1)).toFixed(1);
-    const choices = ['FORD THE RIVER', 'CAULK THE WAGON AND FLOAT'].concat(m.ferry ? [`TAKE THE FERRY ($${m.ferry})`] : []).concat(['WAIT A DAY']);
-    const ask = () => showCard(m.name, [`${m.width} FEET ACROSS, ${d} FEET DEEP.`], choices, (c) => {
-      const how = ['ford', 'float', m.ferry ? 'ferry' : 'wait', 'wait'][c];
-      if (how === 'wait') { dayOnTrail(J, true); return ask(); }
-      const done = (r) => { fx(/LOST|DROWN|NO MONEY/.test(r) ? SFX.bad : SFX.good); if (/NO MONEY/.test(r)) return showCard(m.name, [r], null, ask); showCard(m.name, sentences(r), null, () => { if (J.done) endJourney(); }); };
-      if (how === 'float') return toFloat(m.name, clamp(Math.round(m.width * 0.6), 360, 660), Math.max(18, Math.round(40 - m.depth * 4)), 1.6 + m.depth * 0.1, (hits) => done(crossRiver(J, 'float', m, hits)));
-      done(crossRiver(J, how, m));
-    });
-    return ask();
-  }
-  if (m.kind === 'fork') {
-    return showCard(m.name, ['THE TRAIL DIVIDES.'], m.choices, (c) => {
-      if (m.name === 'SOUTH PASS') J.route = c + 1;
-      else if (c === 1) { J.money = Math.max(0, J.money - BARLOW_TOLL); for (let d = 0; d < BARLOW_DAYS; d++) dayOnTrail(J, true); J.log.push('TOOK THE BARLOW ROAD.'); }
-      else { J.log.push('RAFTED DOWN THE COLUMBIA.'); toFloat('THE COLUMBIA RIVER', 1200, 18, 2.4, (hits) => { const r = floatOutcome(J, hits, true); fx(hits ? SFX.bad : SFX.good); showCard('THE COLUMBIA RIVER', sentences(r), null, () => { if (J.done) endJourney(); }); }); }
-    });
-  }
   showScene(m.name);                                                // its painted scene, when it has one (step 7 paints the rest)
-  const off = () => { sceneOn = -1; };
-  if (m.kind === 'fort') return showCard(m.name, ['A FORT, WITH A STORE.'], ['GO ON', 'BUY SUPPLIES'], (c) => { off(); if (c === 1) toStore(m.prices); });
-  showCard(m.name, ['A LANDMARK ON THE TRAIL.'], null, off);
+  const page = BOOK.places[m.name], off = () => { sceneOn = -1; };
+  const line = m.kind === 'river' ? `${m.width} FEET ACROSS, ${riverDepth(J, m).toFixed(1)} FEET DEEP.` : m.kind === 'fort' ? 'A FORT, WITH A STORE.' : m.kind === 'fork' ? 'THE TRAIL DIVIDES HERE.' : 'A LANDMARK ON THE TRAIL.';
+  const look = () => showCard(m.name, page.about, null, arrive);
+  const talk = () => {
+    if (!page.talk.length) return showCard(m.name, ['NOBODY IS ABOUT.'], null, arrive);
+    const n = J.talked[m.name] || 0, who = page.talk[n % page.talk.length]; J.talked[m.name] = n + 1;
+    showCard(who.who, who.lines, null, arrive);
+  };
+  const onward = () => { off(); if (m.kind === 'river') crossing(m); else if (m.kind === 'fork') fork(m); };
+  const opts = [['LOOK AROUND', look], ['TALK TO SOMEONE', talk]].concat(m.kind === 'fort' ? [['BUY SUPPLIES', () => { off(); toStore(m.prices); }]] : [])
+    .concat([[m.kind === 'river' ? 'CROSS THE RIVER' : m.kind === 'fork' ? 'CHOOSE THE WAY' : 'GO ON', onward]]);
+  const arrive = () => showCard(m.name, [line], opts.map((o) => o[0]), (c) => opts[c][1]());
+  arrive();
 }
-/** A long result split into its sentences, a line each (a card's line is at most 28 letters). */
-const sentences = (r) => r.split('. ').map((t, i, a) => (i < a.length - 1 ? t + '.' : t));
+const riverDepth = (J, m) => m.depth * (J.month >= 6 ? 0.7 : 1);    // lower water in late summer
+/** A river's crossing (5.4): ford, float, the ferry, a guide where one offers, or wait a day. */
+function crossing(m) {
+  const ways = [['FORD THE RIVER', 'ford'], ['CAULK THE WAGON AND FLOAT', 'float']].concat(m.ferry ? [[`TAKE THE FERRY ($${m.ferry})`, 'ferry']] : [])
+    .concat(m.guide ? [['HIRE A GUIDE (1 CLOTHING)', 'guide']] : []).concat([['WAIT A DAY', 'wait']]);
+  const ask = () => showCard(m.name, [`${m.width} FEET ACROSS, ${riverDepth(J, m).toFixed(1)} FEET DEEP.`], ways.map((w) => w[0]), (c) => {
+    const how = ways[c][1];
+    if (how === 'wait') { dayOnTrail(J, true); return ask(); }
+    const done = (r) => { fx(/LOST|DROWN|NO MONEY|NO CLOTHING/.test(r) ? SFX.bad : SFX.good); if (/^NO /.test(r)) return showCard(m.name, [r], null, ask); showCard(m.name, wrapText(r), null, () => { if (J.done) endJourney(); }); };
+    if (how === 'float') return toFloat(m.name, clamp(Math.round(m.width * 0.6), 360, 660), Math.max(18, Math.round(40 - m.depth * 4)), 1.6 + m.depth * 0.1, (hits) => done(crossRiver(J, 'float', m, hits)));
+    done(crossRiver(J, how, m));
+  });
+  ask();
+}
+/** A fork (5.3, 6): South Pass's two routes; at The Dalles the raft (a float down the Columbia) or the Barlow Road. */
+function fork(m) {
+  showCard(m.name, ['WHICH WAY?'], m.choices, (c) => {
+    if (m.name === 'SOUTH PASS') J.route = c + 1;
+    else if (c === 1) { J.money = Math.max(0, J.money - BARLOW_TOLL); for (let d = 0; d < BARLOW_DAYS; d++) dayOnTrail(J, true); J.log.push('TOOK THE BARLOW ROAD.'); }
+    else { J.log.push('RAFTED DOWN THE COLUMBIA.'); toFloat('THE COLUMBIA RIVER', 1200, 18, 2.4, (hits) => { const r = floatOutcome(J, hits, true); fx(hits ? SFX.bad : SFX.good); showCard('THE COLUMBIA RIVER', wrapText(r), null, () => { if (J.done) endJourney(); }); }); }
+  });
+}
+/** A text in lines of at most 28 letters (a card's width), broken at spaces. */
+function wrapText(t, w = 28) {
+  const out = []; let l = '';
+  for (const word of t.split(' ')) { if (l && l.length + 1 + word.length > w) { out.push(l); l = word; } else l = l ? `${l} ${word}` : word; }
+  if (l) out.push(l);
+  return out;
+}
 function endJourney() {
   state = 'end'; timer = 0; card = null;
   const sc = J.arrived ? scoreOf(J) : 0;

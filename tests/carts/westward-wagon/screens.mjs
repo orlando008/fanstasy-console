@@ -9,7 +9,10 @@ export default function screens(shot) {
   t.press('A'); t.run(3); shot(t, 'setup'); t.press('A'); t.run(3); shot(t, 'month'); t.press('A'); t.run(3); shot(t, 'store');
   const vm = newGame(2), p = vm.probe(); vm.run(200); shot(vm, 'trail', { zoom: [64, 96, 128, 56] });
   vm.press('A'); vm.run(3); shot(vm, 'menu'); vm.press('B');
-  p.J.mile = 550; p.J.next = 4; vm.run(p.DAY_FRAMES + 2); shot(vm, 'chimney-rock'); vm.press('A');
+  p.J.mile = 550; p.J.next = 4; p.J.region = 1; vm.run(p.DAY_FRAMES + 2); while (p.card && !p.card.choices) vm.press('A'); shot(vm, 'chimney-rock');
+  vm.press('A'); shot(vm, 'look-around'); vm.press('A'); vm.press('DOWN'); vm.press('A'); shot(vm, 'talk'); vm.press('A'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A');
+  while (p.card) vm.press('A');
+  p.J.mile = 818; p.J.next = 6; vm.run(p.DAY_FRAMES + 2); while (p.card && p.card.title !== 'THE ROCKY MOUNTAINS') vm.press('A'); shot(vm, 'region'); while (p.card) vm.press('A');
   p.J.mile = 97; p.J.next = 1; vm.run(p.DAY_FRAMES * 2 + 2); shot(vm, 'river');
   const hn = newGame(4), q = hn.probe(); hn.run(3); q.toHunt(); hn.run(500);
   const a = q.hunt.animals.find((x) => q.BIG[x.kind]) || q.hunt.animals[0]; if (a) { q.hunt.aim[0] = a.x + 16; q.hunt.aim[1] = a.y + 12; } hn.run(1); shot(hn, 'hunt');

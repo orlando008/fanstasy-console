@@ -55,6 +55,7 @@ const toMenuItem = (vm, p, item) => { vm.press('A'); vm.run(2); for (let i = 0; 
 { // a river's CAULK AND FLOAT plays the float
   const vm = newGame(9), p = vm.probe();
   vm.run(3); const k = p.TRAIL.findIndex((m) => m.name === 'BIG BLUE RIVER'); p.J.mile = p.TRAIL[k].mile; p.reach(k); vm.run(2);
+  vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); vm.run(2);   // CROSS THE RIVER
   vm.press('DOWN'); vm.press('A'); vm.run(3);
   ok(p.state === 'float' && p.flt.title === 'BIG BLUE RIVER', 'caulking and floating plays the float');
   vm.run(800); ok(p.state === 'trail' && p.card && p.card.title === 'BIG BLUE RIVER', 'then a card with the result', `${p.card && p.card.lines}`);

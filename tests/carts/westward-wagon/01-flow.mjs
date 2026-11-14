@@ -31,7 +31,9 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   while (p.card) vm.press('A');                                     // an event's card, if one came up
   p.J.mile = 101; p.J.next = 1; vm.run(p.DAY_FRAMES + 1);
   for (let i = 0; i < 4 && p.card && !/KANSAS/.test(p.card.title); i++) vm.press('A');   // the day's illness or event comes first
-  ok(p.card && /KANSAS RIVER/.test(p.card.title) && p.card.choices.length === 4, 'a river stops the wagon and asks how to cross (four ways at the Kansas)');
+  ok(p.card && /KANSAS RIVER/.test(p.card.title) && p.card.choices.at(-1) === 'CROSS THE RIVER', 'a river stops the wagon');
+  vm.press('DOWN'); vm.press('DOWN'); vm.press('A');
+  ok(p.card && /KANSAS RIVER/.test(p.card.title) && p.card.choices.length === 4, 'and asks how to cross (four ways at the Kansas)');
 }
 {
   const vm = newGame(3), p = vm.probe(); vm.run(2);
