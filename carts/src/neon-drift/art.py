@@ -120,4 +120,9 @@ t2 = big_text('DRIFT', logo_pal.pink, scale=2, outline=logo_pal.edge, shadow=log
 logo.blit(t1, (256 - t1.w) // 2, 0); logo.blit(t2, (256 - t2.w) // 2, 22)
 art.scene('logo', logo, pal=logo_pal, at=(96, 0))
 
+# --- The grades D to S: big letters as sprites, beside the results' panel (a sprite under an overlay panel would be dimmed) ---
+grade_pal = art.sprite_palette(1, {'gold': ramp('ffd040', 5), 'edge': '180818', 'shade': '502060'})
+for g in 'DCBAS':
+    art.big_sprite('grade' + g, big_text(g, grade_pal.gold, scale=4, outline=grade_pal.edge, shadow=grade_pal.shade), pal=grade_pal, region='spr')
+
 art.write(sys.argv[1])

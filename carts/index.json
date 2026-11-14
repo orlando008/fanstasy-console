@@ -31,6 +31,16 @@
       "png": "carts/flow-state.nova.png"
     },
     {
+      "name": "neon-drift",
+      "title": "Neon Drift",
+      "author": "NOVA-16",
+      "description": "You are a glowing diamond flying down a neon wormhole to a trance beat. Lights ride the tunnel towards you in time with the music: glide round the rim to catch each one on the beat, build a combo and watch the rings flow with the kick. Five original tracks, three levels, no game over.",
+      "genre": "Arcade",
+      "players": "1",
+      "label": "carts/labels/neon-drift.png",
+      "png": "carts/neon-drift.nova.png"
+    },
+    {
       "name": "operation-ironstorm",
       "title": "Operation Ironstorm",
       "author": "Independent Game Project",

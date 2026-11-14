@@ -16,6 +16,11 @@ export default function screens(shot) {
   for (let i = 0; i < 1500; i++) play.step(choose(p, 4, 1));
   shot(play, 'play-drop', { zoom: [64, 140, 128, 84] });
   play.press('START'); play.run(5); shot(play, 'pause');
+  for (const t of [1, 3]) {                                         // the other tracks' colours: Starlight Run and Pulsar, in their drops
+    const g = newGame(4 + t, { save: calibrated() }), q = g.probe(); q.startTrack(t, 2);
+    for (let i = 0; i < 3000; i++) g.step(choose(q, 4, 1));
+    shot(g, 'play-' + q.TRACKS[t].toLowerCase().replace(' ', '-'));
+  }
   const res = newGame(2, { save: calibrated() }), r = res.probe();
   for (let i = 0; i < 9000 && r.state === 'play'; i++) res.step(choose(r, 6, 2));
   res.run(60); shot(res, 'results');

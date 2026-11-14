@@ -13,7 +13,8 @@ from kit import *
 VMAX, ACC = 3.2, 0.4
 LEVELS = ('CHILL', 'DRIVE', 'OVERDRIVE')
 STEP = (22, 13, 7)           # how far round the rim the next light is (units), on each level, before the melody's wiggle
-WIGGLE = (3.0, 2.0, 1.2)     # units a semitone the pitch moves it
+WIGGLE = (3.0, 2.0, 0.4)     # units a semitone the pitch moves it
+BACK = (8, 8, 0)             # how far back against the phrase's way round a light may be (none on OVERDRIVE: too quick to turn)
 SECTION_KINDS = ('intro', 'groove', 'build', 'drop', 'break', 'rise', 'outro')
 
 # Parts of a section: K kick, H hats, C clap, B bass, A arpeggio, a soft arpeggio, P pad, L lead, R a snare roll in the last bar,
@@ -78,8 +79,8 @@ class Track:
                         if t == '-': continue
                         if t == '.': r[k * 2][0] = {'n': 'OFF'}; continue
                         p = s.tone(ch, t, 36); r[k * 2][0] = cell(p, I['LEAD']); ev['L'][R0 + k * 2] = p
-                if b == 0:                                   # a held lead or pad stops where its section ends
-                    for part, c in (('L', 0), ('P', 3)):
+                if b == 0:                                   # a held lead, pad or bass stops where its section ends
+                    for part, c in (('L', 0), ('P', 3), ('B', 2)):
                         if part in before and part not in parts and r[0][c] is None: r[0][c] = {'n': 'OFF'}
                 rows += r; bar += 1
             before = parts
@@ -118,8 +119,9 @@ class Track:
                 else:
                     df = f - last_f
                     step = dirn * STEP[level] + WIGGLE[level] * (pitch - last_p) * dirn
-                    reach = 0.8 * VMAX * df + 16 if df > 2 * VMAX / ACC else 0.25 * ACC * df * df + 16
-                    step = max(-min(8, reach), min(reach, step)) if dirn > 0 else min(min(8, reach), max(-reach, step))
+                    reach = 0.7 * VMAX * df + 12 if df > 2 * VMAX / ACC else 0.25 * ACC * df * df + 16
+                    back = BACK[level]                       # how far a light may step against the phrase's way round
+                    step = max(-min(back, reach), min(reach, step)) if dirn > 0 else min(min(back, reach), max(-reach, step))
                     ang += step
                 out.append((f, int(round(ang)) & 255, pitch))
                 last_f, last_p = f, pitch
@@ -153,4 +155,32 @@ EVENT_HORIZON = Track('EVENT HORIZON', 7, ('A', MINOR), ['1', '6', '3', '7'],
     ["8 - - 5 - - 3' -", "8 - - 5 - - 3 -", "5 - - 3 - - 8 -", "5 - - 8 - - 3' -",
      "8 - - 5 - - 3' -", "3' - - 8 - - 5 -", "5 - - 8 - - 3' -", "8 - 5 - 3 - 5 -"])
 
-TRACKS = [EVENT_HORIZON]
+# The euphoric one: F major, a rolling bass under it.
+STARLIGHT_RUN = Track('STARLIGHT RUN', 7, ('F', MAJOR), ['1', '5', '6', '4'],
+    "1 3 5 8 5 3 5 8 1 3 5 8 3' 8 5 3",
+    "- 1 1 1 - 1 1 1 - 1 1 1 - 1 1 1",
+    ["5 - - 8 - - 3' -", "5 - - 3 - - 1 -", "8 - - 5 - - 3 -", "8 - - 3' - - 5' -",
+     "5 - 8 - 3' - 8 -", "3' - - 8 - - 5 -", "5 - - 3 - - 8 -", "1 - 3 - 5 - 8 -"], echo=(7, 6, 6, 9))
+
+# Dreamy: D minor with the major dominant (A), long lead notes, a lot of echo.
+AURORA = Track('AURORA', 7, ('D', MINOR), ['1', '4', '6', '5+'],
+    "1 5 3' 5 8 5 3' 8 1 5 3' 5 8 5 5' 3'",
+    "- - 1 . - - 1 . - - 5 . - - 1 .",
+    ["8 - - - 5 - 8 -", "3' - - - 8 - 8 -", "5 - - - 8 - 5 -", "3 - - - 5 - - -",
+     "8 - - - 5 - 8 -", "5' - - - 3' - 8 -", "3' - - - 8 - 5 -", "5 - 3 - 1 - - -"], echo=(10, 7, 7, 8))
+
+# Fast and hard: E minor at 150 bpm, a galloping bass.
+PULSAR = Track('PULSAR', 6, ('E', MINOR), ['1', '7', '6', '7'],
+    "1 8 5 8 3' 8 5 8 1 8 5 8 5' 8 3' 8",
+    "- 1 1 1 - 1 1 1 - 1 1 1 - 1 1 1",
+    ["8 - 8 - 5 - 3' -", "8 - - 5 - - 8 -", "3' - 3' - 8 - 5 -", "5 - - 8 - - 3' -",
+     "8 - 8 - 5 - 3' -", "5' - - 3' - - 8 -", "3' - 8 - 5 - 8 -", "8 - 5 - 3 - 1 -"], echo=(4, 4, 5, 10))
+
+# The finale: C minor at 150 bpm, Ab Bb Cm G.
+SUPERNOVA = Track('SUPERNOVA', 6, ('C', MINOR), ['6', '7', '1', '5+'],
+    "1 5 8 3' 8 5 3' 5' 1 5 8 3' 5' 3' 8 5",
+    "- - 1 . - - 1 . - - 1 . - 5 1 .",
+    ["8 - - 5 - - 8 -", "3' - - 8 - - 3' -", "5' - - 3' - - 8 -", "3' - - - 8 - - -",
+     "8 - - 5 - - 8 -", "3' - - 5' - - 3' -", "5' - - 3' - - 8 -", "8 - 5 - 3 - 1 -"], echo=(6, 6, 6, 9))
+
+TRACKS = [EVENT_HORIZON, STARLIGHT_RUN, AURORA, PULSAR, SUPERNOVA]
