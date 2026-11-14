@@ -365,7 +365,7 @@ function press(i) {
   if (isGen(v)) { generate(i); return; }
   if (isItem(v)) { held = i; fx(SFX.pick); return; }
   if (v === CRATE) {
-    if (!crateOpenable(board, i)) { say('OPEN THE CRATES NEXT TO YOUR SPACE FIRST', ORANGE); fx(SFX.knock); return; }
+    if (!crateOpenable(board, i)) { say('OPEN A CRATE BESIDE OPEN SPACE', ORANGE); fx(SFX.knock); return; }
     if (ask && ask.kind === 'crate' && ask.i === i) {
       ask = null;
       if (coins < crateCost()) { say(`A CRATE COSTS ${crateCost()} COINS`, ORANGE); fx(SFX.knock); return; }
@@ -491,7 +491,7 @@ function updateRecipes() {
 }
 
 function updateEnding() {
-  if (timer > 120 && (pressed(A) || pressed(START))) { fx(SFX.select); toPlay(); say('THE CAFE IS OPEN! ORDERS NEVER STOP NOW', GOLD); }
+  if (timer > 120 && (pressed(A) || pressed(START))) { fx(SFX.select); toPlay(); say('THE CAFE IS OPEN FOR GOOD!', GOLD); }
 }
 
 function updatePause() {
@@ -607,7 +607,7 @@ function drawHud() {
   if (on) { const t = 'A: THE CAFE'; rectfill(252 - t.length * 8 - 2, 75, t.length * 8 + 4, 9, SOLID); txt(t, 252 - t.length * 8, 76, WHITE); }
   if (ask) {
     const v = board[ask.i];
-    panel(24, 120, 208, 40);
+    panel(8, 120, 240, 40);
     ctxt(ask.kind === 'sell' ? `SELL ${nameOf(v)} FOR ${valueOf(v)}?` : `OPEN THIS CRATE FOR ${crateCost()}?`, 130, WHITE);
     ctxt('A: YES   B: NO', 144, DIM);
   } else if (orderCard >= 0 && spots[orderCard]) drawOrderCard(spots[orderCard]);
@@ -645,7 +645,7 @@ function drawCard(v) {
 }
 function drawOrderCard(c) {
   const r = reward(c);
-  panel(16, 96, 224, 80);
+  panel(8, 96, 240, 80);
   ctxt(`${PEOPLE[c.who]}${c.special ? ': THE DAILY SPECIAL' : c.who < 5 ? ': A FAVOURITE' : ''}`, 104, GOLD);
   c.items.forEach((v, i) => ctxt(`${c.got[i] ? 'GOT ' : ''}${nameOf(v)}`, 118 + i * 11, c.got[i] ? DIM : WHITE));
   ctxt(`PAYS ${r.coins} COINS, ${r.stars} STAR${r.stars > 1 ? 'S' : ''}`, 144, CREAM);
@@ -692,17 +692,17 @@ function drawRecipes() {
   panel(8, 30, 240, 50);
   const foundN = Array.from({ length: 30 }, (_, i) => isFound(i + 1)).filter((x) => x).length;
   ctxt(`RECIPES: ${foundN} OF 30 FOUND`, 36, GOLD);
-  ctxt(st === 2 ? `${nameOf(item(line, tier))}` : st === 1 ? 'NEXT TO FIND: MERGE TWO OF THE ONE BEFORE' : '???', 50, st === 2 ? WHITE : DIM);
+  ctxt(st === 2 ? `${nameOf(item(line, tier))}` : st === 1 ? (tier === 1 ? `FROM THE ${GEN_NAMES[line]}` : `MAKE IT: 2 X ${NAMES[line][tier - 2]}`) : '???', 50, st === 2 ? WHITE : DIM);   // the silhouette: what makes it
   const met = story.map((s, k) => (s ? PEOPLE[k] : null)).filter((x) => x);
   ctxt(met.length ? `REGULARS: ${met.length} OF 5 MET` : 'NO REGULARS MET YET', 64, CREAM);
 }
 
 function drawTitle() {
-  if (confirm) { panel(32, 150, 192, 40); ctxt('START A NEW CAFE?', 158, WHITE); ctxt('YOUR SAVED ONE IS LOST.  A: YES  B: NO', 172, ORANGE); return; }
+  if (confirm) { panel(24, 146, 208, 50); ctxt('START A NEW CAFE?', 152, WHITE); ctxt('YOUR SAVED CAFE IS LOST.', 165, ORANGE); ctxt('A: YES   B: NO', 180, DIM); return; }
   const items = hasSave() ? ['CONTINUE', 'NEW CAFE', 'RECIPES'] : ['NEW CAFE', 'RECIPES'];
   items.forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 92, 150 + i * 12, i === titleSel ? WHITE : DIM));
   for (let k = 0; k < 5; k++) drawPic(picOf(item(k, 6)), 24 + k * 44, flr(178 + 2 * Math.sin(clock / 20 + k)), { prio: 2 });   // the best of each line, on parade
-  ctxt('A: PICK UP, DROP   B: WHAT IS IT', 212, DIM);
+  ctxt('A: PICK UP, DROP  B: WHAT IS IT', 212, DIM);
 }
 
 function drawEnding() {
