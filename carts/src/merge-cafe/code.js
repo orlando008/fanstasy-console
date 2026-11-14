@@ -278,7 +278,8 @@ function applyCafe() {
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) mset(cf.mx + x0 + x, cf.my + y0 + y, mget(sx + x, sy + y));
   });
   const put = (first, n, c) => { const r = c ? rampOf(c, n) : null; for (let i = 0; i < n; i++) { const v = r ? r[i] : shabbyCols[first + i]; color(first + i, v[0], v[1], v[2]); } };
-  put(17, 3, WALL[styleName('wall')]); put(20, 4, WOOD[styleName('wood')]); put(65, 4, COUNTER[styleName('counter')]);
+  put(17, 3, WALL[styleName('wall')]);
+  if (doneKind('wall')) for (const e of [17, 19]) { const v = color(18); color(e, v[0], v[1], v[2]); }   // fresh paint: the stains (the darker step) and the patches (the lighter) are gone put(20, 4, WOOD[styleName('wood')]); put(65, 4, COUNTER[styleName('counter')]);
   if (doneKind('fix:window')) { color(24, 18, 24, 27); color(25, 22, 27, 29); color(26, 29, 31, 31); } else for (let e = 24; e <= 26; e++) { const v = shabbyCols[e]; color(e, v[0], v[1], v[2]); }
 }
 
@@ -540,7 +541,8 @@ function drawOrders() {
     const c = spots[k];
     if (!c) continue;
     const want = c.items.filter((v, i) => !c.got[i]), v = want[((clock / 60) | 0) % want.length], x = BUBBLE_TX[k] * 8;
-    drawPic(picOf(v), x, -2, { prio: 3 });
+    const cen = rom('centres'), pc = picOf(v);                       // centred on the picture's own middle, not its plate
+    drawPic(pc, x + 16 - cen[pc * 2], 13 - cen[pc * 2 + 1], { prio: 3 });
     if (onBoard(v)) { line(x + 24, 20, x + 26, 22, GREEN); line(x + 26, 22, x + 30, 16, GREEN); }
     if (c.items.length > 1) print(`${c.got.filter((g) => g).length + 1}/${c.items.length}`, x + 2, 2, SHADOW);
     if (c.special) { rect(x, 0, 32, 26, GOLD); if ((clock >> 4) & 1) print('SPECIAL', x - 12, 26, GOLD); }
@@ -556,11 +558,12 @@ function drawProps() {
   prop('curtains', 6, 2); prop('curtains', 50, 2, { fx: true }); prop('flowerbox', 28, 14);
   prop('lamp', 124, -6); prop('plant', 226, -5); prop('jars', 182, -5);
   if (doneKind('menu')) { rectfill(96, 62, 64, 21, SOLID); rect(96, 62, 64, 21, CHALK); print('TODAY:', 104, 64, WHITE); print(served % 2 ? 'TARTS' : 'LATTES', 104, 74, GOLD); }   // a chalkboard on the counter's front
-  if (doneKind('sign')) { rectfill(22, 14, 18, 8, 6); print('OPEN', 23, 15, WHITE); }
-  if (doneKind('clock')) { circfill(196, 12, 7, 15); circ(196, 12, 7, 4); line(196, 12, 196, 7, 1); line(196, 12, 196 + Math.round(4 * Math.cos(clock / 600)), 12 + Math.round(4 * Math.sin(clock / 600)), 1); }
-  if (doneKind('pictures')) { const sea = styleName('pictures') === 'THE SEA'; for (const x of [100, 156]) { rectfill(x, 6, 12, 10, 4); rectfill(x + 2, 8, 8, 6, sea ? 13 : 11); if (!sea) pset(x + 5, 10, 8); } }
-  if (doneKind('fairy')) for (let x = 4; x < 256; x += 10) pset(x, 3 + Math.round(2 * Math.sin(x / 9)), [14, 8, 11, 13][((x / 10 | 0) + (clock >> 4)) % 4]);
-  if (doneKind('bunting')) for (let x = 0; x < 256; x += 12) { const c = [8, 14, 11, 13][(x / 12) % 4]; line(x, 0, x + 6, 6, c); line(x + 6, 6, x + 12, 0, c); line(x + 3, 2, x + 9, 2, c); }
+  if (doneKind('sign')) { line(31, 9, 31, 21, 1); line(57, 9, 57, 21, 1); rectfill(26, 21, 37, 12, 6); rect(26, 21, 37, 12, 1); print('OPEN', 29, 23, WHITE); }   // hung in the window, wider than its word
+  if (doneKind('clock')) { circfill(126, 11, 5, 15); circ(126, 11, 5, 4); line(126, 11, 126, 8, 1); line(126, 11, 126 + Math.round(3 * Math.cos(clock / 600)), 11 + Math.round(3 * Math.sin(clock / 600)), 1); }
+  if (doneKind('pictures')) { const sea = styleName('pictures') === 'THE SEA'; rectfill(104, 5, 13, 11, 4); rectfill(106, 7, 9, 7, sea ? 13 : 11); if (!sea) { pset(109, 9, 8); pset(112, 10, 14); } else line(106, 11, 114, 11, 15); }   // between the first bubble and the lamp
+  const clear = (x0, x1) => ![0, 1, 2].some((k) => bubbleOn[k] && x1 >= BUBBLE_TX[k] * 8 && x0 < BUBBLE_TX[k] * 8 + 32);   // decorations on the overlay stay off the bubbles
+  if (doneKind('fairy')) for (let x = 4; x < 256; x += 10) if (clear(x, x)) pset(x, 3 + Math.round(2 * Math.sin(x / 9)), [14, 8, 11, 13][((x / 10 | 0) + (clock >> 4)) % 4]);
+  if (doneKind('bunting')) for (let x = 0; x < 256; x += 12) { if (!clear(x, x + 12)) continue; const c = [8, 14, 11, 13][(x / 12) % 4]; line(x, 0, x + 6, 6, c); line(x + 6, 6, x + 12, 0, c); line(x + 3, 2, x + 9, 2, c); }
 }
 
 function drawBoard() {

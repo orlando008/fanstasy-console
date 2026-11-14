@@ -365,6 +365,11 @@ os.makedirs(os.path.join(sys.argv[1], 'rom'), exist_ok=True)
 open(os.path.join(sys.argv[1], 'rom', 'pics.bin'), 'wb').write(bytes(blob_))
 open(os.path.join(sys.argv[1], 'rom', 'people.bin'), 'wb').write(bytes(people_blob))
 open(os.path.join(sys.argv[1], 'rom', 'fixes.bin'), 'wb').write(bytes(fix_blob))
+centres = bytearray()                                         # each picture's middle (of its drawn pixels), so a bubble can centre it
+for im, P in PICS:
+    xs = [x for y in range(32) for x in range(32) if im.px[y][x]]; ys = [y for y in range(32) for x in range(32) if im.px[y][x]]
+    centres += bytes([(min(xs) + max(xs) + 1) // 2, (min(ys) + max(ys) + 1) // 2])
+open(os.path.join(sys.argv[1], 'rom', 'centres.bin'), 'wb').write(bytes(centres))
 print('pictures:', len(PICS), '(items 0-29, generators 30-34, the crate 35, people 36-%d, props %d-%d: %s)' % (35 + 2 * len(PEOPLE), 36 + 2 * len(PEOPLE), len(PICS) - 1, ', '.join(PROP_NAMES)))
 
 # --- The title: MERGE CAFE in warm bevelled letters (BG2, shown on the title) ---
