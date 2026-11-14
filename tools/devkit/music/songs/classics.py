@@ -1,4 +1,4 @@
-"""Six public domain classics arranged for the NOVA-16 sound chip, from the note text in scores/ (import_scores.py
+"""Seven public domain classics arranged for the NOVA-16 sound chip, from the note text in scores/ (import_scores.py
 reads it out of public domain engravings; scores/SOURCES.md has each source and its licence):
 
     song 0  Mozart, Rondo alla Turca (K. 331), bars 1 to 32       a quick level, an action scene, a rhythm game
@@ -7,10 +7,11 @@ reads it out of public domain engravings; scores/SOURCES.md has each source and 
     song 3  Chopin, Minute Waltz (Op. 64 No. 1), bars 1 to 36     a chase, a timer running out
     song 4  Pachelbel, Canon in D, bars 1 to 24                   a title, a credits roll, a peaceful place
     song 5  Bach, Jesu, Joy of Man's Desiring (BWV 147), all      an ending, a church, a hall of heroes
+    song 6  Beethoven, Ode to Joy (Symphony No. 9), by hand       a victory, a level cleared, a festival
 
     python3 tools/devkit/music/songs/classics.py carts/src/<name>/audio.json
 
-It writes a whole audio.json with these six songs. To use one beside a cart's own songs, copy its instruments and its
+It writes a whole audio.json with these seven songs. To use one beside a cart's own songs, copy its instruments and its
 piece() into the cart's audio.py (a Medley, tools/devkit/music/medley.py). Songs use channels 0 to 6 (channel 7 holds
 the speed), so an SFX on channel 6 mutes the hats while it plays.
 """
@@ -43,6 +44,12 @@ def beat(piece, bar, hits, until=None):
     return piece
 
 
+def stop(piece, channels):
+    """Let go, at a piece's start, of a channel it does not play (the last note of the piece before would ring on)."""
+    for ch in channels: piece[0][0][ch] = piece[0][0][ch] or {'n': 'OFF'}
+    return piece
+
+
 std = {'lead': (0, 'LEAD', -12), 'bass': (2, 'BASS', 0), 'inner': (3, 'KEYS', -12, 11), 'tenor': (4, 'KEYS2', 0, 11)}
 two4 = {0: 'KICK', 2: 'HAT', 4: 'SNARE', 6: 'HAT'}
 m.song([beat(m.piece(['alla_turca'], 6, std), 8, two4)], echo=(4, 4, 4, 9))
@@ -58,4 +65,12 @@ m.song([m.piece(['canon'], 7, {'lead': (0, 'LEAD', -12), 'inner': (3, 'KEYS', -1
 # the left hand's bass on the triangle, and the right hand's other notes quieter under the tune, at their own pitch.
 m.song([m.piece(['jesu'], 13, {'lead': (0, 'LEAD', 0, 13), 'inner': (3, 'KEYS', 0, 9), 'tenor': (4, 'KEYS2', 0, 9), 'bass': (2, 'BASS', 0)})],
        echo=(8, 6, 6, 7))
-a.write(sys.argv[1], songs=6)
+# The Ode to Joy three times: plain; the variation over drums; the variation a step up (E major) and quicker.
+ode_parts = {'lead': (0, 'LEAD', 0), 'bass': (2, 'BASS', 0), 'inner': (3, 'KEYS', 0, 11), 'tenor': (4, 'KEYS2', 0, 11)}
+var_parts = {'lead': (0, 'LEAD', -12), 'lead@2': (1, 'KEYS2', 0, 10), 'bass': (2, 'BASS', 0), 'inner': (3, 'KEYS', 0, 10)}
+up_parts = {k: (ch, inst, semis + 2, *vol) for k, (ch, inst, semis, *vol) in var_parts.items()}
+four4 = {0: 'KICK', 4: 'HAT', 8: 'SNARE', 12: 'HAT'}
+m.song([m.piece(['ode'], 7, ode_parts), stop(beat(m.piece(['ode2'], 7, var_parts), 16, four4), [4]),
+        stop(beat(m.piece(['ode2'], 6, up_parts), 16, four4), [4])],
+       echo=(5, 4, 5, 8))
+a.write(sys.argv[1], songs=7)

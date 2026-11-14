@@ -1,8 +1,10 @@
 """The classics' note text (scores/), read from public domain MIDI engravings of the Mutopia Project, as collected in
 the marmooo/classical-midi-db repository (scores/SOURCES.md has each file and its licence; the MIDI files are not in
-the repository). Needs the mido package (pip install mido):
+the repository), and a few written out here by hand. Reading the files needs the mido package (pip install mido):
 
-    python3 tools/devkit/music/songs/import_scores.py <folder with the MIDI files>
+    python3 tools/devkit/music/songs/import_scores.py [folder with the MIDI files]
+
+Without a folder it writes only the pieces by hand.
 
 Each piece is an excerpt (bars `from` to the bar before `to`, `bar` ticks long) on a grid (`grid` ticks a row), dealt
 out to a tune, a bass and two inner voices by tools/devkit/music/score.py. classics.py makes the songs from the text.
@@ -58,8 +60,47 @@ def played(path, track, row, split):
             for p in ps: out[h].append((r, d, p)); out[1].append((r, d, p))
     return {h: sorted(v) for h, v in out.items()}
 
+# Written by hand (a tune known well enough to write out), on a grid of sixteenths, 16 rows a bar of 4/4.
+# Beethoven, Symphony No. 9, the finale's "Ode to Joy" theme, in D: (MIDI pitch, sixteenths) a note.
+ODE = [[(66, 4), (66, 4), (67, 4), (69, 4)], [(69, 4), (67, 4), (66, 4), (64, 4)], [(62, 4), (62, 4), (64, 4), (66, 4)],
+       [(66, 6), (64, 2), (64, 8)],
+       [(66, 4), (66, 4), (67, 4), (69, 4)], [(69, 4), (67, 4), (66, 4), (64, 4)], [(62, 4), (62, 4), (64, 4), (66, 4)],
+       [(64, 6), (62, 2), (62, 8)],
+       [(64, 4), (64, 4), (66, 4), (62, 4)], [(64, 4), (66, 2), (67, 2), (66, 4), (62, 4)],
+       [(64, 4), (66, 2), (67, 2), (66, 4), (64, 4)], [(62, 4), (64, 4), (57, 8)],
+       [(66, 4), (66, 4), (67, 4), (69, 4)], [(69, 4), (67, 4), (66, 4), (64, 4)], [(62, 4), (62, 4), (64, 4), (66, 4)],
+       [(64, 6), (62, 2), (62, 8)]]
+# The chord of each half bar, D or A: (bass, the two inner notes).
+CHORD = {'D': (38, 57, 62), 'A': (45, 52, 61)}   # D as A and D: the tune's G passes over it without rubbing on an F#
+ODE_CHORDS = 'DD DA DD DA DD DA DD AD AD AD AA DA DD DA DD AD'.split()
+
+
+def ode():
+    """The theme plain (half-note chords under it), and a variation: the tune an octave up over a bass in eighths and
+    the chord as a running arpeggio of sixteenths (the drums are added by classics.py)."""
+    tune, bass, inner, tenor, bass2, arp = [], [], [], [], [], []
+    for b, (notes, halves) in enumerate(zip(ODE, ODE_CHORDS)):
+        r = b * 16
+        for p, d in notes: tune.append((r, p, d)); r += d
+        for h, c in enumerate(halves):
+            lo, c1, c2 = CHORD[c]; r = b * 16 + h * 8
+            bass.append((r, lo, 8)); inner.append((r, c2, 8)); tenor.append((r, c1, 8))
+            for k in range(4): bass2.append((r + k * 2, lo + 12 * (k % 2), 2))
+            for k, p in enumerate((c1, c2, lo + 24, c2, c1 + 12, c2 + 12, lo + 36, c2 + 12)): arp.append((r + k, p, 1))
+    up = [(r, p + 12, d) for r, p, d in tune]
+    return {'lead': tune, 'bass': bass, 'inner': inner, 'tenor': tenor}, {'lead': up, 'bass': bass2, 'inner': arp}
+
+
+def by_hand():
+    plain, var = ode()
+    write_score(os.path.join(HERE, 'scores', 'ode.txt'), 'ode', "Beethoven's Ode to Joy (by hand), 16 bars of 4/4, a row a sixteenth", plain, 256)
+    write_score(os.path.join(HERE, 'scores', 'ode2.txt'), 'ode2', "the Ode to Joy, the variation over an arpeggio (by hand), a row a sixteenth", var, 256)
+    print('ode, ode2: 256 rows each (by hand)')
+
 
 def main(folder):
+    by_hand()
+    if folder is None: return
     for name, pc in PLAYED.items():
         voices, rows = deal_notes(played(os.path.join(folder, pc['file']), pc['track'], pc['row'], pc['split']), pc)
         write_score(os.path.join(HERE, 'scores', name + '.txt'), name,
@@ -73,4 +114,4 @@ def main(folder):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1])
+    main(sys.argv[1] if len(sys.argv) > 1 else None)
