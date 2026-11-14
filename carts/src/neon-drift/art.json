@@ -2,129 +2,215 @@
  "colors": {
   "GLASS": 200
  },
- "gradients": [
-  "sky"
- ],
  "palettes": {
   "bg1": {
    "base": 16,
    "colors": {
-    "bloom": 5,
-    "grass0": 1,
-    "grass1": 2,
-    "grass2": 3,
-    "grass3": 4
+    "glow0": 8,
+    "glow1": 9,
+    "glow2": 10,
+    "glow3": 11,
+    "glow4": 12,
+    "glow5": 13,
+    "glow6": 14,
+    "line0": 1,
+    "line1": 2,
+    "line2": 3,
+    "line3": 4,
+    "line4": 5,
+    "line5": 6,
+    "line6": 7
    }
   },
   "bg2": {
    "base": 32,
    "colors": {
-    "hill0": 1,
-    "hill1": 2,
-    "hill2": 3
+    "haze0": 4,
+    "haze1": 5,
+    "haze2": 6,
+    "haze3": 7,
+    "star0": 1,
+    "star1": 2,
+    "star2": 3
    }
   },
   "bg3": {
    "base": 48,
    "colors": {
     "edge": 6,
-    "gold0": 1,
-    "gold1": 2,
-    "gold2": 3,
-    "gold3": 4,
-    "gold4": 5,
+    "neon0": 1,
+    "neon1": 2,
+    "neon2": 3,
+    "neon3": 4,
+    "neon4": 5,
+    "pink0": 8,
+    "pink1": 9,
+    "pink2": 10,
     "shade": 7
    }
   },
   "spr0": {
    "base": 128,
    "colors": {
-    "hair0": 5,
-    "hair1": 6,
-    "hair2": 7,
-    "pants0": 12,
-    "pants1": 13,
-    "pants2": 14,
-    "pants3": 15,
-    "shirt0": 8,
-    "shirt1": 9,
-    "shirt2": 10,
-    "shirt3": 11,
-    "skin0": 1,
-    "skin1": 2,
-    "skin2": 3,
-    "skin3": 4
+    "core": 8,
+    "edge": 7,
+    "facet0": 1,
+    "facet1": 2,
+    "facet2": 3,
+    "facet3": 4,
+    "facet4": 5,
+    "facet5": 6,
+    "ink": 9
    }
   },
-  "spr1": {
-   "base": 144,
+  "spr4": {
+   "base": 192,
    "colors": {
-    "edge": 6,
-    "gold0": 1,
-    "gold1": 2,
-    "gold2": 3,
-    "gold3": 4,
-    "gold4": 5,
-    "white": 7
+    "g0": 1,
+    "g1": 2,
+    "g2": 3,
+    "g3": 4,
+    "g4": 5,
+    "g5": 6
+   }
+  },
+  "spr5": {
+   "base": 208,
+   "colors": {
+    "h0": 1,
+    "h1": 2,
+    "h2": 3,
+    "h3": 4,
+    "h4": 5
+   }
+  },
+  "spr6": {
+   "base": 224,
+   "colors": {
+    "b0": 1,
+    "b1": 2,
+    "b2": 3,
+    "b3": 4,
+    "b4": 5
    }
   }
  },
  "scenes": {
-  "field": {
-   "h": 8,
-   "mx": 0,
+  "logo": {
+   "h": 6,
+   "mx": 96,
    "my": 0,
-   "pal": 1,
+   "pal": 3,
    "w": 32
   },
-  "hills": {
-   "h": 8,
-   "mx": 32,
+  "space": {
+   "h": 28,
+   "mx": 64,
    "my": 0,
    "pal": 2,
    "w": 32
   },
-  "logo": {
-   "h": 3,
+  "tunnel": {
+   "h": 64,
    "mx": 0,
-   "my": 16,
-   "pal": 3,
-   "w": 32
+   "my": 0,
+   "pal": 1,
+   "w": 64
   }
  },
  "sprites": {
-  "gem": {
-   "pal": 1,
+  "burst0": {
+   "pal": 6,
+   "size": 32,
+   "tile": 652
+  },
+  "burst1": {
+   "pal": 6,
+   "size": 32,
+   "tile": 704
+  },
+  "burst2": {
+   "pal": 6,
+   "size": 32,
+   "tile": 708
+  },
+  "burst3": {
+   "pal": 6,
+   "size": 32,
+   "tile": 712
+  },
+  "gem0": {
+   "pal": 0,
+   "size": 32,
+   "tile": 512
+  },
+  "gem1": {
+   "pal": 0,
+   "size": 32,
+   "tile": 516
+  },
+  "gem2": {
+   "pal": 0,
+   "size": 32,
+   "tile": 520
+  },
+  "gem3": {
+   "pal": 0,
+   "size": 32,
+   "tile": 524
+  },
+  "gem4": {
+   "pal": 0,
+   "size": 32,
+   "tile": 576
+  },
+  "gem5": {
+   "pal": 0,
+   "size": 32,
+   "tile": 580
+  },
+  "gem6": {
+   "pal": 0,
+   "size": 32,
+   "tile": 584
+  },
+  "gem7": {
+   "pal": 0,
+   "size": 32,
+   "tile": 588
+  },
+  "gem8": {
+   "pal": 0,
+   "size": 32,
+   "tile": 640
+  },
+  "halo": {
+   "pal": 5,
+   "size": 32,
+   "tile": 644
+  },
+  "light16": {
+   "pal": 4,
    "size": 16,
-   "tile": 324
+   "tile": 482
   },
-  "hero0": {
-   "pal": 0,
+  "light32": {
+   "pal": 4,
    "size": 32,
-   "tile": 256
+   "tile": 648
   },
-  "hero1": {
-   "pal": 0,
-   "size": 32,
-   "tile": 260
+  "light8": {
+   "pal": 4,
+   "size": 8,
+   "tile": 480
   },
-  "hero2": {
-   "pal": 0,
-   "size": 32,
-   "tile": 264
-  },
-  "hero3": {
-   "pal": 0,
-   "size": 32,
-   "tile": 268
-  },
-  "hero4": {
-   "pal": 0,
-   "size": 32,
-   "tile": 320
+  "spark": {
+   "pal": 6,
+   "size": 8,
+   "tile": 481
   }
  },
  "tiles": {},
- "used": 287,
+ "used": 655,
  "version": 1
 }
