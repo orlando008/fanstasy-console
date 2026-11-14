@@ -9,6 +9,7 @@ const PROBE = `__expose(() => ({
   get J() { return J; }, set J(v) { J = v; }, get card() { return card; }, set card(v) { card = v; }, get sel() { return sel; }, get setup() { return setup; }, get cart() { return cart; },
   get storeMult() { return storeMult; }, get rank() { return rank; }, get dayTimer() { return dayTimer; },
   SFX, SONG, BACKGROUNDS, MONTHS, START_MONTHS, GOODS, PACES, RATIONS, TRAIL, ILLS, WEATHERS, TERRAIN, WEATHER_MILES, STARVING, REST_GAIN, EASY_GAIN, DAY_FRAMES, NAMES, CUTOFF_SAVES, BARLOW_TOLL, BARLOW_DAYS,
+  EVENTS, EVENT_RATE, rollEvent, loseDays, rollWeather,
   newJourney, alive, healthWord, dateText, nextMark, markMile, regionAt, dayOnTrail, scoreOf, crossRiver, costOf, topTen, insertTop, packName, unpackName,
   reach: (k) => reach(k), toStore: (m) => toStore(m), endJourney: () => endJourney(),
 }));`;

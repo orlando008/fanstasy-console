@@ -24,7 +24,7 @@ function storeTarget(p) {
     if (J.money >= 800) { buy('oxen', 4); buy('clothes', 10); buy('wheel', 1); buy('axle', 1); buy('tongue', 1); buy('bullets', 5); }
     else { buy('oxen', 3); buy('clothes', 5); buy('bullets', 2); }                // a farmer's $400: the food first
     want.food = Math.min(2000, Math.floor(money * 0.9 / 0.2 / 50) * 50);
-  } else want.food = Math.min(Math.max(0, 600 - J.food), Math.floor(J.money * 0.8 / (0.2 * p.storeMult) / 50) * 50);
+  } else want.food = Math.min(Math.max(0, 1000 - J.food), Math.floor(J.money * 0.9 / (0.2 * p.storeMult) / 50) * 50);   // at a fort: up to 1,000 lb
   return want;
 }
 export function pad(vm, p) {
@@ -40,7 +40,7 @@ export function pad(vm, p) {
       want = depth < 2.5 ? 0 : has('TAKE THE FERRY') >= 0 && J.money > 25 ? has('TAKE THE FERRY') : 1;
     } else if (has('FORT BRIDGER') >= 0) want = opts.route ?? 0;
     else if (has('RAFT') >= 0) want = J.money > 40 ? 1 : 0;
-    else if (has('BUY SUPPLIES') >= 0) want = J.food < 400 && J.money > 20 ? 1 : 0;
+    else if (has('BUY SUPPLIES') >= 0) want = J.food < 800 && J.money > 20 ? 1 : 0;
     else if (has('STEADY') >= 0) want = p.cardWant ?? opts.pace ?? 0;
     else if (has('FILLING') >= 0) want = p.cardWant ?? 0;
     else if (has('1 DAY') >= 0) want = 1;

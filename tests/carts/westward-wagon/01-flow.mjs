@@ -28,7 +28,10 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   vm.press('DOWN'); vm.press('A'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); ok(p.J.rations === 2, 'CHANGE RATIONS: bare bones');
   vm.press('DOWN'); vm.press('A'); const d2 = p.J.days, m2 = p.J.mile; vm.press('DOWN'); vm.press('A'); ok(p.J.days === d2 + 3 && p.J.mile === m2, 'STOP TO REST: three days, no miles');
   vm.press('B'); ok(p.state === 'trail', 'B goes back on the trail');
-  p.J.mile = 101; p.J.next = 1; vm.run(p.DAY_FRAMES + 1); ok(p.card && /KANSAS RIVER/.test(p.card.title) && p.card.choices.length === 4, 'a river stops the wagon and asks how to cross (four ways at the Kansas)');
+  while (p.card) vm.press('A');                                     // an event's card, if one came up
+  p.J.mile = 101; p.J.next = 1; vm.run(p.DAY_FRAMES + 1);
+  for (let i = 0; i < 4 && p.card && !/KANSAS/.test(p.card.title); i++) vm.press('A');   // the day's illness or event comes first
+  ok(p.card && /KANSAS RIVER/.test(p.card.title) && p.card.choices.length === 4, 'a river stops the wagon and asks how to cross (four ways at the Kansas)');
 }
 {
   const vm = newGame(3), p = vm.probe(); vm.run(2);

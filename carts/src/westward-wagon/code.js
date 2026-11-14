@@ -120,7 +120,7 @@ function nextMark(J) { for (let k = J.next; k < TRAIL.length; k++) if (!TRAIL[k]
 const markMile = (J, k) => TRAIL[k].mile - (J.route === 2 && TRAIL[k].mile > 989 ? CUTOFF_SAVES : 0);
 /** The weather for a month and region: warm in summer, cold at the ends of the year and in the mountains; rain in spring, snow in winter. */
 function rollWeather(month, region) {
-  const temp = [5, 5, 4, 3, 2, 1, 0, 0, 2, 3, 4, 5][month] + (region === 2 ? 1 : 0);
+  const temp = [5, 5, 4, 3, 2, 2, 1, 1, 2, 3, 4, 5][month] + (region === 2 ? 1 : 0) + rndi(-1, 1);   // each month's average, a step either way (midsummer: very hot a third of the days)
   const r = rnd(1);
   if (r < 0.12) return temp >= 4 ? (rnd(1) < 0.3 ? 9 : 8) : rnd(1) < 0.3 ? 7 : 6;   // rain, or snow when it is cold
   if (r < 0.15) return 10;
@@ -151,7 +151,8 @@ const ILLS = [null, { name: 'DYSENTERY', hurt: 2.5 }, { name: 'CHOLERA', hurt: 4
 function dayOnTrail(J, resting = false) {
   J.weather = rollWeather(J.month, regionAt(J.mile));
   const out = { miles: 0, arrived: -1, died: [], ill: [] };
-  if (!resting) {
+  const stuck = resting === 'stuck'; if (stuck) resting = false;      // a day lost (lost on the trail, waiting for a part): no miles and no rest
+  if (!resting && !stuck) {
     const yoke = J.oxen < 2 ? 0.5 : 1 + 0.05 * (J.oxen - 2) * (J.bg === 2 ? 1.2 : 1);
     let miles = Math.round(PACES[J.pace].miles * yoke * TERRAIN[regionAt(J.mile)] * WEATHER_MILES[J.weather]);
     if (J.oxen <= 0) miles = 0;
@@ -168,6 +169,51 @@ function dayOnTrail(J, resting = false) {
   advanceDate(J);
   if (!alive(J).length) J.done = true;
   return out;
+}
+/** n days lost (5.3): the food is eaten, the party neither travels nor rests. Returns the names of any who died. */
+function loseDays(J, n) { const died = []; for (let d = 0; d < n && !J.done; d++) died.push(...dayOnTrail(J, 'stuck').died); return died; }
+
+// --- Events (spec 5.3): each day on the move, one may happen. Each is [its chance a day, when it can happen (or null), what it does to the
+// journey, returning its lines]; the chance is multiplied by the weights of the place, season and pace. ---
+const EVENT_RATE = 1;                                               // tuning: all events' chances at once
+const someone = (J) => { const a = alive(J); return a[rndi(0, a.length - 1)]; };
+const EVENTS = [
+  [0.012, null, (J) => brokenPart(J)],
+  [0.004, (J) => J.oxen > 0, (J) => { if (J.bg === 2 && rnd(1) < 0.5) return ['AN OX WENT LAME, BUT THE FARMER', 'NURSED IT BACK TO PULLING.']; J.oxen--; return ['AN OX IS LAME. A YOKE CAN NO LONGER PULL.', `OXEN: ${J.oxen} YOKE`]; }],
+  [0.006, (J) => J.food > 40, (J) => { const f = Math.floor(J.food * (0.1 + rnd(0.2))); J.food -= f; const b = Math.floor(J.bullets * 0.3); J.bullets -= b; return ['A THIEF CAME IN THE NIGHT.', `LOST ${f} LB OF FOOD${b ? ` AND ${b * 20} BULLETS` : ''}.`]; }],
+  [0.005, null, (J) => { const n = rndi(2, 4); const d = loseDays(J, n); return ['YOU LOST THE TRAIL.', `IT TOOK ${n} DAYS TO FIND IT AGAIN.`].concat(d.map((x) => `${x} HAS DIED.`)); }],
+  [0.007, (J) => regionAt(J.mile) >= 1, (J) => { for (const p of alive(J)) p.health = Math.max(1, p.health - 6); return ['BAD WATER.', 'THE PARTY IS SICK FROM IT.']; }],
+  [0.006, (J) => regionAt(J.mile) === 1 || regionAt(J.mile) === 3, (J) => { loseDays(J, 1); return ['LITTLE GRASS FOR THE OXEN.', 'YOU RESTED THEM FOR A DAY.']; }],
+  [0.006, (J) => regionAt(J.mile) === 2 || regionAt(J.mile) === 4, (J) => { loseDays(J, rndi(1, 2)); return ['ROUGH TRAIL.', 'THE WAGON CRAWLED OVER THE ROCKS.']; }],
+  [0.004, (J) => J.weather >= 6 && J.weather <= 7, (J) => { const f = Math.floor(J.food * 0.1); J.food -= f; for (const p of alive(J)) p.health = Math.max(1, p.health - 3); return ['A HAILSTORM.', `${f} LB OF FOOD SPOILED.`]; }],
+  [0.03, (J) => J.weather >= 8, (J) => { const n = rndi(2, 4); const d = loseDays(J, n); return ['A BLIZZARD.', `SNOWED IN FOR ${n} DAYS.`].concat(d.map((x) => `${x} HAS DIED.`)); }],
+  [0.003, (J) => J.food > 50, (J) => { const f = Math.floor(J.food * 0.15), c = Math.floor(J.clothes * 0.2); J.food -= f; J.clothes -= c; return ['A FIRE IN THE WAGON.', `LOST ${f} LB OF FOOD${c ? ` AND ${c} SETS OF CLOTHING` : ''}.`]; }],
+  // good fortune
+  [0.008, (J) => J.month >= 5 && J.month <= 8 && regionAt(J.mile) !== 2, (J) => { const f = rndi(20, 40); J.food += f; return ['YOU FOUND WILD BERRIES.', `+${f} LB OF FOOD.`]; }],
+  [0.005, null, (J) => { const what = rndi(0, 2); if (what === 0) { J.food += 50; return ['AN ABANDONED WAGON BY THE TRAIL.', 'YOU FOUND 50 LB OF FOOD.']; } if (what === 1) { J.clothes += 2; return ['AN ABANDONED WAGON BY THE TRAIL.', 'YOU FOUND 2 SETS OF CLOTHING.']; } const k = ['wheel', 'axle', 'tongue'][rndi(0, 2)]; J[k]++; return ['AN ABANDONED WAGON BY THE TRAIL.', `YOU FOUND A SPARE ${k.toUpperCase()}.`]; }],
+  [0.005, (J) => alive(J).some((p) => p.ill), (J) => { const p = alive(J).find((x) => x.ill); p.ill = 0; p.health = Math.min(100, p.health + 10); return ['A DOCTOR TRAVELLING WEST', `TENDED ${p.name}, WHO IS BETTER.`]; }],
+  [0.004, (J) => J.food < 300, (J) => { J.food += 60; return ['ANOTHER PARTY SHARED', 'THEIR FOOD: +60 LB.']; }],
+  [0.004, (J) => regionAt(J.mile) >= 2, (J) => { const near = TRAIL[nextMark(J)].mile, g = Math.min(rndi(10, 25), markMile(J, nextMark(J)) - J.mile - 1); if (g > 0) J.mile += g; return regionAt(J.mile) === 3 ? ['A SHOSHONE GUIDE SHOWED YOU', `A SHORTER WAY: +${Math.max(0, g)} MILES.`] : ['A TRAPPER SHOWED YOU', `A SHORTER WAY: +${Math.max(0, g)} MILES.`]; }],
+  [0.005, (J) => regionAt(J.mile) === 3 || regionAt(J.mile) === 1, (J) => { for (const p of alive(J)) p.health = Math.min(100, p.health + 5); return regionAt(J.mile) === 3 ? ['A SHOSHONE FAMILY SHOWED YOU', 'A SPRING OF GOOD WATER.'] : ['A LAKOTA FAMILY SHOWED YOU', 'A SPRING OF GOOD WATER.']; }],
+];
+/** A broken wheel, axle or tongue: a spare mends it; without one, a carpenter mends it half the time, anyone else a third; or the party
+ * waits for a passing train to trade one. */
+function brokenPart(J) {
+  const k = ['wheel', 'axle', 'tongue'][rndi(0, 2)], name = `A WAGON ${k.toUpperCase()} BROKE.`;
+  if (J[k] > 0) { J[k]--; return [name, 'YOU REPLACED IT WITH A SPARE.']; }
+  if (rnd(1) < (J.bg === 1 ? 0.5 : 0.33)) return [name, J.bg === 1 ? 'THE CARPENTER MENDED IT.' : 'YOU MANAGED TO MEND IT.'];
+  const n = rndi(3, 6), f = Math.min(J.food, 40); J.food -= f; const d = loseDays(J, n);
+  return [name, `YOU WAITED ${n} DAYS FOR A PASSING`, `PARTY TO TRADE YOU ONE (${f} LB OF FOOD).`].concat(d.map((x) => `${x} HAS DIED.`));
+}
+/** Today's event, if any (5.3): the chances are multiplied by the pace (a hard pace breaks things) and the rations. Applies it and returns
+ * its lines, or null. */
+function rollEvent(J) {
+  const w = EVENT_RATE * (1 + 0.3 * J.pace);
+  for (const [chance, when, act] of EVENTS) {
+    if (when && !when(J)) continue;
+    if (rnd(1) < chance * w) { const lines = act(J); J.log.push(lines.join(' ')); if (!alive(J).length) J.done = true; return lines; }
+  }
+  return null;
 }
 /** The chance a well person falls ill today: more with a hard pace, poor rations, poor health and cold. */
 const illChance = (J, p, resting) => 0.006 * (1 + J.pace + J.rations + (p.health < 50 ? 2 : 0) + (COLD[J.weather] ? 1 : 0)) * (resting ? 0.5 : 1);
@@ -334,9 +380,11 @@ function travel(resting) {
   const out = dayOnTrail(J, resting), lines = [];
   for (const n of out.died) lines.push(`${n} HAS DIED.`);
   for (const t of out.ill) if (!out.died.some((n) => t.startsWith(n + ' '))) lines.push(t);   // the illness as it struck (it may have passed by the evening)
+  const ev = !resting && out.arrived < 0 && !J.done ? rollEvent(J) : null;   // an event on a day of travel that reached no landmark
   const after = () => { if (J.done) return endJourney(); if (out.arrived >= 0) reach(out.arrived); };
-  if (lines.length) { fx(out.died.length ? SFX.over : SFX.bad); showCard(dateText(J), lines, null, after); }
-  else after();
+  const evCard = () => { if (ev) { fx(/DIED|LOST|BROKE|THIEF|LAME|STORM|BLIZZARD|FIRE|BAD|ROUGH|LITTLE/.test(ev[0]) ? SFX.bad : SFX.good); showCard(dateText(J), ev, null, after); } else after(); };
+  if (lines.length) { fx(out.died.length ? SFX.over : SFX.bad); showCard(dateText(J), lines, null, evCard); }
+  else evCard();
   return out;
 }
 /** Reaching a landmark (5.3 to 5.4): its card; a river asks how to cross, a fork which way, a fort offers its store, the end ends. */
@@ -406,7 +454,8 @@ function draw() {
   cls();
   const trailOn = state === 'trail' || state === 'menu' || state === 'end' || state === 'title';
   setLayers(trailOn);
-  if (trailOn && sceneOn < 0) drawWagon();
+  if (trailOn) weatherLook();
+  if (trailOn && sceneOn < 0) { drawWagon(); if (J && state !== 'title') drawWeather(); }
   if (trailOn && state !== 'title' && sceneOn < 0) drawHudBoard();
   if (state === 'title') drawTitle();
   else if (state === 'setup') drawSetup();
@@ -459,6 +508,26 @@ function loadScene(k) {
   sceneLoaded = k;
 }
 function showScene(name) { const k = SCENE_OF[name]; if (k === undefined) return; if (sceneLoaded !== k) loadScene(k); sceneOn = k; }
+
+// --- The weather you can see, and the season (spec 5.2): rain, snow and fog on the overlay, grey clouds and a dimmer sky in bad weather,
+// the grass browning through the autumn. The colours are set from the art's own (kept at the start). ---
+const FOG = 201, CLOUD0 = 52, GRASS0 = 17;
+let baseCols = null, skyDim = 1;
+function weatherLook() {
+  if (!baseCols) { baseCols = {}; for (let e = 16; e < 64; e++) baseCols[e] = color(e); color(FOG, 26, 27, 28); }
+  const w = J ? J.weather : 3, bad = w >= 6 && w <= 10;
+  skyDim = w === 7 || w === 9 ? 0.6 : bad ? 0.8 : 1;
+  for (let i = 0; i < 3; i++) { const v = baseCols[CLOUD0 + i], g = Math.round((v[0] + v[1] + v[2]) / 3 * 0.75); color(CLOUD0 + i, ...(bad ? [g, g, g + 1] : v)); }
+  const m = J ? J.month : 4, autumn = clamp((m - 7) / 3, 0, 1), snow = w === 8 || w === 9 ? 0.5 : 0;   // September to November: towards straw
+  for (let i = 0; i < 4; i++) { const v = baseCols[GRASS0 + i]; color(GRASS0 + i, ...v.map((c, k) => Math.round(lerp(lerp(c, [24, 20, 10][k] * (0.6 + 0.15 * i), autumn * 0.7), 28, snow)))); }
+}
+function drawWeather() {
+  const w = J.weather;
+  if (w === 6 || w === 7) for (let k = 0; k < (w === 7 ? 70 : 35); k++) { const x = (hash(k) + clock * 2) % 280 - 12, y = (hash(k * 7) + clock * 6) % 152; line(x, y, x - 2, y + 5, DIM); }
+  if (w === 8 || w === 9) for (let k = 0; k < (w === 9 ? 80 : 40); k++) { const x = (hash(k) + clock + Math.round(3 * Math.sin((clock + k * 9) / 20))) % 256, y = (hash(k * 7) + clock) % 152; pset(x, y, WHITE); }
+  if (w === 10) rectfill(0, 20, 256, 132, FOG);
+}
+const hash = (k) => (Math.imul(k + 1, 2654435761) >>> 0) % 997;
 
 function drawHudBoard() {
   rectfill(0, 152, 256, 72, BOARD); for (let y = 160; y < 224; y += 16) line(0, y, 255, y, BROWN);
@@ -538,4 +607,7 @@ function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }
 const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
 
 /** Each line of the screen: the sky's colour (the SNES did its skies this way, with HDMA). */
-function scanline(y) { gradientLine(ART.gradients.sky, y); }
+function scanline(y) {
+  const v = ART.gradients.sky.lines[y];
+  if (v !== undefined) color(0, flr((v & 31) * skyDim), flr(((v >> 5) & 31) * skyDim), flr((v >> 10) * skyDim));   // dimmer under rain and snow
+}

@@ -299,6 +299,31 @@ The art is made in code by `carts/src/westward-wagon/art.py` with the kit (`scen
 
 **Step 1, results** (the bot, 4 seeds each, leaving in April): a banker arrives every time, with 3.75 of 5 alive resting never and 4.5 resting when needed, in 177 to 205 days; a carpenter the same (twice the score); a farmer, whose $400 buys about 1,200 lb of food for a trip that eats 2,600, arrives a quarter to half of the time with one or two: the hunt (step 4) is how a farmer eats. Two bugs found by the bot: a menu's choice was dropped on the frame the button was let go, and a person who fell ill and got better the same day crashed the day's card.
 
+**Step 3, built:** the events of 5.3 (`EVENTS`: each a chance a day, when it can happen and what it does), one at most on a day of travel that reached no landmark, their chances x 1.3 at strenuous and x 1.6 at grueling:
+
+| Event | Chance a day | What it does |
+|---|---|---|
+| a broken wheel, axle or tongue | 1.2 % | a spare mends it; without one a carpenter mends it half the time, anyone else a third; else 3 to 6 days waiting for a passing party to trade one (for up to 40 lb of food) |
+| a lame ox | 0.4 % | a yoke fewer (a farmer nurses it back half the time) |
+| a thief in the night | 0.6 % | 10 to 30 % of the food, 30 % of the bullets |
+| lost the trail | 0.5 % | 2 to 4 days |
+| bad water (west of the prairie) | 0.7 % | everyone -6 health |
+| little grass (bluffs, desert) | 0.6 % | a day lost |
+| rough trail (mountains, forest) | 0.6 % | 1 or 2 days lost |
+| a hailstorm (in rain) | 0.4 % | 10 % of the food, everyone -3 |
+| a blizzard (in snow) | 3 % | 2 to 4 days snowed in |
+| a fire in the wagon | 0.3 % | 15 % of the food, 20 % of the clothing |
+| wild berries (summer) | 0.8 % | +20 to 40 lb |
+| an abandoned wagon | 0.5 % | 50 lb of food, 2 sets of clothing, or a spare part |
+| a doctor travelling west | 0.5 % | one person well, +10 health |
+| another party shares food | 0.4 % | +60 lb (when short) |
+| a guide's shortcut (a Shoshone guide in the desert, a trapper elsewhere) | 0.4 % | 10 to 25 miles |
+| a Shoshone or Lakota family shows the party a spring | 0.5 % | everyone +5 health |
+
+The weather now varies around each month's average (a step either way): the first version made midsummer very hot on every dry day, and that, not the events, was killing parties in the desert. **The weather you can see:** rain and heavy rain fall as streaks, snow drifts down and whitens the ground, fog washes the far hills out (a translucent overlay), the clouds go grey and the sky dims in bad weather (the sky's gradient scaled line by line); and the grass browns from September to November. Tests: `03-events.mjs` (a spare used, the carpenter's odds, days lost, about 8 events in 150 days, a blizzard only in snow, July and December's weather).
+
+**Step 3, results** (6 seeds each, April): a banker arrives every time, with 4.7 of 5 alive when resting when needed (3.8 when never); a carpenter 2.5 and a farmer 0.2 to 0.7, both short of food: the deaths left are starvation in the last 300 miles, in October. Hunting (step 4) is the food the poorer backgrounds need, as in the classic game. The bot now buys up to 1,000 lb at a fort.
+
 Each step: build it, run `node tools/check.js westward-wagon` and `node tools/test.js westward-wagon`, write its **Built** and **Results** notes under its number here, commit and push.
 
 ## 16. Open questions
