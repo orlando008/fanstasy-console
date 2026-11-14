@@ -43,7 +43,8 @@ As the board fills up, decide what to keep for later orders, what to merge and w
 | A | On a generator: make an item. On an item: **pick it up**. While holding: **drop** it on an empty cell (it moves), on an identical item (they **merge**), on an order that wants it (**served**), or back where it came from |
 | B | While holding: put it back. Otherwise: **show what the item is** (its name, its tier, what it makes next, what it sells for) |
 | SELECT | Sell the item under the cursor (asks once: A to confirm) |
-| START | The menu: CAFE (the tasks and the decorating), RECIPES (the encyclopedia), RESUME, QUIT TO TITLE |
+| START | The menu: RESUME, CAFE (the tasks and the decorating), RECIPES (the encyclopedia), QUIT TO TITLE; it opens on CAFE while the **[!]** shows |
+| [!] | A small button on the counter, under the stars, shown (steady, not blinking) while a café task can be bought: the cursor reaches it with RIGHT from the last order bubble, and A on it opens the café (the user's idea, 14 November 2026: it replaced a blinking START: CAFE) |
 
 Only the d-pad, A, B, START and SELECT, so it is playable on a phone's touch controls.
 
@@ -270,6 +271,8 @@ The game saves after every change (a merge, an order, a task), so turning the co
 **A last art pass (after the release), from `critique.mjs` and `colors.mjs`:** the panels were a dark brown that measured as mud (0.88, the limit 0.3): they are now **chalkboards** (a deep green with a gold rim and a lighter inner line), and the menu board on the counter matches them (mud 0.13). The coins, the stars and "START: CAFE" sit on small chalkboard tags of their own (they were hard to read on the counter's grain). The title was a flat field under the logo (55 % one colour): it has a warm gradient line by line (`scanline`), the logo higher, and the best item of each line on parade under the menu; a new label. The critique's warnings went from 10 to 3 (text over the café's picture on the cards, which sit on solid panels). The wheat was tried again as a tied sheaf and read worse (a mushroom): the agreed one stays.
 
 **Fixes from the user's look at the gallery (14 November 2026):** an order did not look centred in its bubble (a picture is drawn sitting on its plate, so a short cup sat low): `art.py` writes each picture's middle to `rom/centres.bin` and the bubbles centre on it. The walls kept their stains after the paint: paint now makes the wall one colour (the darker and lighter steps take the middle one). The overlay's decorations were drawn over the bubbles (the overlay is above everything): the picture and the clock moved to the gap between the first bubble and the lamp, and the fairy lights and bunting leave out the bubbles' width. The OPEN sign was narrower than its word, half of it on the glass: it is a red sign hung in the window, wider than the word.
+
+**The [!] button (14 November 2026, the user's request):** "START: CAFE" blinked whenever a task could be bought, which late in the game was nearly always. It is now a steady **[!]** button under the stars: the cursor reaches it from the last order bubble (RIGHT), A on it opens the café, and START opens the menu with CAFE already chosen. `05-cafe.mjs` checks it.
 
 **Step 8, the audio:** the three jazz songs and 19 effects of section 11.
 

@@ -20,6 +20,19 @@ ok(p.board.includes(p.GEN0 + 2), 'the milk churn comes onto the board');
   const before = cafeMap(); p.buyTask(0); vm.run(1);
   ok(cafeMap() !== before, 'a repair changes the café\'s picture (the cracks patched)');
 }
+// The [!] button: shown when a task can be bought; the cursor reaches it past the last order, and START opens the menu on CAFE.
+{
+  const v = newGame(4), q = v.probe(); v.run(100);
+  q.stars = 0; v.run(1); ok(!q.canBuy(), 'no [!] without the stars for a task');
+  q.cur = q.SPOT_COL[2]; v.press('UP'); v.press('RIGHT'); ok(q.cur === -3, 'and the cursor stops at the last order');
+  q.stars = q.TASK_COST[0]; v.run(1); ok(q.canBuy(), 'with them the [!] shows');
+  v.press('RIGHT'); ok(q.cur === q.BUTTON, 'RIGHT from the last order goes to the [!]');
+  v.press('A'); ok(q.state === 'cafe', 'A on it opens the café');
+  v.press('B'); ok(q.state === 'play', 'B comes back');
+  v.press('START'); ok(q.paused && q.pauseSelNow === 1, 'START opens the menu with CAFE chosen'); v.press('B');
+  q.cur = q.BUTTON; q.stars = 0; v.run(2); ok(q.cur === q.SPOT_COL[2], 'when the [!] goes, the cursor goes back to the board');
+}
+
 // Styles through the café screen.
 {
   p.toCafe(); vm.run(1); ok(p.state === 'cafe' && p.cafePage === 1, 'the café screen opens on the current area');

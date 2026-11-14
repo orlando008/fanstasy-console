@@ -406,9 +406,13 @@ function placeGenerators() {
   }
 }
 
-/** The cursor: cells 0 to 34, or -1 to -3 for the orders of the three places at the counter (UP from the top row). */
+/** The cursor: cells 0 to 34, -1 to -3 the orders of the three places at the counter (UP from the top row), or BUTTON, the [!] that
+ * shows when a café task can be bought (RIGHT from the last order). */
+const BUTTON = -4, BTN_X = 222, BTN_Y = 74;
+const canBuy = () => { const a = areasDone(); return a < 6 && stars >= TASK_COST[a]; };
 function updatePlay() {
-  if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (pressed(START)) { paused = true; pauseSel = canBuy() ? 1 : 0; fx(SFX.pause); return; }   // with the [!] showing, the menu opens on CAFE
+  if (cur === BUTTON && !canBuy()) cur = SPOT_COL[2];              // the button went (a task was bought): back to the board
   for (let k = 0; k < 3; k++) if (!spots[k] && clock >= nextAt[k]) arrive(k);
   placeGenerators();
   if (storyCard) { if (pressed(A) || pressed(B)) { storyCard = null; fx(SFX.move); } return; }
@@ -418,10 +422,17 @@ function updatePlay() {
     return;
   }
   if (card !== -1 || orderCard !== -1) { if (pressed(A) || pressed(B) || pressed(SELECT)) card = orderCard = -1; return; }
+  if (cur === BUTTON) {                                             // on the [!] button: A opens the café
+    if (pressed(A)) { fx(SFX.select); toCafe(); }
+    else if (stepped(LEFT) || stepped(UP)) { cur = -3; fx(SFX.move); }
+    else if (stepped(DOWN)) { cur = SPOT_COL[2]; fx(SFX.move); }
+    return;
+  }
   if (cur < 0) {                                                    // on the orders
     const k = -1 - cur;
     if (stepped(LEFT) && k > 0) { cur++; fx(SFX.move); }
     if (stepped(RIGHT) && k < 2) { cur--; fx(SFX.move); }
+    else if (stepped(RIGHT) && canBuy() && held < 0) { cur = BUTTON; fx(SFX.move); }   // past the last bubble: the [!] button
     if (stepped(DOWN)) { cur = SPOT_COL[k]; fx(SFX.move); }
     if (pressed(A)) { if (held >= 0) hand(k); else if (spots[k]) orderCard = k; }
     else if (pressed(B)) { if (held >= 0) { held = -1; fx(SFX.drop); } else if (spots[k]) orderCard = k; }
@@ -578,7 +589,7 @@ function drawBoard() {
   }
   anims = anims.filter((a) => now - a.at < 10);
   const bob = (clock >> 4) & 1, cx = cur < 0 ? BUBBLE_TX[-1 - cur] * 8 : cellX(cur), cy = cur < 0 ? -1 : cellY(cur) - 2;
-  sprite(ART.sprites[bob ? 'cursor1' : 'cursor0'], cx, cy, { prio: 3 });
+  if (cur !== BUTTON) sprite(ART.sprites[bob ? 'cursor1' : 'cursor0'], cx, cy, { prio: 3 });
   if (held >= 0) drawPic(picOf(board[held]), cx, cy - 7 - bob + (cur < 0 ? 30 : 0), { prio: 3 });
   sparks = sparks.filter((s) => clock - s.at < 14);
   for (const s of sparks) { const d = 4 + (clock - s.at) * 1.5; sprite(ART.sprites.spark, flr(s.x + d * Math.cos(s.a) - 4), flr(s.y + d * Math.sin(s.a) - 4)); }
@@ -589,7 +600,12 @@ function drawHud() {
   rectfill(1, 62, cs.length * 8 + 6, 12, SOLID); txt(cs, 4, 64, GOLD);
   rectfill(249 - st.length * 8, 62, st.length * 8 + 6, 12, SOLID); txt(st, 252 - st.length * 8, 64, CREAM);
   const a = areasDone();
-  if (a < 6 && stars >= TASK_COST[a] && ((clock >> 5) & 1)) { rectfill(1, 74, 94, 10, SOLID); txt('START: CAFE', 4, 75, GOLD); }   // a task can be bought: under the coins, clear of the menu board
+  if (canBuy()) {                                                   // a café task can be bought: the [!] button, under the stars
+    const on = cur === BUTTON;
+    rectfill(BTN_X, BTN_Y, 30, 10, on ? GOLD : SOLID); rect(BTN_X - 1, BTN_Y - 1, 32, 12, on ? WHITE : GOLD);
+    print('[!]', BTN_X + 3, BTN_Y + 1, on ? SHADOW : GOLD);
+    if (on) { const t = 'A: THE CAFE'; rectfill(BTN_X - 96, BTN_Y, 92, 10, SOLID); txt(t, BTN_X - 92, BTN_Y + 1, WHITE); }
+  }
   if (ask) {
     const v = board[ask.i];
     panel(24, 120, 208, 40);
