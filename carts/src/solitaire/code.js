@@ -12,8 +12,8 @@ const SHADOW = 1, PANEL = 3, RED = 6, DIM = 10, GREEN = 11, CYAN = 13, GOLD = 14
 const ART = {
   tiles: {},
   sprites: {"hand": {"pal": 1, "size": 16, "tile": 908}},
-  scenes: {},
-  colors: {"FELTDARK": 114, "GLASS": 200, "OUTLINE": 113},
+  scenes: {"table": {"h": 28, "mx": 0, "my": 0, "pal": 1, "w": 32}},
+  colors: {"FELTDARK": 18, "GLASS": 200, "OUTLINE": 113},
 };
 // END ART
 
@@ -330,7 +330,9 @@ function init() {
     for (let i = 0; i < 256; i++) dset(i, 0);
     dset(VERSION_SLOT, SAVE_VERSION);
   }
-  bg(0, { show: false });                     // the table is the backdrop for now (the art proof draws the felt)
+  const t = ART.scenes.table;                 // the felt and its rim, on layer 2, under everything
+  bg(0, { show: false }); bg(1, { show: false });
+  bg(2, { mx: t.mx, my: t.my, mw: t.w, mh: t.h, x: 0, y: 0, wrap: false, show: true });
   blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (GLASS) are see-through
   if (skipTitle) startGame(); else toTitle();
 }
@@ -458,10 +460,15 @@ function drawTable() {
   txt(`MOVES ${moves}`, 4, 2, WHITE);
   txt(`DRAW ${drawN}`, 196, 2, DIM);
 }
-/** An empty pile: its outline on the felt, with the letter of the card that may start it. */
+/** An empty pile: a darker place in the felt with a gold outline, rounded as a card is, and the letter of the card
+ * that may start it. */
 function slot(k, y, letter) {
-  rectfill(COLX(k) + 1, y + 1, 30, 46, FELTDARK); rect(COLX(k), y, 32, 48, OUTLINE);
-  if (letter) print(letter, COLX(k) + 12, y + 20, OUTLINE);
+  const x = COLX(k);
+  rectfill(x + 2, y + 2, 28, 44, FELTDARK);
+  line(x + 2, y, x + 29, y, OUTLINE); line(x + 2, y + 47, x + 29, y + 47, OUTLINE);
+  line(x, y + 2, x, y + 45, OUTLINE); line(x + 31, y + 2, x + 31, y + 45, OUTLINE);
+  pset(x + 1, y + 1, OUTLINE); pset(x + 30, y + 1, OUTLINE); pset(x + 1, y + 46, OUTLINE); pset(x + 30, y + 46, OUTLINE);
+  if (letter) print(letter, x + 12, y + 20, OUTLINE);
 }
 
 function drawTitle() {

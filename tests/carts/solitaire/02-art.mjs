@@ -18,10 +18,15 @@ const count = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); let 
 // 2. On the screen.
 {
   const vm = newGame(2), p = vm.probe(); vm.run(3);
-  const backdrop = rgb(vm, 0);
-  ok((vm.out32[200 * 256 + 128] >>> 0) === backdrop, 'the felt shows where there are no cards');
-  ok(p.cols.every((c, k) => (vm.out32[(66 + 2) * 256 + 4 + 36 * k + 16] >>> 0) !== backdrop), 'every column is drawn where it belongs');
-  ok((vm.out32[30 * 256 + 20] >>> 0) !== backdrop, 'and the stock');
+  const felt = new Set([1, 2, 3, 4, 5].map((k) => rgb(vm, 16 + k))), wood = new Set([6, 7, 8, 9].map((k) => rgb(vm, 16 + k)));
+  const L = vm.ppu.layers[2], t = p.ART.scenes.table;
+  ok(L.show && L.mx === t.mx && L.my === t.my && t.w === 32 && t.h === 28, 'layer 2 shows the table, the whole screen of it');
+  ok(felt.has(vm.out32[200 * 256 + 128] >>> 0), 'the felt shows where there are no cards');
+  let shades = new Set(); for (let x = 40; x < 216; x++) shades.add(vm.out32[180 * 256 + x] >>> 0);
+  ok(shades.size >= 2, 'with a weave in it (more than one shade along a line)', `${shades.size} shades`);
+  ok(wood.has(vm.out32[1 * 256 + 128] >>> 0) && wood.has(vm.out32[112 * 256 + 1] >>> 0), 'a wooden rim runs round the edge');
+  ok(p.cols.every((c, k) => !felt.has(vm.out32[(66 + 2) * 256 + 4 + 36 * k + 16] >>> 0)), 'every column is drawn where it belongs');
+  ok(!felt.has(vm.out32[30 * 256 + 20] >>> 0), 'and the stock');
   ok(count(vm, p.ART.colors.OUTLINE, 220, 10, 256, 62) > 50, 'the empty foundations are gold outlines');
   ok(vm.ppu.oamCount <= 40, 'a table at the deal is few sprites', `${vm.ppu.oamCount}`);
 }

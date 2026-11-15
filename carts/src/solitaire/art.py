@@ -17,11 +17,38 @@ art = Art()
 art.region('bg', 1, 63)        # the felt and the rim (the art proof, step 2)
 art.region('spr', 64, 1023)    # the cards' buffers and slots, the hand
 
-# The table: a flat green felt for now (the backdrop); the art proof (step 2) draws the real one.
-art.backdrop('1e5a32')
+# The table (spec 12): a green baize with a fine diagonal twill, darker towards the corners (in three steps, a tile at a
+# time, so the 16 px pattern shares tiles), inside a carved wooden rim 4 px wide. Every pattern repeats on the tile grid
+# (the twill every 16 px, the wood's grain every 32), so the whole screen costs a few dozen of the 63 BG tiles.
+felt = art.palette(1, {'felt': ['0c2e1c', '134226', '1a5630', '206638', '287642'], 'wood': ramp('8a5a30', 4), 'line': '1a1008'})
+F, W = felt.felt, felt.wood
+
+def vignette(tx, ty):
+    """How much darker the felt is in tile (tx, ty): 0 in the middle, 2 in the corners."""
+    u, v = (tx + 0.5) / 32 * 2 - 1, (ty + 0.5) / 28 * 2 - 1
+    d = (u * u * 0.8 + v * v) ** 0.5
+    return 0 if d < 0.8 else 1 if d < 1.05 else 2
+
+def table(x, y):
+    if x < 4 or x > 251 or y < 4 or y > 219:                       # the rim: grain along it, a bevel, a dark inner line
+        if x == 3 or x == 252 or y == 3 or y == 220: return felt.line
+        along = x if (y < 4 or y > 219) else y
+        across = min(x, 255 - x, y, 223 - y)
+        g = (hsh((along % 32) // 3 * 7 + across * 3) % 3 == 0) or ((along + across * 5) % 32 in (5, 6, 19))
+        base = 3 if across == 0 else 2 if across == 1 else 1
+        return W[max(0, base - 1)] if g else W[base]
+    lv = vignette(x // 8, y // 8)
+    px, py = x % 16, y % 16
+    shade = 3 if lv < 2 else 2                                      # the corners a shade darker...
+    if (px + py) % (2 if lv == 1 else 4) == 0: shade -= 1           # ...and between, the twill's dark threads twice as dense
+    elif hsh(px * 31 + py * 17) % 11 == 0: shade += 1               # a fleck of lighter wool
+    if x < 8 or x > 247 or y < 8 or y > 215: shade -= 1             # the shadow the rim casts
+    return F[max(0, min(4, shade))]
+
+art.scene('table', Img.make(256, 224, table), pal=felt, at=(0, 0), solid=True, region='bg')
 art.color(200, '0c2a18', 'GLASS')     # the panels' fill, seen through (code.js blends the overlay)
 art.color(113, 'd8b048', 'OUTLINE')   # the empty piles' outlines and the hint (solid: under 192)
-art.color(114, '164a2a', 'FELTDARK')  # the empty piles' insides
+art.colors['FELTDARK'] = felt.cgram('felt1')   # the inside of an empty pile: the felt's dark shade
 
 # The cards (the card kit, playbook section 2 "Card games"): the large 32 x 48 deck in one shared palette (red and
 # black inks together), so a column of overlapping cards can be composed into one buffer and drawn as a few sprites:

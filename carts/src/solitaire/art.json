@@ -1,10 +1,25 @@
 {
  "colors": {
-  "FELTDARK": 114,
+  "FELTDARK": 18,
   "GLASS": 200,
   "OUTLINE": 113
  },
  "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "felt0": 1,
+    "felt1": 2,
+    "felt2": 3,
+    "felt3": 4,
+    "felt4": 5,
+    "line": 10,
+    "wood0": 6,
+    "wood1": 7,
+    "wood2": 8,
+    "wood3": 9
+   }
+  },
   "spr1": {
    "base": 144,
    "colors": {
@@ -49,7 +64,15 @@
  "rom": [
   "cards_large"
  ],
- "scenes": {},
+ "scenes": {
+  "table": {
+   "h": 28,
+   "mx": 0,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  }
+ },
  "sprites": {
   "hand": {
    "pal": 1,
@@ -58,6 +81,6 @@
   }
  },
  "tiles": {},
- "used": 916,
+ "used": 964,
  "version": 1
 }

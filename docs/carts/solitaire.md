@@ -1,7 +1,7 @@
 # Solitaire: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 1 built: the table and every rule of Klondike, DRAW 1 and DRAW 3 (no score, menus or art yet)
+**Status:** Step 2 built, waiting for the user's word on the art proof: the table, every rule of Klondike, the felt
 **Shelf and players:** Puzzle; 1 player: the same as `genre` and `players` in `carts/src/solitaire/meta.json`.
 **Cart source:** `carts/src/solitaire/` → `carts/solitaire.nova`
 
@@ -190,6 +190,10 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
 2. **The art proof:** the felt, the rim, the empty piles' outlines, the hand and the cards on one real screen (a game
    in progress), from the recipes of `docs/dev/art-recipes.md`; then `node tools/devkit/art/proof.mjs solitaire`, the
    picture sent to the user, and what they said written here.
+   - **Built:** the felt (a deep green baize with a diagonal twill and flecks, its threads denser and then a shade
+     darker towards the corners, a shadow under the rim) and a carved wooden rim 4 px wide, all one scene on layer 2
+     in 48 of the 63 BG tiles (the patterns repeat every 16 and 32 px, so tiles are shared); the empty piles as darker
+     felt with rounded gold outlines. The proof: `node tools/devkit/art/proof.mjs solitaire --screen holding`.
    - **Agreed:** TODO (the date, and the changes asked for)
 3. **Score, clock, undo and help:** the scoring of section 9, the HUD, undo, the smart A, auto-finish, the stuck check
    and its panel, the hint.
