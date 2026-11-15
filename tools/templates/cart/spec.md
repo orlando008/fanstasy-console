@@ -2,7 +2,7 @@
 
 **Version:** 0.1 (draft)
 **Status:** Scaffolded: the frame of the game (title, play, pause, game over, top 10, records, sound cues) works; the game is a placeholder
-**Shelf and players:** TODO (Arcade, Puzzle, Racing or Strategy; 1 or 1-4): the same as `carts/src/{{NAME}}/meta.json`.
+**Shelf and players:** {{GENRE}}; players TODO (`1` to `4`, or a range such as `1-2`): the same as `genre` and `players` in `carts/src/{{NAME}}/meta.json`.
 **Cart source:** `carts/src/{{NAME}}/` → `carts/{{NAME}}.nova`
 
 > Fill this in before building (docs/dev/playbook.md, section 1): ask the user the few design questions that change
@@ -87,7 +87,7 @@ The frame's layout (from the starter). Keep slot 0 and the top 10 unless the gam
 
 | Asset | Budget |
 |---|---|
-| Code | TODO KB of the 64 KB limit (`node tools/check.js {{NAME}}` checks this figure against the code) |
+| Code | TODO KB of the 64 KB limit (`node tools/check.js {{NAME}}` warns if this figure is more than 2 KB off; write a bare number such as 31.4 KB first in the cell, as it skips "about" or "≤") |
 | Tiles | TODO of 1,024 |
 | Sprites | TODO (128 in OAM, 32 per line) |
 | Songs / SFX | TODO |
