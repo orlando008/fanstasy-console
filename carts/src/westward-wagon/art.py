@@ -36,7 +36,7 @@ ground = art.palette(1, P0['ground'])
 near = art.palette(2, P0['near'])
 far = art.palette(3, P0['far'])
 wag = art.sprite_palette(0, {'canvas': ramp('ece4cc', 4), 'wood': ramp('8a5a30', 4), 'iron': ramp('3a3440', 3)})
-ox = art.sprite_palette(1, {'hide': ramp('9a6a3a', 5), 'dark': ramp('5a3a22', 3), 'horn': ramp('e8dcc0', 2), 'yoke': ramp('7a5030', 3)})
+ox = art.sprite_palette(1, {'hide': ramp('9a6a3a', 5), 'far': ramp('5a3a22', 3), 'horn': ramp('e8dcc0', 2), 'yoke': ramp('7a5030', 3)})
 
 # --- The trail's layers: the prairie in the sheet (the tools show it); every region, the prairie too, in rom/regions.bin ---
 art.scene('far', far_layer(far, 'prairie'), pal=far, at=(0, 0))
@@ -87,7 +87,7 @@ def wagon(phase):
 def oxen(step):
     """Two oxen, one behind the other, facing right; step 0 to 3: their walk."""
     out = Img(48, 32)
-    for k, (dx, dy, R) in enumerate(((0, 0, ox.dark), (6, 3, ox.hide))):   # the far ox darker, then the near one
+    for k, (dx, dy, R) in enumerate(((0, 0, ox.far), (6, 3, ox.hide))):   # the far ox's own darker hide, then the near one
         d = Canvas(48, 32)
         body = R[3] if len(R) > 3 else R[1]
         d.fill(blob([(6, 12), (10, 7), (24, 6), (34, 8), (36, 14), (30, 18), (12, 18)]), body, part='body')
@@ -98,7 +98,7 @@ def oxen(step):
         for i, lx in enumerate((10, 14, 27, 31)):
             s = sw if i % 2 == 0 else -sw
             d.fill(brush([(lx, 16), (lx + s, 24)], 1.3, 1.0), R[0] if i in (1, 3) else R[1], part='leg%d' % i)
-            d.fill(oval(lx + s, 25, 1.2, 0.9), ox.dark[0], part='hoof%d' % i)
+            d.fill(oval(lx + s, 25, 1.2, 0.9), ox.far[0], part='hoof%d' % i)
         d.fill(brush([(6, 10), (3, 18)], 0.8, 0.6), R[0], part='tail')
         im = d.render(outline=ox)
         for y in range(32):

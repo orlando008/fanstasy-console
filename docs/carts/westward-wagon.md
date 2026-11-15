@@ -1,7 +1,7 @@
 # Westward Wagon: Cart Specification
 
-**Version:** 0.2 (design agreed with the user, not built)
-**Status:** Scaffolded (`node tools/new-cart.js westward-wagon "Westward Wagon"`: the frame of the game works, the game is a placeholder). Next: step 1 of section 15
+**Version:** 1.0
+**Status:** Released (all nine steps of section 15 built; in the Library, `carts/westward-wagon.nova.png`)
 **Cart source:** `carts/src/westward-wagon/` → `carts/westward-wagon.nova`
 
 ---
@@ -265,10 +265,10 @@ The art is made in code by `carts/src/westward-wagon/art.py` and `world.py` (the
 
 | Asset | Budget |
 |---|---|
-| Code | about 50 KB of the 64 KB limit, `"strip"` and `"mangle"` if needed; the texts (events, landmarks, diary phrases) in the ROM, read at the start (`carts/src/clockwork-dominion/book.py` is the pattern) |
-| Tiles | 5 regions' parallax layers (repeating, about 60 tiles each); the HUD board; the wagon, oxen and animals as sprites (about 250); one landmark scene at a time, copied from the ROM (a reserved area of about 200 tiles) |
-| ROM | the landmark scenes (about 15 of up to 200 tiles each, packed: about 50 KB), the texts (about 15 KB) |
-| Songs / SFX | 6 to 8 folk tunes; about 20 effects |
+| Code | 61.9 KB of the 64 KB limit, packed without its comments (`"strip"`); the texts of the places, people and regions in the ROM (`book.py`), the events' in the code (each carries its numbers) |
+| Tiles | one region's three layers at a time, from the ROM (tiles 1 to 380: 270 to 366 a region); the wagon, oxen, animals and grave as sprites (342 of 368, tiles 432 to 799); one landmark scene at a time, from the ROM (tiles 800 to 1023 and 381 to 431: up to 275) |
+| ROM | 71 KB of 128: the regions (30 KB) and the scenes (32 KB), LZ-packed; the book (8 KB). The `.nova.png` payload 108 KB of 147 |
+| Songs / SFX | 8 songs (32 patterns, 9 KB of samples); 13 effects |
 
 ## 15. Implementation plan
 
@@ -346,6 +346,10 @@ The weather now varies around each month's average (a step either way): the firs
 **Step 7, results** (4 seeds, a banker and a farmer, April): every run finishes cleanly through the five regions; a banker arrives with 4.75 of 5, a farmer with 1.75.
 
 **Step 8, built:** the music: `scores.py` reads seven public domain engravings from the Mutopia Project with `midi.py` (a small MIDI reader, so no packages are needed) into `scores/` (a skyline for the guitar arrangement whose tune shares its track; the bagpipe engraving's grace notes left out; a drone of the game's own under Amazing Grace), and `audio.py` arranges them as eight songs (section 11): 32 patterns, 9 KB of samples. Each region plays its tune from the moment the wagon enters it (with its layers; its card after the day's), a grave plays the hymn while it is made and the region's tune after, the arrival *Home! Sweet Home!*, the whole party lost the hymn. Four new effects: a death's toll, the store's till (when something is bought), a landmark's chord, the ox's bell. Levels (`loud.mjs --check`): every song within the limits (medians 0.030 to 0.041, the lead 0.021 to 0.025 and 0.62 to 0.74 of the mix, pierce at most 0.0120); effects 0.007 to 0.063. `clash.py` finds only the engravings' own passing notes (the fiddle's G over D in *Soldier's Joy*, an appoggiatura in *Slumber*, B flat over the C7's E in *Home! Sweet Home!*). Tests: `08-audio.mjs` (each region its tune, a death's toll and the grave's hymn and back, a landmark's chord, the till, the arrival's song, the ox's bell).
+
+**Step 9, built:** the balance (below); a day now rolls in 90 frames (a second and a half: with the cards, the landmarks, the hunts and the floats a journey is about 25 minutes for a person, the bot's 3 minutes being only the rolling), and the terrain is quicker (the bluffs 0.95, the mountains 0.75, the desert 0.9, the forests 0.8 of the prairie's miles), so a careful party arrives in late September or October. The panels and cards are a walnut (`colors.mjs --check` found the darker brown muddy: 0.95 of the panels' pixels, now 0.08), and the far ox's darker hide is named for what it is (`far`, not `dark`, which the check reads as a shade). The label (the title), `carts/westward-wagon.nova.png`, the Library entry and a README row (`node tools/release.js westward-wagon`).
+
+**Step 9, results** (the bot, 3 seeds for each of 18 cases: the three backgrounds, leaving in March, May or July, resting when needed or never; every run finished cleanly): a banker and a carpenter arrive every time with 4.3 to 5 of 5, in 173 to 237 days; a farmer arrives a third of the time to always, with 0.3 to 2, the hard game for three times the score. Resting when needed saves a person or none and costs about 30 days; leaving in July costs nobody but arrives in winter. The carpenter plays as the banker in the bot's hands (both can afford the same outfit); their difference is the score and the mending.
 
 Each step: build it, run `node tools/check.js westward-wagon` and `node tools/test.js westward-wagon`, write its **Built** and **Results** notes under its number here, commit and push.
 

@@ -547,7 +547,7 @@ function init() {
   loadBook(); graveList = graves(); loadRegion(0);
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { for (let i = 0; i < 256; i++) dset(i, 0); dset(VERSION_SLOT, SAVE_VERSION); }
   for (const [layer, name] of [[0, 'ground'], [1, 'near'], [2, 'far']]) { const sc = ART.scenes[name]; bg(layer, { mx: sc.mx, my: sc.my, mw: sc.w, mh: sc.h, x: 0, y: 0, wrap: true, show: true }); }
-  color(SOLID, 6, 4, 2); color(BOARD, 14, 9, 5);
+  color(SOLID, 10, 4, 1); color(BOARD, 14, 9, 5);                   // a walnut panel (a duller brown read as mud: colors.mjs)
   color(WATER, 6, 12, 18); color(WATER2, 14, 21, 26); color(ROCK, 10, 9, 9); color(ROCK2, 17, 16, 15); color(BANK, 9, 14, 6); color(BANK2, 20, 17, 10); color(CANVAS, 29, 28, 24); color(WOOD, 13, 8, 4);
   blend({ layers: ['overlay'], half: true });
   if (skipTitle) { J = newJourney(0, 3, NAMES); Object.assign(J, { departed: true, oxen: 4, food: 900, clothes: 10, bullets: 200, wheel: 1, axle: 1, tongue: 1, money: 1600 - 4 * 40 - 180 - 100 - 20 - 30 }); toTrail(); }

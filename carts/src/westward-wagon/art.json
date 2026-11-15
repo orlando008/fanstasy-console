@@ -818,9 +818,9 @@
   "spr1": {
    "base": 144,
    "colors": {
-    "dark0": 6,
-    "dark1": 7,
-    "dark2": 8,
+    "far0": 6,
+    "far1": 7,
+    "far2": 8,
     "hide0": 1,
     "hide1": 2,
     "hide2": 3,
