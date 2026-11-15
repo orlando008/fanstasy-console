@@ -1,7 +1,7 @@
 # Solitaire: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 6 built: every rule, the felt, the score, the clock, the help, a bot, the menus, statistics, saves and the win cascade
+**Status:** Step 7 built: the whole game and its art; the audio pass and the release are left
 **Shelf and players:** Puzzle; 1 player: the same as `genre` and `players` in `carts/src/solitaire/meta.json`.
 **Cart source:** `carts/src/solitaire/` → `carts/solitaire.nova`
 
@@ -156,7 +156,8 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
   (`drawStack`), and a scanline crosses at most one per column. Buffer 7 holds the run in the hand. The stock, the
   waste and the foundations' top cards are drawn with the kit's `drawCard`. All the cards are in one sprite palette
   (both inks), so cards of both colours can share a sprite.
-- **Overlay:** the HUD, the panels (see-through, `blend`), the hint's arrows, and the cascade's trails.
+- **Overlay:** the HUD, the panels (solid), the hint's outlines, the title's lettering (from `rom/logo.bin`) and the
+  cascade's trails. It is never blended.
 
 ## 13. Persistence (save slots)
 
@@ -175,8 +176,8 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
 
 | Asset | Budget |
 |---|---|
-| Code | 38.8 KB of the 64 KB limit after step 6 (the card kit's CARDS block with `sort`, `anim` and `stack` about 9 KB); about 40 KB planned with the score, hint, cascade and records |
-| ROM | 47 KB, the large cards (`rom/cards_large.bin`) |
+| Code | 39.8 KB of the 64 KB limit after step 7 (the card kit's CARDS block with `sort`, `anim` and `stack` about 9 KB); about 40 KB planned with the score, hint, cascade and records |
+| ROM | 50 KB: the large cards 47 KB (`rom/cards_large.bin`), the logo 3 KB, the backs 24 bytes |
 | Tiles | 916 of 1,024 after step 1: the nine stack buffers 720 (9 x 80: 32 x 160 px, whole sprites), eight card slots 192, the hand 4; the felt, rim and outlines have tiles 1 to 63 |
 | Sprites | about 60 (seven columns of five, the stock, waste and foundations' 24, the hand and a held run 6) of 128; at most about 12 on a line |
 | Songs / SFX | 3 songs from the library; the card kit's 4 effects and the starter's 4 |
@@ -241,6 +242,15 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
      frame 3.0 ms.
 7. **Art pass:** the title (a fan of cards), the panels, the records screen, the card backs (`gallery.mjs` and
    `critique.mjs` over every screen).
+   - **Built:** the title: "SOLITAIRE" in the kit's big lettering (twice the font, a gold gradient, a dark outline and
+     shadow; `rom/logo.bin`, copied onto the overlay, since the tile sheet is nearly full), a fan of the ace of spades,
+     king of hearts, queen of clubs and jack of diamonds with a face-down card last (the back chosen in the menu,
+     bobbing), the menu in a panel. The panels are solid now (dark green, a gold border, a lighter line inside it):
+     the twill no longer shows through their text, and the overlay is never blended. The pause and win panels were
+     made big enough for their lines.
+   - **Results:** 139 checks (four more in `02-art.mjs`). `critique.mjs` leaves three kinds of warning, all looked at
+     and kept: "noisy" on the felt's twill (the look agreed in step 2), "text on picture" on the logo's dark outline
+     over the dark felt (it reads well on the sheets), and the hand under the NO MOVES LEFT panel.
 8. **Audio pass:** the three library songs, the card sounds and their cues, the levels.
 9. **Polish and release:** frame times with every card on the table, the label, the PNG cart, the Library
    (`node tools/release.js solitaire`) and a README row.

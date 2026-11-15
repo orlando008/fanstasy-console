@@ -46,7 +46,10 @@ def table(x, y):
     return F[max(0, min(4, shade))]
 
 art.scene('table', Img.make(256, 224, table), pal=felt, at=(0, 0), solid=True, region='bg')
-art.color(240, '081c10', 'GLASS')     # the panels' fill, seen through (code.js blends the overlay); 192 to 207 are the cards' palette
+# The panels (pause, NO MOVES LEFT, the win, the menus, the records): solid, so the felt's twill does not show through
+# their text; dark green with a gold border and a lighter line inside it. Overlay colours, under 192 (solid).
+art.color(115, '0a2214', 'PANELFILL')
+art.color(116, '2c5e3a', 'PANELLINE')
 art.color(113, 'd8b048', 'OUTLINE')   # the empty piles' outlines and the hint (solid: under 192)
 art.colors['FELTDARK'] = felt.cgram('felt1')   # the inside of an empty pile: the felt's dark shade
 
@@ -67,6 +70,13 @@ for base in ('2c4c9c', 'a83038', '2a7a40', 'b88a28'):
         r, g, b = (int(hx[i:i + 2], 16) >> 3 for i in (0, 2, 4)); v = r | (g << 5) | (b << 10)
         backs += bytes([v & 255, v >> 8])
 art.rom['backs'] = bytes(backs)
+
+# The title's lettering: the kit's big letters (twice the font, a gold gradient, a dark outline and shadow), in BG
+# palette 2. The tile sheet is nearly full, so the picture goes in the ROM (rom/logo.bin: its width, its height, then a
+# CGRAM entry a pixel, 0 for none) and code.js copies it onto the overlay on the title.
+logo_pal = art.palette(2, {'gold': ramp('e8b848', 5), 'ink': '1a1008', 'shade': '061008'})
+logo = big_text('SOLITAIRE', logo_pal.gold, scale=2, outline=logo_pal.ink, shadow=logo_pal.shade)
+art.rom['logo'] = bytes([logo.w, logo.h] + [(logo_pal.base + v) if v else 0 for row in logo.px for v in row])
 
 # The hand: the icon library's cursor, in its own palette.
 items = items_palette(art, 1)

@@ -13,7 +13,7 @@ const ART = {
   tiles: {},
   sprites: {"hand": {"pal": 1, "size": 16, "tile": 908}},
   scenes: {"table": {"h": 28, "mx": 0, "my": 0, "pal": 1, "w": 32}},
-  colors: {"BACK0": 202, "BACK1": 203, "BACK2": 204, "FELTDARK": 18, "GLASS": 240, "OUTLINE": 113},
+  colors: {"BACK0": 202, "BACK1": 203, "BACK2": 204, "FELTDARK": 18, "OUTLINE": 113, "PANELFILL": 115, "PANELLINE": 116},
 };
 // END ART
 
@@ -419,7 +419,7 @@ function init() {
   const t = ART.scenes.table;                 // the felt and its rim, on layer 2, under everything
   bg(0, { show: false }); bg(1, { show: false });
   bg(2, { mx: t.mx, my: t.my, mw: t.w, mh: t.h, x: 0, y: 0, wrap: false, show: true });
-  blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (GLASS) are see-through
+  blend(null);                                // the panels are solid, and the cascade stamps cards (entries 192 up) on the overlay
   drawN = dget(MODE_SLOT) === 3 ? 3 : 1; setBack(dget(BACK_SLOT) & 3);
   if (skipTitle) startGame(); else toTitle();
 }
@@ -574,9 +574,7 @@ function updatePause() {
 const OUTLINE = ART.colors.OUTLINE, FELTDARK = ART.colors.FELTDARK;
 
 function draw() {
-  // the cascade and the win panel keep the overlay (the trails), and do not blend it: the cards' colours are from 192 up
-  const keep = state === 'cascade' || state === 'over';
-  blend(keep ? null : { layers: ['overlay'], half: true });
+  // the cascade and the win panel keep the overlay (the cascade's trails)
   if (state === 'cascade') { if (timer <= 1) cls(); drawTable(false); for (const k of flying) stamp(k.c, k.x, k.y); return; }
   if (state !== 'over') cls();
   if (state === 'play') drawTable(true);
@@ -585,7 +583,7 @@ function draw() {
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
   if (state === 'over') {
-    panel(40, 72, 176, 80); ctxt('YOU WIN!', 82, GOLD);
+    panel(40, 68, 176, 88); ctxt('YOU WIN!', 80, GOLD);
     ctxt(`TIME ${clockText()}  MOVES ${moves}`, 100, WHITE); ctxt(`TIME BONUS ${bonus}`, 112, DIM); ctxt(`SCORE ${score}`, 124, GOLD);
     if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 140, DIM);
   }
@@ -651,13 +649,25 @@ function emptyPile(k, y, letter) {
   if (letter) print(letter, x + 12, y + 20, OUTLINE);
 }
 
+/** The title: the lettering, a fan of cards (its last face down: the back chosen in the menu), the menu in a panel. */
+const FAN = [0, 25, 50, 36];                               // the ace of spades, king of hearts, queen of clubs, jack of diamonds
 function drawTitle() {
-  ctxt('SOLITAIRE', 60, GOLD);
+  drawLogo(128, 22);
+  const n = FAN.length + 1, sp = 26, x0 = 128 - ((n - 1) * sp + 32) / 2;
+  for (let i = n - 1; i >= 0; i--) {                       // the right-hand card first: the first sprites are on top
+    const d = (i - (n - 1) / 2) / ((n - 1) / 2), x = Math.round(x0 + i * sp), y = Math.round(54 + 6 * d * d + (i === n - 1 ? (clock >> 5) % 2 : 0));
+    if (i === n - 1) drawCard(0, x, y, { down: true }); else drawCard(FAN[i], x, y);
+  }
+  panel(36, 118, 184, 72);
   TITLE_ITEMS.forEach((s, i) => {
-    const on = i === titleSel, label = i === 2 ? `${s}  < ${BACK_NAMES[back]} >` : s;
-    txt(`${on ? '> ' : '  '}${label}`, 72, 100 + i * 14, on ? WHITE : DIM);
+    const on = i === titleSel, label = i === 2 ? `${s} < ${BACK_NAMES[back]} >` : s;
+    txt(`${on ? '>' : ' '} ${label}`, 44, 128 + i * 14, on ? WHITE : DIM);
   });
-  drawCard(0, 112, 164, { down: true });                   // the back as it will be
+}
+/** The title's lettering, from rom/logo.bin (art.py), centred on x, copied onto the overlay a pixel at a time. */
+function drawLogo(cx, y) {
+  const b = rom('logo'), w = b[0], h = b[1], x = cx - (w >> 1);
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) { const c = b[2 + j * w + i]; if (c) pset(x + i, y + j, c); }
 }
 
 const mmss = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
@@ -667,7 +677,7 @@ function drawRecords() {
   ctxt(page ? '< STATISTICS >' : '< TOP 10 >', 20, GOLD);
   if (page === 0) topTen().forEach((e, i) => {
     const y = 40 + i * 14, on = i === hl;
-    if (on && timer % 40 < 30) rectfill(20, y - 2, 216, 12, PANEL);
+    if (on && timer % 40 < 30) rectfill(20, y - 2, 216, 12, ART.colors.PANELLINE);
     txt(String(i + 1).padStart(2), 24, y, i === 0 ? GOLD : DIM);
     txt(e.score ? e.initials : '---', 48, y, on ? GOLD : WHITE);
     txt(e.score ? String(e.score).padStart(6) : '', 84, y, i === 0 ? GOLD : WHITE);
@@ -695,18 +705,22 @@ function drawInitials() {
   ctxt('ENTER YOUR INITIALS', 90, DIM);
   for (let i = 0; i < 3; i++) {
     const on = i === ini.pos, x = 84 + i * 32;
-    rect(x - 2, 106, 28, 20, on ? GOLD : PANEL);
+    rect(x - 2, 106, 28, 20, on ? GOLD : ART.colors.PANELLINE);
     txt(ini.chars[i], x + 10, 112, on ? GOLD : WHITE);
   }
   if (timer % 60 < 40) ctxt('START: SAVE', 160, WHITE);
 }
 
 function drawPause() {
-  panel(64, 76, 128, 72);
-  ctxt('PAUSED', 84, GOLD);
-  PAUSE_ITEMS.forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 100 + i * 10, i === pauseSel ? WHITE : DIM));
+  panel(52, 68, 152, 88);
+  ctxt('PAUSED', 78, GOLD);
+  PAUSE_ITEMS.forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 64, 96 + i * 11, i === pauseSel ? WHITE : DIM));
 }
 
-function panel(x, y, w, h) { rectfill(x, y, w, h, ART.colors.GLASS); rect(x, y, w, h, PANEL); }
+/** A panel: solid dark green, a gold border with a lighter line inside it. */
+function panel(x, y, w, h) {
+  rectfill(x, y, w, h, ART.colors.PANELFILL);
+  rect(x, y, w, h, OUTLINE); rect(x + 2, y + 2, w - 4, h - 4, ART.colors.PANELLINE);
+}
 function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }
 const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);

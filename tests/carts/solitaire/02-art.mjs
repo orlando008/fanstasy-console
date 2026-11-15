@@ -30,4 +30,15 @@ const count = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); let 
   ok(count(vm, p.ART.colors.OUTLINE, 220, 10, 256, 62) > 50, 'the empty foundations are gold outlines');
   ok(vm.ppu.oamCount <= 40, 'a table at the deal is few sprites', `${vm.ppu.oamCount}`);
 }
+// 3. The title and the panels (the art pass, step 7).
+{
+  const vm = newGame(3, { title: true }), p = vm.probe(); vm.run(3);
+  const logo = vm.cart.rom.logo, w = logo[0], h = logo[1];
+  ok(w > 100 && h >= 16 && logo.length === 2 + w * h, 'the title\'s lettering is a picture in the ROM', `${w} x ${h}`);
+  const gold = new Set(Array.from(logo.slice(2)).filter(Boolean).map((c) => rgb(vm, c)));
+  let shown = 0; for (let y = 22; y < 22 + h; y++) for (let x = 0; x < 256; x++) if (gold.has(vm.out32[y * 256 + x] >>> 0)) shown++;
+  ok(shown > w * h * 0.3, 'and it is drawn at the top of the title', `${shown} pixels`);
+  ok(vm.ppu.oamCount >= 5, 'with a fan of five cards under it', `${vm.ppu.oamCount} sprites`);
+  ok(count(vm, p.ART.colors.PANELFILL, 40, 120, 216, 186) > 4000, 'the menu is on a solid panel (the felt does not show through the text)');
+}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

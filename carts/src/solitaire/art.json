@@ -4,8 +4,9 @@
   "BACK1": 203,
   "BACK2": 204,
   "FELTDARK": 18,
-  "GLASS": 240,
-  "OUTLINE": 113
+  "OUTLINE": 113,
+  "PANELFILL": 115,
+  "PANELLINE": 116
  },
  "palettes": {
   "bg1": {
@@ -21,6 +22,18 @@
     "wood1": 7,
     "wood2": 8,
     "wood3": 9
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "gold0": 1,
+    "gold1": 2,
+    "gold2": 3,
+    "gold3": 4,
+    "gold4": 5,
+    "ink": 6,
+    "shade": 7
    }
   },
   "spr1": {
@@ -66,7 +79,8 @@
  },
  "rom": [
   "backs",
-  "cards_large"
+  "cards_large",
+  "logo"
  ],
  "scenes": {
   "table": {
