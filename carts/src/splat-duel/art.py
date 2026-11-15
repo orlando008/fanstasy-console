@@ -48,7 +48,8 @@ art.color(119, '5a5a7a', 'STONEL')
 
 ground = art.palette(1, {'pave': ramp('b8a88a', 5), 'grass': ramp('5aa03a', 4), 'leaf': ramp('2e6a34', 4)})
 far = art.palette(2, {'hill': recede(ramp('4a8a4a', 3), 0.55, 'a8d4f0'), 'roof': recede(ramp('c0604a', 3), 0.4, 'a8d4f0'),
-                      'house': recede(ramp('e8d8b8', 3), 0.4, 'a8d4f0'), 'tree': recede(ramp('3a7a44', 3), 0.3, 'a8d4f0')})
+                      'house': recede(ramp('e8d8b8', 3), 0.4, 'a8d4f0'), 'tree': recede(ramp('3a7a44', 3), 0.3, 'a8d4f0'),
+                      'cloud': ramp('e8f0fc', 3)})
 wallp = art.palette(3, {'brick': ramp('c87a44', 5), 'tpaint': ramp('2ad4b4', 5), 'mpaint': ramp('f04aa8', 5)})
 logo = art.palette(4, {'teal': ramp('2ad4b4', 4), 'mag': ramp('f04aa8', 4), 'edge': '1a1030', 'shade': '2a1a48', 'gold': ramp('f0c040', 4)})
 
@@ -74,7 +75,12 @@ for k, hx in enumerate(range(40, WORLD_W, 92)):
         farw.rect(hx - 3 + j, top - j, w + 6 - 2 * j, 1, far.roof[1] if j > 1 else far.roof[0])
         farw.pset(hx - 3 + j, top - j, far.roof[2])
 treeline(farw, far.tree, base=94, size=12, spacing=30, seed=5, wrap=False)
-art.scene('far', view(farw), pal=far, at=(0, 0))
+# Above it, clouds: one strip 256 px wide that repeats, so code.js can drift it with the wind (scanline() scrolls only
+# those lines). Sky that far away looks the same from both ends of the courtyard, so the two views share it.
+farscreen = Img(256, 48 + 104)                 # screen rows 48..199: the clouds, then the houses and hills
+clouds(farscreen, far.cloud, count=4, y0=6, y1=40, size=(28, 52), seed=7, wrap=True)
+farscreen.blit(view(farw), 0, 48)
+art.scene('far', farscreen, pal=far, at=(0, 0))
 
 # Ground: a hedge along the back of the courtyard, then paving to the bottom of the screen (layer 1).
 groundw = Img(WORLD_W, 40)                     # screen rows 184..223
@@ -115,6 +121,10 @@ def kid(pose, pony):
         back, front, fork = [(11, 18), (9, 23)], [(18, 18), (21, 22)], (22, 19)
     elif pose == 'draw':
         back, front, fork = [(11, 18), (7, 18)], [(18, 18), (25, 16)], (26, 13)
+    elif pose == 'cheer':                      # both arms up, the slingshot held high
+        back, front, fork = [(11, 18), (4, 10)], [(18, 18), (27, 10)], (28, 6)
+    elif pose == 'oops':                       # splatted: hands up by the face
+        back, front, fork = [(11, 17), (5, 14)], [(18, 17), (25, 13)], (26, 10)
     else:
         back, front, fork = [(11, 18), (20, 14)], [(18, 18), (26, 15)], (26, 12)
     d.fill(brush(back, 2.6, 2.2), p.white[0], part='barm'); d.fill(oval(*back[1], 1.7, 1.7), p.skin[1], part='bhand')
@@ -137,7 +147,11 @@ def kid(pose, pony):
     img = d.render(outline=p.line, tidy=1)
     # pixel-exact details after: the eye, the mouth, the band
     img.pset(19, 10, p.line); img.pset(19, 11, p.line); img.pset(20, 10, p.white[1])
-    if pose == 'release': img.pset(20, 14, p.line); img.pset(21, 14, p.line); img.pset(21, 13, p.skin[0])
+    if pose in ('release', 'cheer'): img.pset(20, 14, p.line); img.pset(21, 14, p.line); img.pset(21, 13, p.skin[0])
+    elif pose == 'oops':                        # an O of a mouth, a shut eye and a drop of sweat
+        img.pset(20, 13, p.line); img.pset(20, 14, p.line); img.pset(21, 13, p.line); img.pset(21, 14, p.line)
+        img.pset(19, 10, p.skin[2]); img.pset(20, 10, p.skin[2]); img.line(18, 11, 20, 11, p.line)
+        img.pset(23, 6, p.white[1]); img.pset(23, 7, p.white[0])
     else: img.pset(20, 14, p.skin[0]); img.pset(21, 14, p.skin[0])
     if pose == 'draw':                          # the band, stretched from the fork's tips back to the hand
         img.line(fx - 2, fy - 2, back[1][0] + 1, back[1][1], p.wood[0])
@@ -146,17 +160,17 @@ def kid(pose, pony):
         img.line(fx - 2, fy - 2, fx + 2, fy - 2, p.wood[0])
     return img
 
-KID_POSES = ['idle', 'draw', 'release']
+KID_POSES = ['idle', 'draw', 'release', 'cheer', 'oops']
 for who, pony in (('teal', False), ('mag', True)):
     for pose in KID_POSES:
         art.sprite('%s_%s' % (who, pose), kid(pose, pony), pal=teal if who == 'teal' else mag, region='spr')
 
 # --- Balloons, splats and droplets: one picture each, in the 'team' role, drawn in either player's palette ---
-def balloon(airborne):
+def balloon(airborne, squash=False):
     p = teal
     d = Canvas(16, 16)
     if airborne:
-        d.fill(oval(9, 8, 5.2, 4.2, rot=-8), p.team[2], part='b')
+        d.fill(oval(9, 8, 5.7, 3.7, rot=-8) if squash else oval(9, 8, 5.2, 4.2, rot=-8), p.team[2], part='b')
         d.fill(blob([(13.5, 7), (15.5, 5.5), (15.5, 9)]), p.team[1], part='knot')
     else:
         d.fill(oval(8, 8, 4.6, 5.2), p.team[2], part='b')
@@ -173,6 +187,7 @@ def balloon(airborne):
 
 art.sprite('balloon', balloon(False), pal=teal, region='spr')
 art.sprite('balloon_fly', balloon(True), pal=teal, region='spr')
+art.sprite('balloon_fly2', balloon(True, squash=True), pal=teal, region='spr')   # the wobble in flight
 
 def splat(kind):
     p = teal

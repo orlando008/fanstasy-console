@@ -34,6 +34,9 @@
   "bg2": {
    "base": 32,
    "colors": {
+    "cloud0": 13,
+    "cloud1": 14,
+    "cloud2": 15,
     "hill0": 1,
     "hill1": 2,
     "hill2": 3,
@@ -148,7 +151,7 @@
  },
  "scenes": {
   "far": {
-   "h": 13,
+   "h": 19,
    "mx": 0,
    "my": 0,
    "pal": 2,
@@ -180,7 +183,7 @@
   "arrow": {
    "pal": 0,
    "size": 16,
-   "tile": 620
+   "tile": 622
   },
   "balloon": {
    "pal": 0,
@@ -192,110 +195,130 @@
    "size": 16,
    "tile": 610
   },
-  "drop": {
-   "pal": 0,
-   "size": 8,
-   "tile": 618
-  },
-  "flag0": {
-   "pal": 2,
-   "size": 16,
-   "tile": 622
-  },
-  "flag1a": {
-   "pal": 2,
-   "size": 16,
-   "tile": 712
-  },
-  "flag1b": {
-   "pal": 2,
-   "size": 16,
-   "tile": 714
-  },
-  "flag2a": {
-   "pal": 2,
-   "size": 16,
-   "tile": 716
-  },
-  "flag2b": {
-   "pal": 2,
-   "size": 16,
-   "tile": 718
-  },
-  "flag3a": {
-   "pal": 2,
-   "size": 16,
-   "tile": 744
-  },
-  "flag3b": {
-   "pal": 2,
-   "size": 16,
-   "tile": 746
-  },
-  "mag_draw": {
-   "pal": 1,
-   "size": 32,
-   "tile": 704
-  },
-  "mag_idle": {
-   "pal": 1,
-   "size": 32,
-   "tile": 652
-  },
-  "mag_release": {
-   "pal": 1,
-   "size": 32,
-   "tile": 708
-  },
-  "pu_big": {
-   "pal": 2,
-   "size": 16,
-   "tile": 748
-  },
-  "pu_roller": {
-   "pal": 2,
-   "size": 16,
-   "tile": 768
-  },
-  "pu_sponge": {
-   "pal": 2,
-   "size": 16,
-   "tile": 770
-  },
-  "pu_triple": {
-   "pal": 2,
-   "size": 16,
-   "tile": 750
-  },
-  "sparkle0": {
-   "pal": 2,
-   "size": 16,
-   "tile": 772
-  },
-  "sparkle1": {
-   "pal": 2,
-   "size": 16,
-   "tile": 774
-  },
-  "sparkle2": {
-   "pal": 2,
-   "size": 16,
-   "tile": 776
-  },
-  "splat_burst": {
-   "pal": 0,
-   "size": 16,
-   "tile": 614
-  },
-  "splat_pop": {
+  "balloon_fly2": {
    "pal": 0,
    "size": 16,
    "tile": 612
   },
-  "splat_puddle": {
+  "drop": {
+   "pal": 0,
+   "size": 8,
+   "tile": 620
+  },
+  "flag0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 776
+  },
+  "flag1a": {
+   "pal": 2,
+   "size": 16,
+   "tile": 778
+  },
+  "flag1b": {
+   "pal": 2,
+   "size": 16,
+   "tile": 780
+  },
+  "flag2a": {
+   "pal": 2,
+   "size": 16,
+   "tile": 782
+  },
+  "flag2b": {
+   "pal": 2,
+   "size": 16,
+   "tile": 808
+  },
+  "flag3a": {
+   "pal": 2,
+   "size": 16,
+   "tile": 810
+  },
+  "flag3b": {
+   "pal": 2,
+   "size": 16,
+   "tile": 812
+  },
+  "mag_cheer": {
+   "pal": 1,
+   "size": 32,
+   "tile": 768
+  },
+  "mag_draw": {
+   "pal": 1,
+   "size": 32,
+   "tile": 712
+  },
+  "mag_idle": {
+   "pal": 1,
+   "size": 32,
+   "tile": 708
+  },
+  "mag_oops": {
+   "pal": 1,
+   "size": 32,
+   "tile": 772
+  },
+  "mag_release": {
+   "pal": 1,
+   "size": 32,
+   "tile": 716
+  },
+  "pu_big": {
+   "pal": 2,
+   "size": 16,
+   "tile": 814
+  },
+  "pu_roller": {
+   "pal": 2,
+   "size": 16,
+   "tile": 834
+  },
+  "pu_sponge": {
+   "pal": 2,
+   "size": 16,
+   "tile": 836
+  },
+  "pu_triple": {
+   "pal": 2,
+   "size": 16,
+   "tile": 832
+  },
+  "sparkle0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 838
+  },
+  "sparkle1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 840
+  },
+  "sparkle2": {
+   "pal": 2,
+   "size": 16,
+   "tile": 842
+  },
+  "splat_burst": {
    "pal": 0,
    "size": 16,
    "tile": 616
+  },
+  "splat_pop": {
+   "pal": 0,
+   "size": 16,
+   "tile": 614
+  },
+  "splat_puddle": {
+   "pal": 0,
+   "size": 16,
+   "tile": 618
+  },
+  "teal_cheer": {
+   "pal": 0,
+   "size": 32,
+   "tile": 652
   },
   "teal_draw": {
    "pal": 0,
@@ -307,6 +330,11 @@
    "size": 32,
    "tile": 640
   },
+  "teal_oops": {
+   "pal": 0,
+   "size": 32,
+   "tile": 704
+  },
   "teal_release": {
    "pal": 0,
    "size": 32,
@@ -314,6 +342,6 @@
   }
  },
  "tiles": {},
- "used": 534,
+ "used": 669,
  "version": 1
 }

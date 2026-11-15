@@ -12,7 +12,7 @@ const PROBE = `__expose(() => ({
   get shots() { return shots; }, get aim() { return aim; }, get held() { return held; }, set held(v) { held = v; },
   get pu() { return pu; }, set pu(v) { pu = v; }, get balloons() { return balloons; }, get shot() { return shot; },
   get walls() { return walls; }, get notes() { return notes; }, get winner() { return winner; }, get quiet() { return quiet; },
-  get trails() { return trails; }, get confirm() { return confirm; }, get series() { return series; }, get stats() { return stats; }, get tossed() { return tossed; }, get fadeIn() { return fadeIn; }, get menuSel() { return menuSel; }, get pauseSel() { return pauseSel; }, get tieRound() { return tieRound; },
+  get trails() { return trails; }, get confirm() { return confirm; }, get oops() { return oops; }, get cloudX() { return cloudX; }, deco, rndi: (a, b) => rndi(a, b), addDrips, get series() { return series; }, get stats() { return stats; }, get tossed() { return tossed; }, get fadeIn() { return fadeIn; }, get menuSel() { return menuSel; }, get pauseSel() { return pauseSel; }, get tieRound() { return tieRound; },
   get ART() { return ART; }, get drops() { return drops; }, get fxs() { return fxs; }, get puddles() { return puddles; },
   CFG, SFX, SONG, CELLS, COLS, ROWS, arc, launch, move, contact, splash, roll, sponge, verdict, viewX, ovX, ovY, sy, covered, percent,
   get wind() { return wind; }, setWind: (w) => { wind = w; }, setCell, spawnPowerup, newWalls, drawWallTiles, mget: (x, y) => mget(x, y), sget: (x, y) => sget(x, y),

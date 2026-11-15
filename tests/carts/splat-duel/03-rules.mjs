@@ -133,11 +133,11 @@ const oamHas = (vm, tile) => Array.from(vm.ppu.oamTile.slice(0, vm.ppu.oamCount)
   ok(j >= 0 && vm.ppu.oamX[j] === 90 - 8, 'and one in teal\'s end in the left-hand view');
   p.pu = null;
   p.aim[0].angle = 40; p.aim[0].power = 85; vm.run(20); vm.press('A');
-  const fly = p.ART.sprites.balloon_fly.tile; let agree = true, seenL = 0, seenR = 0, frames = 0;
+  const fly = [p.ART.sprites.balloon_fly.tile, p.ART.sprites.balloon_fly2.tile]; let agree = true, seenL = 0, seenR = 0, frames = 0;
   while (p.state === 'flight' && frames++ < 400) {
     vm.step(0);
     const b = p.balloons[0]; if (!b.alive) break;
-    const sprites = Array.from(vm.ppu.oamTile.slice(0, vm.ppu.oamCount)).map((t, k) => [t, vm.ppu.oamX[k], vm.ppu.oamY[k]]).filter(([t]) => t === fly);
+    const sprites = Array.from(vm.ppu.oamTile.slice(0, vm.ppu.oamCount)).map((t, k) => [t, vm.ppu.oamX[k], vm.ppu.oamY[k]]).filter(([t]) => fly.includes(t));
     const want = p.viewX(b.x, 8), visible = want !== null && p.sy(b.y) > 36;
     if (visible !== (sprites.length === 1)) agree = false;
     if (visible && (sprites[0][1] !== Math.floor(want - 8) || sprites[0][2] !== Math.floor(p.sy(b.y) - 8))) agree = false;

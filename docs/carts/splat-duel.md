@@ -1,7 +1,7 @@
 # Splat Duel: Cart Specification
 
-**Version:** 0.6 (step 6: menus and flow; step 5 dropped)
-**Status:** In development. The whole turn loop, the hidden power-up and all four power-ups play, in the look the user agreed (step 2); the splash is tuned so aiming decides the game (step 3); a wind that changes each round (step 4); its own game song and sampled effects (step 8); title settings, a pause that asks, a first-turn hint and an end summary (step 6)
+**Version:** 0.7 (step 7: the art pass)
+**Status:** In development. The whole turn loop, the hidden power-up and all four power-ups play, in the look the user agreed (step 2); the splash is tuned so aiming decides the game (step 3); a wind that changes each round (step 4); its own game song and sampled effects (step 8); title settings, a pause that asks, a first-turn hint and an end summary (step 6); drips, reactions and clouds in the wind (step 7)
 **Cart source:** `carts/src/splat-duel/` → `carts/splat-duel.nova`
 
 ---
@@ -86,7 +86,9 @@ ellipse 10 px up and down and 1.8 times that across (Big Balloon: 16 px), so a s
 wall at the height it lands, and only its height is aimed. Its top and bottom edges are ragged (4 to 7 lobes, up to 16%
 in); its sides are not, since a ragged side would make the wall's outer columns a matter of luck. A normal splash
 paints about 16% of a bare wall, a Big Balloon about 29%. It returns how many cells were *newly* painted, so overlapping paint never counts twice. The score is the share of the other wall's cells painted. The
-spray, drops, bursts and puddles are decoration and never touch the grid. The walls' tiles are drawn from the grid:
+spray, drops, bursts, puddles and the drips that run down under a splash are decoration and never touch the grid: drips
+are drawn on the wall's tiles from a list of their own, not the mask, and decoration draws its random numbers from a
+generator of its own (`deco`), so it never changes the game's winds, power-ups or splashes. The walls' tiles are drawn from the grid:
 each wall cell has its own tile (512 to 607), rewritten from the brick and the grid when the grid changes, so paint
 shows the brick's courses under it.
 
@@ -184,12 +186,15 @@ on 6 and 7.
 ## 12. Video layers
 
 - **Backdrop:** the sky, a gradient set line by line in `scanline()`.
-- **BG2:** houses, trees and hills beyond the courtyard (`far`, palette 2, receded towards the sky).
+- **BG2:** clouds, then houses, trees and hills beyond the courtyard (`far`, palette 2, receded towards the sky). The
+  cloud strip (screen lines 48 to 95) repeats every 256 px and drifts with the wind (`cloudX`, scrolled in `scanline()`;
+  the layer wraps, so it is hidden above line 48). Sky that far away looks the same from both ends, so the two views share it.
 - **BG1:** the hedge and the paving (`ground`, palette 1).
 - **BG0:** the two walls (`walls`, palette 3: brick, teal paint and magenta paint, three ramps of five in the same
   order), or the title's lettering (`logo`, palette 4).
 - **Sprites:** the kids (32 px, palettes 0 and 1 with the same roles: one picture, two colours), balloons, bursts,
-  drops, puddles, the turn arrow, the power-ups and sparkles (palette 2).
+  drops, puddles, the turn arrow, the pennants, the power-ups and sparkles (palette 2). The kids have five poses each:
+  idle, draw, release, cheer and oops.
 - **Overlay:** the HUD, the overview, the divider, the aiming panel and dots, the trails, the panels (see-through GLASS).
 
 ## 13. Persistence (save slots)
@@ -206,8 +211,8 @@ on 6 and 7.
 
 | Asset | Budget |
 |---|---|
-| Code | 39.4 KB of the 64 KB limit (`node tools/check.js splat-duel`) |
-| Tiles | 498 of 1,024 (321 background, 177 sprites), plus 96 reserved for the painted walls |
+| Code | 42.3 KB of the 64 KB limit (`node tools/check.js splat-duel`) |
+| Tiles | 669 of 1,024 (424 background, 245 sprites), plus 96 reserved for the painted walls |
 | Sprites | About 20 at most (3 balloons, 24 drops capped, 10 puddles, the kids, the power-up) |
 | Songs / SFX | 3 of 8 songs, 14 effects |
 
@@ -293,6 +298,17 @@ on 6 and 7.
      title (A on FIRST now changes it): fixed. The hint covers the pennant on each wall, but only in round 1, which is
      always calm.
 7. **Art pass:** the rest of the art in the agreed look (paint drips, a hit reaction, the power-ups' frames).
+   - **Built:** drips (2 to 4 under each splash, 4 to 13 px, a pixel every 3 frames; a sponge wipes those in its band);
+     `deco()`, decoration's own random numbers (the spray moved to it from the game's); the kids' `cheer` and `oops`
+     poses (a kid flinches for 40 frames when their wall is splatted; at the end the winner cheers, the loser droops); a
+     second, squashed balloon frame for a wobble in flight; a glint on a revealed power-up every 80 frames; clouds that
+     drift with the wind. `05-art.mjs` checks the drips run and stop, never change the coverage and are paint on bare
+     brick; that 500 decoration numbers leave the game's next numbers unchanged; the reactions; the wobble; the drift.
+   - **Results:** 116 checks pass; smoke test 60 fps, no errors. The first cheer and flinch poses kept the arms by the
+     head, where they vanished behind the cap at real size: spread wide, they read. `snes.mjs` scores 67 (68 before),
+     with the backgrounds' shades up from 2.4 to 3.1; it samples each layer once a frame, so it sees neither the clouds'
+     drift nor the far layer (both set line by line in `scanline()`) and counts 2 layers and no parallax, where the
+     pictures show three layers and drifting clouds.
 8. **Audio pass:** a calmer game song for a turn-based game, levels checked (done before steps 5 to 7, as the user asked).
    - **Built:** `audio.py` rewritten: the game's own song (section 11), the title from the library's *Entertainer*
      (`SONG` in `code.js` now play 0, title 1, win 2), the library's instruments scaled to 70% for this cart, and the
