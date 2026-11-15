@@ -1,8 +1,7 @@
 # NOVA-16 — Fantasy Console Specification
 
-**Version:** 0.1 (draft)
-**Status:** Pre-implementation
-**Name:** "NOVA-16" is a placeholder. Rename freely.
+**Status:** Built. Milestones 1 to 10 (section 14) are done, and this document describes the console as it is. Change it in the same commit as the code it describes.
+**Name:** NOVA-16.
 
 ---
 
@@ -738,6 +737,7 @@ every file the prompt names exists, and `tests/console/make.mjs` the tools it sa
 │   │   ├── sandbox.js      # Cart compilation and API injection
 │   │   ├── api.js          # Public cart API
 │   │   ├── ppu.js          # Video state and scanline renderer
+│   │   ├── overlay.js      # The overlay: immediate-mode drawing (print, rectfill...), on top of the sprites
 │   │   ├── font.js         # Built-in 8×8 font data
 │   │   └── prng.js         # xoshiro128**
 │   ├── audio/
@@ -792,14 +792,15 @@ every file the prompt names exists, and `tests/console/make.mjs` the tools it sa
 │   ├── icons.js            # Draws the app's icons
 │   ├── templates/cart/     # The starter's files ({{NAME}}, {{TITLE}} placeholders)
 │   ├── templates/kinds/    # A whole game for a kind of game (puzzle); --kind <kind> on new-cart.js
-│   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader; music/: song toolkit and sampled instruments, loudness, clashes, old-cart compatibility, audio scripts from audio.json, lead lowering; art/: art toolkit, scene and sprite viewers
+│   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader; art/: the art kit (icons, recipes, viewers); music/: the song toolkit and library (songs/), sampled instruments, loudness, clashes
 ├── docs/
 │   ├── SPEC.md             # This document (the cart-facing API is section 8)
 │   ├── carts/<name>.md     # Each game's specification, with its build notes
 │   └── dev/playbook.md     # How to build a cart: workflow, tools, limits, audio rules, traps
 ├── CLAUDE.md               # Short notes for agents, pointing to the playbook
 └── .github/workflows/
-    └── check.yml           # Syntax, cart checks, the starters' self-test, soak runs; verify on pull requests
+    ├── check.yml           # Syntax, cart checks, the starters' self-test, the soak (its own job), verify on pull requests
+    └── pages.yml           # The hosted site on GitHub Pages, and each pull request's preview (11.3)
 ```
 
 ## 13. Development conventions
@@ -836,6 +837,7 @@ jobs:
 | M7 | Audio | Worklet synth, instruments, SFX, patterns, songs, SFX and music tabs | A demo cart has in-console music and sound effects |
 | M8 | Persistence and PNG carts | `dget`/`dset`, label capture, `.nova.png` export and import | An exported PNG dropped onto a fresh page boots the game with saves working |
 | M9 | Recording | Input recording and replay (seed + inputs), WebM capture with audio, GIF export | A 10-second clip exports as both WebM and GIF |
+| M10 | SNES effects | Colour blending, brightness, windows and mosaic (4.10–4.12) | The `effects` demo runs every page of its effects |
 
 ## 15. Non-goals for v1
 
@@ -850,7 +852,6 @@ jobs:
 
 ## 16. Open decisions
 
-- The final name of the console.
 - Whether to add a second, smaller 4 × 6 font to the overlay.
 - ~~How GIF export handles frames whose mid-frame palette changes produce more than 256 distinct colors.~~ Decided: every GIF frame has its own local color table, and only frames with more than 256 colors are median-cut quantized.
 - Whether `peek`/`poke` arrive in v2 over a defined memory map.

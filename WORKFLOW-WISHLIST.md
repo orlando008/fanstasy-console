@@ -233,6 +233,7 @@ cart runs there is nothing on screen but the game.
 - [ ] **Fullscreen and scaling.**
   - **What:** a fullscreen button and key; a choice of sharp whole-number scaling or fit-to-window.
   - **Option:** a scanline (CRT) filter.
+  - **Partly built:** the pause menu has a Full screen entry (`src/pause-menu.js`), so the button and the key exist. The scaling choice and the scanline filter are not built, so the item stays open.
 
 **Settings and controllers**
 
