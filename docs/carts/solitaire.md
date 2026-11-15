@@ -1,7 +1,7 @@
 # Solitaire: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 2 built, waiting for the user's word on the art proof: the table, every rule of Klondike, the felt
+**Status:** Step 3 built: every rule, the felt, the score, the clock, undo, auto-finish, the stuck check and the hint
 **Shelf and players:** Puzzle; 1 player: the same as `genre` and `players` in `carts/src/solitaire/meta.json`.
 **Cart source:** `carts/src/solitaire/` → `carts/solitaire.nova`
 
@@ -35,8 +35,8 @@ The d-pad, A, B, START and SELECT only (the buttons of a phone's touch controls)
 | D-pad up / down | Between the two rows; inside a column, up and down its face-up cards to choose how many to pick up (the card under the hand and all below it) |
 | A | Pick up the cards under the hand; with cards held, put them down on the pile under the hand (if the move is legal; otherwise they go back with a soft "no" sound). A on the stock draws 1 or 3 cards, or turns the waste back over when the stock is empty |
 | A twice | A second A within 12 frames on the same single card sends it to its foundation, if it can go there (the "smart A") |
-| B | With cards held: cancel (they go back). With nothing held: a **hint** (one useful move is shown with arrows for 90 frames) |
-| SELECT | Undo the last move (any number of times, back to the deal) |
+| B | With cards held: cancel (they go back). With nothing held: a **hint** (the card to move and where it goes blink in gold outlines, joined by a line, for 90 frames) |
+| SELECT | Undo the last move (any number of times, back to the deal); it works on the NO MOVES LEFT panel too |
 | START | Pause: RESUME, UNDO, HINT, NEW DEAL, QUIT TO TITLE |
 
 The hand jumps to the last face-up card of a column when it arrives there. Left and right on the bottom row wrap.
@@ -49,7 +49,7 @@ foundations; 3 goes to the waste).
 
 | Thing | Where |
 |---|---|
-| HUD line | y 2 to 9, overlay text: SCORE, TIME (m:ss), MOVES, and DRAW 1 or DRAW 3 at the right |
+| HUD line | y 2 to 9, overlay text: SCORE at x 4, TIME (m:ss) at x 108, DRAW 1 or DRAW 3 at x 196 (the moves are on the win panel) |
 | Top row | y 12 to 59: the stock at column 0, the waste at column 1 (in DRAW 3, the top three fanned to the right 8 px apart, into column 2's space), the four foundations at columns 3 to 6 |
 | Columns | from y 66 down. Face-down cards 4 px apart, face-up cards 10 px apart; when a column would pass y 220 its face-up spacing shrinks (to 6 px at least) so it fits |
 | Empty piles | gold outlines on the felt (a K in an empty column's outline, an A in a foundation's) |
@@ -73,10 +73,12 @@ Standard Klondike.
 - **Stuck:** after each move the game checks for any move that changes something: a legal move (not just one between
   two equal places, such as a king from one empty-bottomed column to another), a draw that brings out a card not seen
   this pass, or a pass of the waste that could. If there is none, a panel says NO MOVES LEFT: NEW DEAL, UNDO, KEEP
-  LOOKING.
-- **Hint:** the first of these that is legal: a card to a foundation; a move that turns up a face-down card (the
-  longest column first); a waste card to a column; a king to an empty column if there is a face-down card to free;
-  otherwise DRAW. It is shown, never made.
+  LOOKING. (A card back down from a foundation is not counted: it would never be stuck.) Precisely, a way on is any
+  hint below, or a draw after which, going round the stock and waste twice, some card shows that could be played.
+- **Hint:** the first of these that is legal: a card to a foundation; a column's whole face-up run to another column
+  (which turns up a face-down card or empties the column; not a king already at the bottom), the column with the most
+  face-down cards first; a waste card to a column; a king with face-down cards under it to an empty column; a run whose
+  move lets the card under it go home; otherwise DRAW. It is shown, never made.
 
 ## 6. Levels or content
 
@@ -167,7 +169,7 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
 
 | Asset | Budget |
 |---|---|
-| Code | 25.7 KB of the 64 KB limit after step 1 (the card kit's CARDS block with `sort`, `anim` and `stack` about 9 KB); about 40 KB planned with the score, hint, cascade and records |
+| Code | 32.9 KB of the 64 KB limit after step 3 (the card kit's CARDS block with `sort`, `anim` and `stack` about 9 KB); about 40 KB planned with the score, hint, cascade and records |
 | ROM | 47 KB, the large cards (`rom/cards_large.bin`) |
 | Tiles | 916 of 1,024 after step 1: the nine stack buffers 720 (9 x 80: 32 x 160 px, whole sprites), eight card slots 192, the hand 4; the felt, rim and outlines have tiles 1 to 63 |
 | Sprites | about 60 (seven columns of five, the stock, waste and foundations' 24, the hand and a held run 6) of 128; at most about 12 on a line |
@@ -194,9 +196,18 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
      darker towards the corners, a shadow under the rim) and a carved wooden rim 4 px wide, all one scene on layer 2
      in 48 of the 63 BG tiles (the patterns repeat every 16 and 32 px, so tiles are shared); the empty piles as darker
      felt with rounded gold outlines. The proof: `node tools/devkit/art/proof.mjs solitaire --screen holding`.
-   - **Agreed:** TODO (the date, and the changes asked for)
+   - **Agreed:** 15 November 2026, as it is: no changes asked for.
 3. **Score, clock, undo and help:** the scoring of section 9, the HUD, undo, the smart A, auto-finish, the stuck check
    and its panel, the hint.
+   - **Built:** the scoring of section 9 (and undo's -10, the time bonus on a win), the HUD (SCORE, TIME, DRAW), the
+     clock from the first move (stopped while paused), auto-finish (a card every 6 frames, the lowest first), the
+     stuck check after every move with its NO MOVES LEFT panel (NEW DEAL, UNDO, KEEP LOOKING; SELECT undoes there
+     too), the hint on B and in the pause menu (blinking gold outlines and a line), and the win panel (time, moves,
+     time bonus, score). The panels' colour had been sitting in the cards' sprite palette (entries 192 to 207) and
+     came out orange: it is now entry 240. The art kit now notes a palette that overwrites a colour named by
+     `art.color` (it found the same clash in two released games, Streets of Woe and Merge Café, left for their own
+     fix).
+   - **Results:** `04-help.mjs` 29 checks; all four files 103, passing. The gallery's nine screens looked over.
 4. **The bot:** `bot.mjs` plays whole deals through the pad, choosing moves as the hint does (with a skill that
    sometimes takes a worse legal move). `sweep.mjs` over many seeds reports wins and moves for each mode and finds any
    stuck state or crash.

@@ -46,7 +46,7 @@ def table(x, y):
     return F[max(0, min(4, shade))]
 
 art.scene('table', Img.make(256, 224, table), pal=felt, at=(0, 0), solid=True, region='bg')
-art.color(200, '0c2a18', 'GLASS')     # the panels' fill, seen through (code.js blends the overlay)
+art.color(240, '081c10', 'GLASS')     # the panels' fill, seen through (code.js blends the overlay); 192 to 207 are the cards' palette
 art.color(113, 'd8b048', 'OUTLINE')   # the empty piles' outlines and the hint (solid: under 192)
 art.colors['FELTDARK'] = felt.cgram('felt1')   # the inside of an empty pile: the felt's dark shade
 

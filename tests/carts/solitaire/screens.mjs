@@ -17,4 +17,13 @@ export default function screens(shot) {
   play.press('B');
   p.drawN = 3; p.setHand(0, 0); play.press('A'); play.run(2); shot(play, 'draw 3');
   play.press('START'); play.run(5); shot(play, 'pause');
+  play.press('B'); play.run(2);
+  p.setHand(1, 3); play.press('B'); play.run(4); shot(play, 'hint');
+  const C = (s) => { const r = s.slice(0, -1), k = { A: 1, J: 11, Q: 12, K: 13 }[r] ?? Number(r); return 'SHDC'.indexOf(s.slice(-1)) * 13 + k - 1; };
+  const H = (str) => str.split(' ').map(C);
+  p.set({ cols: [H('5S 9S'), H('5H 9H'), H('5D 3D'), H('5C 4D'), [], [], []], down: [1, 1, 1, 1, 0, 0, 0], stock: H('7S'), waste: [], found: [[], [], [], []] });
+  p.setHand(0, 0); play.press('A'); play.run(4); shot(play, 'stuck');
+  const won = newGame(2), w = won.probe(), suit = (s) => Array.from({ length: 13 }, (_, r) => s * 13 + r);
+  won.run(2); w.set({ cols: [[51], [], [], [], [], [], []], down: [0, 0, 0, 0, 0, 0, 0], stock: [], waste: [], found: [suit(0), suit(1), suit(2), suit(3).slice(0, 12)] });
+  w.setHand(1, 0); won.press('A'); won.press('A'); won.run(30); shot(won, 'win');
 }

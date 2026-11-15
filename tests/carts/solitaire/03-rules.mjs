@@ -68,7 +68,7 @@ const empty7 = () => Array.from({ length: 7 }, () => []);
 // 4. The foundations.
 {
   const vm = newGame(1), p = vm.probe(); vm.run(2);
-  p.set({ cols: [H('AS'), H('2S'), H('3H'), [], [], [], []], down: [0, 0, 0, 0, 0, 0, 0], stock: [], waste: [], found: [[], [], [], []] });
+  p.set({ cols: [H('AS'), H('2S'), H('3H'), [], [], [], []], down: [0, 0, 0, 0, 0, 0, 0], stock: H('KC'), waste: [], found: [[], [], [], []] });   // a king in the stock: the game neither finishes itself nor is stuck
   ok(p.canOnFound(C('AS'), 0) && !p.canOnFound(C('2S'), 0), 'an empty foundation takes an ace, and nothing else');
   p.setHand(1, 0); vm.press('A'); vm.press('UP'); vm.press('RIGHT'); vm.press('RIGHT'); vm.press('A');
   ok(p.found[0].length === 1 && p.cols[0].length === 0, 'the ace goes up onto a foundation');

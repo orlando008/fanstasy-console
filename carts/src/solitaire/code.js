@@ -13,7 +13,7 @@ const ART = {
   tiles: {},
   sprites: {"hand": {"pal": 1, "size": 16, "tile": 908}},
   scenes: {"table": {"h": 28, "mx": 0, "my": 0, "pal": 1, "w": 32}},
-  colors: {"FELTDARK": 18, "GLASS": 200, "OUTLINE": 113},
+  colors: {"FELTDARK": 18, "GLASS": 240, "OUTLINE": 113},
 };
 // END ART
 
@@ -204,6 +204,12 @@ const COLX = (k) => 4 + 36 * k, TOPY = 12, COLY = 66, CH = 48, DOWN_GAP = 4, UP_
 const TOP_PILES = [0, 1, 3, 4, 5, 6], HELD = 7, SMART = 12;
 let drawN = 1;                                     // DRAW 1 or DRAW 3
 let cols, down, stock, waste, found, colH, held, hand, moves, undos, lastA;
+let played = 0, started = false, autoing = false, stuck = false, stuckSel = 0, hint = null, hintT = 0;
+// The points (spec 9): the classic desktop game's
+const PTS = { wasteCol: 5, wasteFound: 10, colFound: 10, turn: 5, foundCol: -15, undo: -10, recycle1: -100, recycle3: -20, bonus: 700000 };
+const AUTO_EVERY = 6, HINT_FRAMES = 90;
+const addScore = (n) => { score = Math.max(0, score + n); };
+const seconds = () => Math.floor(played / 60);
 
 const top = (a) => a[a.length - 1];
 /** Can this card (the head of a run) go on column k? */
@@ -234,16 +240,25 @@ function newDeal() {
   cols = []; down = []; colH = []; found = [[], [], [], []]; waste = [];
   for (let k = 0; k < 7; k++) { cols.push(deck.splice(deck.length - k - 1, k + 1)); down.push(k); }
   stock = deck; held = null; moves = 0; undos = []; lastA = -99;
+  played = 0; started = false; autoing = false; stuck = false; hint = null;
   hand = { row: 1, i: 0, depth: 0 };
   composeAll();
 }
 
-const snapshot = () => ({ cols: cols.map((c) => c.slice()), down: down.slice(), stock: stock.slice(), waste: waste.slice(), found: found.map((f) => f.slice()), moves });
-function restore(s) { cols = s.cols; down = s.down; stock = s.stock; waste = s.waste; found = s.found; moves = s.moves; held = null; composeAll(); }
+const snapshot = () => ({ cols: cols.map((c) => c.slice()), down: down.slice(), stock: stock.slice(), waste: waste.slice(), found: found.map((f) => f.slice()), moves, score });
+function restore(s) { cols = s.cols; down = s.down; stock = s.stock; waste = s.waste; found = s.found; moves = s.moves; score = s.score; held = null; composeAll(); }
+/** Undo the last move: its points come back off, and the undo costs 10 more. */
 function undo() {
   if (held) cancel();
   if (!undos.length) { fx(SFX.no); return; }
-  restore(undos.pop()); fx(SFX.move); fixHand();
+  restore(undos.pop()); addScore(PTS.undo); fx(SFX.move); fixHand(); stuck = false; hint = null;
+}
+/** After every move: the clock starts, and the game looks for a way on (stuck), or finishes itself. */
+function afterMove() {
+  started = true; hint = null;
+  if (found.every((f) => f.length === 13)) { win(); return; }
+  if (!stock.length && !waste.length && down.every((d) => d === 0)) { autoing = true; return; }
+  stuck = !findHint(true); stuckSel = 0;
 }
 
 /** A on the stock: draw 1 or 3 onto the waste; on an empty stock, turn the waste back over. */
@@ -251,8 +266,8 @@ function drawStock() {
   if (!stock.length && !waste.length) { fx(SFX.no); return; }
   undos.push(snapshot());
   if (stock.length) for (let n = 0; n < drawN && stock.length; n++) waste.push(stock.pop());
-  else { stock = waste.reverse(); waste = []; }
-  moves++; fx(SFX.move);
+  else { stock = waste.reverse(); waste = []; addScore(drawN === 3 ? PTS.recycle3 : PTS.recycle1); }
+  moves++; fx(SFX.move); afterMove();
 }
 
 /** Pick up the cards under the hand. */
@@ -280,15 +295,70 @@ function cancel() {
  * to its foundation (the smart A). */
 function putDown() {
   const g = held, c = g.cards[0], h = hand, same = h.row === g.row && h.i === g.i;
-  let ok = false;
-  if (same && g.cards.length === 1 && timer - g.at <= SMART && foundFor(c) >= 0) { found[foundFor(c)].push(c); ok = true; }
+  let to = null;                                   // 'col' or 'found'
+  if (same && g.cards.length === 1 && timer - g.at <= SMART && foundFor(c) >= 0) { found[foundFor(c)].push(c); to = 'found'; }
   else if (same) { cancel(); fx(SFX.move); return; }
-  else if (h.row === 1 && canOnCol(c, h.i)) { cols[h.i].push(...g.cards); compose(h.i); ok = true; }
-  else if (h.row === 0 && h.i >= 3 && g.cards.length === 1 && canOnFound(c, h.i - 3)) { found[h.i - 3].push(c); ok = true; }
-  if (!ok) { cancel(); fx(SFX.no); return; }
+  else if (h.row === 1 && canOnCol(c, h.i)) { cols[h.i].push(...g.cards); compose(h.i); to = 'col'; }
+  else if (h.row === 0 && h.i >= 3 && g.cards.length === 1 && canOnFound(c, h.i - 3)) { found[h.i - 3].push(c); to = 'found'; }
+  if (!to) { cancel(); fx(SFX.no); return; }
   held = null; undos.push(g.snap); moves++;
-  if (g.row === 1 && cols[g.i].length && down[g.i] === cols[g.i].length) { down[g.i]--; compose(g.i); }   // the card under turns face up
-  fx(SFX.select); fixHand();
+  const from = g.row === 1 ? 'col' : g.i === 1 ? 'waste' : 'found';
+  addScore(from === 'waste' ? (to === 'col' ? PTS.wasteCol : PTS.wasteFound) : from === 'col' ? (to === 'found' ? PTS.colFound : 0) : to === 'col' ? PTS.foundCol : 0);
+  if (g.row === 1) turnUp(g.i);
+  fx(SFX.select); fixHand(); afterMove();
+}
+/** The card left on top of column k turns face up (5 points). */
+function turnUp(k) { if (cols[k].length && down[k] === cols[k].length) { down[k]--; compose(k); addScore(PTS.turn); } }
+
+/** The next move worth making (spec 5): { from: [row, i, depth], to: [row, i] }, to a foundation first, then one that
+ * turns up a card, a waste card to a column, a king to an empty column; else a draw ({ draw: true }); null if there
+ * is nothing. any: true asks only whether there is one (the stuck check), counting a draw only if the stock and waste
+ * hold a card that could be played. */
+function findHint(any) {
+  const tops = [];                                 // the single cards that may go up: the waste's top, each column's last
+  if (waste.length) tops.push([0, 1, 0, top(waste)]);
+  for (let k = 0; k < 7; k++) if (cols[k].length) tops.push([1, k, cols[k].length - 1, top(cols[k])]);
+  for (const [r, i, d, c] of tops) { const f = foundFor(c); if (f >= 0) return { from: [r, i, d], to: [0, f + 3] }; }
+  const order = [0, 1, 2, 3, 4, 5, 6].sort((a, b) => down[b] - down[a]);
+  for (const k of order) {                         // a run whose move turns up a card (or frees a column for a king)
+    const d = down[k];
+    if (!cols[k].length || (d === 0 && cardRank(cols[k][0]) === 13)) continue;
+    for (let j = 0; j < 7; j++) if (j !== k && cols[j].length && canOnCol(cols[k][d], j)) return { from: [1, k, d], to: [1, j] };
+  }
+  if (waste.length) for (let j = 0; j < 7; j++) if (canOnCol(top(waste), j)) return { from: [0, 1, 0], to: [1, j] };
+  for (const k of order) {
+    const d = down[k];
+    if (d > 0 && cardRank(cols[k][d]) === 13) for (let j = 0; j < 7; j++) if (!cols[j].length) return { from: [1, k, d], to: [1, j] };
+  }
+  for (const k of order) {                         // a card under a run that could then go home
+    for (let i = down[k] + 1; i < cols[k].length; i++) if (foundFor(cols[k][i - 1]) >= 0) {
+      for (let j = 0; j < 7; j++) if (j !== k && canOnCol(cols[k][i], j)) return { from: [1, k, i], to: [1, j] };
+    }
+  }
+  if (!stock.length && !waste.length) return null;
+  if (!any) return { draw: true };
+  // a draw is worth it only if a card of the stock or waste would show and could be played: go round twice
+  let st = stock.slice(), w = waste.slice();
+  for (let n = 0, most = 2 * (st.length + w.length) + 2; n < most; n++) {
+    if (st.length) for (let q = 0; q < drawN && st.length; q++) w.push(st.pop());
+    else { st = w.reverse(); w = []; }
+    const c = top(w);
+    if (c !== undefined && (foundFor(c) >= 0 || [0, 1, 2, 3, 4, 5, 6].some((j) => canOnCol(c, j)))) return { draw: true };
+  }
+  return null;
+}
+function showHint() {
+  hint = findHint(false); hintT = HINT_FRAMES;
+  fx(hint ? SFX.point : SFX.no);
+}
+/** Auto-finish: every 6 frames, the lowest card that can go up does. */
+function autoStep() {
+  if (timer % AUTO_EVERY) return;
+  let best = -1, rk = 99;
+  for (let k = 0; k < 7; k++) if (cols[k].length && foundFor(top(cols[k])) >= 0 && cardRank(top(cols[k])) < rk) { best = k; rk = cardRank(top(cols[k])); }
+  if (best < 0) { autoing = false; return; }
+  const c = cols[best].pop(); found[foundFor(c)].push(c); compose(best); addScore(PTS.colFound); moves++;
+  fx(SFX.select);
   if (found.every((f) => f.length === 13)) win();
 }
 
@@ -323,7 +393,7 @@ function moveHand() {
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
-let score = 0, won = false;
+let score = 0, won = false, bonus = 0;
 
 function init() {
   if (dget(VERSION_SLOT) !== SAVE_VERSION) { // a new or older save: start clean
@@ -340,7 +410,7 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
 
 function startGame() {
-  score = 0; won = false; paused = false; timer = 0; state = 'play';
+  score = 0; won = false; bonus = 0; paused = false; timer = 0; state = 'play';
   newDeal();
   play(SONG.play);
 }
@@ -369,14 +439,28 @@ function updateTitle() {
 
 function updatePlay() {
   if (pressed(START)) { paused = true; pauseSel = 0; fx(SFX.pause); return; }
+  if (started) played++;                          // the clock: from the first move, never while paused
+  if (hintT > 0 && --hintT === 0) hint = null;
+  if (autoing) { autoStep(); return; }
+  if (stuck) { updateStuck(); return; }
   if (pressed(SELECT)) { undo(); return; }
   moveHand();
   if (pressed(A)) { if (held) putDown(); else pickUp(); }
-  else if (pressed(B) && held) { cancel(); fx(SFX.move); }
+  else if (pressed(B)) { if (held) { cancel(); fx(SFX.move); } else showHint(); }
+}
+const STUCK_ITEMS = ['NEW DEAL', 'UNDO', 'KEEP LOOKING'];
+function updateStuck() {
+  if (pressed(SELECT)) { undo(); return; }
+  if (pressed(UP) || pressed(DOWN)) { stuckSel = (stuckSel + (pressed(UP) ? 2 : 1)) % 3; fx(SFX.move); }
+  if (!pressed(A)) return;
+  fx(SFX.select);
+  if (stuckSel === 0) startGame(); else if (stuckSel === 1) undo(); else stuck = false;
 }
 
 function win() {
-  won = true; state = 'over'; timer = 0; play(-1); fx(SFX.record);
+  won = true; state = 'over'; timer = 0; play(-1); fx(SFX.record); autoing = false;
+  bonus = seconds() > 30 ? Math.floor(PTS.bonus / seconds()) : 0;
+  score += bonus;
   rank = insertTop({ score, initials: lastInitials() });
 }
 
@@ -407,7 +491,7 @@ function updateRecords() {
   if ((pressed(START) || pressed(A) || pressed(B)) && timer > 20) { fx(SFX.select); toTitle(); }
 }
 
-const PAUSE_ITEMS = ['RESUME', 'UNDO', 'NEW DEAL', 'QUIT TO TITLE'];
+const PAUSE_ITEMS = ['RESUME', 'UNDO', 'HINT', 'NEW DEAL', 'QUIT TO TITLE'];
 function updatePause() {
   const n = PAUSE_ITEMS.length;
   if (pressed(UP)) { pauseSel = (pauseSel + n - 1) % n; fx(SFX.move); }
@@ -416,8 +500,9 @@ function updatePause() {
   else if (pressed(A) || pressed(START)) {
     fx(SFX.select); paused = false;
     if (pauseSel === 1) undo();
-    else if (pauseSel === 2) startGame();
-    else if (pauseSel === 3) toTitle();
+    else if (pauseSel === 2) showHint();
+    else if (pauseSel === 3) startGame();
+    else if (pauseSel === 4) toTitle();
   }
 }
 
@@ -431,7 +516,15 @@ function draw() {
   else if (state === 'title') drawTitle();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
-  if (state === 'over') { panel(48, 80, 160, 64); ctxt('YOU WIN!', 92, GOLD); ctxt(`MOVES ${moves}`, 108, WHITE); if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 126, DIM); }
+  if (state === 'over') {
+    panel(40, 72, 176, 80); ctxt('YOU WIN!', 82, GOLD);
+    ctxt(`TIME ${clockText()}  MOVES ${moves}`, 100, WHITE); ctxt(`TIME BONUS ${bonus}`, 112, DIM); ctxt(`SCORE ${score}`, 124, GOLD);
+    if (timer > 60 && timer % 60 < 40) ctxt('START: CONTINUE', 140, DIM);
+  }
+  if (state === 'play' && stuck) {
+    panel(56, 80, 144, 64); ctxt('NO MOVES LEFT', 88, GOLD);
+    STUCK_ITEMS.forEach((s, i) => txt(`${i === stuckSel ? '>' : ' '} ${s}`, 72, 104 + i * 10, i === stuckSel ? WHITE : DIM));
+  }
   if (paused) drawPause();
 }
 
@@ -457,8 +550,24 @@ function drawTable() {
   for (let f = 0; f < 4; f++) { if (found[f].length) drawCard(top(found[f]), COLX(f + 3), TOPY); else slot(f + 3, TOPY, 'A'); }
   // the columns
   for (let k = 0; k < 7; k++) { if (cols[k].length) drawStack(k, COLX(k), COLY, colH[k]); else slot(k, COLY, 'K'); }
-  txt(`MOVES ${moves}`, 4, 2, WHITE);
+  txt(`SCORE ${score}`, 4, 2, WHITE);
+  txt(`TIME ${clockText()}`, 108, 2, WHITE);
   txt(`DRAW ${drawN}`, 196, 2, DIM);
+  if (hint) drawHint();
+}
+const clockText = () => `${Math.floor(seconds() / 60)}:${String(seconds() % 60).padStart(2, '0')}`;
+/** Where a pile is on the screen: [x, y] of its top card (a column's card at depth d). */
+function pileAt(row, i, d) {
+  if (row === 0) return [COLX(i) + (i === 1 && drawN === 3 ? Math.max(0, Math.min(waste.length, 3) - 1) * 8 : 0), TOPY];
+  const ys = colYs(i); return [COLX(i), COLY + (ys.length ? ys[Math.min(d ?? ys.length - 1, ys.length - 1)] : 0)];
+}
+/** The hint: the card to move and where it goes, outlined in gold and blinking, with a line between them. */
+function drawHint() {
+  if (clock % 20 >= 14) return;
+  const box = (x, y) => { rect(x - 1, y - 1, 34, 50, OUTLINE); rect(x - 2, y - 2, 36, 52, OUTLINE); };
+  if (hint.draw) { box(COLX(0), TOPY); return; }
+  const [fx0, fy0] = pileAt(hint.from[0], hint.from[1], hint.from[2]), [tx, ty] = pileAt(hint.to[0], hint.to[1]);
+  box(fx0, fy0); box(tx, ty); line(fx0 + 16, fy0 + 24, tx + 16, ty + 24, OUTLINE);
 }
 /** An empty pile: a darker place in the felt with a gold outline, rounded as a card is, and the letter of the card
  * that may start it. */

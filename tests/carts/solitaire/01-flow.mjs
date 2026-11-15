@@ -37,7 +37,7 @@ const nearlyWon = (p) => p.set({ cols: [[51], [], [], [], [], [], []], down: [0,
   vm.press('DOWN'); vm.press('A'); vm.run(2);
   ok(!p.paused && p.waste.length === 1, 'UNDO in the pause menu takes back a move');
   const cols = JSON.stringify(p.cols);
-  vm.press('START'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); vm.run(2);
+  vm.press('START'); vm.press('DOWN'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A'); vm.run(2);
   ok(!p.paused && p.moves === 0 && p.waste.length === 0 && JSON.stringify(p.cols) !== cols, 'NEW DEAL deals again');
   vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
 }
@@ -54,8 +54,8 @@ const nearlyWon = (p) => p.set({ cols: [[51], [], [], [], [], [], []], down: [0,
   vm.press('UP'); vm.press('RIGHT'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT'); vm.press('DOWN'); vm.press('START');
   ok(p.state === 'records', 'START saves them and shows the records');
   const e = p.topTen()[0];
-  ok(e.score === 120 && e.initials === 'BC9', 'the score is saved with the initials as typed', `${e.score} ${e.initials}`);
-  ok(vm.m.save[p.TOP_SLOT] === 120, 'in the save slots');
+  ok(e.score === 130 && e.initials === 'BC9', 'the score (with the last card\'s 10) is saved with the initials as typed', `${e.score} ${e.initials}`);
+  ok(vm.m.save[p.TOP_SLOT] === 130, 'in the save slots');
 }
 {
   const vm = newGame(4), p = vm.probe();
