@@ -1,7 +1,7 @@
 # Splat Duel: Cart Specification
 
-**Version:** 0.7 (step 7: the art pass)
-**Status:** In development. The whole turn loop, the hidden power-up and all four power-ups play, in the look the user agreed (step 2); the splash is tuned so aiming decides the game (step 3); a wind that changes each round (step 4); its own game song and sampled effects (step 8); title settings, a pause that asks, a first-turn hint and an end summary (step 6); drips, reactions and clouds in the wind (step 7)
+**Version:** 1.0 (released)
+**Status:** Released: in the Library on the Strategy shelf (2 players), and as the PNG cart `carts/splat-duel.nova.png`. The turn loop, the hidden power-up and four power-ups, a splash tuned so aiming decides the game, wind each round, title settings, its own song, in the look the user agreed
 **Cart source:** `carts/src/splat-duel/` → `carts/splat-duel.nova`
 
 ---
@@ -323,6 +323,11 @@ on 6 and 7.
      0.008 to 0.056, the reveal the clearest of the play sounds. No render clips. Not yet heard by a person: the WAVs
      were sent to the user.
 9. **Balance and polish:** label, PNG cart, Library, README row (`node tools/release.js splat-duel`).
+   - **Built:** `node tools/release.js splat-duel`: the label is the title screen 3.5 s in (the logo, the menu and both
+     kids under drifting clouds), the `.nova.png`, the Library's index (Strategy, 2 players), the README row, and a
+     section for the game in the playbook (section 15). The balance was done in steps 3 and 4.
+   - **Results:** the PNG cart decodes to exactly the packed cart (payload 59 KB of 147 KB); `check.js` with no
+     warnings; code 42.3 KB of 64 KB, tiles to 860 of 1,024, 3 songs, 14 effects.
 
 ## 16. Open questions
 

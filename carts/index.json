@@ -271,6 +271,16 @@
       "png": "carts/royal-chess.nova.png"
     },
     {
+      "name": "splat-duel",
+      "title": "Splat Duel",
+      "author": "NOVA-16",
+      "description": "Two players, one pad, one slingshot each: take turns lobbing paint balloons across the courtyard to cover the other's wall. A power-up floats somewhere unseen, and the shot that finds it may hand it to your rival.",
+      "genre": "Strategy",
+      "players": "2",
+      "label": "carts/labels/splat-duel.png",
+      "png": "carts/splat-duel.nova.png"
+    },
+    {
       "name": "franchise",
       "title": "The Franchise: Basketball Edition",
       "author": "NOVA-16",
