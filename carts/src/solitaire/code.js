@@ -610,9 +610,12 @@ function drawTable(overlay) {
   // sprites first are on top: the hand, then the held cards, then the piles
   const [hx, hy] = handAt(), bob = (clock >> 4) & 1;
   if (overlay) sprite(ART.sprites.hand, hx + 14, hy + 10 + bob);
-  if (held) drawStack(HELD, hx + 6, hy + 6, held.cards.length * UP_GAP + CH - UP_GAP);
-  // the top row: the stock, the waste (fanned in DRAW 3), the foundations
-  const slot = overlay ? emptyPile : () => {};
+  const heldH = held ? held.cards.length * UP_GAP + CH - UP_GAP : 0;
+  if (held) drawStack(HELD, hx + 6, hy + 6, heldH);
+  // the top row: the stock, the waste (fanned in DRAW 3), the foundations. The empty piles are on the overlay, which is
+  // above every sprite, so they leave out the box the hand and the cards it holds are in (or they would hide them).
+  const box = [hx + 6, hy + 6, hx + 38, Math.max(hy + 27 + bob, hy + 6 + heldH)];
+  const slot = overlay ? (k, y, letter) => outside(box, () => emptyPile(k, y, letter)) : () => {};
   if (stock.length) drawCard(stock[0], COLX(0), TOPY, { down: true }); else slot(0, TOPY, '');
   const show = waste.slice(-(drawN === 3 ? 3 : 1));
   for (let n = show.length - 1; n >= 0; n--) drawCard(show[n], COLX(1) + n * 8, TOPY);
@@ -642,6 +645,13 @@ function drawHint() {
 }
 /** An empty pile: a darker place in the felt with a gold outline, rounded as a card is, and the letter of the card
  * that may start it. */
+/** Draw with f() everywhere on the overlay except inside box [x0, y0, x1, y1]: four clipped bands round it. */
+function outside([x0, y0, x1, y1], f) {
+  for (const [x, y, w, h] of [[0, 0, 256, y0], [0, y1, 256, 224 - y1], [0, y0, x0, y1 - y0], [x1, y0, 256 - x1, y1 - y0]]) {
+    if (w > 0 && h > 0) { clip(x, y, w, h); f(); }
+  }
+  clip();
+}
 function emptyPile(k, y, letter) {
   const x = COLX(k);
   rectfill(x + 2, y + 2, 28, 44, FELTDARK);

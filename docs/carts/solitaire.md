@@ -282,6 +282,11 @@ songs' medians 0.076 to 0.086, leads 0.039 to 0.045 RMS and 0.49 to 0.61 of the 
 Each step: build it, run `node tools/verify.js solitaire` (and the tests) and `node tools/devkit/smoke.mjs solitaire`,
 write its **Built** and **Results** notes under its number here, commit and push.
 
+**Fixed after the release** (found playing the preview on a phone): a run held over an empty pile was hidden under
+it, since the empty piles are drawn on the overlay, above every sprite. They now leave out the box the hand and the
+held cards are in (four clipped bands round it, `outside()` in code.js). `02-art.mjs` holds a run over an empty column
+and checks no pixel of the empty pile is on it (781 were, before the fix).
+
 ## 16. Open questions
 
 None left. The defaults the user had not confirmed were put to them after the release and kept as they are: the

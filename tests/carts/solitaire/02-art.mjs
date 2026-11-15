@@ -34,6 +34,19 @@ const count = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); let 
   ok(count(vm, p.ART.colors.OUTLINE, 220, 10, 256, 62) > 50, 'the empty foundations are gold outlines');
   ok(vm.ppu.oamCount <= 40, 'a table at the deal is few sprites', `${vm.ppu.oamCount}`);
 }
+// Held cards over an empty pile: the empty piles are on the overlay, above every sprite, so they must leave out the box
+// the hand and the cards it holds are in (a player found the held run hidden under an empty column's K).
+{
+  const vm = newGame(4), p = vm.probe(); vm.run(3);
+  const C = (s) => { const r = s.slice(0, -1), k = { A: 1, J: 11, Q: 12, K: 13 }[r] ?? Number(r); return 'SHDC'.indexOf(s.slice(-1)) * 13 + k - 1; };
+  p.set({ cols: [[], [C('5D'), C('KS'), C('QH'), C('JC')], [], [], [], [], []], down: [0, 1, 0, 0, 0, 0, 0], stock: [C('2C')], waste: [], found: [[], [], [], []] });
+  p.setHand(1, 1, 1); vm.press('A'); vm.press('LEFT'); vm.run(2);
+  ok(p.held && p.held.cards.length === 3 && p.hand.i === 0, 'a run is held over the empty first column');
+  const inHeld = count(vm, p.ART.colors.FELTDARK, 4 + 6 + 4, 66 + 6 + 4, 4 + 6 + 28, 66 + 6 + 60) + count(vm, p.ART.colors.OUTLINE, 4 + 6 + 2, 66 + 6 + 2, 4 + 6 + 30, 66 + 6 + 60);
+  ok(inHeld === 0, 'the held cards show over the empty pile, none of it drawn over them', `${inHeld} pixels of the empty pile on the held cards`);
+  ok(count(vm, p.ART.colors.OUTLINE, 0, 60, 3, 120) + count(vm, p.ART.colors.OUTLINE, 4, 60, 9, 120) > 10, 'and the rest of its outline is still drawn');
+}
+
 // 3. The title and the panels (the art pass, step 7).
 {
   const vm = newGame(3, { title: true }), p = vm.probe(); vm.run(3);

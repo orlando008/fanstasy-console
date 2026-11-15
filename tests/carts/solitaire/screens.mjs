@@ -16,6 +16,11 @@ export default function screens(shot) {
   p.setHand(0, 0); for (let i = 0; i < 3; i++) play.press('A');
   p.setHand(1, 0); play.press('A'); play.press('RIGHT'); play.run(2); shot(play, 'holding');
   play.press('B');
+  { // a run held over an empty column (the empty piles must not hide it)
+    const v = newGame(4), q = v.probe(); v.run(3);
+    q.set({ cols: [[], [16, 12, 24, 49], [], [3], [], [], []], down: [0, 1, 0, 0, 0, 0, 0], stock: [40], waste: [], found: [[], [], [], []] });
+    q.setHand(1, 1, 1); v.press('A'); v.press('LEFT'); v.run(2); shot(v, 'held over an empty column', { zoom: [0, 56, 128, 112] });
+  }
   p.drawN = 3; p.setHand(0, 0); play.press('A'); play.run(2); shot(play, 'draw 3');
   play.press('START'); play.run(5); shot(play, 'pause');
   play.press('B'); play.run(2);
