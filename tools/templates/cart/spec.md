@@ -2,6 +2,7 @@
 
 **Version:** 0.1 (draft)
 **Status:** Scaffolded: the frame of the game (title, play, pause, game over, top 10, records, sound cues) works; the game is a placeholder
+**Shelf and players:** {{GENRE}}; players TODO (`1` to `4`, or a range such as `1-2`): the same as `genre` and `players` in `carts/src/{{NAME}}/meta.json`.
 **Cart source:** `carts/src/{{NAME}}/` → `carts/{{NAME}}.nova`
 
 > Fill this in before building (docs/dev/playbook.md, section 1): ask the user the few design questions that change
@@ -52,6 +53,8 @@ TODO.
 
 ## 10. Screens and flow
 
+The frame's screens (from the starter). Change them to the game's.
+
 1. **Title:** PLAY, RECORDS.
 2. **Play**, with a **Pause** (START): RESUME, RESTART, QUIT TO TITLE.
 3. **Game over**, then **initials** if the score is in the top 10, then the **records**.
@@ -71,6 +74,8 @@ TODO: what is on BG0 to BG2, the sprites and the overlay. The art is made in cod
 
 ## 13. Persistence (save slots)
 
+The frame's layout (from the starter). Keep slot 0 and the top 10 unless the game needs otherwise.
+
 | Slots | Contents |
 |---|---|
 | 0 | Format version |
@@ -82,7 +87,7 @@ TODO: what is on BG0 to BG2, the sprites and the overlay. The art is made in cod
 
 | Asset | Budget |
 |---|---|
-| Code | TODO of the 64 KB limit (`node tools/check.js {{NAME}}`) |
+| Code | TODO KB of the 64 KB limit (`node tools/check.js {{NAME}}` warns if this figure is more than 2 KB off; write a bare number such as 31.4 KB first in the cell, as it skips "about" or "≤") |
 | Tiles | TODO of 1,024 |
 | Sprites | TODO (128 in OAM, 32 per line) |
 | Songs / SFX | TODO |
@@ -107,5 +112,8 @@ Each step: build it, run `node tools/check.js {{NAME}}` and `node tools/test.js 
 **Results** notes under its number here, commit and push.
 
 ## 16. Open questions
+
+Defaults you chose that the user has not confirmed, so they are easy to change (playbook section 1).
+Delete this note when the list is filled in.
 
 - TODO
