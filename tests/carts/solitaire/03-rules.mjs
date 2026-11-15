@@ -53,6 +53,16 @@ const empty7 = () => Array.from({ length: 7 }, () => []);
   ok(p.held && p.held.cards.map(p.cardName).join() === '10S,9H,8C', 'A on a card inside a run picks up the run from it down');
   vm.press('RIGHT'); vm.press('A');
   ok(p.cols[1].map(p.cardName).join() === 'JD,10S,9H,8C' && p.down[0] === 0, 'the run moves as one, and the card it left turns face up');
+  // arriving on a column, the hand points at its highest face-up card: A takes the whole run; DOWN takes fewer
+  p.set({ cols: [H('2C'), H('4D 10S 9H 8C'), H('JD'), [], [], [], []], down: [0, 1, 0, 0, 0, 0, 0] });
+  p.setHand(1, 0); vm.press('RIGHT');
+  ok(p.hand.i === 1 && p.hand.depth === 1, 'arriving on a column, the hand points at its highest face-up card', JSON.stringify(p.hand));
+  vm.press('A');
+  ok(p.held && p.held.cards.map(p.cardName).join() === '10S,9H,8C', 'so A picks up the whole face-up run');
+  vm.press('B'); vm.press('DOWN'); vm.press('DOWN'); vm.press('A');
+  ok(p.held && p.held.cards.map(p.cardName).join() === '8C', 'and DOWN moves the hand down it to take fewer cards');
+  vm.press('B'); vm.press('UP'); vm.press('UP'); vm.press('UP'); vm.press('DOWN');
+  ok(p.hand.row === 1 && p.hand.depth === 1, 'coming down from the top row lands on the run\'s head too', JSON.stringify(p.hand));
   // a face-down card cannot be picked up
   p.set({ cols: [H('5D 10S'), [], [], [], [], [], []], down: [1, 0, 0, 0, 0, 0, 0] });
   p.setHand(1, 0, 0); vm.press('A');

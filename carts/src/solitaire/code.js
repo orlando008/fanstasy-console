@@ -388,9 +388,10 @@ function fixHand() {
 }
 function moveHand() {
   const h = hand, last = (k) => Math.max(0, cols[k].length - 1);
+  const head = (k) => Math.min(down[k], last(k));            // arriving on a column: its highest face-up card, the whole run
   if (pressed(LEFT) || pressed(RIGHT)) {
     const d = pressed(LEFT) ? -1 : 1;
-    if (h.row === 1) { h.i = (h.i + d + 7) % 7; h.depth = last(h.i); }
+    if (h.row === 1) { h.i = (h.i + d + 7) % 7; h.depth = head(h.i); }
     else h.i = TOP_PILES[(TOP_PILES.indexOf(h.i) + d + 6) % 6];
     fx(SFX.move);
   }
@@ -400,7 +401,7 @@ function moveHand() {
     fx(SFX.move);
   }
   if (pressed(DOWN)) {
-    if (h.row === 0) { h.row = 1; h.depth = last(h.i); }
+    if (h.row === 0) { h.row = 1; h.depth = head(h.i); }
     else if (!held && h.depth < last(h.i)) h.depth++;
     fx(SFX.move);
   }

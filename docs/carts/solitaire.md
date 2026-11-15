@@ -32,14 +32,16 @@ The d-pad, A, B, START and SELECT only (the buttons of a phone's touch controls)
 | Button | Use |
 |---|---|
 | D-pad left / right | Move the hand between piles: on the top row the stock, the waste and the four foundations; below, the seven columns |
-| D-pad up / down | Between the two rows; inside a column, up and down its face-up cards to choose how many to pick up (the card under the hand and all below it) |
+| D-pad up / down | Between the two rows; inside a column, up and down its face-up cards to choose how many to pick up (the card under the hand and all below it; the hand arrives on the highest, the whole run) |
 | A | Pick up the cards under the hand; with cards held, put them down on the pile under the hand (if the move is legal; otherwise they go back with a soft "no" sound). A on the stock draws 1 or 3 cards, or turns the waste back over when the stock is empty |
 | A twice | A second A within 12 frames on the same single card sends it to its foundation, if it can go there (the "smart A") |
 | B | With cards held: cancel (they go back). With nothing held: a **hint** (the card to move and where it goes blink in gold outlines, joined by a line, for 90 frames) |
 | SELECT | Undo the last move (any number of times, back to the deal); it works on the NO MOVES LEFT panel too |
 | START | Pause: RESUME, UNDO, HINT, NEW DEAL, QUIT TO TITLE |
 
-The hand jumps to the last face-up card of a column when it arrives there. Left and right on the bottom row wrap.
+The hand points at a column's highest face-up card when it arrives there (from the side or from the top row), so A
+takes the whole face-up run; DOWN moves it down the run to take fewer cards. (Asked for by the user after the release:
+it used to point at the last card.) Left and right on the bottom row wrap.
 Up from a column goes to the pile above it (column 1 is under the stock, 2 under the waste, 4 to 7 under the
 foundations; 3 goes to the waste).
 
