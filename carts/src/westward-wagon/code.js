@@ -92,7 +92,7 @@ const TRAIL = [
 const CUTOFF_SAVES = 68, BARLOW_TOLL = 30, BARLOW_DAYS = 10;
 /** The region at a mile (5.2's terrain and the art's layers): 0 prairie, 1 bluffs, 2 mountains, 3 high desert, 4 forest. */
 const regionAt = (m) => (m < 500 ? 0 : m < 820 ? 1 : m < 1150 ? 2 : m < 1560 ? 3 : 4);
-const TERRAIN = [1, 0.9, 0.6, 0.85, 0.75];
+const TERRAIN = [1, 0.95, 0.75, 0.9, 0.8];
 const WEATHERS = ['VERY HOT', 'HOT', 'WARM', 'COOL', 'COLD', 'VERY COLD', 'RAIN', 'HEAVY RAIN', 'SNOW', 'HEAVY SNOW', 'FOG'];
 const WEATHER_MILES = [1, 1, 1, 1, 1, 0.9, 0.7, 0.5, 0.7, 0.3, 0.8];
 const COLD = [0, 0, 0, 0, 1, 2, 0, 0, 2, 3, 0];                    // how cold each weather is (clothing needed)
@@ -529,7 +529,7 @@ const stepped = (b) => pressed(b) || (btnp(b) && (inputMask & (1 << b)) !== 0);
 let skipTitle = false;                                              // tests set this to land straight on the trail with a stocked wagon
 let state = 'title', paused = false, timer = 0, clock = 0, sel = 0, pauseSel = 0;
 let J = null, setup = { bg: 0, month: 1, step: 0, names: [] }, cart = {}, storeMult = 1, card = null, dayTimer = 0, scroll = 0, rank = -1;
-const DAY_FRAMES = 50;                                              // a day rolls by in this many frames (spec: about a second)
+const DAY_FRAMES = 90;                                              // a day rolls by in this many frames (spec: a second and a half)
 const NAMES = ['MARY', 'JOHN', 'SARAH', 'WILL', 'ELLA'];            // step 6 adds naming them
 
 // --- The book (rom/book.bin, from book.py): each place's paragraph and its people, the regions' cards ---

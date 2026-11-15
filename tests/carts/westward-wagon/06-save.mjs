@@ -24,7 +24,7 @@ const clear = (vm, p) => { for (let i = 0; i < 20 && p.card; i++) vm.press('A');
   ok(p.state === 'trail' && p.graves().some((g) => g.name === 'WILL' && g.text === 'AB' && g.mile === mile), 'the grave is saved with its epitaph and mile');
   ok(p.J.log.some((l) => /BURIED WILL/.test(l)), 'and written in the diary');
   const vm2 = newGame(9, { save: vm.m.save.slice() }), q = vm2.probe(); vm2.run(2); clear(vm2, q);
-  q.J.mile = mile - 20; q.J.next = 3; vm2.run(2);
+  q.J.mile = mile - 10; q.J.next = 3; vm2.run(2);
   const g = q.graveList.find((x) => x.name === 'WILL');
   ok(g && q.graveX(g) > 150 && q.graveX(g) < 256, 'a later journey sees the grave ahead on the trail', g && q.graveX(g));
   ok(q.graveInView() === g, 'in view'); vm2.press('A');
