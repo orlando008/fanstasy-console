@@ -61,6 +61,13 @@ export class TouchControls {
     });
     const end = (e) => { if (this.pointers.delete(e.pointerId)) this.update(false); };
     for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) this.el.addEventListener(ev, end);
+    // A finger's end can miss the controls: the capture failed and it lifted elsewhere, or the browser took the touch
+    // for a gesture (a palm, a swipe from the edge) and its pointer events stopped. Hear the end anywhere on the page,
+    // and when no finger is left on the screen at all, let go of everything, so a direction never stays held.
+    for (const ev of ['pointerup', 'pointercancel']) window.addEventListener(ev, end, true);
+    const lifted = (e) => { if (e.touches.length === 0 && this.pointers.size) this.release(); };
+    for (const ev of ['touchend', 'touchcancel']) window.addEventListener(ev, lifted, true);
+    window.addEventListener('blur', () => { if (this.pointers.size) this.release(); });
     this.el.addEventListener('contextmenu', (e) => e.preventDefault()); // a long press is a held button, not a menu
 
     // Show on a touch screen: the first touch anywhere, or a device whose main pointer is a finger.
