@@ -1,7 +1,7 @@
 # Solitaire: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 3 built: every rule, the felt, the score, the clock, undo, auto-finish, the stuck check and the hint
+**Status:** Step 4 built: every rule, the felt, the score, the clock, undo, auto-finish, the stuck check, the hint and a bot
 **Shelf and players:** Puzzle; 1 player: the same as `genre` and `players` in `carts/src/solitaire/meta.json`.
 **Cart source:** `carts/src/solitaire/` → `carts/solitaire.nova`
 
@@ -211,6 +211,16 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
 4. **The bot:** `bot.mjs` plays whole deals through the pad, choosing moves as the hint does (with a skill that
    sometimes takes a worse legal move). `sweep.mjs` over many seeds reports wins and moves for each mode and finds any
    stuck state or crash.
+   - **Built:** `bot.mjs` moves the hand with the d-pad and A (a press every other frame), takes the game's hint with
+     probability `skill` and otherwise draws (a missed move), and reports wins, cards home, moves, score and time.
+     Its problems: a hinted move that did not happen, a deal that never ends, and a wrong NO MOVES LEFT, checked by a
+     search of its own (any number of draws round the stock and waste, then up to two moves of any kind, including
+     back from a foundation, looking for a card home or one turned up). `05-bot.mjs` plays three deals of each mode
+     in the tests.
+   - **Results:** `node tools/devkit/sweep.mjs solitaire --seeds 40 --set draw=1,3 --set skill=1,0.8`: 160 deals, no
+     problem. Wins with the hint as it is (greedy, no look-ahead, no undo): DRAW 1 38% (skill 1) and 42% (skill 0.8),
+     DRAW 3 5% and 5%; cards home on average 26 and 28 in DRAW 1, 10 and 9 in DRAW 3. The bot plays a deal in 60 to
+     200 moves. A person who thinks ahead and undoes should win more; these are a floor, and a check for change.
 5. **Flow:** the title menu (DRAW 1, DRAW 3, CARD BACK, RECORDS), the pause menu, the statistics, the top 10 with the
    mode, the saves.
 6. **The win:** the cascade on the overlay, the time bonus, the score screen.
