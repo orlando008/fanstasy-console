@@ -26,5 +26,6 @@ export default function screens(shot) {
   p.setHand(0, 0); play.press('A'); play.run(4); shot(play, 'stuck');
   const won = newGame(2), w = won.probe(), suit = (s) => Array.from({ length: 13 }, (_, r) => s * 13 + r);
   won.run(2); w.set({ cols: [[51], [], [], [], [], [], []], down: [0, 0, 0, 0, 0, 0, 0], stock: [], waste: [], found: [suit(0), suit(1), suit(2), suit(3).slice(0, 12)] });
-  w.setHand(1, 0); won.press('A'); won.press('A'); won.run(30); shot(won, 'win');
+  w.setHand(1, 0); won.press('A'); won.press('A'); won.run(320); shot(won, 'cascade');
+  won.run(700); shot(won, 'win');
 }

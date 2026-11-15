@@ -46,8 +46,9 @@ const nearlyWon = (p) => p.set({ cols: [[51], [], [], [], [], [], []], down: [0,
 {
   const vm = newGame(3), p = vm.probe(); vm.run(2); p.score = 120; musicLog(vm);
   nearlyWon(p); p.setHand(1, 0); vm.press('A'); vm.press('A');
-  ok(p.state === 'over' && p.rank === 0, 'the last card home wins, and a score in the top 10 gets a rank', `rank ${p.rank}`);
+  ok(p.state === 'cascade' && p.rank === 0, 'the last card home wins (the cascade starts), and a score in the top 10 gets a rank', `rank ${p.rank}`);
   ok(musicLog(vm).includes(-1), 'the game song stops');
+  vm.run(20); vm.press('A'); ok(p.state === 'over', 'A skips the cascade to the score');
   vm.run(70); vm.press('A');
   ok(p.state === 'initials', 'A asks for initials');
   vm.run(25);

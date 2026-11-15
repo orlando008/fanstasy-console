@@ -1,7 +1,7 @@
 # Solitaire: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 5 built: every rule, the felt, the score, the clock, the help, a bot, the menus, statistics and saves
+**Status:** Step 6 built: every rule, the felt, the score, the clock, the help, a bot, the menus, statistics, saves and the win cascade
 **Shelf and players:** Puzzle; 1 player: the same as `genre` and `players` in `carts/src/solitaire/meta.json`.
 **Cart source:** `carts/src/solitaire/` → `carts/solitaire.nova`
 
@@ -126,10 +126,13 @@ The score never goes below 0. The clock starts at the first move and stops on a 
    **statistics** of each mode side by side (played, won, win rate, best time, best score, streak, best streak). A
    win in the top 10 opens the top 10 with its row lit; a win outside it opens the statistics.
 
-**The win cascade:** as the old desktop game: each king to ace in turn leaps off its foundation with a random sideways
-speed and bounces down the table (gravity, losing a third of its speed at each bounce on the bottom edge) until it is
-off the screen. Every frame it is stamped onto the overlay, which is not cleared, so it leaves a trail of cards. A
-press of A skips it.
+**The win cascade:** as the old desktop game: the cards leap off the foundations, the four kings, then the queens and
+so on, one every 16 frames, each with a random sideways speed (1.5 to 4 px a frame, left or right) and upward speed (0
+to 4), falling under gravity (0.35 px a frame each frame) and bouncing on the bottom edge with two thirds of its speed,
+until it leaves the screen at the side. Every frame each is stamped onto the overlay, which is not cleared, so it
+leaves a trail of cards. The whole cascade takes about 15 s; A skips it (after its first 10 frames, so the winning
+press does not). The win is counted before it starts. The overlay is not blended during the cascade and the score
+(the cards' colours are entries 192 to 207, which blending would make see-through).
 
 ## 11. Audio
 
@@ -172,7 +175,7 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
 
 | Asset | Budget |
 |---|---|
-| Code | 36.5 KB of the 64 KB limit after step 5 (the card kit's CARDS block with `sort`, `anim` and `stack` about 9 KB); about 40 KB planned with the score, hint, cascade and records |
+| Code | 38.8 KB of the 64 KB limit after step 6 (the card kit's CARDS block with `sort`, `anim` and `stack` about 9 KB); about 40 KB planned with the score, hint, cascade and records |
 | ROM | 47 KB, the large cards (`rom/cards_large.bin`) |
 | Tiles | 916 of 1,024 after step 1: the nine stack buffers 720 (9 x 80: 32 x 160 px, whole sprites), eight card slots 192, the hand 4; the felt, rim and outlines have tiles 1 to 63 |
 | Sprites | about 60 (seven columns of five, the stock, waste and foundations' 24, the hand and a held run 6) of 128; at most about 12 on a line |
@@ -232,6 +235,10 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
      records. The save format is version 2 (an older save starts clean).
    - **Results:** `06-menus.mjs` 18 checks; 125 in all, passing.
 6. **The win:** the cascade on the overlay, the time bonus, the score screen.
+   - **Built:** the cascade as described in section 10 (the card copied from the ROM onto the overlay with `pset`),
+     the score panel over its trails, A to skip.
+   - **Results:** `07-win.mjs` 9 checks; 135 in all, passing. A full cascade is 880 frames (about 15 s); its worst
+     frame 3.0 ms.
 7. **Art pass:** the title (a fan of cards), the panels, the records screen, the card backs (`gallery.mjs` and
    `critique.mjs` over every screen).
 8. **Audio pass:** the three library songs, the card sounds and their cues, the levels.

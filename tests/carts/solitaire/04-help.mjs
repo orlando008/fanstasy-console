@@ -60,8 +60,8 @@ const busy = (p, t) => p.set({ cols: [H('2S 3S'), [], [], [], [], [], []], down:
   p.set({ cols: [H('KS QS JS'), suit(1).slice(9).reverse(), [], [], [], [], []], down: Z7, stock: [], waste: [], found: [suit(0).slice(0, 10), suit(1).slice(0, 9), suit(2), suit(3)] });
   p.setHand(1, 0); vm.press('A'); vm.press('A');      // the JS home: every card is now face up, stock and waste empty
   ok(p.autoing, 'with every card face up and the stock and waste empty, the game finishes itself');
-  vm.run(6 * 8);
-  ok(p.state === 'over' && p.found.every((f) => f.length === 13), 'the rest go home one by one, and the game is won', `${p.found.map((f) => f.length)}`);
+  let f = 0; while (!p.won && f < 6 * 10) { vm.run(1); f++; }
+  ok(p.won && f >= 6 * 4 && f <= 6 * 6, 'the other six go home one every 6 frames, and the game is won', `${f} frames`);
 }
 {
   const vm = newGame(6), p = vm.probe(); vm.run(2);
@@ -70,7 +70,7 @@ const busy = (p, t) => p.set({ cols: [H('2S 3S'), [], [], [], [], [], []], down:
   p.set({ cols: [[51], [], [], [], [], [], []], down: Z7, stock: [], waste: [], found: [suit(0), suit(1), suit(2), suit(3).slice(0, 12)] });
   vm.run(100 * 60); p.score = 1000; p.setHand(1, 0); vm.press('A'); vm.press('A');
   const secs = Math.floor(p.played / 60);
-  ok(p.state === 'over' && secs >= 100 && p.bonus === Math.floor(700000 / secs) && p.score === 1000 + 10 + p.bonus, 'a win after 100 s gets a time bonus of 700,000 / seconds', `${secs} s, bonus ${p.bonus}, score ${p.score}`);
+  ok(p.won && secs >= 100 && p.bonus === Math.floor(700000 / secs) && p.score === 1000 + 10 + p.bonus, 'a win after 100 s gets a time bonus of 700,000 / seconds', `${secs} s, bonus ${p.bonus}, score ${p.score}`);
 }
 
 // 5. Stuck.

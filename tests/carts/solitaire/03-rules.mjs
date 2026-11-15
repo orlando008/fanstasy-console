@@ -101,7 +101,7 @@ const empty7 = () => Array.from({ length: 7 }, () => []);
   const suit = (s) => Array.from({ length: 13 }, (_, r) => s * 13 + r);
   p.set({ cols: [[51], [], [], [], [], [], []], down: [0, 0, 0, 0, 0, 0, 0], stock: [], waste: [], found: [suit(0), suit(1), suit(2), suit(3).slice(0, 12)] });
   p.setHand(1, 0); vm.press('A'); vm.press('A');
-  ok(p.found.every((f) => f.length === 13) && p.state === 'over', 'the 52nd card on the foundations wins the game');
+  ok(p.won && p.state === 'cascade', 'the 52nd card on the foundations wins the game');
 }
 
 // 6. The columns are drawn from their buffers, within the sprite limits.

@@ -440,6 +440,7 @@ function update() {
   if (paused) updatePause();
   else if (state === 'title') updateTitle();
   else if (state === 'play') updatePlay();
+  else if (state === 'cascade') updateCascade();
   else if (state === 'over') updateOver();
   else if (state === 'initials') updateInitials();
   else if (state === 'records') updateRecords();
@@ -487,11 +488,42 @@ function updateStuck() {
 }
 
 function win() {
-  won = true; state = 'over'; timer = 0; play(-1); fx(SFX.record); autoing = false;
+  won = true; state = 'cascade'; timer = 0; play(-1); fx(SFX.record); autoing = false; flying = []; launched = 0;
   bonus = seconds() > 30 ? Math.floor(PTS.bonus / seconds()) : 0;
   score += bonus;
   record(true);
   rank = insertTop({ score, initials: lastInitials(), mode: drawN, secs: seconds() });
+}
+
+// --- The win cascade (spec 10): the cards leap off the foundations, kings first, and bounce down the table. Each is
+// stamped onto the overlay every frame, and the overlay is not cleared, so each leaves a trail of cards. ---
+
+const LAUNCH_EVERY = 16, GRAVITY = 0.35, FLOOR = 224 - 48, BOUNCE = 0.67;
+let flying = [], launched = 0;
+function updateCascade() {
+  if (timer > 10 && pressed(A)) { endCascade(); return; }
+  if (launched < 52 && timer % LAUNCH_EVERY === 1) {               // the next card: K of each suit, then Q ...
+    const f = launched % 4, c = found[f].pop();
+    if (c !== undefined) flying.push({ c, x: COLX(f + 3), y: TOPY, vx: (rnd(2.5) + 1.5) * (rndi(0, 1) ? 1 : -1), vy: -rnd(4) });
+    launched++;
+  }
+  for (const k of flying) {
+    k.vy += GRAVITY; k.x += k.vx; k.y += k.vy;
+    if (k.y > FLOOR) { k.y = FLOOR; k.vy = -k.vy * BOUNCE; }
+  }
+  flying = flying.filter((k) => k.x > -32 && k.x < 256);
+  if (launched >= 52 && !flying.length) endCascade();
+}
+function endCascade() { state = 'over'; timer = 0; flying = []; for (const f of found) f.length = 0; }
+/** A card's face, copied from the ROM onto the overlay pixel by pixel (its palette's entries, 128 + 16 x palette up). */
+function stamp(c, x, y) {
+  const z = CARDS.sizes.large, b = rom(z.rom), p = c * z.bytes, base = 128 + 16 * b[p];
+  x = Math.round(x); y = Math.round(y);
+  for (let j = 0; j < z.h; j++) for (let i = 0; i < z.w; i += 2) {
+    const v = b[p + 1 + j * (z.w >> 1) + (i >> 1)];
+    if (v & 15) pset(x + i, y + j, base + (v & 15));
+    if (v >> 4) pset(x + i + 1, y + j, base + (v >> 4));
+  }
 }
 
 function updateOver() {
@@ -542,8 +574,13 @@ function updatePause() {
 const OUTLINE = ART.colors.OUTLINE, FELTDARK = ART.colors.FELTDARK;
 
 function draw() {
-  cls();
-  if (state === 'play' || state === 'over') drawTable();
+  // the cascade and the win panel keep the overlay (the trails), and do not blend it: the cards' colours are from 192 up
+  const keep = state === 'cascade' || state === 'over';
+  blend(keep ? null : { layers: ['overlay'], half: true });
+  if (state === 'cascade') { if (timer <= 1) cls(); drawTable(false); for (const k of flying) stamp(k.c, k.x, k.y); return; }
+  if (state !== 'over') cls();
+  if (state === 'play') drawTable(true);
+  else if (state === 'over') drawTable(false);
   else if (state === 'title') drawTitle();
   else if (state === 'initials') drawInitials();
   else if (state === 'records') drawRecords();
@@ -568,12 +605,14 @@ function handAt() {
   return [COLX(h.i), COLY + y];
 }
 
-function drawTable() {
+/** The table: its cards as sprites, and with `overlay`, the empty piles, the HUD and the hint on the overlay. */
+function drawTable(overlay) {
   // sprites first are on top: the hand, then the held cards, then the piles
   const [hx, hy] = handAt(), bob = (clock >> 4) & 1;
-  sprite(ART.sprites.hand, hx + 14, hy + 10 + bob);
+  if (overlay) sprite(ART.sprites.hand, hx + 14, hy + 10 + bob);
   if (held) drawStack(HELD, hx + 6, hy + 6, held.cards.length * UP_GAP + CH - UP_GAP);
   // the top row: the stock, the waste (fanned in DRAW 3), the foundations
+  const slot = overlay ? emptyPile : () => {};
   if (stock.length) drawCard(stock[0], COLX(0), TOPY, { down: true }); else slot(0, TOPY, '');
   const show = waste.slice(-(drawN === 3 ? 3 : 1));
   for (let n = show.length - 1; n >= 0; n--) drawCard(show[n], COLX(1) + n * 8, TOPY);
@@ -581,6 +620,7 @@ function drawTable() {
   for (let f = 0; f < 4; f++) { if (found[f].length) drawCard(top(found[f]), COLX(f + 3), TOPY); else slot(f + 3, TOPY, 'A'); }
   // the columns
   for (let k = 0; k < 7; k++) { if (cols[k].length) drawStack(k, COLX(k), COLY, colH[k]); else slot(k, COLY, 'K'); }
+  if (!overlay) return;
   txt(`SCORE ${score}`, 4, 2, WHITE);
   txt(`TIME ${clockText()}`, 108, 2, WHITE);
   txt(`DRAW ${drawN}`, 196, 2, DIM);
@@ -602,7 +642,7 @@ function drawHint() {
 }
 /** An empty pile: a darker place in the felt with a gold outline, rounded as a card is, and the letter of the card
  * that may start it. */
-function slot(k, y, letter) {
+function emptyPile(k, y, letter) {
   const x = COLX(k);
   rectfill(x + 2, y + 2, 28, 44, FELTDARK);
   line(x + 2, y, x + 29, y, OUTLINE); line(x + 2, y + 47, x + 29, y + 47, OUTLINE);

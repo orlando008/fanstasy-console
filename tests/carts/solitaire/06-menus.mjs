@@ -8,6 +8,7 @@ const suit = (s) => Array.from({ length: 13 }, (_, r) => s * 13 + r);
 function winNow(vm, p) {
   p.set({ cols: [[51], [], [], [], [], [], []], down: [0, 0, 0, 0, 0, 0, 0], stock: [], waste: [], found: [suit(0), suit(1), suit(2), suit(3).slice(0, 12)] });
   p.setHand(1, 0); vm.press('A'); vm.press('A');
+  vm.run(12); vm.press('A');                             // skip the cascade, to the score
 }
 const rgb = (vm, i) => vm.m.cgram ? vm.m.cgram[i] : null;
 

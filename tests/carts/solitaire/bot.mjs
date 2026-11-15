@@ -102,6 +102,6 @@ function wayOn(p) {
 
 export const finished = (p) => p.state !== 'play' || p.stuck || problems.length > 0;
 export function result(p) {
-  const won = p.state !== 'play' && p.found.every((f) => f.length === 13);
+  const won = p.won;
   return { won: won ? 1 : 0, home: p.found.reduce((n, f) => n + f.length, 0), moves: p.moves, score: p.score, seconds: Math.floor(p.played / 60), problems: problems.slice() };
 }

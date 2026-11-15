@@ -18,7 +18,7 @@ const PROBE = `__expose(() => ({
     if (t.waste) waste = t.waste.slice(); if (t.found) found = t.found.map((f) => f.slice()); held = null; undos = []; stuck = false; autoing = false; hint = null; composeAll(); },
   setHand(row, i, depth) { hand = { row, i, depth: depth ?? Math.max(0, (row ? cols[i].length : 1) - 1) }; },
   get played() { return played; }, get started() { return started; }, get autoing() { return autoing; }, get stuck() { return stuck; },
-  get hint() { return hint; }, get bonus() { return bonus; }, findHint, PTS, get back() { return back; }, get page() { return page; },
+  get hint() { return hint; }, get bonus() { return bonus; }, findHint, PTS, get back() { return back; }, get won() { return won; }, get flying() { return flying; }, get launched() { return launched; }, get page() { return page; },
   stat, STAT_SLOT, BACK_SLOT, MODE_SLOT, readEntry,
   canOnCol, canOnFound, foundFor, colYs, cardName, cardRank, cardSuit, cardRed,
   SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
