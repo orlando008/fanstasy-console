@@ -419,6 +419,8 @@ class Art:
             if not 1 <= i <= 15: raise ValueError('palette %s %d: %r needs index 1 to 15 (0 is transparent), got %d' % (kind, sub, name, i))
             if i in index.values(): raise ValueError('palette %s %d: index %d used twice' % (kind, sub, i))
             index[name] = i; hexes[name] = _hex(v)
+            clash = [k for k, e in s.colors.items() if e == base + i]
+            if clash: s.notes.append('%s palette %d overwrites CGRAM entry %d, the colour named %s by art.color: give that colour a free entry' % (kind, sub, base + i, clash[0]))
             s.cgram[base + i] = hexes[name]
         if kind == 'bg' and sub == 0: s.notes.append('BG palette 0 is defined: it shares CGRAM entries 1 to 15 with the overlay\'s default text colours, which change with it')
         r = Roles(kind, sub, base, index, hexes, {n: tuple(index['%s%d' % (n, k)] for k in range(c)) for n, c in ramps.items()})

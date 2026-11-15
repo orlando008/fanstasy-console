@@ -1,0 +1,104 @@
+{
+ "colors": {
+  "BACK0": 202,
+  "BACK1": 203,
+  "BACK2": 204,
+  "FELTDARK": 18,
+  "OUTLINE": 113,
+  "PANELFILL": 115,
+  "PANELLINE": 116
+ },
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "felt0": 1,
+    "felt1": 2,
+    "felt2": 3,
+    "felt3": 4,
+    "felt4": 5,
+    "line": 10,
+    "wood0": 6,
+    "wood1": 7,
+    "wood2": 8,
+    "wood3": 9
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "gold0": 1,
+    "gold1": 2,
+    "gold2": 3,
+    "gold3": 4,
+    "gold4": 5,
+    "ink": 6,
+    "shade": 7
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "blue0": 7,
+    "blue1": 8,
+    "blue2": 9,
+    "gold0": 4,
+    "gold1": 5,
+    "gold2": 6,
+    "green0": 10,
+    "green1": 11,
+    "green2": 12,
+    "grey0": 13,
+    "grey1": 14,
+    "grey2": 15,
+    "red0": 1,
+    "red1": 2,
+    "red2": 3
+   }
+  },
+  "spr4": {
+   "base": 192,
+   "colors": {
+    "back0": 10,
+    "back1": 11,
+    "back2": 12,
+    "edge": 1,
+    "gold0": 8,
+    "gold1": 9,
+    "hair": 15,
+    "ink0": 4,
+    "ink1": 5,
+    "ink20": 6,
+    "ink21": 7,
+    "paper0": 2,
+    "paper1": 3,
+    "skin0": 13,
+    "skin1": 14
+   }
+  }
+ },
+ "rom": [
+  "backs",
+  "cards_large",
+  "logo"
+ ],
+ "scenes": {
+  "table": {
+   "h": 28,
+   "mx": 0,
+   "my": 0,
+   "pal": 1,
+   "w": 32
+  }
+ },
+ "sprites": {
+  "hand": {
+   "pal": 1,
+   "size": 16,
+   "tile": 908
+  }
+ },
+ "tiles": {},
+ "used": 964,
+ "version": 1
+}
