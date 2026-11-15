@@ -197,6 +197,41 @@
    "size": 8,
    "tile": 618
   },
+  "flag0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 622
+  },
+  "flag1a": {
+   "pal": 2,
+   "size": 16,
+   "tile": 712
+  },
+  "flag1b": {
+   "pal": 2,
+   "size": 16,
+   "tile": 714
+  },
+  "flag2a": {
+   "pal": 2,
+   "size": 16,
+   "tile": 716
+  },
+  "flag2b": {
+   "pal": 2,
+   "size": 16,
+   "tile": 718
+  },
+  "flag3a": {
+   "pal": 2,
+   "size": 16,
+   "tile": 744
+  },
+  "flag3b": {
+   "pal": 2,
+   "size": 16,
+   "tile": 746
+  },
   "mag_draw": {
    "pal": 1,
    "size": 32,
@@ -215,37 +250,37 @@
   "pu_big": {
    "pal": 2,
    "size": 16,
-   "tile": 622
+   "tile": 748
   },
   "pu_roller": {
    "pal": 2,
    "size": 16,
-   "tile": 714
+   "tile": 768
   },
   "pu_sponge": {
    "pal": 2,
    "size": 16,
-   "tile": 716
+   "tile": 770
   },
   "pu_triple": {
    "pal": 2,
    "size": 16,
-   "tile": 712
+   "tile": 750
   },
   "sparkle0": {
    "pal": 2,
    "size": 16,
-   "tile": 718
+   "tile": 772
   },
   "sparkle1": {
    "pal": 2,
    "size": 16,
-   "tile": 744
+   "tile": 774
   },
   "sparkle2": {
    "pal": 2,
    "size": 16,
-   "tile": 746
+   "tile": 776
   },
   "splat_burst": {
    "pal": 0,
@@ -279,6 +314,6 @@
   }
  },
  "tiles": {},
- "used": 506,
+ "used": 534,
  "version": 1
 }

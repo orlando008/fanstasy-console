@@ -13,20 +13,21 @@ export const newGame = (seed) => { runSeed = seed; return boot(seed); }; // the 
 
 let plan = null, planTurn = -1, st = null, lastState = '';
 /** Options that change the cart's tuning for a sweep: splash (the splash radius), wide and jitter (its shape and spread
- *  across the wall), win (the percent), pu=0 (no power-ups). */
+ *  across the wall), win (the percent), wind (its most steps; 0: always calm), pu=0 (no power-ups). */
 export function setup(vm, p, opts) {
   plan = null; planTurn = -1; lastState = '';
   if (opts.splash) p.CFG.SPLASH_R = Number(opts.splash);
   if (opts.win) p.CFG.WIN = Number(opts.win);
+  if (opts.wind !== undefined) p.CFG.WIND_MAX = Number(opts.wind);
   if (opts.wide) p.CFG.SPLASH_WIDE = Number(opts.wide);
   if (opts.jitter !== undefined) p.CFG.SPLASH_JITTER = Number(opts.jitter);
   if (opts.pu === 0 || opts.pu === '0') { p.CFG.PU_X = [[-999, -999], [-999, -999]]; p.CFG.PU_Y = [-999, -999]; p.pu = null; } // out of reach
-  st = { reveals: 0, collects: 0, steals: 0, shots: 0, hits: 0, kinds: {}, got: [0, 0], at50: 0, revealedBy: -1 };
+  st = { windBy: [0, 0], hitBy: [0, 0], shotBy: [0, 0], addBy: [0, 0], reveals: 0, collects: 0, steals: 0, shots: 0, hits: 0, kinds: {}, got: [0, 0], at50: 0, revealedBy: -1 };
 }
 /** What each shot did, read when its result comes up (the bot only watches; it never changes the game). */
 function watch(p) {
   if (p.state === 'result' && lastState !== 'result') {
-    const s = p.shot; st.shots++; if (s.hits) st.hits++;
+    const s = p.shot; st.shots++; if (s.hits) st.hits++; st.shotBy[s.p]++; if (s.hits) st.hitBy[s.p]++; st.addBy[s.p] += s.added; st.windBy[s.p] += s.p ? -p.wind : p.wind; // positive: a wind behind the shot
     if (s.revealed) { st.reveals++; st.revealedBy = s.p; }
     if (s.collected) {
       st.collects++; st.got[s.p]++; st.kinds[s.collected] = (st.kinds[s.collected] || 0) + 1;
@@ -83,7 +84,8 @@ export function result(p) {
   if (p.state !== 'over') problems.push('still playing');
   if (p.state === 'over' && p.shots[0] !== p.shots[1]) problems.push('unequal shots');
   const lead = st.got[0] === st.got[1] ? null : st.got[0] > st.got[1] ? 0 : 1;
-  return { winner: p.winner, rounds: p.round, teal: p.percent(0), magenta: p.percent(1), hitRate: +(st.hits / st.shots).toFixed(2),
+  return { winner: p.winner, rounds: p.round, teal: p.percent(0), magenta: p.percent(1), hitRate: +(st.hits / st.shots).toFixed(2), tealHit: +(st.hitBy[0] / st.shotBy[0]).toFixed(2), magHit: +(st.hitBy[1] / st.shotBy[1]).toFixed(2),
+    tealTail: st.windBy[0], magTail: st.windBy[1], tealAdd: Math.round(st.addBy[0] / st.shotBy[0]), magAdd: Math.round(st.addBy[1] / st.shotBy[1]),
     roundsTo50: st.at50, lastStretch: p.round - st.at50, reveals: st.reveals, collects: st.collects, steals: st.steals,
     moreWon: lead === null ? 0.5 : +(lead === p.winner), problems };
 }

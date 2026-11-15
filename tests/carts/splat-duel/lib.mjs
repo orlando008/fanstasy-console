@@ -15,7 +15,7 @@ const PROBE = `__expose(() => ({
   get trails() { return trails; }, get menuSel() { return menuSel; }, get pauseSel() { return pauseSel; }, get tieRound() { return tieRound; },
   get ART() { return ART; }, get drops() { return drops; }, get fxs() { return fxs; }, get puddles() { return puddles; },
   CFG, SFX, SONG, CELLS, COLS, ROWS, arc, launch, move, contact, splash, roll, sponge, verdict, viewX, ovX, ovY, sy, covered, percent,
-  setCell, spawnPowerup, newWalls, drawWallTiles, mget: (x, y) => mget(x, y), sget: (x, y) => sget(x, y),
+  get wind() { return wind; }, setWind: (w) => { wind = w; }, setCell, spawnPowerup, newWalls, drawWallTiles, mget: (x, y) => mget(x, y), sget: (x, y) => sget(x, y),
 }));`;
 
 /** A new game. title: true to start on the title (otherwise straight to the first handoff). */

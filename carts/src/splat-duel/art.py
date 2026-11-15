@@ -207,6 +207,29 @@ arrow = Img.from_rows(['.....oooooo.....', '.....oLLMMo.....', '.....oLMMDo.....
                        '.......o........'] + ['.' * 16] * 5, key={'o': teal.line, 'L': teal.team[3], 'M': teal.team[2], 'D': teal.team[1]})
 art.sprite('arrow', arrow, pal=teal, region='spr')
 
+# --- The wind pennants, one on each wall: a pole and a flag that hangs limp in calm air and flies further out as the
+# wind gets up (strengths 0 to 3), two frames of flutter each. Drawn blowing right; code.js flips them for a wind to the left.
+def pennant(strength, phase):
+    im = Img(16, 16)
+    im.rect(1, 1, 1, 15, items.grey[0]); im.rect(2, 1, 1, 15, items.grey[1]); im.pset(1, 0, items.gold[2]); im.pset(2, 0, items.gold[1])
+    if strength == 0:                              # hanging down the pole
+        for y in range(2, 9): im.rect(3, y, max(1, 3 - (y - 2) // 3), 1, items.white if y < 6 else items.yellow[1])
+        return im
+    length, droop = 4 + strength * 3, (3 - strength) * 0.45
+    for x in range(length):
+        k = x / max(1, length - 1)
+        wave = round(math.sin(x * 0.9 + phase * math.pi) * (0.6 + 0.3 * strength) * k)
+        top = 2 + round(droop * x) + wave
+        h = max(1, round(4 * (1 - k * 0.75)))
+        for y in range(top, top + h):
+            if 0 <= y < 16: im.pset(3 + x, y, items.yellow[2] if y == top else items.white if x < length // 2 else items.yellow[1])
+    return im
+
+for k in range(4):
+    for ph in (0, 1):
+        if k == 0 and ph: continue
+        art.sprite('flag%d%s' % (k, 'ab'[ph] if k else ''), pennant(k, ph), pal=items, region='spr')
+
 # --- The power-ups: an icon in a gold diamond (16 px), and the sparkle of a reveal ---
 def diamond(inner):
     im = Img(16, 16)

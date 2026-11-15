@@ -1,7 +1,7 @@
 # Splat Duel: Cart Specification
 
-**Version:** 0.3 (step 3: feel and balance)
-**Status:** In development. The whole turn loop, the hidden power-up and all four power-ups play, in the look the user agreed (step 2); the splash is tuned so aiming decides the game (step 3)
+**Version:** 0.4 (step 4: wind)
+**Status:** In development. The whole turn loop, the hidden power-up and all four power-ups play, in the look the user agreed (step 2); the splash is tuned so aiming decides the game (step 3); a wind that changes each round (step 4)
 **Cart source:** `carts/src/splat-duel/` → `carts/splat-duel.nova`
 
 ---
@@ -71,8 +71,9 @@ All the numbers are `CFG` in `code.js`.
 
 **Flight.** A balloon leaves the slingshot at (52, 19) for teal, (395, 19) for magenta, at speed
 `2.0 + 5.5 × power / 100` px a frame, at the chosen angle (5 to 85 degrees) towards the other wall, and falls at 0.1 px a
-frame per frame, stepped 4 times a frame. The aiming dots are the first 24 frames of that same motion (gravity only:
-they know nothing of the walls or the power-up). Starting aim: 45 degrees, power 60; each player's aim is kept between
+frame per frame, stepped 4 times a frame. The **wind** pushes it across the courtyard at `wind × 0.004` px a frame per
+frame, `wind` from -3 (towards teal's wall) to 3 (towards magenta's). The aiming dots are the first 24 frames of that same
+motion (gravity and wind: the wind is shown, so the dots may know it; they know nothing of the walls or the power-up). Starting aim: 45 degrees, power 60; each player's aim is kept between
 turns.
 
 **Hits.** A balloon (radius 3) that touches a wall (32 × 96 px) splashes on it; one that touches the ground leaves a
@@ -91,7 +92,7 @@ shows the brick's courses under it.
 
 **The power-up.** Exactly one is in the courtyard at a time, at x 72 to 112 or 336 to 376 (inside a view) and a height
 of 28 to 140, which both players can reach (a test checks). It appears **hidden** at the start of a turn when there is
-none, and is never drawn, sparkled, shadowed or hinted at while hidden: nothing on the screen depends on where it is
+none (except the game's very first turn: the first one appears on the second turn; see step 3's results), and is never drawn, sparkled, shadowed or hinted at while hidden: nothing on the screen depends on where it is
 (a test draws the same game with it in two places and compares every frame).
 
 - A balloon passing within **20 px** reveals it, to both players; it stays revealed, in the same place, until collected
@@ -126,7 +127,13 @@ One courtyard (the prototype's scope). More courtyards are an open question.
 
 ## 7. Opponents or hazards
 
-The other player. No AI opponent (out of scope); no wind or obstacles yet.
+The other player. No AI opponent (out of scope); no obstacles.
+
+**The wind.** The first round is calm. Each later round begins with a new wind, `rndi(-3, 3)` from the game's seed, the
+same for both players' shots of the round and never changing during one. A pennant on top of each wall shows it (hanging
+limp, drooping, flying out, straight out; two frames of flutter), and the overview and the handoff spell it out
+("WIND >>", "CALM"). One step moves a flat shot's impact on the wall about 3 px and a high lob's by tens of pixels, so in a
+strong wind the flat shot is the safe one.
 
 ## 8. Modes
 
@@ -181,8 +188,8 @@ effects take turns on 6 and 7.
 
 | Asset | Budget |
 |---|---|
-| Code | 33.9 KB of the 64 KB limit (`node tools/check.js splat-duel`) |
-| Tiles | 470 of 1,024 (321 background, 149 sprites), plus 96 reserved for the painted walls |
+| Code | 35.9 KB of the 64 KB limit (`node tools/check.js splat-duel`) |
+| Tiles | 498 of 1,024 (321 background, 177 sprites), plus 96 reserved for the painted walls |
 | Sprites | About 20 at most (3 balloons, 24 drops capped, 10 puddles, the kids, the power-up) |
 | Songs / SFX | 3 of 8 songs, 14 effects |
 
@@ -234,7 +241,25 @@ effects take turns on 6 and 7.
      The sweeps also found two bugs in the bot, not the game: its aiming error came from the frame number, which is the
      same in every game, so 16 seeds were one game repeated (it gave teal 15 of 16 without power-ups); now the seed is in
      it. And it aimed at a band 5 rows tall, smaller than a splash, so it re-painted paint; now the band is a splash's.
-4. **More to read in the courtyard:** wind or obstacles, if wanted (open questions).
+4. **More to read in the courtyard:** wind (chosen by default when the user said "go ahead"; obstacles not built).
+   - **Built:** `wind` in the motion rule (`move`), so the flight, the aiming dots and the bot all feel it the same way;
+     `WIND_MAX` 3, `WIND_STEP` 0.004, `WIND_CALM_ROUNDS` 1; a new wind when a round begins (`updateResult`). Pennants
+     (`flag0` to `flag3a/b`, palette 2) on both walls, flipped for a wind to the left; the wind in the overview and on
+     the handoff; a line on the help page. And the evening from step 3: no power-up on the game's first turn
+     (`startTurn`). `04-wind.mjs`: the first round calm, the same wind for both shots of a round and from aiming to
+     landing, changing between rounds within 3 steps, the same seed giving the same winds; a tailwind carrying a shot
+     further; the flight in the wind being exactly the aiming dots' arc, frame by frame; the pennants; the first
+     power-up waiting for the second turn.
+   - **Results:** 92 checks pass; smoke test 60 fps, no errors. Sweeps at skill 0.8 (the bot reads the wind perfectly,
+     so this measures fairness and length, not difficulty for a person): about 6 to 6.5 rounds a game (6.4 at skill 0.6),
+     2 to 3 of them from 50% to the win; 2.5 to 3.8 power-ups taken a game, about 1.2 steals. **The second player's edge
+     is gone into the noise:** 105 of 192 games with power-ups (55%; it was 61%, 88 of 144, before the first power-up
+     waited for the second turn; 55% is 1.3 standard deviations from even). Without power-ups the wind left the game even
+     where it was calm (16 to 16 with the wind off), and 60% to the first player with it (77 of 128: 66% on the first
+     64 seeds, 55% on the next 64), with no mechanism found: both players hit 97% of shots and painted the same per
+     shot, and the wind behind each player's shots averaged out; to watch, not to act on yet. Looking at the screens
+     found a help line too long, and the result panel covering the pennants or a sparkle: the panel now takes the first
+     of three heights that covers neither the power-up nor a sparkle.
 5. **Content:** more courtyards, if wanted.
 6. **Flow:** first-player choice, a short tutorial turn.
 7. **Art pass:** the rest of the art in the agreed look (paint drips, a hit reaction, the power-ups' frames).
@@ -254,6 +279,8 @@ Defaults chosen for the prototype that the user has not confirmed:
 - **Aiming dots** show the first 24 frames of the arc; the last shot of each player stays as a trail.
 - **The game song** is the starter's; a calmer piece may suit a turn-based game.
 - Teal starts the first game, and the first player alternates in rematches.
-- **Going second is worth about 61% with power-ups** (step 3). Possible evenings, each to sweep: no power-up on the
-  game's very first turn (so the second player's shot is the first to pass the first one); or the first player
-  alternating every round instead of every game; or leaving it, as rematches alternate.
+- **Going second was worth about 61% with power-ups** (step 3); the first power-up now waits for the game's second turn
+  (step 4: the user's "go ahead" on the recommendation). If the edge remains, the next evening to try is the first
+  player alternating every round instead of every game.
+- **The wind** is calm in round 1 and up to 3 steps after; the bot reads it perfectly (it uses the cart's own `arc()`), so
+  how hard it is for a person is not measured: to be judged by playing the preview.
