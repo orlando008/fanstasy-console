@@ -268,6 +268,10 @@ Build the cart with these in mind from the start:
   to game), then check the win rate over 40 seeds. A bot that loses with moves to spare is a weak bot, not a hard level:
   make it chase the goal harder before changing the level. If one feature (a corner of ice that only three clears can reach)
   decides a level, it is luck, not difficulty; take it out.
+  **A bot's own randomness must come from the run's seed** (its aiming error, its choices), not from the frame number or
+  a fixed sequence: a bot plays the same frames in every game, so Splat Duel's first sweep was one game sixteen times and
+  showed teal winning 15 of 16 (`tests/carts/splat-duel/bot.mjs` keeps the seed from `newGame`). Before believing a
+  lopsided result, trace one game shot by shot: the same sweep's bot also aimed at a band smaller than its own splash.
 
 
 Checks that proved their worth (the test files in `tests/carts/moto-crosser/` are the examples):
@@ -701,4 +705,31 @@ What building `merge-cafe` taught (its spec is `docs/carts/merge-cafe.md`; every
   and expect a person who stops to think to take about twice as long.
 - **Jazz on the chip:** a bar of 12 rows (three to a beat) swings the eighths; voice a major chord with its sixth, not its seventh, under a tune
   that sits on the root, and stop a tune's note at the bar line when the next bar's tune starts late (`clash.py` found both).
+
+## 15. A turn-based duel on this console (Splat Duel)
+
+What building `splat-duel` taught (its spec is `docs/carts/splat-duel.md`; every point has a test in `tests/carts/splat-duel/`):
+
+- **Two players on one pad need a handoff a held button cannot skip.** Take the next turn's press only after every
+  button has been let go for half a second (`HANDOFF_QUIET`), and ignore A for a moment after it (`AIM_GRACE`): a held
+  A, a mashed A and a double tap then cannot fire the next player's shot. Check the press before counting the quiet,
+  or the press itself resets it (the first version never let the turn start).
+- **A wider world than the screen: one mapping, two windows and an overview.** The courtyard is 448 px; each half of the
+  screen is a fixed window onto one end (`viewX()`), every background is drawn once in world coordinates and cut into
+  the halves (`view()` in `art.py`), and an overview strip shows the whole flight. A window hides sprites on the divider
+  (`winmask('spr')`) so nothing crosses from one view into the other. Distant sky looks the same from both ends, so a
+  cloud strip shared by the two views is honest.
+- **A secret must not leak through the picture.** Test it the hard way: the same game with the hidden thing in two
+  places must draw identical frames (`03-rules.mjs`), and the same check must tell the difference once it is revealed.
+- **Score from a mask, draw from the mask, decorate apart.** Coverage is a grid of cells (a cell counts once); the wall's
+  tiles are written from it with `sset` (each wall cell copied to a tile of its own at start, so painting one does not
+  paint its twins); drips are a list of their own drawn on the same tiles; decoration has its own random numbers
+  (`deco()`), so it can never change the winds or the spawns (a test draws 500 of them and checks the game's next
+  numbers).
+- **Look for luck at the end of a game.** The sweep's `lastStretch` (rounds from 50% to the win) was longer than the climb
+  to 50%, and a perfect aimer barely beat a sloppy one: the splash landed at random across the wall and rarely reached
+  its edges. A splash as wide as the wall, ragged only top and bottom, made the end a matter of aiming.
+- **A reveal-and-steal mechanic favours the second player** (61% of bot games); the first power-up waiting for the
+  game's second turn brought it to 55%. Sweep the second player's share whenever a rule lets one player's shot help
+  the other.
 
