@@ -36,8 +36,9 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 
 // --- Sound (SPEC 5): songs on channels 0 to 5, effects take turns on 6 and 7 ---
 
-const SFX = { move: 0, select: 1, pause: 2, bad: 3, over: 4, good: 5, record: 6, shot: 7, splash: 8 };
-const SONG = { title: 0, trail: 1 };
+const SFX = { move: 0, select: 1, pause: 2, bad: 3, over: 4, good: 5, record: 6, shot: 7, splash: 8, toll: 9, till: 10, arrive: 11, bell: 12 };
+const SONG = { title: 0, region: 1, grave: 6, arrival: 7 };      // 1 to 5: the prairie, bluffs, mountains, desert, forests (audio.py)
+const regionSong = () => play(SONG.region + (J ? J.region : 0));
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -456,8 +457,9 @@ function saveGrave(g) {
 /** A death's grave: REST IN PEACE, or an epitaph written on the keyboard. */
 function buryNext() {
   const d = J.buried.shift();
+  if (state !== 'end') play(SONG.grave);                             // the grave's hymn, until the party goes on
   showCard('A GRAVE BY THE TRAIL', [`FOR ${d.name}.`, 'WHAT SHALL IT SAY?'], ['REST IN PEACE', 'WRITE AN EPITAPH'], (c) => {
-    const put = (text) => { saveGrave({ ...d, text }); J.log.push(`${MONTHS[d.month].slice(0, 3)} ${d.day}: BURIED ${d.name}. THE MARKER READS "${text}".`); };   // dated the day they died
+    const put = (text) => { if (state !== 'end' && !J.buried.length) regionSong(); saveGrave({ ...d, text }); J.log.push(`${MONTHS[d.month].slice(0, 3)} ${d.day}: BURIED ${d.name}. THE MARKER READS "${text}".`); };   // dated the day they died
     if (c === 0) return put('REST IN PEACE');
     const back = state;
     toKeys(`${d.name}'S EPITAPH`, '', 16, (t) => { put(t); state = back; timer = 0; });
@@ -555,7 +557,7 @@ function init() {
 function toTitle() { state = 'title'; timer = 0; sel = 0; paused = false; sceneOn = -1; loadRegion(0); play(SONG.title); }
 function toSetup() { state = 'setup'; timer = 0; setup = { bg: 0, month: 1, step: 0, names: NAMES.slice() }; }
 function toStore(mult = 1) { state = 'store'; timer = 0; sel = 0; storeMult = mult; cart = {}; for (const g of GOODS) cart[g.key] = 0; }
-function toTrail() { state = 'trail'; timer = 0; paused = false; card = null; dayTimer = 0; play(SONG.trail); }
+function toTrail() { state = 'trail'; timer = 0; paused = false; card = null; dayTimer = 0; regionSong(); }
 function toMenu() { state = 'menu'; timer = 0; sel = 0; }
 /** A card over the trail: a title, lines, and choices (or none: A continues). then(choice) runs when one is made. */
 function showCard(title, lines, choices = null, then = null) { card = { title, lines: lines.flatMap((l) => (l.length > 28 ? wrapText(l) : [l])), choices, then, sel: 0 }; }   // long lines wrapped to the card
@@ -678,9 +680,11 @@ function updateStore() {
   }
   if (pressed(A) && sel === GOODS.length || pressed(START)) {
     if (J.mile === 0 && J.oxen + cart.oxen < 1) { fx(SFX.bad); showCard('THE STORE', ['YOU NEED AT LEAST ONE YOKE', 'OF OXEN TO PULL THE WAGON.']); return; }
+    if (cartCost() > 0) fx(SFX.till);
     J.money = Math.round((J.money - cartCost()) * 100) / 100;
     for (const g of GOODS) J[g.key] += cart[g.key] * (g.per || 1);
-    fx(SFX.select); toTrail();
+    if (cartCost() === 0) fx(SFX.select);
+    toTrail();
     if (!J.departed) { J.departed = true; showCard('INDEPENDENCE, MISSOURI', BOOK.places.INDEPENDENCE.about); }   // setting out
   } else if (pressed(B) && J.mile > 0) { fx(SFX.move); toTrail(); }
 }
@@ -695,6 +699,7 @@ function updateTrail() {
     toMenu(); return;
   }
   scroll += 1;
+  if (scroll % 233 === 0) fx(SFX.bell);                           // the lead ox's bell, now and then
   if (++dayTimer < DAY_FRAMES) return;
   dayTimer = 0;
   travel(false);
@@ -706,20 +711,21 @@ function travel(resting) {
   for (const t of out.ill) if (!out.died.some((n) => t.startsWith(n + ' '))) lines.push(t);   // the illness as it struck (it may have passed by the evening)
   const ev = !resting && out.arrived < 0 && !J.done ? rollEvent(J) : null;   // an event on a day of travel that reached no landmark
   const reg = regionAt(J.mile), newRegion = reg > J.region; J.region = Math.max(J.region, reg);
+  if (newRegion) { loadRegion(reg); regionSong(); }                  // its layers and its tune at once; its card after the day's
   const after = () => {
     if (J.done) return endJourney();
     const go = () => { if (out.arrived >= 0) reach(out.arrived); };
-    if (newRegion) { loadRegion(reg); const r = BOOK.regions[reg]; showCard(r.name, r.lines, null, go); } else go();   // a card on entering a new region, and its layers
+    if (newRegion) { const r = BOOK.regions[reg]; showCard(r.name, r.lines, null, go); } else go();   // a card on entering a new region, and its layers
   };
   const evCard = () => { if (ev) { fx(/DIED|LOST|BROKE|THIEF|LAME|STORM|BLIZZARD|FIRE|BAD|ROUGH|LITTLE/.test(ev[0]) ? SFX.bad : SFX.good); showCard(dateText(J), ev, null, after); } else after(); };
-  if (lines.length) { fx(out.died.length ? SFX.over : SFX.bad); showCard(dateText(J), lines, null, evCard); }
+  if (lines.length) { fx(out.died.length ? SFX.toll : SFX.bad); showCard(dateText(J), lines, null, evCard); }
   else evCard();
   return out;
 }
 /** Reaching a landmark (5.3 to 5.4, 6): its scene and card, where you can look around (the book's paragraph), talk to the people there
  * (a different one each time) and, at a fort, buy supplies; then a river asks how to cross, a fork which way; the end ends. */
 function reach(k) {
-  const m = TRAIL[k]; J.next = k + 1; fx(SFX.good);
+  const m = TRAIL[k]; J.next = k + 1; fx(SFX.arrive);
   note(J, `REACHED ${m.name}.`);
   if (m.kind === 'end') { J.arrived = true; J.done = true; return endJourney(); }
   showScene(m.name);                                                // its painted scene, when it has one (step 7 paints the rest)
@@ -770,7 +776,7 @@ function endJourney() {
   state = 'end'; timer = 0; card = null;
   const sc = J.arrived ? scoreOf(J) : 0;
   rank = J.arrived ? insertTop({ score: sc, name: J.party[0].name, bg: J.bg }) : -1;
-  J.score = sc; fx(J.arrived ? SFX.record : SFX.over);
+  J.score = sc; fx(J.arrived ? SFX.record : SFX.over); play(J.arrived ? SONG.arrival : SONG.grave);
   dset(SAVE_SLOT, 0);                                               // the journey is over: nothing to continue
   if (J.arrived) showScene('WILLAMETTE VALLEY');
 }

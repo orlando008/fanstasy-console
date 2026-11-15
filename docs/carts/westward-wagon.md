@@ -212,20 +212,20 @@ The journey is **saved** each day (CONTINUE resumes it), so a 45-minute game can
 
 ## 11. Audio
 
-**Songs**, public-domain American folk tunes of the period on the sampled instruments: a fiddle-like strings lead, a banjo-like pluck, a harmonica-like flute, a simple bass, a light drum where it suits. The candidates:
-- the title: "Oh! Susanna" (Foster, 1848);
-- the prairie: "Buffalo Gals" (1844);
-- the bluffs: "Old Dan Tucker" (1843);
-- the mountains: "Shenandoah" (traditional);
-- the desert: "Sweet Betsy from Pike" (a trail song, 1850s);
-- the forests: "Camptown Races" (1850);
-- a grave: "Shenandoah", slow;
-- the arrival: "Oh! Susanna" in full.
+**Songs**, American tunes of the period in their own notes, read from public domain engravings (Mutopia; `scores/SOURCES.md`), on the sampled instruments: a fiddle (strings), a banjo (pluck), a harmonica (flute) and a bass; no drums. Each song a medley (`medley.py`); a piece's padding to whole patterns passes at a frame a row (`F01` after its last note), so a loop has no silence.
+- 0 the title: *Soldier's Joy* (fiddle over banjo);
+- 1 the prairie: G. F. Root, *There's Music in the Air* (1857, harmonica), then *Soldier's Joy*;
+- 2 the bluffs: S. C. Foster, *The Old Folks at Home* (1851, fiddle over a picked banjo);
+- 3 the mountains: *Amazing Grace* (*New Britain*, 1835, harmonica over a drone of strings);
+- 4 the desert: R. Lowry, *Hanson Place* (1864, fiddle, choir and strings);
+- 5 the forests: S. C. Foster, *Slumber My Darling* (1862, harmonica over the banjo's arpeggios);
+- 6 a grave: *Amazing Grace*, slow, strings over the drone (while the grave is made, and when the whole party is lost);
+- 7 the arrival: H. R. Bishop, *Home! Sweet Home!* (1823, fiddle and harmonica together).
 
-The notes are taken from public-domain scores, not from memory (the playbook's lesson from Flow State).
+The first choices (*Oh! Susanna*, *Camptown Races*, *Buffalo Gals*, *Old Dan Tucker*, *Shenandoah*, *Sweet Betsy from Pike*) had no public domain engraving that could be fetched (`scores/SOURCES.md`).
 
-**Effects:**
-- the wagon's creak and the oxen's bell, quietly, while it rolls;
+**Effects** (`SFX` in the code: menu move, select, pause, bad news, the party lost, good news, a record, a shot, a rock struck, a death's toll, the till, a landmark's chord, the ox's bell):
+- the oxen's bell, now and then while the wagon rolls (every 233 frames on the move);
 - a gunshot and a hit;
 - the river's splash;
 - an event's chime: good or bad;
@@ -344,6 +344,8 @@ The weather now varies around each month's average (a step either way): the firs
 **Step 7, built:** the world (`world.py`): the five regions' parallax layers (the prairie's hills and cottonwoods; the bluffs' flat-topped clay buttes and junipers; the Rockies' snowy peaks and pines; the high desert's pale mesas, sage and black basalt; Oregon's firs under Mount Hood), each with its own sky and colours, the mountains and forests drawn 128 px wide and laid twice so their tiles are shared (270 to 366 tiles a region); eight new landmark scenes (Independence Rock's granite dome by the Sweetwater, its names painted at the foot; Soda Springs' mineral mounds and the Steamboat Spring's plume; South Pass under the Wind River Range; the Blue Mountains' road between pines; The Dalles' basalt gorge and the Columbia under Mount Hood; an adobe fort with bastions and a pennant; a river crossing with cottonwoods; the Willamette Valley's fields, river and cabin under Mount Hood) and the logo, all in the ROM, LZ-packed (`lz` and `pack_blob` in `world.py`, `lz()` and `romEntry()` in the code; 70 KB of the 128). `loadRegion` on entering a region, at the start, on the title and on resuming; every landmark shows its scene with its card; the end shows the valley with the score beneath it. Cards wrap any line longer than 28 letters (an event's "IT TOOK 2 DAYS TO FIND IT AGAIN." ran past the card); a river's line is shorter ("620 FT ACROSS, 3.6 FT DEEP."); the title's choices sit on a panel. The event pictures of the plan were left out: the sprite tiles are nearly full (342 of 368) and the cards read well with the trail behind them. `screens.mjs` lists each region's trail and each scene (32 screens); `critique.mjs` leaves one warning, the trade card over the wagon, as designed. Tests: `07-world.mjs` (every region and scene unpacks whole and fits its tiles, every landmark has a scene, a region loads on entering it, scenes show and hide, the title shows the prairie, a resumed journey its region). The code is 61 KB of 64.
 
 **Step 7, results** (4 seeds, a banker and a farmer, April): every run finishes cleanly through the five regions; a banker arrives with 4.75 of 5, a farmer with 1.75.
+
+**Step 8, built:** the music: `scores.py` reads seven public domain engravings from the Mutopia Project with `midi.py` (a small MIDI reader, so no packages are needed) into `scores/` (a skyline for the guitar arrangement whose tune shares its track; the bagpipe engraving's grace notes left out; a drone of the game's own under Amazing Grace), and `audio.py` arranges them as eight songs (section 11): 32 patterns, 9 KB of samples. Each region plays its tune from the moment the wagon enters it (with its layers; its card after the day's), a grave plays the hymn while it is made and the region's tune after, the arrival *Home! Sweet Home!*, the whole party lost the hymn. Four new effects: a death's toll, the store's till (when something is bought), a landmark's chord, the ox's bell. Levels (`loud.mjs --check`): every song within the limits (medians 0.030 to 0.041, the lead 0.021 to 0.025 and 0.62 to 0.74 of the mix, pierce at most 0.0120); effects 0.007 to 0.063. `clash.py` finds only the engravings' own passing notes (the fiddle's G over D in *Soldier's Joy*, an appoggiatura in *Slumber*, B flat over the C7's E in *Home! Sweet Home!*). Tests: `08-audio.mjs` (each region its tune, a death's toll and the grave's hymn and back, a landmark's chord, the till, the arrival's song, the ox's bell).
 
 Each step: build it, run `node tools/check.js westward-wagon` and `node tools/test.js westward-wagon`, write its **Built** and **Results** notes under its number here, commit and push.
 

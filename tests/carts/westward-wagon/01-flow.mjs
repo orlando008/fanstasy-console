@@ -25,7 +25,7 @@ const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name
   ok(p.cart.food === 500, 'and food 50 lb at a time');
   vm.press('UP'); vm.press('UP'); vm.press('A');
   ok(p.state === 'trail' && p.J.oxen === 3 && p.J.food === 500 && Math.abs(p.J.money - (800 - 120 - 100)) < 0.01, 'leaving pays the bill: $120 of oxen and $100 of food');
-  ok(p.playing === p.SONG.trail, 'the trail has its song');
+  ok(p.playing === p.SONG.region, 'the trail has the prairie\'s song');
 }
 {
   const vm = newGame(2), p = vm.probe(); vm.run(2);
