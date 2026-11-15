@@ -268,6 +268,10 @@ Build the cart with these in mind from the start:
   to game), then check the win rate over 40 seeds. A bot that loses with moves to spare is a weak bot, not a hard level:
   make it chase the goal harder before changing the level. If one feature (a corner of ice that only three clears can reach)
   decides a level, it is luck, not difficulty; take it out.
+  **A bot's own randomness must come from the run's seed** (its aiming error, its choices), not from the frame number or
+  a fixed sequence: a bot plays the same frames in every game, so Splat Duel's first sweep was one game sixteen times and
+  showed teal winning 15 of 16 (`tests/carts/splat-duel/bot.mjs` keeps the seed from `newGame`). Before believing a
+  lopsided result, trace one game shot by shot: the same sweep's bot also aimed at a band smaller than its own splash.
 
 
 Checks that proved their worth (the test files in `tests/carts/moto-crosser/` are the examples):

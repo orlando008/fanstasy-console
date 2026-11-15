@@ -19,8 +19,9 @@ const CFG = {
   SUBSTEPS: 4,                  // physics steps a frame (so a fast balloon cannot skip the power-up)
   ANGLE_MIN: 5, ANGLE_MAX: 85, ANGLE0: 45, POWER0: 60, COARSE: 5, // aiming, in degrees and percent; B held: steps of 5
   BALLOON_R: 3,                 // a balloon's radius for hitting walls and the ground
-  SPLASH_R: 13, BIG_R: 20,      // a splash's radius on the wall, normal and Big Balloon
-  SPLASH_JITTER: 6,             // a side hit lands this far either side of the wall's middle
+  SPLASH_R: 10, BIG_R: 16,      // a splash's half-height on the wall, normal and Big Balloon
+  SPLASH_WIDE: 1.8,             // a splash spreads this much wider across the wall than it is tall
+  SPLASH_JITTER: 2,             // a side hit lands this far either side of the wall's middle
   DISCOVER_R: 20,               // a balloon this close to the power-up reveals it
   COLLECT_R: 9,                 // and this close collects it (hidden or not)
   PU_X: [[72, 112], [336, 376]],// where a power-up can appear: one of these spans of x (inside a view) ...
@@ -144,14 +145,15 @@ function setCell(w, i, j, v) {
   return v ? 1 : -1;
 }
 /** A splash on wall w at (u, v) of its face (px from its left and from the ground): cells inside an uneven blob of
- *  radius r are painted. Returns the cells newly painted (a cell painted twice counts once). */
+ *  radius r (SPLASH_WIDE times that across the wall) are painted. Returns the cells newly painted (a cell painted twice counts once). */
 function splash(w, u, v, r) {
   const lobes = rndi(4, 7), phase = rnd(6.283);
   let added = 0;
   for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
-    const dx = i * CFG.CELL + 1 - u, dy = j * CFG.CELL + 1 - v, d = Math.hypot(dx, dy);
+    const dx = (i * CFG.CELL + 1 - u) / CFG.SPLASH_WIDE, dy = j * CFG.CELL + 1 - v, d = Math.hypot(dx, dy);
     if (d > r * 1.1) continue;
-    const edge = r * (0.84 + 0.16 * Math.sin(lobes * Math.atan2(dy, dx) + phase));
+    // ragged top and bottom (up to 16% in), but a clean reach sideways: where it lands across the wall is not aimed
+    const edge = r * (1 - 0.16 * (Math.abs(dy) / (d || 1)) * (0.5 + 0.5 * Math.sin(lobes * Math.atan2(dy, dx) + phase)));
     if (d <= edge) added += setCell(w, i, j, 1);
   }
   return added;

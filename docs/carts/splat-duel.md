@@ -1,7 +1,7 @@
 # Splat Duel: Cart Specification
 
-**Version:** 0.2 (the playable prototype: step 1)
-**Status:** In development. The whole turn loop, the hidden power-up and all four power-ups play; the art is a first pass in the look of the user's concept sheet, waiting for the art proof (step 2)
+**Version:** 0.3 (step 3: feel and balance)
+**Status:** In development. The whole turn loop, the hidden power-up and all four power-ups play, in the look the user agreed (step 2); the splash is tuned so aiming decides the game (step 3)
 **Cart source:** `carts/src/splat-duel/` → `carts/splat-duel.nova`
 
 ---
@@ -77,12 +77,14 @@ turns.
 
 **Hits.** A balloon (radius 3) that touches a wall (32 × 96 px) splashes on it; one that touches the ground leaves a
 puddle (decoration only); one that leaves the courtyard over a wall is a miss. A splash from the side lands at the
-balloon's height, within 6 px of the middle of the wall's face; one from above lands on the top at the balloon's x. A
+balloon's height, within 2 px of the middle of the wall's face; one from above lands on the top at the balloon's x. A
 balloon that lands on its own thrower's wall (it can only happen from a near-vertical lob) paints it all the same.
 
 **Paint and coverage.** Each wall is a grid of 2 × 2 px cells (16 × 48 = 768). A splash paints the cells inside an
-uneven blob (radius 13 px; Big Balloon 20; the edge varies with 4 to 7 lobes) and returns how many cells were *newly*
-painted, so overlapping paint never counts twice. The score is the share of the other wall's cells painted. The
+ellipse 10 px up and down and 1.8 times that across (Big Balloon: 16 px), so a splash always reaches across the whole
+wall at the height it lands, and only its height is aimed. Its top and bottom edges are ragged (4 to 7 lobes, up to 16%
+in); its sides are not, since a ragged side would make the wall's outer columns a matter of luck. A normal splash
+paints about 16% of a bare wall, a Big Balloon about 29%. It returns how many cells were *newly* painted, so overlapping paint never counts twice. The score is the share of the other wall's cells painted. The
 spray, drops, bursts and puddles are decoration and never touch the grid. The walls' tiles are drawn from the grid:
 each wall cell has its own tile (512 to 607), rewritten from the brick and the grid when the grid changes, so paint
 shows the brick's courses under it.
@@ -100,7 +102,7 @@ none, and is never drawn, sparkled, shadowed or hinted at while hidden: nothing 
 
 | Power-up | Effect |
 |---|---|
-| Big Balloon | The collector's next shot splashes with radius 20 instead of 13 (about 2.4 times the cells) |
+| Big Balloon | The collector's next shot splashes 16 px up and down instead of 10 (about 1.8 times the cells) |
 | Triple Balloon | The collector's next shot is three balloons, at the angle and 4 degrees above and below |
 | Paint Roller | At once: a band 12 px tall across the opponent's wall, where the wall is barest |
 | Sponge | At once: clears a disc of radius 16 from the collector's own wall, where it holds the most paint |
@@ -179,7 +181,7 @@ effects take turns on 6 and 7.
 
 | Asset | Budget |
 |---|---|
-| Code | 33.6 KB of the 64 KB limit (`node tools/check.js splat-duel`) |
+| Code | 33.9 KB of the 64 KB limit (`node tools/check.js splat-duel`) |
 | Tiles | 470 of 1,024 (321 background, 149 sprites), plus 96 reserved for the painted walls |
 | Sprites | About 20 at most (3 balloons, 24 drops capped, 10 puddles, the kids, the power-up) |
 | Songs / SFX | 3 of 8 songs, 14 effects |
@@ -209,8 +211,29 @@ effects take turns on 6 and 7.
      panels, and the turn banner covering a revealed power-up: all fixed (the banner is now in the top line).
 2. **The art proof:** the kids (every pose), the palettes and the aiming screen (`node tools/devkit/art/proof.mjs
    splat-duel`), sent to the user against their concept sheet.
-   - **Agreed:** not yet.
+   - **Agreed:** 2026-11-15, as it was ("it looks good"): the kids, the palettes, the courtyard and the HUD.
 3. **Feel and balance:** the number of rounds a game takes, the splash size, the power-up weights, from sweeps.
+   - **Built:** the bot reports what each game did (`hitRate`, `roundsTo50`, `lastStretch` from 50% to the win,
+     `reveals`, `collects`, `steals`: a power-up revealed by one player and taken by the other, `moreWon`: the player
+     who took more power-ups won), and a sweep can change the tuning (`--set splash=, wide=, jitter=, win=, pu=0`).
+     The splash became an ellipse 1.8 times wider than tall (`SPLASH_WIDE`), ragged only on top and bottom, half-height 10
+     (was a ragged circle of 13), landing within 2 px of the wall's middle (was 6); Big Balloon 16 (was 20).
+     `03-rules.mjs` checks a side splash reaches both outer columns and stays within its height.
+   - **Results:** the first sweep (12 games at each of skill 0.6, 0.8, 1) showed the last 30% took longer than the first
+     50% (7 rounds from 50% to the win, 5 to reach 50%), and a perfect aimer finished barely faster than a sloppy one
+     (11.6 rounds against 13.2): a side splash reached the wall's outer columns only 16% of the time, and where it landed
+     across the wall was random, so the end of a game was luck. A wider splash at radius 13 fixed that but made games
+     too short (5 rounds at skill 0.8 and 1); half-height 10 at 1.8 times wide reaches both edges every time and paints
+     16% of a wall. Now (64 games at each skill after the bot fix below): skill 0.6 about 7.5 rounds, 0.8 about 6.3,
+     1.0 about 6; from 50% to the win 2 to 3 rounds; about 3.5 power-ups taken a game, 1.3 of them steals; the player
+     who took more power-ups won about 70% of games. Without power-ups the game is even (9 to 7 in 16 games).
+     **The second player of a round wins about 61% of games with power-ups** (88 of 144): the game's first power-up
+     appears on the first player's turn, whose shot usually reveals it for the second; and a power-up revealed in the
+     last round can only help the second player. Rematches alternate the first player, so a session is even; changing
+     the rule is an open question for the user.
+     The sweeps also found two bugs in the bot, not the game: its aiming error came from the frame number, which is the
+     same in every game, so 16 seeds were one game repeated (it gave teal 15 of 16 without power-ups); now the seed is in
+     it. And it aimed at a band 5 rows tall, smaller than a splash, so it re-painted paint; now the band is a splash's.
 4. **More to read in the courtyard:** wind or obstacles, if wanted (open questions).
 5. **Content:** more courtyards, if wanted.
 6. **Flow:** first-player choice, a short tutorial turn.
@@ -224,10 +247,13 @@ Defaults chosen for the prototype that the user has not confirmed:
 
 - **The split is left / right**, two fixed close-ups plus an overview strip, with the middle of the courtyard only on the
   overview. The alternative is a top / bottom split, each half showing the whole courtyard from one player's side.
-- **Splash on a side hit is centred on the wall's face** (within 6 px of its middle), since the side view cannot show
-  depth; only the height is aimed.
+- **Splash on a side hit is centred on the wall's face** (within 2 px of its middle, and wide enough to cover it), since
+  the side view cannot show depth; only the height is aimed.
 - **Paint Roller and Sponge act at once**; Big and Triple wait for the next shot, automatically (no choice of when).
 - **The power-up spawns only inside a view**, so it can be seen when revealed.
 - **Aiming dots** show the first 24 frames of the arc; the last shot of each player stays as a trail.
 - **The game song** is the starter's; a calmer piece may suit a turn-based game.
 - Teal starts the first game, and the first player alternates in rematches.
+- **Going second is worth about 61% with power-ups** (step 3). Possible evenings, each to sweep: no power-up on the
+  game's very first turn (so the second player's shot is the first to pass the first one); or the first player
+  alternating every round instead of every game; or leaving it, as rematches alternate.

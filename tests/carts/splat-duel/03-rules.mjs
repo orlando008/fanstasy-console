@@ -83,6 +83,20 @@ const oamHas = (vm, tile) => Array.from(vm.ppu.oamTile.slice(0, vm.ppu.oamCount)
   ok(px >= 6 && px <= 10, 'and a painted wall is drawn in teal paint over the magenta wall', `index ${px}`);
 }
 
+// 4b. Aiming decides: a side splash reaches across the wall at the height it lands, so the outer columns are not luck.
+{
+  const vm = newGame(13), p = vm.probe(); vm.run(2);
+  let edges = 0, N = 200;
+  for (let k = 0; k < N; k++) {
+    p.newWalls(); p.splash(1, 16 + (k % 7) - 3, 48, p.CFG.SPLASH_R); // every landing place the jitter allows
+    const row = 24 * p.COLS; edges += (p.walls[1].mask[row] + p.walls[1].mask[row + p.COLS - 1]) / 2;
+  }
+  ok(edges / N > 0.85, 'a side splash reaches both outer columns at its height nearly every time', `${(edges / N).toFixed(2)}`);
+  p.newWalls(); p.splash(1, 16, 48, p.CFG.SPLASH_R);
+  const rows = []; for (let j = 0; j < p.ROWS; j++) if (p.walls[1].mask[j * p.COLS + 8]) rows.push(j);
+  ok(rows.length && Math.max(...rows) * 2 < 48 + p.CFG.SPLASH_R + 2 && Math.min(...rows) * 2 > 48 - p.CFG.SPLASH_R - 2, 'and stays within its radius up and down (the height is what is aimed)', `${rows[0] * 2}..${rows[rows.length - 1] * 2}`);
+}
+
 // 5. The handoff cannot fire a shot.
 {
   const vm = newGame(5), p = vm.probe(), A = M('A');
@@ -139,7 +153,8 @@ const oamHas = (vm, tile) => Array.from(vm.ppu.oamTile.slice(0, vm.ppu.oamCount)
 {
   const vm = newGame(7), p = vm.probe();
   const fresh = (r) => { p.newWalls(); return p.splash(1, 16, 48, r); };
-  ok(fresh(p.CFG.BIG_R) > fresh(p.CFG.SPLASH_R) * 2, 'Big Balloon: a splash over twice the area');
+  const big = fresh(p.CFG.BIG_R), small = fresh(p.CFG.SPLASH_R);
+  ok(big > small * 1.5, 'Big Balloon: a splash over one and a half times the area', `${big} cells against ${small}`);
   p.newWalls();
   takePad(vm); p.held[0] = 'triple'; p.pu = null;
   p.aim[0].angle = 45; p.aim[0].power = 70; vm.run(20); vm.press('A');
