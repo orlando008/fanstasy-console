@@ -190,7 +190,7 @@ for name in ('a', 'b', 'start', 'dpad'): sheet.add('button ' + name, button(name
 
 ## Playing cards
 
-For a card game: art.cards() draws a whole deck at 32 x 48, 24 x 32 and 16 x 24 (drawn kings, queens and jacks at the large size, a joker, a back and the frames of a flip), keeps the faces in the ROM, and writes the CARDS block of code.js (decks, shuffle, deal, poker, blackjack, runs and sets, moves, fans). The playbook's card section has the code side.
+For a card game: art.cards() draws a whole deck at 32 x 48, 24 x 32 and 16 x 24 (drawn kings, queens and jacks at the large size, a joker, a back and the frames of a flip), keeps the faces in the ROM, and writes the CARDS block of code.js (decks, shuffle, deal, poker, blackjack, runs and sets, moves, fans). Every card of each size: docs/dev/art-recipes/cards-large.png, cards-medium.png and cards-small.png. The playbook's card section has the code side.
 
 ![Playing cards](art-recipes/cards.png)
 

@@ -25,7 +25,8 @@
 - **Card games: use the card kit.** `art.cards(...)` in `art.py` draws a whole deck (32 x 48, 24 x 32 and 16 x 24; drawn
   court cards, a back, flips; a custom deck too) into the ROM and writes the CARDS block of `code.js`: decks, a seeded
   `shuffle`, `deal`, `drawCard`, and on request sorting, poker, blackjack, runs and sets, moves and fans.
-  `tools/devkit/music/cardsfx.py` adds the sounds. The playbook's "Card games" part of section 2 has the details.
+  `tools/devkit/music/cardsfx.py` adds the sounds. Every card of each size: `docs/dev/art-recipes/cards-large.png`,
+  `cards-medium.png` and `cards-small.png`. The playbook's "Card games" part of section 2 has the details.
 - **Other art: draw with the kit.** `docs/dev/art-recipes.md` has a picture and the code for each recipe (a hero, a big
   character, sculpted things, textures, a landscape, a room, a title). Use the kit's modules (`rig.py` for characters,
   `sculpt.py`, `texture.py`, `scenery.py`, `lettering.py`) before placing pixels by hand; the starter's `art.py` uses them.

@@ -26,7 +26,8 @@ show A to K, others their number; suits 0 to 3 the standard pips); face(img, P, 
 card's palette roles; size: 'large', 'medium' or 'small').
 
 ROM: large 769 bytes a face, medium 385, small 193 (61 entries for the standard deck: 47 KB, 23 KB, 12 KB of the
-128 KB). They compress well in a .nova.png (mostly paper). `card_sheet(cards, path)` saves a PNG of every face to look at.
+128 KB). They compress well in a .nova.png (mostly paper). `card_sheet(cards, path)` saves a PNG of every face to look at;
+the standard deck's are docs/dev/art-recipes/cards-large.png, cards-medium.png and cards-small.png (recipes.py writes them).
 """
 import json, os, re
 from kit import Img, Art, ART_END

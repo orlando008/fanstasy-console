@@ -200,8 +200,9 @@ recommended answer after each question.
 The starter's template is `tools/templates/cart/` (`code.js` is the frame to build on; its `01-flow.mjs` is the
 first test file and its `bot.mjs` the first bot).
 
-**Card games** (`tools/devkit/art/cards.py`, `cards.js`, `tools/devkit/music/cardsfx.py`; the picture is the "Playing cards"
-recipe in `docs/dev/art-recipes.md`). A deck, its art and the code that deals and draws it, from one call in `art.py`:
+**Card games** (`tools/devkit/art/cards.py`, `cards.js`, `tools/devkit/music/cardsfx.py`; every card of each size is on
+`docs/dev/art-recipes/cards-large.png`, `cards-medium.png` and `cards-small.png`, and the code in the "Playing cards" recipe of
+`docs/dev/art-recipes.md`). A deck, its art and the code that deals and draws it, from one call in `art.py`:
 
 ```python
 deck = art.cards(sizes=('large', 'small'), slots={'large': 10, 'small': 24}, pals=(4, 5), use=('sort', 'poker', 'anim'))
