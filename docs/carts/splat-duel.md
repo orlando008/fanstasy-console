@@ -1,7 +1,7 @@
 # Splat Duel: Cart Specification
 
-**Version:** 0.5 (step 8: the audio pass, at the user's request ahead of steps 5 to 7)
-**Status:** In development. The whole turn loop, the hidden power-up and all four power-ups play, in the look the user agreed (step 2); the splash is tuned so aiming decides the game (step 3); a wind that changes each round (step 4); its own game song and sampled effects (step 8)
+**Version:** 0.6 (step 6: menus and flow; step 5 dropped)
+**Status:** In development. The whole turn loop, the hidden power-up and all four power-ups play, in the look the user agreed (step 2); the splash is tuned so aiming decides the game (step 3); a wind that changes each round (step 4); its own game song and sampled effects (step 8); title settings, a pause that asks, a first-turn hint and an end summary (step 6)
 **Cart source:** `carts/src/splat-duel/` → `carts/splat-duel.nova`
 
 ---
@@ -35,10 +35,10 @@ opponent.
 | Button | Use |
 |---|---|
 | UP / DOWN | Angle up / down, 1 degree (held: repeats) |
-| LEFT / RIGHT | Power down / up, 1 percent (the same way for both players: RIGHT is always more) |
+| LEFT / RIGHT | Power down / up, 1 percent (the same way for both players: RIGHT is always more); on the title, change FIRST and WIN AT |
 | B (held) | Steps of 5 instead of 1 |
 | A | Fire; at the handoff, begin the turn; on the title, choose |
-| START | Pause (RESUME, RESTART, QUIT TO TITLE), while aiming or in flight |
+| START | Pause (RESUME, RESTART, QUIT TO TITLE: the last two ask first), while aiming or in flight |
 
 ## 4. Screen layout
 
@@ -113,8 +113,8 @@ fired; the aiming panel says "NEXT: ...". A power-up can only be collected durin
 load has already been fired, so a player never holds two. (If one ever arrived while another was held, the new one would
 replace it.) Paint Roller and Sponge act at the end of the shot that collected them.
 
-**Winning.** 80% of the other wall wins, checked only when a round ends (both players have fired the same number of
-shots, teal first in odd games, magenta first in rematches). If one player is over the line, they win. If both are, the
+**Winning.** 80% of the other wall wins (60% or 70% if chosen on the title), checked only when a round ends (both players
+have fired the same number of shots; who goes first is the title's setting, and alternates in rematches). If one player is over the line, they win. If both are, the
 one with more painted cells wins; if they are level, another round is played ("LEVEL PEGGING! ANOTHER ROUND").
 
 **The handoff.** It takes a press of A only after HANDOFF_QUIET (30) frames with no button held, and the turn then
@@ -137,7 +137,8 @@ strong wind the flat shot is the safe one.
 
 ## 8. Modes
 
-One: a duel to 80%, then a rematch with the other player going first.
+One: a duel to 80% (or 60% or 70%: the title's WIN AT), then a rematch with the other player going first. Who goes first in the
+first game is the title's FIRST: teal, magenta, or a coin toss (by the seed; the first handoff says who won it).
 
 ## 9. Scoring
 
@@ -145,9 +146,16 @@ The percent of the other wall painted, shown at the top; the number of games eac
 
 ## 10. Screens and flow
 
-1. **Title:** PLAY, HOW TO PLAY.
-2. **Handoff** → **Aim** → **Flight** → **Result**, round after round, with a **Pause** (START): RESUME, RESTART, QUIT TO TITLE.
-3. **Game over:** the winner, the score, the wins so far; A for a rematch, B for the title.
+1. **Title:** PLAY; FIRST (TEAL, MAGENTA, COIN TOSS) and WIN AT (60, 70, 80%), changed with LEFT/RIGHT or A and saved;
+   HOW TO PLAY. Under the menu the tagline, and the wins so far in turn with it once there are any.
+2. **Handoff** → **Aim** → **Flight** → **Result**, round after round, with a **Pause** (START): RESUME, RESTART, QUIT TO
+   TITLE. RESTART and QUIT ask first ("RESTART THIS GAME? THE PAINT IS LOST", A yes, B no): one wrong press should not
+   end a long game. Until a player's first shot of a series, the controls are shown under their aiming panel.
+3. **Game over:** the winner, the score and rounds, each player's hits (shots that reached a wall) and power-ups taken,
+   the wins so far; A for a rematch (the other player first), B for the title.
+
+The title and each new game come up from black (`brightness`, 12 frames; the state changes at once, so nothing waits on
+the fade). The overview marks the line to win on each wall in yellow.
 
 ## 11. Audio
 
@@ -190,13 +198,15 @@ on 6 and 7.
 |---|---|
 | 0 | Format version |
 | 2, 3 | Games won by teal, by magenta |
-| 4–255 | Reserved |
+| 4 | FIRST: 0 teal, 1 magenta, 2 coin toss |
+| 5 | WIN AT, in percent (0: 80) |
+| 6–255 | Reserved |
 
 ## 14. Asset budget
 
 | Asset | Budget |
 |---|---|
-| Code | 35.9 KB of the 64 KB limit (`node tools/check.js splat-duel`) |
+| Code | 39.4 KB of the 64 KB limit (`node tools/check.js splat-duel`) |
 | Tiles | 498 of 1,024 (321 background, 177 sprites), plus 96 reserved for the painted walls |
 | Sprites | About 20 at most (3 balloons, 24 drops capped, 10 puddles, the kids, the power-up) |
 | Songs / SFX | 3 of 8 songs, 14 effects |
@@ -268,8 +278,20 @@ on 6 and 7.
      shot, and the wind behind each player's shots averaged out; to watch, not to act on yet. Looking at the screens
      found a help line too long, and the result panel covering the pennants or a sparkle: the panel now takes the first
      of three heights that covers neither the power-up nor a sparkle.
-5. **Content:** more courtyards, if wanted.
+5. **Content:** more courtyards. **Dropped** (the user: "I don't think we need more courtyards").
 6. **Flow:** first-player choice, a short tutorial turn.
+   - **Built:** the title's settings (`FIRSTS`, `TARGETS`, save slots 4 and 5; `startSeries` decides the first player of a
+     series, a coin toss by `rndi`, and `series` alternates it in rematches; RESTART keeps it); the pause's question
+     (`confirm`); the controls hint under the aiming panel until a player's first shot of a series; the end summary
+     (`stats`: hits and power-ups each); the wins on the title; the line to win on the overview's walls; the fade from
+     black (`fadeIn`). `01-flow.mjs` checks the menu wraps, the settings change, are saved and kept, PLAY uses them, a
+     coin toss can go either way and its winner has the first handoff, QUIT and RESTART ask and B keeps the game, a yes
+     restarts on clean walls with the same first player, the hint is drawn (the pixels under the panel before and after a
+     first shot) and the summary's counts.
+   - **Results:** 106 checks pass; smoke test 60 fps, no errors. Looking at the screens found the hint and the summary
+     too wide for their panels (the hint off the screen in magenta's view), and the gallery's help picture taken of the
+     title (A on FIRST now changes it): fixed. The hint covers the pennant on each wall, but only in round 1, which is
+     always calm.
 7. **Art pass:** the rest of the art in the agreed look (paint drips, a hit reaction, the power-ups' frames).
 8. **Audio pass:** a calmer game song for a turn-based game, levels checked (done before steps 5 to 7, as the user asked).
    - **Built:** `audio.py` rewritten: the game's own song (section 11), the title from the library's *Entertainer*
@@ -297,7 +319,6 @@ Defaults chosen for the prototype that the user has not confirmed:
 - **Paint Roller and Sponge act at once**; Big and Triple wait for the next shot, automatically (no choice of when).
 - **The power-up spawns only inside a view**, so it can be seen when revealed.
 - **Aiming dots** show the first 24 frames of the arc; the last shot of each player stays as a trail.
-- Teal starts the first game, and the first player alternates in rematches.
 - **Going second was worth about 61% with power-ups** (step 3); the first power-up now waits for the game's second turn
   (step 4: the user's "go ahead" on the recommendation). If the edge remains, the next evening to try is the first
   player alternating every round instead of every game.

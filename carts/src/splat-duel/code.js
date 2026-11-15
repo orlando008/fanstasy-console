@@ -76,7 +76,10 @@ function play(song) { if (song === playing) return; playing = song; music(song);
 
 // --- Save: the number of games each colour has won ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1, WINS_SLOT = 2;
+const VERSION_SLOT = 0, SAVE_VERSION = 1, WINS_SLOT = 2, FIRST_SLOT = 4, WIN_SLOT = 5;
+// The title's settings, saved: who goes first (0 teal, 1 magenta, 2 a coin toss) and the target (a zero slot is 80%).
+const FIRSTS = ['TEAL', 'MAGENTA', 'COIN TOSS'], TARGETS = [60, 70, 80];
+const firstSetting = () => dget(FIRST_SLOT) % 3, winSetting = () => dget(WIN_SLOT) || 80;
 
 // --- Input: edge-triggered presses ---
 
@@ -235,7 +238,9 @@ let turn = 0, first = 0, round = 1, shots = [0, 0];      // whose turn, who star
 let aim = [{ angle: 0, power: 0 }, { angle: 0, power: 0 }], last = [null, null], trails = [[], []];
 let held = [null, null];                                  // a shot power-up waiting for the player's next shot
 let balloons = [], shot = null, notes = [], fxs = [], puddles = [], drops = [];
-let quiet = 0, winner = -1, tieRound = false, games = 0, banner = 0, roller = null;
+let quiet = 0, winner = -1, tieRound = false, banner = 0, roller = null;
+let series = 0, seriesFirst = 0, tossed = false, confirm = 0, fadeIn = 0; // games since PLAY, who began the series, a coin decided it; the pause's question; the fade
+let stats = { hits: [0, 0], pups: [0, 0] };                 // for the summary at the end
 let wind = 0; // -WIND_MAX..WIND_MAX: positive blows towards magenta's wall. Set when a round begins, never during one
 
 function init() {
@@ -251,15 +256,22 @@ function init() {
   if (skipTitle) startGame(); else toTitle();
 }
 
-function toTitle() { state = 'title'; timer = 0; menuSel = 0; paused = false; play(SONG.title); showWalls(false); }
+function toTitle() { state = 'title'; timer = 0; menuSel = 0; paused = false; confirm = 0; fadeIn = 12; play(SONG.title); showWalls(false); }
 function showWalls(on) {
   const s = on ? ART.scenes.walls : ART.scenes.logo;
   bg(0, { mx: s.mx, my: s.my, mw: s.w, mh: s.h, y: on ? -96 : -24 });
 }
 
+/** PLAY on the title: a new series of games. The first player is the setting, or a coin toss; rematches alternate. */
+function startSeries() {
+  const f = firstSetting(); tossed = f === 2; seriesFirst = tossed ? rndi(0, 1) : f; series = 0;
+  startGame();
+}
+
 function startGame() {
   newWalls(); drawWallTiles(0); drawWallTiles(1);
-  first = games % 2; turn = first; round = 1; wind = 0; shots = [0, 0]; winner = -1; tieRound = false;
+  CFG.WIN = winSetting(); stats = { hits: [0, 0], pups: [0, 0] }; fadeIn = 12; confirm = 0;
+  first = (seriesFirst + series) % 2; turn = first; round = 1; wind = 0; shots = [0, 0]; winner = -1; tieRound = false;
   aim = [0, 1].map(() => ({ angle: CFG.ANGLE0, power: CFG.POWER0 }));
   last = [null, null]; trails = [[], []]; held = [null, null]; pu = null;
   balloons = []; notes = []; fxs = []; puddles = []; drops = []; roller = null; paused = false;
@@ -292,9 +304,16 @@ function update() {
   prevMask = inputMask;
 }
 
+/** The title's menu: PLAY, FIRST, WIN AT, HOW TO PLAY. LEFT/RIGHT (or A) change a setting, and it is saved. */
 function updateTitle() {
-  if (pressed(UP) || pressed(DOWN)) { menuSel ^= 1; fx(SFX.move); }
-  if (pressed(A) || pressed(START)) { fx(SFX.select); if (menuSel === 0) startGame(); else { state = 'help'; timer = 0; } }
+  if (pressed(UP)) { menuSel = (menuSel + 3) % 4; fx(SFX.move); }
+  if (pressed(DOWN)) { menuSel = (menuSel + 1) % 4; fx(SFX.move); }
+  const d = pressed(RIGHT) || (pressed(A) && menuSel > 0 && menuSel < 3) ? 1 : pressed(LEFT) ? -1 : 0;
+  if (menuSel === 1 && d) { dset(FIRST_SLOT, (firstSetting() + d + 3) % 3); fx(SFX.tick); }
+  else if (menuSel === 2 && d) { const k = TARGETS.indexOf(winSetting()); dset(WIN_SLOT, TARGETS[(k + d + 3) % 3]); fx(SFX.tick); }
+  else if (pressed(A) || pressed(START)) {
+    if (menuSel === 0) { fx(SFX.select); startSeries(); } else if (menuSel === 3) { fx(SFX.select); state = 'help'; timer = 0; }
+  }
 }
 
 /** The handoff: nothing happens until every button has been let go for HANDOFF_QUIET frames, and then a new press of
@@ -391,6 +410,8 @@ function resolveShot() {
     else if (k === 'sponge') { const [n, v] = sponge(p); fxs.push({ k: 'sponge', w: p, v, t: 0 }); fx(SFX.sponge); notes.push([`SPONGED ${flr(-n * 100 / CELLS)}% OFF YOUR WALL`, TEAM[p]]); }
     else notes.push(['IT GOES ON YOUR NEXT SHOT', DIM]);
   }
+  if (shot.hits) stats.hits[p]++;
+  if (k) stats.pups[p]++;
   state = 'result'; timer = 0;
 }
 
@@ -417,23 +438,29 @@ function verdict() {
 }
 
 function endGame() {
-  state = 'over'; timer = 0; games++; play(SONG.win); fx(SFX.win);
+  state = 'over'; timer = 0; play(SONG.win); fx(SFX.win);
   dset(WINS_SLOT + winner, dget(WINS_SLOT + winner) + 1);
 }
 
 function updateOver() {
   if (timer < 90) return;
-  if (pressed(A) || pressed(START)) { fx(SFX.select); startGame(); }
+  if (pressed(A) || pressed(START)) { fx(SFX.select); series++; startGame(); }
   else if (pressed(B)) { fx(SFX.select); toTitle(); }
 }
 
+/** The pause: RESUME, RESTART, QUIT TO TITLE. The last two lose the game, so they ask first (A: yes, B: no). */
 function updatePause() {
+  if (confirm) {
+    if (pressed(B)) { confirm = 0; fx(SFX.move); }
+    else if (pressed(A)) { fx(SFX.select); if (confirm === 1) startGame(); else toTitle(); }
+    return;
+  }
   if (pressed(UP)) { pauseSel = (pauseSel + 2) % 3; fx(SFX.move); }
   if (pressed(DOWN)) { pauseSel = (pauseSel + 1) % 3; fx(SFX.move); }
   if (pressed(B) || (pressed(START) && pauseSel === 0)) { paused = false; fx(SFX.pause); }
   else if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (pauseSel === 0) paused = false; else if (pauseSel === 1) { games = first; startGame(); } else toTitle();
+    if (pauseSel === 0) paused = false; else confirm = pauseSel;
   }
 }
 
@@ -450,6 +477,7 @@ function updateEffects() {
   drops = drops.filter((d) => d.y > 0 && d.t < 80);
   if (roller) { roller.t++; if (roller.t > 40) roller = null; }
   if (banner) banner--;
+  if (fadeIn) fadeIn--;
   for (let w = 0; w < 2; w++) if (walls[w] && walls[w].dirty) drawWallTiles(w);
 }
 
@@ -457,6 +485,7 @@ function updateEffects() {
 
 function draw() {
   cls();
+  brightness(15 - Math.ceil(fadeIn * 15 / 12)); // a new screen comes up from black
   if (state === 'title' || state === 'help') { if (state === 'title') drawCourt(true); drawTitle(); return; }
   drawCourt(false);
   drawHud();
@@ -544,6 +573,7 @@ function drawHud() {
   for (let w = 0; w < 2; w++) {
     const x = ovX(w ? CFG.WORLD_W - CFG.WALL_W : 0), top = ovY(CFG.WALL_H), h = OV.y - top + 1, fill = flr(h * covered(w) / CELLS);
     rectfill(x, top, 16, h, C.STONEL); if (fill) rectfill(x, OV.y + 1 - fill, 16, fill, TEAM[1 - w]);
+    const t = OV.y + 1 - Math.ceil(h * CFG.WIN / 100); line(x - 2, t, x + 17, t, C.YELLOW); // the line to win
   }
   for (let p = 0; p < 2; p++) pset(ovX(CFG.SLING[p].x), ovY(CFG.SLING[p].y), TEAM[p]);
   const ws = windText(); ctxt(ws, 15, wind ? C.YELLOW : DIM);
@@ -573,6 +603,11 @@ function drawAim() {
   rect(x0 + 82, VIEW_TOP + 17, 30, 7, DIM); rectfill(x0 + 83, VIEW_TOP + 18, flr(a.power * 28 / 100), 5, TEAM[p]);
   const l = last[p]; if (l) print(`LAST ${l.angle}/${l.power}`, x0 + 4, VIEW_TOP + 27, DIM);
   if (held[p]) txt(`NEXT: ${PU_NAMES[held[p]]}`, x0 + 4, VIEW_TOP + 36, GOLD);
+  if (!shots[p] && series === 0) { // until a player's first shot of a series: the controls, under the panel
+    const y = VIEW_TOP + (held[p] ? 48 : 38);
+    panel(x0, y, 116, 34);
+    [['UP/DOWN', 'ANGLE'], ['L/R', 'POWER'], ['A', 'FIRE!']].forEach(([k, v], i) => { print(k, x0 + 4, y + 4 + i * 10, WHITE); print(v, x0 + 68, y + 4 + i * 10, GOLD); });
+  }
 }
 
 function drawNotes() {
@@ -587,7 +622,8 @@ function drawNotes() {
 function drawHandoff() {
   const p = turn, ready = quiet >= CFG.HANDOFF_QUIET;
   panel(24, 64, 208, 76);
-  ctxt(tieRound ? 'LEVEL PEGGING! ANOTHER ROUND' : `ROUND ${round}`, 70, tieRound ? GOLD : WHITE);
+  const toss = tossed && series === 0 && round === 1 && turn === first;
+  ctxt(tieRound ? 'LEVEL PEGGING! ANOTHER ROUND' : toss ? `COIN TOSS: ${NAMES[p]} FIRST` : `ROUND ${round}`, 70, tieRound || toss ? GOLD : WHITE);
   ctxt(`${NAMES[p]}'S TURN`, 86, TEAM[p]);
   ctxt(`PASS THE PAD TO ${NAMES[p]}`, 100, WHITE);
   ctxt(windText(), 110, wind ? C.YELLOW : DIM);
@@ -595,19 +631,33 @@ function drawHandoff() {
   else if (clock % 50 < 36) ctxt('PRESS A WHEN READY', 124, GOLD);
 }
 
+/** The end: the winner, the score, each player's shots on target and power-ups, the wins so far. */
 function drawOver() {
-  panel(32, 64, 192, 72);
-  ctxt(`${NAMES[winner]} WINS!`, 72, TEAM[winner]);
-  ctxt(`${percent(0)}% TO ${percent(1)}% IN ${round} ROUND${round > 1 ? 'S' : ''}`, 90, WHITE);
-  ctxt(`WINS: TEAL ${dget(WINS_SLOT)}  MAGENTA ${dget(WINS_SLOT + 1)}`, 104, DIM);
-  if (timer > 90 && clock % 60 < 44) ctxt('A: REMATCH   B: TITLE', 120, GOLD);
+  panel(20, 56, 216, 102);
+  ctxt(`${NAMES[winner]} WINS!`, 62, TEAM[winner]);
+  ctxt(`${percent(0)}% TO ${percent(1)}% IN ${round} ROUND${round > 1 ? 'S' : ''}`, 78, WHITE);
+  print('HITS', 108, 92, DIM); print('POWER-UPS', 156, 92, DIM);
+  for (let p = 0; p < 2; p++) {
+    const y = 102 + p * 10, h = `${stats.hits[p]}/${shots[p]}`;
+    txt(NAMES[p], 28, y, TEAM[p]);
+    print(h, 124 - h.length * 4, y, WHITE); print(String(stats.pups[p]), 188, y, WHITE);
+  }
+  ctxt(`WINS: TEAL ${dget(WINS_SLOT)}  MAGENTA ${dget(WINS_SLOT + 1)}`, 126, DIM);
+  if (timer > 90 && clock % 60 < 44) ctxt('A: REMATCH   B: TITLE', 142, GOLD);
 }
 
 function drawTitle() {
   if (state === 'help') { drawHelp(); return; }
-  panel(64, 116, 128, 34);
-  ['PLAY', 'HOW TO PLAY'].forEach((s, i) => txt(`${i === menuSel ? '> ' : '  '}${s}`, 72, 122 + i * 12, i === menuSel ? WHITE : DIM));
-  ctxt('2 PLAYERS, ONE PAD, TAKE TURNS', 156, WHITE);
+  panel(40, 100, 176, 54);
+  ['PLAY', `FIRST: ${FIRSTS[firstSetting()]}`, `WIN AT: ${winSetting()}%`, 'HOW TO PLAY'].forEach((s, i) => {
+    const on = i === menuSel, set = i === 1 || i === 2;
+    txt(`${on ? '>' : ' '} ${s}`, 48, 106 + i * 11, on ? WHITE : DIM);
+    if (on && set) txt('< >', 184, 106 + i * 11, GOLD);
+  });
+  // the tagline, and the wins so far (when there are any) in turn
+  const w = dget(WINS_SLOT) + dget(WINS_SLOT + 1);
+  if (w && (clock / 180 | 0) % 2) ctxt(`WINS: TEAL ${dget(WINS_SLOT)}  MAGENTA ${dget(WINS_SLOT + 1)}`, 158, WHITE);
+  else ctxt('2 PLAYERS, ONE PAD, TAKE TURNS', 158, WHITE);
 }
 
 function drawHelp() {
@@ -615,7 +665,7 @@ function drawHelp() {
   ctxt('HOW TO PLAY', 14, GOLD);
   [['UP/DOWN', 'AIM HIGHER/LOWER'], ['LEFT/RIGHT', 'LESS/MORE POWER'], ['HOLD B', 'STEPS OF 5'], ['A', 'FIRE'], ['START', 'PAUSE']]
     .forEach(([k, v], i) => { txt(k, 20, 30 + i * 10, WHITE); txt(v, 108, 30 + i * 10, DIM); });
-  ['PAINT 80% OF THE OTHER WALL.', 'SAME SHOTS EACH, EVERY ROUND.', 'NEW WIND EACH ROUND: FLAGS!', '', 'ONE POWER-UP FLOATS UNSEEN.',
+  [`PAINT ${CFG.WIN}% OF THE OTHER WALL.`, 'SAME SHOTS EACH, EVERY ROUND.', 'NEW WIND EACH ROUND: FLAGS!', '', 'ONE POWER-UP FLOATS UNSEEN.',
    'A BALLOON PASSING CLOSE SHOWS', 'IT TO BOTH; A HIT TAKES IT.', '', 'BIG: A BIGGER SPLASH NEXT',
    'TRIPLE: 3 BALLOONS NEXT SHOT', 'ROLLER: PAINTS A STRIP NOW', 'SPONGE: CLEANS YOUR WALL']
     .forEach((s, i) => txt(s, 16, 90 + i * 10, i < 3 ? WHITE : DIM));
@@ -623,6 +673,12 @@ function drawHelp() {
 
 function drawPause() {
   panel(56, 80, 144, 64);
+  if (confirm) {
+    ctxt(confirm === 1 ? 'RESTART THIS GAME?' : 'QUIT TO THE TITLE?', 92, GOLD);
+    ctxt('THE PAINT IS LOST', 106, DIM);
+    ctxt('A: YES   B: NO', 124, WHITE);
+    return;
+  }
   ctxt('PAUSED', 88, GOLD);
   ['RESUME', 'RESTART', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 68, 104 + i * 10, i === pauseSel ? WHITE : DIM));
 }

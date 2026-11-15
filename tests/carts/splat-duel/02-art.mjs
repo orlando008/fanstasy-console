@@ -28,7 +28,7 @@ const has = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); for (l
   ok(vm.ppu.oamCount <= 128, 'the sprites stay within the 128 of the console', `${vm.ppu.oamCount}`);
 }
 {
-  const vm = newGame(3, { title: true }); vm.run(3);
+  const vm = newGame(3, { title: true }); vm.run(15); // past the fade from black
   ok(has(vm, color('bg4', 'teal3'), 0, 20, 256, 100) && has(vm, color('bg4', 'mag3'), 0, 20, 256, 100), 'the title spells SPLAT in teal and DUEL in magenta');
 }
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);
