@@ -612,10 +612,8 @@ function drawTable(overlay) {
   if (overlay) sprite(ART.sprites.hand, hx + 14, hy + 10 + bob);
   const heldH = held ? held.cards.length * UP_GAP + CH - UP_GAP : 0;
   if (held) drawStack(HELD, hx + 6, hy + 6, heldH);
-  // the top row: the stock, the waste (fanned in DRAW 3), the foundations. The empty piles are on the overlay, which is
-  // above every sprite, so they leave out the box the hand and the cards it holds are in (or they would hide them).
-  const box = [hx + 6, hy + 6, hx + 38, Math.max(hy + 27 + bob, hy + 6 + heldH)];
-  const slot = overlay ? (k, y, letter) => outside(box, () => emptyPile(k, y, letter)) : () => {};
+  // the top row: the stock, the waste (fanned in DRAW 3), the foundations
+  const slot = overlay ? emptyPile : () => {};
   if (stock.length) drawCard(stock[0], COLX(0), TOPY, { down: true }); else slot(0, TOPY, '');
   const show = waste.slice(-(drawN === 3 ? 3 : 1));
   for (let n = show.length - 1; n >= 0; n--) drawCard(show[n], COLX(1) + n * 8, TOPY);
@@ -624,6 +622,11 @@ function drawTable(overlay) {
   // the columns
   for (let k = 0; k < 7; k++) { if (cols[k].length) drawStack(k, COLX(k), COLY, colH[k]); else slot(k, COLY, 'K'); }
   if (!overlay) return;
+  // The empty piles are on the overlay, which is above every sprite: cut the hand and the held cards out of it, pixel
+  // by pixel, so they show on top of an empty pile (and nothing else of the pile is lost).
+  const H = ART.sprites.hand;
+  punch(H.tile, H.size, H.size, hx + 14, hy + 10 + bob);
+  if (held) punch(CARDS.stack.tiles[HELD], CARDS.stack.w, heldH, hx + 6, hy + 6);
   txt(`SCORE ${score}`, 4, 2, WHITE);
   txt(`TIME ${clockText()}`, 108, 2, WHITE);
   txt(`DRAW ${drawN}`, 196, 2, DIM);
@@ -643,15 +646,14 @@ function drawHint() {
   const [fx0, fy0] = pileAt(hint.from[0], hint.from[1], hint.from[2]), [tx, ty] = pileAt(hint.to[0], hint.to[1]);
   box(fx0, fy0); box(tx, ty); line(fx0 + 16, fy0 + 24, tx + 16, ty + 24, OUTLINE);
 }
+/** Clear the overlay (to transparent) wherever a sprite drawn at (x, y) from tile t, w x h px, has a pixel, so the
+ * sprite shows through whatever the overlay holds there. */
+function punch(t, w, h, x, y) {
+  const sx = (t % 16) * 8, sy = (t >> 4) * 8;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (sget(sx + i, sy + j)) pset(x + i, y + j, 0);
+}
 /** An empty pile: a darker place in the felt with a gold outline, rounded as a card is, and the letter of the card
  * that may start it. */
-/** Draw with f() everywhere on the overlay except inside box [x0, y0, x1, y1]: four clipped bands round it. */
-function outside([x0, y0, x1, y1], f) {
-  for (const [x, y, w, h] of [[0, 0, 256, y0], [0, y1, 256, 224 - y1], [0, y0, x0, y1 - y0], [x1, y0, 256 - x1, y1 - y0]]) {
-    if (w > 0 && h > 0) { clip(x, y, w, h); f(); }
-  }
-  clip();
-}
 function emptyPile(k, y, letter) {
   const x = COLX(k);
   rectfill(x + 2, y + 2, 28, 44, FELTDARK);

@@ -47,6 +47,18 @@ const count = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); let 
   ok(count(vm, p.ART.colors.OUTLINE, 0, 60, 3, 120) + count(vm, p.ART.colors.OUTLINE, 4, 60, 9, 120) > 10, 'and the rest of its outline is still drawn');
 }
 
+// The hand alone over an empty pile: only its own pixels are cut out of the pile, not a box round it (a player saw a
+// square of the felt round the cursor).
+{
+  const vm = newGame(4), p = vm.probe(); vm.run(3);
+  p.set({ cols: [[], [3], [], [], [], [], []], down: [0, 0, 0, 0, 0, 0, 0], stock: [40], waste: [], found: [[], [], [], []] });
+  p.setHand(1, 0); vm.run(40);
+  const hx = 4 + 14, hy = 66 + 10;                   // where the hand is drawn over the first column's empty pile
+  const around = count(vm, p.ART.colors.FELTDARK, hx - 2, hy - 2, hx + 18, hy + 18);
+  ok(around > 120, 'the dark felt of the empty pile reaches right up to the hand (no lighter square round it)', `${around} dark pixels round the hand`);
+  ok(count(vm, p.ART.colors.FELTDARK, hx, hy, hx + 16, hy + 16) < 200, 'and the hand itself shows on it');
+}
+
 // 3. The title and the panels (the art pass, step 7).
 {
   const vm = newGame(3, { title: true }), p = vm.probe(); vm.run(3);

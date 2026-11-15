@@ -283,9 +283,12 @@ Each step: build it, run `node tools/verify.js solitaire` (and the tests) and `n
 write its **Built** and **Results** notes under its number here, commit and push.
 
 **Fixed after the release** (found playing the preview on a phone): a run held over an empty pile was hidden under
-it, since the empty piles are drawn on the overlay, above every sprite. They now leave out the box the hand and the
-held cards are in (four clipped bands round it, `outside()` in code.js). `02-art.mjs` holds a run over an empty column
-and checks no pixel of the empty pile is on it (781 were, before the fix).
+it, since the empty piles are drawn on the overlay, above every sprite. A first fix left a box round the hand and the
+held cards out of the piles, which showed as a square of the lighter felt round the cursor. Now the hand's and the held
+cards' own pixels are cut out of the overlay (`punch()` in code.js reads them from the tile sheet with `sget` and
+clears the overlay there), so they show on top and the rest of the pile stays. `02-art.mjs` checks both: no pixel of
+the empty pile on held cards (781 before the first fix), and the pile's dark felt right up to the hand (18 pixels round
+it with the box, 243 now).
 
 ## 16. Open questions
 
