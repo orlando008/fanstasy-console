@@ -6,6 +6,8 @@
 # samples on channel 5. The new sound chip (SPEC 5): sampled instruments from samples.py (a.voice) and an echo per song.
 # After a change: node tools/devkit/music/loud.mjs carts/{{NAME}}.nova --check (levels; the lead alone must stay at most
 # 0.07 RMS and 0.75 of the mix) and python3 tools/devkit/music/clash.py on the json.
+# Ready-made songs (a boss theme, a victory, a town...): tools/devkit/music/songs/README.md, added after the game's own
+# with library.add(a, name), which returns the song's number.
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/music'))
 from kit import *
