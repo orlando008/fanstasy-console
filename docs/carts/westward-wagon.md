@@ -1,0 +1,366 @@
+# Westward Wagon: Cart Specification
+
+**Version:** 1.0
+**Status:** Released (all nine steps of section 15 built; in the Library, `carts/westward-wagon.nova.png`)
+**Cart source:** `carts/src/westward-wagon/` → `carts/westward-wagon.nova`
+
+---
+
+## 1. Concept
+
+An original wagon-trail game in the spirit of the classic educational games about the Oregon Trail. (The name "The Oregon Trail" is a trademark: the game, its title, its events, its people and its art are our own; the route and the landmarks are history.)
+
+It is spring 1848 in Independence, Missouri. You lead a party of five, a leader and four companions, along 2,040 miles of the real trail to the Willamette Valley in Oregon. You:
+- outfit the wagon at the store;
+- set the pace and the rations as the days roll by;
+- decide how to cross each river;
+- hunt for food and trade at the forts;
+- meet what the trail brings: illness, broken axles, thieves, storms, kindness from strangers.
+
+The wagon rolls across the screen through a landscape that changes with the route, from prairie to bluffs, mountains, high desert and forest, under the weather of the season. The real landmarks (Chimney Rock, Fort Laramie, South Pass...) are big painted scenes. Not everyone makes it, but good choices usually get most of the party through. Those who fall get a grave with your epitaph, and later parties pass their graves.
+
+**Decisions made with the user:**
+- **Name:** Westward Wagon, one player, on the Strategy shelf.
+- **Setting:** historical, freely told: the real route, landmarks and dangers, with events and characters our own. The peoples met along the way, Native nations included, are drawn with respect, as individuals: traders, guides and neighbours, never as a threat to shoot at.
+- **Structure:** one journey of about 45 minutes, different each time.
+- **Action:** hunting, river crossings (the float as a short steering sequence) and trading.
+- **Party:** a leader and four companions, named by the player, with a background for the leader (banker, carpenter or farmer) that is also the difficulty.
+- **Difficulty:** classic and fair.
+- **Look:** a side view with parallax layers, the landmarks as big scenes.
+- **Extras, all four:** graves that persist, a diary, scores and a top 10, weather and seasons.
+- **Music:** public-domain folk tunes of the period.
+- **Time:** days roll on by themselves, and A stops the wagon to use the menu.
+
+## 2. Core loop
+
+**Before you leave:**
+1. Name the leader and the four companions.
+2. Choose the leader's background.
+3. Choose the month you set out, March to August.
+4. Spend your money at the store.
+
+**On the trail:** each day the wagon covers miles set by the pace, the oxen, the terrain and the weather, and the party eats by the rations. Health rises with rest and food and falls with hard pace, bad weather, illness and hunger. Events come along the way.
+- **At a landmark** you look around, read about it, and at a fort you can buy and trade.
+- **At a river** you choose how to cross.
+- **At a fork** you choose a route.
+- **At any time** you can stop and hunt, rest, trade with a passer-by, change the pace or the rations, or read the diary.
+
+**The end:** the journey ends in the Willamette Valley, with a score and the diary, or on the trail, when the whole party is gone.
+
+## 3. Controls
+
+| Button | Use |
+|---|---|
+| A | On the trail: stop the wagon and open the menu. In menus: choose |
+| B | Back; in the menu, continue on the trail |
+| D-pad | Menus; in the hunt, move the aim; in the river float, steer |
+| START | Pause (also a way to the menu) |
+| SELECT | On the trail: the supplies and the party at a glance |
+
+Naming people uses an on-screen keyboard, as in the console's other games: the d-pad and A, with B to delete.
+
+## 4. Screen layout
+
+256 x 224.
+
+| Area | What |
+|---|---|
+| Lines 0 to 151: the trail | The sky (a gradient set line by line, by the time of the season and the weather); BG2 the far range (mountains or bluffs), scrolling slowest; BG1 the near hills and trees; BG0 the ground and the trail. Sprites are the wagon, the oxen walking, the party's dog, the weather (rain, snow) and the grass. |
+| Lines 152 to 223: the HUD | The date, the weather, the party's health in words (good, fair, poor, very poor), the food in pounds, the next landmark and its distance, the miles travelled, all on a wooden board |
+
+| Screen | What |
+|---|---|
+| Title | The logo over a wagon at sunset; NEW JOURNEY, CONTINUE (when one is saved), TOP 10, THE GRAVES |
+| Setup | The background, the names, the month |
+| Store | The goods, their prices and what you have: oxen, food, clothing, ammunition, spare parts (wheel, axle, tongue) |
+| Trail | The rolling wagon and the HUD |
+| Menu | Continue, the supplies, the map, the pace, the rations, rest, trade, hunt, the diary |
+| Landmark | A painted scene and a card: LOOK AROUND (a paragraph about the place, history freely told), TALK TO SOMEONE (three people at each, met in turn), BUY SUPPLIES at a fort, then GO ON, CROSS THE RIVER or CHOOSE THE WAY |
+| Region | A card on entering each of the five regions |
+| River | Its width and depth, and the choices: ford, caulk and float, take the ferry, wait a day |
+| Hunt | The region's scene. Animals cross in three lanes; the d-pad aims and A fires, B stops. Bullets are limited and the time is 30 seconds |
+| Float | From above: steer the caulked wagon (LEFT, RIGHT) down the current between rocks and eddies, 6 to 11 seconds at a river and 20 down the Columbia |
+| Event | A picture and a line ("Ella has dysentery." "A wagon wheel broke.") with the choice it asks, if any |
+| Grave | When someone dies: their name, the date, and your epitaph |
+| End | The arrival scene and the score, or the last grave; then the diary, and the top 10 |
+
+## 5. The rules
+
+All numbers are first values. Step 9 tunes them with the bot, and the tests assert them.
+
+### 5.1 The party, money and the store
+
+- **Backgrounds:**
+
+| Background | Money | Score multiplier | Gift |
+|---|---|---|---|
+| Banker | $1,600 | x1 | |
+| Carpenter | $800 | x2 | a broken wagon part is mended without a spare 50 % of the time |
+| Farmer | $400 | x3 | oxen tire more slowly |
+
+- **Health:** each person has health 0 to 100, starting at 100, and at most one illness at a time. The party's health in words is the average.
+- **The store at Independence:**
+
+| Item | Price | Notes |
+|---|---|---|
+| Oxen | $40 a yoke of two | 2 to 9 yokes; 3 or more advised |
+| Food | $0.20 a pound | |
+| Clothing | $10 a set | |
+| Ammunition | $2 a box of 20 | |
+| Spare wheel, axle, tongue | $10 each | at most 3 of each |
+
+  Prices at the forts go up the further west they are, from x1.25 at Fort Kearney to x2 at Fort Boise.
+
+### 5.2 A day on the trail
+
+- **Miles a day:**
+  - by the pace: 15 at steady, 19 at strenuous, 24 at grueling (history: 15 to 20);
+  - x the oxen (each yoke beyond 2 adds 5 %, fewer than 2 yokes halves it, tired or hurt oxen less);
+  - x the terrain (plains 1, bluffs 0.9, mountains 0.6);
+  - x the weather (rain or snow 0.7, deep snow 0.3).
+- **Food a day** for each person alive: 3 pounds at filling, 2 at meager, 1 at bare bones.
+- **Health a day** (tenths of a point; tuned in step 1, when whole points killed a party on meager rations in five months): a person loses health from:
+  - the pace (strenuous 0.5, grueling 1.5);
+  - the rations (meager 0.4, bare bones 1.2, none 4);
+  - the weather (very hot 1, hot 0.3; cold 1 to 3 a degree of cold, less with one set of clothing each, none with two);
+  - an illness (1 to 4 a day by the illness: cholera worst).
+
+  They gain 3 a day of rest (4 on filling rations), and 0.6 on an easy day (steady, filling, well). At 0 they die. A well person falls ill on a day with a chance of 0.6 % x (1 + the pace + the rations + 2 if their health is under 50 + 1 in the cold), half that resting; an illness passes with a chance of 12 % a day, 30 % resting.
+- **Clothing:** without 2 sets each in the cold months, the cold hurts.
+- **The date:** each day moves the date. The month and the place set the **weather**: very hot, hot, warm, cool, cold, very cold, rain, heavy rain, snow, heavy snow, fog.
+
+### 5.3 Events
+
+Each day, a chance of one event, weighted by the place, the season, the pace, the rations and the party's health:
+- **Illness:** dysentery, cholera, measles, typhoid, exhaustion, fever, a broken arm or leg, a snakebite.
+- **The wagon:** a broken wheel, axle or tongue. Mend it with a spare; otherwise try to fix it (the carpenter is better at this) or trade for one.
+- **Oxen:** one is injured or wanders off.
+- **Losses:** a thief comes in the night; supplies are lost in a river or a fire.
+- **Delays:** the party loses the trail (days lost), or meets rough trail, bad water, little grass or a storm (hail, blizzard, fog).
+- **Good fortune:** wild fruit, an abandoned wagon to salvage, a helpful stranger, a guide who shows a shortcut, another party sharing food.
+
+Events and their texts are data in the ROM (section 14).
+
+### 5.4 Rivers
+
+Each river has a **width** and a **depth** that change with the season and the rain. The choices:
+- **Ford:** safe under 2.5 ft; risky to 3 ft; worse beyond (supplies lost, the wagon tips, a person may drown).
+- **Caulk and float:** the **float**, a steering sequence of 6 to 11 seconds (0.6 frames a foot of width), rocks coming more often in deeper water and eddies pushing the wagon sideways. No rock struck: safe. One: 8 % of the food. Two: 15 % of the food, clothing and bullets, and a 15 % chance someone drowns. Three or more: the wagon swamps, 35 % and a 35 % chance. **Rafting down the Columbia** at The Dalles is the same game, 20 seconds and faster, with 25 % and 50 %.
+- **The ferry** where there is one: $5 to $20, and a day or more of waiting.
+- **A guide** where one offers (a Shoshone guide at the Snake River): they lead the crossing safely by the shallows for a set of clothing, in a day.
+- **Wait a day** for the water to fall.
+
+### 5.5 Hunting and trading
+
+- **The hunt:** 30 seconds in a prairie or forest scene. Animals (rabbits, squirrels, deer, buffalo, bear, elk, by region) cross at their own speeds. The d-pad aims and A fires; a shot uses a bullet. Meat shot: rabbit 2 lb, squirrel 1, deer 50, elk 80, bear 100, buffalo 400. **At most 100 pounds can be carried back.** Hunting takes a day.
+- **Trading:** TRADE in the menu spends a day waiting by the trail; then (85 % of days) a trader comes: one of the region's people (a Pawnee, Lakota, Shoshone or Nez Perce trader, 60 %) or another traveller (a settler, a French trapper, a mountain man, a family going east). They offer one good for another the party has, worth 0.8 to 1.6 times as much (oxen $40 a yoke, food 20 cents a pound, clothing $10 a set, bullets 10 cents, spare parts $10), never the party's last yoke. Accept or decline.
+- **Ammunition** is sold in boxes of 20 and kept, and shown, in bullets.
+
+### 5.6 The journey's end, score and graves
+
+- **Arriving:** the score is, for each person alive, 500 x their health in words (good 4, fair 3, poor 2, very poor 1), plus what is left (a wagon 50, a yoke of oxen 4, each spare part 2, each clothing set 2, each 50 bullets 1, each 25 lb of food 1, each $5 1), x the background's multiplier.
+- **The top 10:** with the leader's name.
+- **Graves:** up to 12 kept in the save, each with its mile and your epitaph (16 characters). Later journeys pass them on the trail: the wagon goes by a grave marker on the way, and A stops to read it.
+- **The diary:** each day's line is written as the journey goes ("May 3. Crossed the Kansas River by ferry. Ella is better."), and can be read in the menu and at the end.
+
+## 6. Levels or content
+
+The trail, 2,040 miles (the miles and the order are the historical route, rounded):
+
+| Mile | Landmark | Kind |
+|---|---|---|
+| 0 | Independence, Missouri | start, store |
+| 102 | Kansas River | river (ferry) |
+| 185 | Big Blue River | river |
+| 304 | Fort Kearney | fort |
+| 554 | Chimney Rock | landmark |
+| 640 | Fort Laramie | fort |
+| 830 | Independence Rock | landmark ("the Great Register of the Desert") |
+| 932 | South Pass | the fork: Fort Bridger, or the Sublette Cutoff (shorter, no water) |
+| 989 / 1,057 | Green River / Fort Bridger | a river / a fort, by the fork |
+| 1,151 | Soda Springs | landmark |
+| 1,208 | Fort Hall | fort |
+| 1,390 | Snake River | river (a guide offers) |
+| 1,504 | Fort Boise | fort |
+| 1,600 | Blue Mountains | landmark, mountain road |
+| 1,800 | The Dalles | the end's choice: raft down the Columbia (a float), or the Barlow Road (a toll, slower, safer) |
+| 2,040 | Willamette Valley | the end |
+
+**Regions** (each its own parallax layers and colours): the prairie (Missouri, Kansas, Nebraska), the bluffs (western Nebraska, Wyoming), the Rocky Mountains, the high desert (Idaho), the forests (Oregon).
+
+## 7. Opponents or hazards
+
+The trail itself (section 5.3). No combat.
+
+## 8. Modes
+
+One journey. The backgrounds are the difficulty levels.
+
+## 9. Scoring
+
+Section 5.6, with the top 10 saved.
+
+## 10. Screens and flow
+
+1. **Title:** NEW JOURNEY, CONTINUE, TOP 10, THE GRAVES.
+2. **Setup:** the background, the names, the month.
+3. **The store at Independence.**
+4. **The trail**, with its menu, landmarks, rivers, the fork, events, hunts, floats, graves and trades.
+5. **The end:** arrival and score, or the last grave; then the diary and the top 10.
+
+The journey is **saved** each day (CONTINUE resumes it), so a 45-minute game can be played in pieces.
+
+## 11. Audio
+
+**Songs**, American tunes of the period in their own notes, read from public domain engravings (Mutopia; `scores/SOURCES.md`), on the sampled instruments: a fiddle (strings), a banjo (pluck), a harmonica (flute) and a bass; no drums. Each song a medley (`medley.py`); a piece's padding to whole patterns passes at a frame a row (`F01` after its last note), so a loop has no silence.
+- 0 the title: *Soldier's Joy* (fiddle over banjo);
+- 1 the prairie: G. F. Root, *There's Music in the Air* (1857, harmonica), then *Soldier's Joy*;
+- 2 the bluffs: S. C. Foster, *The Old Folks at Home* (1851, fiddle over a picked banjo);
+- 3 the mountains: *Amazing Grace* (*New Britain*, 1835, harmonica over a drone of strings);
+- 4 the desert: R. Lowry, *Hanson Place* (1864, fiddle, choir and strings);
+- 5 the forests: S. C. Foster, *Slumber My Darling* (1862, harmonica over the banjo's arpeggios);
+- 6 a grave: *Amazing Grace*, slow, strings over the drone (while the grave is made, and when the whole party is lost);
+- 7 the arrival: H. R. Bishop, *Home! Sweet Home!* (1823, fiddle and harmonica together).
+
+The first choices (*Oh! Susanna*, *Camptown Races*, *Buffalo Gals*, *Old Dan Tucker*, *Shenandoah*, *Sweet Betsy from Pike*) had no public domain engraving that could be fetched (`scores/SOURCES.md`).
+
+**Effects** (`SFX` in the code: menu move, select, pause, bad news, the party lost, good news, a record, a shot, a rock struck, a death's toll, the till, a landmark's chord, the ox's bell):
+- the oxen's bell, now and then while the wagon rolls (every 233 frames on the move);
+- a gunshot and a hit;
+- the river's splash;
+- an event's chime: good or bad;
+- a death's toll;
+- menu sounds;
+- the store's till;
+- a landmark's arrival.
+
+Levels: `node tools/devkit/music/loud.mjs carts/westward-wagon.nova --check` (playbook section 5).
+
+## 12. Video layers
+
+- **BG2:** the far range, for each region.
+- **BG1:** the near hills and trees.
+- **BG0:** the ground and the trail.
+- **The sky:** a gradient line by line.
+- **The regions** (the prairie, the bluffs, the Rocky Mountains, the high desert, the forests of Oregon) each have their own three layers, colours (BG palettes 1 to 3, the same roles in each, so the weather's tints work everywhere) and sky. Five would not fit in the tile sheet, so they are kept in the ROM and the one the wagon is in is copied into tiles 1 to 380 and the layers' maps on entering it.
+- **The landmarks' painted scenes** are big pictures on BG2, over the region's sky: nine of them (Chimney Rock, Independence Rock, Soda Springs, South Pass, the Blue Mountains, The Dalles, a fort shared by the five forts, a river crossing shared by the four rivers, and the Willamette Valley at the end), and the title's logo. They are kept in the ROM and one at a time copied into a reserved block (tiles 800 to 1023, then 381 to 431: 275 tiles) and BG palette 5 (Merge Café's picture pool, for a background).
+- **ROM:** `rom/regions.bin` (30 KB) and `rom/scenes.bin` (32 KB), LZ-packed by `world.py` (about a third of their size) and unpacked by `lz()` in the code; `rom/book.bin` (8 KB).
+- **Sprites:** the wagon and oxen (four frames), the hunted animals, the graves. The aim, the float's water, rocks and wagon, and the weather are drawn on the overlay.
+- **The overlay:** the HUD's text, the menus and the event cards, on wooden panels.
+
+The art is made in code by `carts/src/westward-wagon/art.py` and `world.py` (the regions and the scenes) with the kit (`scenery.py` for skies, mountains, hills and trees; `texture.py` for ground and wood; `sculpt.py` and `draw.py` for the wagon, the oxen and the animals).
+
+## 13. Persistence (save slots)
+
+| Slots | Contents |
+|---|---|
+| 0 | Format version |
+| 1 to 35 | The journey in progress, written each day on the trail: 1 a flag, 2 a random seed (drawn and set as it is saved, so a resumed journey goes on as it would have), 3 the background, date, route, pace, rations, weather, region (packed), 4 the mile and the next landmark, 5 the days, 6 the oxen and spare parts, 7 food, 8 bullets, 9 money in cents, 10 to 24 the party's health (x 10), illness and life, 25 to 34 their names (packed), 35 clothing. Cleared at the journey's end |
+| 100 to 139 | The top 10: score, the leader's name (packed), the background, the date of arrival |
+| 140 to 199 | The graves: 12, five slots each, a bit stream of 30 bits a slot: the mile (11 bits), the month (4), the day (5), the name (10 letters) and the epitaph (16), 5 bits a letter |
+| 200 | The next grave to write (the oldest goes) |
+| 201 to 255 | Reserved (the diary is in RAM, for the journey being played; a resumed journey starts a new page) |
+
+## 14. Asset budget
+
+| Asset | Budget |
+|---|---|
+| Code | 61.9 KB of the 64 KB limit, packed without its comments (`"strip"`); the texts of the places, people and regions in the ROM (`book.py`), the events' in the code (each carries its numbers) |
+| Tiles | one region's three layers at a time, from the ROM (tiles 1 to 380: 270 to 366 a region); the wagon, oxen, animals and grave as sprites (342 of 368, tiles 432 to 799); one landmark scene at a time, from the ROM (tiles 800 to 1023 and 381 to 431: up to 275) |
+| ROM | 71 KB of 128: the regions (30 KB) and the scenes (32 KB), LZ-packed; the book (8 KB). The `.nova.png` payload 108 KB of 147 |
+| Songs / SFX | 8 songs (32 patterns, 9 KB of samples); 13 effects |
+
+## 15. Implementation plan
+
+1. **The journey (a vertical slice):**
+   - the setup (background, plain names, month);
+   - the store;
+   - the days rolling (miles, food, health, the date, the weather);
+   - the menu (pace, rations, rest);
+   - the landmarks' list (plain cards);
+   - arriving or dying;
+   - the score.
+   
+   Tests for every number of section 5.1 and 5.2, and a **bot** that plays a whole journey with a strategy.
+2. **The art proof:** the look, agreed before the rest is drawn:
+   - the wagon and oxen (walking, every frame);
+   - the prairie's parallax layers and sky;
+   - one landmark scene (Chimney Rock);
+   - the palettes.
+   
+   Then `node tools/devkit/art/proof.mjs westward-wagon`, the picture sent to the user, and what they said written here.
+   - **Built:** the prairie's trail in layers (a sky gradient set line by line; BG2 fair-weather clouds and far hills, BG1 near hills with cottonwoods, BG0 the grass and the trail's ruts, each 256 px wide and wrapping, scrolled at its own speed), the wagon (canvas over hoops, a wooden box, spoked wheels turning in 4 frames) and a yoke of oxen (walking in 4 frames) as big sprites, the logo, and **Chimney Rock as a landmark scene in the ROM**: `art.py` packs it (181 tiles with flips shared, its map and its colours) into `rom/scenes.bin`, and `loadScene` copies it into the 256 tiles reserved from tile 768 and a stretch of Map RAM, shown on BG2. The technique the fifteen scenes need works.
+   - **Sent** on 14 November 2026: the wagon and oxen frames, the trail, Chimney Rock, the title.
+   - **Agreed** on 14 November 2026: "It looks good", with one fix: the far bluffs were drawn after Chimney Rock, so one covered the foot of its cone; now the horizon is drawn first and the rock stands in front. The rest of the scenes are drawn in this order (far to near).
+3. **The trail's dangers:** illness, events (5.3), weather and seasons, the forts' prices, the fork.
+4. **Rivers, the float, the hunt and trading** (5.4, 5.5).
+5. **Content:** every landmark and its text, the regions, the events' texts, the people met.
+6. **The flow:** the title, naming with the keyboard, the diary, the graves (written and passed), the top 10, saving and resuming the journey.
+7. **Art pass:** the other regions, the landmark scenes (ROM), the event pictures, the hunt's animals (`gallery.mjs` and `critique.mjs` over every screen).
+8. **Audio:** the folk tunes from public-domain scores, and the effects.
+9. **Balance and release:** the bot over many seeds and strategies (how many arrive, how many survive, by background and month, choices that matter), the label, the PNG cart, the Library (`node tools/release.js westward-wagon`) and a README row.
+
+**Step 1, built:** the journey as pure functions on one object (`newJourney`, `dayOnTrail`, `personDay`, `rollWeather`, `nextMark` and `markMile` with the two routes after South Pass, `crossRiver`, `scoreOf`), and the screens that drive it: the title, the setup (the background, the month; the names fixed as MARY, JOHN, SARAH, WILL and ELLA until step 6), the store (Independence's, and the forts' at their prices), the trail (a day every 50 frames; A stops), the menu (continue, supplies, pace, rations, rest 1, 3 or 5 days), cards for deaths, illnesses and landmarks, the rivers' four choices (fording by the depth, caulking and floating by chance until step 4's float, the ferry, waiting), the forks (South Pass: Fort Bridger or the Sublette Cutoff; The Dalles: the raft or the Barlow Road, its toll and days), the end with the score and the top 10 (the leader's name, packed in two slots). The trail is drawn with the starter's art and a wagon of rectangles until the art proof. Tests: `01-flow` (the screens in order, the store's bill, the days rolling, the menu's choices, a river's card, the end and the top 10), `02-rules` (every number of 5.1, 5.2, 5.4, 5.6). `bot.mjs` makes a whole journey with the buttons: it outfits the wagon, crosses by the depth, eats less when the food will not last, rests when the party is poor or ill (`care`), buys food at the forts.
+
+**Step 1, results** (the bot, 4 seeds each, leaving in April): a banker arrives every time, with 3.75 of 5 alive resting never and 4.5 resting when needed, in 177 to 205 days; a carpenter the same (twice the score); a farmer, whose $400 buys about 1,200 lb of food for a trip that eats 2,600, arrives a quarter to half of the time with one or two: the hunt (step 4) is how a farmer eats. Two bugs found by the bot: a menu's choice was dropped on the frame the button was let go, and a person who fell ill and got better the same day crashed the day's card.
+
+**Step 3, built:** the events of 5.3 (`EVENTS`: each a chance a day, when it can happen and what it does), one at most on a day of travel that reached no landmark, their chances x 1.3 at strenuous and x 1.6 at grueling:
+
+| Event | Chance a day | What it does |
+|---|---|---|
+| a broken wheel, axle or tongue | 1.2 % | a spare mends it; without one a carpenter mends it half the time, anyone else a third; else 3 to 6 days waiting for a passing party to trade one (for up to 40 lb of food) |
+| a lame ox | 0.4 % | a yoke fewer (a farmer nurses it back half the time) |
+| a thief in the night | 0.6 % | 10 to 30 % of the food, 30 % of the bullets |
+| lost the trail | 0.5 % | 2 to 4 days |
+| bad water (west of the prairie) | 0.7 % | everyone -6 health |
+| little grass (bluffs, desert) | 0.6 % | a day lost |
+| rough trail (mountains, forest) | 0.6 % | 1 or 2 days lost |
+| a hailstorm (in rain) | 0.4 % | 10 % of the food, everyone -3 |
+| a blizzard (in snow) | 3 % | 2 to 4 days snowed in |
+| a fire in the wagon | 0.3 % | 15 % of the food, 20 % of the clothing |
+| wild berries (summer) | 0.8 % | +20 to 40 lb |
+| an abandoned wagon | 0.5 % | 50 lb of food, 2 sets of clothing, or a spare part |
+| a doctor travelling west | 0.5 % | one person well, +10 health |
+| another party shares food | 0.4 % | +60 lb (when short) |
+| a guide's shortcut (a Shoshone guide in the desert, a trapper elsewhere) | 0.4 % | 10 to 25 miles |
+| a Shoshone or Lakota family shows the party a spring | 0.5 % | everyone +5 health |
+
+The weather now varies around each month's average (a step either way): the first version made midsummer very hot on every dry day, and that, not the events, was killing parties in the desert. **The weather you can see:** rain and heavy rain fall as streaks, snow drifts down and whitens the ground, fog washes the far hills out (a translucent overlay), the clouds go grey and the sky dims in bad weather (the sky's gradient scaled line by line); and the grass browns from September to November. Tests: `03-events.mjs` (a spare used, the carpenter's odds, days lost, about 8 events in 150 days, a blizzard only in snow, July and December's weather).
+
+**Step 3, results** (6 seeds each, April): a banker arrives every time, with 4.7 of 5 alive when resting when needed (3.8 when never); a carpenter 2.5 and a farmer 0.2 to 0.7, both short of food: the deaths left are starvation in the last 300 miles, in October. Hunting (step 4) is the food the poorer backgrounds need, as in the classic game. The bot now buys up to 1,000 lb at a fort.
+
+**Step 4, built:** the hunt (`toHunt`, `updateHunt`, `endHunt`): over the trail's layers, animals of the region (`GAME`: the prairie and bluffs rabbits, squirrels, deer, buffalo; the mountains and forest squirrels, deer, elk, bear; the desert rabbits, deer, elk; fewer in winter) walk across three lanes at their own speeds (rabbit 1.5 px a frame to buffalo 0.5), at most five at once; the aim moves 2 px a frame and is drawn on the overlay; a shot uses a bullet, a hit blinks the animal out with its meat rising, a miss startles those near it (x 1.8 speed); 30 seconds or B; then a card, the meat (at most 100 lb) and a day. The float (`toFloat`, `updateFloat`, `floatOutcome`): from above, on the overlay, the banks winding, rocks and eddies coming down the current, a wagon that steers with momentum; it is the CAULK AND FLOAT of every river and the raft down the Columbia. Trading (`tradeOffer`, `applyTrade`, `seekTrade`) from the menu, which is now continue, supplies, pace, rations, rest, hunt, trade. Two effects: a shot, a rock struck. Long river results are split into a line a sentence. The art: the six animals in two frames (the four big ones in 16 px pieces, shared between frames, so they fit the sprite region). Tests: `04-hunt.mjs` (bullets by the box, the hunt from the menu, a shot's meat and bullet, the aim's speed, 100 lb carried back and a day, no bullets no hunt; the float's steering, rocks struck or passed, what the hits cost, a river's float; fair trade offers, a trade, TRADE from the menu with lines that fit). The bot hunts when the food runs short (aiming at the human's speed, a shot at most every 18 frames, the big animals first) and steers the float away from the rock coming at it.
+
+**Step 4, results** (6 seeds each, April, the bot resting when needed and hunting every third day at most while the food will not last): a banker and a carpenter arrive every time with all five; a farmer every time with 3 (2 to 5), after 8 to 14 hunts. Before the bot hunted early, the farmer cut the rations instead, and the illness that short rations bring killed the party (0.2 arrived). The float: a bot that looks only at the nearest rock struck 3 to 6 on the Snake and 3 to 10 down the Columbia; one that looks ahead for the clearest lane strikes 0 to 2, so the float is fair and rewards looking ahead (the deepest rivers now send a rock every 18 frames at most, not 14). Journeys take 195 to 242 days, arriving in October or November: step 9 looks at the pace of the trip.
+
+**Step 5, built:** the book (`book.py` writes `rom/book.bin`, 8.4 KB; `loadBook` reads it at the start): for each of the 17 places a paragraph (up to 8 lines of 28 letters) and three people met there (a storekeeper, a ferryman, soldiers, emigrants, children; a Kansa hunter, Pawnee, Lakota, Shoshone, Nez Perce and Wasco traders and guides, each speaking of their own country and trade), and a card for each region (the prairie, the bluffs, the Rocky Mountains, the high desert, the forests of Oregon), shown on first entering it. A landmark's card offers LOOK AROUND, TALK TO SOMEONE (each person in turn), BUY SUPPLIES at a fort, and GO ON, CROSS THE RIVER or CHOOSE THE WAY; leaving Independence's store shows a card about setting out. The Snake River offers a Shoshone guide (a set of clothing, a day, a safe crossing). Results longer than a line are wrapped to the card (`wrapText`). The events' texts stay in the code, since each carries its numbers. `book.py` checks every line fits a card, and `--check` that the ROM is up to date (run by `05-book.mjs`). Tests: `05-book.mjs` (every place's paragraph and three people, every line fits, look, talk in turn, a fort's store at its prices, a region's card, the guide, setting out). The bot goes on at landmarks, buys at forts, and hires the guide when it has clothing to spare.
+
+**Step 5, results** (6 seeds each, April): unchanged in balance: a banker and a carpenter arrive with all five, a farmer with 2.8 (1 to 5); every run finishes cleanly through the new cards.
+
+**Step 6, built:** the keyboard (`toKeys`, `updateKeys`: the 26 letters, `.`, `-`, `'` and a space in three rows, DEL and END; the d-pad moves, A types, B deletes, START is done), used to name the party after the background (each name starts as MARY, JOHN, SARAH, WILL, ELLA; START keeps it; B on an empty name goes back) and to write epitaphs. The title offers CONTINUE JOURNEY when one is saved: the journey is saved each day on the trail (slots 1 to 35, section 13), with a fresh random seed set as it is saved, so a resumed journey goes on exactly as it would have; the end clears it. Graves: each death (illness, a river) asks for one, REST IN PEACE or an epitaph of up to 16 letters, kept with the mile and the date in five slots (12 graves, the oldest replaced); later journeys pass the graves as pale wooden markers in front of the trail, with a blinking A to read them (HERE LIES, the name, the date, the epitaph). The diary: every line of the journey's log is dated (`note`), rests are written too, and it is read from the menu (READ THE DIARY) and from the end (B), a page of 15 lines, UP and DOWN by a line, LEFT and RIGHT by a page. The code is packed without its comments (`"strip": true`: 59 KB of 64). Tests: `06-save.mjs` (a grave in five slots and back, twelve kept, a death's grave and epitaph, the next journey passing and reading it, the journey resumed as it was and going on the same way from either seed, the end clearing it, the diary's dated lines); `01-flow` names the party on the keyboard.
+
+**Step 6, results** (6 seeds each, April): a banker and a carpenter arrive every time with 4.8 of 5, a farmer with 2 (1 to 4), within the noise of step 5 (the random sequence changed, since each day's save sets a new seed). The bot keeps the names and lays its dead to rest in peace.
+
+**Step 7, built:** the world (`world.py`): the five regions' parallax layers (the prairie's hills and cottonwoods; the bluffs' flat-topped clay buttes and junipers; the Rockies' snowy peaks and pines; the high desert's pale mesas, sage and black basalt; Oregon's firs under Mount Hood), each with its own sky and colours, the mountains and forests drawn 128 px wide and laid twice so their tiles are shared (270 to 366 tiles a region); eight new landmark scenes (Independence Rock's granite dome by the Sweetwater, its names painted at the foot; Soda Springs' mineral mounds and the Steamboat Spring's plume; South Pass under the Wind River Range; the Blue Mountains' road between pines; The Dalles' basalt gorge and the Columbia under Mount Hood; an adobe fort with bastions and a pennant; a river crossing with cottonwoods; the Willamette Valley's fields, river and cabin under Mount Hood) and the logo, all in the ROM, LZ-packed (`lz` and `pack_blob` in `world.py`, `lz()` and `romEntry()` in the code; 70 KB of the 128). `loadRegion` on entering a region, at the start, on the title and on resuming; every landmark shows its scene with its card; the end shows the valley with the score beneath it. Cards wrap any line longer than 28 letters (an event's "IT TOOK 2 DAYS TO FIND IT AGAIN." ran past the card); a river's line is shorter ("620 FT ACROSS, 3.6 FT DEEP."); the title's choices sit on a panel. The event pictures of the plan were left out: the sprite tiles are nearly full (342 of 368) and the cards read well with the trail behind them. `screens.mjs` lists each region's trail and each scene (32 screens); `critique.mjs` leaves one warning, the trade card over the wagon, as designed. Tests: `07-world.mjs` (every region and scene unpacks whole and fits its tiles, every landmark has a scene, a region loads on entering it, scenes show and hide, the title shows the prairie, a resumed journey its region). The code is 61 KB of 64.
+
+**Step 7, results** (4 seeds, a banker and a farmer, April): every run finishes cleanly through the five regions; a banker arrives with 4.75 of 5, a farmer with 1.75.
+
+**Step 8, built:** the music: `scores.py` reads seven public domain engravings from the Mutopia Project with `midi.py` (a small MIDI reader, so no packages are needed) into `scores/` (a skyline for the guitar arrangement whose tune shares its track; the bagpipe engraving's grace notes left out; a drone of the game's own under Amazing Grace), and `audio.py` arranges them as eight songs (section 11): 32 patterns, 9 KB of samples. Each region plays its tune from the moment the wagon enters it (with its layers; its card after the day's), a grave plays the hymn while it is made and the region's tune after, the arrival *Home! Sweet Home!*, the whole party lost the hymn. Four new effects: a death's toll, the store's till (when something is bought), a landmark's chord, the ox's bell. Levels (`loud.mjs --check`): every song within the limits (medians 0.030 to 0.041, the lead 0.021 to 0.025 and 0.62 to 0.74 of the mix, pierce at most 0.0120); effects 0.007 to 0.063. `clash.py` finds only the engravings' own passing notes (the fiddle's G over D in *Soldier's Joy*, an appoggiatura in *Slumber*, B flat over the C7's E in *Home! Sweet Home!*). Tests: `08-audio.mjs` (each region its tune, a death's toll and the grave's hymn and back, a landmark's chord, the till, the arrival's song, the ox's bell).
+
+**Step 9, built:** the balance (below); a day now rolls in 90 frames (a second and a half: with the cards, the landmarks, the hunts and the floats a journey is about 25 minutes for a person, the bot's 3 minutes being only the rolling), and the terrain is quicker (the bluffs 0.95, the mountains 0.75, the desert 0.9, the forests 0.8 of the prairie's miles), so a careful party arrives in late September or October. The panels and cards are a walnut (`colors.mjs --check` found the darker brown muddy: 0.95 of the panels' pixels, now 0.08), and the far ox's darker hide is named for what it is (`far`, not `dark`, which the check reads as a shade). The label (the title), `carts/westward-wagon.nova.png`, the Library entry and a README row (`node tools/release.js westward-wagon`). After the user's first whole journey ("it was fun!"): the arrival's line "5 OF 5 MADE IT, OCTOBER 9, 1848" ran past its panel (up to 33 letters in September), so the date has its own line; "1999 MILES FROM INDEPENDENCE" on the lost party's screen filled its panel and is now "... MILES ALONG THE TRAIL". `09-text.mjs` watches every print while it walks every screen, card, event, landmark, person and region with the longest names, dates and numbers, and fails on a line off the screen or past its panel (it finds both lines in the code before the fix).
+
+**Step 9, results** (the bot, 3 seeds for each of 18 cases: the three backgrounds, leaving in March, May or July, resting when needed or never; every run finished cleanly): a banker and a carpenter arrive every time with 4.3 to 5 of 5, in 173 to 237 days; a farmer arrives a third of the time to always, with 0.3 to 2, the hard game for three times the score. Resting when needed saves a person or none and costs about 30 days; leaving in July costs nobody but arrives in winter. The carpenter plays as the banker in the bot's hands (both can afford the same outfit); their difference is the score and the mending.
+
+Each step: build it, run `node tools/check.js westward-wagon` and `node tools/test.js westward-wagon`, write its **Built** and **Results** notes under its number here, commit and push.
+
+## 16. Open questions
+
+Defaults I chose that you did not confirm (all easy to change):
+
+- **The year and the route:** 1848, with the historical landmarks and miles of section 6. There are two forks: South Pass, and the end at The Dalles.
+- **The numbers of section 5:** prices, miles a day, food, health, the score (modelled on the classic game's feel, with our own values).
+- **The illnesses:** they include cholera and dysentery, as history did. Deaths are handled gently: a grave and an epitaph, no gore.
+- **Native nations:** met as traders, guides and helpers (for example a guide at the Snake River), drawn with respect.
+- **Saving:** the journey is saved each day so it can be resumed.
+- **Folk tunes:** the list in section 11 (all public domain).
+- **The landmark scenes:** kept in the ROM and loaded one at a time. This is an untried technique for a background, so step 2 proves it.

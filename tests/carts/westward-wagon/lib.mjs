@@ -1,0 +1,24 @@
+// The test helpers for Westward Wagon: boot the cart with its variables exposed.
+import { fileURLToPath } from 'node:url';
+import { BTN, boot } from '../../../tools/devkit/harness.mjs';
+export { BTN };
+export const CART = fileURLToPath(new URL('../../../carts/westward-wagon.nova', import.meta.url));
+
+export const PROBE = `__expose(() => ({
+  get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; }, get clock() { return clock; },
+  get J() { return J; }, set J(v) { J = v; }, get card() { return card; }, set card(v) { card = v; }, get sel() { return sel; }, get setup() { return setup; }, get cart() { return cart; },
+  get storeMult() { return storeMult; }, get rank() { return rank; }, get dayTimer() { return dayTimer; },
+  SFX, SONG, BACKGROUNDS, MONTHS, START_MONTHS, GOODS, PACES, RATIONS, TRAIL, ILLS, WEATHERS, TERRAIN, WEATHER_MILES, STARVING, REST_GAIN, EASY_GAIN, DAY_FRAMES, NAMES, CUTOFF_SAVES, BARLOW_TOLL, BARLOW_DAYS,
+  EVENTS, EVENT_RATE, rollEvent, loseDays, rollWeather,
+  newJourney, alive, healthWord, dateText, nextMark, markMile, regionAt, dayOnTrail, scoreOf, crossRiver, costOf, topTen, insertTop, packName, unpackName,
+  get hunt() { return hunt; }, get flt() { return flt; }, MEAT, GAME, BIG, HUNT_FRAMES, CARRY, LANES, MENU, FLOAT_Y, WORTH, TRADERS,
+  get BOOK() { return BOOK; }, get sceneOn() { return sceneOn; }, get regionLoaded() { return regionLoaded; }, SCENES, REGION_TILES, loadRegion, sceneOf, romEntry, lz, get kbd() { return kbd; }, get diary() { return diary; }, get graveList() { return graveList; }, MENU_DIARY: 7, SAVE_SLOT, GRAVE_SLOT, GRAVES,
+  packGrave, unpackGrave, graves, saveGrave, saveJourney, loadJourney, graveX, graveInView, note, wrapText, floatOutcome, tradeOffer, applyTrade, goodText, animalBox, banks, toHunt: () => toHunt(), toFloat: (...a) => toFloat(...a),
+  reach: (k) => reach(k), toStore: (m) => toStore(m), endJourney: () => endJourney(),
+}));`;
+
+/** A new game. title: true to start on the title (otherwise on the trail with a stocked wagon: 4 yokes, 900 lb, ...). */
+export const newGame = (seed = 1, { title = false, save = null } = {}) =>
+  boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + PROBE });
+export const M = (...names) => names.reduce((m, n) => m | (1 << BTN[n]), 0);
+export const sfxLog = (vm) => { const r = vm.audioLog.filter((a) => a[1] === 'sfx').map((a) => [a[2], a[3]]); vm.audioLog.length = 0; return r; };
