@@ -10,6 +10,7 @@ clumps, a character's proportions) shapes every head and figure the kit draws, a
 | `heads-expressions.png` | The same head angry, hurt and shouting, in both views | `templates/heads.json`: the expressions |
 | `fighter-model-sheet.png` | A 96 px fighter: the model, front, three-quarter, side and back views, a guard and a punch, the palette and proportions | the figure's proportions, outfit and fighting poses (in progress) |
 | `dungeon-crawl-table.webp` | The user's picture of the Dungeon Crawl Pinball table (October 2026): the layout (two curling ramps, the side cubbies with keys, the x3 and x10 slots behind gates at the top, the upper flipper, the lava pit with the levels and the Boss), the colours and the mood | `docs/carts/dungeon-crawl.md`: the table's layout (section 4) and the look (sections 6 and 12) |
+| `splat-duel-concept.png` | The user's concept sheet for Splat Duel (November 2026, reduced to 64 colours): the two kids in caps (idle, draw, release), slingshots and balloons, the impacts, the brick walls clean and painted, the four power-ups in gold diamonds, the discovery sparkle, the dotted arc and the turn arrows | `docs/carts/splat-duel.md`: the look (sections 1 and 12) and `carts/src/splat-duel/art.py` |
 
 `ai-sprite-engine-spec.md` is a specification the user supplied for a text-authored sprite engine (ASCII grids, layered
 parts, polygons; a review loop and a rubric). The art kit has taken its useful ideas rather than building it: strict

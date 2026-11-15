@@ -1,0 +1,284 @@
+{
+ "colors": {
+  "GLASS": 200,
+  "MAG": 114,
+  "MAGD": 116,
+  "STONE": 118,
+  "STONEL": 119,
+  "TEAL": 113,
+  "TEALD": 115,
+  "YELLOW": 117
+ },
+ "gradients": [
+  "sky"
+ ],
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "grass0": 6,
+    "grass1": 7,
+    "grass2": 8,
+    "grass3": 9,
+    "leaf0": 10,
+    "leaf1": 11,
+    "leaf2": 12,
+    "leaf3": 13,
+    "pave0": 1,
+    "pave1": 2,
+    "pave2": 3,
+    "pave3": 4,
+    "pave4": 5
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "hill0": 1,
+    "hill1": 2,
+    "hill2": 3,
+    "house0": 7,
+    "house1": 8,
+    "house2": 9,
+    "roof0": 4,
+    "roof1": 5,
+    "roof2": 6,
+    "tree0": 10,
+    "tree1": 11,
+    "tree2": 12
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "brick0": 1,
+    "brick1": 2,
+    "brick2": 3,
+    "brick3": 4,
+    "brick4": 5,
+    "mpaint0": 11,
+    "mpaint1": 12,
+    "mpaint2": 13,
+    "mpaint3": 14,
+    "mpaint4": 15,
+    "tpaint0": 6,
+    "tpaint1": 7,
+    "tpaint2": 8,
+    "tpaint3": 9,
+    "tpaint4": 10
+   }
+  },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "edge": 9,
+    "gold0": 11,
+    "gold1": 12,
+    "gold2": 13,
+    "gold3": 14,
+    "mag0": 5,
+    "mag1": 6,
+    "mag2": 7,
+    "mag3": 8,
+    "shade": 10,
+    "teal0": 1,
+    "teal1": 2,
+    "teal2": 3,
+    "teal3": 4
+   }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "hair0": 4,
+    "hair1": 5,
+    "line": 14,
+    "skin0": 1,
+    "skin1": 2,
+    "skin2": 3,
+    "team0": 6,
+    "team1": 7,
+    "team2": 8,
+    "team3": 9,
+    "white0": 10,
+    "white1": 11,
+    "wood0": 12,
+    "wood1": 13
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "hair0": 4,
+    "hair1": 5,
+    "line": 14,
+    "skin0": 1,
+    "skin1": 2,
+    "skin2": 3,
+    "team0": 6,
+    "team1": 7,
+    "team2": 8,
+    "team3": 9,
+    "white0": 10,
+    "white1": 11,
+    "wood0": 12,
+    "wood1": 13
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "blue0": 6,
+    "blue1": 7,
+    "blue2": 8,
+    "gold0": 1,
+    "gold1": 2,
+    "gold2": 3,
+    "grey0": 14,
+    "grey1": 15,
+    "line": 4,
+    "pink0": 9,
+    "pink1": 10,
+    "white": 5,
+    "yellow0": 11,
+    "yellow1": 12,
+    "yellow2": 13
+   }
+  }
+ },
+ "scenes": {
+  "far": {
+   "h": 13,
+   "mx": 0,
+   "my": 0,
+   "pal": 2,
+   "w": 32
+  },
+  "ground": {
+   "h": 5,
+   "mx": 0,
+   "my": 28,
+   "pal": 1,
+   "w": 32
+  },
+  "logo": {
+   "h": 9,
+   "mx": 0,
+   "my": 64,
+   "pal": 4,
+   "w": 32
+  },
+  "walls": {
+   "h": 13,
+   "mx": 0,
+   "my": 48,
+   "pal": 3,
+   "w": 32
+  }
+ },
+ "sprites": {
+  "arrow": {
+   "pal": 0,
+   "size": 16,
+   "tile": 620
+  },
+  "balloon": {
+   "pal": 0,
+   "size": 16,
+   "tile": 608
+  },
+  "balloon_fly": {
+   "pal": 0,
+   "size": 16,
+   "tile": 610
+  },
+  "drop": {
+   "pal": 0,
+   "size": 8,
+   "tile": 618
+  },
+  "mag_draw": {
+   "pal": 1,
+   "size": 32,
+   "tile": 704
+  },
+  "mag_idle": {
+   "pal": 1,
+   "size": 32,
+   "tile": 652
+  },
+  "mag_release": {
+   "pal": 1,
+   "size": 32,
+   "tile": 708
+  },
+  "pu_big": {
+   "pal": 2,
+   "size": 16,
+   "tile": 622
+  },
+  "pu_roller": {
+   "pal": 2,
+   "size": 16,
+   "tile": 714
+  },
+  "pu_sponge": {
+   "pal": 2,
+   "size": 16,
+   "tile": 716
+  },
+  "pu_triple": {
+   "pal": 2,
+   "size": 16,
+   "tile": 712
+  },
+  "sparkle0": {
+   "pal": 2,
+   "size": 16,
+   "tile": 718
+  },
+  "sparkle1": {
+   "pal": 2,
+   "size": 16,
+   "tile": 744
+  },
+  "sparkle2": {
+   "pal": 2,
+   "size": 16,
+   "tile": 746
+  },
+  "splat_burst": {
+   "pal": 0,
+   "size": 16,
+   "tile": 614
+  },
+  "splat_pop": {
+   "pal": 0,
+   "size": 16,
+   "tile": 612
+  },
+  "splat_puddle": {
+   "pal": 0,
+   "size": 16,
+   "tile": 616
+  },
+  "teal_draw": {
+   "pal": 0,
+   "size": 32,
+   "tile": 644
+  },
+  "teal_idle": {
+   "pal": 0,
+   "size": 32,
+   "tile": 640
+  },
+  "teal_release": {
+   "pal": 0,
+   "size": 32,
+   "tile": 648
+  }
+ },
+ "tiles": {},
+ "used": 506,
+ "version": 1
+}
