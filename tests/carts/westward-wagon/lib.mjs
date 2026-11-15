@@ -4,7 +4,7 @@ import { BTN, boot } from '../../../tools/devkit/harness.mjs';
 export { BTN };
 export const CART = fileURLToPath(new URL('../../../carts/westward-wagon.nova', import.meta.url));
 
-const PROBE = `__expose(() => ({
+export const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get timer() { return timer; }, get playing() { return playing; }, get clock() { return clock; },
   get J() { return J; }, set J(v) { J = v; }, get card() { return card; }, set card(v) { card = v; }, get sel() { return sel; }, get setup() { return setup; }, get cart() { return cart; },
   get storeMult() { return storeMult; }, get rank() { return rank; }, get dayTimer() { return dayTimer; },

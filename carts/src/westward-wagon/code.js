@@ -1012,14 +1012,14 @@ function drawFloat() {
 function drawEnd() {
   if (J.arrived) {                                                  // under the valley's picture
     panel(8, 153, 240, 68);
-    ctxt('THE WILLAMETTE VALLEY!', 160, GOLD);
-    ctxt(`${alive(J).length} OF 5 MADE IT, ${dateText(J)}`, 173, WHITE);
-    ctxt(`SCORE ${J.score}${rank >= 0 ? `   TOP 10: #${rank + 1}` : ''}`, 186, rank >= 0 ? CYAN : GOLD);
-    if (timer > 60 && (clock >> 5) & 1) ctxt('A: CONTINUE   B: THE DIARY', 204, DIM);
+    ctxt('THE WILLAMETTE VALLEY!', 159, GOLD);
+    ctxt(`${alive(J).length} OF 5 MADE IT`, 170, WHITE); ctxt(dateText(J), 181, WHITE);   // the date on its own line (SEPTEMBER 30, 1848 with the count is 33 letters)
+    ctxt(`SCORE ${J.score}${rank >= 0 ? `   TOP 10: #${rank + 1}` : ''}`, 193, rank >= 0 ? CYAN : GOLD);
+    if (timer > 60 && (clock >> 5) & 1) ctxt('A: CONTINUE   B: THE DIARY', 207, DIM);
     return;
   }
   panel(16, 24, 224, 120);
-  ctxt('THE WHOLE PARTY', 50, WHITE); ctxt('HAS DIED ON THE TRAIL.', 62, RED); ctxt(`${J.mile} MILES FROM INDEPENDENCE`, 82, DIM);
+  ctxt('THE WHOLE PARTY', 50, WHITE); ctxt('HAS DIED ON THE TRAIL.', 62, RED); ctxt(`${J.mile} MILES ALONG THE TRAIL`, 82, DIM);
   if (timer > 60 && (clock >> 5) & 1) ctxt('A: CONTINUE   B: THE DIARY', 124, DIM);
 }
 function drawRecords() {
