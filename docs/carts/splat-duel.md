@@ -1,7 +1,7 @@
 # Splat Duel: Cart Specification
 
-**Version:** 0.4 (step 4: wind)
-**Status:** In development. The whole turn loop, the hidden power-up and all four power-ups play, in the look the user agreed (step 2); the splash is tuned so aiming decides the game (step 3); a wind that changes each round (step 4)
+**Version:** 0.5 (step 8: the audio pass, at the user's request ahead of steps 5 to 7)
+**Status:** In development. The whole turn loop, the hidden power-up and all four power-ups play, in the look the user agreed (step 2); the splash is tuned so aiming decides the game (step 3); a wind that changes each round (step 4); its own game song and sampled effects (step 8)
 **Cart source:** `carts/src/splat-duel/` → `carts/splat-duel.nova`
 
 ---
@@ -151,19 +151,27 @@ The percent of the other wall painted, shown at the top; the number of games eac
 
 ## 11. Audio
 
-Songs: 0 the title, 1 the game (the starter's), 2 the victory (the library's *Ode to Joy*). Songs use channels 0 to 6;
-effects take turns on 6 and 7.
+| Song | What | Length | Level (RMS) |
+|---|---|---|---|
+| 0 the game | Its own: G major, 100 bpm, 36 bars (a 4-bar intro, the tune twice, a middle over strings, the tune once more). The tune on a soft flute (no vibrato) doubled by a marimba, a plucked arpeggio, a bass, soft drums. Calm: the players are thinking | 86 s | 0.058; the lead 0.033, 0.60 of the mix |
+| 1 the title | The library's *The Entertainer* | 48 s | 0.061 |
+| 2 the victory | The library's *Ode to Joy* | 85 s | 0.061 |
 
-| SFX | When |
-|---|---|
-| 0 move, 1 select, 2 pause | Menus |
-| 3 tick, 13 deny | An aiming step; a step at the limit |
-| 4 launch | The slingshot lets go |
-| 5 splat, 6 ground | A balloon on a wall; on the ground |
-| 7 reveal, 8 collect | The power-up found; taken |
-| 9 ready | The handoff is ready for a press |
-| 10 roller, 11 sponge | The instant power-ups |
-| 12 win | The end of a game |
+The library's instruments are 30% softer in this cart (`audio.py`), so the three songs are within 5% of each other and
+moving between screens does not jump in loudness. Songs use channels 0 to 5 (the library's 0 to 6); effects take turns
+on 6 and 7.
+
+| SFX | When | Sound | RMS |
+|---|---|---|---|
+| 0 move, 1 select, 2 pause | Menus | Pulse blips and chimes | 0.009, 0.035, 0.035 |
+| 3 tick, 13 deny | An aiming step; a step at the limit | A soft marimba tick (it repeats while held); a low thud | 0.008, 0.014 |
+| 4 launch | The slingshot lets go | A rising twang | 0.026 |
+| 5 splat, 6 ground | A balloon on a wall; on the ground | A noise pop and a low thud; a squish | 0.036, 0.036 |
+| 7 reveal | The power-up found | A rising sparkle of celesta bells: the game's signature moment, the clearest effect | 0.040 |
+| 8 collect | The power-up taken | A marimba arpeggio into two bells | 0.035 |
+| 9 ready | The handoff takes a press | Two soft bells | 0.021 |
+| 10 roller, 11 sponge | The instant power-ups | A rising squish; a falling one | 0.046, 0.041 |
+| 12 win | The end of a game | A pulse fanfare (then the victory song) | 0.056 |
 
 ## 12. Video layers
 
@@ -263,7 +271,19 @@ effects take turns on 6 and 7.
 5. **Content:** more courtyards, if wanted.
 6. **Flow:** first-player choice, a short tutorial turn.
 7. **Art pass:** the rest of the art in the agreed look (paint drips, a hit reaction, the power-ups' frames).
-8. **Audio pass:** a calmer game song for a turn-based game, levels checked.
+8. **Audio pass:** a calmer game song for a turn-based game, levels checked (done before steps 5 to 7, as the user asked).
+   - **Built:** `audio.py` rewritten: the game's own song (section 11), the title from the library's *Entertainer*
+     (`SONG` in `code.js` now play 0, title 1, win 2), the library's instruments scaled to 70% for this cart, and the
+     effects that matter on sampled voices (celesta and marimba, `FXCEL`, `FXMAR`).
+   - **Results:** before, the game song looped every 15 s (a game lasts minutes), the menu and aiming ticks were 2-tick
+     pulse blips too short to register, and the win and collect effects were at the top of the effect range. The first
+     version of the new song had the marimba alone on the tune: at full volume only 0.019 RMS, 0.40 of the mix (it
+     decays too fast to lead), and the song half as loud as the library's (0.037 against 0.085): the flute doubling and
+     the 70% scaling fixed both. `loud.mjs --check` passes every song (game: median 0.058, the lead 0.60 of the mix,
+     pierce 0.0036 against the 0.012 limit); `clash.py` found one tritone in the middle section (a C over D's F#),
+     changed; the Entertainer's flags are the library's own. Every effect measured with `sfx.mjs` on channel 7 is in
+     0.008 to 0.056, the reveal the clearest of the play sounds. No render clips. Not yet heard by a person: the WAVs
+     were sent to the user.
 9. **Balance and polish:** label, PNG cart, Library, README row (`node tools/release.js splat-duel`).
 
 ## 16. Open questions
@@ -277,7 +297,6 @@ Defaults chosen for the prototype that the user has not confirmed:
 - **Paint Roller and Sponge act at once**; Big and Triple wait for the next shot, automatically (no choice of when).
 - **The power-up spawns only inside a view**, so it can be seen when revealed.
 - **Aiming dots** show the first 24 frames of the arc; the last shot of each player stays as a trail.
-- **The game song** is the starter's; a calmer piece may suit a turn-based game.
 - Teal starts the first game, and the first player alternates in rematches.
 - **Going second was worth about 61% with power-ups** (step 3); the first power-up now waits for the game's second turn
   (step 4: the user's "go ahead" on the recommendation). If the edge remains, the next evening to try is the first

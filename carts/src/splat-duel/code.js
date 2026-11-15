@@ -67,7 +67,7 @@ function sprite(s, x, y, opts = {}) { return spr(s.tile, flr(x), flr(y), { size:
 // --- Sound (SPEC 5): songs on channels 0 to 6, effects take turns on 6 and 7 ---
 
 const SFX = { move: 0, select: 1, pause: 2, tick: 3, launch: 4, splat: 5, ground: 6, reveal: 7, collect: 8, ready: 9, roller: 10, sponge: 11, win: 12, deny: 13 };
-const SONG = { title: 0, play: 1, win: 2 };
+const SONG = { play: 0, title: 1, win: 2 };
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
