@@ -13,6 +13,10 @@ const count = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); let 
   ok(vm.cart.rom && vm.cart.rom.cards_large && vm.cart.rom.cards_large.length === 61 * 769, 'its faces, back and flip frames are in the ROM');
   ok(C.stack && C.stack.tiles.length === 9 && C.stack.w === 32, 'nine stack buffers, one for each column, the hand and a spare');
   ok(new Set(Array.from(vm.cart.rom.cards_large).filter((_, i) => i % 769 === 0)).size === 1, 'every card is in one sprite palette (both inks), so a column can share sprites');
+  const backIdx = new Set(['BACK0', 'BACK1', 'BACK2'].map((k) => p.ART.colors[k] - 192)), rom = vm.cart.rom.cards_large;
+  let faceUses = 0;
+  for (let c = 0; c < 54; c++) for (let i = 1; i < 769; i++) { const v = rom[c * 769 + i]; if (backIdx.has(v & 15) || backIdx.has(v >> 4)) faceUses++; }
+  ok(faceUses === 0, 'no face uses the back\'s colours, so choosing a back changes only the back', `${faceUses} bytes`);
 }
 
 // 2. On the screen.

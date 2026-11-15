@@ -284,14 +284,10 @@ write its **Built** and **Results** notes under its number here, commit and push
 
 ## 16. Open questions
 
-Defaults chosen that the user has not confirmed, so they are easy to change.
+None left. The defaults the user had not confirmed were put to them after the release and kept as they are: the
+classic scoring with undo's extra -10, no limit on passes through the stock, a free hint, one top 10 for both modes.
 
-- **Scoring:** the classic desktop game's (section 9), and the undo's extra -10.
-- **Passes through the stock:** no limit in either mode.
-- **Hint:** on B with nothing held, and in the pause menu; it is free.
 - **Card backs:** the colour is changed by rewriting the back's three palette entries (`BACK0` to `BACK2`) from
-  `rom/backs.bin`, four ramps made by `art.py`. Those entries also colour the court
-  cards' collars and the joker's hat, so a red back gives red collars. If that matters, the kit could give the back its
-  own palette.
-- **Top 10:** shared between the modes (each entry marked D1 or D3), rather than one table each.
+  `rom/backs.bin`, four ramps made by `art.py`. They used to colour the court cards' collars and the joker's hat too
+  (a red back gave red collars); the card kit now draws those in gold and the suit's ink, so only the back changes.
 - **Not picked, for later:** replay a deal by number, winnable deals only (a solver), timed or Vegas scoring.
