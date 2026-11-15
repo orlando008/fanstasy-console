@@ -530,12 +530,19 @@ A recording holds what is needed to reproduce a run exactly: `{ "format": "nova1
 | Direction | Message | Payload |
 |---|---|---|
 | main → worker | `init` | `OffscreenCanvas` (transferred) |
-| main → worker | `load` | Parsed cart object, seed |
-| main → worker | `tick` | `{ frame, input: Uint16Array(4) }` |
-| main → worker | `pause` / `resume` / `reset` | |
+| main → worker | `load` | The parsed cart, the seed, and the save data (`Int32Array(256)`) |
+| main → worker | `tick` | `{ frame, input: Uint16Array(4) }`: one 12-bit button mask per pad, once a frame |
+| main → worker | `pause` / `resume` | No payload; the main thread stops sending ticks while paused |
+| main → worker | `reset` | No payload; restarts the cart, keeping its save data |
+| main → worker | `stream` | `{ on }`: while a clip records, every frame is sent back as `rframe` |
+| main → worker | `capture` | `{ id }`: the F7 label; answered with `frame` |
+| main → worker | `video` | `{ id }`: the layer regions of the paused game; answered with `video` |
 | worker → main | `audio` | Array of commands for this frame |
 | worker → main | `save` | `Int32Array(256)` when dirty |
 | worker → main | `log` / `error` / `stat` | Text, error with line, frame stats |
+| worker → main | `frame` | The label's frame data (answers `capture`) |
+| worker → main | `video` | The layers (answers `video`) |
+| worker → main | `rframe` | A copy of each rendered frame while `stream` is on |
 | main → worklet | `loadAudio` | Instruments, patterns, songs, SFX, samples |
 | main → worklet | `cmd` | Relayed audio commands |
 
@@ -664,7 +671,7 @@ has been visited, and installs as an app.
   square one for Android to crop). Chrome and Edge offer to install it (on Android, Install app in the menu; on a
   desktop, the icon in the address bar); on an iPhone or iPad it is Share, then Add to Home Screen.
 - **Offline.** The service worker (`sw.js`) keeps a copy of everything the console loads when it installs: the page,
-  its code, the manifest and icons, the Library's index, every cart (`.nova`) and every label, about 3.7 MB. The PNG
+  its code, the manifest and icons, the Library's index, every cart (`.nova`) and every label: about 10.5 MB as files, about 2.5 MB compressed, measured when this section was last checked (it grows with each cart). The PNG
   carts are not kept (downloads for sharing; the Library plays the `.nova`). After that every request goes to the
   network as before, and only if the network fails, or has not answered in 4 seconds, is it answered from the copy:
   online the site is always as published, offline it is the version the worker was built with. Every cart plays
@@ -820,7 +827,8 @@ name: check
 on: [push, pull_request]
 jobs:
   syntax:   # node --check on src/, tools/ and tests/; the documentation's file references
-  carts:    # check.js --all, the sound chip's checks, the starters' self-test, soak.mjs --all
+  carts:    # check.js --all, the sound chip's checks, the carts' and the console's own tests, the starters' self-test
+  soak:     # soak.mjs --all, a job of its own, so it runs beside carts
   verify:   # pull requests only: tools/verify.js for the carts the PR changes
 ```
 
