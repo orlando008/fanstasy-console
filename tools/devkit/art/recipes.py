@@ -118,6 +118,14 @@ for k, d in enumerate(digits(items, 16, 'gold')): sheet.add('digit %d' % k, d, i
 sheet.row()
 for name in ('a', 'b', 'start', 'dpad'): sheet.add('button ' + name, button(name, 16, items), items, scale=4)
 '''),
+('cards', 'Playing cards', 'For a card game: art.cards() draws a whole deck at 32 x 48, 24 x 32 and 16 x 24 (drawn kings, queens and jacks at the large size, a joker, a back and the frames of a flip), keeps the faces in the ROM, and writes the CARDS block of code.js (decks, shuffle, deal, poker, blackjack, runs and sets, moves, fans). The playbook\'s card section has the code side.', '''
+deck = art.cards(sizes=('large', 'medium', 'small'), slots={'large': 2, 'medium': 2, 'small': 2}, pals=(6, 7), use=('poker', 'anim'))
+pick = [0, 22, 37, 51, 52, 54]                                       # the ace of spades, 10 of hearts, queen of diamonds, king of clubs, a joker, the back
+for size, scale in (('large', 3), ('medium', 3), ('small', 4)):
+    for c in pick: sheet.add('%s %d' % (size, c), deck['faces'][size][c], deck['subs'][size][c], scale=scale)
+    sheet.row()
+for k in range(1, 7): sheet.add('flip %d' % k, deck['faces']['large'][54 + k], deck['subs']['large'][54 + k], scale=2)
+'''),
 ('icons','Small icons by hand', 'For an icon the library does not have: the one place for pixels typed by hand, 8 and 16 px icons where every pixel is a decision. Anything bigger: a recipe above.', '''
 pal = art.sprite_palette(3, {'edge': '140c1c', 'red': ramp('d04648', 3), 'gold': ramp('dad45e', 3)})
 K = {'o': pal.edge, 'd': pal.red[0], 'r': pal.red[1], 'l': pal.red[2], 'g': pal.gold[1], 'y': pal.gold[2]}

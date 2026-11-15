@@ -49,6 +49,9 @@ of it). Each is a module of its own here, and comes with `from kit import *`:
                 reference art), Figure: a drawn body on a rig's skeleton
   trace.py      turn an artist's reference drawing into templates: recover_grid(), clean(), align(), trace_head()
   preview.py    Sheet: a PNG of pictures, ramps and layer stacks, straight from art.py
+  cards.py      art.cards(sizes, slots, pals, use=...): playing cards (three sizes, drawn court cards, a back, flips) in the
+                ROM, and the CARDS block of code.js (cards.js: decks, shuffle, deal, poker, blackjack, runs, moves);
+                card_sheet() a PNG of the faces
   and here      art.big_sprite() (bigSprite() in code.js), art.animation(), art.stream() (frames loaded as they play:
                 streamSprite(); rom=True keeps them in the cart's ROM, rom/<name>.bin), art.gradient() (gradientLine() in scanline()), art.variant(),
                 Img.from_rows(mirror='x')
@@ -822,7 +825,9 @@ class Art:
             if os.path.exists(f): os.remove(f)
         put('art.json', json.dumps(s.manifest(), indent=1, sort_keys=True) + '\n')
         code = os.path.join(outdir, 'code.js')
-        if os.path.exists(code): inject(code, s.constants())
+        if os.path.exists(code):
+            inject(code, s.constants())
+            for name, block in getattr(s, 'blocks', {}).items(): inject_block(code, name, block)   # the CARDS block (cards.py)
         if not quiet: print(s.report())
 
 
@@ -1016,3 +1021,4 @@ from draw import Canvas, oval, blob, curve, poly, brush, speckle  # noqa: E402  
 from figure import head, Figure, tones  # noqa: E402  drawn heads (three views, expressions, hair) and bodies on a rig
 from review import review, findings_text  # noqa: E402  the checks a person makes by eye, as findings an agent can read
 from icons import icon, items_palette, ICONS, anim, ANIMS, digits, button, BUTTONS  # noqa: E402  ready-made icons, animations, score digits and button prompts
+from cards import card_sheet, inject_block  # noqa: E402  playing cards: art.cards(...) (decks, faces in the ROM, the CARDS block of code.js)
