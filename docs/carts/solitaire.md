@@ -1,7 +1,7 @@
 # Solitaire: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 7 built: the whole game and its art; the audio pass and the release are left
+**Status:** Step 8 built: the whole game, its art and its sound; the polish and the release are left
 **Shelf and players:** Puzzle; 1 player: the same as `genre` and `players` in `carts/src/solitaire/meta.json`.
 **Cart source:** `carts/src/solitaire/` → `carts/solitaire.nova`
 
@@ -136,13 +136,27 @@ press does not). The win is counted before it starts. The overlay is not blended
 
 ## 11. Audio
 
-On the new sound chip (SPEC 5). Songs from the song library (`tools/devkit/music/songs/README.md`): **The Entertainer**
-(Joplin) on the title and the records, **Canon in D** (Pachelbel) while playing, **Ode to Joy** (Beethoven) for the
-cascade and the score. The Canon's notes come from a CC BY file, so the game credits its engraver (on the records
-screen). Effects: the card kit's sounds (`cardsfx.add(a)`: a shuffle on a new deal, a deal for each card dealt, a flip
-when a card turns face up, a place when cards are put down) and the starter's menu move, select, pause and "no".
-Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6. Levels: `loud.mjs --check`
-(playbook section 5).
+On the new sound chip (SPEC 5). Songs from the song library (`tools/devkit/music/songs/README.md`), in `audio.py`:
+**0 The Entertainer** (Joplin) on the title and the records, **1 Canon in D** (Pachelbel) while playing, **2 Ode to
+Joy** (Beethoven) for the cascade and the score. The Canon's notes come from a CC BY 4.0 file: the statistics page
+credits its engraver, Michael Fischer v. Mollard, Mutopia Project.
+
+| Effect | When |
+|---|---|
+| 0 move | the hand moves, a menu item |
+| 1 select | a menu choice |
+| 2 pause | pause and resume |
+| 3 no | a move the rules refuse, nothing to undo |
+| 4 hint | a hint shown |
+| 6 record | the initials screen |
+| 7 shuffle (card kit) | a new deal |
+| 8 deal (card kit) | a card drawn from the stock, cards picked up |
+| 9 flip (card kit) | a column card turning face up |
+| 10 place (card kit) | cards put down, a card home in auto-finish |
+
+Songs use channels 0 to 6 (the library's hats on 6); effects take turns on 7 and 6. Levels (`loud.mjs --check`): the
+songs' medians 0.076 to 0.086, leads 0.039 to 0.045 RMS and 0.49 to 0.61 of the mix, The Entertainer's pierce 0.0112
+(the limit is 0.012); the effects (`sfx.mjs` on 7) 0.004 to 0.041 RMS, peaks 0.04 to 0.14.
 
 ## 12. Video layers
 
@@ -176,11 +190,11 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
 
 | Asset | Budget |
 |---|---|
-| Code | 39.8 KB of the 64 KB limit after step 7 (the card kit's CARDS block with `sort`, `anim` and `stack` about 9 KB); about 40 KB planned with the score, hint, cascade and records |
+| Code | 40.2 KB of the 64 KB limit after step 8 (the card kit's CARDS block with `sort`, `anim` and `stack` about 9 KB); about 40 KB planned with the score, hint, cascade and records |
 | ROM | 50 KB: the large cards 47 KB (`rom/cards_large.bin`), the logo 3 KB, the backs 24 bytes |
 | Tiles | 916 of 1,024 after step 1: the nine stack buffers 720 (9 x 80: 32 x 160 px, whole sprites), eight card slots 192, the hand 4; the felt, rim and outlines have tiles 1 to 63 |
 | Sprites | about 60 (seven columns of five, the stock, waste and foundations' 24, the hand and a held run 6) of 128; at most about 12 on a line |
-| Songs / SFX | 3 songs from the library; the card kit's 4 effects and the starter's 4 |
+| Songs / SFX | 3 songs from the library (26 of 64 patterns), 11 effects (the card kit's 4); 8 KB of the 32 KB of Sample RAM |
 
 ## 15. Implementation plan
 
@@ -252,6 +266,11 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
      and kept: "noisy" on the felt's twill (the look agreed in step 2), "text on picture" on the logo's dark outline
      over the dark felt (it reads well on the sheets), and the hand under the NO MOVES LEFT panel.
 8. **Audio pass:** the three library songs, the card sounds and their cues, the levels.
+   - **Built:** `audio.py` takes the three songs from the library and the card kit's four sounds, and has six menu
+     effects of its own (the starter's crunch for a refused move became a soft two-note "no"; a chime for the hint).
+     The cues of section 11; the Canon's credit on the statistics page.
+   - **Results:** all songs within the limits; the effects' levels in section 11. `08-audio.mjs` 7 checks; 147 in
+     all, passing.
 9. **Polish and release:** frame times with every card on the table, the label, the PNG cart, the Library
    (`node tools/release.js solitaire`) and a README row.
 

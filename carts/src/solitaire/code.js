@@ -159,8 +159,9 @@ function sprite(s, x, y, opts = {}) { spr(s.tile, x, y, { size: s.size, pal: s.p
 
 // --- Sound (SPEC 5). Songs use channels 0 to 5; effects take turns on 6 and 7. ---
 
-const SFX = { move: 0, select: 1, pause: 2, no: 3, over: 4, point: 5, record: 6 };
-const SONG = { title: 0, play: 1 };
+// The effects (audio.py): the menus' own, then the card kit's sounds (cardsfx.py)
+const SFX = { move: 0, select: 1, pause: 2, no: 3, hint: 4, point: 5, record: 6, shuffle: 7, deal: 8, flip: 9, place: 10 };
+const SONG = { title: 0, play: 1, win: 2 };              // The Entertainer, the Canon in D, the Ode to Joy (the song library)
 const SFX_CH = [7, 6];
 let fxNext = 0;
 function fx(n) { sfx(n, SFX_CH[fxNext]); fxNext ^= 1; }
@@ -283,7 +284,7 @@ function drawStock() {
   undos.push(snapshot());
   if (stock.length) for (let n = 0; n < drawN && stock.length; n++) waste.push(stock.pop());
   else { stock = waste.reverse(); waste = []; addScore(drawN === 3 ? PTS.recycle3 : PTS.recycle1); }
-  moves++; fx(SFX.move); afterMove();
+  moves++; fx(SFX.deal); afterMove();
 }
 
 /** Pick up the cards under the hand. */
@@ -297,7 +298,7 @@ function pickUp() {
   if (!cards) { fx(SFX.no); return; }
   held = { row: h.row, i: h.i, cards, snap, at: timer };
   stackCompose(HELD, cards.map((c, n) => [c, n * UP_GAP, false]));
-  fx(SFX.select);
+  fx(SFX.deal);
 }
 /** Put the held cards back where they came from. */
 function cancel() {
@@ -320,11 +321,12 @@ function putDown() {
   held = null; undos.push(g.snap); moves++;
   const from = g.row === 1 ? 'col' : g.i === 1 ? 'waste' : 'found';
   addScore(from === 'waste' ? (to === 'col' ? PTS.wasteCol : PTS.wasteFound) : from === 'col' ? (to === 'found' ? PTS.colFound : 0) : to === 'col' ? PTS.foundCol : 0);
+  fx(SFX.place);
   if (g.row === 1) turnUp(g.i);
-  fx(SFX.select); fixHand(); afterMove();
+  fixHand(); afterMove();
 }
 /** The card left on top of column k turns face up (5 points). */
-function turnUp(k) { if (cols[k].length && down[k] === cols[k].length) { down[k]--; compose(k); addScore(PTS.turn); } }
+function turnUp(k) { if (cols[k].length && down[k] === cols[k].length) { down[k]--; compose(k); addScore(PTS.turn); fx(SFX.flip); } }
 
 /** The next move worth making (spec 5): { from: [row, i, depth], to: [row, i] }, to a foundation first, then one that
  * turns up a card, a waste card to a column, a king to an empty column; else a draw ({ draw: true }); null if there
@@ -365,7 +367,7 @@ function findHint(any) {
 }
 function showHint() {
   hint = findHint(false); hintT = HINT_FRAMES;
-  fx(hint ? SFX.point : SFX.no);
+  fx(hint ? SFX.hint : SFX.no);
 }
 /** Auto-finish: every 6 frames, the lowest card that can go up does. */
 function autoStep() {
@@ -374,7 +376,7 @@ function autoStep() {
   for (let k = 0; k < 7; k++) if (cols[k].length && foundFor(top(cols[k])) >= 0 && cardRank(top(cols[k])) < rk) { best = k; rk = cardRank(top(cols[k])); }
   if (best < 0) { autoing = false; return; }
   const c = cols[best].pop(); found[foundFor(c)].push(c); compose(best); addScore(PTS.colFound); moves++;
-  fx(SFX.select);
+  fx(SFX.place);
   if (found.every((f) => f.length === 13)) win();
 }
 
@@ -428,7 +430,7 @@ function toTitle() { state = 'title'; timer = 0; titleSel = drawN === 3 ? 1 : 0;
 
 function startGame() {
   score = 0; won = false; bonus = 0; paused = false; timer = 0; state = 'play';
-  newDeal();
+  newDeal(); fx(SFX.shuffle);
   play(SONG.play);
 }
 
@@ -488,7 +490,7 @@ function updateStuck() {
 }
 
 function win() {
-  won = true; state = 'cascade'; timer = 0; play(-1); fx(SFX.record); autoing = false; flying = []; launched = 0;
+  won = true; state = 'cascade'; timer = 0; play(SONG.win); autoing = false; flying = []; launched = 0;
   bonus = seconds() > 30 ? Math.floor(PTS.bonus / seconds()) : 0;
   score += bonus;
   record(true);
@@ -693,8 +695,10 @@ function drawRecords() {
       const y = 58 + i * 16;
       txt(name, 24, y, DIM); txt(String(f(1)).padStart(6), 128, y, WHITE); txt(String(f(3)).padStart(6), 184, y, WHITE);
     });
+    // the Canon in D's credit: its notes are from a CC BY 4.0 file (audio.py)
+    ctxt('MUSIC: CANON IN D ENGRAVED', 166, DIM); ctxt('BY MICHAEL FISCHER V. MOLLARD', 176, DIM); ctxt('MUTOPIA PROJECT, CC BY 4.0', 186, DIM);
   }
-  if (timer % 60 < 40) ctxt('START: BACK', 196, DIM);
+  if (timer % 60 < 40) ctxt('START: BACK', 200, DIM);
 }
 
 function drawInitials() {
