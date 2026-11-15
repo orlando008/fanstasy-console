@@ -59,6 +59,22 @@ const count = (vm, entry, x0, y0, x1, y1) => { const want = rgb(vm, entry); let 
   ok(count(vm, p.ART.colors.FELTDARK, hx, hy, hx + 16, hy + 16) < 200, 'and the hand itself shows on it');
 }
 
+// DRAW 3 through the whole stock, twice: the waste's three cards on the screen are always the right ones (the card
+// kit's slots are freed frame by frame; a player found old cards shown after a few draws, when the game's own `stat`
+// hid the console's stat('frame') and no slot was ever freed).
+{
+  const vm = newGame(5), p = vm.probe(); vm.run(3);
+  p.drawN = 3; p.setHand(0, 0);
+  const z = p.CARDS.sizes.large;
+  let wrong = 0, draws = 0;
+  for (let i = 0; i < 18; i++) {
+    vm.press('A'); vm.run(2); draws++;
+    const want = p.waste.slice(-3);
+    for (const c of want) { const k = z.shows.indexOf(c); if (k < 0 || z.used[k] !== vm.m.frame - 1) wrong++; }
+  }
+  ok(wrong === 0 && p.CARDS.missed === 0, 'DRAW 3: after every draw, the waste\'s three cards are the ones in the card slots drawn this frame', `${draws} draws, ${wrong} wrong, ${p.CARDS.missed} missed`);
+}
+
 // 3. The title and the panels (the art pass, step 7).
 {
   const vm = newGame(3, { title: true }), p = vm.probe(); vm.run(3);

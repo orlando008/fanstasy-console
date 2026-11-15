@@ -487,6 +487,13 @@ def inject_block(code_path, name, block, after=ART_END):
         text = text[:i] + '\n\n' + begin + '\n' + end + text[i:]
     if text.count(begin) != 1 or text.count(end) != 1: raise ValueError('%s needs exactly one "%s" line and one "%s" line' % (code_path, begin, end))
     a = text.index(begin) + len(begin); b = text.index(end)
+    if name == 'CARDS':
+        # the block calls these console functions: a cart that declares its own (Solitaire's statistics were `stat`)
+        # hides them, and the cards go wrong without an error (stat('frame') stood still, so no card slot was freed)
+        rest = text[:text.index(begin)] + text[b:]
+        for fn in ('stat', 'rom', 'sset', 'spr', 'rndi'):
+            if re.search(r'(?:function\s+%s\s*\(|(?:const|let|var)\s+%s\s*=)' % (fn, fn), rest):
+                raise ValueError('%s declares its own %s, which hides the console\'s %s() that the CARDS block uses: rename it' % (code_path, fn, fn))
     new = text[:a] + '\n' + block + text[b:]
     if new != open(code_path, encoding='utf8').read(): open(code_path, 'w', encoding='utf8', newline='\n').write(new)
 

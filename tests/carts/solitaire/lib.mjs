@@ -19,7 +19,7 @@ const PROBE = `__expose(() => ({
   setHand(row, i, depth) { hand = { row, i, depth: depth ?? Math.max(0, (row ? cols[i].length : 1) - 1) }; },
   get played() { return played; }, get started() { return started; }, get autoing() { return autoing; }, get stuck() { return stuck; },
   get hint() { return hint; }, get bonus() { return bonus; }, findHint, PTS, get back() { return back; }, get won() { return won; }, get flying() { return flying; }, get launched() { return launched; }, get page() { return page; },
-  stat, STAT_SLOT, BACK_SLOT, MODE_SLOT, readEntry,
+  stat: statOf, STAT_SLOT, BACK_SLOT, MODE_SLOT, readEntry,
   canOnCol, canOnFound, foundFor, colYs, cardName, cardRank, cardSuit, cardRed,
   SFX, SONG, TOP_SLOT, ENTRY, insertTop, topTen, packInitials, unpackInitials,
 }));`;

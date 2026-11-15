@@ -292,6 +292,13 @@ clears the overlay there), so they show on top and the rest of the pile stays. `
 the empty pile on held cards (781 before the first fix), and the pile's dark felt right up to the hand (18 pixels round
 it with the box, 243 now).
 
+**Also fixed after the release** (found playing DRAW 3): the waste showed old cards, and the card picked up was not the
+one shown. The game's statistics were read by a function called `stat`, which hid the console's `stat()`; the card
+kit's slots ask `stat('frame')` which cards were drawn this frame, got the same answer every frame, and so never freed
+a slot once all eight were full (the title's fan alone takes five). The game's function is now `statOf`, and the card
+kit's `art.py` refuses a `code.js` that hides a console function its CARDS block calls. `02-art.mjs` draws through the
+whole stock in DRAW 3 twice and checks the three cards in the slots are the waste's (48 wrong and 136 missed before).
+
 ## 16. Open questions
 
 None left. The defaults the user had not confirmed were put to them after the release and kept as they are: the

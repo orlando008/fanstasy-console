@@ -174,17 +174,17 @@ const VERSION_SLOT = 0, SAVE_VERSION = 2, INITIALS_SLOT = 1, BACK_SLOT = 2, MODE
 const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, mode x 100000 + seconds (slots 10 to 39)
 // The statistics, 8 slots a mode from 40 (DRAW 1) and 48 (DRAW 3): played, won, best time (s), best score, streak, best streak
 const STAT_SLOT = { 1: 40, 3: 48 }, ST = { played: 0, won: 1, time: 2, score: 3, streak: 4, best: 5 };
-const stat = (mode, k) => dget(STAT_SLOT[mode] + ST[k]);
-const setStat = (mode, k, v) => dset(STAT_SLOT[mode] + ST[k], v);
+const statOf = (mode, k) => dget(STAT_SLOT[mode] + ST[k]);
+const setStatOf = (mode, k, v) => dset(STAT_SLOT[mode] + ST[k], v);
 /** A deal is over: count it in its mode's statistics (a win: its time and score too). */
 function record(win) {
   const m = drawN;
-  setStat(m, 'played', stat(m, 'played') + 1);
-  if (!win) { setStat(m, 'streak', 0); return; }
-  setStat(m, 'won', stat(m, 'won') + 1);
-  const st = stat(m, 'streak') + 1; setStat(m, 'streak', st); setStat(m, 'best', Math.max(st, stat(m, 'best')));
-  if (!stat(m, 'time') || seconds() < stat(m, 'time')) setStat(m, 'time', Math.max(1, seconds()));
-  setStat(m, 'score', Math.max(score, stat(m, 'score')));
+  setStatOf(m, 'played', statOf(m, 'played') + 1);
+  if (!win) { setStatOf(m, 'streak', 0); return; }
+  setStatOf(m, 'won', statOf(m, 'won') + 1);
+  const st = statOf(m, 'streak') + 1; setStatOf(m, 'streak', st); setStatOf(m, 'best', Math.max(st, statOf(m, 'best')));
+  if (!statOf(m, 'time') || seconds() < statOf(m, 'time')) setStatOf(m, 'time', Math.max(1, seconds()));
+  setStatOf(m, 'score', Math.max(score, statOf(m, 'score')));
 }
 /** Leaving a deal (NEW DEAL, QUIT): it counts as lost once a move has been made. */
 function abandon() { if (state === 'play' && started && !won) record(false); }
@@ -700,10 +700,10 @@ function drawRecords() {
   });
   else {
     txt('DRAW 1', 128, 40, GOLD); txt('DRAW 3', 184, 40, GOLD);
-    const rows = [['PLAYED', (m) => stat(m, 'played')], ['WON', (m) => stat(m, 'won')],
-      ['WIN RATE', (m) => (stat(m, 'played') ? Math.round((100 * stat(m, 'won')) / stat(m, 'played')) + '%' : '-')],
-      ['BEST TIME', (m) => (stat(m, 'time') ? mmss(stat(m, 'time')) : '-')], ['BEST SCORE', (m) => stat(m, 'score') || '-'],
-      ['STREAK', (m) => stat(m, 'streak')], ['BEST STREAK', (m) => stat(m, 'best')]];
+    const rows = [['PLAYED', (m) => statOf(m, 'played')], ['WON', (m) => statOf(m, 'won')],
+      ['WIN RATE', (m) => (statOf(m, 'played') ? Math.round((100 * statOf(m, 'won')) / statOf(m, 'played')) + '%' : '-')],
+      ['BEST TIME', (m) => (statOf(m, 'time') ? mmss(statOf(m, 'time')) : '-')], ['BEST SCORE', (m) => statOf(m, 'score') || '-'],
+      ['STREAK', (m) => statOf(m, 'streak')], ['BEST STREAK', (m) => statOf(m, 'best')]];
     rows.forEach(([name, f], i) => {
       const y = 58 + i * 16;
       txt(name, 24, y, DIM); txt(String(f(1)).padStart(6), 128, y, WHITE); txt(String(f(3)).padStart(6), 184, y, WHITE);
