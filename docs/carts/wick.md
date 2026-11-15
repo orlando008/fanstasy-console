@@ -128,7 +128,7 @@ several times as long); the par is 2.5 times it, to the second above.
 | 2-7 | The condenser | yes | 2.4 s | 6 s |
 | 2-8 | The steam shaft |  | 3.3 s | 9 s |
 | 2-9 | The furnace | yes | 1.8 s | 5 s |
-| 2-10 | The alchemist's stair | yes | 3.5 s | 9 s |
+| 2-10 | The alchemist's stair | yes | 3.6 s | 9 s |
 | 2-11 | It follows (chase) |  | 4.6 s | 12 s |
 | 3-1 | Ride the gears |  | 1.6 s | 4 s |
 | 3-2 | Mind the weights |  | 1.5 s | 4 s |
@@ -392,6 +392,12 @@ after its tenth, which moved the later rooms along); a save of another version i
    - **After the release (2026-11-12), the user's note on the title:** its letters were plain gold capitals, oddly
      spaced. They are candle wax now (`art.py`: thick round strokes, shaded as if they bulged, with drips running
      down), "Wick" with a small i that is a candle: a wick and a flame where its dot would be.
+   - **After the release, the user's note on 2-10 (2026-11-15):** "might be impossible". Its two steam jets on the
+     right (rows 5 and 7) came on and went off together, and both covered a ledge of the climb: two jumps in a row
+     had to fit in the 60 frames they were off, which takes 53 at the fastest. The solver found a way only by
+     counting frames (none of its runs survived a person's timing). The upper jet is one cell further right now, so
+     the two are a quarter of a cycle apart, and the left end of the middle ledge is out of the steam: a place to stop
+     between the two jumps.
    - **Results:** 150 checks; `check.js` with no warnings (code 67% of 64 KB, ROM 8.5%, the PNG's payload 41%).
 
 Each step: build it, run `node tools/check.js wick` and `node tools/test.js wick`, write its **Built** and
