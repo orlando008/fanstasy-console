@@ -1,8 +1,7 @@
 # NOVA-16 — Fantasy Console Specification
 
-**Version:** 0.1 (draft)
-**Status:** Pre-implementation
-**Name:** "NOVA-16" is a placeholder. Rename freely.
+**Status:** Built. Milestones 1 to 10 (section 14) are done, and this document describes the console as it is. Change it in the same commit as the code it describes.
+**Name:** NOVA-16.
 
 ---
 
@@ -531,12 +530,19 @@ A recording holds what is needed to reproduce a run exactly: `{ "format": "nova1
 | Direction | Message | Payload |
 |---|---|---|
 | main → worker | `init` | `OffscreenCanvas` (transferred) |
-| main → worker | `load` | Parsed cart object, seed |
-| main → worker | `tick` | `{ frame, input: Uint16Array(4) }` |
-| main → worker | `pause` / `resume` / `reset` | |
+| main → worker | `load` | The parsed cart, the seed, and the save data (`Int32Array(256)`) |
+| main → worker | `tick` | `{ frame, input: Uint16Array(4) }`: one 12-bit button mask per pad, once a frame |
+| main → worker | `pause` / `resume` | No payload; the main thread stops sending ticks while paused |
+| main → worker | `reset` | No payload; restarts the cart, keeping its save data |
+| main → worker | `stream` | `{ on }`: while a clip records, every frame is sent back as `rframe` |
+| main → worker | `capture` | `{ id }`: the F7 label; answered with `frame` |
+| main → worker | `video` | `{ id }`: the layer regions of the paused game; answered with `video` |
 | worker → main | `audio` | Array of commands for this frame |
 | worker → main | `save` | `Int32Array(256)` when dirty |
 | worker → main | `log` / `error` / `stat` | Text, error with line, frame stats |
+| worker → main | `frame` | The label's frame data (answers `capture`) |
+| worker → main | `video` | The layers (answers `video`) |
+| worker → main | `rframe` | A copy of each rendered frame while `stream` is on |
 | main → worklet | `loadAudio` | Instruments, patterns, songs, SFX, samples |
 | main → worklet | `cmd` | Relayed audio commands |
 
@@ -545,12 +551,17 @@ A recording holds what is needed to reproduce a run exactly: `{ "format": "nova1
 - Keep a `Uint32Array` view over the `ImageData` buffer and a 256-entry CGRAM → RGBA lookup table. Rebuild the table whenever `color` or `palcopy` runs, including mid-frame.
 - Render one line at a time into a 256-entry line buffer of `{color index, priority tier}`, then resolve it to RGBA.
 - Pre-decode 4 bpp tiles into a `Uint8Array` of one byte per pixel when VRAM changes, so the inner loop never unpacks nibbles.
-- Sort the per-line sprite list once per frame by y-range so each line only checks sprites that overlap it.
+- Bucket the sprites into the lines they cover once per frame, keeping the first 32 per line in OAM order (`bucketSprites()`), so each line only checks the sprites that overlap it.
 - With an effect on (4.10 to 4.12), the mosaic and the window masks are applied to each layer's line, and each pixel of the line buffer also keeps the pixel under it and which layer drew it, and the line is resolved through RGB555 maths instead of the lookup table. With none on, the plain path runs; `tests/console/effects.mjs` checks that both give the same picture for every cart.
 
 ### 10.3 Security model
 
-Cart code runs in a dedicated worker with no DOM, no cookies and no `localStorage`. The page CSP restricts network access, and the main thread owns save data. The remaining accepted risk for v1 is that a worker can reach same-origin IndexedDB, so the console itself must not store anything sensitive there.
+Cart code runs in a dedicated worker with no DOM, no cookies and no `localStorage`. Before any cart code runs, the worker
+removes the network and storage globals (`fetch`, `XMLHttpRequest`, `WebSocket`, `indexedDB`, `caches` and the rest of the
+list in `lockdown()`, `src/console/worker.js`), and the cart's scope shadows them again (`HIDDEN` in
+`src/console/sandbox.js`). That is defence in depth. The page's CSP (`connect-src 'self'`) is what restricts network
+access, and the main thread owns save data. The shadowing is a convenience, not a security boundary: a cart can only
+reach what the worker itself can reach, so the console must not store anything sensitive in the worker's own scope.
 
 ## 11. Built-in tools
 
@@ -665,7 +676,7 @@ has been visited, and installs as an app.
   square one for Android to crop). Chrome and Edge offer to install it (on Android, Install app in the menu; on a
   desktop, the icon in the address bar); on an iPhone or iPad it is Share, then Add to Home Screen.
 - **Offline.** The service worker (`sw.js`) keeps a copy of everything the console loads when it installs: the page,
-  its code, the manifest and icons, the Library's index, every cart (`.nova`) and every label, about 3.7 MB. The PNG
+  its code, the manifest and icons, the Library's index, every cart (`.nova`) and every label: about 10.5 MB as files, about 2.5 MB compressed, measured when this section was last checked (it grows with each cart). The PNG
   carts are not kept (downloads for sharing; the Library plays the `.nova`). After that every request goes to the
   network as before, and only if the network fails, or has not answered in 4 seconds, is it answered from the copy:
   online the site is always as published, offline it is the version the worker was built with. Every cart plays
@@ -738,6 +749,7 @@ every file the prompt names exists, and `tests/console/make.mjs` the tools it sa
 │   │   ├── sandbox.js      # Cart compilation and API injection
 │   │   ├── api.js          # Public cart API
 │   │   ├── ppu.js          # Video state and scanline renderer
+│   │   ├── overlay.js      # The overlay: immediate-mode drawing (print, rectfill...), on top of the sprites
 │   │   ├── font.js         # Built-in 8×8 font data
 │   │   └── prng.js         # xoshiro128**
 │   ├── audio/
@@ -792,14 +804,15 @@ every file the prompt names exists, and `tests/console/make.mjs` the tools it sa
 │   ├── icons.js            # Draws the app's icons
 │   ├── templates/cart/     # The starter's files ({{NAME}}, {{TITLE}} placeholders)
 │   ├── templates/kinds/    # A whole game for a kind of game (puzzle); --kind <kind> on new-cart.js
-│   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader; music/: song toolkit and sampled instruments, loudness, clashes, old-cart compatibility, audio scripts from audio.json, lead lowering; art/: art toolkit, scene and sprite viewers
+│   └── devkit/             # Headless harness, soak, smoke, sweep, shots, tiles, PNG-cart reader; art/: the art kit (icons, recipes, viewers); music/: the song toolkit and library (songs/), sampled instruments, loudness, clashes
 ├── docs/
 │   ├── SPEC.md             # This document (the cart-facing API is section 8)
 │   ├── carts/<name>.md     # Each game's specification, with its build notes
 │   └── dev/playbook.md     # How to build a cart: workflow, tools, limits, audio rules, traps
 ├── CLAUDE.md               # Short notes for agents, pointing to the playbook
 └── .github/workflows/
-    └── check.yml           # Syntax, cart checks, the starters' self-test, soak runs; verify on pull requests
+    ├── check.yml           # Syntax, cart checks, the starters' self-test, the soak (its own job), verify on pull requests
+    └── pages.yml           # The hosted site on GitHub Pages, and each pull request's preview (11.3)
 ```
 
 ## 13. Development conventions
@@ -819,7 +832,8 @@ name: check
 on: [push, pull_request]
 jobs:
   syntax:   # node --check on src/, tools/ and tests/; the documentation's file references
-  carts:    # check.js --all, the sound chip's checks, the starters' self-test, soak.mjs --all
+  carts:    # check.js --all, the sound chip's checks, the carts' and the console's own tests, the starters' self-test
+  soak:     # soak.mjs --all, a job of its own, so it runs beside carts
   verify:   # pull requests only: tools/verify.js for the carts the PR changes
 ```
 
@@ -836,6 +850,7 @@ jobs:
 | M7 | Audio | Worklet synth, instruments, SFX, patterns, songs, SFX and music tabs | A demo cart has in-console music and sound effects |
 | M8 | Persistence and PNG carts | `dget`/`dset`, label capture, `.nova.png` export and import | An exported PNG dropped onto a fresh page boots the game with saves working |
 | M9 | Recording | Input recording and replay (seed + inputs), WebM capture with audio, GIF export | A 10-second clip exports as both WebM and GIF |
+| M10 | SNES effects | Colour blending, brightness, windows and mosaic (4.10–4.12) | The `effects` demo runs every page of its effects |
 
 ## 15. Non-goals for v1
 
@@ -850,7 +865,6 @@ jobs:
 
 ## 16. Open decisions
 
-- The final name of the console.
 - Whether to add a second, smaller 4 × 6 font to the overlay.
 - ~~How GIF export handles frames whose mid-frame palette changes produce more than 256 distinct colors.~~ Decided: every GIF frame has its own local color table, and only frames with more than 256 colors are median-cut quantized.
 - Whether `peek`/`poke` arrive in v2 over a defined memory map.
