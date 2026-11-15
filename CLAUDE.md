@@ -10,7 +10,7 @@
   and spec template; `--kind puzzle` for a whole match-3 game to change into yours, see the playbook). Build a cart from
   `carts/src/<name>/` with `node tools/pack.js carts/src/<name> carts/<name>.nova`.
 - **Before you commit a cart change**, run these:
-  - `node tools/verify.js`: the carts you changed (audio script, packed cart, checks, soak, docs and the cart's tests).
+  - `node tools/verify.js`: the carts you changed (art and audio scripts, packed cart, checks, soak, music levels, docs and the cart's tests).
     Add `--fast` to skip the tests, which take minutes; or run them in the background.
   - `node tools/devkit/smoke.mjs <name>`: the real console. It needs Playwright and Chromium, which CI does not run.
   - After a change to the rules, the physics or the AI: `node tools/devkit/sweep.mjs <name>` (the cart's bot over many seeds).
@@ -26,7 +26,7 @@
   character, sculpted things, textures, a landscape, a room, a title). Use the kit's modules (`rig.py` for characters,
   `sculpt.py`, `texture.py`, `scenery.py`, `lettering.py`) before placing pixels by hand; the starter's `art.py` uses them.
 - **Look at what you make.** You cannot hear or see a cart directly, so measure the audio (`tools/devkit/music/`) and look
-  at the art with `tools/devkit/art/sprites.mjs`, `scene.mjs`, `tiles.mjs` and `shots.mjs` (open the PNGs with the Read
+  at the art with `tools/devkit/art/sprites.mjs` and `scene.mjs`, and `tools/devkit/tiles.mjs` and `shots.mjs` (open the PNGs with the Read
   tool). Before a release, `node tools/devkit/gallery.mjs <name>` puts every screen the cart lists in
   `tests/carts/<name>/screens.mjs` on contact sheets: keep that list up to date and look through the sheets.
   `node tools/devkit/art/critique.mjs <name>` reviews those screens for flat or noisy pictures and hard-to-read text.

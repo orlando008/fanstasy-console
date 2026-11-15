@@ -109,7 +109,8 @@ async function checkCart(arg) {
     console.log(`  song ${s}  ${song.order.length} patterns, channels ${used.join(',') || 'none'}${busy.length ? `  (channel ${busy.join(' and ')} has notes: it is usually kept for SFX)` : ''}`);
   });
   const code = cart.code, sfxCh = /\bSFX_CH\s*=\s*(\d)/.exec(code), wrongVoice = [], routed = /sfx-voice-routed|SFX_VOICE_CH/.test(code);
-  if (cart.chip === 2 && sfxCh && Number(sfxCh[1]) < 6) warn(`SFX_CH = ${sfxCh[1]}: on the new chip songs use channels 0 to 5, so an effect there cuts a hole in the music; use 6 or 7 (or -1)`);
+  const sfxChans = /\bSFX_CH\s*=\s*(\[[\d\s,]*\]|\d)/.exec(code), low = sfxChans ? (sfxChans[1].match(/\d/g) || []).map(Number).filter((ch) => ch < 6) : [];
+  if (cart.chip === 2 && low.length) warn(`SFX_CH = ${sfxChans[1]}: on the new chip songs use channels 0 to 5, so an effect on ${low.join(' or ')} cuts a hole in the music; use 6 or 7 (or -1)`);
   cart.sfx.forEach((e, n) => {
     const used = e.rows.filter((r) => r && r.n != null && r.n >= 0 && r.i != null);
     if (!used.length) return;
