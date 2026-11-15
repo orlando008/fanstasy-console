@@ -1,7 +1,7 @@
 # Making a cart: the playbook
 
-For agents (and people) building games for the NOVA-16 fantasy console. It collects what the first
-seven games taught us, so the next one starts from a working kit instead of rebuilding it.
+For agents (and people) building games for the NOVA-16 fantasy console. It collects what the games
+built so far taught us, so the next one starts from a working kit instead of rebuilding it.
 The console's own rules are in `docs/SPEC.md`; each game's design is in `docs/carts/<name>.md`.
 `node tools/check-docs.js` keeps every file and tool flag this document mentions real: if you move a tool, fix the docs.
 
@@ -88,9 +88,9 @@ recommended answer after each question.
 | `carts/src/<name>/` | A cart's source: `code.js`, `meta.json`, `tiles.txt`, `palette.txt`, `map.txt` and `art.json` (made by `art.py`), `audio.json` (made by `audio.py`), `label.png`, `rom/<name>.bin` (the cart's ROM: 128 KB of data read with `rom(name)`; SPEC 9.1) |
 | `carts/<name>.nova`, `.nova.png`, `labels/`, `index.json` | What `pack.js`, `release.js` and `library.js` build from the source: commit them with it |
 | `tests/carts/<name>/` | `lib.mjs` (boots the cart with its variables exposed), `NN-*.mjs` (check scripts, one per build step), `bot.mjs` (the bot for `sweep.mjs`) |
-| `tests/console/` | Checks of the console itself: the player's volume keys, the pause menu and ways back to the Library, the Library's genre shelves, the touch controls, the site offline and installable, sharing a cart's link and the prompt for making a game with AI (`volume.mjs`, `menu.mjs`, `library.mjs`, `touch.mjs`, `offline.mjs`, `share.mjs`, `make.mjs`: headless Chromium), a song that plays once falling silent at its end (`song-end.mjs`, in CI); not part of a cart build |
+| `tests/console/` | Checks of the console and the kit, not part of a cart build. In headless Chromium: the player's volume keys, the pause menu and ways back to the Library, the Library's genre shelves, the touch controls, the site offline and installable, sharing a cart's link and the prompt for making a game with AI (`volume.mjs`, `menu.mjs`, `library.mjs`, `touch.mjs`, `offline.mjs`, `share.mjs`, `make.mjs`). In CI: a song that plays once falling silent at its end (`song-end.mjs`), every cart's effects (`effects.mjs`), the ROM (`rom.mjs`), the stripper, the mangler and the size report (`strip.mjs`, `mangle.mjs`, `size.mjs`), `loud.mjs --why` (`loud-why.mjs`), the critique and the art proof (`critique.mjs`, `proof.mjs`) |
 | `docs/carts/<name>.md` | The game's spec, with each step's **Built** and **Results** notes |
-| `tools/` | `pack`, `library`, `new-cart`, `verify`, `check`, `test`, `release`, `check-docs` (section 2) |
+| `tools/` | `pack`, `unpack`, `library`, `new-cart`, `verify`, `check`, `test`, `release`, `site`, `icons`, `check-docs` (section 2) |
 | `tools/devkit/` | The headless harness, soak, smoke, sweep, shots, tiles, voices, the random player; `music/`: the song toolkit, loudness checks, effect levels and lead lowering; `art/`: the art toolkit and the scene and sprite viewers |
 | `tools/templates/cart/` | The starter's files |
 | `tools/templates/kinds/<kind>/` | A whole game for a kind of game (`--kind`) |
@@ -103,7 +103,6 @@ recommended answer after each question.
 - **F7 label**: press F7 while a game runs to make the current frame its Library cover (the cart editor's "Capture now" does the same).
 - **Lead**: a song's main melody channel. **Pierce**: the energy of a lead in the 2 to 5 kHz band, which the ear finds piercing (`loud.mjs`).
 - **Fxx**: an effect on a pattern's first row that sets a song's speed, in ticks a row.
-- **Commit reminder**: the harness asks for a commit after each step (section 8). Agents without that harness commit by hand.
 
 ## 1. The shape of a game build
 
@@ -139,10 +138,10 @@ recommended answer after each question.
 
 | Command | What it does |
 |---|---|
-| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an art script (a gradient sky, receded hills, a ground, a ship and a gem, in ramps, with see-through panels: the SNES look from the start), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--kind puzzle` starts from a whole match-3 game instead (see "Starters by kind"). `--selftest` checks every starter (CI does) |
+| `node tools/new-cart.js <name> "Title"` | **Start a new cart**: a working frame (title, play, pause, game over, saved top 10 with initials, records, sound and music cues, `skipTitle`), an art script (a gradient sky, receded hills, a ground, a rigged 32 px hero with a walk, a sculpted gem and a lettered title, in ramps, with see-through panels: the SNES look from the start), an audio script, tests, a bot and a spec template with the plan. Replace the placeholder game in `updatePlay`/`drawPlay`. `--kind puzzle` starts from a whole match-3 game instead (see "Starters by kind"). `--selftest` checks every starter (CI does) |
 | `node tools/pack.js carts/src/<name> carts/<name>.nova` | Build the cart from its source folder |
 | `node tools/unpack.js <cart.nova> carts/src/<name>` | The reverse, for a cart made elsewhere (the console's editors, a friend) that is to join the Library: writes its source folder and checks it packs back to the same cart. Then add the `genre` and `players` to its `meta.json`, write its spec and release it (Operation Ironstorm came in this way) |
-| `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the music levels (`loud.mjs --check`), the docs check, and the cart's tests (`--fast` skips them). Carts run two at a time (`--jobs n`). A change under `src/` or `tools/devkit/` selects every cart; `art.py` and `audio.py` rerun only for carts whose own files changed, or after a change to the art or music kit. CI runs it on pull requests |
+| `node tools/verify.js [name...]` | **Verify what you changed, in one command** (the carts changed since `origin/main`, or the ones you name, or `--all`): `audio.py` regenerates `audio.json`, the source packs to the committed `.nova`, `check.js`, a soak run, the music levels (`loud.mjs --check`), the docs check, and the cart's tests (`--fast` skips them). Carts run side by side, half the CPU cores at a time (`--jobs n`). A change under `src/` or `tools/devkit/` selects every cart; `art.py` and `audio.py` rerun only for carts whose own files changed, or after a change to the art or music kit. CI runs it on pull requests |
 | `node tools/check.js <name>` / `--all` | Code size against 64 KB, syntax, audio limits, instrument/channel mismatches, PNG fit, **the `.nova.png` decoding to exactly the packed cart** (no browser), the spec (header, TODOs in a released cart, code size in the budget table), label and description, and a `genre` and `players` in `meta.json` (the Library's shelf, one of `src/genres.js`, and the badge on the cartridge) that `carts/index.json` matches |
 | `node tools/test.js <name> [filter] [-v]` | Run `tests/carts/<name>/NN-*.mjs` one at a time (about 3 minutes for Moto Crosser: run it in the background) |
 | `node tools/site.js check` | The hosted site (GitHub Pages, `.github/workflows/pages.yml`): builds it as it is published (`index.html`, `style.css`, `src/`, `carts/` without the sources, the manifest and icons, and `sw.js` with the offline copy's list of files), lays it out as the gh-pages branch (main at the root, previews in `pr/<n>/`), publishes it through git to a throwaway remote, and loads the main site and a preview in headless Chromium under a subpath: the Library, the labels, a cart running, the preview's own saves, no errors; and that the offline copy holds every cart and label and the icons are up to date. Run it after changing what the site loads, and `tests/console/offline.mjs` after changing `sw.js` |
@@ -213,7 +212,9 @@ tests green as you go, and delete what you do not use. The kinds so far:
 Examples of a full build: `tests/carts/moto-crosser/` (seven suites, a `lib.mjs` and a bot) and `carts/src/moto-crosser/audio.py` (songs and effects with the kit).
 
 **CI** (`.github/workflows/check.yml`): syntax of `src/`, `tools/` and `tests/`; the docs check; `check.js --all`; the
-starter's self-test; `soak.mjs --all`; and, on pull requests, `verify.js` for the carts the PR changes. The smoke
+console tests marked "In CI" above; the old and new sound chips (`compat.mjs`, `compat.mjs --converted`,
+`tests/audio/chip.mjs`); the art and music kits' self-tests, `recipes.py --check`, and `colors.mjs` and `snes.mjs`
+`--selftest`; the starter's self-test; `soak.mjs --all`; and, on pull requests, `verify.js` for the carts the PR changes. The smoke
 test is not in CI (it needs Playwright and Chromium). On CI the tests' frame-time limits are 3 times looser.
 
 ## 3. Limits and rules of the console
@@ -315,7 +316,7 @@ unit. Games made before it are carts for the old chip (format version 1) until e
 - **Channels by convention**: songs on 0 to 5 (the kit: lead 0, counter-melody 1, bass 2, pad or arpeggio 3, the pad's
   fifth or the hats 4, drums 5; the tempo on row 0 of channel 7), effects on 6 and 7. The starter's `fx(n)` takes turns
   between 6 and 7, so two effects can sound at once and neither cuts into the music. `check.js` warns about an
-  `SFX_CH` under 6, and lists the channels each song uses. The library's songs also use channel 6 (hats; Rush D all 8),
+  `SFX_CH` under 6 (a number or an array such as `[7, 6]`), and lists the channels each song uses. The library's songs also use channel 6 (hats; Rush D all 8),
   so an effect there mutes a part of them while it plays.
 - **Echo**: give each song its own (`a.song(key, speed, echo=(delay, feedback, volume, tone))`, SPEC 5.6) and send the
   instruments that should ring into it (`echo=` on the instrument): pads, leads, snare, bells; not the bass or the kick,
@@ -374,7 +375,7 @@ sound test, so `verify.js` only warns for it).
 `items = items_palette(art, n)` (one sprite palette for all of them). Draw only what it does not have.
 
 Write the art as code, in `carts/src/<name>/art.py`, with the toolkit (`tools/devkit/art/kit.py`: read its header). The
-starter has a small `art.py` (a gradient sky, hills, a ground, a ship, a gem) to start from. A cart's art script owns `tiles.txt`, `palette.txt`,
+starter has a small `art.py` (a gradient sky, hills, a ground, a rigged hero, a sculpted gem, a title) to start from. A cart's art script owns `tiles.txt`, `palette.txt`,
 `map.txt` and `art.json`, and the `ART` block in `code.js`; `verify.js` fails if they are not what it makes.
 
 ```python
@@ -535,7 +536,7 @@ tiles for three settings by designing a tile-aligned vocabulary, after an image-
   edit, and `node --check` it. Prefer small, exact `Edit`s.
 - In Python, `x if cond else y` binds looser than you think inside a larger expression (silently dropped draw
   functions in one game): put each operand in parentheses.
-- A tool call stops after 2 minutes: run long jobs in the background (`run_in_background`) and wait for the
+- A tool call stops after 2 minutes by default (10 at most): run long jobs in the background (`run_in_background`) and wait for the
   notification, rather than sleeping.
 - **Parallel runs, and which are safe.** `verify.js` runs carts two at a time (`--jobs n`; half the cores by default), and
   `soak.mjs --all` and `tests/console/effects.mjs` play the carts one process each (`--jobs n`). Those are the only parallel
@@ -550,7 +551,7 @@ tiles for three settings by designing a tile-aligned vocabulary, after an image-
 
 ## 8. Git
 
-- Work on the branch you are given; commit after every step (the harness's commit reminder asks for it) and push.
+- Work on the branch you are given; commit and push after every step.
 - Never open a pull request until asked. When asked, open it, then merge when the user says so. A merged
   branch is finished: start follow-up work from the latest `main` on the same branch name.
 - **Every pull request gets a playable preview** at `https://orlando008.github.io/fanstasy-console/pr/<number>/`
