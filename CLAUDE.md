@@ -24,7 +24,8 @@
   all: `art.sprite('heart', icon('heart', 16, items), pal=items)` with `items = items_palette(art, n)`.
 - **Card games: use the card kit.** `art.cards(...)` in `art.py` draws a whole deck (32 x 48, 24 x 32 and 16 x 24; drawn
   court cards, a back, flips; a custom deck too) into the ROM and writes the CARDS block of `code.js`: decks, a seeded
-  `shuffle`, `deal`, `drawCard`, and on request sorting, poker, blackjack, runs and sets, moves and fans.
+  `shuffle`, `deal`, `drawCard`, and on request sorting, poker, blackjack, runs and sets, moves and fans; piles of
+  overlapping cards are composed into stack buffers (`stacks=`), which keeps them under the 32 sprites a line shows.
   `tools/devkit/music/cardsfx.py` adds the sounds. Every card of each size: `docs/dev/art-recipes/cards-large.png`,
   `cards-medium.png` and `cards-small.png`. The playbook's "Card games" part of section 2 has the details.
 - **Other art: draw with the kit.** `docs/dev/art-recipes.md` has a picture and the code for each recipe (a hero, a big

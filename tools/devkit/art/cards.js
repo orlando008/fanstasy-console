@@ -207,3 +207,26 @@ function fanLayout(n, cx, opts = {}) {
     return [Math.round(x0 + i * step), Math.round(y + arc * d * d - (i === opts.sel ? opts.lift ?? 6 : 0))];
   });
 }
+
+//@ stack: core
+/** Compose a pile of overlapping cards into stack buffer k (art.cards(stacks=(n, height))): items [[card, y, down], ...]
+ * from the card underneath to the one on top, y its top in px from the buffer's top. A covered card is copied only as
+ * far as it shows. Run it when the pile changes, not every frame. Returns the height the pile takes. */
+function stackCompose(k, items) {
+  const S = CARDS.stack, z = CARDS.sizes[S.size], b = rom(z.rom), t = S.tiles[k], x0 = (t % 16) * 8, y0 = (t >> 4) * 8, half = z.w >> 1;
+  for (let y = 0; y < S.h; y++) for (let x = 0; x < S.w; x++) sset(x0 + x, y0 + y, 0);
+  items.forEach(([c, y, down], i) => {
+    const p = (down ? CARDS.back : c) * z.bytes + 1, end = Math.min(z.h, S.h - y, i + 1 < items.length ? items[i + 1][1] - y + 2 : z.h);
+    for (let r = 0; r < end; r++) for (let x = 0; x < z.w; x += 2) {
+      const v = b[p + r * half + (x >> 1)];
+      if (v & 15) sset(x0 + x, y0 + y + r, v & 15);
+      if (v >> 4) sset(x0 + x + 1, y0 + y + r, v >> 4);
+    }
+  });
+  return items.length ? Math.min(S.h, items[items.length - 1][1] + z.h) : 0;
+}
+/** Draw stack buffer k with its top left at (x, y), `h` px of it (what stackCompose returned). opts { prio }. */
+function drawStack(k, x, y, h, opts = {}) {
+  const S = CARDS.stack, z = CARDS.sizes[S.size], t = S.tiles[k], size = S.w, pal = rom(z.rom)[0];
+  for (let r = 0; r < h; r += size) spr(t + (r >> 3) * 16, x, y + r, { size, pal, prio: opts.prio ?? 3 });
+}

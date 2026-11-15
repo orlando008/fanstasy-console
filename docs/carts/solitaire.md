@@ -1,7 +1,7 @@
 # Solitaire: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Scaffolded, spec written: the frame works; the game is still the starter's placeholder
+**Status:** Step 1 built: the table and every rule of Klondike, DRAW 1 and DRAW 3 (no score, menus or art yet)
 **Shelf and players:** Puzzle; 1 player: the same as `genre` and `players` in `carts/src/solitaire/meta.json`.
 **Cart source:** `carts/src/solitaire/` → `carts/solitaire.nova`
 
@@ -142,10 +142,12 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
   carved wooden rim round the edge of the screen. The empty piles' gold outlines are on it too.
 - **BG0, BG1:** off during play (BG0 is hidden, playbook section 6).
 - **Sprites, the cards:** the large cards of the card kit. Overlapping cards as single sprites would put up to 60
-  sprites on a scanline (the limit is 32). So **each column is composed into a sprite buffer of its own**: a 32 x 152
-  block of tiles (4 x 19), into which the column's cards are copied from the cart's ROM (`sset`) whenever the column
-  changes. A column is then about five 32 px sprites, and a scanline crosses at most one per column. A ninth buffer
-  holds the run in the hand. The stock, the waste and the foundations' top cards are drawn with the kit's `drawCard`.
+  sprites on a scanline (the limit is 32). So **each column is composed into a stack buffer of its own** (the card
+  kit's `stacks=`, added for this game): a 32 x 160 block of tiles, into which the column's cards are copied from the
+  cart's ROM (`stackCompose`) whenever the column changes. A column is then at most five 32 px sprites
+  (`drawStack`), and a scanline crosses at most one per column. Buffer 7 holds the run in the hand. The stock, the
+  waste and the foundations' top cards are drawn with the kit's `drawCard`. All the cards are in one sprite palette
+  (both inks), so cards of both colours can share a sprite.
 - **Overlay:** the HUD, the panels (see-through, `blend`), the hint's arrows, and the cascade's trails.
 
 ## 13. Persistence (save slots)
@@ -165,9 +167,9 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
 
 | Asset | Budget |
 |---|---|
-| Code | 40 KB of the 64 KB limit planned (the starter about 18 KB, the card kit's CARDS block with `sort` and `anim` about 9 KB, the rules, undo, hint, cascade and records about 13 KB) |
+| Code | 25.7 KB of the 64 KB limit after step 1 (the card kit's CARDS block with `sort`, `anim` and `stack` about 9 KB); about 40 KB planned with the score, hint, cascade and records |
 | ROM | 47 KB, the large cards (`rom/cards_large.bin`) |
-| Tiles | about 960 of 1,024: the nine column buffers 684 (9 x 76), eight card slots 192, the felt, rim and outlines about 80 |
+| Tiles | 916 of 1,024 after step 1: the nine stack buffers 720 (9 x 80: 32 x 160 px, whole sprites), eight card slots 192, the hand 4; the felt, rim and outlines have tiles 1 to 63 |
 | Sprites | about 60 (seven columns of five, the stock, waste and foundations' 24, the hand and a held run 6) of 128; at most about 12 on a line |
 | Songs / SFX | 3 songs from the library; the card kit's 4 effects and the starter's 4 |
 
@@ -176,6 +178,15 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
 1. **The table and the rules:** the deal, the column buffers, the stock and waste (DRAW 1 and DRAW 3), the hand,
    picking up and putting down with every rule of section 5, cards turning face up. Tests for the rules
    (`03-rules.mjs`) and the deal. The cards are the kit's; the felt is a flat green for now.
+   - **Built:** the deal (seeded), the stock and waste (DRAW 1 and DRAW 3, unlimited passes), the hand on both rows,
+     picking up a card or a run and putting it down by the rules, cards turning face up, the foundations (and back
+     down), the smart A, B to cancel, SELECT to undo (step 3's undo came free with the snapshot each move keeps), the
+     win, the pause menu (RESUME, UNDO, NEW DEAL, QUIT TO TITLE). Columns are stack buffers; the longest column there
+     can be (six face down, thirteen up) closes up to fit by y 210. The card kit gained `pals=(n,)` with both inks in
+     one palette, and stack buffers (`stacks=`, `stackCompose`, `drawStack`).
+   - **Results:** `01-flow.mjs` 27 checks, `02-art.mjs` 9, `03-rules.mjs` 35, all passing. Frame time with moves and
+     undos 2.6 ms at the 99th percentile, 8.1 ms at worst (an undo composes all seven columns again). In 1,500 frames
+     of moves the table was at most 25 sprites, at most 9 on a line (of 128 and 32). Code 25.7 KB.
 2. **The art proof:** the felt, the rim, the empty piles' outlines, the hand and the cards on one real screen (a game
    in progress), from the recipes of `docs/dev/art-recipes.md`; then `node tools/devkit/art/proof.mjs solitaire`, the
    picture sent to the user, and what they said written here.

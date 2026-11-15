@@ -14,63 +14,23 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../
 from kit import *
 
 art = Art()
-art.region('bg', 1, 255)       # background tiles
-art.region('spr', 256, 1023)   # sprites (a 16 px sprite takes four tiles)
+art.region('bg', 1, 63)        # the felt and the rim (the art proof, step 2)
+art.region('spr', 64, 1023)    # the cards' buffers and slots, the hand
 
-# The SNES look from the start (docs/dev/snes-picture.md): colours as ramps (shades of one colour, dark to light), a sky
-# set line by line, hills pushed back behind the ground, and see-through panels (GLASS, an overlay colour from 192 up,
-# which blend() makes translucent; code.js turns it on). BG palette 0 is shared with the overlay's text colours, so it
-# is left alone.
-art.gradient('sky', ['1c2a6a', '3c64b4', '9cd0ec'], y0=0, y1=175)          # the backdrop, a colour for each line
-art.color(200, '141c3c', 'GLASS')                                          # the panels' fill, seen through
-field = art.palette(1, {'grass': ramp('4a8a2e', 4), 'bloom': 'dad45e'})    # field.grass: 4 indices, dark to light
-far = art.palette(2, {'hill': recede(ramp('2c6a3a', 3), 0.5, '9cd0ec')})   # far things are paler, nearer the sky
-# Sprite palettes: 15 colours each, so a character is a few ramps (skin, hair, shirt, trousers), not a rainbow.
-hero_pal = art.sprite_palette(0, {'skin': ramp('e8a878', 4), 'hair': ramp('5a3a22', 3), 'shirt': ramp('d04648', 4), 'pants': ramp('3050a0', 4)})
-gem_pal = art.sprite_palette(1, {'gold': ramp('dad45e', 5), 'edge': '140c1c', 'white': 'fff8e0'})
-logo_pal = art.palette(3, {'gold': ramp('e0a030', 5), 'edge': '1c1020', 'shade': '2a2040'})
+# The table: a flat green felt for now (the backdrop); the art proof (step 2) draws the real one.
+art.backdrop('1e5a32')
+art.color(200, '0c2a18', 'GLASS')     # the panels' fill, seen through (code.js blends the overlay)
+art.color(113, 'd8b048', 'OUTLINE')   # the empty piles' outlines and the hint (solid: under 192)
+art.color(114, '164a2a', 'FELTDARK')  # the empty piles' insides
 
-# --- The ground (layer 0): a strip of grass, 32 x 8 tiles, lit along its top edge, flowers now and then ---
-ground = Img(256, 64)
-grass = texture('grass', 64, 64, field.grass)
-for x in range(0, 256, 64): ground.blit(grass, x, 0)
-for x in range(256):
-    ground.px[0][x] = field.grass[3]; ground.px[1][x] = field.grass[2] if x % 5 else field.grass[3]
-for k in range(12):
-    fx_, fy_ = int(hsh(k * 7 + 1) % 250) + 3, int(hsh(k * 13 + 5) % 50) + 8
-    ground.px[fy_][fx_] = field.bloom
-art.scene('field', ground, pal=field, at=(0, 0), solid=True)
+# The cards (the card kit, playbook section 2 "Card games"): the large 32 x 48 deck in one shared palette (red and
+# black inks together), so a column of overlapping cards can be composed into one buffer and drawn as a few sprites:
+# nine buffers of 32 x 160 (the seven columns, the run in the hand, and one spare), and eight slots for single cards
+# (the stock, the waste's three, the four foundations).
+deck = art.cards(sizes=('large',), slots={'large': 8}, pals=(4,), stacks=(9, 152), use=('sort', 'anim'), region='spr')
 
-# --- The hills (layer 1): rolling green behind the ground, receded towards the sky ---
-back = Img(256, 64)
-hills(back, far.hill, base=64, amp=40, period=128)
-art.scene('hills', back, pal=far, at=(32, 0))
-
-# --- The hero: a character from the kit's skeleton (rig.py), not pixels placed by hand. One Rig gives every frame in
-# the same proportions and light: a standing pose and a walk of four frames, each 32 x 32 (a hero should be big enough
-# to read: 24 px or more on this screen). To change the character, change the preset ('hero', 'brawler', 'boxer' ...),
-# the ramps or the poses (pose(STAND, arm_n=60)); to add an action, add its poses (JUMP, PUNCH, HIT). Look at them all
-# with filmstrip('/tmp/hero.png', hero, poses, hero_pal), or in the packed cart with tools/devkit/art/sprites.mjs.
-hero = Rig('hero', height=26, skin=hero_pal.skin, hair=hero_pal.hair, shirt=hero_pal.shirt, pants=hero_pal.pants, shoes=hero_pal.hair, margin=1)
-for k, p in enumerate([STAND] + hero.animate(WALK, 8)[::2]):
-    art.sprite('hero%d' % k, hero.render(p).fit(32, 32), pal=hero_pal, region='spr')   # fit: feet on the bottom row, centred
-
-# --- A gem to dodge: a ball sculpted from a 3D shape (sculpt.py), lit, glossy and outlined by the kit ---
-ball = Sculpt(16, 16)
-ball.sphere(8, 8, 0, 6.5, Mat(gem_pal.gold, gloss=0.9))
-art.sprite('gem', ball.render(), pal=gem_pal, region='spr')
-
-# --- The title: the game's name in big bevelled letters (lettering.py), on its own layer (layer 2, shown on the title).
-# Words go on a second line when the name is long; a very long word is drawn at the font's own size. ---
-TITLE, lines = 'SOLITAIRE', ['']
-for word in TITLE.split():
-    if lines[-1] and len(lines[-1]) + 1 + len(word) > 15: lines.append('')
-    lines[-1] = (lines[-1] + ' ' + word).strip()
-scale = 2 if max(len(l) for l in lines) <= 15 else 1
-logo = Img(256, 8 * (3 if scale == 2 else 2) * len(lines))
-for k, l in enumerate(lines):
-    t = big_text(l, logo_pal.gold, scale=scale, outline=logo_pal.edge, shadow=logo_pal.shade)
-    logo.blit(t, max(0, (256 - t.w) // 2), k * 8 * (3 if scale == 2 else 2) + 1)
-art.scene('logo', logo, pal=logo_pal, at=(0, 16))
+# The hand: the icon library's cursor, in its own palette.
+items = items_palette(art, 1)
+art.sprite('hand', icon('cursor', 16, items), pal=items, region='spr')
 
 art.write(sys.argv[1])
