@@ -118,6 +118,14 @@ for k, d in enumerate(digits(items, 16, 'gold')): sheet.add('digit %d' % k, d, i
 sheet.row()
 for name in ('a', 'b', 'start', 'dpad'): sheet.add('button ' + name, button(name, 16, items), items, scale=4)
 '''),
+('cards', 'Playing cards', 'For a card game: art.cards() draws a whole deck at 32 x 48, 24 x 32 and 16 x 24 (drawn kings, queens and jacks at the large size, a joker, a back and the frames of a flip), keeps the faces in the ROM, and writes the CARDS block of code.js (decks, shuffle, deal, poker, blackjack, runs and sets, moves, fans). Every card of each size: docs/dev/art-recipes/cards-large.png, cards-medium.png and cards-small.png. The playbook\'s card section has the code side.', '''
+deck = art.cards(sizes=('large', 'medium', 'small'), slots={'large': 2, 'medium': 2, 'small': 2}, pals=(6, 7), use=('poker', 'anim'))
+pick = [0, 22, 37, 51, 52, 54]                                       # the ace of spades, 10 of hearts, queen of diamonds, king of clubs, a joker, the back
+for size, scale in (('large', 3), ('medium', 3), ('small', 4)):
+    for c in pick: sheet.add('%s %d' % (size, c), deck['faces'][size][c], deck['subs'][size][c], scale=scale)
+    sheet.row()
+for k in range(1, 7): sheet.add('flip %d' % k, deck['faces']['large'][54 + k], deck['subs']['large'][54 + k], scale=2)
+'''),
 ('icons','Small icons by hand', 'For an icon the library does not have: the one place for pixels typed by hand, 8 and 16 px icons where every pixel is a decision. Anything bigger: a recipe above.', '''
 pal = art.sprite_palette(3, {'edge': '140c1c', 'red': ramp('d04648', 3), 'gold': ramp('dad45e', 3)})
 K = {'o': pal.edge, 'd': pal.red[0], 'r': pal.red[1], 'l': pal.red[2], 'g': pal.gold[1], 'y': pal.gold[2]}
@@ -139,6 +147,17 @@ def run(code, png):
     ns['sheet'] = ns['Sheet'](scale=3)
     exec(code, ns)
     ns['sheet'].save(png)
+
+
+# Whole sheets the page points to (the recipes show a few of each): name -> a function that writes the PNG.
+def _cards(size):
+    def make(png):
+        import kit
+        art = kit.Art(); art.region('spr', 256, 1023)
+        deck = art.cards(sizes=(size,), slots={size: 1}, pals=(6, 7))
+        kit.card_sheet(deck, png, size, scale=3)
+    return make
+SHEETS = {'cards-%s' % z: _cards(z) for z in ('large', 'medium', 'small')}
 
 
 def pixels(path):
@@ -167,6 +186,7 @@ def build(page, pics):
         run(code, os.path.join(pics, rid + '.png'))
         shown = '\n'.join(l for l in code.strip().split('\n'))
         out += ['## ' + title, '', when, '', '![%s](art-recipes/%s.png)' % (title, rid), '', '```python', shown, '```', '']
+    for name, make in SHEETS.items(): make(os.path.join(pics, name + '.png'))
     open(page, 'w').write('\n'.join(out))
 
 
@@ -175,11 +195,11 @@ if __name__ == '__main__':
         with tempfile.TemporaryDirectory() as d:
             build(os.path.join(d, 'page.md'), os.path.join(d, 'pics'))
             stale = [] if open(os.path.join(d, 'page.md')).read() == (open(PAGE).read() if os.path.exists(PAGE) else '') else ['docs/dev/art-recipes.md']
-            for rid, *_ in RECIPES:
+            for rid in [r[0] for r in RECIPES] + list(SHEETS):
                 a, b = os.path.join(d, 'pics', rid + '.png'), os.path.join(PICS, rid + '.png')
                 if not os.path.exists(b) or pixels(a) != pixels(b): stale.append('docs/dev/art-recipes/%s.png' % rid)
         if stale: sys.exit('out of date: %s\nrun python3 tools/devkit/art/recipes.py and commit the page and its pictures' % ', '.join(stale))
-        print('ok: %d recipes run, and the page and its pictures are up to date' % len(RECIPES))
+        print('ok: %d recipes run, and the page and its %d pictures are up to date' % (len(RECIPES), len(RECIPES) + len(SHEETS)))
     else:
         build(PAGE, PICS)
-        print('wrote docs/dev/art-recipes.md and %d pictures' % len(RECIPES))
+        print('wrote docs/dev/art-recipes.md and %d pictures' % (len(RECIPES) + len(SHEETS)))

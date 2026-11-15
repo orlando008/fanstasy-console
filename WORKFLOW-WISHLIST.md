@@ -176,6 +176,10 @@ tile grid, and its `outline` grows a 16 px sprite to 18 px), but these parts of 
   - **What:** print code size, tiles, patterns, effects, instruments, the number of test checks, song levels and the last
     sweep medians, ready to paste into a step's **Results** note.
   - **Why:** hand-counted numbers drift; the Tricksy Towerz polish notes were off by one check.
+- [x] **A card game kit** (`tools/devkit/art/cards.py`, `cards.js`, `tools/devkit/music/cardsfx.py`). Built (November
+  2026): `art.cards(...)` draws a standard or custom deck at three sizes into the ROM and writes the CARDS block of
+  `code.js` (decks, seeded shuffle, deal, drawing through sprite slots, flips, moves, fans, sorting, poker, blackjack,
+  runs and sets); `cardsfx.add(a)` adds the sounds. The playbook's "Card games" (section 2) documents it.
 - [ ] **More starter kinds** (`node tools/new-cart.js <name> "Title" --kind <kind>`).
   - **What:** add platformer, shooter, racer and physics stacker kinds; only `puzzle` exists.
   - **Why:** those genres cover most of the library, and a kind is a whole working game to start from.
