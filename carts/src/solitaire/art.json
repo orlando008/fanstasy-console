@@ -1,5 +1,8 @@
 {
  "colors": {
+  "BACK0": 202,
+  "BACK1": 203,
+  "BACK2": 204,
   "FELTDARK": 18,
   "GLASS": 240,
   "OUTLINE": 113
@@ -62,6 +65,7 @@
   }
  },
  "rom": [
+  "backs",
   "cards_large"
  ],
  "scenes": {

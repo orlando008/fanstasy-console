@@ -11,10 +11,10 @@ const nearlyWon = (p) => p.set({ cols: [[51], [], [], [], [], [], []], down: [0,
   const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3);
   ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
   vm.press('DOWN'); ok(p.titleSel === 1, 'DOWN moves down the menu'); vm.press('UP'); ok(p.titleSel === 0, 'and UP back');
-  vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
+  vm.press('UP'); vm.press('A'); ok(p.state === 'records', 'RECORDS (the last item: UP wraps to it) opens the records');
   vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
   sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.playing === p.SONG.play && p.cols.length === 7, 'PLAY deals a game, with the game song');
+  ok(p.state === 'play' && p.playing === p.SONG.play && p.cols.length === 7, 'DRAW 1 deals a game, with the game song');
 }
 
 // 2. The hand.

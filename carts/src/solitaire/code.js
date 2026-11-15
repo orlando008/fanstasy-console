@@ -13,7 +13,7 @@ const ART = {
   tiles: {},
   sprites: {"hand": {"pal": 1, "size": 16, "tile": 908}},
   scenes: {"table": {"h": 28, "mx": 0, "my": 0, "pal": 1, "w": 32}},
-  colors: {"FELTDARK": 18, "GLASS": 240, "OUTLINE": 113},
+  colors: {"BACK0": 202, "BACK1": 203, "BACK2": 204, "FELTDARK": 18, "GLASS": 240, "OUTLINE": 113},
 };
 // END ART
 
@@ -169,12 +169,28 @@ function play(song) { if (song === playing) return; playing = song; music(song);
 
 // --- Save slots (spec 13) ---
 
-const VERSION_SLOT = 0, SAVE_VERSION = 1, INITIALS_SLOT = 1;
-const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, a spare (slots 10 to 39)
+const VERSION_SLOT = 0, SAVE_VERSION = 2, INITIALS_SLOT = 1, BACK_SLOT = 2, MODE_SLOT = 3;
+const TOP_SLOT = 10, TOP_N = 10, ENTRY = 3; // the top 10, best first: score, initials, mode x 100000 + seconds (slots 10 to 39)
+// The statistics, 8 slots a mode from 40 (DRAW 1) and 48 (DRAW 3): played, won, best time (s), best score, streak, best streak
+const STAT_SLOT = { 1: 40, 3: 48 }, ST = { played: 0, won: 1, time: 2, score: 3, streak: 4, best: 5 };
+const stat = (mode, k) => dget(STAT_SLOT[mode] + ST[k]);
+const setStat = (mode, k, v) => dset(STAT_SLOT[mode] + ST[k], v);
+/** A deal is over: count it in its mode's statistics (a win: its time and score too). */
+function record(win) {
+  const m = drawN;
+  setStat(m, 'played', stat(m, 'played') + 1);
+  if (!win) { setStat(m, 'streak', 0); return; }
+  setStat(m, 'won', stat(m, 'won') + 1);
+  const st = stat(m, 'streak') + 1; setStat(m, 'streak', st); setStat(m, 'best', Math.max(st, stat(m, 'best')));
+  if (!stat(m, 'time') || seconds() < stat(m, 'time')) setStat(m, 'time', Math.max(1, seconds()));
+  setStat(m, 'score', Math.max(score, stat(m, 'score')));
+}
+/** Leaving a deal (NEW DEAL, QUIT): it counts as lost once a move has been made. */
+function abandon() { if (state === 'play' && started && !won) record(false); }
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-function readEntry(i) { const s = TOP_SLOT + i * ENTRY; return { score: dget(s), initials: unpackInitials(dget(s + 1)) }; }
-function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); }
+function readEntry(i) { const s = TOP_SLOT + i * ENTRY, x = dget(s + 2); return { score: dget(s), initials: unpackInitials(dget(s + 1)), mode: Math.floor(x / 100000), secs: x % 100000 }; }
+function writeEntry(i, e) { const s = TOP_SLOT + i * ENTRY; dset(s, e.score); dset(s + 1, packInitials(e.initials)); dset(s + 2, (e.mode || 0) * 100000 + Math.min(99999, e.secs || 0)); }
 const topTen = () => Array.from({ length: TOP_N }, (_, i) => readEntry(i));
 /** Put a score into the top 10 if it makes it. Returns its row, or -1. */
 function insertTop(e) {
@@ -392,7 +408,7 @@ function moveHand() {
 
 let skipTitle = false; // tests set this to land straight in the game
 let state = 'title', paused = false, timer = 0, clock = 0;
-let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
+let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null, page = 0;
 let score = 0, won = false, bonus = 0;
 
 function init() {
@@ -404,10 +420,11 @@ function init() {
   bg(0, { show: false }); bg(1, { show: false });
   bg(2, { mx: t.mx, my: t.my, mw: t.w, mh: t.h, x: 0, y: 0, wrap: false, show: true });
   blend({ layers: ['overlay'], half: true }); // overlay colours from 192 up (GLASS) are see-through
+  drawN = dget(MODE_SLOT) === 3 ? 3 : 1; setBack(dget(BACK_SLOT) & 3);
   if (skipTitle) startGame(); else toTitle();
 }
 
-function toTitle() { state = 'title'; timer = 0; titleSel = 0; paused = false; play(SONG.title); }
+function toTitle() { state = 'title'; timer = 0; titleSel = drawN === 3 ? 1 : 0; paused = false; play(SONG.title); }
 
 function startGame() {
   score = 0; won = false; bonus = 0; paused = false; timer = 0; state = 'play';
@@ -429,12 +446,24 @@ function update() {
   prevMask = inputMask;
 }
 
+const TITLE_ITEMS = ['DRAW 1', 'DRAW 3', 'CARD BACK', 'RECORDS'], BACK_NAMES = ['BLUE', 'RED', 'GREEN', 'GOLD'];
 function updateTitle() {
-  if (pressed(UP) || pressed(DOWN)) { titleSel ^= 1; fx(SFX.move); }
+  if (pressed(UP)) { titleSel = (titleSel + 3) % 4; fx(SFX.move); }
+  if (pressed(DOWN)) { titleSel = (titleSel + 1) % 4; fx(SFX.move); }
+  if (titleSel === 2 && (pressed(LEFT) || pressed(RIGHT) || pressed(A))) {
+    setBack((back + (pressed(LEFT) ? 3 : 1)) % 4); dset(BACK_SLOT, back); fx(SFX.move); return;
+  }
   if (pressed(A) || pressed(START)) {
     fx(SFX.select);
-    if (titleSel === 0) startGame(); else { state = 'records'; hl = -1; timer = 0; }
+    if (titleSel < 2) { drawN = titleSel ? 3 : 1; dset(MODE_SLOT, drawN); startGame(); }
+    else if (titleSel === 3) { state = 'records'; hl = -1; page = 0; timer = 0; }
   }
+}
+/** The card back's colour: its ramp's three entries, from rom/backs.bin (art.py). */
+let back = 0;
+function setBack(k) {
+  back = k; const b = rom('backs');
+  for (let j = 0; j < 3; j++) { const v = b[(k * 3 + j) * 2] | (b[(k * 3 + j) * 2 + 1] << 8); color(ART.colors['BACK' + j], v & 31, (v >> 5) & 31, v >> 10); }
 }
 
 function updatePlay() {
@@ -454,21 +483,22 @@ function updateStuck() {
   if (pressed(UP) || pressed(DOWN)) { stuckSel = (stuckSel + (pressed(UP) ? 2 : 1)) % 3; fx(SFX.move); }
   if (!pressed(A)) return;
   fx(SFX.select);
-  if (stuckSel === 0) startGame(); else if (stuckSel === 1) undo(); else stuck = false;
+  if (stuckSel === 0) { abandon(); startGame(); } else if (stuckSel === 1) undo(); else stuck = false;
 }
 
 function win() {
   won = true; state = 'over'; timer = 0; play(-1); fx(SFX.record); autoing = false;
   bonus = seconds() > 30 ? Math.floor(PTS.bonus / seconds()) : 0;
   score += bonus;
-  rank = insertTop({ score, initials: lastInitials() });
+  record(true);
+  rank = insertTop({ score, initials: lastInitials(), mode: drawN, secs: seconds() });
 }
 
 function updateOver() {
   if (timer < 60 || !(pressed(A) || pressed(START))) return;
   fx(SFX.select);
   if (rank >= 0) { state = 'initials'; timer = 0; initials = { chars: lastInitials().split(''), pos: 0 }; fx(SFX.record); }
-  else toTitle();
+  else { state = 'records'; hl = -1; page = 1; timer = 0; }   // not in the top 10: the statistics, with this win in them
 }
 
 /** UP/DOWN pick a letter, LEFT/RIGHT (or A and B) move, START saves (as does A on the last letter). */
@@ -484,10 +514,11 @@ function updateInitials() {
   const v = packInitials(ini.chars.join(''));
   dset(INITIALS_SLOT, v); dset(TOP_SLOT + rank * ENTRY + 1, v);
   fx(SFX.select);
-  state = 'records'; hl = rank; timer = 0;
+  state = 'records'; hl = rank; page = 0; timer = 0;
 }
 
 function updateRecords() {
+  if (pressed(LEFT) || pressed(RIGHT)) { page ^= 1; fx(SFX.move); }
   if ((pressed(START) || pressed(A) || pressed(B)) && timer > 20) { fx(SFX.select); toTitle(); }
 }
 
@@ -501,8 +532,8 @@ function updatePause() {
     fx(SFX.select); paused = false;
     if (pauseSel === 1) undo();
     else if (pauseSel === 2) showHint();
-    else if (pauseSel === 3) startGame();
-    else if (pauseSel === 4) toTitle();
+    else if (pauseSel === 3) { abandon(); startGame(); }
+    else if (pauseSel === 4) { abandon(); toTitle(); }
   }
 }
 
@@ -582,20 +613,38 @@ function slot(k, y, letter) {
 
 function drawTitle() {
   ctxt('SOLITAIRE', 60, GOLD);
-  ['PLAY', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '> ' : '  '}${s}`, 96, 100 + i * 14, i === titleSel ? WHITE : DIM));
+  TITLE_ITEMS.forEach((s, i) => {
+    const on = i === titleSel, label = i === 2 ? `${s}  < ${BACK_NAMES[back]} >` : s;
+    txt(`${on ? '> ' : '  '}${label}`, 72, 100 + i * 14, on ? WHITE : DIM);
+  });
+  drawCard(0, 112, 164, { down: true });                   // the back as it will be
 }
 
+const mmss = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+/** The records: page 0 the top 10, page 1 each mode's statistics (LEFT and RIGHT turn the page). */
 function drawRecords() {
-  panel(24, 16, 208, 192);
-  ctxt('TOP 10', 24, GOLD);
-  topTen().forEach((e, i) => {
-    const y = 48 + i * 14, on = i === hl;
-    if (on && timer % 40 < 30) rectfill(28, y - 2, 200, 12, PANEL);
-    txt(String(i + 1).padStart(2), 40, y, i === 0 ? GOLD : DIM);
-    txt(e.score ? e.initials : '---', 72, y, on ? GOLD : WHITE);
-    txt(e.score ? String(e.score).padStart(8) : '', 128, y, i === 0 ? GOLD : WHITE);
+  panel(16, 12, 224, 200);
+  ctxt(page ? '< STATISTICS >' : '< TOP 10 >', 20, GOLD);
+  if (page === 0) topTen().forEach((e, i) => {
+    const y = 40 + i * 14, on = i === hl;
+    if (on && timer % 40 < 30) rectfill(20, y - 2, 216, 12, PANEL);
+    txt(String(i + 1).padStart(2), 24, y, i === 0 ? GOLD : DIM);
+    txt(e.score ? e.initials : '---', 48, y, on ? GOLD : WHITE);
+    txt(e.score ? String(e.score).padStart(6) : '', 84, y, i === 0 ? GOLD : WHITE);
+    if (e.score) { txt(e.mode === 3 ? 'D3' : 'D1', 144, y, DIM); txt(mmss(e.secs).padStart(6), 176, y, DIM); }
   });
-  if (timer % 60 < 40) ctxt('START: BACK', 192, DIM);
+  else {
+    txt('DRAW 1', 128, 40, GOLD); txt('DRAW 3', 184, 40, GOLD);
+    const rows = [['PLAYED', (m) => stat(m, 'played')], ['WON', (m) => stat(m, 'won')],
+      ['WIN RATE', (m) => (stat(m, 'played') ? Math.round((100 * stat(m, 'won')) / stat(m, 'played')) + '%' : '-')],
+      ['BEST TIME', (m) => (stat(m, 'time') ? mmss(stat(m, 'time')) : '-')], ['BEST SCORE', (m) => stat(m, 'score') || '-'],
+      ['STREAK', (m) => stat(m, 'streak')], ['BEST STREAK', (m) => stat(m, 'best')]];
+    rows.forEach(([name, f], i) => {
+      const y = 58 + i * 16;
+      txt(name, 24, y, DIM); txt(String(f(1)).padStart(6), 128, y, WHITE); txt(String(f(3)).padStart(6), 184, y, WHITE);
+    });
+  }
+  if (timer % 60 < 40) ctxt('START: BACK', 196, DIM);
 }
 
 function drawInitials() {

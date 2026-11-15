@@ -9,7 +9,8 @@ export const hero = [];
 export default function screens(shot) {
   const vm = newGame(1, { title: true });
   vm.run(30); shot(vm, 'title');
-  vm.press('DOWN'); vm.press('A'); vm.run(30); shot(vm, 'records'); vm.press('START'); vm.run(5);
+  vm.press('UP'); vm.press('A'); vm.run(30); shot(vm, 'records'); vm.press('RIGHT'); vm.run(2); shot(vm, 'statistics'); vm.press('START'); vm.run(5);
+  vm.press('DOWN'); vm.press('DOWN'); vm.press('RIGHT'); vm.run(2); shot(vm, 'title, red back');
   const play = newGame(1), p = play.probe();
   play.run(10); shot(play, 'deal', { zoom: [0, 0, 128, 112] });
   p.setHand(0, 0); for (let i = 0; i < 3; i++) play.press('A');

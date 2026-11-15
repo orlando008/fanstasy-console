@@ -1,7 +1,7 @@
 # Solitaire: Cart Specification
 
 **Version:** 0.1 (draft)
-**Status:** Step 4 built: every rule, the felt, the score, the clock, undo, auto-finish, the stuck check, the hint and a bot
+**Status:** Step 5 built: every rule, the felt, the score, the clock, the help, a bot, the menus, statistics and saves
 **Shelf and players:** Puzzle; 1 player: the same as `genre` and `players` in `carts/src/solitaire/meta.json`.
 **Cart source:** `carts/src/solitaire/` → `carts/solitaire.nova`
 
@@ -115,13 +115,16 @@ The score never goes below 0. The clock starts at the first move and stops on a 
 ## 10. Screens and flow
 
 1. **Title:** a fan of cards over the felt and the name. Menu: DRAW 1, DRAW 3, CARD BACK (BLUE, RED, GREEN, GOLD;
-   left and right change it, remembered), RECORDS.
+   left, right or A change it, remembered; the back shows under the menu), RECORDS. The menu starts on the mode
+   played last. A deal left with NEW DEAL or QUIT TO TITLE after a move counts as a game lost; before any move, as
+   nothing.
 2. **Play** (the table), with **Pause** (START).
 3. **No moves left** panel, when stuck.
 4. **Win:** auto-finish if it is needed, then the **cascade** (below), then the score with the time bonus, then
    **initials** if the score is in the top 10, then the **records**.
-5. **Records:** the top 10 (score, initials, mode) and, for each mode, games played, won, win rate, best time,
-   best score, current and best streak.
+5. **Records:** two pages, LEFT and RIGHT turn them: the **top 10** (score, initials, D1 or D3, the time) and the
+   **statistics** of each mode side by side (played, won, win rate, best time, best score, streak, best streak). A
+   win in the top 10 opens the top 10 with its row lit; a win outside it opens the statistics.
 
 **The win cascade:** as the old desktop game: each king to ace in turn leaps off its foundation with a random sideways
 speed and bounces down the table (gravity, losing a third of its speed at each bounce on the bottom edge) until it is
@@ -156,7 +159,7 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
 
 | Slots | Contents |
 |---|---|
-| 0 | Format version |
+| 0 | Format version (2) |
 | 1 | Last initials entered |
 | 2 | Card back (0 to 3) |
 | 3 | Last mode (1 or 3) |
@@ -169,7 +172,7 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
 
 | Asset | Budget |
 |---|---|
-| Code | 32.9 KB of the 64 KB limit after step 3 (the card kit's CARDS block with `sort`, `anim` and `stack` about 9 KB); about 40 KB planned with the score, hint, cascade and records |
+| Code | 36.5 KB of the 64 KB limit after step 5 (the card kit's CARDS block with `sort`, `anim` and `stack` about 9 KB); about 40 KB planned with the score, hint, cascade and records |
 | ROM | 47 KB, the large cards (`rom/cards_large.bin`) |
 | Tiles | 916 of 1,024 after step 1: the nine stack buffers 720 (9 x 80: 32 x 160 px, whole sprites), eight card slots 192, the hand 4; the felt, rim and outlines have tiles 1 to 63 |
 | Sprites | about 60 (seven columns of five, the stock, waste and foundations' 24, the hand and a held run 6) of 128; at most about 12 on a line |
@@ -223,6 +226,11 @@ Songs on channels 0 to 6 (the library's use 6 for the hats), effects on 7 and 6.
      200 moves. A person who thinks ahead and undoes should win more; these are a floor, and a check for change.
 5. **Flow:** the title menu (DRAW 1, DRAW 3, CARD BACK, RECORDS), the pause menu, the statistics, the top 10 with the
    mode, the saves.
+   - **Built:** the title menu (DRAW 1, DRAW 3, CARD BACK, RECORDS; the mode played last and the back remembered),
+     the card backs (four ramps in `rom/backs.bin`, written into the back's palette entries), each mode's statistics
+     (a deal counts when it is won, or left after a move), the top 10 with each score's mode and time, the two-page
+     records. The save format is version 2 (an older save starts clean).
+   - **Results:** `06-menus.mjs` 18 checks; 125 in all, passing.
 6. **The win:** the cascade on the overlay, the time bonus, the score screen.
 7. **Art pass:** the title (a fan of cards), the panels, the records screen, the card backs (`gallery.mjs` and
    `critique.mjs` over every screen).
@@ -240,7 +248,8 @@ Defaults chosen that the user has not confirmed, so they are easy to change.
 - **Scoring:** the classic desktop game's (section 9), and the undo's extra -10.
 - **Passes through the stock:** no limit in either mode.
 - **Hint:** on B with nothing held, and in the pause menu; it is free.
-- **Card backs:** the colour is changed by rewriting the back's palette entries. Those entries also colour the court
+- **Card backs:** the colour is changed by rewriting the back's three palette entries (`BACK0` to `BACK2`) from
+  `rom/backs.bin`, four ramps made by `art.py`. Those entries also colour the court
   cards' collars and the joker's hat, so a red back gives red collars. If that matters, the kit could give the back its
   own palette.
 - **Top 10:** shared between the modes (each entry marked D1 or D3), rather than one table each.

@@ -56,6 +56,18 @@ art.colors['FELTDARK'] = felt.cgram('felt1')   # the inside of an empty pile: th
 # (the stock, the waste's three, the four foundations).
 deck = art.cards(sizes=('large',), slots={'large': 8}, pals=(4,), stacks=(9, 152), use=('sort', 'anim'), region='spr')
 
+# The card backs (spec 10, CARD BACK on the title): the back is drawn in the cards' 'back' ramp, so a back of another
+# colour is that ramp's three entries rewritten in code. rom/backs.bin: blue, red, green, gold, three RGB555 colours each
+# (dark to light, two bytes each, low byte first); BACK0 to BACK2 name the entries.
+P = deck['pals'][next(iter(deck['pals']))]
+for k in range(3): art.colors['BACK%d' % k] = P.cgram('back%d' % k)
+backs = bytearray()
+for base in ('2c4c9c', 'a83038', '2a7a40', 'b88a28'):
+    for hx in ramp(base, 3, at=1):
+        r, g, b = (int(hx[i:i + 2], 16) >> 3 for i in (0, 2, 4)); v = r | (g << 5) | (b << 10)
+        backs += bytes([v & 255, v >> 8])
+art.rom['backs'] = bytes(backs)
+
 # The hand: the icon library's cursor, in its own palette.
 items = items_palette(art, 1)
 art.sprite('hand', icon('cursor', 16, items), pal=items, region='spr')
