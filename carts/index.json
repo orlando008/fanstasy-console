@@ -171,6 +171,16 @@
       "png": "carts/riddlewick-manor.nova.png"
     },
     {
+      "name": "solitaire",
+      "title": "Solitaire",
+      "author": "NOVA-16",
+      "description": "Klondike patience on a green felt table: build the four suits up from the ace, drawing one card or three. Undo, a hint when you ask, and every card flies home when the game is won.",
+      "genre": "Puzzle",
+      "players": "1",
+      "label": "carts/labels/solitaire.png",
+      "png": "carts/solitaire.nova.png"
+    },
+    {
       "name": "tricksy-towerz",
       "title": "Tricksy Towerz",
       "author": "NOVA-16",

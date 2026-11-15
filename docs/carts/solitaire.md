@@ -1,7 +1,7 @@
 # Solitaire: Cart Specification
 
-**Version:** 0.1 (draft)
-**Status:** Step 8 built: the whole game, its art and its sound; the polish and the release are left
+**Version:** 1.0
+**Status:** Released (November 2026): `carts/solitaire.nova` and `carts/solitaire.nova.png`, in the Library on the Puzzle shelf
 **Shelf and players:** Puzzle; 1 player: the same as `genre` and `players` in `carts/src/solitaire/meta.json`.
 **Cart source:** `carts/src/solitaire/` → `carts/solitaire.nova`
 
@@ -273,6 +273,11 @@ songs' medians 0.076 to 0.086, leads 0.039 to 0.045 RMS and 0.49 to 0.61 of the 
      all, passing.
 9. **Polish and release:** frame times with every card on the table, the label, the PNG cart, the Library
    (`node tools/release.js solitaire`) and a README row.
+   - **Built:** the release: the label (the title, 3.5 s in), `carts/solitaire.nova.png`, the Library's entry on the
+     Puzzle shelf, the README row.
+   - **Results:** the heaviest frames, a draw or an undo that composes every column again: 3.6 ms at the 99th
+     percentile, 5.5 ms at worst. A 20,000-frame soak: worst frame 4.7 ms, at most 29 sprites and 10 on a line. The
+     PNG cart's payload 58,626 of 147,443 bytes (40%); `check.js` with no warning. 147 checks.
 
 Each step: build it, run `node tools/verify.js solitaire` (and the tests) and `node tools/devkit/smoke.mjs solitaire`,
 write its **Built** and **Results** notes under its number here, commit and push.
