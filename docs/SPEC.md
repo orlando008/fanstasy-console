@@ -551,12 +551,17 @@ A recording holds what is needed to reproduce a run exactly: `{ "format": "nova1
 - Keep a `Uint32Array` view over the `ImageData` buffer and a 256-entry CGRAM → RGBA lookup table. Rebuild the table whenever `color` or `palcopy` runs, including mid-frame.
 - Render one line at a time into a 256-entry line buffer of `{color index, priority tier}`, then resolve it to RGBA.
 - Pre-decode 4 bpp tiles into a `Uint8Array` of one byte per pixel when VRAM changes, so the inner loop never unpacks nibbles.
-- Sort the per-line sprite list once per frame by y-range so each line only checks sprites that overlap it.
+- Bucket the sprites into the lines they cover once per frame, keeping the first 32 per line in OAM order (`bucketSprites()`), so each line only checks the sprites that overlap it.
 - With an effect on (4.10 to 4.12), the mosaic and the window masks are applied to each layer's line, and each pixel of the line buffer also keeps the pixel under it and which layer drew it, and the line is resolved through RGB555 maths instead of the lookup table. With none on, the plain path runs; `tests/console/effects.mjs` checks that both give the same picture for every cart.
 
 ### 10.3 Security model
 
-Cart code runs in a dedicated worker with no DOM, no cookies and no `localStorage`. The page CSP restricts network access, and the main thread owns save data. The remaining accepted risk for v1 is that a worker can reach same-origin IndexedDB, so the console itself must not store anything sensitive there.
+Cart code runs in a dedicated worker with no DOM, no cookies and no `localStorage`. Before any cart code runs, the worker
+removes the network and storage globals (`fetch`, `XMLHttpRequest`, `WebSocket`, `indexedDB`, `caches` and the rest of the
+list in `lockdown()`, `src/console/worker.js`), and the cart's scope shadows them again (`HIDDEN` in
+`src/console/sandbox.js`). That is defence in depth. The page's CSP (`connect-src 'self'`) is what restricts network
+access, and the main thread owns save data. The shadowing is a convenience, not a security boundary: a cart can only
+reach what the worker itself can reach, so the console must not store anything sensitive in the worker's own scope.
 
 ## 11. Built-in tools
 
