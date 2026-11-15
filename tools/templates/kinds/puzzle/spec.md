@@ -2,6 +2,7 @@
 
 **Version:** 0.1 (draft)
 **Status:** Scaffolded as a match-3 puzzle (`node tools/new-cart.js --kind puzzle`): the frame and a working game with placeholder numbers, art and sound
+**Shelf and players:** TODO (Arcade, Puzzle, Racing or Strategy; 1 or 1-4): the same as `carts/src/{{NAME}}/meta.json`.
 **Cart source:** `carts/src/{{NAME}}/` → `carts/{{NAME}}.nova`
 
 > The numbers below are the starter's defaults: they are what the code and the tests do now. Ask the user the few design
@@ -100,7 +101,7 @@ The gems are 16 px sprites, each kind in its own sprite palette (0 to 5); the cu
 
 | Asset | Budget |
 |---|---|
-| Code | TODO of the 64 KB limit (`node tools/check.js {{NAME}}`) |
+| Code | TODO KB of the 64 KB limit (`node tools/check.js {{NAME}}` checks this figure against the code) |
 | Tiles | about 66 of 1,023 (the background 38, the gems and cursor 28) |
 | Sprites | 65 on the board (128 in OAM, 32 per scanline) |
 | Songs / SFX | 2 songs, 14 SFX |
@@ -111,7 +112,7 @@ The starter already does steps 1 and 2 with placeholder numbers; what is left is
 
 1. **Board and swapping:** the pure board logic (`findRuns`, `hasMoves`, `makeTypes`), the cursor and the swap. (Done: 03-rules.mjs.)
 2. **Falling and chains:** `collapse`, the phase machine, scoring. (Done.)
-3. **Goals and levels:** the goal, moves, the bonus, the next level. Tune `goalFor` with the bot (`node tools/devkit/sweep.mjs {{NAME}}`): skill 1 should reach about level 4 to 5 and skill 0.5 about level 3 to 4 (the bot never misses a legal move; a person will do worse).
+3. **Goals and levels:** the goal, moves, the bonus, the next level. Tune `goalFor` with the bot (`node tools/devkit/sweep.mjs {{NAME}} --seeds 8 --set skill=0.5,1`). With these starter defaults, six seeds gave skill 1 an average of level 3.8 (3 to 5) and skill 0.5 level 3.3 (3 to 4). A game aiming for a steeper curve should move `goalFor` until skill 1 reaches about level 4 to 5. The bot never misses a legal move, so a person will do worse.
 4. **Your twist:** special gems, obstacles, a mode. New rules go into `03-rules.mjs` first.
 5. **Flow:** modes, menus, saves, records for the real game.
 6. **Art pass:** `art.py` (the gems' shapes and colours, the background, effects for a clear).
@@ -121,5 +122,8 @@ The starter already does steps 1 and 2 with placeholder numbers; what is left is
 Each step: build it, run `node tools/verify.js` and `node tools/devkit/smoke.mjs {{NAME}}`, write its **Built** and **Results** notes under its number here, commit and push.
 
 ## 16. Open questions
+
+Defaults you chose that the user has not confirmed, so they are easy to change (playbook section 1).
+Delete this note when the list is filled in.
 
 - TODO: the twist. What does the player do that a plain match-3 does not?
