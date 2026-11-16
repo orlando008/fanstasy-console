@@ -191,6 +191,16 @@
       "png": "carts/tricksy-towerz.nova.png"
     },
     {
+      "name": "highway-rush",
+      "title": "Highway Rush",
+      "author": "NOVA-16",
+      "description": "Race a red sports car down a never-turning highway against seven rivals. Dodge cones and oil, hit green pads, grab mystery cubes for a turbo, a shield or an oil slick, and overtake your way to the front in a two-minute sprint at sunset.",
+      "genre": "Racing",
+      "players": "1",
+      "label": "carts/labels/highway-rush.png",
+      "png": "carts/highway-rush.nova.png"
+    },
+    {
       "name": "moto-crosser",
       "title": "Moto Crosser",
       "author": "NOVA-16",
