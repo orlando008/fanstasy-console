@@ -686,7 +686,7 @@ function drawTitle() {
 const fmtTime = (f) => `${Math.floor(f / 3600)}:${String(Math.floor(f / 60) % 60).padStart(2, '0')}.${String(Math.floor((f % 60) / 6))}`;
 function drawResults() {
   const R = result;
-  panel(34, 62, 188, 146);
+  panel(34, 62, 188, 156);
   ctxt(R.place === 1 ? 'YOU WIN!' : `FINISHED ${ord(R.place)}`, 68, R.place <= 3 ? GOLD : WHITE);
   ctxt(`TIME ${fmtTime(R.time)}${R.newBest ? '  NEW BEST!' : ''}`, 80, WHITE);
   R.order.forEach((e, i) => {
@@ -697,7 +697,7 @@ function drawResults() {
     txt(e.fin >= 0 ? fmtTime(e.fin) : '--', 150, y, e.you ? GOLD : DIM);
   });
   txt(`SCORE ${R.score}${rank >= 0 ? '  TOP 10!' : ''}`, 46, 176, rank >= 0 ? GOLD : WHITE);
-  if (timer > 45 && timer % 60 < 40) { txt('A: RACE AGAIN', 46, 190, WHITE); txt('B: TITLE', 150, 190, DIM); }
+  if (timer > 45 && timer % 60 < 40) { txt('A: RACE AGAIN', 46, 190, WHITE); txt('B: TITLE', 46, 202, DIM); }
 }
 function drawRecords() {
   rectfill(0, 0, 256, 224, ART.colors.GLASS);
