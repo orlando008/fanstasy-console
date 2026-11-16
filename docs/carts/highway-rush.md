@@ -1,0 +1,119 @@
+# Highway Rush: Cart Specification
+
+**Version:** 0.1 (draft)
+**Status:** Scaffolded: the frame of the game (title, play, pause, game over, top 10, records, sound cues) works; the game is a placeholder
+**Shelf and players:** Arcade; players TODO (`1` to `4`, or a range such as `1-2`): the same as `genre` and `players` in `carts/src/highway-rush/meta.json`.
+**Cart source:** `carts/src/highway-rush/` → `carts/highway-rush.nova`
+
+> Fill this in before building (docs/dev/playbook.md, section 1): ask the user the few design questions that change
+> the game, choose sensible defaults for the rest, and write the rules with numbers. Delete this note.
+
+---
+
+## 1. Concept
+
+TODO: what the game is, in a paragraph; what the player does, and what makes it fun.
+
+## 2. Core loop
+
+TODO: the loop the player repeats, and how a game ends.
+
+## 3. Controls
+
+| Button | Use |
+|---|---|
+| D-pad | TODO |
+| A | TODO |
+| B | TODO |
+| START | Pause (RESUME, RESTART, QUIT TO TITLE) |
+
+## 4. Screen layout
+
+TODO: the 256 × 224 screen: what is on which layer (BG0 to BG2, sprites, overlay) and where the HUD goes.
+
+## 5. The rules
+
+TODO: the mechanics, with numbers (speeds, costs, timings, scores), so the tests can assert them.
+
+## 6. Levels or content
+
+TODO.
+
+## 7. Opponents or hazards
+
+TODO.
+
+## 8. Modes
+
+TODO.
+
+## 9. Scoring
+
+TODO.
+
+## 10. Screens and flow
+
+The frame's screens (from the starter). Change them to the game's.
+
+1. **Title:** PLAY, RECORDS.
+2. **Play**, with a **Pause** (START): RESUME, RESTART, QUIT TO TITLE.
+3. **Game over**, then **initials** if the score is in the top 10, then the **records**.
+
+## 11. Audio
+
+Songs: 0 the title, 1 the game, on the new sound chip (sampled instruments and echo; SPEC 5). Songs use channels 0 to 5;
+effects take turns on 6 and 7. TODO: the rest of the songs and effects, the cues (which song where; check
+tools/devkit/music/songs/README.md for ready-made songs first). Levels: the lead alone at most
+0.07 RMS and 0.75 of the mix, no vibrato, no jump of more than 1.5x where it enters (`node tools/devkit/music/loud.mjs
+carts/highway-rush.nova --check`; playbook section 5).
+
+## 12. Video layers
+
+TODO: what is on BG0 to BG2, the sprites and the overlay. The art is made in code by `carts/src/highway-rush/art.py` (the art toolkit,
+`tools/devkit/art/kit.py`); give the tile and sprite budget in section 14.
+
+## 13. Persistence (save slots)
+
+The frame's layout (from the starter). Keep slot 0 and the top 10 unless the game needs otherwise.
+
+| Slots | Contents |
+|---|---|
+| 0 | Format version |
+| 1 | Last initials entered |
+| 10–39 | Top 10 scores, best first, 3 slots each: score, initials, 1 spare |
+| 40–255 | Reserved |
+
+## 14. Asset budget
+
+| Asset | Budget |
+|---|---|
+| Code | TODO KB of the 64 KB limit (`node tools/check.js highway-rush` warns if this figure is more than 2 KB off; write a bare number such as 31.4 KB first in the cell, as it skips "about" or "≤") |
+| Tiles | TODO of 1,024 |
+| Sprites | TODO (128 in OAM, 32 per line) |
+| Songs / SFX | TODO |
+
+## 15. Implementation plan
+
+1. **Vertical slice:** the core mechanic playable on a test course, with the frame already in place (scaffolded).
+2. **The art proof:** the look, agreed before the rest is drawn. The hero (every frame, 24 px or more), the palettes,
+   and one screen of the game as it will look, from the recipes of `docs/dev/art-recipes.md`; then
+   `node tools/devkit/art/proof.mjs highway-rush`, the picture sent to the user, and what they said written here.
+   - **Agreed:** TODO (the date, and the changes asked for)
+3. **Core mechanics:** the rules of section 5.
+4. **Opponents or hazards.**
+5. **Content:** levels, tracks or stages.
+6. **Flow:** modes, menus, saves and the records for the real game.
+7. **Art pass:** the rest of the art, in the look agreed in step 2 (`gallery.mjs` and `critique.mjs` over every screen).
+8. **Audio pass.**
+9. **Balance and polish:** check with an automatic player, then the label, the PNG cart and the Library
+   (`node tools/release.js highway-rush`) and a README row.
+
+Each step: build it, run `node tools/check.js highway-rush` and `node tools/test.js highway-rush`, write its **Built** and
+**Results** notes under its number here, commit and push.
+
+## 16. Open questions
+
+Defaults you chose that the user has not confirmed, so they are easy to change (playbook section 1).
+Delete this note when the list is filled in.
+
+- TODO
