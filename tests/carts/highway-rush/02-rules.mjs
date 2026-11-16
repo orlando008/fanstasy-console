@@ -168,6 +168,17 @@ const T = (p) => p.TUNE;
   vm.run(60); ok(Math.abs(back.tx) > 10 || back.v < 4.5, 'a rival coming up behind a slower car changes lane or backs off', `tx ${back.tx.toFixed(1)} v ${back.v.toFixed(2)}`);
 }
 
+// 9b. Overtaking: position is the order of the distances; passing a slower car on the road gains a place, with the message and the sound.
+{
+  const { vm, p } = bare(19); const r = p.racers[1]; r.d = p.P.d + 90; r.x = 0; r.tx = 0; r.v = 4; r.rv = 0.76; r.skill = 0; r.cool = 9999; r.inv = 0;
+  const before = p.place(p.P); sfxLog(vm); let sawMsg = false;
+  for (let i = 0; i < 160 && p.P.d < r.d + 30; i++) { vm.step(i < 14 ? M('RIGHT') : 0); if (p.msg.startsWith('PASSED')) sawMsg = true; }
+  ok(p.P.d > r.d && p.place(p.P) === before - 1, 'driving past a slower car on the road puts you one place higher', `${before} -> ${p.place(p.P)}`);
+  ok(sawMsg && sfxLog(vm).some(([n]) => n === p.SFX.pass) && p.passes === 1, 'with the PASSED! message, the sound, and a pass counted');
+  ok(p.racers.filter((q) => q.d > p.P.d).length + 1 === p.place(p.P), 'and the place is exactly the number of cars ahead, plus one');
+  r.x = 0; vm.run(3);
+}
+
 // 10. The track: the same for a seed, with room to dodge, and nothing unfair near the start.
 {
   const vm = newGame(20), p = vm.probe(); let same = true, fair = true, minGap = 1e9, early = 0, late = 0, rows = 0, withHaz = 0, cubesN = 0, padsN = 0;

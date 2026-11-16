@@ -31,7 +31,7 @@ a.voice('FANFARE', 'brass', 11, d=6, s=11, r=6)
 a.instrument('BLIP', 'pulse12', 0, 3, 0, 0, 8, echo=4)
 a.voice('CHIME', 'celesta', 12)
 a.voice('THUD', 'tom', 12)
-a.voice('CRASH', 'crash', 10)
+a.voice('CRASH', 'crash', 15)
 a.instrument('ZAP', 'saw', 0, 5, 4, 3, 7)                    # sweeps: the boost, the red pad
 a.instrument('SPLAT', 'noise-short', 0, 5, 1, 3, 8)
 a.instrument('SCRAPE', 'noise-short', 0, 3, 3, 2, 6)

@@ -1,7 +1,8 @@
 {
   "title": "Highway Rush",
   "author": "NOVA-16",
-  "description": "A game in progress.",
-  "genre": "Arcade",
-  "players": "1"
+  "description": "Race a red sports car down a never-turning highway against seven rivals. Dodge cones and oil, hit green pads, grab mystery cubes for a turbo, a shield or an oil slick, and overtake your way to the front in a two-minute sprint at sunset.",
+  "genre": "Racing",
+  "players": "1",
+  "strip": true
 }

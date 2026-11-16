@@ -759,3 +759,45 @@ What building `splat-duel` taught (its spec is `docs/carts/splat-duel.md`; every
   game's second turn brought it to 55%. Sweep the second player's share whenever a rule lets one player's shot help
   the other.
 
+
+## 16. A straight-road racer on this console (Highway Rush)
+
+What building `highway-rush` taught (its spec is `docs/carts/highway-rush.md`; every point has a test in `tests/carts/highway-rush/`):
+
+- **Never name a constant like a button.** `const START = 100` (the start line's distance) shadowed the console's `START`, so
+  `pressed(START)` tested bit 100, which wraps to bit 4: pressing A paused the race. The console's names (`UP DOWN LEFT RIGHT A B X Y L R START
+  SELECT`, and the API's `t rnd stat log color line rect circ print ...`) are shadowed silently, in the whole cart. Call it `START_D`.
+- **A Mode 7 road is a ring of map rows rewritten as it scrolls, not a long picture.** The floor needs only the rows between the camera and the
+  distance where the road fades (1,000 units here, 125 rows of the 128 a region can hold); `floorRow(r)` writes world row `r` into tile row
+  `(-r - 1) & 127` when it comes into range, about 0.65 rows a frame, so a road of any length costs 128 tiles of Map RAM. Make the map
+  run *towards* the horizon (`mapY = -(camD + z)`): then a picture drawn upright in the map (a chevron pad, a finish line) is upright on the road.
+- **Put road markings in the floor, not in sprites.** Pads and oil slicks are small scenes (4 tiles wide, one lane) copied into the ring with
+  `mget`/`mset` when their rows are written: they have true perspective, and cars, cubes and cones, being sprites, sort in front of them for free.
+  A slick dropped during the race stamps its rows at once and `floorRow` rewrites them when it expires. Only stamp rows ahead of the camera
+  (a row behind it shares a tile row with one 128 rows ahead).
+- **Colour changes in `scanline()` last to the end of the frame.** The fog fades the road's palette entries towards the haze with distance;
+  the first version never put them back, so the whole near road was 1/32 off in green (`04-look.mjs` found it by comparing a kerb pixel with its
+  palette entry). Restore on the line after the last faded one. Reading the colours once in `init()` (`color(i)`) is what makes it possible.
+- **Sprites do not scale: draw each thing at several widths from one design.** The car is vector shapes (`draw.py`'s `Canvas`) in a 56 x 31 box,
+  rendered at 56, 44, 34, 26, 20, 15, 11 and 8 px; the sprite for a distance is the nearest (`ZT(z, thresholds)`). `big_sprite` cuts a picture into
+  32, 16 and 8 px pieces, so the **tile cost follows the pieces, not the pixels**: a 20 px cube costs as many tiles as a 32 px one (four 16 px
+  quarters), a 14 px one four, so pick widths that fit the pieces (32, 16, 8), give the nearest size the poses and the far ones one frame. Four car palettes with
+  the same roles share the same tiles (`pal` in `bigSprite`); a rival's recolour costs nothing. A game with this much sprite art (about 460 tiles) needs the
+  tile regions set deliberately: `art.region('bg', 1, 519)` and `art.region('spr', 520, 1023)`, found with `HR_BUDGET=1` printing the tiles used after each group.
+- **The ray-cast cube.** A turning cube with a mark on its sides is rendered by casting a ray through each sample against a box and looking up the
+  face's pattern (`cube_img` in `art.py`): four frames a quarter turn, outlined by hand; it is faster than hand-pixelling four rotations and keeps
+  the '?' from mirroring.
+- **Depth sorting is the OAM order.** Lower OAM index draws on top among sprites of one priority, so build one list of everything with a distance
+  (cars, cubes, cones, posts, smoke), sort it nearest first, and draw in that order. A test finds a near car's tiles and a far car's in the OAM and
+  checks the order. Overlay effects (the shield ring, the finish gantry, the speed lines) are above every sprite, which suits them if they
+  are kept clear of the cars.
+- **A fair random track is built from a seed with its own generator**, so the road is the same for a seed whatever else draws random numbers.
+  Fairness is a rule in the generator, tested over 40 seeds: every row of hazards leaves a lane clear, rows are 190 units apart or more, none in
+  the first 1,300 or the last 900 units. Hit boxes smaller than the sprites (13 for a cone against a 24-wide car) feel forgiving, and a
+  protection period after a hit (30 to 45 frames, blinking) stops two cones costing two penalties.
+- **A rival that drives like a player is the same code with different inputs.** `aiDrive` looks ahead, scores the three lanes and steers; it
+  drives the rivals, the title's demo and the player's car after the line. The bot (`bot.mjs`) plans the same way with exact knowledge and a
+  `skill` that sets how far it looks, how late it decides and how far it misses its line; a sweep of skill 0.3, 0.6 and 1 gives the balance (the
+  spec, section 17). A rubber band (rivals far behind catch up, far ahead ease off) keeps the pack in reach of a casual player.
+- **Things behind the camera cannot be seen**, so an item that acts behind the player (the oil drop) needs feedback another way: the message
+  line says which rival spun out, with a sound.

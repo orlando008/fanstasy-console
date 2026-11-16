@@ -58,6 +58,8 @@ const TUNE = {
   oilLife: 900,       // frames an oil drop stays on the road
   rubber: 0.14,       // how much a rival that is far behind speeds up (and one far ahead of you eases off)
   spawnFirst: 1300, hazardGap: 190,                  // no hazard before this distance, and the least between hazard rows
+  rowGap: [190, 380],                                // the distance between rows of things on the road: least, most
+  mix: [0.19, 0.33, 0.5, 0.63, 0.75],                // what a row is, as running shares of the dice: cubes, green pad, cones, red pad, oil; the rest is empty road
 };
 const HORIZON = 96, FOCAL = 128, HEIGHT = 46, CAMD = 55;   // the view: horizon line, focal length, camera height, camera behind the car
 const CX = 512;                                            // the road's centre column in the floor map, in world units
@@ -121,7 +123,7 @@ let racers = [], P = null, objs = [], decals = new Map(), oils = [], parts = [],
 let rt = 0, camD = 0, camX = 0, nextRow = 0, objLow = 0, finishAt = -1;
 let result = null, msg = '', msgT = 0, lastRank = 8, cubes = 0, passes = 0, shake = 0;
 
-const RIVALS = [['RAZE', 1, 1.07, 0.9], ['VOLT', 2, 1.05, 0.8], ['NOVA', 3, 1.04, 0.85], ['ACE', 7, 1.08, 0.95], ['DRIFT', 1, 1.01, 0.6], ['COBRA', 2, 1.06, 0.7], ['JET', 3, 1.0, 0.5]];
+const RIVALS = [['RAZE', 1, 1.06, 0.9], ['VOLT', 2, 1.04, 0.8], ['NOVA', 3, 1.03, 0.85], ['ACE', 7, 1.07, 0.95], ['DRIFT', 1, 1.0, 0.6], ['COBRA', 2, 1.05, 0.7], ['JET', 3, 0.99, 0.5]];
 const GRID = [[36, 0], [36, 2], [72, 1], [108, 0], [108, 2], [144, 1], [180, 0]]; // rival start slots: distance past the player, lane
 const PAL_COLOR = [RED, 8, GOLD, GREEN, 0, 0, 0, WHITE]; // overlay colour of each car palette, for the progress strip and the results
 
@@ -131,25 +133,25 @@ function lcg(seed) { let s = (Math.imul(seed, 2654435761) + 12345) >>> 0; return
 const KINDS = { c: { hw: 17, hl: 10 }, k: { hw: 13, hl: 6 }, o: { hw: 18, hl: 14 }, g: { hw: 18, hl: 24 }, r: { hw: 18, hl: 24 } };
 /** The objects of a race, by distance: cubes (c), cones (k), oil (o), green pads (g) and red pads (r). Every row of hazards leaves a lane clear. */
 function makeTrack(seed) {
-  const rn = lcg(seed), list = [], dec = new Map();
+  const rn = lcg(seed), list = [], dec = new Map(), mix = TUNE.mix;
   const pick = (n) => Math.floor(rn() * n);
   const add = (k, lane, d, dx = 0) => list.push({ k, x: LANES[lane] + dx, d, on: true, lane });
   const decal = (k, lane, d, rows) => { const r0 = Math.floor(d / 8) - (rows >> 1); for (let j = 0; j < rows; j++) { const r = r0 + rows - 1 - j; if (!dec.has(r)) dec.set(r, []); dec.get(r).push([k, lane, j]); } };
   let d = TUNE.spawnFirst, lastHaz = -1e9, n = 0;
-  while (d < FINISH_D - 900) {
+  while (d < FINISH_D - 960) {
     const roll = rn(), hazOk = d - lastHaz >= TUNE.hazardGap, free = pick(3);   // `free` is the lane a hazard row always leaves open
-    if (roll < 0.14 || !hazOk && roll < 0.6) {                       // mystery cubes: one to three of them across the road
+    if (roll < mix[0] || !hazOk && roll < 0.6) {                       // mystery cubes: one to three of them across the road
       const m = 1 + pick(3), start = pick(3);
       for (let i = 0; i < m; i++) add('c', (start + i) % 3, d);
-    } else if (roll < 0.28) { const l = pick(3); add('g', l, d); decal('g', l, d, 6); if (rn() < 0.5) add('c', (l + 1 + pick(2)) % 3, d + 130); }   // a green pad, sometimes with a cube after it
-    else if (roll < 0.46) {                                          // cones: a pair across one lane, or two lanes
+    } else if (roll < mix[1]) { const l = pick(3); add('g', l, d); decal('g', l, d, 6); if (rn() < 0.5) add('c', (l + 1 + pick(2)) % 3, d + 130); }   // a green pad, sometimes with a cube after it
+    else if (roll < mix[2]) {                                          // cones: a pair across one lane, or two lanes
       for (let l = 0; l < 3; l++) if (l !== free && (l === (free + 1) % 3 || rn() < 0.35)) { add('k', l, d, -9); add('k', l, d + 10, 9); }
       lastHaz = d;
-    } else if (roll < 0.6) { const l = pick(3); add('r', l, d); decal('r', l, d, 6); lastHaz = d; if (rn() < 0.5) add('c', (l + 1 + pick(2)) % 3, d + 20); }   // a red pad, with a cube beside it as bait
-    else if (roll < 0.72) { const l = pick(3); add('o', l, d); decal('o', l, d, 4); lastHaz = d; if (rn() < 0.3) { const l2 = (l + 1 + pick(2)) % 3; if (l2 !== free) { add('o', l2, d + 30); decal('o', l2, d + 30, 4); } } }
+    } else if (roll < mix[3]) { const l = pick(3); add('r', l, d); decal('r', l, d, 6); lastHaz = d; if (rn() < 0.5) add('c', (l + 1 + pick(2)) % 3, d + 20); }   // a red pad, with a cube beside it as bait
+    else if (roll < mix[4]) { const l = pick(3); add('o', l, d); decal('o', l, d, 4); lastHaz = d; if (rn() < 0.3) { const l2 = (l + 1 + pick(2)) % 3; if (l2 !== free) { add('o', l2, d + 30); decal('o', l2, d + 30, 4); } } }
     // the rest of the rolls leave the road empty: a breather
     n++;
-    d += 190 + rn() * 190;
+    d += TUNE.rowGap[0] + rn() * (TUNE.rowGap[1] - TUNE.rowGap[0]);
   }
   list.sort((a, b) => a.d - b.d);
   list.forEach((o, i) => { o.i = i; o.hw = KINDS[o.k].hw; o.hl = KINDS[o.k].hl; });
@@ -672,7 +674,7 @@ function drawCountdown() {
   else bigText('GO', 128, 66, 9, GREEN, true);
 }
 function drawTitle() {
-  panel(72, 134, 112, 76);
+  panel(72, 134, 112, 76, true);
   ['RACE', 'RECORDS'].forEach((s, i) => txt(`${i === titleSel ? '>' : ' '} ${s}`, 92, 142 + i * 14, i === titleSel ? WHITE : DIM));
   const best = dget(BEST_SLOT);
   if (best) ctxt('BEST WIN ' + fmtTime(best), 174, GOLD);
@@ -726,7 +728,7 @@ function drawPause() {
   ctxt('PAUSED', 88, GOLD);
   ['RESUME', 'RESTART', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
 }
-function panel(x, y, w, h) { rectfill(x, y, w, h, ART.colors.GLASS); rect(x, y, w, h, PANEL); }
+function panel(x, y, w, h, glass) { rectfill(x, y, w, h, glass ? ART.colors.GLASS : 2); rect(x, y, w, h, DIM); rect(x + 1, y + 1, w - 2, h - 2, PANEL); }
 function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }
 const ctxt = (s, y, c) => txt(s, 128 - s.length * 4, y, c);
 
@@ -758,8 +760,8 @@ function scanline(y) {
   const py = ((-camD - z) % 1024 + 1024) % 1024;
   affine({ a: s, b: CX + camX - 128, c: 0, d: py, cx: 128, cy: 0 });
   bgscroll(2, 0, 1 - y);
-  if (y <= FOG_END) {
-    const k = Math.pow(clamp((z - 160) / 840, 0, 1), 0.7);
-    for (const i of FOG_ENTRIES) { const c = FOG[i]; if (c) color(i, flr(lerp(c[0], HAZE[0], k)), flr(lerp(c[1], HAZE[1], k)), flr(lerp(c[2], HAZE[2], k))); }
+  if (y <= FOG_END + 1) {   // the road's colours fade into the haze with distance; one line past the last faded one they are put back
+    const k = y > FOG_END ? 0 : Math.pow(clamp((z - 160) / 840, 0, 1), 0.7);
+    for (const i of FOG_ENTRIES) { const c = FOG[i]; color(i, flr(lerp(c[0], HAZE[0], k)), flr(lerp(c[1], HAZE[1], k)), flr(lerp(c[2], HAZE[2], k))); }
   }
 }
