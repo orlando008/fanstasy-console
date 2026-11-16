@@ -291,20 +291,22 @@ speed, pads, cones, oil, cubes, the three items, collisions, protection, the riv
 by the bot: its length, place and overtaking, the order of the results, the replay), 04-look (the art, the perspective, the depth
 order, the sprite budget and frame time, the floor stamps).
 
-**Balance** (`node tools/devkit/sweep.mjs highway-rush --seeds 8 --set skill=0.3,0.6,1`; the bot looks ahead, chooses the lane with
+**Balance** (`node tools/devkit/sweep.mjs highway-rush --seeds 10 --set skill=0.3,0.6,1`; the bot looks ahead, chooses the lane with
 the most to gain and least to lose, and uses its items; `skill` is how far it looks, how late it decides and how far it misses its
-line by). The rivals' pace and the mix of the track were tuned over four sweeps (each 24 to 30 races); the last, shipped:
+line by). Run on the shipped build, after cubes respawned, car bumps were softened and the rear-view mirror was added (30 races, none failed):
 
 | Bot skill | Place (mean ± spread, range) | Race time | Cubes taken | Passes |
 |---|---|---|---|---|
-| 0.3 (casual) | 3.9 ± 1.5 (1 to 6) | 114.4 s | 11 | 7.8 |
-| 0.6 | 2.9 ± 1.3 (1 to 5) | 111.1 s | 14 | 7.3 |
-| 1 (a careful player) | 2.3 ± 0.8 (1 to 4) | 110.1 s | 19 | 8.3 |
+| 0.3 (casual) | 3.9 ± 1.4 (2 to 6) | 111.3 s | 21 | 12.0 |
+| 0.6 | 2.5 ± 1.1 (1 to 5) | 108.5 s | 25 | 10.4 |
+| 1 (a careful player) | 2.0 ± 1.3 (1 to 5) | 107.7 s | 28 | 9.5 |
 
-The first sweep (rivals at 0.94 to 1.01 of cruising speed, many cubes) had the bot win every race, even at skill 0.3: the rivals
-now run at 0.98 to 1.06 and cubes are rarer (about 55 a race). A rival-pace set 1 % faster than the shipped one (`RIVALS` +0.01) put skill
-0.3, 0.6 and 1 at 5.2, 3.1 and 3.8: the bot's results are noisy (a race is decided by which cubes a bot happens to catch, so the
-spread is 1 to 1.7 places) and the three skills are not far apart. What this says: nobody is safe in front, a casual player is
-mid-field, and a clean run with a few turbos can win.
+History: the first sweep (rivals at 0.94 to 1.01 of cruising speed, many cubes) had the bot win every race, even at skill 0.3; the rivals
+were then sped up and slowed again to 0.98 to 1.06, and cubes made rarer (about 55 a race). That build gave 3.9 / 2.9 / 2.3 for skill 0.3 / 0.6 / 1
+(8 seeds). Respawning cubes doubled the cubes a bot takes (11 to 21 at skill 0.3) and moved everyone up by 0.4 to 0.5 places, mostly through more turbos;
+the gentler bumps and the mirror do not change the bot (it never looks behind), and the bumps cost it less. The bot's results are noisy
+(a race is decided by which cubes a bot happens to catch: the spread is 1 to 1.4 places), but the three skills now separate in the right order.
+What this says: nobody is safe in front, a casual player is mid-field, and a clean run can win. If wins come too easily in play, slow the rivals
+(`RIVALS` pace, `rubber` in `TUNE`) or space the cubes out (`TUNE.mix`, `rowGap`).
 
 A person is slower to react than a bot with exact knowledge of every object, so a real player of skill 1 should do a little worse.
