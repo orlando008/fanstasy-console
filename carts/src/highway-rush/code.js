@@ -54,7 +54,9 @@ const TUNE = {
   redSlow: 60, redMul: 0.68,                         // a red pad
   greenBoost: 70, greenAdd: 1.5,                     // a green pad: frames, the speed added
   turboFrames: 100, turboAdd: 2.3,                   // the turbo item
-  protect: 45,        // frames of protection after a collision
+  protect: 45,        // frames of protection after a shield breaks
+  carKeep: 0.94, carSlow: 10, carProtect: 30,        // a car-to-car bump: the speed kept relative to the car in front, frames of slowdown, frames of protection
+  cubeBack: 60,       // frames before a cube someone took is back, for the others
   oilLife: 900,       // frames an oil drop stays on the road
   rubber: 0.14,       // how much a rival that is far behind speeds up (and one far ahead of you eases off)
   spawnFirst: 1300, hazardGap: 190,                  // no hazard before this distance, and the least between hazard rows
@@ -119,7 +121,7 @@ let skipTitle = false; // tests set this to land straight in the race
 let state = 'title', paused = false, timer = 0, clock = 0;
 let titleSel = 0, pauseSel = 0, rank = -1, hl = -1, initials = null;
 let seedNo = 1, raceNo = 0, demo = false;
-let racers = [], P = null, objs = [], decals = new Map(), oils = [], parts = [], finishOrder = [];
+let cubeQ = [], racers = [], P = null, objs = [], decals = new Map(), oils = [], parts = [], finishOrder = [];
 let rt = 0, camD = 0, camX = 0, nextRow = 0, objLow = 0, finishAt = -1;
 let result = null, msg = '', msgT = 0, lastRank = 8, cubes = 0, passes = 0, shake = 0;
 
@@ -209,7 +211,7 @@ function newRacer(id, x, d, pal, name, rv, skill) {
 function startRace(seed) {
   seedNo = seed; srand(seed); raceNo++;
   const tr = makeTrack(seed);
-  objs = tr.list; decals = tr.dec; oils = []; parts = []; finishOrder = [];
+  objs = tr.list; decals = tr.dec; oils = []; cubeQ = []; parts = []; finishOrder = [];
   racers = [newRacer(0, 0, START_D, 0, 'YOU', 1, 1)];
   RIVALS.forEach(([name, pal, rv, skill], i) => racers.push(newRacer(i + 1, LANES[GRID[i][1]], START_D + GRID[i][0], pal, name, rv, skill)));
   P = racers[0]; P.auto = false;
@@ -294,6 +296,7 @@ function stepWorld(still) {
     const gone = oils.filter((o) => o.ttl <= 0);
     if (gone.length) { oils = oils.filter((o) => o.ttl > 0); for (const o of gone) wipeOil(o); }
     followRank();
+    while (cubeQ.length && cubeQ[0].back <= clock) cubeQ.shift().on = true;   // a cube that was taken comes back, so the cars behind get a chance at it
   }
   for (const r of racers) {
     if (r.fin < 0 && r.d >= FINISH_D && !still) { r.fin = rt; finishOrder.push(r); }
@@ -433,7 +436,7 @@ function touchObjects(r) {
     const o = objs[i];
     if (!o.on || r.last.includes(o) || Math.abs(o.x - r.x) >= o.hw || r.d < o.d - o.hl || r.prev > o.d + o.hl) continue;
     remember(r, o);
-    if (o.k === 'c') { o.on = false; collect(r, o); }
+    if (o.k === 'c') { o.on = false; o.back = clock + TUNE.cubeBack; cubeQ.push(o); collect(r, o); }
     else if (o.k === 'g') { r.boost = Math.max(r.boost, TUNE.greenBoost); r.boostAdd = Math.max(r.boostAdd, TUNE.greenAdd); if (r === P) { fx(SFX.pad); shake = 6; } }
     else if (o.k === 'r') { if (hit(r, 'red', o)) { r.slow = TUNE.redSlow; r.v *= 0.85; if (r === P) fx(SFX.slow); } }
     else if (o.k === 'k') { if (hit(r, 'cone', o)) { r.slow = TUNE.coneSlow; r.v *= TUNE.coneKeep; if (r === P) { fx(SFX.cone); shake = 10; } } o.on = false; emit('spark', o.x, o.d, 6, 0, 0.4, 16); }
@@ -460,7 +463,7 @@ function carHits() {
     if (protectedBack) { hit(back, 'car'); front.inv = 20; }
     else if (protectedFront) { hit(front, 'car'); back.inv = 20; }
     else {
-      back.v = Math.min(back.v, front.v * 0.82); back.slow = 25; back.inv = TUNE.protect; front.inv = 20; front.v += 0.3;
+      back.v = Math.min(back.v, front.v * TUNE.carKeep); back.slow = TUNE.carSlow; back.inv = TUNE.carProtect; front.inv = 20; front.v += 0.3;
       if (back === P || front === P) { fx(SFX.crash); shake = 14; emit('spark', (a.x + b.x) / 2, front.d - 8, 8, 0, 0.5, 16); }
     }
     const push = Math.sign(back.x - front.x) || (back.id & 1 ? 1 : -1);
@@ -724,9 +727,9 @@ function drawInitials() {
   if (timer % 60 < 40) ctxt('START: SAVE', 160, WHITE);
 }
 function drawPause() {
-  panel(64, 80, 128, 64);
+  panel(48, 80, 160, 64);
   ctxt('PAUSED', 88, GOLD);
-  ['RESUME', 'RESTART', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 76, 104 + i * 10, i === pauseSel ? WHITE : DIM));
+  ['RESUME', 'RESTART', 'QUIT TO TITLE'].forEach((s, i) => txt(`${i === pauseSel ? '>' : ' '} ${s}`, 64, 104 + i * 10, i === pauseSel ? WHITE : DIM));
 }
 function panel(x, y, w, h, glass) { rectfill(x, y, w, h, glass ? ART.colors.GLASS : 2); rect(x, y, w, h, DIM); rect(x + 1, y + 1, w - 2, h - 2, PANEL); }
 function txt(s, x, y, c) { print(s, x + 1, y + 1, SHADOW); print(s, x, y, c); }

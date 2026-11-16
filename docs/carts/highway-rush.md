@@ -90,7 +90,7 @@ Hit boxes are smaller than the cars (forgiving): half-width (car centre to objec
 | Red pad | Red slab with three chevrons pointing **back** | Speed ×0.68 for 60 frames, an immediate 15 % loss | 18 × 24 |
 | Cone | Orange cone with a white band, in pairs | Speed ×0.72 at once and ×0.66 for 40 frames; the cone is knocked away | 13 × 6 |
 | Oil slick | Black purple-sheened puddle, one lane wide | 70 frames out of control (steering at 30 %, a sideways wobble), speed ×0.88, 20 frames of slowdown | 18 × 14 |
-| Mystery cube | Turning purple cube, gold border, gold `?` | One item (5.4); with an item already held it is used up and says ITEM FULL | 17 × 10 |
+| Mystery cube | Turning purple cube, gold border, gold `?` | One item (5.4); with an item already held it is used up and says ITEM FULL. A cube that anyone takes **comes back 60 frames (a second) later**, so the cars behind the leader get a chance at it | 17 × 10 |
 
 **Shapes, not only colours.** The pads are told apart by the way their chevrons point; cones are triangles, cubes are
 squares with a mark, oil is an irregular puddle. A pad or an oil slick is touched once however long the car is on it.
@@ -108,10 +108,10 @@ the rest). One item is held at a time; A uses it.
 
 ### 5.5 Collisions and protection
 
-- **Hazards** (cone, oil, red pad): protection of 30 frames after the hit, in which nothing else costs anything, so a
+- **Hazards** (cone, oil, red pad; a shield breaking gives 45): protection of 30 frames after the hit, in which nothing else costs anything, so a
   pair of cones is one penalty, not two.
-- **Cars** (a hit box of 20 sideways, 18 along): the car behind drops to 82 % of the speed of the one in front, slows for 25
-  frames, is protected 45 frames (it blinks); the car in front gets a small kick (+0.3) and 20 frames of protection; both are
+- **Cars** (a hit box of 20 sideways, 18 along): a gentle bump. The car behind drops to 94 % of the speed of the one in front, slows for 10
+  frames, is protected 30 frames (it blinks); the car in front gets a small kick (+0.3) and 20 frames of protection; both are
   pushed 5 units apart sideways. Side contact is the same. A shield takes the hit instead.
 - Protection applies to every car, not only the player.
 

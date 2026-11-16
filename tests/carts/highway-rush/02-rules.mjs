@@ -111,6 +111,17 @@ const T = (p) => p.TUNE;
   ok(kinds.size === 3, 'turbo, shield and oil all come out of the cubes');
 }
 
+// 6b. A cube someone takes comes back a second later, so the cars behind get a chance at it.
+{
+  const { vm, p } = bare(21); const c = put(p, 'c', 0, 100); p.P.item = 0;
+  vm.run(30); ok(!c.on && p.P.item > 0, 'a cube is gone once taken');
+  const t = p.TUNE.cubeBack; vm.run(t - 20); ok(!c.on, 'and stays gone for a moment', `${t} frames in all`);
+  vm.run(30); ok(c.on, 'then it is back on the road');
+  // a rival behind the leader takes it the second time
+  const r = p.racers[1]; r.d = c.d - 60; r.x = 0; r.tx = 0; r.v = 5; r.cool = 9999; r.skill = 0; r.item = 0; r.last = [];
+  vm.run(20); ok(!c.on && r.item > 0, 'and a car that comes along later takes it');
+}
+
 // 7. Items: turbo, shield, oil.
 {
   const { vm, p } = bare(12); p.P.item = 1; sfxLog(vm); vm.press('A'); vm.run(30);
@@ -141,10 +152,10 @@ const T = (p) => p.TUNE;
 {
   const { vm, p } = bare(15); const r = p.racers[1]; r.d = p.P.d + 12; r.x = p.P.x; r.v = 4; r.rv = 0.7; r.inv = 0; r.cool = 999; r.skill = 0; sfxLog(vm);
   vm.step(0);
-  ok(p.P.inv > 0 && p.P.v <= r.v + 0.01, 'running into the back of a car slows you to its speed, and protects you', `inv ${p.P.inv} v ${p.P.v.toFixed(2)} (car ${r.v.toFixed(2)})`);
+  ok(p.P.inv > 0 && p.P.v <= r.v * T(p).carKeep + 0.01 && p.P.v > r.v * 0.8, 'running into the back of a car slows you to just under its speed, and protects you', `inv ${p.P.inv} v ${p.P.v.toFixed(2)} (car ${r.v.toFixed(2)})`);
   ok(sfxLog(vm).some(([n]) => n === p.SFX.crash), 'with the crash sound');
   ok(Math.abs(p.P.x - r.x) >= 4, 'and the cars are pushed apart sideways', `${p.P.x.toFixed(1)} ${r.x.toFixed(1)}`);
-  const v1 = p.P.v; vm.run(10); ok(p.P.v >= v1, 'the protection stops one bump costing again and again');
+  const v1 = p.P.v; vm.run(10); ok(p.P.v >= v1 * 0.8 && p.P.slow === 0, 'the protection stops one bump costing again and again, and the slowdown is short (a sixth of a second)', `v ${v1.toFixed(2)} -> ${p.P.v.toFixed(2)}, slow ${p.P.slow}`);
 }
 {
   const { vm, p } = bare(16); p.P.shield = true; const r = p.racers[1]; r.d = p.P.d + 12; r.x = p.P.x; r.v = 4; r.rv = 0.7; r.cool = 999; const v0 = p.P.v;
