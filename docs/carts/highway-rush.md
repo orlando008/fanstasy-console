@@ -117,18 +117,18 @@ the rest). One item is held at a time; A uses it.
 
 ### 5.6 The rivals
 
-Seven cars, each with a name, a colour, a top speed (a share of cruising speed from 1.00 to 1.08) and a skill (0.5 to 0.95)
+Seven cars, each with a name, a colour, a top speed (a share of cruising speed from 0.98 to 1.06) and a skill (0.5 to 0.95)
 that is the share of hazards it notices.
 
 | Rival | Car | Pace | Skill |
 |---|---|---|---|
-| ACE | White | 1.08 | 0.95 |
-| RAZE | Blue | 1.07 | 0.90 |
-| COBRA | Yellow | 1.06 | 0.70 |
-| VOLT | Yellow | 1.05 | 0.80 |
-| NOVA | Green | 1.04 | 0.85 |
-| DRIFT | Blue | 1.01 | 0.60 |
-| JET | Green | 1.00 | 0.50 |
+| ACE | White | 1.06 | 0.95 |
+| RAZE | Blue | 1.05 | 0.90 |
+| COBRA | Yellow | 1.04 | 0.70 |
+| VOLT | Yellow | 1.03 | 0.80 |
+| NOVA | Green | 1.02 | 0.85 |
+| DRIFT | Blue | 0.99 | 0.60 |
+| JET | Green | 0.98 | 0.50 |
 
 - They **look ahead** (150 + 6 × speed units) for cones, oil and red pads in their lane and move to the free lane nearest
   to them (a lane change takes about 20 frames, with a short wait before the next); the same function picks the lane for the
@@ -262,7 +262,7 @@ The plan was done as one build, at the user's request (a complete game in one go
    songs, the title and results.
 6. **Balance:** a bot (`tests/carts/highway-rush/bot.mjs`) swept over seeds and skills.
 
-*Results (6):* see section 17.
+*Results (6):* see section 17: the field was made quicker and then slowed down after the first sweeps had the bot winning everything.
 
 ## 16. Open questions
 
@@ -292,12 +292,18 @@ order, the sprite budget and frame time, the floor stamps).
 
 **Balance** (`node tools/devkit/sweep.mjs highway-rush --seeds 8 --set skill=0.3,0.6,1`; the bot looks ahead, chooses the lane with
 the most to gain and least to lose, and uses its items; `skill` is how far it looks, how late it decides and how far it misses its
-line by):
+line by). The rivals' pace and the mix of the track were tuned over four sweeps (each 24 to 30 races); the last, shipped:
 
-| Bot skill | Place (mean, range) | Time | Cubes |
-|---|---|---|---|
-| 0.3 (casual) | 6.3 (5 to 8) | 116.6 s | 3.8 |
-| 0.6 | 4.1 (2 to 5) | 112.6 s | 7.4 |
-| 1 (a good player) | TODO | TODO | TODO |
+| Bot skill | Place (mean ± spread, range) | Race time | Cubes taken | Passes |
+|---|---|---|---|---|
+| 0.3 (casual) | 3.9 ± 1.5 (1 to 6) | 114.4 s | 11 | 7.8 |
+| 0.6 | 2.9 ± 1.3 (1 to 5) | 111.1 s | 14 | 7.3 |
+| 1 (a careful player) | 2.3 ± 0.8 (1 to 4) | 110.1 s | 19 | 8.3 |
+
+The first sweep (rivals at 0.94 to 1.01 of cruising speed, many cubes) had the bot win every race, even at skill 0.3: the rivals
+now run at 0.98 to 1.06 and cubes are rarer (about 55 a race). A rival-pace set 1 % faster than the shipped one (`RIVALS` +0.01) put skill
+0.3, 0.6 and 1 at 5.2, 3.1 and 3.8: the bot's results are noisy (a race is decided by which cubes a bot happens to catch, so the
+spread is 1 to 1.7 places) and the three skills are not far apart. What this says: nobody is safe in front, a casual player is
+mid-field, and a clean run with a few turbos can win.
 
 A person is slower to react than a bot with exact knowledge of every object, so a real player of skill 1 should do a little worse.

@@ -123,7 +123,7 @@ let racers = [], P = null, objs = [], decals = new Map(), oils = [], parts = [],
 let rt = 0, camD = 0, camX = 0, nextRow = 0, objLow = 0, finishAt = -1;
 let result = null, msg = '', msgT = 0, lastRank = 8, cubes = 0, passes = 0, shake = 0;
 
-const RIVALS = [['RAZE', 1, 1.06, 0.9], ['VOLT', 2, 1.04, 0.8], ['NOVA', 3, 1.03, 0.85], ['ACE', 7, 1.07, 0.95], ['DRIFT', 1, 1.0, 0.6], ['COBRA', 2, 1.05, 0.7], ['JET', 3, 0.99, 0.5]];
+const RIVALS = [['RAZE', 1, 1.05, 0.9], ['VOLT', 2, 1.03, 0.8], ['NOVA', 3, 1.02, 0.85], ['ACE', 7, 1.06, 0.95], ['DRIFT', 1, 0.99, 0.6], ['COBRA', 2, 1.04, 0.7], ['JET', 3, 0.98, 0.5]];
 const GRID = [[36, 0], [36, 2], [72, 1], [108, 0], [108, 2], [144, 1], [180, 0]]; // rival start slots: distance past the player, lane
 const PAL_COLOR = [RED, 8, GOLD, GREEN, 0, 0, 0, WHITE]; // overlay colour of each car palette, for the progress strip and the results
 
@@ -665,13 +665,13 @@ function drawHud() {
   print(`${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}.${t10}`, 8, 52, WHITE);
   if (msgT > 0 && msg !== 'GO!' && msg !== 'FINISH!') ctxt(msg, 60, GOLD);
   if (state === 'grid') drawCountdown();
-  if (state === 'finish' && timer < 190) bigText('FINISH', 128, 68, 6, GOLD, true);
-  if (state === 'race' && msg === 'GO!' && msgT > 0) bigText('GO', 128, 66, 9, GREEN, true);
+  if (state === 'finish' && timer < 190) bigText('FINISH', 128, 54, 5, GOLD, true);
+  if (state === 'race' && msg === 'GO!' && msgT > 0) bigText('GO', 128, 50, 7, GREEN, true);
 }
 function drawCountdown() {
   const c = timer, n = c < 60 ? 3 : c < 120 ? 2 : c < 180 ? 1 : 0;
-  if (n > 0) bigText(String(n), 128, 66, 9, c % 60 < 8 ? WHITE : GOLD, true);
-  else bigText('GO', 128, 66, 9, GREEN, true);
+  if (n > 0) bigText(String(n), 128, 50, 7, c % 60 < 8 ? WHITE : GOLD, true);
+  else bigText('GO', 128, 50, 7, GREEN, true);
 }
 function drawTitle() {
   panel(72, 134, 112, 76, true);
