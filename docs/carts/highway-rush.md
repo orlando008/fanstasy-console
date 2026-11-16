@@ -36,6 +36,7 @@ Position is real: every car has a distance along the road, and you pass a rival 
 |---|---|
 | LEFT / RIGHT | Move across the road. The car builds up its sideways speed, so the steering is smooth, not lane to lane |
 | B | Brake (while held). The car speeds up again by itself when released |
+| DOWN (held) | **Rear-view mirror**: a panel over the sky shows the road behind you, the cars on it (in their colours, headlights towards you) and any oil slicks. Nothing else changes: the car does not brake |
 | A | Use the item you are holding (turbo, shield or oil) |
 | START | Pause: RESUME, RESTART (the same track), QUIT TO TITLE. On the title and results, START also starts a race |
 | UP / DOWN | Menus only |
@@ -51,6 +52,7 @@ All of it plays on the d-pad, A, B and START, the buttons the phone's touch cont
 | Sky | lines 0 to 95 | The backdrop gradient (deep indigo to pale gold, one colour a line), the far layer (sun, clouds, mountains, BG2 above the horizon) and the near layer (hills and a tree line, BG1) |
 | Road | lines 96 to 223 | The Mode 7 floor (BG2), the cars, cubes, cones and rail posts as sprites, smoke and sparks |
 | HUD | y 4 to 49 | BG0 panels: POS (4, 4), the held item (64, 4), SPEED (128, 4) and the progress strip (4, 38). The numbers, the gauge and the dots are on the overlay, the big digits and the item icon are sprites above BG0 |
+| Rear-view mirror | (64, 54), 128 × 40 | Only while DOWN is held (overlay): the road behind in a compressed perspective, 460 units deep |
 | Messages | y 60 | One line (PASSED! 3RD, OIL!, SHIELD!), and the big GO and FINISH |
 
 - **POS** `2/8` is your place (big gold digit). **SPEED** is the speed in km/h (units a frame × 60) in big digits, with a
@@ -139,7 +141,7 @@ that is the share of hazards it notices.
   eases off up to 8 %. The pack stays within reach, and so does the front.
 - Start: the rivals are in rows ahead of the player (36 to 180 units), so the player starts eighth.
 
-### 5.7 The track
+#### 5.7 The track
 
 Made once from a seed by its own generator (the track does not change when anything else draws random numbers), then fixed:
 
@@ -276,10 +278,9 @@ Defaults I chose that you have not confirmed:
   floor map and smaller sprites.
 - **The player starts last** and the field is tuned so a good player wins about half the time; a casual player finishes mid-field.
 - **Items for rivals:** only a turbo or an oil slick (no shield). They drop oil on you, too.
-- **A rival spun by your oil is out of sight** (it is behind you): the game says so in the message line and plays a blip. A rear-view
-  mirror would show it.
+- **A rival spun by your oil is behind you:** the message line says so with a blip, and holding DOWN shows the mirror (the rival's box and the slick).
 - **Extras not picked, for later:** a championship of several races, a ghost of your best time, a two-player split screen,
-  more items (a boost pad you place, a missile), rain and night, a rear-view mirror.
+  more items (a boost pad you place, a missile), rain and night.
 - **To check by playing** (no test can): the feel of the steering and the braking, whether the pads and cones read in time at 312
   km/h, the volume of the engine against the songs, and whether the first seconds after GO are exciting.
 

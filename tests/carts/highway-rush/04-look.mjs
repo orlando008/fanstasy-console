@@ -94,4 +94,16 @@ const color = (pal, role) => manifest.palettes[pal].base + manifest.palettes[pal
   const gold = [color('bg4', 'gold2'), color('bg4', 'gold3')]; ok(gold.some((g) => count(vm, g, 0, 20, 256, 90) > 40), 'the title\'s lettering is gold');
   vm.press('A'); vm.run(30); ok(vm.ppu.layers[0].my !== l0.my, 'and the race shows the HUD panels instead (another region of Map RAM)');
 }
+// 7. DOWN opens the rear-view mirror: the cars behind you, in their colours, and not otherwise.
+{
+  const vm = newGame(9), p = vm.probe(); vm.run(250); p.objs.length = 0; vm.run(100);
+  const r = p.racers[2]; r.d = p.P.d - 70; r.x = -20; r.tx = -20; r.skill = 0; r.cool = 9999; r.rv = 0.5;   // a yellow rival well behind
+  p.racers.filter((q) => q !== r && q !== p.P).forEach((q) => { q.d = p.P.d + 500; });
+  const gold = rgb(vm, 14), inMirror = () => { let n = 0; for (let y = 68; y < 94; y++) for (let x = 64; x < 192; x++) if ((vm.out32[y * 256 + x] >>> 0) === gold) n++; return n; };
+  vm.run(2); const without = inMirror(); vm.run(2, M('DOWN')); const withDown = inMirror();
+  ok(withDown > without + 20, 'holding DOWN shows the road behind in a mirror, with the car that is there drawn in its colour', `${without} -> ${withDown} yellow pixels`);
+  vm.run(2); ok(inMirror() <= without, 'and letting go puts the mirror away');
+  r.d = p.P.d + 300; vm.run(2, M('DOWN')); ok(inMirror() <= without + 2, 'a car that is ahead of you is not in it');
+  ok(p.P.v > 4, 'the car carries on at speed while you look (DOWN does not brake)', `v ${p.P.v.toFixed(2)}`);
+}
 console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);

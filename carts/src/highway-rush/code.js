@@ -668,8 +668,37 @@ function drawHud() {
   print(`${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}.${t10}`, 8, 52, WHITE);
   if (msgT > 0 && msg !== 'GO!' && msg !== 'FINISH!') ctxt(msg, 60, GOLD);
   if (state === 'grid') drawCountdown();
+  if (held(DOWN) && !paused && state !== 'results') drawMirror();
   if (state === 'finish' && timer < 190) bigText('FINISH', 128, 54, 5, GOLD, true);
   if (state === 'race' && msg === 'GO!' && msgT > 0) bigText('GO', 128, 50, 7, GREEN, true);
+}
+/** The rear-view mirror, while DOWN is held: the road behind in perspective (the same projection as the road ahead, turned round), with the
+ *  cars that are behind you as boxes in their colours with headlights, nearest in front, and the oil slicks that are on the road behind. */
+const MIR = { x: 64, y: 54, w: 128, h: 40, k: 28, hz: 10, hh: 10.7, reach: 460 };
+const mirZ = (dz) => 10 + 0.4 * Math.max(0, dz);
+const mirY = (dz) => MIR.y + MIR.hz + 3 + 27 / (1 + Math.max(0, dz) / 50);   // line of a point dz behind you (a curve that gives the near cars most of the glass)
+const mirDz = (dy) => 50 * (27 / Math.max(0.5, dy - 3) - 1);   // the mirror squeezes distance so cars close behind are big and low
+function drawMirror() {
+  const { x, y, w, h, k, hz, hh, reach } = MIR, cx = x + w / 2, hy = y + hz;
+  rectfill(x, y, w, h, 9); rectfill(x, hy, w, h - hz, 5);                                   // sky, and grass
+  for (let yy = hy + 1; yy < y + h; yy++) {                                                 // the road, a strip a line, narrowing to the horizon
+    const dz = mirDz(yy - hy), z = mirZ(dz), half = ROAD_HALF * k / z, l = Math.round(cx - camX * k / z - half), band = (flr((P.d - dz) / 32) & 1);
+    rectfill(l, yy, Math.round(half * 2), 1, band ? 7 : 3);
+    if (half > 2) { rectfill(l, yy, 1, 1, WHITE); rectfill(l + Math.round(half * 2) - 1, yy, 1, 1, WHITE); }
+  }
+  const px = (lat, z) => Math.round(cx + (lat - camX) * k / z), py = (dz) => Math.round(mirY(dz));
+  clip(x, y, w, h);
+  for (const o of oils) { const dz = P.d - o.d; if (dz > -10 && dz < reach) { const z = mirZ(dz); rectfill(px(o.x, z) - Math.round(14 * k / z), py(dz) - 1, Math.round(28 * k / z), 2, 1); } }
+  const behind = racers.filter((r) => r !== P && r.d < P.d + 6 && P.d - r.d < reach).sort((a, b) => a.d - b.d);   // furthest first
+  for (const r of behind) {
+    const z = mirZ(P.d - r.d), cw = Math.max(2, Math.round(24 * k / z)), ch = Math.max(2, Math.round(11 * k / z)), bx = px(r.x, z) - (cw >> 1), by = py(P.d - r.d) - ch;
+    rectfill(bx, by, cw, ch, PAL_COLOR[r.pal] || WHITE);
+    if (ch >= 4) { rectfill(bx + (cw >> 2), by + 1, cw - (cw >> 1), Math.max(1, ch >> 2), 1); }          // the windscreen
+    rectfill(bx, by + ch - 1, Math.max(1, cw >> 2), 1, WHITE); rectfill(bx + cw - Math.max(1, cw >> 2), by + ch - 1, Math.max(1, cw >> 2), 1, WHITE);   // headlights, towards you
+  }
+  clip();
+  rect(x - 1, y - 1, w + 2, h + 2, DIM); rect(x - 2, y - 2, w + 4, h + 4, PANEL);
+  print('REAR', x + 3, y + 3, WHITE);
 }
 function drawCountdown() {
   const c = timer, n = c < 60 ? 3 : c < 120 ? 2 : c < 180 ? 1 : 0;
