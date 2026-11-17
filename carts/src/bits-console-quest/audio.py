@@ -48,9 +48,13 @@ S.finish()
 a.effect(1, ['E-6', 'OFF'], 'BLIP')                                # 0 menu move
 a.effect(2, ['C-6', 'G-6', 'OFF'], 'CHIME')                        # 1 select
 a.effect(2, ['E-5', 'B-5', 'OFF'], 'CHIME')                        # 2 pause
-a.effect(3, ['C-4', 'G-3', 'D-3', 'A-2', 'OFF'], 'CRUNCH')         # 3 a hit (noise)
-a.effect(6, ['G-4', 'E-4', 'C-4', None, 'D-4', None, 'C-4', 'OFF'], 'FANFARE')   # 4 game over
-a.effect(1, ['C-6', 'G-6', 'OFF'], 'BLIP')                         # 5 a point
-a.effect(4, ['C-5', 'E-5', 'G-5', 'C-6', None, 'G-5', 'C-6', 'OFF'], 'FANFARE')  # 6 a record
+a.effect(3, ['C-4', 'G-3', 'D-3', 'A-2', 'OFF'], 'CRUNCH')         # 3 fall
+a.effect(6, ['G-4', 'E-4', 'C-4', None, 'D-4', None, 'C-4', 'OFF'], 'FANFARE')   # 4 reserved
+a.effect(1, ['C-6', 'G-6', 'OFF'], 'BLIP')                         # 5 treasure
+a.effect(4, ['C-5', 'E-5', 'G-5', 'C-6', None, 'G-5', 'C-6', 'OFF'], 'FANFARE')  # 6 stage clear
+
+a.effect(2, ['G-4', 'C-5', 'G-5', 'OFF'], 'BLIP')                  # 7 jump
+a.effect(2, ['A-3', 'E-4', 'A-4', 'OFF'], 'CHIME')                 # 8 plug
+a.effect(4, ['E-5', 'G-5', 'C-6', 'OFF'], 'CHIME')                 # 9 checkpoint
 
 a.write(sys.argv[1], songs=2)

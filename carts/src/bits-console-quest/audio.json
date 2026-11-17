@@ -4489,6 +4489,150 @@
     null,
     null
    ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "G-4",
+     "i": 9
+    },
+    {
+     "n": "C-5",
+     "i": 9
+    },
+    {
+     "n": "G-5",
+     "i": 9
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 2,
+   "rows": [
+    {
+     "n": "A-3",
+     "i": 10
+    },
+    {
+     "n": "E-4",
+     "i": 10
+    },
+    {
+     "n": "A-4",
+     "i": 10
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
+  },
+  {
+   "speed": 4,
+   "rows": [
+    {
+     "n": "E-5",
+     "i": 10
+    },
+    {
+     "n": "G-5",
+     "i": 10
+    },
+    {
+     "n": "C-6",
+     "i": 10
+    },
+    {
+     "n": "OFF"
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ]
   }
  ],
  "samples": [

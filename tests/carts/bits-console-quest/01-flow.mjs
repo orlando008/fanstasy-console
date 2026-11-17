@@ -1,68 +1,72 @@
-// Bit’s Console Quest: the frame (title, play, pause, game over, initials, records, saves) and its sound cues.
-// One PASS/FAIL line for each behaviour, written as a sentence. Add a file for each step of the build (02-..., 03-...).
-import { newGame, M, sfxLog, musicLog } from './lib.mjs';
-let fails = 0;
-const ok = (c, name, extra = '') => { console.log(`${c ? 'PASS' : 'FAIL'} ${name} ${extra}`); if (!c) fails++; };
+import { newGame, M } from './lib.mjs';
+import { mainRoute, replay, toLift, toUpperDeck, treasureRoute } from './bot.mjs';
 
-// 1. The title and its menu.
-{
-  const vm = newGame(1, { title: true }), p = vm.probe(); vm.run(3);
-  ok(p.state === 'title' && p.playing === p.SONG.title, 'the game opens on the title, with its song');
-  vm.press('DOWN'); ok(p.titleSel === 1, 'DOWN moves down the menu'); vm.press('UP'); ok(p.titleSel === 0, 'and UP back');
-  vm.press('DOWN'); vm.press('A'); ok(p.state === 'records', 'RECORDS opens the records');
-  vm.run(25); vm.press('START'); ok(p.state === 'title', 'START goes back to the title');
-  sfxLog(vm); vm.press('A');
-  ok(p.state === 'play' && p.playing === p.SONG.play, 'PLAY starts the game, with the game song');
+let failures = 0;
+function check(condition, description) {
+  console.log(`${condition ? 'PASS' : 'FAIL'} ${description}`);
+  if (!condition) failures++;
 }
 
-// 2. Playing: movement, blocks, a hit costs a life.
 {
-  const vm = newGame(1), p = vm.probe(), x0 = p.px;
-  vm.run(10, M('LEFT')); ok(p.px < x0, 'LEFT moves the player');
-  vm.run(20, M('RIGHT')); ok(p.px > x0 - 30, 'and RIGHT');
-  const lives = p.lives; sfxLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.lives === lives - 1, 'a block that lands on the player costs a life');
-  ok(sfxLog(vm).some(([n, ch]) => n === p.SFX.hit && ch >= 6), 'with the hit sound, on an effects channel (6 or 7)');
+  const vm = newGame(1, { title: true });
+  const p = vm.probe();
+  vm.run(3);
+  check(p.state === 'title' && p.playing === p.SONG.title, 'the title opens with its song');
+  vm.press('A');
+  check(p.state === 'play' && p.playing === p.SONG.stage, 'A starts the Foundry course with its song');
+  vm.run(15, M('RIGHT'));
+  vm.press('START');
+  const x = p.bit.x;
+  vm.run(30, M('RIGHT'));
+  check(p.paused && p.bit.x === x, 'pause freezes movement');
+  vm.press('B');
+  check(!p.paused, 'B resumes play from the pause menu');
+  vm.press('START');
+  vm.press('DOWN');
+  vm.press('A');
+  check(!p.paused && p.bit.x === 32 && !p.checkpoint, 'restart resets the course and checkpoint');
+  vm.press('START');
+  vm.press('UP');
+  vm.press('A');
+  check(!p.paused && p.state === 'title', 'back to title leaves the course');
 }
 
-// 3. Pause.
 {
-  const vm = newGame(2), p = vm.probe(); vm.run(30);
-  vm.press('START'); ok(p.paused, 'START pauses');
-  const y = p.blocks.map((b) => b.y).join(); vm.run(30); ok(p.blocks.map((b) => b.y).join() === y, 'and the game stands still');
-  const t = p.timer; vm.press('DOWN'); vm.press('A'); vm.run(2);
-  ok(!p.paused && p.score === 0 && p.timer < t, 'RESTART starts the game again');
-  vm.press('START'); vm.press('UP'); vm.press('A'); ok(p.state === 'title' && !p.paused, 'QUIT TO TITLE goes back to the title');
+  const oldSave = Int32Array.from([1, 0x414243, 983, 68]);
+  const vm = newGame(2, { save: oldSave });
+  const p = vm.probe();
+  check(vm.m.save[0] === p.SAVE_VERSION && !p.hasTreasure() && !p.stageCleared(),
+    'the starter save is replaced by the campaign format');
+  replay(vm, [...toLift, ...toUpperDeck, ...treasureRoute]);
+  check(p.state === 'clear' && p.falls === 0, 'the recorded treasure route clears the course through real inputs');
+  check(p.hasTreasure() && vm.m.save[p.TREASURE_SLOT] === 1, 'the treasure is saved when touched');
+  check(p.stageCleared() && vm.m.save[p.CLEAR_SLOT] === 1, 'clearing the course saves its clear bit');
+  const cues = vm.audioLog.filter((event) => event[1] === 'sfx');
+  check([p.SFX.jump, p.SFX.checkpoint, p.SFX.plug, p.SFX.pickup, p.SFX.clear]
+    .every(n => cues.some(event => event[2] === n && event[3] >= 6)), 'gameplay cues play on effects channels');
+
+  const reopened = newGame(7, { title: true, save: vm.m.save });
+  const saved = reopened.probe();
+  reopened.press('A');
+  check(saved.state === 'play' && saved.hasTreasure() && saved.stageCleared(),
+    'reopening the cart keeps both collection and clear progress');
+  replay(reopened, [...toLift, ...toUpperDeck, ...treasureRoute]);
+  check(!reopened.audioLog.some(event => event[1] === 'sfx' && event[2] === saved.SFX.pickup),
+    'a collected treasure cannot be picked up twice');
+  reopened.step(M('B'));
+  check(saved.state === 'clear', 'holding B at the exit leaves the clear screen open');
+  reopened.step();
+  reopened.press('B');
+  check(saved.state === 'title', 'B returns from the clear screen to title');
 }
 
-// 4. Game over, the top 10 and initials.
 {
-  const vm = newGame(3), p = vm.probe(); p.score = 120; p.lives = 1; musicLog(vm);
-  p.blocks.push({ x: p.px, y: 190 }); vm.run(10);
-  ok(p.state === 'over' && p.rank === 0, 'the last life ends the game, and a score in the top 10 gets a rank', `rank ${p.rank}`);
-  ok(musicLog(vm).includes(-1), 'the game song stops');
-  vm.run(70); vm.press('A');
-  ok(p.state === 'initials', 'A asks for initials');
-  vm.run(25); // START is ignored for a moment, so a press from the game does not skip it
-  vm.press('UP'); vm.press('RIGHT'); vm.press('UP'); vm.press('UP'); vm.press('RIGHT'); vm.press('DOWN'); vm.press('START');
-  ok(p.state === 'records', 'START saves them and shows the records');
-  const e = p.topTen()[0];
-  ok(e.score === 120 && e.initials === 'BC9', 'the score is saved with the initials as typed (UP is the next letter, DOWN from A wraps to 9)', `${e.score} ${e.initials}`);
-  ok(vm.m.save[p.TOP_SLOT] === 120, 'in the save slots');
-}
-{
-  const vm = newGame(4), p = vm.probe();
-  const list = [50, 20, 90, 10, 70, 30, 100, 60, 40, 80].map((s) => p.insertTop({ score: s, initials: 'AAA' }));
-  ok(p.topTen().map((e) => e.score).join() === '100,90,80,70,60,50,40,30,20,10', 'the top 10 is kept best first');
-  ok(p.insertTop({ score: 5, initials: 'ZZZ' }) === -1 && p.insertTop({ score: 0, initials: 'ZZZ' }) === -1, 'a score below the tenth, or nothing, does not get in');
+  const vm = newGame(3);
+  const p = vm.probe();
+  replay(vm, [...toLift, ...toUpperDeck, ...mainRoute]);
+  check(p.state === 'clear' && !p.hasTreasure() && p.falls === 0, 'the main route works without collecting the optional treasure');
+  vm.press('A');
+  check(p.state === 'play' && p.bit.x === 32 && p.stageCleared(), 'A replays the course and keeps the clear bit');
 }
 
-// 5. Frames are quick.
-{
-  const vm = newGame(5), times = [];
-  for (let i = 0; i < 600; i++) { vm.step(i % 40 < 20 ? M('LEFT') : M('RIGHT')); times.push(vm.m.stats.cpu); }
-  times.sort((a, b) => a - b); const p99 = times[Math.floor(times.length * 0.99)];
-  ok(p99 < 8 * (process.env.CI ? 3 : 1), 'frames are quick', `99th percentile ${p99.toFixed(2)} ms`);
-}
-console.log(fails ? 'SOME FAILED' : 'ALL PASS'); process.exit(fails ? 1 : 0);
+process.exitCode = failures ? 1 : 0;

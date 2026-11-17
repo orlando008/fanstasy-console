@@ -1,33 +1,34 @@
-// The bot for tools/devkit/sweep.mjs: a player that plays Bit’s Console Quest by itself, so balance and stuck states can be
-// checked over many seeds without a person.
-//
-//   node tools/devkit/sweep.mjs bits-console-quest --seeds 8 --set skill=0,0.5
-//
-// The contract is in the header of tools/devkit/sweep.mjs: pad() gives the buttons each frame, finished() says the
-// run is over, result() gives the numbers to summarise (and `problems` for anything that must not happen).
-// Replace this with a bot for the real game: the same logic a rival or a hint would use, reading the cart's variables
-// through the probe in lib.mjs (add what it needs there). `skill` here is the chance (0 to 1) of dodging a block.
-import { M, newGame as boot } from './lib.mjs';
+// Inputs recorded against the packed cart. Both routes share the three mandatory jumps and the lift.
+import { M } from './lib.mjs';
 
-export const defaults = { frames: 20000, seeds: 6, set: { skill: [0, 0.5] } };
+export const toLift = [
+  [56, M('RIGHT')], [42, M('RIGHT', 'A')], [54, M('RIGHT')],
+  [36, M('RIGHT', 'A')], [5, 0],
+];
+export const toUpperDeck = [
+  [1, M('B')], [80, 0], [5, M('RIGHT')], [40, M('RIGHT', 'A')], [1, M('RIGHT')],
+];
+export const treasureRoute = [
+  [30, M('RIGHT', 'A')], [5, M('RIGHT')], [36, M('RIGHT', 'A')], [11, M('RIGHT')], [1, M('B')],
+];
+export const mainRoute = [
+  [34, M('RIGHT')], [42, M('RIGHT', 'A')], [5, M('RIGHT')], [1, M('B')],
+];
 
-export const newGame = (seed) => boot(seed); // skipTitle: straight into play
+export const replay = (vm, inputs) => {
+  for (const [frames, buttons] of inputs) vm.run(frames, buttons);
+};
 
-let lastFrame = 0;
-export const setup = () => { lastFrame = 0; };
+const expand = (inputs) => inputs.flatMap(([frames, buttons]) => Array(frames).fill(buttons));
+const routes = {
+  main: expand([...toLift, ...toUpperDeck, ...mainRoute]),
+  treasure: expand([...toLift, ...toUpperDeck, ...treasureRoute]),
+};
 
-/** Dodge the nearest block that is about to land on the player, with probability `skill` (decided once a block gets close). */
-const decided = new WeakMap();
-export function pad(vm, p, frame, opts) {
-  const near = p.blocks.find((b) => b.y > 120 && b.y < 215 && Math.abs(b.x - p.px) < 22 && !b.hit);
-  if (!near) return 0;
-  if (!decided.has(near)) decided.set(near, ((near.x * 7 + frame) % 100) / 100 < (opts.skill ?? 1));
-  if (!decided.get(near)) return 0;
-  return near.x >= p.px ? M('LEFT') : M('RIGHT');
-}
+export const defaults = { frames: 600, seeds: 4, set: { route: ['main', 'treasure'] } };
+export const pad = (_vm, _probe, frame, { route }) => routes[route][frame] ?? 0;
+export const finished = (probe) => probe.state === 'clear';
 
-export const finished = (p) => p.state !== 'play';
-
-export function result(p) {
-  return { score: p.score, lives: p.lives, problems: p.state === 'play' ? ['still playing'] : [] };
+export function result(probe) {
+  return { falls: probe.falls, treasure: Number(probe.hasTreasure()), problems: probe.falls ? ['fell during replay'] : [] };
 }

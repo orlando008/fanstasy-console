@@ -1,6 +1,16 @@
 {
  "colors": {
-  "GLASS": 200
+  "CORAL": 121,
+  "CYAN": 119,
+  "DARK": 123,
+  "GOLD": 118,
+  "INK": 113,
+  "MUTED": 116,
+  "PANEL": 114,
+  "PURPLE": 120,
+  "STEEL": 122,
+  "TRIM": 115,
+  "WHITE": 117
  },
  "gradients": [
   "sky"
@@ -9,19 +19,23 @@
   "bg1": {
    "base": 16,
    "colors": {
-    "bloom": 5,
-    "grass0": 1,
-    "grass1": 2,
-    "grass2": 3,
-    "grass3": 4
+    "face0": 2,
+    "face1": 3,
+    "face2": 4,
+    "face3": 5,
+    "ink": 1,
+    "rim0": 6,
+    "rim1": 7,
+    "rim2": 8
    }
   },
   "bg2": {
    "base": 32,
    "colors": {
-    "hill0": 1,
-    "hill1": 2,
-    "hill2": 3
+    "edge": 3,
+    "lamp": 4,
+    "shadow": 1,
+    "steel": 2
    }
   },
   "bg3": {
@@ -39,48 +53,45 @@
   "spr0": {
    "base": 128,
    "colors": {
-    "hair0": 5,
-    "hair1": 6,
-    "hair2": 7,
-    "pants0": 12,
-    "pants1": 13,
-    "pants2": 14,
-    "pants3": 15,
-    "shirt0": 8,
-    "shirt1": 9,
-    "shirt2": 10,
-    "shirt3": 11,
-    "skin0": 1,
-    "skin1": 2,
-    "skin2": 3,
-    "skin3": 4
+    "boot": 6,
+    "eye": 7,
+    "ink": 1,
+    "pack0": 8,
+    "pack1": 9,
+    "pack2": 10,
+    "pin": 11,
+    "screen": 2,
+    "shell0": 3,
+    "shell1": 4,
+    "shell2": 5
    }
   },
   "spr1": {
    "base": 144,
    "colors": {
-    "edge": 6,
-    "gold0": 1,
-    "gold1": 2,
-    "gold2": 3,
-    "gold3": 4,
-    "gold4": 5,
-    "white": 7
+    "gold0": 2,
+    "gold1": 3,
+    "gold2": 4,
+    "gold3": 5,
+    "ink": 1,
+    "white": 6
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "frame": 2,
+    "idle": 3,
+    "ink": 1,
+    "live": 4
    }
   }
  },
  "scenes": {
-  "field": {
-   "h": 8,
+  "factory": {
+   "h": 28,
    "mx": 0,
-   "my": 0,
-   "pal": 1,
-   "w": 32
-  },
-  "hills": {
-   "h": 8,
-   "mx": 32,
-   "my": 0,
+   "my": 32,
    "pal": 2,
    "w": 32
   },
@@ -93,38 +104,56 @@
   }
  },
  "sprites": {
-  "gem": {
-   "pal": 1,
-   "size": 16,
-   "tile": 324
-  },
-  "hero0": {
+  "heroIdle": {
    "pal": 0,
    "size": 32,
    "tile": 256
   },
-  "hero1": {
+  "heroJump": {
+   "pal": 0,
+   "size": 32,
+   "tile": 324
+  },
+  "heroWalk1": {
    "pal": 0,
    "size": 32,
    "tile": 260
   },
-  "hero2": {
+  "heroWalk2": {
    "pal": 0,
    "size": 32,
    "tile": 264
   },
-  "hero3": {
+  "heroWalk3": {
    "pal": 0,
    "size": 32,
    "tile": 268
   },
-  "hero4": {
+  "heroWalk4": {
    "pal": 0,
    "size": 32,
    "tile": 320
+  },
+  "socketIdle": {
+   "pal": 2,
+   "size": 16,
+   "tile": 330
+  },
+  "socketLive": {
+   "pal": 2,
+   "size": 16,
+   "tile": 332
+  },
+  "treasure": {
+   "pal": 1,
+   "size": 16,
+   "tile": 328
   }
  },
- "tiles": {},
- "used": 317,
+ "tiles": {
+  "deckSide": 2,
+  "deckTop": 1
+ },
+ "used": 203,
  "version": 1
 }

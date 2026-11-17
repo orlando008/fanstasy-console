@@ -1,76 +1,126 @@
-# Bit’s Console Quest's art: carts/src/bits-console-quest/tiles.txt, palette.txt, map.txt and art.json, and the ART block in code.js.
-#   python3 carts/src/bits-console-quest/art.py carts/src/bits-console-quest
-# Written with the art toolkit (tools/devkit/art/kit.py: its header explains the pieces; docs/dev/art-recipes.md shows what
-# each part of it draws, with the lines that drew it: start a new picture from the nearest recipe). This cart owns those files:
-# change the pictures here, not in them. Then look at the result with
-#   node tools/devkit/art/sprites.mjs carts/bits-console-quest.nova out.png      the sprites, at their real sizes and palettes
-#   node tools/devkit/art/scene.mjs carts/bits-console-quest.nova out.png --scene field --holes     the background, with gaps marked
-#   node tools/devkit/tiles.mjs carts/bits-console-quest.nova out.png --from 0 --count 64 --pal 1   the tiles, with their numbers
-# (pack first: node tools/pack.js carts/src/bits-console-quest carts/bits-console-quest.nova). Pixel values are palette indices; 0 is transparent.
-# Hearts, coins, stars, keys, a cursor...: ready-made in the icon library (icon(), items_palette(); all of them on
-# docs/dev/art-recipes/icons-library.png): art.sprite('heart', icon('heart', 16, items), pal=items).
-import os, sys
+"""Regenerate the Controller Foundry prototype art from the NOVA-16 art kit."""
+import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/art'))
-from kit import *
+from kit import Art, Img, big_text, ramp
 
 art = Art()
-art.region('bg', 1, 255)       # background tiles
-art.region('spr', 256, 1023)   # sprites (a 16 px sprite takes four tiles)
+art.region('bg', 1, 255)
+art.region('spr', 256, 1023)
 
-# The SNES look from the start (docs/dev/snes-picture.md): colours as ramps (shades of one colour, dark to light), a sky
-# set line by line, hills pushed back behind the ground, and see-through panels (GLASS, an overlay colour from 192 up,
-# which blend() makes translucent; code.js turns it on). BG palette 0 is shared with the overlay's text colours, so it
-# is left alone.
-art.gradient('sky', ['1c2a6a', '3c64b4', '9cd0ec'], y0=0, y1=175)          # the backdrop, a colour for each line
-art.color(200, '141c3c', 'GLASS')                                          # the panels' fill, seen through
-field = art.palette(1, {'grass': ramp('4a8a2e', 4), 'bloom': 'dad45e'})    # field.grass: 4 indices, dark to light
-far = art.palette(2, {'hill': recede(ramp('2c6a3a', 3), 0.5, '9cd0ec')})   # far things are paler, nearer the sky
-# Sprite palettes: 15 colours each, so a character is a few ramps (skin, hair, shirt, trousers), not a rainbow.
-hero_pal = art.sprite_palette(0, {'skin': ramp('e8a878', 4), 'hair': ramp('5a3a22', 3), 'shirt': ramp('d04648', 4), 'pants': ramp('3050a0', 4)})
-gem_pal = art.sprite_palette(1, {'gold': ramp('dad45e', 5), 'edge': '140c1c', 'white': 'fff8e0'})
-logo_pal = art.palette(3, {'gold': ramp('e0a030', 5), 'edge': '1c1020', 'shade': '2a2040'})
+art.gradient('sky', ['141126', '251b37', '41243f'], y0=0, y1=223)
+overlay = {
+    'INK': '151222', 'PANEL': '201a34', 'TRIM': '52446c', 'MUTED': 'b9afca',
+    'WHITE': 'fff0d9', 'GOLD': 'ffca70', 'CYAN': '67f1e3', 'PURPLE': '9975c9',
+    'CORAL': 'ec8868', 'STEEL': '665374', 'DARK': '382d4a',
+}
+for index, (name, rgb) in enumerate(overlay.items(), 113):
+    art.color(index, rgb, name)
 
-# --- The ground (layer 0): a strip of grass, 32 x 8 tiles, lit along its top edge, flowers now and then ---
-ground = Img(256, 64)
-grass = texture('grass', 64, 64, field.grass)
-for x in range(0, 256, 64): ground.blit(grass, x, 0)
-for x in range(256):
-    ground.px[0][x] = field.grass[3]; ground.px[1][x] = field.grass[2] if x % 5 else field.grass[3]
-for k in range(12):
-    fx_, fy_ = int(hsh(k * 7 + 1) % 250) + 3, int(hsh(k * 13 + 5) % 50) + 8
-    ground.px[fy_][fx_] = field.bloom
-art.scene('field', ground, pal=field, at=(0, 0), solid=True)
+deck = art.palette(1, {
+    'ink': '2b2139', 'face': ramp('8e675c', 4), 'rim': ramp('eb9874', 3),
+})
+top = Img(8, 8)
+top.rect(0, 0, 8, 8, deck.face[1])
+top.rect(0, 0, 8, 1, deck.rim[2])
+top.rect(0, 1, 8, 2, deck.rim[1])
+top.rect(0, 3, 8, 1, deck.ink)
+top.rect(1, 5, 2, 1, deck.face[3])
+art.tile('deckTop', top, pal=deck, region='bg')
 
-# --- The hills (layer 1): rolling green behind the ground, receded towards the sky ---
-back = Img(256, 64)
-hills(back, far.hill, base=64, amp=40, period=128)
-art.scene('hills', back, pal=far, at=(32, 0))
+side = Img(8, 8)
+side.rect(0, 0, 8, 8, deck.face[0])
+side.rect(0, 0, 8, 1, deck.ink)
+side.line(0, 7, 6, 1, deck.face[1])
+side.line(4, 7, 7, 4, deck.face[1])
+art.tile('deckSide', side, pal=deck, region='bg')
 
-# --- The hero: a character from the kit's skeleton (rig.py), not pixels placed by hand. One Rig gives every frame in
-# the same proportions and light: a standing pose and a walk of four frames, each 32 x 32 (a hero should be big enough
-# to read: 24 px or more on this screen). To change the character, change the preset ('hero', 'brawler', 'boxer' ...),
-# the ramps or the poses (pose(STAND, arm_n=60)); to add an action, add its poses (JUMP, PUNCH, HIT). Look at them all
-# with filmstrip('/tmp/hero.png', hero, poses, hero_pal), or in the packed cart with tools/devkit/art/sprites.mjs.
-hero = Rig('hero', height=26, skin=hero_pal.skin, hair=hero_pal.hair, shirt=hero_pal.shirt, pants=hero_pal.pants, shoes=hero_pal.hair, margin=1)
-for k, p in enumerate([STAND] + hero.animate(WALK, 8)[::2]):
-    art.sprite('hero%d' % k, hero.render(p).fit(32, 32), pal=hero_pal, region='spr')   # fit: feet on the bottom row, centred
+far = art.palette(2, {
+    'shadow': '261e38', 'steel': '362849', 'edge': '533752', 'lamp': '855368',
+})
+factory = Img(256, 224)
+factory.rect(0, 36, 256, 6, far.steel)
+factory.rect(0, 38, 256, 1, far.edge)
+factory.rect(0, 86, 256, 4, far.shadow)
+factory.rect(0, 152, 256, 3, far.steel)
+for x, y, h in [(8, 68, 116), (72, 100, 94), (136, 60, 132), (200, 88, 104)]:
+    factory.rect(x + 8, 40, 4, y - 40, far.steel)
+    factory.rect(x, y, 24, h, far.shadow)
+    factory.rect(x, y, 24, 2, far.edge)
+    factory.rect(x + 2, y + 2, 2, h - 2, far.steel)
+    factory.rect(x + 8, y + 8, 8, 2, far.lamp)
+    for dy in range(24, h, 16):
+        factory.rect(x + 8, y + dy, 12, 2, far.steel)
+art.scene('factory', factory, pal=far, at=(0, 32), region='bg')
 
-# --- A gem to dodge: a ball sculpted from a 3D shape (sculpt.py), lit, glossy and outlined by the kit ---
-ball = Sculpt(16, 16)
-ball.sphere(8, 8, 0, 6.5, Mat(gem_pal.gold, gloss=0.9))
-art.sprite('gem', ball.render(), pal=gem_pal, region='spr')
+logo = art.palette(3, {
+    'gold': ramp('ffbf70', 5), 'edge': '21182b', 'shade': '684254',
+})
+title = Img(256, 48)
+for row, text in enumerate(["BIT'S", 'CONSOLE QUEST']):
+    letters = big_text(text, logo.gold, scale=2, outline=logo.edge, shadow=logo.shade)
+    title.blit(letters, (256 - letters.w) // 2, 24 * row)
+art.scene('logo', title, pal=logo, at=(0, 16), region='bg')
 
-# --- The title: the game's name in big bevelled letters (lettering.py), on its own layer (layer 2, shown on the title).
-# Words go on a second line when the name is long; a very long word is drawn at the font's own size. ---
-TITLE, lines = "BIT'S CONSOLE QUEST", ['']
-for word in TITLE.split():
-    if lines[-1] and len(lines[-1]) + 1 + len(word) > 15: lines.append('')
-    lines[-1] = (lines[-1] + ' ' + word).strip()
-scale = 2 if max(len(l) for l in lines) <= 15 else 1
-logo = Img(256, 8 * (3 if scale == 2 else 2) * len(lines))
-for k, l in enumerate(lines):
-    t = big_text(l, logo_pal.gold, scale=scale, outline=logo_pal.edge, shadow=logo_pal.shade)
-    logo.blit(t, max(0, (256 - t.w) // 2), k * 8 * (3 if scale == 2 else 2) + 1)
-art.scene('logo', logo, pal=logo_pal, at=(0, 16))
+bit = art.sprite_palette(0, {
+    'ink': '171326', 'screen': '282039', 'shell': ramp('ffedcf', 3),
+    'boot': '318c97', 'eye': '64f6e7', 'pack': ramp('a278c8', 3), 'pin': 'ffd177',
+})
+
+# A compact stand-in for the supplied robot. The art proof will establish the final proportions and poses.
+def hero(near, far, bob, side=False):
+    img = Img(32, 32)
+    img.line(7, 22 + bob, 4, 25, bit.ink)
+    img.line(4, 25, 1, 23, bit.pack[0])
+    img.rect(0, 20, 4, 4, bit.ink)
+    img.rect(1, 21, 2, 1, bit.pin)
+    img.rect(5, 16 + bob, 21, 9, bit.ink)
+    img.rect(6, 17 + bob, 5, 7, bit.pack[1])
+    img.rect(11, 19 + bob, 11, 5, bit.shell[0])
+    img.rect(12, 19 + bob, 9, 3, bit.shell[1])
+    for x, dx in ((9, far), (19, near)):
+        img.rect(x + dx, 24, 6, 7, bit.ink)
+        img.rect(x + dx + 1, 25, 4, 4, bit.shell[1])
+        img.rect(x + dx + 1, 29, 4, 1, bit.eye if x == 19 else bit.boot)
+    img.rect(5, 4 + bob, 23, 16, bit.ink)
+    img.rect(7, 2 + bob, 19, 17, bit.shell[0])
+    img.rect(8, 3 + bob, 17, 3, bit.shell[2])
+    img.rect(7, 6 + bob, 4, 10, bit.shell[1])
+    img.rect(11, 6 + bob, 16, 11, bit.screen)
+    img.rect(13 if not side else 15, 9 + bob, 2, 5, bit.eye)
+    img.rect(21 if not side else 23, 9 + bob, 2, 5, bit.eye)
+    return img
+
+for name, near, far_step, bob, side in [
+    ('heroIdle', 0, 0, 0, False), ('heroWalk1', 2, -2, 0, True),
+    ('heroWalk2', 0, 1, 1, True), ('heroWalk3', -2, 2, 0, True),
+    ('heroWalk4', 1, 0, 1, True), ('heroJump', 3, -1, -1, True),
+]:
+    art.sprite(name, hero(near, far_step, bob, side), pal=bit, region='spr')
+
+item = art.sprite_palette(1, {
+    'ink': '3d2541', 'gold': ramp('ffca70', 4), 'white': 'fff4cf',
+})
+treasure = Img(16, 16)
+treasure.rect(5, 1, 6, 14, item.ink)
+treasure.rect(1, 5, 14, 6, item.ink)
+treasure.rect(6, 2, 4, 12, item.gold[2])
+treasure.rect(2, 6, 12, 4, item.gold[2])
+treasure.rect(6, 6, 4, 4, item.gold[3])
+treasure.rect(7, 3, 1, 9, item.white)
+treasure.rect(3, 7, 9, 1, item.white)
+art.sprite('treasure', treasure, pal=item, region='spr')
+
+hardware = art.sprite_palette(2, {
+    'ink': '151222', 'frame': '937bab', 'idle': 'ffca70', 'live': '67f1e3',
+})
+for name, pins in [('socketIdle', hardware.idle), ('socketLive', hardware.live)]:
+    socket = Img(16, 16)
+    socket.rect(2, 2, 12, 12, hardware.frame)
+    socket.rect(3, 3, 10, 10, hardware.ink)
+    socket.rect(5, 6, 2, 4, pins)
+    socket.rect(9, 6, 2, 4, pins)
+    art.sprite(name, socket, pal=hardware, region='spr')
 
 art.write(sys.argv[1])

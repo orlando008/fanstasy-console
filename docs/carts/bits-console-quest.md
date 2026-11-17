@@ -1,12 +1,12 @@
 # Bit’s Console Quest
 
-**Version:** 0.1 (design draft)
+**Version:** 0.2 (Foundry prototype)
 
-**Status:** Scaffolded. The packed starter runs a placeholder minigame. The platformer and lab below are the design for the next steps.
+**Status:** The packed cart runs the first playable Controller Foundry course. The full campaign, lab, and art direction are specified below.
 
 **Shelf and players:** Arcade, one player
 
-**Cart source:** [Source](../../carts/src/bits-console-quest/) · [Packed scaffold](../../carts/bits-console-quest.nova)
+**Cart source:** [Source](../../carts/src/bits-console-quest/) · [Packed cart](../../carts/bits-console-quest.nova)
 
 ## 1. Concept
 
@@ -160,6 +160,8 @@ Use stable stage and item IDs. Derive unlocked stages and complete lab puzzles f
 **Scaffold results.** The repository verifier regenerated the art and audio, repacked the cart, and passed 39 starter checks and a 3,000-frame soak. The starter bot completed six runs. Browser smoke is pending because Chromium could not start in the workspace. The initials screen, high scores, and starter art and audio belong to the placeholder.
 
 1. **Vertical slice.** Replace the starter minigame with a short Controller Foundry course. Implement scrolling, jumping, one powered lift, a checkpoint, one pickup, and a reachable exit. Exercise all of them with recorded inputs.
+   - **Built:** A 768 px course with gaps of 40, 32, 40, and 40 px, a checkpoint at x = 304, and a treasure on an optional ledge 32 px above the upper deck. Bit plugs into the lift on board. The powered lift travels at 1 px per frame between y = 192 and y = 112, waits 60 frames at the top and 45 at the bottom, and cycles so Bit can catch it again. Plug into the exit to clear the course. Save version 2 uses the first stage and treasure bits. The prototype uses the robot’s reference colors and silhouette as a starting point for the art proof, with two starter tracks and gameplay cues.
+   - **Results:** 47 checks, a 3,000-frame soak, and four runs apiece of the recorded exit and treasure routes. All runs cleared without a fall. The production console worker rendered the treasure route under Node and emitted both save bits. Reviewed seven rendered screens. The browser smoke test is pending because the workspace blocks a socket Chromium needs to start. The packed code is about 15 KB, with 203 source tiles used and at most four sprites queued by the scene.
 2. **Art proof.** Draw Bit’s gameplay poses from the supplied sheet, make the purple-and-cyan lab and Foundry palettes, and render a real Foundry screen. Review the proof before drawing the remaining zones.
 3. **Core mechanics.** Add the full socket and device behaviors, collectible bookkeeping, and practice stations. Test repeated B presses, checkpoint restores, and revisiting a collected item.
 4. **Hazards.** Implement warned presses, live contacts, and timed platforms. Verify they remain readable and reset consistently.
