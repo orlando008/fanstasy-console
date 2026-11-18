@@ -71,7 +71,10 @@ export function reach(p, w, { hold = 4, limit = 600, most = 1200000, late = 3, s
   if (done()) return [];
   const key = (s) => {
     const b = s.bit, sup = s.sup ? (s.sup.d ?? 'k' + s.sup.k) : '-';
-    const dev = s.devices.map((d) => `${d.x | 0}.${d.y | 0}.${d.direction}.${d.wait > 0 ? 1 : 0}.${d.phase >> 2}`).join(',');
+    // (a device far from Bit counts only by whether it is powered: a scanline or a lift cycling behind him is not a new
+    // place to be; a shelf keeps its place in the key, since where it stopped decides whether he can use it later)
+    const dev = s.devices.map((d) => Math.abs(d.x - b.x) < 300 || d.kind === 'shelf'
+      ? `${d.x | 0}.${d.y | 0}.${d.direction}.${d.wait > 0 ? 1 : 0}.${d.phase >> 2}` : `${d.powered ? 1 : 0}`).join(',');
     return `${Math.round(b.x / 4)},${Math.round(b.y / 4)},${Math.round(b.vx)},${Math.round(b.vy / 2)},${sup},${s.input & 16 ? 1 : 0},${s.on.join('')},${p.course.hazards.filter((h) => Math.abs(h.x - b.x) < 256).map((h) => Math.floor(((s.hazardTick + h.offset) % (h.kind === 'contact' ? 120 : 144)) / 6)).join('.')},${dev},${s.save.join('.')},${s.checkpoint?.index ?? -1}`;
   };
   let front = [{ s: start, path: null, last: start.input }];
