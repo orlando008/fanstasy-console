@@ -1,7 +1,10 @@
 import { newGame, M } from './lib.mjs';
 import { replay, toLift, toUpperDeck, treasureRoute } from './bot.mjs';
 
-export const hero = ['heroIdle', 'heroWalk1', 'heroWalk2', 'heroWalk3', 'heroWalk4', 'heroJump'];
+export const hero = [
+  'heroIdle', 'heroBlink', 'heroWalk1', 'heroWalk2', 'heroWalk3',
+  'heroWalk4', 'heroJump', 'heroFall', 'heroPlug', 'heroLand', 'heroCheer',
+];
 
 export default function screens(shot) {
   const vm = newGame(1, { title: true });
@@ -14,8 +17,10 @@ export default function screens(shot) {
   shot(vm, 'first jump');
   replay(vm, toLift.slice(1).map(([frames, buttons], i) => [i === 0 ? frames - 17 : frames, buttons]));
   shot(vm, 'lift socket');
-  replay(vm, toUpperDeck);
-  shot(vm, 'upper deck');
+  replay(vm, toUpperDeck.slice(0, 1));
+  shot(vm, 'plugging in');
+  replay(vm, toUpperDeck.slice(1));
+  shot(vm, 'Foundry upper deck');
   vm.press('START');
   shot(vm, 'pause');
   vm.step(M('START'));

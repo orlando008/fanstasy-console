@@ -1,4 +1,4 @@
-"""Regenerate the Controller Foundry prototype art from the NOVA-16 art kit."""
+"""Regenerate the Controller Foundry art and the lab palette study."""
 import os
 import sys
 
@@ -37,7 +37,8 @@ side.line(4, 7, 7, 4, deck.face[1])
 art.tile('deckSide', side, pal=deck, region='bg')
 
 far = art.palette(2, {
-    'shadow': '261e38', 'steel': '362849', 'edge': '533752', 'lamp': '855368',
+    'shadow': '201b33', 'steel': '342644', 'edge': '50344f', 'lamp': '78475a',
+    'mould': '44304f', 'pin': '634059',
 })
 factory = Img(256, 224)
 factory.rect(0, 36, 256, 6, far.steel)
@@ -52,6 +53,29 @@ for x, y, h in [(8, 68, 116), (72, 100, 94), (136, 60, 132), (200, 88, 104)]:
     factory.rect(x + 8, y + 8, 8, 2, far.lamp)
     for dy in range(24, h, 16):
         factory.rect(x + 8, y + dy, 12, 2, far.steel)
+# Controller shells hang above the line, with the case halves and button cutouts still exposed.
+mould = Img(96, 56)
+mould.rect(43, 0, 10, 22, far.shadow)
+mould.rect(44, 0, 3, 18, far.edge)
+mould.rect(38, 15, 20, 5, far.pin)
+mould.poly([(15, 19), (81, 19), (92, 30), (92, 49), (84, 55),
+            (12, 55), (4, 49), (4, 30)], far.shadow)
+mould.poly([(16, 20), (80, 20), (90, 30), (90, 46), (82, 51),
+            (14, 51), (6, 46), (6, 30)], far.mould)
+mould.line(16, 21, 79, 21, far.pin)
+mould.line(15, 49, 80, 49, far.steel)
+mould.disc(26, 36, 11, far.steel)
+mould.rect(23, 28, 6, 18, far.shadow)
+mould.rect(17, 34, 18, 6, far.shadow)
+mould.rect(24, 29, 4, 1, far.edge)
+mould.disc(65, 40, 6.5, far.shadow)
+mould.disc(77, 32, 6.5, far.shadow)
+mould.disc(65, 39, 4, far.pin)
+mould.disc(77, 31, 4, far.pin)
+mould.rect(43, 29, 9, 2, far.pin)
+for x, y in [(24, 64), (152, 96)]:
+    factory.rect(x + 44, 39, 5, y - 38, far.shadow)
+    factory.blit(mould, x, y)
 art.scene('factory', factory, pal=far, at=(0, 32), region='bg')
 
 logo = art.palette(3, {
@@ -64,40 +88,110 @@ for row, text in enumerate(["BIT'S", 'CONSOLE QUEST']):
 art.scene('logo', title, pal=logo, at=(0, 16), region='bg')
 
 bit = art.sprite_palette(0, {
-    'ink': '171326', 'screen': '282039', 'shell': ramp('ffedcf', 3),
-    'boot': '318c97', 'eye': '64f6e7', 'pack': ramp('a278c8', 3), 'pin': 'ffd177',
+    'ink': '151223', 'visor': '151e37', 'joint': ['352e4d', '696182'],
+    'shell': ['8e6876', 'bf9c93', 'ebd4b9', 'fff1d2'],
+    'aqua': ['237787', '21cbd1', '8dfff1'], 'pack': ['492a65', '7849a0', 'b06bd2'],
+    'pin': 'ffc76c',
 })
+ink, joint, shell, aqua, pack = bit.ink, bit.joint, bit.shell, bit.aqua, bit.pack
 
-# A compact stand-in for the supplied robot. The art proof will establish the final proportions and poses.
-def hero(near, far, bob, side=False):
+boot = Img(9, 8)
+boot.poly([(0, 1), (5, 0), (7, 2), (9, 4), (9, 7), (7, 8), (1, 8), (0, 6)], ink)
+boot.poly([(1, 2), (5, 1), (6, 3), (8, 4), (8, 6), (7, 7), (1, 7)], shell[1])
+boot.rect(2, 3, 5, 2, shell[2])
+boot.rect(3, 3, 3, 1, shell[3])
+boot.rect(1, 6, 6, 1, aqua[0])
+boot.rect(4, 6, 3, 1, aqua[1])
+boot.rect(6, 6, 1, 1, aqua[2])
+
+glove = Img(7, 6)
+glove.poly([(1, 0), (5, 0), (7, 2), (7, 5), (5, 6), (1, 6), (0, 4), (0, 2)], ink)
+glove.poly([(2, 1), (5, 1), (6, 2), (6, 4), (4, 5), (1, 4), (1, 2)], shell[2])
+glove.rect(2, 1, 2, 1, shell[3])
+glove.rect(3, 4, 2, 1, shell[1])
+
+def hero(helmet, hip, boots, hands, cable, eyes='open'):
     img = Img(32, 32)
-    img.line(7, 22 + bob, 4, 25, bit.ink)
-    img.line(4, 25, 1, 23, bit.pack[0])
-    img.rect(0, 20, 4, 4, bit.ink)
-    img.rect(1, 21, 2, 1, bit.pin)
-    img.rect(5, 16 + bob, 21, 9, bit.ink)
-    img.rect(6, 17 + bob, 5, 7, bit.pack[1])
-    img.rect(11, 19 + bob, 11, 5, bit.shell[0])
-    img.rect(12, 19 + bob, 9, 3, bit.shell[1])
-    for x, dx in ((9, far), (19, near)):
-        img.rect(x + dx, 24, 6, 7, bit.ink)
-        img.rect(x + dx + 1, 25, 4, 4, bit.shell[1])
-        img.rect(x + dx + 1, 29, 4, 1, bit.eye if x == 19 else bit.boot)
-    img.rect(5, 4 + bob, 23, 16, bit.ink)
-    img.rect(7, 2 + bob, 19, 17, bit.shell[0])
-    img.rect(8, 3 + bob, 17, 3, bit.shell[2])
-    img.rect(7, 6 + bob, 4, 10, bit.shell[1])
-    img.rect(11, 6 + bob, 16, 11, bit.screen)
-    img.rect(13 if not side else 15, 9 + bob, 2, 5, bit.eye)
-    img.rect(21 if not side else 23, 9 + bob, 2, 5, bit.eye)
+    hx, hy = helmet
+    bx, by = hip
+    tip_x, tip_y = cable[-1]
+    path = [(bx - 4, by + 2), *cable]
+    for (x, y), (nx, ny) in zip(path, path[1:]):
+        img.line(x, y, nx, ny, ink).line(x, y + 1, nx, ny + 1, ink)
+    for (x, y), (nx, ny) in zip(path, path[1:]):
+        img.line(x, y, nx, ny, joint[0])
+    img.poly([(tip_x - 2, tip_y - 1), (tip_x + 2, tip_y - 2), (tip_x + 4, tip_y),
+              (tip_x + 3, tip_y + 3), (tip_x - 1, tip_y + 3)], ink)
+    img.rect(tip_x - 1, tip_y, 4, 2, joint[1])
+    img.pset(tip_x + 1, tip_y + 1, bit.pin).pset(tip_x + 3, tip_y + 1, bit.pin)
+
+    def limb(x, y, dx, dy):
+        img.line(x - 1, y, dx - 1, dy, ink).line(x + 1, y, dx + 1, dy, ink)
+        img.line(x, y, dx, dy, joint[1])
+
+    for which, (x, y) in enumerate(boots):
+        limb(bx + (3 if which else -4), by + 2, x + 3, y - 4)
+        img.blit(boot, x, y - 7)
+
+    # Far arm, cartridge backpack and case, then the near arm in front of the body.
+    x, y = hands[0]
+    limb(bx + 5, by - 4, x + 2, y + 2)
+    img.blit(glove, x, y)
+    img.rect(bx - 9, by - 7, 8, 11, ink)
+    img.rect(bx - 8, by - 6, 6, 9, pack[0])
+    img.rect(bx - 8, by - 6, 5, 1, pack[2])
+    img.rect(bx - 7, by - 5, 3, 6, pack[1])
+    img.rect(bx - 7, by - 8, 4, 2, bit.pin)
+    img.poly([(bx - 6, by - 6), (bx + 6, by - 6), (bx + 8, by - 1),
+              (bx + 5, by + 5), (bx - 4, by + 5), (bx - 6, by + 3)], ink)
+    img.poly([(bx - 4, by - 4), (bx + 5, by - 4), (bx + 6, by),
+              (bx + 4, by + 4), (bx - 3, by + 4), (bx - 5, by + 1)], shell[1])
+    img.rect(bx - 2, by - 3, 6, 5, shell[2])
+    img.line(bx + 1, by, bx, by + 1, pack[1]).line(bx + 3, by, bx + 2, by + 1, pack[1])
+    x, y = hands[1]
+    limb(bx - 5, by - 4, x + 2, y + 2)
+    img.blit(glove, x, y)
+
+    def helmet_poly(points, colour):
+        img.poly([(hx + x, hy + y) for x, y in points], colour)
+
+    helmet_poly([(4, 3), (8, 0), (19, 0), (23, 1), (26, 5), (26, 11),
+                 (23, 15), (8, 16), (4, 14), (2, 11), (2, 6)], ink)
+    helmet_poly([(5, 4), (8, 1), (20, 1), (23, 3), (25, 5), (25, 11),
+                 (22, 14), (8, 15), (5, 13), (3, 11), (3, 6)], shell[1])
+    helmet_poly([(6, 4), (9, 1), (20, 1), (23, 2), (24, 4), (9, 6), (4, 7)], shell[3])
+    helmet_poly([(9, 6), (24, 4), (25, 6), (25, 11), (22, 14), (8, 15), (7, 12)], shell[2])
+    helmet_poly([(10, 6), (22, 5), (24, 6), (24, 10), (22, 12), (9, 14), (8, 12)], bit.visor)
+    img.line(hx + 5, hy + 8, hx + 6, hy + 9, shell[0])
+    img.line(hx + 5, hy + 10, hx + 6, hy + 11, shell[0])
+    for ex, ey in [(hx + 13, hy + 8), (hx + 20, hy + 7)]:
+        if eyes == 'smile':
+            img.line(ex - 1, ey + 2, ex + 1, ey, aqua[1]).line(ex + 1, ey, ex + 3, ey + 2, aqua[1])
+            img.pset(ex + 1, ey, aqua[2])
+        elif eyes == 'blink':
+            img.line(ex, ey + 2, ex + 2, ey + 2, aqua[0])
+        else:
+            img.rect(ex, ey, 2, 4, aqua[1])
+            img.pset(ex, ey + 1, aqua[2])
+            img.pset(ex + 1, ey + 3, aqua[0])
     return img
 
-for name, near, far_step, bob, side in [
-    ('heroIdle', 0, 0, 0, False), ('heroWalk1', 2, -2, 0, True),
-    ('heroWalk2', 0, 1, 1, True), ('heroWalk3', -2, 2, 0, True),
-    ('heroWalk4', 1, 0, 1, True), ('heroJump', 3, -1, -1, True),
-]:
-    art.sprite(name, hero(near, far_step, bob, side), pal=bit, region='spr')
+poses = {
+    # Coordinates are anchored to the same feet line as the collision body.
+    'heroIdle':  ((2, 2), (16, 21), [(8, 30), (18, 30)], [(24, 19), (7, 20)], [(6, 25), (3, 25), (2, 22)]),
+    'heroBlink': ((2, 2), (16, 21), [(8, 30), (18, 30)], [(24, 19), (7, 20)], [(6, 25), (3, 25), (2, 22)], 'blink'),
+    'heroWalk1': ((3, 3), (17, 22), [(4, 29), (21, 30)], [(20, 19), (8, 21)], [(7, 26), (3, 26), (2, 23)]),
+    'heroWalk2': ((3, 2), (17, 21), [(13, 28), (16, 30)], [(25, 18), (10, 21)], [(7, 25), (3, 24), (2, 21)]),
+    'heroWalk3': ((3, 3), (17, 22), [(20, 30), (6, 29)], [(25, 20), (6, 19)], [(6, 26), (3, 27), (2, 25)]),
+    'heroWalk4': ((3, 2), (17, 21), [(16, 30), (14, 28)], [(22, 19), (8, 20)], [(6, 25), (3, 25), (2, 22)]),
+    'heroJump':  ((3, 1), (16, 19), [(8, 28), (20, 25)], [(24, 14), (7, 20)], [(5, 24), (3, 22), (2, 19)]),
+    'heroFall':  ((3, 2), (17, 21), [(11, 30), (19, 28)], [(25, 15), (6, 17)], [(7, 25), (4, 23), (2, 19)]),
+    'heroPlug':  ((3, 4), (16, 22), [(9, 30), (19, 30)], [(25, 17), (7, 22)], [(7, 27), (3, 26), (2, 21)]),
+    'heroLand':  ((2, 6), (16, 23), [(7, 30), (19, 30)], [(25, 21), (5, 22)], [(6, 27), (3, 27), (2, 24)]),
+    'heroCheer': ((2, 2), (16, 21), [(8, 30), (18, 29)], [(25, 10), (1, 12)], [(6, 25), (3, 24), (2, 21)], 'smile'),
+}
+for name, pose in poses.items():
+    art.sprite(name, hero(*pose), pal=bit, region='spr')
 
 item = art.sprite_palette(1, {
     'ink': '3d2541', 'gold': ramp('ffca70', 4), 'white': 'fff4cf',
@@ -122,5 +216,30 @@ for name, pins in [('socketIdle', hardware.idle), ('socketLive', hardware.live)]
     socket.rect(5, 6, 2, 4, pins)
     socket.rect(9, 6, 2, 4, pins)
     art.sprite(name, socket, pal=hardware, region='spr')
+
+# Native-size exhibit study from the supplied NOVA-16 reference. It carries the proposed lab palette.
+lab = art.sprite_palette(3, {
+    'labDark': ['121222', '23243e', '44456a'],
+    'labPurple': ['492273', '7832af', 'ad4de1'],
+    'labCyan': ['176d85', '19c8db', '83fffb'],
+})
+console = Img(32, 32)
+console.poly([(8, 6), (24, 6), (31, 12), (31, 21), (25, 27),
+              (7, 27), (1, 21), (1, 12)], lab.labDark[0])
+console.poly([(8, 8), (24, 8), (30, 13), (30, 20), (24, 25),
+              (8, 25), (2, 20), (2, 13)], lab.labPurple[1])
+console.poly([(9, 8), (23, 8), (28, 12), (28, 18), (23, 22),
+              (9, 22), (4, 18), (4, 12)], lab.labCyan[1])
+console.poly([(9, 9), (23, 9), (27, 13), (27, 18), (23, 21),
+              (9, 21), (5, 18), (5, 13)], lab.labDark[1])
+console.rect(9, 12, 14, 5, lab.labDark[2])
+console.rect(10, 13, 12, 3, lab.labDark[0])
+console.rect(23, 10, 2, 1, lab.labCyan[2])
+console.rect(12, 19, 8, 1, lab.labPurple[2])
+for x in (9, 19):
+    console.rect(x, 22, 4, 4, lab.labPurple[0])
+    console.rect(x, 23, 4, 2, lab.labCyan[1])
+    console.rect(x, 24, 4, 1, lab.labCyan[0])
+art.sprite('labConsole', console, pal=lab, region='spr')
 
 art.write(sys.argv[1])

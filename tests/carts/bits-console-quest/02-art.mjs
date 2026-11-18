@@ -1,5 +1,5 @@
 import { newGame, M } from './lib.mjs';
-import { replay, toLift, toUpperDeck } from './bot.mjs';
+import { replay, toLift, toUpperDeck, treasureRoute } from './bot.mjs';
 
 let failures = 0;
 function check(condition, description) {
@@ -33,12 +33,26 @@ check((vm.ppu.oamFlip[0] & 1) !== 0, 'Bit faces left on left input');
 vm.step(M('A'));
 check(vm.ppu.oamTile[0] === p.ART.sprites.heroJump.tile, 'Bit uses his jumping sprite in the air');
 
+const frames = new Set();
+for (let i = 0; i < 60; i++) {
+  vm.step(i < 25 ? M('A') : 0);
+  frames.add(vm.ppu.oamTile[0]);
+}
+check(['heroFall', 'heroLand', 'heroIdle'].every(name => frames.has(p.ART.sprites[name].tile)),
+  'Bit falls, lands, and settles back to his idle pose');
+
 const course = newGame(1);
 const current = course.probe();
 replay(course, toLift);
 check(Math.floor(current.camera) === course.ppu.layers[1].x && course.ppu.layers[2].x < course.ppu.layers[1].x,
   'the terrain scrolls with Bit and the far layer follows more slowly');
-replay(course, toUpperDeck);
+const drawn = name => course.ppu.oamTile.subarray(0, course.ppu.oamCount).includes(current.ART.sprites[name].tile);
+replay(course, toUpperDeck.slice(0, 1));
+check(drawn('heroPlug'), 'powering the lift plays the plug pose');
+replay(course, toUpperDeck.slice(1));
 check(course.ppu.oamCount <= 4, 'Bit, the treasure, and sockets fit the sprite budget');
+
+replay(course, treasureRoute);
+check(current.state === 'clear' && drawn('heroCheer'), 'Bit celebrates after the exit is powered');
 
 process.exitCode = failures ? 1 : 0;

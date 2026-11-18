@@ -34,6 +34,8 @@
    "colors": {
     "edge": 3,
     "lamp": 4,
+    "mould": 5,
+    "pin": 6,
     "shadow": 1,
     "steel": 2
    }
@@ -53,17 +55,21 @@
   "spr0": {
    "base": 128,
    "colors": {
-    "boot": 6,
-    "eye": 7,
+    "aqua0": 9,
+    "aqua1": 10,
+    "aqua2": 11,
     "ink": 1,
-    "pack0": 8,
-    "pack1": 9,
-    "pack2": 10,
-    "pin": 11,
-    "screen": 2,
-    "shell0": 3,
-    "shell1": 4,
-    "shell2": 5
+    "joint0": 3,
+    "joint1": 4,
+    "pack0": 12,
+    "pack1": 13,
+    "pack2": 14,
+    "pin": 15,
+    "shell0": 5,
+    "shell1": 6,
+    "shell2": 7,
+    "shell3": 8,
+    "visor": 2
    }
   },
   "spr1": {
@@ -85,6 +91,20 @@
     "ink": 1,
     "live": 4
    }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "labCyan0": 7,
+    "labCyan1": 8,
+    "labCyan2": 9,
+    "labDark0": 1,
+    "labDark1": 2,
+    "labDark2": 3,
+    "labPurple0": 4,
+    "labPurple1": 5,
+    "labPurple2": 6
+   }
   }
  },
  "scenes": {
@@ -104,6 +124,21 @@
   }
  },
  "sprites": {
+  "heroBlink": {
+   "pal": 0,
+   "size": 32,
+   "tile": 260
+  },
+  "heroCheer": {
+   "pal": 0,
+   "size": 32,
+   "tile": 392
+  },
+  "heroFall": {
+   "pal": 0,
+   "size": 32,
+   "tile": 332
+  },
   "heroIdle": {
    "pal": 0,
    "size": 32,
@@ -112,48 +147,63 @@
   "heroJump": {
    "pal": 0,
    "size": 32,
-   "tile": 324
+   "tile": 328
+  },
+  "heroLand": {
+   "pal": 0,
+   "size": 32,
+   "tile": 388
+  },
+  "heroPlug": {
+   "pal": 0,
+   "size": 32,
+   "tile": 384
   },
   "heroWalk1": {
    "pal": 0,
    "size": 32,
-   "tile": 260
+   "tile": 264
   },
   "heroWalk2": {
    "pal": 0,
    "size": 32,
-   "tile": 264
+   "tile": 268
   },
   "heroWalk3": {
    "pal": 0,
    "size": 32,
-   "tile": 268
+   "tile": 320
   },
   "heroWalk4": {
    "pal": 0,
    "size": 32,
-   "tile": 320
+   "tile": 324
+  },
+  "labConsole": {
+   "pal": 3,
+   "size": 32,
+   "tile": 448
   },
   "socketIdle": {
    "pal": 2,
    "size": 16,
-   "tile": 330
+   "tile": 398
   },
   "socketLive": {
    "pal": 2,
    "size": 16,
-   "tile": 332
+   "tile": 428
   },
   "treasure": {
    "pal": 1,
    "size": 16,
-   "tile": 328
+   "tile": 396
   }
  },
  "tiles": {
   "deckSide": 2,
   "deckTop": 1
  },
- "used": 203,
+ "used": 365,
  "version": 1
 }

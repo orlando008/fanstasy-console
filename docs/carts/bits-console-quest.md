@@ -1,8 +1,8 @@
 # Bit’s Console Quest
 
-**Version:** 0.2 (Foundry prototype)
+**Version:** 0.3 (Foundry art proof)
 
-**Status:** The packed cart runs the first playable Controller Foundry course. The full campaign, lab, and art direction are specified below.
+**Status:** The packed cart runs the first Controller Foundry course with Bit’s gameplay animation and the Foundry art proof. The lab palette and console sprite are visual studies.
 
 **Shelf and players:** Arcade, one player
 
@@ -163,6 +163,9 @@ Use stable stage and item IDs. Derive unlocked stages and complete lab puzzles f
    - **Built:** A 768 px course with gaps of 40, 32, 40, and 40 px, a checkpoint at x = 304, and a treasure on an optional ledge 32 px above the upper deck. Bit plugs into the lift on board. The powered lift travels at 1 px per frame between y = 192 and y = 112, waits 60 frames at the top and 45 at the bottom, and cycles so Bit can catch it again. Plug into the exit to clear the course. Save version 2 uses the first stage and treasure bits. The prototype uses the robot’s reference colors and silhouette as a starting point for the art proof, with two starter tracks and gameplay cues.
    - **Results:** 47 checks, a 3,000-frame soak, and four runs apiece of the recorded exit and treasure routes. All runs cleared without a fall. The production console worker rendered the treasure route under Node and emitted both save bits. Reviewed seven rendered screens. The browser smoke test is pending because the workspace blocks a socket Chromium needs to start. The packed code is about 15 KB, with 203 source tiles used and at most four sprites queued by the scene.
 2. **Art proof.** Draw Bit’s gameplay poses from the supplied sheet, make the purple-and-cyan lab and Foundry palettes, and render a real Foundry screen. Review the proof before drawing the remaining zones.
+   - **Built:** Eleven 32 × 32 frames for Bit, including idle and blink, four running frames, jump, fall, plug, land, and cheer. Kept the cream shell, cyan soles and eyes, purple cartridge backpack, and two-pin cable from the reference. Added controller moulds to the Foundry’s distant layer and a short spark when Bit powers the lift. The lab study uses a dark casing, purple trim, and cyan ports from the supplied NOVA-16 image.
+   - **Results:** The proof shows the sprites at native and 4× size with both palettes and the live upper-deck frame. All 50 checks and eight recorded routes pass. The production worker rendered the treasure route with matching output. The art diagnostic flags overlay edges and a socket covered by the pause panel. The browser smoke test still cannot start in this workspace.
+   - **Review:** The first playable Foundry look was well received. The updated character frames and lab study are ready for review.
 3. **Core mechanics.** Add the full socket and device behaviors, collectible bookkeeping, and practice stations. Test repeated B presses, checkpoint restores, and revisiting a collected item.
 4. **Hazards.** Implement warned presses, live contacts, and timed platforms. Verify they remain readable and reset consistently.
 5. **Stage content.** Build and clear all eight stages. Record a route to every exit and collectible.
