@@ -195,6 +195,25 @@ Use stable stage and item IDs. Derive unlocked stages and complete lab puzzles f
    - **Built:** `tests/carts/bits-console-quest/jump-windows.mjs` measures each main-route jump's take-off window: from where the recorded route presses A, how many frames early or late (up to 8 each way) the press can come and still land on the same platform. It is a tool rather than a numbered test, since it takes a minute or two, and it fails on a window under 10 frames. The label is the title screen (`release.js`). The cart is in the Library on the Arcade shelf, as `carts/bits-console-quest.nova.png`, with a README row.
    - **Results:** All 41 main-route jumps have windows of 12 to 17 frames; the tightest are Slot Elevator's step up to the high ledge and Trace Trail's ledge (−3 to +8 frames). The routes to every treasure and piece (the optional, harder ones) clear in the campaign test. The hazards' safe phases are long: contacts are live for 30 frames of 120, the press for 44 of 144, and scanline spans are off for 24 of 120. No stage needed changing. `release.js`: the PNG decodes to the packed cart (payload 52.7 KB of 147 KB). Human playtesting of first-clear pacing and difficulty is still to do in the preview.
 
+### Second pass: longer, harder, more to do
+
+**The user's playtest (2026-11-18):** "Overall it's really cool, it's just a bit on the easy/short side." Asked how to add length and challenge, they chose all four options offered: longer stages, a third stage per zone, hard remixes after the ending, and time medals. For difficulty they chose **harder throughout**, the Foundry included, over a gentle start.
+
+Targets: a first clear of a stage takes 1 to 3 minutes (the recorded runs of the first version took 10 to 16 seconds). Harder means longer sequences between beacons, gaps that need a running jump, hazards in the paths of jumps rather than beside them, and devices to use on their clock. Fair still means no blind jumps, and a warning before every hazard. Every main-route jump keeps a take-off window of at least 8 frames (`jump-windows.mjs`, now 12 to 17).
+
+The limits that shape it:
+- **Stage width.** Map RAM is 256 tiles wide (2,048 px). Longer stages (about 3,000 to 4,000 px) need the terrain written into a 256-column ring as the camera moves (BG1 wraps), in place of one whole stage written at the start.
+- **Code.** The code is 52.9 KB of 64 KB. Set `"strip": true` in `meta.json`, and keep stage layouts as compact arrays (or in the ROM) as they grow.
+- **Saves.** The format stays version 2, with new slots: the new finales take stage numbers 8 to 11 (the third stage of zone z is stage 8 + z), so existing saves keep their meaning. Clears: slot 1 bits 0–11, with remix clears in bits 16–27. Treasures: slot 2 bits 0–11. Pieces: slot 3 bits 0–23 (a finale's two are bits 16 + 2z and 17 + 2z). Each zone's puzzle becomes six pieces, in a 3 × 2 cutaway. Remix chips: slot 6 bits 0–11. Best times, in frames: slots 16–27, and the remixes' in slots 32–43.
+
+10. **Long-stage engine.** Stream the terrain into a wrapping 256-column map as Bit runs; take stage widths up to 4,096 px; allow three beacons a stage; turn on `strip`; extend the stage format for what the new stages need. Test the streaming at the ring's seams and after a checkpoint jump back.
+11. **Longer, harder stages: Foundry and Caverns.** Rebuild Button Assembly, Cable Works, Contact Mine and Slot Elevator at about three times their length, harder throughout. Re-record their routes and collectibles; check every jump's window.
+12. **Longer, harder stages: Gardens and Skyline.** The same for Trace Trail, Relay Grove, Phosphor Rooftops and Picture Lock.
+13. **A finale for each zone.** Four new stages (1-3 to 4-3), each the hardest of its world, with a treasure and two pieces. The treasure case grows to 12 and the puzzle wall's cutaways to 6 pieces. The stage select lists three a zone, and a zone's finale opens the next zone.
+14. **Time medals.** Each stage gets a target time from its recorded route. The best time is saved on a clear and shown on the clear card and the stage select, with a medal when it beats the target. The lab shows the medal count.
+15. **Hard remixes.** Once the ending has been seen, each of the 12 stages has a remix: the same ground with tighter timing, more hazards and fewer beacons, plus a golden chip to find. Remixes have their own clears, best times and medals, and the lab shows the chips.
+16. **Balance and release again.** Check every route at human timing; the gallery, the art review and the songs over the longer stages; release with `--keep-label`.
+
 ## 16. Open questions
 
 - Working names, device assignments, and treasure designs in the zone table.
