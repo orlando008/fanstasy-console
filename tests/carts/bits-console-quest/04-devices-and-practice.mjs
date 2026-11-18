@@ -41,7 +41,7 @@ function runUntil(vm, condition, buttons = 0, limit = 120) {
   check(vm.m.save[p.PIECE_SLOT] === 3 && p.hasTreasure(), 'the upper route saves the second puzzle piece and treasure');
   const same = newGame(2, { save: vm.m.save });
   replay(same, [...toLift, ...toUpperDeck, ...treasureRoute]);
-  check(!same.audioLog.some(event => event[1] === 'sfx' && event[2] === p.SFX.pickup),
+  check(!same.audioLog.some(event => event[1] === 'sfx' && [p.SFX.treasure, p.SFX.piece].includes(event[2])),
     'both pieces and the treasure disappear on a replay');
 }
 

@@ -26,8 +26,8 @@ const JUMP_SPEED = -4.7, HELD_GRAVITY = 0.22, GRAVITY = 0.30, FALL_LIMIT = 5.5;
 const COYOTE_FRAMES = 6, BUFFER_FRAMES = 6, RESPAWN_FRAMES = 24;
 const SOCKET_X_REACH = 20, SOCKET_Y_REACH = 12, PLUG_FRAMES = 12;
 const SAVE_VERSION = 2, CLEAR_SLOT = 1, TREASURE_SLOT = 2, PIECE_SLOT = 3, STAGE_SLOT = 4, ENDING_SLOT = 5;
-const SFX = { move: 0, confirm: 1, pause: 2, fall: 3, pickup: 5, clear: 6, jump: 7, plug: 8, checkpoint: 9 };
-const SONG = { title: 0, stage: 1, practice: 2 };
+const SFX = { move: 0, confirm: 1, pause: 2, fall: 3, treasure: 4, piece: 5, clear: 6, jump: 7, plug: 8, checkpoint: 9, power: 10, reboot: 11, spring: 12 };
+const SONG = { title: 0, zones: [1, 2, 3, 4], practice: 5 };
 const SFX_CH = [7, 6];
 const BUTTONS = [UP, DOWN, LEFT, RIGHT, A, B, START];
 const WALK = [ART.sprites.heroWalk1, ART.sprites.heroWalk2, ART.sprites.heroWalk3, ART.sprites.heroWalk4];
@@ -67,7 +67,7 @@ function campaignStage(index, name, treasureName, width, spawnY, layout) {
   const zone = index >> 1;
   return {
     index, name, treasureName, zone, width, mapY: 64, palette: zone ? 7 : 1,
-    backdrop: STAGE_BACKDROPS[zone], song: SONG.stage, spawn: point(32, spawnY),
+    backdrop: STAGE_BACKDROPS[zone], song: SONG.zones[zone], spawn: point(32, spawnY),
     devices, hazards, signs, ...terrain,
     sockets: [...sockets, { id: 'exit', mode: 'exit', ...goal }],
     items: [
@@ -516,7 +516,7 @@ function moveBit() {
     bit.support = null;
     bit.coyote = 0;
     bit.jumpBuffer = 0;
-    fx(SFX.jump);
+    fx(spring ? SFX.spring : SFX.jump);
   } else {
     bit.vy = Math.min(FALL_LIMIT, bit.vy + (held(A) && bit.vy < 0 ? HELD_GRAVITY : GRAVITY));
   }
@@ -643,6 +643,7 @@ function plug(s) {
   bit.pluggedSocket = s;
   bit.plugUntil = clock + PLUG_FRAMES;
   fx(SFX.plug);
+  if (s.targets.length || s.alternateTargets.length) fx(SFX.power);
 }
 
 const stageCleared = (index = 0) => (dget(CLEAR_SLOT) & (1 << index)) !== 0;
@@ -698,6 +699,7 @@ function updateStage() {
       resetDevices(checkpoint);
       hazardTick = checkpoint?.hazardTick ?? 0;
       spawnBit(checkpoint?.beacon || course.spawn);
+      fx(SFX.reboot);
     }
     return;
   }
@@ -729,7 +731,7 @@ function updateStage() {
     const slot = itemSlot(item);
     dset(slot, dget(slot) | (1 << item.index));
     bit.cheerUntil = clock + 18;
-    fx(SFX.pickup);
+    fx(item.kind === 'treasure' ? SFX.treasure : SFX.piece);
   }
   if (pressed(B)) {
     const socket = interaction();

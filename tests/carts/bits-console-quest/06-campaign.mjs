@@ -20,6 +20,7 @@ const fullRoutes = [[...toLift, ...toUpperDeck, ...treasureRoute], ...campaignRo
 for (const [index, route] of fullRoutes.entries()) {
   const stage = p.CAMPAIGN[index];
   check(p.state === 'play' && p.course === stage, 'the campaign enters ' + stage.name);
+  check(p.playing === p.SONG.zones[stage.zone], stage.name + ' plays its zone\'s song');
 
   if (index === 1) {
     check(p.mget(688 / 8, p.COURSE_MAP_Y + 112 / 8) === 0,

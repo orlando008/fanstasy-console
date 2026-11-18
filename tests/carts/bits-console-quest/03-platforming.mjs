@@ -83,7 +83,7 @@ function runUntil(vm, condition, buttons = 0, limit = 150) {
   vm.run(p.RESPAWN_FRAMES);
   check(p.bit.x === 304 && p.checkpoint && !p.lift.powered && p.lift.y === 192,
     'after the checkpoint a fall restores Bit and the unpowered lift');
-  check(vm.audioLog.filter(event => event[1] === 'music' && event[2] === p.SONG.stage).length === 1,
+  check(vm.audioLog.filter(event => event[1] === 'music' && event[2] === p.SONG.zones[0]).length === 1,
     'the stage song keeps playing through both respawns');
 }
 

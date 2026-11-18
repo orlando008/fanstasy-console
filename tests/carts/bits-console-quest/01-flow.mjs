@@ -13,7 +13,7 @@ function check(condition, description) {
   vm.run(3);
   check(p.state === 'title' && p.playing === p.SONG.title, 'the title opens with its song');
   enterSelectedStage(vm);
-  check(p.state === 'play' && p.playing === p.SONG.stage, 'the lab console starts the Foundry course with its song');
+  check(p.state === 'play' && p.playing === p.SONG.zones[0], 'the lab console starts the Foundry course with its song');
   vm.run(15, M('RIGHT'));
   vm.press('START');
   const x = p.bit.x;
@@ -42,7 +42,7 @@ function check(condition, description) {
   check(p.hasTreasure() && vm.m.save[p.TREASURE_SLOT] === 1, 'the treasure is saved when touched');
   check(p.stageCleared() && vm.m.save[p.CLEAR_SLOT] === 1, 'clearing the course saves its clear bit');
   const cues = vm.audioLog.filter((event) => event[1] === 'sfx');
-  check([p.SFX.jump, p.SFX.checkpoint, p.SFX.plug, p.SFX.pickup, p.SFX.clear]
+  check([p.SFX.jump, p.SFX.checkpoint, p.SFX.plug, p.SFX.power, p.SFX.treasure, p.SFX.piece, p.SFX.clear]
     .every(n => cues.some(event => event[2] === n && event[3] >= 6)), 'gameplay cues play on effects channels');
 
   const reopened = newGame(7, { title: true, save: vm.m.save });
@@ -51,7 +51,7 @@ function check(condition, description) {
   check(saved.state === 'play' && saved.hasTreasure() && saved.stageCleared(),
     'reopening the cart keeps both collection and clear progress');
   replay(reopened, [...toLift, ...toUpperDeck, ...treasureRoute]);
-  check(!reopened.audioLog.some(event => event[1] === 'sfx' && event[2] === saved.SFX.pickup),
+  check(!reopened.audioLog.some(event => event[1] === 'sfx' && [saved.SFX.treasure, saved.SFX.piece].includes(event[2])),
     'a collected treasure cannot be picked up twice');
   reopened.step(M('B'));
   check(saved.state === 'clear', 'holding B at the exit leaves the clear screen open');
