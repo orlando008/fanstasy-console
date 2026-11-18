@@ -1,4 +1,4 @@
-import { newGame, M } from './lib.mjs';
+import { newGame, M, enterSelectedStage } from './lib.mjs';
 import { replay, toLift, toUpperDeck, treasureRoute } from './bot.mjs';
 
 let failures = 0;
@@ -11,7 +11,7 @@ const vm = newGame(1, { title: true });
 const p = vm.probe();
 vm.step();
 check(vm.ppu.layers[0].show && !vm.ppu.layers[1].show, 'the title shows its logo over the Foundry background');
-vm.press('A');
+enterSelectedStage(vm);
 check(!vm.ppu.layers[0].show && vm.ppu.layers[1].show, 'play shows the terrain instead of the logo');
 
 const base = p.COURSE_MAP_Y;

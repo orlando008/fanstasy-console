@@ -343,4 +343,83 @@ for x in (9, 19):
     console.rect(x, 24, 4, 1, lab.labCyan[0])
 art.sprite('labConsole', console, pal=lab, region='spr')
 
+# Lab displays use one palette across the eight hardware treasures and four cutaways.
+exhibit = art.sprite_palette(5, {
+    'ink': '161528', 'violet': ['402b61', '7563ab', 'bf9aea'],
+    'copper': ['713c43', 'ce865b', 'ffe29a'],
+    'cyan': ['295b79', '409fb7', '8bffe8'], 'white': 'fff4db',
+})
+for i in range(8):
+    item = Img(16, 16)
+    if i == 0:  # Prototype D-pad
+        item.rect(5, 1, 6, 14, exhibit.ink).rect(1, 5, 14, 6, exhibit.ink)
+        item.rect(6, 2, 4, 12, exhibit.violet[1]).rect(2, 6, 12, 4, exhibit.violet[1])
+        item.rect(3, 6, 9, 1, exhibit.violet[2]).pset(7, 3, exhibit.white)
+    elif i == 1:  # Braided cable
+        item.ring(7, 9, 3, 5, exhibit.ink).ring(7, 9, 3.5, 4.5, exhibit.copper[1])
+        item.line(9, 6, 12, 2, exhibit.copper[2]).line(6, 13, 2, 14, exhibit.copper[0])
+        item.rect(10, 1, 5, 4, exhibit.violet[1]).rect(11, 1, 3, 1, exhibit.white)
+    elif i == 2:  # Clear-shell cartridge
+        item.rect(2, 2, 12, 12, exhibit.ink).rect(3, 3, 10, 10, exhibit.cyan[0])
+        item.rect(4, 4, 8, 3, exhibit.cyan[2]).rect(5, 8, 6, 3, exhibit.violet[1])
+        for pin in (4, 7, 10):
+            item.rect(pin, 12, 2, 1, exhibit.copper[2])
+    elif i in (3, 4):  # Gold contact board and ceramic logic chip
+        base = exhibit.copper if i == 3 else exhibit.cyan
+        item.rect(3, 3, 10, 10, exhibit.ink).rect(4, 4, 8, 8, base[0])
+        item.rect(5, 5, 6, 5, base[1]).rect(6, 6, 3, 2, base[2])
+        for pin in (4, 7, 10):
+            item.rect(pin, 1, 2, 3, base[2]).rect(pin, 12, 2, 3, base[2])
+    elif i == 5:  # Relay module
+        item.rect(1, 4, 14, 9, exhibit.ink).rect(2, 5, 12, 7, exhibit.violet[0])
+        for x in (4, 7, 10):
+            item.rect(x, 6, 1, 4, exhibit.cyan[2])
+        item.rect(4, 11, 8, 2, exhibit.copper[1])
+    elif i == 6:  # Phosphor swatch
+        item.poly([(3, 2), (13, 2), (15, 11), (12, 14), (2, 14), (1, 6)], exhibit.ink)
+        item.poly([(4, 3), (12, 3), (13, 11), (11, 13), (3, 12), (2, 6)], exhibit.cyan[0])
+        for x, color in [(4, exhibit.cyan[2]), (7, exhibit.violet[2]), (10, exhibit.copper[1])]:
+            item.rect(x, 5, 2, 6, color)
+    else:  # CRT tuning dial
+        item.disc(7.5, 7.5, 7, exhibit.ink).disc(7.5, 7.5, 5.5, exhibit.violet[1])
+        item.disc(7.5, 7.5, 3.5, exhibit.violet[0]).line(8, 7, 11, 3, exhibit.white)
+        item.pset(3, 6, exhibit.cyan[2]).pset(5, 3, exhibit.cyan[2])
+    art.sprite('displayTreasure' + str(i), item, pal=exhibit, region='spr')
+
+diagram = art.sprite_palette(7, {
+    'grid': '183747', 'frame': '356674', 'board': '284457',
+    'trace': '4aafa8', 'wire': '6bf4dc', 'amber': 'ebc37c', 'light': 'e5fff2',
+})
+for zone in range(4):
+    cutaway = Img(32, 32)
+    cutaway.rect(0, 0, 32, 32, diagram.grid)
+    for g in range(4, 32, 4):
+        cutaway.line(g, 0, g, 31, diagram.board).line(0, g, 31, g, diagram.board)
+    if zone == 0:
+        cutaway.poly([(5, 8), (27, 8), (30, 14), (30, 24), (26, 27),
+                     (6, 27), (2, 24), (2, 14)], diagram.frame)
+        cutaway.rect(5, 12, 22, 11, diagram.board)
+        cutaway.rect(9, 11, 3, 11, diagram.wire).rect(5, 15, 11, 3, diagram.wire)
+        cutaway.disc(21, 19, 3, diagram.amber).disc(25, 14, 2, diagram.light)
+        cutaway.line(16, 8, 16, 2, diagram.trace)
+    elif zone == 1:
+        cutaway.rect(4, 4, 24, 24, diagram.frame).rect(6, 6, 20, 17, diagram.board)
+        cutaway.rect(10, 10, 12, 8, diagram.trace).rect(12, 12, 8, 4, diagram.grid)
+        for x in (8, 12, 16, 20, 24):
+            cutaway.line(x, 18, x, 25, diagram.wire).rect(x - 1, 25, 3, 4, diagram.amber)
+    elif zone == 2:
+        cutaway.rect(11, 10, 10, 12, diagram.trace).rect(13, 12, 6, 8, diagram.board)
+        for x, y, dx, dy in [(11, 12, -1, -1), (20, 12, 1, -1),
+                              (11, 19, -1, 1), (20, 19, 1, 1)]:
+            cutaway.line(x, y, x + 7 * dx, y + 7 * dy, diagram.wire)
+            cutaway.disc(x + 7 * dx, y + 7 * dy, 2, diagram.amber)
+    else:
+        cutaway.poly([(5, 5), (27, 5), (29, 8), (29, 24), (27, 27),
+                     (5, 27), (3, 24), (3, 8)], diagram.frame)
+        cutaway.rect(6, 8, 20, 16, diagram.board)
+        for y in range(11, 23, 3):
+            cutaway.line(8, y, 23, y, diagram.trace)
+        cutaway.line(21, 10, 9, 22, diagram.wire).disc(21, 10, 2, diagram.amber)
+    art.sprite('puzzleArt' + str(zone), cutaway, pal=diagram, region='spr')
+
 art.write(sys.argv[1])

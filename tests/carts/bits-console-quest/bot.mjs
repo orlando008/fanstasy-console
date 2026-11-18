@@ -40,7 +40,9 @@ const routes = {
 
 const campaignKeys = campaignRoutes.map((inputs, i) => {
   const key = 'stage' + (i + 2);
-  routes[key] = expand([[1, M('A')], [1, 0], ...inputs]);
+  routes[key] = expand([
+    [1, M('A')], [1, 0], [1, M('B')], [1, 0], [1, M('A')], [1, 0], ...inputs,
+  ]);
   return key;
 });
 

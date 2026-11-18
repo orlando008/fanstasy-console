@@ -10,6 +10,8 @@ function check(condition, description) {
 
 const vm = newGame(1, { title: true });
 const p = vm.probe();
+vm.press('A');
+vm.press('B');
 vm.press('RIGHT');
 check(p.selection === 0 && p.lastUnlocked() === 0, 'a new save can only select Button Assembly');
 vm.press('A');
@@ -33,18 +35,31 @@ for (const [index, route] of fullRoutes.entries()) {
   if (index < fullRoutes.length - 1) {
     check(p.lastUnlocked() === index + 1, stage.name + ' unlocks the next stage');
     vm.press('A');
+    if (index & 1) {
+      check(p.state === 'lab' && p.selection === index + 1, 'zone clears return to the lab and highlight the next stage');
+      vm.press('B');
+      vm.press('A');
+    }
   }
 }
 
+vm.press('A');
+vm.press('B');
+vm.run(120);
+vm.press('A');
 const reopened = newGame(2, { title: true, save: vm.m.save });
 const saved = reopened.probe();
 check(saved.selection === 7 && saved.lastUnlocked() === 7, 'the last selected stage and full unlocks persist on reopen');
+reopened.press('A');
+reopened.press('B');
 reopened.press('LEFT');
 reopened.press('A');
 check(saved.course.index === 6 && saved.hasTreasure(), 'cleared stages can be selected again with the treasures retained');
 
 const legacy = newGame(1, { title: true, save: Int32Array.from([2, 1, 1, 3]) });
 const old = legacy.probe();
+legacy.press('A');
+legacy.press('B');
 legacy.press('RIGHT');
 legacy.press('RIGHT');
 check(old.selection === 1 && old.lastUnlocked() === 1, 'the Foundry prototype save unlocks Cable Works');

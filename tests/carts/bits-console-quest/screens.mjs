@@ -1,4 +1,4 @@
-import { newGame, M } from './lib.mjs';
+import { newGame, M, enterSelectedStage } from './lib.mjs';
 import { replay, toLift, toUpperDeck, treasureRoute, hazardApproach, crossScanline, toPracticeRelay, toPracticeLift, practiceFinish } from './bot.mjs';
 
 export const hero = [
@@ -10,6 +10,10 @@ export default function screens(shot) {
   const vm = newGame(1, { title: true });
   vm.run(30);
   shot(vm, 'title');
+  vm.press('A');
+  shot(vm, 'Bit’s lab');
+  vm.press('B');
+  shot(vm, 'stage console');
   vm.press('A');
   shot(vm, 'start');
   vm.run(56, M('RIGHT'));
@@ -60,12 +64,33 @@ export default function screens(shot) {
   replay(practice, practiceFinish);
   shot(practice, 'practice complete');
 
+  const collection = newGame(1, { title: true, save: Int32Array.from([2, 255, 255, 65535, 7, 1]) });
+  collection.press('A');
+  collection.run(71, M('RIGHT'));
+  collection.run(7);
+  shot(collection, 'lab treasure cabinet');
+  collection.press('B');
+  shot(collection, 'treasure case');
+  collection.press('B');
+  collection.run(72, M('RIGHT'));
+  collection.run(7);
+  collection.press('B');
+  shot(collection, 'puzzle wall');
+
+  const ending = newGame(1, { title: true, save: Int32Array.from([2, 255, 255, 65535, 7]) });
+  ending.press('A');
+  ending.press('B');
+  ending.run(45);
+  shot(ending, 'console booting');
+  ending.run(80);
+  shot(ending, 'NOVA-16 restored');
+
   for (const [index, label] of [[1, 'Cable Works'], [2, 'Contact Mine'],
     [3, 'Slot Elevator'], [4, 'Trace Trail'], [5, 'Relay Grove'],
     [6, 'Phosphor Rooftops'], [7, 'Picture Lock']]) {
     const save = Int32Array.from([2, (1 << index) - 1, 0, 0, index]);
     const level = newGame(1, { title: true, save });
-    level.press('A');
+    enterSelectedStage(level);
     level.run(42, M('RIGHT'));
     shot(level, label);
   }

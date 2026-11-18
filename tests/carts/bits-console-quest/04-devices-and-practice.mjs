@@ -113,12 +113,12 @@ function runUntil(vm, condition, buttons = 0, limit = 120) {
     'practice effects leave the accompaniment channels alone');
   vm.step();
   vm.press('B');
-  check(p.state === 'title', 'B leaves practice from the completion card');
+  check(p.state === 'lab', 'B returns to the lab from the practice completion card');
   vm.press('B');
   vm.press('START');
   vm.press('UP');
   vm.press('A');
-  check(p.state === 'title' && !p.paused, 'practice can also be left through pause');
+  check(p.state === 'lab' && !p.paused, 'practice can also be left through pause');
 }
 
 process.exitCode = failures ? 1 : 0;

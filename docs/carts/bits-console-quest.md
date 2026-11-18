@@ -1,8 +1,8 @@
 # Bit’s Console Quest
 
-**Version:** 0.6 (campaign stages)
+**Version:** 0.7 (lab and campaign flow)
 
-**Status:** The packed cart runs all eight campaign stages and the three-station practice wing. Use Left or Right on the title screen to choose an unlocked stage, A to start, and B for practice. On a stage-clear card, A advances to the next stage and Left replays the current stage.
+**Status:** The full campaign returns to a walkable lab with stage selection, the treasure case, a puzzle wall, a practice door, and a console boot ending. A enters the lab from title. Walk to a station and press B.
 
 **Shelf and players:** Arcade, one player
 
@@ -104,13 +104,13 @@ Progress is measured by **8 stages cleared**, **8 treasures found**, **16 puzzle
 
 | Screen | Flow |
 |---|---|
-| Title | A enters the lab and resumes the saved campaign, or starts one on a fresh save. |
+| Title | A enters the lab and resumes the saved campaign, or starts one on a fresh save. B is a shortcut to practice. |
 | Lab | Walk to the console, display case, puzzle wall, or practice door and press B. |
 | Stage selector | Shows the unlocked stages and the collectibles found in each. A enters the selected stage. |
 | Stage | The exit terminal opens the clear card. START opens pause. |
-| Stage clear | After a first stage, pick the next stage or the lab. After a zone finale, return to the lab. A previously cleared stage stays cleared on replay. |
+| Stage clear | A advances within a zone or returns to the lab after a zone finale. Left replays the stage and B returns to the lab. |
 | Practice | Work through the three stations. Finish or return to the lab from pause. |
-| Ending | The lab console boots after the last relay. A returns to the open lab. |
+| Ending | After all eight clears, press B beside the console to boot it. A acknowledges the result and returns to the open lab. |
 
 ## 11. Audio
 
@@ -179,6 +179,9 @@ Use stable stage and item IDs. Derive unlocked stages and complete lab puzzles f
    - **Progress:** Clearing a stage unlocks the next and immediately saves its clear bit. Eight treasure bits and sixteen piece bits are independent of stage clears. Existing version 2 saves retain Foundry progress. The title stage selector and last-played slot provide access while the lab hub is in development.
    - **Results:** 134 checks, a 3,000-frame soak, and 40 route runs passed. A fresh-save replay in the production console worker cleared all eight stages and saved all 24 collectibles over 5,714 frames. Recorded perfect routes take roughly 10–16 seconds per stage. First-clear pacing still needs human playtesting. The browser smoke test could not start in this workspace.
 6. **Lab and campaign flow.** Implement stage selection, clear cards, exhibits, puzzle cutaways, replay, and save and resume. Verify that the ending and completed campaign reopen correctly.
+   - **Built:** A 640 px walkable lab with four B-button stations. The NOVA-16 console lists all eight stages with unlock and item status. The cabinet shows eight hardware treasures. The puzzle wall maps each zone’s four saved piece bits to the four quadrants of its cutaway. The practice door and title shortcut open the same practice course. The lab and practice share Scott Joplin’s *The Entertainer*.
+   - **Flow and saves:** The first clear in a zone offers the second stage. Zone finales return to the lab and highlight the next available stage. Exit and pause also return to the lab. After all eight clears, the console boots even if collectibles are still missing. Acknowledging the ending records slot 5 in the existing save format and the console resumes stage selection. Older clear and collection bits stay intact.
+   - **Results:** 161 checks, a 3,000-frame soak, and 40 recorded runs passed. Walk-to-station input tests cover the console, exhibits, practice door, and pause. The production console worker played through all eight stages and the ending in 5,856 frames and persisted all clear, collection, and ending bits. Reviewed all lab screens. Chromium still cannot start the browser smoke test in this workspace.
 7. **Remaining art.** Draw the zones, lab furnishings, treasures, cutaways, and ending. Review screenshots of each stage and screen.
 8. **Audio.** Compose and test the chiptune tracks and effects. Add *The Entertainer* for the lab and practice course. Verify cues and check levels on the new chip.
 9. **Balance and release.** Check main-route jumps at human timing, replay the hardest optional routes, and verify the cart in the console. Produce the label and PNG cart and add the Arcade Library entry.

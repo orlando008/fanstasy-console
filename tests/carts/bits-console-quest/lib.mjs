@@ -11,7 +11,8 @@ const PROBE = `__expose(() => ({
   get deck() { return course.deck; }, get COURSE_MAP_Y() { return course.mapY; },
   hasTreasure, stageCleared, interaction: () => interaction()?.id ?? null, clearSocketPath, mget, ART,
   get hazardTick() { return hazardTick; }, hazardState, solidDevice,
-  get selection() { return selection; }, CAMPAIGN, lastUnlocked,
+  get selection() { return selection; }, get labMenu() { return labMenu; }, get exhibit() { return exhibit; },
+  CAMPAIGN, lastUnlocked, readyToBoot, puzzleMask, ENDING_SLOT,
   SFX, SONG, RESPAWN_FRAMES, SAVE_VERSION, CLEAR_SLOT, TREASURE_SLOT, PIECE_SLOT,
 }));`;
 
@@ -19,3 +20,9 @@ export const newGame = (seed = 1, { title = false, save = null } = {}) =>
   boot(CART, { seed, save, extra: (title ? '' : 'skipTitle = true;') + PROBE });
 
 export const M = (...names) => names.reduce((mask, name) => mask | (1 << BTN[name]), 0);
+
+export const enterSelectedStage = vm => {
+  vm.press('A'); // Enter the lab beside the console.
+  vm.press('B');
+  vm.press('A');
+};

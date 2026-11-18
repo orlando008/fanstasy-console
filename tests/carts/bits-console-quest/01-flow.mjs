@@ -1,4 +1,4 @@
-import { newGame, M } from './lib.mjs';
+import { newGame, M, enterSelectedStage } from './lib.mjs';
 import { mainRoute, replay, toLift, toUpperDeck, treasureRoute } from './bot.mjs';
 
 let failures = 0;
@@ -12,8 +12,8 @@ function check(condition, description) {
   const p = vm.probe();
   vm.run(3);
   check(p.state === 'title' && p.playing === p.SONG.title, 'the title opens with its song');
-  vm.press('A');
-  check(p.state === 'play' && p.playing === p.SONG.stage, 'A starts the Foundry course with its song');
+  enterSelectedStage(vm);
+  check(p.state === 'play' && p.playing === p.SONG.stage, 'the lab console starts the Foundry course with its song');
   vm.run(15, M('RIGHT'));
   vm.press('START');
   const x = p.bit.x;
@@ -28,7 +28,7 @@ function check(condition, description) {
   vm.press('START');
   vm.press('UP');
   vm.press('A');
-  check(!p.paused && p.state === 'title', 'back to title leaves the course');
+  check(!p.paused && p.state === 'lab', 'back to lab leaves the course');
 }
 
 {
@@ -47,7 +47,7 @@ function check(condition, description) {
 
   const reopened = newGame(7, { title: true, save: vm.m.save });
   const saved = reopened.probe();
-  reopened.press('A');
+  enterSelectedStage(reopened);
   check(saved.state === 'play' && saved.hasTreasure() && saved.stageCleared(),
     'reopening the cart keeps both collection and clear progress');
   replay(reopened, [...toLift, ...toUpperDeck, ...treasureRoute]);
@@ -57,7 +57,7 @@ function check(condition, description) {
   check(saved.state === 'clear', 'holding B at the exit leaves the clear screen open');
   reopened.step();
   reopened.press('B');
-  check(saved.state === 'title', 'B returns from the clear screen to title');
+  check(saved.state === 'lab', 'B returns from the clear screen to the lab');
 }
 
 {

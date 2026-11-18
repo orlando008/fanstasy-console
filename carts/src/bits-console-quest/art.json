@@ -168,6 +168,34 @@
     "light": 4,
     "mid": 3
    }
+  },
+  "spr5": {
+   "base": 208,
+   "colors": {
+    "copper0": 5,
+    "copper1": 6,
+    "copper2": 7,
+    "cyan0": 8,
+    "cyan1": 9,
+    "cyan2": 10,
+    "ink": 1,
+    "violet0": 2,
+    "violet1": 3,
+    "violet2": 4,
+    "white": 11
+   }
+  },
+  "spr7": {
+   "base": 240,
+   "colors": {
+    "amber": 6,
+    "board": 3,
+    "frame": 2,
+    "grid": 1,
+    "light": 7,
+    "trace": 4,
+    "wire": 5
+   }
   }
  },
  "scenes": {
@@ -215,6 +243,46 @@
   }
  },
  "sprites": {
+  "displayTreasure0": {
+   "pal": 5,
+   "size": 16,
+   "tile": 452
+  },
+  "displayTreasure1": {
+   "pal": 5,
+   "size": 16,
+   "tile": 454
+  },
+  "displayTreasure2": {
+   "pal": 5,
+   "size": 16,
+   "tile": 456
+  },
+  "displayTreasure3": {
+   "pal": 5,
+   "size": 16,
+   "tile": 458
+  },
+  "displayTreasure4": {
+   "pal": 5,
+   "size": 16,
+   "tile": 460
+  },
+  "displayTreasure5": {
+   "pal": 5,
+   "size": 16,
+   "tile": 462
+  },
+  "displayTreasure6": {
+   "pal": 5,
+   "size": 16,
+   "tile": 484
+  },
+  "displayTreasure7": {
+   "pal": 5,
+   "size": 16,
+   "tile": 486
+  },
   "heroBlink": {
    "pal": 0,
    "size": 32,
@@ -280,6 +348,26 @@
    "size": 16,
    "tile": 398
   },
+  "puzzleArt0": {
+   "pal": 7,
+   "size": 32,
+   "tile": 512
+  },
+  "puzzleArt1": {
+   "pal": 7,
+   "size": 32,
+   "tile": 516
+  },
+  "puzzleArt2": {
+   "pal": 7,
+   "size": 32,
+   "tile": 520
+  },
+  "puzzleArt3": {
+   "pal": 7,
+   "size": 32,
+   "tile": 524
+  },
   "socketIdle": {
    "pal": 2,
    "size": 16,
@@ -300,6 +388,6 @@
   "deckSide": 2,
   "deckTop": 1
  },
- "used": 630,
+ "used": 726,
  "version": 1
 }
