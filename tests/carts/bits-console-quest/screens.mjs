@@ -1,5 +1,5 @@
 import { newGame, M } from './lib.mjs';
-import { replay, toLift, toUpperDeck, treasureRoute, toPracticeRelay, toPracticeLift, practiceFinish } from './bot.mjs';
+import { replay, toLift, toUpperDeck, treasureRoute, hazardApproach, crossScanline, toPracticeRelay, toPracticeLift, practiceFinish } from './bot.mjs';
 
 export const hero = [
   'heroIdle', 'heroBlink', 'heroWalk1', 'heroWalk2', 'heroWalk3',
@@ -26,6 +26,25 @@ export default function screens(shot) {
   vm.step(M('START'));
   replay(vm, treasureRoute);
   shot(vm, 'stage clear');
+
+  const hazards = newGame(1);
+  replay(hazards, [...toLift, ...toUpperDeck, ...hazardApproach]);
+  shot(hazards, 'scanline socket');
+  hazards.step(M('RIGHT', 'B'));
+  hazards.run(74, M('RIGHT'));
+  shot(hazards, 'scanline warning');
+  hazards.run(crossScanline[1][0] - 74, M('RIGHT'));
+  hazards.run(33, M('RIGHT', 'A'));
+  shot(hazards, 'assembly press warning');
+  hazards.run(6);
+  shot(hazards, 'assembly press descending');
+
+  const live = newGame(1);
+  replay(live, [...toLift, ...toUpperDeck, ...hazardApproach, ...crossScanline]);
+  const p = live.probe(), contact = p.course.hazards[0];
+  const phase = p.hazardState(contact).phase;
+  live.run((90 - phase + 120) % 120);
+  shot(live, 'live contacts');
 
   const practice = newGame(1, { title: true });
   practice.press('B');

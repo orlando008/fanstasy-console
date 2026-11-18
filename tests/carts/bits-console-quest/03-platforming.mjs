@@ -76,7 +76,7 @@ function runUntil(vm, condition, buttons = 0, limit = 150) {
   vm.run(p.RESPAWN_FRAMES - 1);
   check(p.deathTimer === 1, 'a fall waits 24 frames before respawn');
   vm.step();
-  check(p.deathTimer === 0 && p.bit.x === 32 && p.falls === 1, 'before the checkpoint a fall returns Bit to the start');
+  check(p.deathTimer === 0 && p.bit.x === 32 && p.reboots === 1, 'before the checkpoint a fall returns Bit to the start');
   replay(vm, [...toLift, ...toUpperDeck]);
   check(p.checkpoint && p.lift.powered, 'the midpoint is captured before taking the powered lift');
   check(runUntil(vm, () => p.deathTimer > 0, M('RIGHT')), 'walking off the upper deck also triggers a reboot');

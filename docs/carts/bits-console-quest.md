@@ -1,8 +1,8 @@
 # Bit’s Console Quest
 
-**Version:** 0.4 (devices and practice)
+**Version:** 0.5 (Foundry hazards)
 
-**Status:** The packed cart runs the first Controller Foundry course and a three-station practice wing. A starts Foundry and B opens practice from the title while the lab hub is in development.
+**Status:** The packed cart runs the first Controller Foundry course with a timed hazard stretch, plus a three-station practice wing. A starts Foundry and B opens practice from the title while the lab hub is in development.
 
 **Shelf and players:** Arcade, one player
 
@@ -171,6 +171,9 @@ Use stable stage and item IDs. Derive unlocked stages and complete lab puzzles f
    - **Practice:** The 800 px wing starts with a 48 px held-jump ledge over a safe floor. Next, a relay switches power from a shelf that slides 40 px at 1 px per frame to a 128 px bridge. A final lift rises 80 px, then Bit plugs into the exit. The two beacons snapshot devices and switches for recovery after a fall. Practice has its own purple-and-cyan scenery and plays Scott Joplin’s *The Entertainer*, with effects on channel 7.
    - **Results:** 78 checks and a 3,000-frame soak passed. Four runs each of the Foundry exit route, Foundry collection route, and practice route cleared without a fall. The production worker rendered both modes with their expected save data. All three songs meet the loudness limits. Reviewed 13 rendered screens. Chromium still cannot start the browser smoke test in this workspace.
 4. **Hazards.** Implement warned presses, live contacts, and timed platforms. Verify they remain readable and reset consistently.
+   - **Built:** Extended the Foundry test course to 1,152 px with a second beacon before the new hazards. The socket-powered scanline bridge spans 128 px and cycles through 72 steady frames, 24 flashing gold walkable frames, and 24 off frames. The contacts use a 120-frame cycle with 24 warning frames and 30 live frames. The press uses 28 warning frames, then 10 to descend, 22 down, and 12 to retract. Its moving head is the hitbox. There is a safe waiting area on each approach.
+   - **Recovery:** Pause freezes hazard and device timing. A fall or hit restores the latest beacon’s device state and hazard clock after 24 frames. The pre-bridge beacon starts the retry on solid ground with the bridge unpowered. Save version 2 and existing collectibles carry forward.
+   - **Results:** 97 checks and a 3,000-frame soak passed. Twelve recorded runs cleared Foundry or practice without a reboot. The production console worker rendered both modes with expected save data. Reviewed the scanline warning, press warning and descent, and live contacts at console resolution. The browser smoke test still cannot start in this workspace.
 5. **Stage content.** Build and clear all eight stages. Record a route to every exit and collectible.
 6. **Lab and campaign flow.** Implement stage selection, clear cards, exhibits, puzzle cutaways, replay, and save and resume. Verify that the ending and completed campaign reopen correctly.
 7. **Remaining art.** Draw the zones, lab furnishings, treasures, cutaways, and ending. Review screenshots of each stage and screen.

@@ -15,6 +15,7 @@ overlay = {
     'INK': '151222', 'PANEL': '201a34', 'TRIM': '52446c', 'MUTED': 'b9afca',
     'WHITE': 'fff0d9', 'GOLD': 'ffca70', 'CYAN': '67f1e3', 'PURPLE': '9975c9',
     'CORAL': 'ec8868', 'STEEL': '665374', 'DARK': '382d4a',
+    'HOT': 'ff665c', 'SIGNAL': 'afffd4',
 }
 for index, (name, rgb) in enumerate(overlay.items(), 113):
     art.color(index, rgb, name)

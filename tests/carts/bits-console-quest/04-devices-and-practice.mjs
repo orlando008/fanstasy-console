@@ -106,7 +106,7 @@ function runUntil(vm, condition, buttons = 0, limit = 120) {
   const vm = startPractice(save);
   const p = vm.probe();
   replay(vm, [...toPracticeRelay, ...toPracticeLift, ...practiceFinish]);
-  check(p.state === 'clear' && p.checkpoint?.index === 1 && p.falls === 0, 'the recorded practice route finishes all three stations');
+  check(p.state === 'clear' && p.checkpoint?.index === 1 && p.reboots === 0, 'the recorded practice route finishes all three stations');
   check([...vm.m.save.slice(0, 4)].join() === '2,1,1,3', 'practice completion leaves campaign progress intact');
   const musicStart = vm.audioLog.findIndex(event => event[1] === 'music' && event[2] === p.SONG.practice);
   check(musicStart >= 0 && vm.audioLog.slice(musicStart).filter(event => event[1] === 'sfx').every(event => event[3] === 7),

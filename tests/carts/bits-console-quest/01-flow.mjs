@@ -38,7 +38,7 @@ function check(condition, description) {
   check(vm.m.save[0] === p.SAVE_VERSION && !p.hasTreasure() && !p.stageCleared(),
     'the starter save is replaced by the campaign format');
   replay(vm, [...toLift, ...toUpperDeck, ...treasureRoute]);
-  check(p.state === 'clear' && p.falls === 0, 'the recorded treasure route clears the course through real inputs');
+  check(p.state === 'clear' && p.reboots === 0, 'the recorded treasure route clears the course through real inputs');
   check(p.hasTreasure() && vm.m.save[p.TREASURE_SLOT] === 1, 'the treasure is saved when touched');
   check(p.stageCleared() && vm.m.save[p.CLEAR_SLOT] === 1, 'clearing the course saves its clear bit');
   const cues = vm.audioLog.filter((event) => event[1] === 'sfx');
@@ -64,7 +64,7 @@ function check(condition, description) {
   const vm = newGame(3);
   const p = vm.probe();
   replay(vm, [...toLift, ...toUpperDeck, ...mainRoute]);
-  check(p.state === 'clear' && !p.hasTreasure() && p.falls === 0, 'the main route works without collecting the optional treasure');
+  check(p.state === 'clear' && !p.hasTreasure() && p.reboots === 0, 'the main route works without collecting the optional treasure');
   vm.press('A');
   check(p.state === 'play' && p.bit.x === 32 && p.stageCleared(), 'A replays the course and keeps the clear bit');
 }

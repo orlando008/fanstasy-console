@@ -4,10 +4,12 @@
   "CYAN": 119,
   "DARK": 123,
   "GOLD": 118,
+  "HOT": 124,
   "INK": 113,
   "MUTED": 116,
   "PANEL": 114,
   "PURPLE": 120,
+  "SIGNAL": 125,
   "STEEL": 122,
   "TRIM": 115,
   "WHITE": 117
