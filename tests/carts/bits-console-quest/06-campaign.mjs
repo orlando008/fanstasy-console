@@ -1,4 +1,6 @@
 import { newGame } from './lib.mjs';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { replay, toLift, toUpperDeck, treasureRoute } from './bot.mjs';
 import { campaignRoutes } from './campaign-routes.mjs';
 
@@ -7,6 +9,10 @@ function check(condition, description) {
   console.log(`${condition ? 'PASS' : 'FAIL'} ${description}`);
   if (!condition) failures++;
 }
+
+// The stages live in the ROM (stages.py writes rom/stages.bin): the cart must hold what the script makes
+const stagesPy = fileURLToPath(new URL('../../../carts/src/bits-console-quest/stages.py', import.meta.url));
+check(spawnSync('python3', [stagesPy, '--check']).status === 0, 'rom/stages.bin is what stages.py makes');
 
 const vm = newGame(1, { title: true });
 const p = vm.probe();
