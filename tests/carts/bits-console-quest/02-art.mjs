@@ -42,8 +42,9 @@ for (let i = 0; i < 60; i++) {
 check(['heroFall', 'heroLand', 'heroIdle'].every(name => frames.has(p.ART.sprites[name].tile)),
   'Bit falls, lands, and settles back to his idle pose');
 
-const course = newGame(1);
+const course = newGame(1, { title: true });
 const current = course.probe();
+enterSelectedStage(course); // (the whole-stage routes are recorded from the lab's console, as a player starts a stage)
 replay(course, toLift);
 check(Math.floor(current.camera) === course.ppu.layers[1].x && course.ppu.layers[2].x < course.ppu.layers[1].x,
   'the terrain scrolls with Bit and the far layer follows more slowly');

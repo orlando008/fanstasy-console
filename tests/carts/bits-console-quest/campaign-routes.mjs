@@ -5,27 +5,14 @@ const wait = 0, left = M('LEFT'), right = M('RIGHT'), jumpRight = M('RIGHT', 'A'
 const plug = M('B'), plugRight = M('B', 'RIGHT');
 
 export const campaignRoutes = [
-  [ // Cable Works
-    [36, right], [1, plugRight], [154, right], [29, jumpRight], [12, wait],
-    [1, plug], [64, wait], [5, right], [33, jumpRight], [8, wait],
-    [35, right], [29, jumpRight], [5, wait], [57, right], [35, jumpRight],
-    [9, wait], [55, right], [39, jumpRight], [5, wait], [5, right],
-    [70, wait], [73, right], [1, plug],
+  [ // Cable Works  (solve.mjs)
+    [47, M('RIGHT')], [4, wait], [8, M('LEFT')], [1, M('B')], [4, wait], [16, M('RIGHT')], [4, wait], [124, M('RIGHT')], [4, M('RIGHT', 'A')], [24, M('RIGHT')], [4, wait], [2, M('B')], [24, M('RIGHT')], [4, M('RIGHT', 'A')], [52, M('RIGHT')], [4, M('RIGHT', 'A')], [44, M('RIGHT')], [4, wait], [48, M('RIGHT')], [4, M('RIGHT', 'A')], [4, M('RIGHT')], [8, M('RIGHT', 'A')], [84, M('RIGHT')], [4, wait], [4, M('RIGHT', 'A')], [4, M('RIGHT')], [4, M('RIGHT', 'A')], [4, M('RIGHT')], [4, M('RIGHT', 'A')], [12, M('RIGHT')], [24, M('RIGHT', 'A')], [16, M('RIGHT')], [4, M('RIGHT', 'A')], [24, M('RIGHT')], [8, wait], [12, M('RIGHT')], [1, M('B')], [56, wait], [16, M('RIGHT')], [8, M('RIGHT', 'A')], [4, M('LEFT', 'A')], [4, M('RIGHT', 'A')], [51, M('RIGHT')], [4, M('RIGHT', 'A')], [4, wait], [32, M('RIGHT')], [4, wait], [1, M('B')], [4, M('RIGHT', 'A')], [4, wait], [4, M('RIGHT')], [4, wait], [20, M('RIGHT')], [12, M('RIGHT', 'A')], [8, M('RIGHT')], [4, M('RIGHT', 'A')], [8, M('RIGHT')], [4, M('RIGHT', 'A')], [16, M('RIGHT')], [4, wait], [20, M('RIGHT')], [4, wait], [1, M('B')], [16, wait], [76, M('RIGHT')], [4, M('RIGHT', 'A')], [12, M('RIGHT')], [4, wait], [8, M('RIGHT')], [8, M('RIGHT', 'A')], [31, M('RIGHT')], [4, M('RIGHT', 'A')], [4, wait], [12, M('RIGHT', 'A')], [4, M('RIGHT')], [4, wait], [4, M('RIGHT')], [44, wait], [12, M('RIGHT')], [4, M('RIGHT', 'A')], [4, wait], [36, M('RIGHT')], [4, M('RIGHT', 'A')], [24, M('RIGHT')], [4, wait], [8, M('RIGHT')], [3, M('B')], [52, wait], [16, M('RIGHT')], [4, M('RIGHT', 'A')], [4, wait], [4, M('RIGHT', 'A')], [8, M('RIGHT')], [4, wait], [4, M('RIGHT')], [4, wait], [8, M('RIGHT')], [4, M('RIGHT', 'A')], [28, M('RIGHT')], [4, M('RIGHT', 'A')], [48, M('RIGHT')], [4, M('RIGHT', 'A')], [20, M('RIGHT')], [4, M('RIGHT', 'A')], [39, M('RIGHT')], [52, wait], [52, M('RIGHT')], [4, wait], [1, M('RIGHT', 'B')],
   ],
-  [ // Contact Mine
-    [45, right], [27, jumpRight], [14, wait], [82, right], [6, wait],
-    [1, plug], [136, wait], [21, right], [28, jumpRight], [13, wait],
-    [37, jumpRight], [46, right], [35, jumpRight], [1, wait], [59, right],
-    [33, jumpRight], [13, wait], [26, jumpRight], [15, wait], [37, right],
-    [1, plug],
+  [ // Contact Mine  (solve.mjs)
+    [52, M('RIGHT')], [4, M('RIGHT', 'A')], [4, wait], [4, M('RIGHT')], [4, wait], [83, M('RIGHT')], [1, M('B')], [28, M('RIGHT')], [4, M('RIGHT', 'A')], [4, M('RIGHT')], [8, M('RIGHT', 'A')], [52, M('RIGHT')], [4, M('RIGHT', 'A')], [4, M('RIGHT')], [8, M('RIGHT', 'A')], [88, M('RIGHT')], [4, M('RIGHT', 'A')], [195, M('RIGHT')], [4, wait], [1, M('RIGHT', 'B')], [12, wait], [32, M('RIGHT')], [4, M('RIGHT', 'A')], [4, M('RIGHT')], [4, M('RIGHT', 'A')], [4, M('RIGHT')], [4, M('RIGHT', 'A')], [28, M('RIGHT')], [4, M('RIGHT', 'A')], [56, M('RIGHT')], [4, M('RIGHT', 'A')], [24, M('RIGHT')], [20, M('RIGHT', 'A')], [16, M('RIGHT')], [20, M('RIGHT', 'A')], [48, M('RIGHT')], [4, M('RIGHT', 'A')], [48, M('RIGHT')], [4, M('RIGHT', 'A')], [51, M('RIGHT')], [1, M('B')], [24, wait], [28, M('RIGHT')], [12, M('RIGHT', 'A')], [76, M('RIGHT')], [4, wait], [28, M('RIGHT')], [4, M('RIGHT', 'A')], [28, M('RIGHT')], [4, M('RIGHT', 'A')], [28, M('RIGHT')], [4, M('RIGHT', 'A')], [112, M('RIGHT')], [1, M('B')], [28, M('RIGHT')], [4, M('RIGHT', 'A')], [4, M('RIGHT')], [16, M('RIGHT', 'A')], [16, M('RIGHT')], [4, wait], [56, M('RIGHT')], [4, wait], [1, M('RIGHT', 'B')],
   ],
-  [ // Slot Elevator
-    [59, right], [30, jumpRight], [11, wait], [1, plug], [80, wait],
-    [4, right], [31, jumpRight], [10, wait], [47, right], [28, jumpRight],
-    [13, wait], [32, right], [30, jumpRight], [11, wait], [1, plug],
-    [64, wait], [5, right], [34, jumpRight], [7, wait], [123, right],
-    [33, jumpRight], [17, wait], [3, right], [29, jumpRight], [5, wait],
-    [20, right], [47, wait], [52, right], [1, plug],
+  [ // Slot Elevator  (solve.mjs)
+    [52, M('RIGHT')], [4, M('RIGHT', 'A')], [4, wait], [4, M('RIGHT')], [4, wait], [16, M('RIGHT')], [2, M('B')], [16, wait], [16, M('RIGHT')], [16, M('RIGHT', 'A')], [116, M('RIGHT')], [4, M('RIGHT', 'A')], [4, wait], [16, M('RIGHT')], [4, wait], [4, M('RIGHT')], [2, M('B')], [24, M('RIGHT')], [4, M('RIGHT', 'A')], [4, wait], [4, M('RIGHT', 'A')], [175, M('RIGHT')], [4, M('RIGHT', 'A')], [104, M('RIGHT')], [3, wait], [1, M('B')], [20, M('RIGHT')], [4, wait], [48, M('RIGHT')], [4, M('RIGHT', 'A')], [16, M('RIGHT')], [4, wait], [8, M('RIGHT')], [4, M('RIGHT', 'A')], [12, M('RIGHT')], [4, wait], [4, M('RIGHT')], [4, wait], [4, M('RIGHT')], [4, wait], [4, M('RIGHT', 'A')], [16, wait], [12, M('RIGHT')], [2, M('B')], [4, wait], [16, M('RIGHT')], [4, M('RIGHT', 'A')], [4, M('LEFT', 'A')], [8, M('RIGHT')], [4, M('RIGHT', 'A')], [23, M('RIGHT')], [4, M('RIGHT', 'A')], [12, M('RIGHT')], [4, wait], [8, M('RIGHT')], [4, wait], [2, M('RIGHT', 'B')], [8, wait], [16, M('RIGHT')], [8, M('RIGHT', 'A')], [4, M('LEFT', 'A')], [8, M('RIGHT')], [4, wait], [23, M('RIGHT')], [4, wait], [24, M('RIGHT')], [4, M('LEFT')], [24, M('RIGHT')], [4, wait], [4, M('RIGHT')], [4, wait], [8, M('RIGHT')], [4, M('RIGHT', 'A')], [60, M('RIGHT')], [3, wait], [4, M('RIGHT')], [4, M('RIGHT', 'A')], [28, M('RIGHT')], [2, M('B')], [16, wait], [12, M('RIGHT')], [12, M('RIGHT', 'A')], [4, M('LEFT', 'A')], [52, M('RIGHT')], [3, wait], [24, M('RIGHT')], [4, M('RIGHT', 'A')], [32, M('RIGHT')], [4, wait], [24, M('RIGHT')], [4, M('RIGHT', 'A')], [32, M('RIGHT')], [40, wait], [36, M('RIGHT')], [32, wait], [4, M('LEFT')], [4, wait], [32, M('RIGHT')], [4, M('RIGHT', 'A')], [4, wait], [24, M('RIGHT')], [4, M('RIGHT', 'A')], [28, M('RIGHT')], [4, M('RIGHT', 'A')], [12, M('RIGHT')], [4, M('RIGHT', 'A')], [4, wait], [8, M('RIGHT')], [4, wait], [1, M('RIGHT', 'B')],
   ],
   [ // Trace Trail
     [78, right], [1, plugRight], [148, right], [36, jumpRight], [4, right],

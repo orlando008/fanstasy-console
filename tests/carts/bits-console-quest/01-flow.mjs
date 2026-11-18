@@ -33,10 +33,11 @@ function check(condition, description) {
 
 {
   const oldSave = Int32Array.from([1, 0x414243, 983, 68]);
-  const vm = newGame(2, { save: oldSave });
+  const vm = newGame(2, { title: true, save: oldSave });
   const p = vm.probe();
   check(vm.m.save[0] === p.SAVE_VERSION && !p.hasTreasure() && !p.stageCleared(),
     'the starter save is replaced by the campaign format');
+  enterSelectedStage(vm); // (the whole-stage routes are recorded from the lab's console, as a player starts a stage)
   replay(vm, [...toLift, ...toUpperDeck, ...treasureRoute]);
   check(p.state === 'clear' && p.reboots === 0, 'the recorded treasure route clears the course through real inputs');
   check(p.hasTreasure() && vm.m.save[p.TREASURE_SLOT] === 1, 'the treasure is saved when touched');
@@ -61,8 +62,9 @@ function check(condition, description) {
 }
 
 {
-  const vm = newGame(3);
+  const vm = newGame(3, { title: true });
   const p = vm.probe();
+  enterSelectedStage(vm);
   replay(vm, [...toLift, ...toUpperDeck, ...mainRoute]);
   check(p.state === 'clear' && !p.hasTreasure() && p.reboots === 0, 'the main route works without collecting the optional treasure');
   vm.press('LEFT');

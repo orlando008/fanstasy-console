@@ -78,60 +78,96 @@ function campaignStage(index, name, treasureName, width, spawnY, layout) {
   };
 }
 
-const FOUNDRY = campaignStage(0, 'BUTTON ASSEMBLY', 'PROTOTYPE D-PAD', 1152, 192, {
+// Step 11 made the first two zones' stages about twice to three times as long: each keeps its opening (the part the
+// first version had, where it teaches its device) and adds two harder sections after it.
+const FOUNDRY = campaignStage(0, 'BUTTON ASSEMBLY', 'PROTOTYPE D-PAD', 3072, 192, {
   deck: [
     stageDeck(0, 184, 192, 32), stageDeck(224, 168, 192, 32),
     stageDeck(520, 128, 112), stageDeck(688, 112, 112), stageDeck(928, 224, 112),
     ledge(592, 48, 80),
+    // stepping stones, one under a press; a lift to a high deck of contacts
+    stageDeck(1208, 40, 112), stageDeck(1296, 40, 128), stageDeck(1384, 176, 112), stageDeck(1656, 192, 48),
+    // a long scanline span on its clock, a press and a contact, then a run down to the exit
+    stageDeck(1896, 96, 120), stageDeck(2152, 160, 120), stageDeck(2376, 104, 104),
+    stageDeck(2552, 200, 152), stageDeck(2800, 272, 152),
   ],
-  devices: [liftAt('lift', 424, 192, 112), springAt('spring', 568, 112, 22), span('scanline', 'scanline', 800, 112)],
-  sockets: [mounted('lift'), power('spring', 543, 101), power('scanline', 774, 101)],
-  beacons: [point(304, 192), point(736, 112)],
-  hazards: [contact(972, 112), press(1056, 112)],
+  devices: [liftAt('lift', 424, 192, 112), springAt('spring', 568, 112, 22), span('scanline', 'scanline', 800, 112),
+    liftAt('lift2', 1576, 112, 48), span('scanline', 'scan2', 1992, 120, 160)],
+  sockets: [mounted('lift'), power('spring', 543, 101), power('scanline', 774, 101), mounted('lift2'), power('scan2', 1966, 109)],
+  beacons: [point(304, 192), point(736, 112), point(1424, 112)],
+  hazards: [contact(972, 112), press(1056, 112), press(1296, 128, 40), contact(1704, 48, 20), contact(1784, 48, 80),
+    press(2200, 120), contact(2264, 120, 60), contact(2600, 152, 10), contact(2680, 152, 70), press(2880, 152, 30)],
   signs: [sign(88, 140, 'A JUMP'), sign(760, 50, 'POWER + RUN')],
-  goal: point(1128, 101), treasure: point(616, 62),
+  goal: point(3040, 141), treasure: point(616, 62),
   pieces: [point(278, 175), point(607, 49)],
 });
 
 const CAMPAIGN = [
   FOUNDRY,
-  campaignStage(1, 'CABLE WORKS', 'BRAIDED CABLE', 1408, 192, {
+  campaignStage(1, 'CABLE WORKS', 'BRAIDED CABLE', 3120, 192, {
     deck: [
       stageDeck(0, 224, 192, 32), stageDeck(208, 264, 136),
       stageDeck(592, 320, 72), ledge(736, 48, 40),
-      stageDeck(952, 168, 88), stageDeck(1160, 248, 104),
+      stageDeck(952, 168, 88), stageDeck(1160, 200, 104),
+      // drop onto a lift and ride it up; a spring is the only way up to a deck of contacts
+      stageDeck(1464, 144, 64), stageDeck(1672, 72, 120), stageDeck(1800, 144, 48),
+      // a lift ridden down, presses, and a last run between contacts
+      stageDeck(2048, 160, 168), stageDeck(2264, 200, 136),
+      // a lift up from a drop, one-way ledges up and over, and two presses before the exit
+      stageDeck(2568, 120, 72), ledge(2744, 40, 96), ledge(2832, 40, 72), stageDeck(2920, 200, 104),
     ],
-    devices: [springAt('spring', 160, 192), liftAt('lift', 496, 136, 72)],
-    sockets: [power('spring', 108, 181), mounted('lift')],
-    beacons: [point(332, 136), point(980, 88)],
-    hazards: [press(1240, 104, 32)],
+    devices: [springAt('spring', 160, 192), liftAt('lift', 496, 136, 72), liftAt('lift2', 1384, 184, 64),
+      springAt('spring2', 1712, 120), liftAt('lift3', 1968, 168, 48), liftAt('lift4', 2488, 184, 72)],
+    sockets: [power('spring', 108, 181), mounted('lift'), mounted('lift2'), power('spring2', 1688, 109), power('lift3', 1930, 37),
+      mounted('lift4')],
+    beacons: [point(332, 136), point(980, 88), point(1500, 64), point(2600, 72)],
+    hazards: [press(1240, 104, 32), contact(1856, 48, 40), press(2096, 168), press(2160, 168, 72),
+      contact(2328, 136), press(2400, 136, 60), contact(2632, 72, 30), press(2976, 104, 20), press(3040, 104, 92)],
     signs: [sign(114, 129, 'POWER THE SPRING'), sign(504, 82, 'RIDE THE LIFT')],
-    goal: point(1376, 93), treasure: point(760, 23),
+    goal: point(3088, 93), treasure: point(760, 23),
     pieces: [point(144, 177), point(1008, 73)],
   }),
-  campaignStage(2, 'CONTACT MINE', 'CLEAR-SHELL CART', 1280, 184, {
+  campaignStage(2, 'CONTACT MINE', 'CLEAR-SHELL CART', 3320, 184, {
     deck: [
       stageDeck(0, 352, 184, 40), stageDeck(536, 288, 184, 40),
       ledge(664, 64, 144), stageDeck(864, 176, 160), stageDeck(1080, 200, 184, 40),
+      // a second shelf across a bay; stepping stones with live contacts on them
+      stageDeck(1480, 160, 184, 40), stageDeck(1704, 40, 168), stageDeck(1792, 40, 152), stageDeck(1880, 40, 168),
+      // a run through a wave of contacts, a third shelf, and a climb to the exit
+      stageDeck(1968, 200, 184, 40), stageDeck(2360, 168, 152),
+      // stones over a bay, contacts in turn, and a fourth shelf down to the exit
+      stageDeck(2592, 40, 136), stageDeck(2688, 40, 120), stageDeck(2784, 160, 152), stageDeck(3144, 176, 184, 40),
     ],
-    devices: [shelfAt('shelf', 352, 184, 488)],
-    sockets: [mounted('shelf')],
-    beacons: [point(304, 184), point(784, 184)],
-    hazards: [contact(152, 184, 30), contact(584, 184, 72), contact(1120, 184, 16)],
+    devices: [shelfAt('shelf', 352, 184, 488), shelfAt('shelf2', 1280, 184, 1416), shelfAt('shelf3', 2168, 184, 2296),
+      shelfAt('shelf4', 2944, 152, 3080)],
+    sockets: [mounted('shelf'), mounted('shelf2'), mounted('shelf3'), mounted('shelf4')],
+    beacons: [point(304, 184), point(784, 184), point(1600, 184), point(2810, 152)],
+    hazards: [contact(152, 184, 30), contact(584, 184, 72), contact(1120, 184, 16), contact(1520, 184, 40),
+      contact(1576, 184, 100), contact(1712, 168), contact(1888, 168, 60), contact(2016, 184, 20),
+      contact(2072, 184, 50), contact(2128, 184, 80), contact(2424, 152, 40), contact(2848, 152), contact(2904, 152, 50)],
     signs: [sign(160, 125, 'JUMP LIVE CONTACTS'), sign(378, 120, 'PLUG IN ON SHELF')],
-    goal: point(1248, 173), treasure: point(704, 129),
+    goal: point(3288, 173), treasure: point(704, 129),
     pieces: [point(254, 168), point(930, 143)],
   }),
-  campaignStage(3, 'SLOT ELEVATOR', 'GOLD CONTACT BOARD', 1360, 200, {
+  campaignStage(3, 'SLOT ELEVATOR', 'GOLD CONTACT BOARD', 3240, 200, {
     deck: [
       stageDeck(0, 176, 200), stageDeck(288, 288, 120),
       stageDeck(696, 320, 56), stageDeck(1056, 304, 104), ledge(1112, 80, 72),
+      // a lift ridden down to contacts; a staircase of two lifts
+      stageDeck(1464, 160, 184), stageDeck(1728, 96, 120), stageDeck(1928, 160, 48),
+      // a pair of presses, and a last lift up to the exit
+      stageDeck(2136, 200, 144), stageDeck(2440, 160, 64),
+      // down again past two presses, and a last run between contacts
+      stageDeck(2664, 96, 96), stageDeck(2816, 160, 128), stageDeck(3024, 216, 104),
     ],
-    devices: [liftAt('lift', 200, 200, 120), liftAt('upperLift', 600, 120, 56)],
-    sockets: [mounted('lift'), mounted('upperLift')],
-    beacons: [point(362, 120), point(918, 56)],
-    hazards: [contact(445, 120, 48), press(1232, 104, 88)],
-    goal: point(1328, 93), treasure: point(1156, 56),
+    devices: [liftAt('lift', 200, 200, 120), liftAt('upperLift', 600, 120, 56), liftAt('lift3', 1384, 184, 104),
+      liftAt('lift4', 1648, 184, 120), liftAt('lift5', 1848, 120, 48), liftAt('lift6', 2360, 144, 64)],
+    sockets: [mounted('lift'), mounted('upperLift'), power('lift3', 1340, 93), mounted('lift4'), mounted('lift5'), mounted('lift6')],
+    beacons: [point(362, 120), point(918, 56), point(1500, 184), point(2160, 144)],
+    hazards: [contact(445, 120, 48), press(1232, 104, 88), contact(1520, 184, 10), contact(1584, 184, 70),
+      contact(1976, 48, 30), press(2200, 144), press(2264, 144, 72), contact(2496, 64, 50), press(2864, 128, 30),
+      press(2928, 128, 102), contact(3080, 104), contact(3144, 104, 60)],
+    goal: point(3208, 93), treasure: point(1156, 56),
     pieces: [point(330, 104), point(752, 40)],
   }),
   campaignStage(4, 'TRACE TRAIL', 'CERAMIC LOGIC CHIP', 1312, 184, {
