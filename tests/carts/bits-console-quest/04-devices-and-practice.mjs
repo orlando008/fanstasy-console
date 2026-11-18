@@ -121,4 +121,33 @@ function runUntil(vm, condition, buttons = 0, limit = 120) {
   check(p.state === 'lab' && !p.paused, 'practice can also be left through pause');
 }
 
+{ // Contact Mine: jump over the first beacon, plug in on the shelf, then jump back to the beacon. The beacon must not
+  // keep the one-shot shelf moving away, or every reboot strands Bit on the near side of the gap.
+  const vm = newGame(1, { title: true, save: Int32Array.from([2, 3, 0, 0, 2]) });
+  const p = vm.probe();
+  vm.press('A');
+  vm.press('B');
+  vm.press('A');
+  p.bit.x = 250;
+  for (let i = 0; i < 200 && p.bit.x < 282; i++) vm.step(M('RIGHT'));
+  vm.run(28, M('RIGHT', 'A'));
+  for (let i = 0; i < 200 && !p.bit.support; i++) vm.step(M('RIGHT'));
+  for (let i = 0; i < 200 && p.bit.x < 378; i++) vm.step(M('RIGHT'));
+  vm.step();
+  check(!p.checkpoint && p.interaction() === 'shelf', 'Bit can reach the Contact Mine shelf without touching the beacon');
+  vm.press('B');
+  vm.run(28, M('LEFT', 'A'));
+  for (let i = 0; i < 80 && !(p.bit.support && p.bit.x < 316); i++) vm.step(M('LEFT'));
+  vm.run(3, M('LEFT'));
+  check(p.checkpoint?.index === 0 && p.devices.find(d => d.id === 'shelf').powered, 'the beacon lights after the shelf is powered');
+  Object.assign(p.bit, { x: 420, y: 200, support: null });
+  for (let i = 0; i < 120 && !p.deathTimer; i++) vm.step();
+  for (let i = 0; i < 60 && p.deathTimer; i++) vm.step();
+  const shelf = p.devices.find(d => d.id === 'shelf');
+  check(p.bit.x === 304 && !shelf.powered && shelf.x === 352, 'the reboot brings the one-shot shelf back home and unpowered');
+  for (let i = 0; i < 200 && p.bit.x < 378; i++) vm.step(M('RIGHT'));
+  vm.step();
+  check(p.interaction() === 'shelf', 'its socket can be plugged in again');
+}
+
 process.exitCode = failures ? 1 : 0;

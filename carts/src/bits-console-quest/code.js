@@ -33,51 +33,13 @@ const BUTTONS = [UP, DOWN, LEFT, RIGHT, A, B, START];
 const WALK = [ART.sprites.heroWalk1, ART.sprites.heroWalk2, ART.sprites.heroWalk3, ART.sprites.heroWalk4];
 const C = ART.colors;
 
-const FOUNDRY = {
-  index: 0, zone: 0, name: 'BUTTON ASSEMBLY', treasureName: 'PROTOTYPE D-PAD', width: 1152, mapY: 64, palette: 1, backdrop: 'factory', song: SONG.stage,
-  spawn: { x: 32, y: 192 },
-  deck: [
-    { x: 0, y: 192, w: 184, h: 32 },
-    { x: 224, y: 192, w: 168, h: 32 },
-    { x: 520, y: 112, w: 128, h: 24 },
-    { x: 688, y: 112, w: 112, h: 24 },
-    { x: 928, y: 112, w: 224, h: 24 },
-    { x: 592, y: 80, w: 48, h: 8, oneWay: true },
-  ],
-  devices: [
-    { id: 'lift', kind: 'lift', x: 424, y: 192, w: 56, top: 112 },
-    { id: 'spring', kind: 'spring', x: 568, y: 112, w: 22 },
-    { id: 'scanline', kind: 'scanline', x: 800, y: 112, w: 128 },
-  ],
-  sockets: [
-    { id: 'lift', mode: 'once', mount: 'lift', dx: 28, dy: -10, on: ['lift'] },
-    { id: 'spring', mode: 'once', x: 543, y: 101, on: ['spring'] },
-    { id: 'scanline', mode: 'once', x: 774, y: 101, on: ['scanline'] },
-    { id: 'exit', mode: 'exit', x: 1128, y: 101 },
-  ],
-  beacons: [{ x: 304, y: 192 }, { x: 736, y: 112 }],
-  hazards: [
-    { kind: 'contact', x: 972, y: 112, w: 24, offset: 0 },
-    { kind: 'press', x: 1056, y: 112, w: 40, raisedY: 46, offset: 0 },
-  ],
-  signs: [
-    { x: 88, y: 140, text: 'A JUMP' },
-    { x: 760, y: 50, text: 'POWER + RUN' },
-  ],
-  items: [
-    { kind: 'treasure', index: 0, x: 616, y: 62 },
-    { kind: 'piece', index: 0, x: 278, y: 175 },
-    { kind: 'piece', index: 1, x: 607, y: 49 },
-  ],
-};
-
 // Deck coordinates are tile aligned. Short gaps teach the device before a long gap requires it.
 const stageDeck = (x, w, y, h = 24) => ({ x, y, w, h });
 const ledge = (x, w, y) => ({ ...stageDeck(x, w, y, 8), oneWay: true });
 const liftAt = (id, x, y, top) => ({ id, kind: 'lift', x, y, w: 56, top });
-const springAt = (id, x, y) => ({ id, kind: 'spring', x, y, w: 24 });
+const springAt = (id, x, y, w = 24) => ({ id, kind: 'spring', x, y, w });
 const span = (kind, id, x, y, w = 128) => ({ kind, id, x, y, w });
-const shelfAt = (id, x, y, target) => ({ id, kind: 'shelf', x, y, target, w: 56 });
+const shelfAt = (id, x, y, target, w = 56) => ({ id, kind: 'shelf', x, y, target, w });
 const power = (id, x, y) => ({ id, mode: 'once', x, y, on: [id] });
 const mounted = (id, dy = -10, dx = 28) => ({ id, mode: 'once', mount: id, dx, dy, on: [id] });
 const relay = (id, x, y, on, off = []) => ({ id, mode: 'switch', x, y, on, off });
@@ -114,6 +76,21 @@ function campaignStage(index, name, treasureName, width, spawnY, layout) {
     ],
   };
 }
+
+const FOUNDRY = campaignStage(0, 'BUTTON ASSEMBLY', 'PROTOTYPE D-PAD', 1152, 192, {
+  deck: [
+    stageDeck(0, 184, 192, 32), stageDeck(224, 168, 192, 32),
+    stageDeck(520, 128, 112), stageDeck(688, 112, 112), stageDeck(928, 224, 112),
+    ledge(592, 48, 80),
+  ],
+  devices: [liftAt('lift', 424, 192, 112), springAt('spring', 568, 112, 22), span('scanline', 'scanline', 800, 112)],
+  sockets: [mounted('lift'), power('spring', 543, 101), power('scanline', 774, 101)],
+  beacons: [point(304, 192), point(736, 112)],
+  hazards: [contact(972, 112), press(1056, 112)],
+  signs: [sign(88, 140, 'A JUMP'), sign(760, 50, 'POWER + RUN')],
+  goal: point(1128, 101), treasure: point(616, 62),
+  pieces: [point(278, 175), point(607, 49)],
+});
 
 const CAMPAIGN = [
   FOUNDRY,
@@ -223,29 +200,12 @@ const CAMPAIGN = [
 
 const PRACTICE = {
   practice: true, width: 800, mapY: 96, palette: 4, backdrop: 'lab', song: SONG.practice,
-  spawn: { x: 32, y: 192 },
-  deck: [
-    { x: 0, y: 192, w: 240, h: 32 },
-    { x: 144, y: 144, w: 112, h: 8, oneWay: true },
-    { x: 384, y: 144, w: 144, h: 24 },
-    { x: 648, y: 64, w: 152, h: 24 },
-  ],
-  devices: [
-    { id: 'bridge', kind: 'bridge', x: 256, y: 144, w: 128 },
-    { id: 'shelf', kind: 'shelf', x: 168, y: 108, w: 40, target: 208 },
-    { id: 'lift', kind: 'lift', x: 552, y: 144, w: 56, top: 64 },
-  ],
-  sockets: [
-    { id: 'relay', mode: 'switch', x: 230, y: 133, on: ['bridge'], off: ['shelf'] },
-    { id: 'lift', mode: 'once', mount: 'lift', dx: 28, dy: -10, on: ['lift'] },
-    { id: 'exit', mode: 'exit', x: 768, y: 53 },
-  ],
-  beacons: [{ x: 205, y: 144 }, { x: 425, y: 144 }],
-  signs: [
-    { x: 104, y: 102, text: '1  HOLD A' },
-    { x: 231, y: 80, text: '2  PLUG IN' },
-    { x: 466, y: 91, text: '3  RIDE LIFT' },
-  ],
+  spawn: point(32, 192),
+  deck: [stageDeck(0, 240, 192, 32), ledge(144, 112, 144), stageDeck(384, 144, 144), stageDeck(648, 152, 64)],
+  devices: [span('bridge', 'bridge', 256, 144), shelfAt('shelf', 168, 108, 208, 40), liftAt('lift', 552, 144, 64)],
+  sockets: [relay('relay', 230, 133, ['bridge'], ['shelf']), mounted('lift'), { id: 'exit', mode: 'exit', x: 768, y: 53 }],
+  beacons: [point(205, 144), point(425, 144)],
+  signs: [sign(104, 102, '1  HOLD A'), sign(231, 80, '2  PLUG IN'), sign(466, 91, '3  RIDE LIFT')],
   items: [],
   hazards: [],
 };
@@ -750,7 +710,11 @@ function updateStage() {
     bit.y === b.y && Math.abs(bit.x - b.x) < 12) : -1;
   if (index >= 0) {
     const beacon = course.beacons[index];
-    checkpoint = { index, beacon, hazardTick, devices: devices.map(d => ({ ...d })), switches: sockets.map(s => s.active) };
+    // A one-shot socket comes back unplugged with its devices as the stage began, so it can be used again: a
+    // shelf or lift saved mid-move could otherwise strand Bit for good (plug in, then back onto this beacon).
+    const oneShot = new Set(sockets.filter(s => s.mode === 'once').flatMap(s => [...s.targets, s.platform]));
+    checkpoint = { index, beacon, hazardTick, devices: devices.map(d => oneShot.has(d) ? null : { ...d }),
+      switches: sockets.map(s => s.mode !== 'once' && s.active) };
     fx(SFX.checkpoint);
   }
   for (const item of course.items) {
@@ -872,20 +836,32 @@ function drawLab(scroll) {
   print('T ' + tally(dget(TREASURE_SLOT), 8) + '/8  P ' + tally(dget(PIECE_SLOT), 16) + '/16', 141, 4, C.CYAN);
 }
 
-// The exhibits use the same tile art in the room and inside solid overlay panels.
+// The exhibits use the same tile art in the room and inside solid overlay panels. The overlay covers sprites, so
+// they are drawn on it: as runs of one colour (within a quadrant), worked out once for each picture.
+const artifactRuns = new Map();
+function runsOf(asset) {
+  let runs = artifactRuns.get(asset);
+  if (runs) return runs;
+  runs = [];
+  const sx = (asset.tile & 15) * 8, sy = (asset.tile >> 4) * 8, half = asset.size / 2;
+  for (let row = 0; row < asset.size; row++) {
+    for (let col = 0; col < asset.size;) {
+      const pixel = sget(sx + col, sy + row);
+      let len = 1;
+      while (col + len < asset.size && (col + len) !== half && sget(sx + col + len, sy + row) === pixel) len++;
+      if (pixel) runs.push({ row, col, len, pixel, quadrant: (row >= half ? 2 : 0) + (col >= half ? 1 : 0) });
+      col += len;
+    }
+  }
+  artifactRuns.set(asset, runs);
+  return runs;
+}
+
 function drawArtifact(asset, x, y, scale = 1, quadrants = 15) {
   if (!quadrants || x >= SCREEN_W || y >= SCREEN_H || x + asset.size * scale <= 0 || y + asset.size * scale <= 0) return;
-  const sx = (asset.tile & 15) * 8, sy = (asset.tile >> 4) * 8;
-  const palette = 128 + asset.pal * 16, half = asset.size / 2;
-  for (let row = 0; row < asset.size; row++) {
-    for (let col = 0; col < asset.size; col++) {
-      const quadrant = (row >= half ? 2 : 0) + (col >= half ? 1 : 0);
-      if (!(quadrants & (1 << quadrant))) continue;
-      const pixel = sget(sx + col, sy + row);
-      if (!pixel) continue;
-      if (scale === 1) pset(x + col, y + row, palette + pixel);
-      else rectfill(x + col * scale, y + row * scale, scale, scale, palette + pixel);
-    }
+  const palette = 128 + asset.pal * 16;
+  for (const { row, col, len, pixel, quadrant } of runsOf(asset)) {
+    if (quadrants & (1 << quadrant)) rectfill(x + col * scale, y + row * scale, len * scale, scale, palette + pixel);
   }
 }
 
@@ -1037,7 +1013,7 @@ function drawStage(scroll) {
   for (const s of sockets) {
     const { x, y } = socketPoint(s);
     const live = s.active || s.mode === 'exit';
-    const label = s.mode === 'exit' ? 'B EXIT' : s.id === 'scanline' ? 'B POWER' : s.mode === 'switch' && live ? 'B RESET' : 'B PLUG';
+    const label = s.mode === 'exit' ? 'B EXIT' : s.targets.some(d => d.kind === 'scanline') ? 'B POWER' : s.mode === 'switch' && live ? 'B RESET' : 'B PLUG';
     drawSocket(x - scroll, y, live ? ART.sprites.socketLive : ART.sprites.socketIdle, prompt === s ? label : '');
   }
   if (clock < bit.plugUntil) {
