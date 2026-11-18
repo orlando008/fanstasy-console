@@ -42,7 +42,7 @@ for (const [index, route] of fullRoutes.entries()) {
   if (index < fullRoutes.length - 1) {
     check(p.lastUnlocked() === index + 1, stage.name + ' unlocks the next stage');
     vm.press('A');
-    if (index & 1) {
+    if (index % 3 === 2) { // (a zone's finale)
       check(p.state === 'lab' && p.selection === index + 1, 'zone clears return to the lab and highlight the next stage');
       vm.press('B');
       vm.press('A');
@@ -56,12 +56,12 @@ vm.run(120);
 vm.press('A');
 const reopened = newGame(2, { title: true, save: vm.m.save });
 const saved = reopened.probe();
-check(saved.selection === 7 && saved.lastUnlocked() === 7, 'the last selected stage and full unlocks persist on reopen');
+check(saved.selection === 11 && saved.lastUnlocked() === 11, 'the last selected stage and full unlocks persist on reopen');
 reopened.press('A');
 reopened.press('B');
 reopened.press('LEFT');
 reopened.press('A');
-check(saved.course.index === 6 && saved.hasTreasure(), 'cleared stages can be selected again with the treasures retained');
+check(saved.course.index === 10 && saved.hasTreasure(), 'cleared stages can be selected again with the treasures retained');
 
 const legacy = newGame(1, { title: true, save: Int32Array.from([2, 255, 255, 65535, 7, 1]) });
 const old = legacy.probe();

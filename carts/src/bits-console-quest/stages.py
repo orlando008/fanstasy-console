@@ -2,7 +2,8 @@
 # (loadStages). Kept here, out of the 64 KB of code, since the second pass made the stages long (spec step 13).
 #   python3 carts/src/bits-console-quest/stages.py            write rom/stages.bin
 #   python3 carts/src/bits-console-quest/stages.py --check    exit 1 if it is not up to date
-# Each stage is [index, name, treasure's name, width, Bit's start height, layout]; code.js's campaignStage() builds the
+# Each stage is [number, name, treasure's name, width, Bit's start height, layout] (the number: its place in ORDER,
+# three a zone); code.js's campaignStage() builds the
 # rest. The helpers make the same objects as code.js's (practice and the lab are still written there). Coordinates are
 # pixels: x along the stage, y down from the top of the screen (a deck's top is where Bit stands); decks are tile aligned.
 # After a change: the stage's route (tests/carts/bits-console-quest/solve.mjs, waypoints.mjs) and jump-windows.mjs.
@@ -213,6 +214,102 @@ STAGES = [
   )),
 ]
 
+
+# Step 13: a finale for each zone, the hardest stage of its world (the stage after the zone's two), each with a
+# treasure and two pieces off the main route.
+FINALE1 = stage(0, 'ASSEMBLY LINE', 'GOLDEN A BUTTON', 3200, 192, dict(
+  deck=[
+    stageDeck(0, 160, 192, 32), stageDeck(208, 40, 176), stageDeck(296, 40, 160), stageDeck(384, 160, 144),
+    stageDeck(648, 160, 64), stageDeck(856, 152, 120), ledge(976, 48, 40), stageDeck(1168, 96, 120),
+    stageDeck(1392, 200, 136), stageDeck(1696, 160, 184), ledge(1800, 48, 144),
+    # stones over a pit, two of them under presses; a lift up; a long span down
+    stageDeck(1912, 40, 168), stageDeck(2000, 40, 152), stageDeck(2088, 56, 168), stageDeck(2176, 40, 152),
+    stageDeck(2320, 192, 72), stageDeck(2672, 96, 104), stageDeck(2824, 64, 136), ledge(2840, 40, 96),
+    stageDeck(2944, 256, 160),
+  ],
+  devices=[liftAt('liftA', 568, 144, 64), springAt('springA', 960, 120), span('scanline', 'scanA', 1008, 120, 160),
+    span('scanline', 'scanB', 1264, 120), liftAt('liftB', 1616, 184, 136), liftAt('liftC', 2240, 152, 72),
+    span('scanline', 'scanC', 2512, 72, 160)],
+  sockets=[mounted('liftA'), power('springA', 936, 109), power('scanA', 990, 109), power('scanB', 1244, 109),
+    power('liftB', 1580, 125), mounted('liftC'), power('scanC', 2490, 61)],
+  beacons=[point(400, 144), point(1408, 136), point(2336, 72), point(2700, 104)],
+  hazards=[press(296, 160, 30), contact(440, 144), contact(496, 144, 60), contact(700, 64, 20), contact(1440, 136, 20),
+    contact(1504, 136, 80), press(1552, 136, 50), contact(1744, 184), contact(1800, 184, 60), press(2000, 152),
+    press(2088, 168, 72), contact(2368, 72, 30), contact(2432, 72, 90), press(3000, 160, 20), contact(3072, 160, 70)],
+  goal=point(3168, 149), treasure=point(1000, 23),
+  pieces=[point(1824, 127), point(2860, 79)],
+))
+
+FINALE2 = stage(0, 'CARTRIDGE VAULT', 'MASK ROM CHIP', 3200, 184, dict(
+  deck=[
+    stageDeck(0, 200, 184, 40), stageDeck(400, 120, 184, 40), stageDeck(624, 160, 104), ledge(872, 40, 64),
+    stageDeck(1000, 96, 104), stageDeck(1144, 40, 128), stageDeck(1232, 40, 152), stageDeck(1320, 40, 176),
+    stageDeck(1408, 192, 184, 40), stageDeck(1880, 160, 96), ledge(1904, 40, 56),
+    # down again; a long bay on the last shelf; a vault floor of contacts and a press
+    stageDeck(2104, 64, 144), stageDeck(2232, 40, 168), stageDeck(2320, 200, 184, 40), stageDeck(2784, 64, 160),
+    ledge(2792, 48, 120), stageDeck(2904, 296, 136),
+  ],
+  devices=[shelfAt('shelfA', 200, 184, 336), liftAt('liftA', 544, 184, 104), shelfAt('shelfB', 784, 104, 936),
+    shelfAt('shelfC', 1600, 184, 1736), liftAt('liftB', 1800, 184, 96), shelfAt('shelfD', 2520, 184, 2720)],
+  sockets=[mounted('shelfA'), mounted('liftA'), mounted('shelfB'), mounted('shelfC'), mounted('liftB'), mounted('shelfD')],
+  beacons=[point(640, 104), point(1424, 184), point(2336, 184), point(2800, 160)],
+  hazards=[contact(120, 184, 30), contact(440, 184, 60), press(680, 104, 20), contact(744, 104, 80), contact(1152, 128),
+    contact(1328, 176, 60), contact(1456, 184, 10), contact(1520, 184, 50), contact(1576, 184, 90), press(1936, 96),
+    press(2000, 96, 72), contact(2376, 184, 30), contact(2440, 184, 90), contact(2960, 136), contact(3040, 136, 60),
+    press(3104, 136, 40)],
+  goal=point(3168, 125), treasure=point(892, 47),
+  pieces=[point(1924, 39), point(2816, 103)],
+))
+
+FINALE3 = stage(0, 'MOTHERBOARD MAZE', 'CRYSTAL OSCILLATOR', 3200, 184, dict(
+  deck=[
+    stageDeck(0, 224, 184, 40), ledge(120, 48, 104), stageDeck(352, 160, 184, 40), stageDeck(608, 32, 184, 40),
+    stageDeck(672, 240, 136), stageDeck(1072, 96, 112), stageDeck(1232, 40, 96), stageDeck(1320, 40, 120),
+    stageDeck(1408, 40, 104), stageDeck(1504, 200, 128), ledge(1624, 64, 56),
+    # a trace, stones, a board of contacts; a last relay whose first bridge goes nowhere
+    stageDeck(1864, 120, 128), stageDeck(1992, 40, 104), stageDeck(2088, 200, 128), stageDeck(2384, 32, 128),
+    stageDeck(2480, 160, 176), stageDeck(2696, 64, 152), stageDeck(2816, 384, 128), ledge(2840, 48, 88),
+  ],
+  devices=[springAt('springA', 150, 184), span('bridge', 'bridgeA', 224, 184), span('bridge', 'bridgeB', 512, 136, 160),
+    span('bridge', 'bridgeC', 512, 184, 96), span('bridge', 'bridgeD', 912, 136, 160), springAt('springB', 1660, 128),
+    span('bridge', 'bridgeE', 1704, 128, 160), span('bridge', 'bridgeF', 2288, 176, 192), span('bridge', 'bridgeG', 2288, 128, 96)],
+  sockets=[relay('relayA', 196, 173, ['bridgeA'], ['springA']), relay('relayB', 490, 173, ['bridgeB'], ['bridgeC']),
+    power('bridgeD', 890, 125), relay('relayC', 1690, 117, ['bridgeE'], ['springB']),
+    relay('relayD', 2272, 117, ['bridgeF'], ['bridgeG'])],
+  beacons=[point(690, 136), point(1520, 128), point(2104, 128), point(2500, 176)],
+  hazards=[contact(400, 184, 40), contact(456, 184, 100), press(744, 136), press(808, 136, 48), press(872, 136, 96),
+    contact(1552, 128, 20), contact(1600, 128, 80), contact(2136, 128), contact(2192, 128, 50), contact(2248, 128, 100),
+    press(2528, 176, 30), contact(2880, 128, 20), contact(2960, 128, 80), press(3040, 128, 40)],
+  goal=point(3168, 117), treasure=point(1656, 39),
+  pieces=[point(144, 87), point(2864, 71)],
+))
+
+FINALE4 = stage(0, 'TEST PATTERN', 'COLOR BAR CARD', 3240, 144, dict(
+  deck=[
+    stageDeck(0, 192, 144), stageDeck(352, 96, 144), stageDeck(576, 160, 120), stageDeck(816, 192, 56),
+    stageDeck(1064, 64, 104), stageDeck(1288, 96, 104), ledge(1392, 56, 40), stageDeck(1440, 40, 128),
+    stageDeck(1536, 200, 112), stageDeck(1840, 160, 48),
+    # a span down, stones, a board of contacts; a last span to the exit
+    stageDeck(2160, 64, 80), stageDeck(2280, 40, 104), stageDeck(2376, 40, 128), stageDeck(2472, 200, 144),
+    stageDeck(2832, 64, 120), ledge(2848, 40, 80), stageDeck(2952, 288, 144),
+  ],
+  devices=[span('scanline', 'scanA', 192, 144, 160), span('scanline', 'scanB', 448, 144), liftAt('liftA', 736, 120, 56),
+    span('scanline', 'scanC', 1128, 104, 160), springAt('springA', 1352, 104), liftAt('liftB', 1760, 112, 48),
+    span('scanline', 'scanD', 2000, 48, 160), span('scanline', 'scanE', 2672, 144, 160)],
+  sockets=[power('scanA', 170, 133), power('scanB', 428, 133), mounted('liftA'), power('scanC', 1110, 93),
+    power('springA', 1330, 93), mounted('liftB'), power('scanD', 1980, 37), power('scanE', 2650, 133)],
+  beacons=[point(592, 120), point(1552, 112), point(2488, 144), point(2850, 120)],
+  hazards=[contact(616, 120), contact(680, 120, 60), contact(864, 56, 30), contact(944, 56, 90), press(1584, 112),
+    press(1648, 112, 72), contact(1880, 48, 20), contact(1944, 48, 80), contact(2520, 144, 10), contact(2584, 144, 70),
+    press(3008, 144, 20), contact(3088, 144, 60)],
+  goal=point(3208, 133), treasure=point(1420, 23),
+  pieces=[point(980, 39), point(2868, 63)],
+))
+
+# Play order: each zone's two stages and its finale. A stage's number is its place here (its own first argument is not used).
+ORDER = [STAGES[0], STAGES[1], FINALE1, STAGES[2], STAGES[3], FINALE2, STAGES[4], STAGES[5], FINALE3,
+         STAGES[6], STAGES[7], FINALE4]
+STAGES = [[i] + s[1:] for i, s in enumerate(ORDER)]
 
 if __name__ == '__main__':
     data = json.dumps(STAGES, separators=(',', ':')).encode('ascii')

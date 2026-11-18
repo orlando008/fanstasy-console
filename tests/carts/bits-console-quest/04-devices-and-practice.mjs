@@ -123,7 +123,7 @@ function runUntil(vm, condition, buttons = 0, limit = 120) {
 
 { // Contact Mine: jump over the first beacon, plug in on the shelf, then jump back to the beacon. The beacon must not
   // keep the one-shot shelf moving away, or every reboot strands Bit on the near side of the gap.
-  const vm = newGame(1, { title: true, save: saveWith({ clears: 3, stage: 2 }) });
+  const vm = newGame(1, { title: true, save: saveWith({ clears: 7, stage: 3 }) });
   const p = vm.probe();
   vm.press('A');
   vm.press('B');

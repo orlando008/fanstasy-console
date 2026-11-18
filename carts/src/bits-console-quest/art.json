@@ -257,6 +257,16 @@
    "size": 16,
    "tile": 458
   },
+  "displayTreasure10": {
+   "pal": 5,
+   "size": 16,
+   "tile": 516
+  },
+  "displayTreasure11": {
+   "pal": 5,
+   "size": 16,
+   "tile": 518
+  },
   "displayTreasure2": {
    "pal": 5,
    "size": 16,
@@ -286,6 +296,16 @@
    "pal": 5,
    "size": 16,
    "tile": 494
+  },
+  "displayTreasure8": {
+   "pal": 5,
+   "size": 16,
+   "tile": 512
+  },
+  "displayTreasure9": {
+   "pal": 5,
+   "size": 16,
+   "tile": 514
   },
   "exitTerminal": {
    "pal": 2,
@@ -360,22 +380,22 @@
   "puzzleArt0": {
    "pal": 7,
    "size": 32,
-   "tile": 512
+   "tile": 520
   },
   "puzzleArt1": {
    "pal": 7,
    "size": 32,
-   "tile": 516
+   "tile": 524
   },
   "puzzleArt2": {
    "pal": 7,
    "size": 32,
-   "tile": 520
+   "tile": 576
   },
   "puzzleArt3": {
    "pal": 7,
    "size": 32,
-   "tile": 524
+   "tile": 580
   },
   "socketIdle": {
    "pal": 2,
@@ -419,6 +439,6 @@
   "deckWall23": 139,
   "deckWall3": 138
  },
- "used": 831,
+ "used": 847,
  "version": 1
 }

@@ -65,7 +65,7 @@ export default function screens(shot) {
   replay(practice, practiceFinish);
   shot(practice, 'practice complete');
 
-  const collection = newGame(1, { title: true, save: saveWith({ clears: 255, treasures: 255, pieces: 65535, stage: 7, ending: 1 }) });
+  const collection = newGame(1, { title: true, save: saveWith({ clears: 4095, treasures: 4095, pieces: 0xFFFFFF, stage: 11, ending: 1 }) });
   collection.press('A');
   collection.run(71, M('RIGHT'));
   collection.run(7);
@@ -78,7 +78,7 @@ export default function screens(shot) {
   collection.press('B');
   shot(collection, 'puzzle wall');
 
-  const ending = newGame(1, { title: true, save: saveWith({ clears: 255, treasures: 255, pieces: 65535, stage: 7 }) });
+  const ending = newGame(1, { title: true, save: saveWith({ clears: 4095, treasures: 4095, pieces: 0xFFFFFF, stage: 11 }) });
   ending.press('A');
   ending.press('B');
   ending.run(45);
@@ -86,9 +86,9 @@ export default function screens(shot) {
   ending.run(80);
   shot(ending, 'NOVA-16 restored');
 
-  for (const [index, label] of [[1, 'Cable Works'], [2, 'Contact Mine'],
-    [3, 'Slot Elevator'], [4, 'Trace Trail'], [5, 'Relay Grove'],
-    [6, 'Phosphor Rooftops'], [7, 'Picture Lock']]) {
+  for (const [index, label] of [[1, 'Cable Works'], [2, 'Assembly Line'], [3, 'Contact Mine'],
+    [4, 'Slot Elevator'], [5, 'Cartridge Vault'], [6, 'Trace Trail'], [7, 'Relay Grove'], [8, 'Motherboard Maze'],
+    [9, 'Phosphor Rooftops'], [10, 'Picture Lock'], [11, 'Test Pattern']]) {
     const save = saveWith({ clears: (1 << index) - 1, stage: index });
     const level = newGame(1, { title: true, save });
     enterSelectedStage(level);
@@ -97,7 +97,8 @@ export default function screens(shot) {
   }
 
   // Each zone's look at the far end of a stage: its terrain, ledges and the exit terminal
-  for (const [index, label] of [[2, 'Contact Mine exit'], [4, 'Trace Trail exit'], [7, 'Picture Lock exit']]) {
+  for (const [index, label] of [[3, 'Contact Mine exit'], [6, 'Trace Trail exit'], [10, 'Picture Lock exit'],
+    [2, 'Assembly Line exit'], [5, 'Cartridge Vault exit'], [8, 'Motherboard Maze exit'], [11, 'Test Pattern exit']]) {
     const save = saveWith({ clears: (1 << index) - 1, stage: index });
     const level = newGame(1, { title: true, save });
     enterSelectedStage(level);

@@ -18,9 +18,9 @@ Use the supplied Bit sprite sheet for his cream shell, dark faceplate, cyan eyes
 
 1. Start in the lab and use its console to select an unlocked stage.
 2. Run and jump through the stage. Plug into marked sockets to power devices and follow side paths to collectibles.
-3. Reach the exit terminal to clear the stage. Continue to the second stage of the zone or return to the lab. Clearing the second stage unlocks the next zone and returns Bit to the lab.
+3. Reach the exit terminal to clear the stage. Continue to the zone's next stage or return to the lab. Clearing the zone's third stage, its finale, unlocks the next zone and returns Bit to the lab.
 4. Visit the display case and puzzle wall to see what Bit brought home. Return to a cleared stage at any time to pick up missing items.
-5. Clear all eight stages to power up the lab’s NOVA-16 and see the ending. The lab and all eight stages stay open afterward.
+5. Clear all twelve stages to power up the lab’s NOVA-16 and see the ending. The lab and all twelve stages stay open afterward.
 
 ## 3. Controls
 
@@ -68,14 +68,14 @@ Bit has unlimited attempts. To keep checkpoints safe and prevent a locked route,
 
 Each stage targets 2–4 minutes on a first clear. The first stage of each zone introduces a device. The second uses it in a longer sequence. Stage and treasure names below are working names.
 
-| Zone | Palette | Stage 1 | Stage 2 |
-|---|---|---|---|
-| 1. Controller Foundry | Coral, gold, charcoal | **Button Assembly.** Power spring buttons that launch Bit across the assembly line. Treasure: Prototype D-pad. | **Cable Works.** Link spring buttons with a socket-powered lift. Treasure: Braided Controller Cable. |
-| 2. Cartridge Caverns | Violet, copper, teal | **Contact Mine.** Extend cartridge shelves to cross bays of exposed contacts. Treasure: Clear-Shell Cart. | **Slot Elevator.** Switch shelf positions at a moving cartridge rack. Treasure: Gold Contact Board. |
-| 3. Circuit Gardens | Mint, green, citrus | **Trace Trail.** Route current along marked circuit traces to raise bridges. Treasure: Ceramic Logic Chip. | **Relay Grove.** Choose which of two marked branches to power and switch between them. Treasure: Relay Module. |
-| 4. CRT Skyline | Indigo, orange, phosphor cyan | **Phosphor Rooftops.** Power scanline platforms and cross them in their visible safe phase. Treasure: Phosphor Swatch. | **Picture Lock.** Synchronize lifts and scanline platforms, then close the last relay. Treasure: CRT Tuning Dial. |
+| Zone | Palette | Stage 1 | Stage 2 | Stage 3 (finale) |
+|---|---|---|---|---|
+| 1. Controller Foundry | Coral, gold, charcoal | **Button Assembly.** Power spring buttons that launch Bit across the assembly line. Treasure: Prototype D-pad. | **Cable Works.** Link spring buttons with a socket-powered lift. Treasure: Braided Controller Cable. | **Assembly Line.** Stones under presses, three lifts and three scanline spans in one run. Treasure: Golden A Button. |
+| 2. Cartridge Caverns | Violet, copper, teal | **Contact Mine.** Extend cartridge shelves to cross bays of exposed contacts. Treasure: Clear-Shell Cart. | **Slot Elevator.** Switch shelf positions at a moving cartridge rack. Treasure: Gold Contact Board. | **Cartridge Vault.** Four shelves and two lifts across bays and waves of contacts. Treasure: Mask ROM Chip. |
+| 3. Circuit Gardens | Mint, green, citrus | **Trace Trail.** Route current along marked circuit traces to raise bridges. Treasure: Ceramic Logic Chip. | **Relay Grove.** Choose which of two marked branches to power and switch between them. Treasure: Relay Module. | **Motherboard Maze.** Relays whose first bridge often goes nowhere, a press gauntlet and a spring cache. Treasure: Crystal Oscillator. |
+| 4. CRT Skyline | Indigo, orange, phosphor cyan | **Phosphor Rooftops.** Power scanline platforms and cross them in their visible safe phase. Treasure: Phosphor Swatch. | **Picture Lock.** Synchronize lifts and scanline platforms, then close the last relay. Treasure: CRT Tuning Dial. | **Test Pattern.** Five scanline spans, two lifts and a spring, over the Skyline's last rooftops. Treasure: Color Bar Card. |
 
-Each stage puts one puzzle piece near a route the player can see from the main path and the other behind a tougher optional jump or socket puzzle. Each zone’s four pieces reveal one illustrated hardware cutaway on the lab wall. Treasures fill eight display slots as soon as Bit returns.
+Each stage puts one puzzle piece near a route the player can see from the main path and the other behind a tougher optional jump or socket puzzle. Each zone’s six pieces (two in each of its three stages) reveal one illustrated hardware cutaway on the lab wall. Treasures fill eight display slots as soon as Bit returns.
 
 The **practice course** is available from the first lab visit. Its three short stations teach a held jump, a socket next to a safe landing, and a moving lift. Bit can leave through the exit or the pause menu.
 
@@ -93,12 +93,12 @@ Stage layout and machine timing carry the challenge. Hazards use a distinct silh
 
 ## 8. Modes
 
-- **Campaign.** Eight stages, one unlocked path through the zones, and replay of cleared stages.
+- **Campaign.** Twelve stages, three a zone, one unlocked path through the zones, and replay of cleared stages.
 - **Lab practice.** Repeatable exercises for jumps and sockets.
 
 ## 9. Scoring
 
-Progress is measured by **8 stages cleared**, **8 treasures found**, **16 puzzle pieces found**, and **4 lab puzzles completed**. Adventure completion is all eight stage clears. Collection completion is all eight treasures and all sixteen pieces.
+Progress is measured by **12 stages cleared**, **12 treasures found**, **24 puzzle pieces found**, and **4 lab puzzles completed**. Adventure completion is all twelve stage clears. Collection completion is all twelve treasures and all twenty-four pieces.
 
 ## 10. Screens and flow
 
@@ -110,11 +110,11 @@ Progress is measured by **8 stages cleared**, **8 treasures found**, **16 puzzle
 | Stage | The exit terminal opens the clear card. START opens pause. |
 | Stage clear | A advances within a zone or returns to the lab after a zone finale. Left replays the stage and B returns to the lab. |
 | Practice | Work through the three stations. Finish or return to the lab from pause. |
-| Ending | After all eight clears, press B beside the console to boot it. A acknowledges the result and returns to the open lab. |
+| Ending | After all twelve clears, press B beside the console to boot it. A acknowledges the result and returns to the open lab. |
 
 ## 11. Audio
 
-Use the new sound chip. Write original chiptunes for the title and four zones, with one track shared by the two stages in each zone. The lab and practice course use the song library’s arrangement of Scott Joplin’s *The Entertainer*. Keep the arrangement’s source credit with the cart using the repository’s [song source list](../../tools/devkit/music/songs/scores/SOURCES.md). A respawn leaves the stage music running.
+Use the new sound chip. Write original chiptunes for the title and four zones, with one track shared by the three stages in each zone. The lab and practice course use the song library’s arrangement of Scott Joplin’s *The Entertainer*. Keep the arrangement’s source credit with the cart using the repository’s [song source list](../../tools/devkit/music/songs/scores/SOURCES.md). A respawn leaves the stage music running.
 
 Short cues cover menu move, confirm, jump, plug, device power, checkpoint, treasure, puzzle piece, respawn, and stage clear. Route effects through channels 6 and 7 for the original tracks. Reserve 7 for lab effects if the library arrangement uses 6. Measure loudness and effect levels during the audio pass.
 
@@ -151,8 +151,8 @@ Use stable stage and item IDs. Derive unlocked stages and complete lab puzzles f
 
 | Asset | Campaign target |
 |---|---|
-| Code | Up to 48 KiB planned of the 64 KiB limit; 52.7 KB (80%) after step 7. Keep stage layouts in ROM, or set `strip` in `meta.json`, if the audio and balance work needs room. |
-| ROM | Up to 32 KiB planned of the 128 KiB limit for stage data and exhibit assets |
+| Code | Up to 48 KiB planned of the 64 KiB limit. Since step 13 the stages are in the ROM (`stages.py`), and `strip` is on: 44.8 KB (68%) with twelve stages. |
+| ROM | Up to 32 KiB planned of the 128 KiB limit for stage data and exhibit assets. After step 13: the twelve stages, 27.7 KB of JSON (`rom/stages.bin`). |
 | Tiles | Up to 900 of 1,024, with shared device tiles and reusable background tiles. After step 7: 831 used (BG 213 of 255, sprites 320 of 384, zone backdrops 311 of 384). |
 | Sprites | Up to 48 in a frame and 24 on a line, below the 128 / 32 limits |
 | Songs / SFX | 6 songs, up to 48 patterns, about 10 effects. After step 8: 6 songs, 21 patterns, 13 effects, 18 KB of the 32 KB sample RAM. |
@@ -231,6 +231,14 @@ The limits that shape it:
      The solver's state key now counts a device far from Bit (over 300 px) only by whether it is powered: a scanline or a lift cycling behind him multiplied the states some 900 times, and Phosphor Rooftops could not be solved until it did.
    - **Results:** The routes clear each stage with every item: 1,366 to 1,445 frames (23 to 24 s of perfect play). All 74 take-offs on the eight stages have windows of 8 to 17 frames. 178 checks, `verify.js`, the smoke test and the sweep pass. The code is 54.5 KB (83%): step 13 starts by making room (the stage data into the ROM, or `mangle`).
 13. **A finale for each zone.** Four new stages (1-3 to 4-3), each the hardest of its world, with a treasure and two pieces. The treasure case grows to 12 and the puzzle wall's cutaways to 6 pieces. The stage select lists three a zone, and a zone's finale opens the next zone.
+   - **Built:** First, room: the stages moved from the code into the ROM. `stages.py` holds them, with the same helpers as `code.js`, and writes `rom/stages.bin` (JSON), which `loadStages()` reads at start. The data is identical, and the code went from 54.5 KB to 43.9 KB. Then the finales, each the hardest stage of its world with four beacons, a treasure and two pieces off the main route:
+     - **1-3 Assembly Line** (3,200 px): stepping stones under presses, three lifts (one ridden down), three scanline spans, and a spring up to the treasure.
+     - **2-3 Cartridge Vault** (3,200 px): four shelves and two lifts across bays, a wave of three contacts, and presses.
+     - **3-3 Motherboard Maze** (3,200 px): four relays, two of whose first bridges go nowhere, a gauntlet of three presses, and two spring caches.
+     - **4-3 Test Pattern** (3,240 px): five scanline spans, two lifts, a spring up to the treasure, presses and contacts.
+
+     Stages are numbered in play order, three a zone (`STAGES_PER_ZONE`). The zone's finale opens the next zone, and it is the zone's third stage on the stage select. Twelve treasures: four new pictures (a golden A button, a mask ROM chip, a crystal oscillator, a colour-bar card). The cabinet shows two rows of six, the case three rows of four. Each puzzle has six pieces, in a 3 × 2 cut of its 32 px cutaway (`PUZZLE_PARTS`). The stage select lists twelve rows; the title, the lab's HUD and the ending count twelve and twenty-four. The ending's count of treasures and pieces is on two lines (one would be 264 px).
+   - **Results:** The finales' routes clear them with every item, in 1,514 to 1,632 frames (25 to 27 s of perfect play). All 132 take-offs on the twelve stages have windows of 8 frames or more. On the way there, five optional ledges 48 px up (the top of a jump) came down to 40 px, a spring cache was widened, a contact beside a press was removed, a ledge that caught a late jump off a lift moved, and a stone under a press was widened to leave a safe strip. 199 checks pass. The campaign test plays all twelve stages through the real menus. The lab test reads the twelve-slot case and the six-part puzzles. The streaming, smoke, sweep (13 routes, 4 seeds) and `verify.js` pass. The gallery has 43 screens, the finales' starts and exits among them, and the art review's warnings are as before (menus over the world). The code is 44.8 KB (68%) and the ROM 27.7 KB.
 14. **Time medals.** Each stage gets a target time from its recorded route. The best time is saved on a clear and shown on the clear card and the stage select, with a medal when it beats the target. The lab shows the medal count.
 15. **Hard remixes.** Once the ending has been seen, each of the 12 stages has a remix: the same ground with tighter timing, more hazards and fewer beacons, plus a golden chip to find. Remixes have their own clears, best times and medals, and the lab shows the chips.
 16. **Balance and release again.** Check every route at human timing; the gallery, the art review and the songs over the longer stages; release with `--keep-label`.
@@ -239,6 +247,6 @@ The limits that shape it:
 
 - Working names, device assignments, and treasure designs in the zone table.
 - First-clear stage length, movement tuning, and whether a midpoint is enough for each stage.
-- The initial collection model of one treasure and two pieces per stage, with a cutaway for each four-piece puzzle.
+- The collection model of one treasure and two pieces per stage, with a cutaway for each six-piece puzzle.
 - Linear zone unlocks and the lab’s final boot sequence.
 - Optional time medals and written treasure stories are ideas for a later pass.

@@ -15,7 +15,8 @@ const NARROW = 8;
 let narrow = 0;
 const A = M('A');
 const routes = [[...toLift, ...toUpperDeck, ...mainRoute], ...campaignRoutes];
-const names = ['Button Assembly', 'Cable Works', 'Contact Mine', 'Slot Elevator', 'Trace Trail', 'Relay Grove', 'Phosphor Rooftops', 'Picture Lock'];
+const names = ['Button Assembly', 'Cable Works', 'Assembly Line', 'Contact Mine', 'Slot Elevator', 'Cartridge Vault', 'Trace Trail',
+  'Relay Grove', 'Motherboard Maze', 'Phosphor Rooftops', 'Picture Lock', 'Test Pattern'];
 const only = process.argv.slice(2).filter((a) => /^\d+$/.test(a)).map(Number);
 const where = (s) => s ? (s.id || `deck@${s.x},${s.y}`) : null;
 

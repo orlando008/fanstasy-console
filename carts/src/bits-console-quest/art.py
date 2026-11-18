@@ -401,8 +401,32 @@ exhibit = art.sprite_palette(5, {
     'copper': ['713c43', 'ce865b', 'ffe29a'],
     'cyan': ['295b79', '409fb7', '8bffe8'], 'white': 'fff4db',
 })
-for i in range(8):
-    item = Img(16, 16)
+# Named by stage number (three a zone since step 13): the first eight pictures belong to each zone's first two stages;
+# the finales (stages 2, 5, 8 and 11) have their own, drawn after.
+FIRST_EIGHT = {0: 0, 1: 1, 3: 2, 4: 3, 6: 4, 7: 5, 9: 6, 10: 7}
+for n in range(12):
+    item, i = Img(16, 16), FIRST_EIGHT.get(n)
+    if i is None:
+        if n == 2:  # Golden A button: a round button in its well
+            item.disc(7.5, 8.5, 7, exhibit.ink).disc(7.5, 8.5, 5.5, exhibit.copper[0]).disc(7.5, 7.5, 4.5, exhibit.copper[1])
+            item.disc(6.5, 6.5, 2, exhibit.copper[2]).rect(6, 7, 3, 3, exhibit.copper[0]).pset(7, 6, exhibit.copper[0])
+            item.pset(5, 4, exhibit.white)
+        elif n == 5:  # Mask ROM chip: a long black chip with legs on both sides
+            item.rect(1, 4, 14, 9, exhibit.ink).rect(2, 5, 12, 7, exhibit.violet[0]).disc(3.5, 8.5, 1, exhibit.ink)
+            for x in range(3, 14, 2):
+                item.rect(x, 2, 1, 2, exhibit.cyan[1]).rect(x, 13, 1, 2, exhibit.cyan[1])
+            item.rect(6, 7, 6, 1, exhibit.violet[2]).rect(6, 9, 4, 1, exhibit.violet[1])
+        elif n == 8:  # Crystal oscillator: a silver can on two legs
+            item.rect(2, 3, 12, 8, exhibit.ink).rect(3, 4, 10, 6, exhibit.cyan[1]).rect(3, 4, 10, 2, exhibit.cyan[2])
+            item.rect(4, 7, 4, 1, exhibit.white).rect(4, 11, 2, 4, exhibit.copper[1]).rect(10, 11, 2, 4, exhibit.copper[1])
+        else:  # Colour bar card: the test pattern's bars on a card
+            item.rect(1, 2, 14, 12, exhibit.ink)
+            for k, color in enumerate([exhibit.white, exhibit.copper[2], exhibit.cyan[2], exhibit.cyan[1],
+                                       exhibit.violet[2], exhibit.copper[1]]):
+                item.rect(2 + 2 * k, 3, 2, 7, color)
+            item.rect(2, 10, 12, 3, exhibit.violet[0]).rect(4, 11, 3, 1, exhibit.white)
+        art.sprite('displayTreasure' + str(n), item, pal=exhibit, region='spr')
+        continue
     if i == 0:  # Prototype D-pad
         item.rect(5, 1, 6, 14, exhibit.ink).rect(1, 5, 14, 6, exhibit.ink)
         item.rect(6, 2, 4, 12, exhibit.violet[1]).rect(2, 6, 12, 4, exhibit.violet[1])
@@ -436,7 +460,7 @@ for i in range(8):
         item.disc(7.5, 7.5, 7, exhibit.ink).disc(7.5, 7.5, 5.5, exhibit.violet[1])
         item.disc(7.5, 7.5, 3.5, exhibit.violet[0]).line(8, 7, 11, 3, exhibit.white)
         item.pset(3, 6, exhibit.cyan[2]).pset(5, 3, exhibit.cyan[2])
-    art.sprite('displayTreasure' + str(i), item, pal=exhibit, region='spr')
+    art.sprite('displayTreasure' + str(n), item, pal=exhibit, region='spr')
 
 diagram = art.sprite_palette(7, {
     'grid': '183747', 'frame': '356674', 'board': '284457',

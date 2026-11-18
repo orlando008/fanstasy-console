@@ -57,38 +57,39 @@ function hasPixels(vm, min, max, x, y, w, h) {
 }
 
 {
-  const save = saveWith({ clears: 1, treasures: 129, pieces: 0x00AB });
+  const save = saveWith({ clears: 1, treasures: 2049, pieces: 0x00AB });
   const vm = startLab(save);
   const p = vm.probe();
   walkTo(vm, 226);
   vm.press('B');
   check(p.labMenu === 'treasures' && p.exhibit === 0, 'the treasure cabinet opens at the first slot');
-  check(hasPixels(vm, 209, 224, 39, 49, 17, 16), 'the saved Foundry treasure displays its hardware icon');
-  check(!hasPixels(vm, 209, 224, 92, 49, 17, 16), 'an uncollected treasure slot hides its icon');
+  check(hasPixels(vm, 209, 224, 40, 43, 16, 16), 'the saved Foundry treasure displays its hardware icon');
+  check(!hasPixels(vm, 209, 224, 93, 43, 16, 16), 'an uncollected treasure slot hides its icon');
   vm.press('DOWN');
   vm.press('LEFT');
   check(p.exhibit === 3, 'the treasure menu moves between rows and columns');
   vm.press('DOWN');
-  check(p.exhibit === 7 && hasPixels(vm, 209, 224, 198, 94, 17, 16), 'a saved nonadjacent treasure displays in the final slot');
+  vm.press('DOWN');
+  check(p.exhibit === 11 && hasPixels(vm, 209, 224, 199, 111, 16, 16), 'a saved nonadjacent treasure displays in the final slot');
   vm.press('B');
 
   walkTo(vm, 389);
   vm.press('B');
-  check(p.labMenu === 'puzzles' && p.puzzleMask(0) === 11 && p.puzzleMask(1) === 10,
-    'the puzzle wall reads four independent piece bits per zone');
-  check(hasPixels(vm, 241, 256, 155, 48, 32, 32) && !hasPixels(vm, 241, 256, 155, 80, 32, 32),
-    'the cutaway reveals collected quadrants and hides missing ones');
+  check(p.labMenu === 'puzzles' && p.puzzleMask(0) === 43 && p.puzzleMask(1) === 2,
+    'the puzzle wall reads six independent piece bits per zone');
+  check(hasPixels(vm, 241, 256, 155, 48, 22, 32) && !hasPixels(vm, 241, 256, 199, 48, 20, 32),
+    'the cutaway reveals collected parts and hides missing ones');
   vm.press('DOWN');
   check(p.exhibit === 1, 'Down selects the next zone in the puzzle wall');
-  check(!hasPixels(vm, 241, 256, 155, 48, 32, 32) && hasPixels(vm, 241, 256, 187, 48, 32, 32),
+  check(!hasPixels(vm, 241, 256, 155, 48, 22, 32) && hasPixels(vm, 241, 256, 177, 48, 22, 32),
     'the selected zone changes the visible illustration pieces');
-  check([...vm.m.save.slice(0, 4)].join() === '3,1,129,171', 'viewing the lab collection leaves the save intact');
+  check([...vm.m.save.slice(0, 4)].join() === '3,1,2049,171', 'viewing the lab collection leaves the save intact');
 }
 
 {
-  const vm = startLab(saveWith({ clears: 255, pieces: 15, stage: 7 }));
+  const vm = startLab(saveWith({ clears: 4095, pieces: 63, stage: 11 }));
   const p = vm.probe();
-  check(p.readyToBoot(), 'all eight clears unlock the ending with optional collections still incomplete');
+  check(p.readyToBoot(), 'all twelve clears unlock the ending with optional collections still incomplete');
   vm.press('B');
   check(p.state === 'ending' && vm.m.save[p.ENDING_SLOT] === 0, 'powering the console starts the ending');
   vm.press('A');
@@ -99,11 +100,11 @@ function hasPixels(vm, min, max, x, y, w, h) {
   const reopened = startLab(vm.m.save);
   const saved = reopened.probe();
   reopened.press('B');
-  check(saved.labMenu === 'console' && saved.selection === 7 && saved.lastUnlocked() === 7,
+  check(saved.labMenu === 'console' && saved.selection === 11 && saved.lastUnlocked() === 11,
     'after reopening, the console shows the unlocked stage list again');
   reopened.press('LEFT');
   reopened.press('A');
-  check(saved.state === 'play' && saved.course.index === 6, 'the completed campaign stays replayable');
+  check(saved.state === 'play' && saved.course.index === 10, 'the completed campaign stays replayable');
 }
 
 process.exitCode = failures ? 1 : 0;
