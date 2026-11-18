@@ -1,0 +1,252 @@
+# Bit’s Console Quest
+
+**Version:** 1.0
+
+**Status:** Released (step 9 of 9): in the Library, on the Arcade shelf, and as the PNG cart `carts/bits-console-quest.nova.png`. Not yet merged: the art of step 7 waits for the user's look, and first-clear pacing for a playtest in the preview. The user approved the softened zone songs (2026-11-18).
+
+**Shelf and players:** Arcade, one player
+
+**Cart source:** [Source](../../carts/src/bits-console-quest/) · [Packed cart](../../carts/bits-console-quest.nova)
+
+## 1. Concept
+
+Bit is a little robot who loves the NOVA-16. He explores four colorful, side-scrolling worlds built around its hardware and brings his favorite finds back to his lab. His cable tail plugs into sockets to wake up gadgets, move platforms, and make new routes. The main path gives players time to look around and room to recover. The harder jumps and switch puzzles hide treasures and puzzle pieces.
+
+Use the supplied Bit sprite sheet for his cream shell, dark faceplate, cyan eyes and soles, purple cartridge backpack, and cable tail. The supplied console and wired controller set the look of the lab’s hardware. The lab is purple and cyan. Each world gets its own palette, silhouettes, and mechanical theme.
+
+## 2. Core loop
+
+1. Start in the lab and use its console to select an unlocked stage.
+2. Run and jump through the stage. Plug into marked sockets to power devices and follow side paths to collectibles.
+3. Reach the exit terminal to clear the stage. Continue to the zone's next stage or return to the lab. Clearing the zone's third stage, its finale, unlocks the next zone and returns Bit to the lab.
+4. Visit the display case and puzzle wall to see what Bit brought home. Return to a cleared stage at any time to pick up missing items.
+5. Clear all twelve stages to power up the lab’s NOVA-16 and see the ending. The lab and all twelve stages stay open afterward.
+
+## 3. Controls
+
+| Input | Action |
+|---|---|
+| LEFT / RIGHT | Move Bit |
+| D-pad in menus | Move the selection |
+| A | Jump. Hold for more height. Confirm in menus. |
+| B | Plug the cable tail into the highlighted socket. Back out of menus. |
+| START | Pause. Resume, restart the current stage or practice course, or return to the lab. In the lab, resume or return to title. |
+
+Stage selection, displays, the puzzle wall, and the practice entrance use B at lab sockets. The platformer and lab use the console’s normal keyboard, gamepad, and touch controls.
+
+## 4. Screen layout
+
+| Area | Contents |
+|---|---|
+| Top 16 px | Compact HUD with stage number, treasure status, and collected puzzle pieces for the current stage |
+| Below the HUD | Side-scrolling playfield with Bit, platforms, devices, collectibles, and the in-world B prompt |
+| Lab | A walkable workshop with the console, display shelves, puzzle wall, and a door to the practice course |
+| Menus | Small overlay panels in the title, stage selector, pause, stage clear, and ending screens |
+
+Use a 256 × 224 viewport. Follow Bit along the horizontal axis with a 64 px dead zone centered on the screen, clamped to stage bounds. Keep the camera still at the safe approach to a timed obstacle whenever possible so the player can watch its warning.
+
+## 5. The rules
+
+These are the first tuning values for the test course. Speeds are in pixels per frame at 60 frames per second.
+
+| Rule | Initial value |
+|---|---|
+| Bit’s collision body | 14 × 22 px under a 32 × 32 sprite |
+| Run speed | 2.25 top speed, 0.35 ground acceleration, 0.22 air acceleration, 0.45 ground braking |
+| Jump | Initial vertical velocity −4.7. Apply gravity of 0.22 while rising with A held, 0.30 otherwise. Cap fall speed at 5.5. |
+| Forgiveness | 6 frames of coyote time and 6 frames of jump buffering |
+| Main-route jumps | Start with mandatory gaps of at most 48 px and rises of at most 28 px. Validate combined gaps and rises through the actual movement code. |
+| Socket reach | Up to 20 px horizontally and 12 px vertically from the body center, with a clear path to the socket. Highlight the nearest eligible socket. |
+| Plug action | One activation per B press. A one-shot socket stays powered for that attempt. A switch socket toggles its marked device. |
+| Checkpoints | Start and one midpoint per stage. Touch the midpoint to capture the state of required devices and set the respawn point. |
+| Hazard recovery | Return to the latest checkpoint after 24 frames. Restore local devices to checkpoint state and restart timed hazards from their checkpoint phase. A one-shot socket comes back unplugged, with its devices as the stage began, so a checkpoint can never keep a shelf or lift that has already left. |
+| Collectibles | 1 treasure and 2 puzzle pieces per stage. Pickups save on contact and disappear from replays. |
+
+Bit has unlimited attempts. To keep checkpoints safe and prevent a locked route, each checkpoint includes a stable landing and a verified route to the exit from its saved device state. Every timed main-route obstacle has a place to wait. Practice uses the same controls and device types, with a flat landing under its first exercise and a reset point at each exercise.
+
+## 6. Levels or content
+
+Each stage targets 2–4 minutes on a first clear. The first stage of each zone introduces a device. The second uses it in a longer sequence. Stage and treasure names below are working names.
+
+| Zone | Palette | Stage 1 | Stage 2 | Stage 3 (finale) |
+|---|---|---|---|---|
+| 1. Controller Foundry | Coral, gold, charcoal | **Button Assembly.** Power spring buttons that launch Bit across the assembly line. Treasure: Prototype D-pad. | **Cable Works.** Link spring buttons with a socket-powered lift. Treasure: Braided Controller Cable. | **Assembly Line.** Stones under presses, three lifts and three scanline spans in one run. Treasure: Golden A Button. |
+| 2. Cartridge Caverns | Violet, copper, teal | **Contact Mine.** Extend cartridge shelves to cross bays of exposed contacts. Treasure: Clear-Shell Cart. | **Slot Elevator.** Switch shelf positions at a moving cartridge rack. Treasure: Gold Contact Board. | **Cartridge Vault.** Four shelves and two lifts across bays and waves of contacts. Treasure: Mask ROM Chip. |
+| 3. Circuit Gardens | Mint, green, citrus | **Trace Trail.** Route current along marked circuit traces to raise bridges. Treasure: Ceramic Logic Chip. | **Relay Grove.** Choose which of two marked branches to power and switch between them. Treasure: Relay Module. | **Motherboard Maze.** Relays whose first bridge often goes nowhere, a press gauntlet and a spring cache. Treasure: Crystal Oscillator. |
+| 4. CRT Skyline | Indigo, orange, phosphor cyan | **Phosphor Rooftops.** Power scanline platforms and cross them in their visible safe phase. Treasure: Phosphor Swatch. | **Picture Lock.** Synchronize lifts and scanline platforms, then close the last relay. Treasure: CRT Tuning Dial. | **Test Pattern.** Five scanline spans, two lifts and a spring, over the Skyline's last rooftops. Treasure: Color Bar Card. |
+
+Each stage puts one puzzle piece near a route the player can see from the main path and the other behind a tougher optional jump or socket puzzle. Each zone’s six pieces (two in each of its three stages) reveal one illustrated hardware cutaway on the lab wall. Treasures fill eight display slots as soon as Bit returns.
+
+The **practice course** is available from the first lab visit. Its three short stations teach a held jump, a socket next to a safe landing, and a moving lift. Bit can leave through the exit or the pause menu.
+
+## 7. Opponents or hazards
+
+| Hazard | Behaviour |
+|---|---|
+| Gaps | Falling below the stage returns Bit to his checkpoint. Early gaps use visible lower landings before the first checkpoint. |
+| Button-assembly presses | A press telegraphs with a flashing outline for at least 24 frames. A safe ledge sits beside each mandatory crossing. |
+| Live contacts | Marked contact pads flash for at least 24 frames before electrifying. Contact while live returns Bit to his checkpoint. |
+| Lifts and shelves | Carry Bit if he is standing on them. Side contact is forgiving. All paths have safe endpoints. |
+| Scanline platforms | Default 120-frame cycle: 72 solid, 24 warning while still solid, 24 off. A socket starts the cycle from its solid phase. |
+
+Stage layout and machine timing carry the challenge. Hazards use a distinct silhouette and a visible warning so their state also reads with sound muted.
+
+## 8. Modes
+
+- **Campaign.** Twelve stages, three a zone, one unlocked path through the zones, and replay of cleared stages.
+- **Lab practice.** Repeatable exercises for jumps and sockets.
+
+## 9. Scoring
+
+Progress is measured by **12 stages cleared**, **12 treasures found**, **24 puzzle pieces found**, and **4 lab puzzles completed**. Adventure completion is all twelve stage clears. Collection completion is all twelve treasures and all twenty-four pieces.
+
+## 10. Screens and flow
+
+| Screen | Flow |
+|---|---|
+| Title | A enters the lab and resumes the saved campaign, or starts one on a fresh save. B is a shortcut to practice. |
+| Lab | Walk to the console, display case, puzzle wall, or practice door and press B. |
+| Stage selector | Shows the unlocked stages and the collectibles found in each. A enters the selected stage. |
+| Stage | The exit terminal opens the clear card. START opens pause. |
+| Stage clear | A advances within a zone or returns to the lab after a zone finale. Left replays the stage and B returns to the lab. |
+| Practice | Work through the three stations. Finish or return to the lab from pause. |
+| Ending | After all twelve clears, press B beside the console to boot it. A acknowledges the result and returns to the open lab. |
+
+## 11. Audio
+
+Use the new sound chip. Write original chiptunes for the title and four zones, with one track shared by the three stages in each zone. The lab and practice course use the song library’s arrangement of Scott Joplin’s *The Entertainer*. Keep the arrangement’s source credit with the cart using the repository’s [song source list](../../tools/devkit/music/songs/scores/SOURCES.md). A respawn leaves the stage music running.
+
+Short cues cover menu move, confirm, jump, plug, device power, checkpoint, treasure, puzzle piece, respawn, and stage clear. Route effects through channels 6 and 7 for the original tracks. Reserve 7 for lab effects if the library arrangement uses 6. Measure loudness and effect levels during the audio pass.
+
+## 12. Video layers
+
+| Layer | Use |
+|---|---|
+| BG2 | Distant parallax shapes such as circuit traces, casing ribs, or a CRT glow |
+| BG1 | Scrolling stage tiles and solid terrain, or the lab’s shelves and console wall |
+| BG0 | Selected foreground trim and lit cables. Keep Bit and hazard warnings visible. |
+| Sprites | Bit, sockets, moving devices, collectibles, and short effects |
+| Overlay | HUD, prompts, menu panels, and clear cards |
+
+Draw Bit at native console resolution from the supplied reference and proof idle, run, jump, plug, landing, and celebration poses. Use the supplied hardware designs for the lab console, controller, and related exhibit shapes. The first art proof includes Bit, the lab and Controller Foundry palettes, and a real Foundry screen. Regenerate tiles, palettes, and sprite metadata from the cart’s art script.
+
+## 13. Persistence (save slots)
+
+| Slot | Contents |
+|---|---|
+| 0 | Format version: 3 since the second pass (step 10). A save in any other format starts over: the user chose not to keep the first version's saves. |
+| 1 | Stage clears, bits 0–11 (bits 0–7 until step 13 adds the finales); remix clears, bits 16–27 (step 15) |
+| 2 | Treasures, bits 0–11 |
+| 3 | Puzzle pieces, two per stage (bits 2n and 2n + 1) |
+| 4 | Remix golden chips, bits 0–11 (step 15) |
+| 5 | Last stage entered |
+| 6 | Ending seen, 0 or 1 |
+| 16–27 | Best time of each stage, in frames (step 14) |
+| 32–43 | Best time of each remix, in frames (step 15) |
+| others | Reserved |
+
+Use stable stage and item IDs. Derive unlocked stages and complete lab puzzles from the masks. Save clear and collection bits on the frame that grants them. Resuming from title enters the lab. Checkpoint state lives in the current stage attempt.
+
+## 14. Asset budget
+
+| Asset | Campaign target |
+|---|---|
+| Code | Up to 48 KiB planned of the 64 KiB limit. Since step 13 the stages are in the ROM (`stages.py`), and `strip` is on: 44.8 KB (68%) with twelve stages. |
+| ROM | Up to 32 KiB planned of the 128 KiB limit for stage data and exhibit assets. After step 13: the twelve stages, 27.7 KB of JSON (`rom/stages.bin`). |
+| Tiles | Up to 900 of 1,024, with shared device tiles and reusable background tiles. After step 7: 831 used (BG 213 of 255, sprites 320 of 384, zone backdrops 311 of 384). |
+| Sprites | Up to 48 in a frame and 24 on a line, below the 128 / 32 limits |
+| Songs / SFX | 6 songs, up to 48 patterns, about 10 effects. After step 8: 6 songs, 21 patterns, 13 effects, 18 KB of the 32 KB sample RAM. |
+| PNG cart | Check the 147,443-byte payload limit as the backgrounds and audio land. |
+
+## 15. Implementation plan
+
+**Scaffold results.** The repository verifier regenerated the art and audio, repacked the cart, and passed 39 starter checks and a 3,000-frame soak. The starter bot completed six runs. Browser smoke is pending because Chromium could not start in the workspace. The initials screen, high scores, and starter art and audio belong to the placeholder.
+
+1. **Vertical slice.** Replace the starter minigame with a short Controller Foundry course. Implement scrolling, jumping, one powered lift, a checkpoint, one pickup, and a reachable exit. Exercise all of them with recorded inputs.
+   - **Built:** A 768 px course with gaps of 40, 32, 40, and 40 px, a checkpoint at x = 304, and a treasure on an optional ledge 32 px above the upper deck. Bit plugs into the lift on board. The powered lift travels at 1 px per frame between y = 192 and y = 112, waits 60 frames at the top and 45 at the bottom, and cycles so Bit can catch it again. Plug into the exit to clear the course. Save version 2 uses the first stage and treasure bits. The prototype uses the robot’s reference colors and silhouette as a starting point for the art proof, with two starter tracks and gameplay cues.
+   - **Results:** 47 checks, a 3,000-frame soak, and four runs apiece of the recorded exit and treasure routes. All runs cleared without a fall. The production console worker rendered the treasure route under Node and emitted both save bits. Reviewed seven rendered screens. The browser smoke test is pending because the workspace blocks a socket Chromium needs to start. The packed code is about 15 KB, with 203 source tiles used and at most four sprites queued by the scene.
+2. **Art proof.** Draw Bit’s gameplay poses from the supplied sheet, make the purple-and-cyan lab and Foundry palettes, and render a real Foundry screen. Review the proof before drawing the remaining zones.
+   - **Built:** Eleven 32 × 32 frames for Bit, including idle and blink, four running frames, jump, fall, plug, land, and cheer. Kept the cream shell, cyan soles and eyes, purple cartridge backpack, and two-pin cable from the reference. Added controller moulds to the Foundry’s distant layer and a short spark when Bit powers the lift. The lab study uses a dark casing, purple trim, and cyan ports from the supplied NOVA-16 image.
+   - **Results:** The proof shows the sprites at native and 4× size with both palettes and the live upper-deck frame. All 50 checks and eight recorded routes pass. The production worker rendered the treasure route with matching output. The art diagnostic flags overlay edges and a socket covered by the pause panel. The browser smoke test still cannot start in this workspace.
+   - **Review:** The first playable Foundry look was well received. The updated character frames and lab palette were approved.
+3. **Core mechanics.** Add the full socket and device behaviors, collectible bookkeeping, and practice stations. Test repeated B presses, checkpoint restores, and revisiting a collected item.
+   - **Built:** The same course runner handles Foundry and practice. Sockets check reach and line of sight, choose the closest eligible target, and react to a fresh B press. Foundry adds a spring launch at −6.2 px per frame and two independently saved puzzle pieces. The existing clear and treasure bits retain their save format.
+   - **Practice:** The 800 px wing starts with a 48 px held-jump ledge over a safe floor. Next, a relay switches power from a shelf that slides 40 px at 1 px per frame to a 128 px bridge. A final lift rises 80 px, then Bit plugs into the exit. The two beacons snapshot devices and switches for recovery after a fall. Practice has its own purple-and-cyan scenery and plays Scott Joplin’s *The Entertainer*, with effects on channel 7.
+   - **Results:** 78 checks and a 3,000-frame soak passed. Four runs each of the Foundry exit route, Foundry collection route, and practice route cleared without a fall. The production worker rendered both modes with their expected save data. All three songs meet the loudness limits. Reviewed 13 rendered screens. Chromium still cannot start the browser smoke test in this workspace.
+4. **Hazards.** Implement warned presses, live contacts, and timed platforms. Verify they remain readable and reset consistently.
+   - **Built:** Extended the Foundry test course to 1,152 px with a second beacon before the new hazards. The socket-powered scanline bridge spans 128 px and cycles through 72 steady frames, 24 flashing gold walkable frames, and 24 off frames. The contacts use a 120-frame cycle with 24 warning frames and 30 live frames. The press uses 28 warning frames, then 10 to descend, 22 down, and 12 to retract. Its moving head is the hitbox. There is a safe waiting area on each approach.
+   - **Recovery:** Pause freezes hazard and device timing. A fall or hit restores the latest beacon’s device state and hazard clock after 24 frames. The pre-bridge beacon starts the retry on solid ground with the bridge unpowered. Save version 2 and existing collectibles carry forward.
+   - **Results:** 97 checks and a 3,000-frame soak passed. Twelve recorded runs cleared Foundry or practice without a reboot. The production console worker rendered both modes with expected save data. Reviewed the scanline warning, press warning and descent, and live contacts at console resolution. The browser smoke test still cannot start in this workspace.
+5. **Stage content.** Build and clear all eight stages. Record a route to every exit and collectible.
+   - **Built:** Two playable stages per zone, 1,152–1,568 px wide. Cable Works combines a spring climb and a lift. Contact Mine carries Bit over a gap on a sliding cartridge shelf, and Slot Elevator has two lift rides. Trace Trail opens two bridges, while Relay Grove routes power between a spring cache and a bridge. Phosphor Rooftops links two timed spans. Picture Lock combines lift, spring, scanline, and hazard timing. Each zone has its own backdrop and deck colors. Foundry and the other zones share the current stage music for this pass.
+   - **Progress:** Clearing a stage unlocks the next and immediately saves its clear bit. Eight treasure bits and sixteen piece bits are independent of stage clears. Existing version 2 saves retain Foundry progress. The title stage selector and last-played slot provide access while the lab hub is in development.
+   - **Results:** 134 checks, a 3,000-frame soak, and 40 route runs passed. A fresh-save replay in the production console worker cleared all eight stages and saved all 24 collectibles over 5,714 frames. Recorded perfect routes take roughly 10–16 seconds per stage. First-clear pacing still needs human playtesting. The browser smoke test could not start in this workspace.
+6. **Lab and campaign flow.** Implement stage selection, clear cards, exhibits, puzzle cutaways, replay, and save and resume. Verify that the ending and completed campaign reopen correctly.
+   - **Built:** A 640 px walkable lab with four B-button stations. The NOVA-16 console lists all eight stages with unlock and item status. The cabinet shows eight hardware treasures. The puzzle wall maps each zone’s four saved piece bits to the four quadrants of its cutaway. The practice door and title shortcut open the same practice course. The lab and practice share Scott Joplin’s *The Entertainer*.
+   - **Flow and saves:** The first clear in a zone offers the second stage. Zone finales return to the lab and highlight the next available stage. Exit and pause also return to the lab. After all eight clears, the console boots even if collectibles are still missing. Acknowledging the ending records slot 5 in the existing save format and the console resumes stage selection. Older clear and collection bits stay intact.
+   - **Results:** 161 checks, a 3,000-frame soak, and 40 recorded runs passed. Walk-to-station input tests cover the console, exhibits, practice door, and pause. The production console worker played through all eight stages and the ending in 5,856 frames and persisted all clear, collection, and ending bits. Reviewed all lab screens. Chromium still cannot start the browser smoke test in this workspace.
+   - **Review fixes (2026-11-18):** A beacon touched after a one-shot socket was plugged saved that device mid-move. In Contact Mine, jumping over the first beacon, plugging in on the shelf and jumping back made every reboot bring the shelf back already leaving, out of reach across the gap, until Restart Stage. One-shot sockets now come back unplugged, with their devices as the stage began (`04-devices-and-practice` plays that case). The B POWER prompt now follows the socket's device, so the scanline sockets in Phosphor Rooftops and Picture Lock say POWER as Foundry's does. Foundry and practice are built with the same stage helpers as the other stages. Exhibits are drawn as runs of one colour worked out once per picture (2,096 calls in place of 5,678 pixels across the exhibits and the console picture, and no sget a frame), with identical pictures on all 32 gallery screens. The browser smoke test runs: no errors at 60 fps.
+7. **Remaining art.** Draw the zones, lab furnishings, treasures, cutaways, and ending. Review screenshots of each stage and screen.
+   - **Found at the start of the step:** the lab, its furnishings, the eight treasures, the four cutaways, the ending and a backdrop for each zone were already drawn in steps 5 and 6. Every zone's ground used Foundry's two tiles in other colours, and the exit was a bare socket.
+   - **Built:** Each zone has its own terrain set (`terrain()` in `art.py`): a top, an end cap (flipped for the right end), two walls that alternate, and a one-way ledge with its end, open beneath on brackets so it reads as something to jump up through. Foundry is a conveyor on riveted plate, the Caverns cut rock with a copper rail and contact pins, the Gardens a circuit board with traces and solder pads, and the Skyline rooftop coping over panelled walls with lit windows. Practice and the lab use Foundry's set in their own colours. The exit is a terminal with an arrow on its screen, with its socket in the front panel. The Skyline backdrop has a lower band of distant rooftops with dim windows and antenna masts. The scenery and deck colours follow the zone table: copper and teal in the Caverns; orange and phosphor cyan on the Skyline. Signs, the stage banner and the B prompts have a trim border. The sprite region moved to tiles 256–639 and the backdrops to 640–1023, to make room.
+   - **Results:** `verify.js` and all 165 checks pass; the smoke test runs with no errors at 60 fps. The gallery lists 35 screens (three new: the far end of Contact Mine, Trace Trail and Picture Lock, with the terminal); all were looked over. The art review's warnings went from 23 to 22: the Skyline is no longer a flat picture. The rest are menus and cards that cover the world on purpose, and dark panels on dark scenes.
+8. **Audio.** Compose and test the chiptune tracks and effects. Add *The Entertainer* for the lab and practice course. Verify cues and check levels on the new chip.
+   - **Built:** Each zone has its own song (`SONG.zones`). Song 0, the title, is A minor with a soft horn. Song 1, Foundry, is C major with a flute (both from step 1). Song 2, the Caverns, is D minor and slow, with electric piano over marimba and strings in a long cave echo. Song 3, the Gardens, is G major and bouncy, with a flute over marimba. Song 4, the Skyline, is E minor and driving, with a soft square lead over a fast arpeggio. Each new song starts with four bars without the lead, and the last bar has a drum fill before it loops. Song 5 is the song library's *The Entertainer* for the lab and practice. New effects: a treasure fanfare (4), the puzzle piece's blip (5), device power when a socket powers something (10), a boot chirp on respawn (11), and a spring launch (12) in place of the jump sound.
+   - **Results:** `loud.mjs --check` passes all six songs. The new leads are 0.026–0.035 RMS (0.52–0.61 of the mix), pierce at most 0.009, and the leads enter at most 1.32x. `clash.py` finds no clash in the game's own songs; the library arrangement has 8, which are its own. Effects measure 0.007–0.063 RMS on channels 6 and 7. A test checks that each of the eight stages plays its zone's song; the effects test now covers power, treasure and piece; all 173 checks pass. The smoke test runs with no errors at 60 fps.
+   - **The user's note on the three zone songs (2026-11-18):** "long sustained notes that are shrill sounding and slightly too loud relative to the parts underneath that are quicker and quieter". Rendering each channel alone showed which parts those were. In the Caverns and Gardens it was the strings pad (two channels holding the chord's third and fifth in octave 4, each as loud as the marimba or louder, and brighter), and the Gardens flute lead. In the Skyline it was the square lead, held at a high sustain: 0.030 RMS against the arpeggio's 0.013. The fixes: the pad is an octave lower (the kit's new `pbase=36`) and quieter (`ZPAD`, strings at 4); the marimba is up from 9 to 12; the Gardens flute (`GFLUTE`) is at 4 and eases off as it holds (sustain 7); the Skyline lead is a square (pulse50, not the brighter pulse25) at 4 that fades as it holds (sustain 4). Per channel, the pads' brightness fell from 0.058 and 0.093 to 0.015 and 0.024, and each pad channel is now at or under the marimba. The Gardens lead went from 0.026 to 0.014, under the marimba's 0.017. The Skyline lead went from 0.030 to 0.019, and its pierce from 0.0087 to 0.0056. All six songs still pass `loud.mjs --check` and `clash.py`. The user's verdict on the new versions: "Sounds good."
+9. **Balance and release.** Check main-route jumps at human timing, replay the hardest optional routes, and verify the cart in the console. Produce the label and PNG cart and add the Arcade Library entry.
+   - **Built:** `tests/carts/bits-console-quest/jump-windows.mjs` measures each main-route jump's take-off window: from where the recorded route presses A, how many frames early or late (up to 8 each way) the press can come and still land on the same platform. It is a tool rather than a numbered test, since it takes a minute or two, and it fails on a window under 10 frames. The label is the title screen (`release.js`). The cart is in the Library on the Arcade shelf, as `carts/bits-console-quest.nova.png`, with a README row.
+   - **Results:** All 41 main-route jumps have windows of 12 to 17 frames; the tightest are Slot Elevator's step up to the high ledge and Trace Trail's ledge (−3 to +8 frames). The routes to every treasure and piece (the optional, harder ones) clear in the campaign test. The hazards' safe phases are long: contacts are live for 30 frames of 120, the press for 44 of 144, and scanline spans are off for 24 of 120. No stage needed changing. `release.js`: the PNG decodes to the packed cart (payload 52.7 KB of 147 KB). Human playtesting of first-clear pacing and difficulty is still to do in the preview.
+
+### Second pass: longer, harder, more to do
+
+**The user's playtest (2026-11-18):** "Overall it's really cool, it's just a bit on the easy/short side." Asked how to add length and challenge, they chose all four options offered: longer stages, a third stage per zone, hard remixes after the ending, and time medals. For difficulty they chose **harder throughout**, the Foundry included, over a gentle start.
+
+Targets: a first clear of a stage takes 1 to 3 minutes (the recorded runs of the first version took 10 to 16 seconds). Harder means longer sequences between beacons, gaps that need a running jump, hazards in the paths of jumps rather than beside them, and devices to use on their clock. Fair still means no blind jumps, and a warning before every hazard. Every main-route jump keeps a take-off window of at least 8 frames (`jump-windows.mjs`, now 12 to 17).
+
+The limits that shape it:
+- **Stage width.** Map RAM is 256 tiles wide (2,048 px). Longer stages (about 3,000 to 4,000 px) need the terrain written into a 256-column ring as the camera moves (BG1 wraps), in place of one whole stage written at the start.
+- **Code.** The code is 52.9 KB of 64 KB. Set `"strip": true` in `meta.json`, and keep stage layouts as compact arrays (or in the ROM) as they grow.
+- **Saves.** The user does not need old saves kept (2026-11-18), so the format moves to version 3, which clears a version 2 save. Stages are numbered in play order, three a zone (zone z's stages are 3z, 3z + 1 and 3z + 2). Clears: slot 1 bits 0–11, with remix clears in bits 16–27. Treasures: slot 2 bits 0–11. Pieces: slot 3, two per stage (bits 2n and 2n + 1); a zone's six (bits 6z to 6z + 5) make its puzzle, a 3 × 2 cutaway. Remix chips: slot 4 bits 0–11. Last stage entered: slot 5; ending seen: slot 6. Best times, in frames: slots 16–27, and the remixes' in slots 32–43.
+
+10. **Long-stage engine.** Stream the terrain into a wrapping 256-column map as Bit runs; take stage widths up to 4,096 px; allow three beacons a stage; turn on `strip`; extend the stage format for what the new stages need. Test the streaming at the ring's seams and after a checkpoint jump back.
+   - **Built:** The terrain streams into a ring of 256 map columns (`resetTerrain`, `terrainTile`, `streamTerrain`), and BG1 wraps. A column is written when it comes within a tile of the screen, from a per-column list of the decks that cover it, so a stage can be as wide as its data (up to 4,096 px is the plan). Collisions still use the deck list, never the map. A stage can have any number of beacons. `meta.json` sets `strip`. Saves are format 3 (section 13), and the tests build saves with `saveWith()` in `lib.mjs`. The stage format itself needs nothing new yet; steps 11 to 13 will extend it as the new stages need.
+   - **Results:** 178 checks pass. The new `08-streaming` runs Bit across a synthetic 4,096 px course, twice the map's width. The camera crosses the ring's seam, and every column on screen holds its tile all the way. A reboot to a beacon near the start brings the camera back, with those columns written again. A frame at the seam was looked at: the ground and a ledge draw across it cleanly. The code is 49.4 KB with `strip` (75%; it was 52.9 KB). The smoke test, the sweep and `verify.js` pass; the PNG cart was rebuilt with `--keep-label`.
+11. **Longer, harder stages: Foundry and Caverns.** Rebuild Button Assembly, Cable Works, Contact Mine and Slot Elevator at about three times their length, harder throughout. Re-record their routes and collectibles; check every jump's window.
+   - **Built:** Each stage keeps its opening (the first version's teaching section, which the earlier tests' recorded inputs still cover) and adds two or three harder sections:
+     - **Button Assembly** (3,072 px, was 1,152): stepping stones, one under a press; a second lift to a high deck between two contacts; a 160 px scanline span to cross on its clock; a press and a contact; running jumps down to the exit past contacts and a last press.
+     - **Cable Works** (3,120 px, was 1,408): a drop onto a lift; a spring that is the only way up to a deck of contacts; a lift ridden down past two presses; another lift up from a drop; one-way ledges; two presses before the exit.
+     - **Contact Mine** (3,320 px, was 1,280): a second shelf across a bay onto contacts; stepping stones with live contacts on them; a run through a wave of three contacts; a third shelf; stones over a bay; a fourth shelf down to the exit.
+     - **Slot Elevator** (3,240 px, was 1,360): a lift ridden down onto contacts; a staircase of two lifts; a pair of presses on a deck; a last lift up; then down past two presses that alternate, with a gap between them to wait in, and a run between contacts.
+
+     Each stage has three or four beacons. The routes are found by a new solver (`tests/carts/bits-console-quest/solve.mjs`, with each stage's goals in `waypoints.mjs`). It searches held buttons with the cart's own update code, between waypoints (the items, the sockets, places to stand, the exit). A route counts only if every step also survives with the hazards' clock 4 frames ahead or behind, and every change of buttons survives being 3 frames late. Without those rules the solver slipped past presses and contacts with no margin, and 14 jumps measured under 10 frames. `stagemap.mjs` draws a whole stage, with a route's path, for review. Button Assembly's routes are the first version's recorded start plus a solved finish (`bot.mjs`), and the whole-stage tests now enter from the lab's console, as a player does. Entering that way takes a frame more than starting in the stage, and the routes are timed to it. `jump-windows.mjs` now counts only take-offs, and restores snapshots instead of replaying routes (seconds, not minutes). The sweep runs 2,400 frames.
+   - **Results:** The routes clear each stage with every item: 1,376 to 1,650 frames (23 to 27 s of perfect play, up from 10 to 16 s; a first clear with deaths and waits will be several times that). All 42 take-offs on the four stages have windows of 9 to 17 frames (8 is the floor). 178 checks, `verify.js`, the smoke test and the sweep (every route, four seeds, no reboots) pass. The code is 52.0 KB (79%): steps 12 to 15 will need `mangle`, or the stage data in the ROM. Played by a person: still to do, in the preview.
+12. **Longer, harder stages: Gardens and Skyline.** The same for Trace Trail, Relay Grove, Phosphor Rooftops and Picture Lock.
+   - **Built:** As in step 11, each opening is kept and harder sections follow:
+     - **Trace Trail** (3,000 px, was 1,312): three more traces to power; stones; a press over a long board; a descent; a last trace onto a board of contacts.
+     - **Relay Grove** (2,920 px, was 1,472): a third relay that trades a spring up to a cache (where the second piece now is) for the bridge on; stones; two presses; a fourth relay whose first bridge goes nowhere, so power must go to the one below.
+     - **Phosphor Rooftops** (3,024 px, was 1,360): a 160 px span; two spans in a row with a stone and a socket between; rooftops under two presses that alternate; a last 160 px span.
+     - **Picture Lock** (3,024 px, was 1,568): a drop to a span; a lift up to a deck of contacts; a 160 px span; a press; rooftops to the exit between contacts.
+
+     The solver's state key now counts a device far from Bit (over 300 px) only by whether it is powered: a scanline or a lift cycling behind him multiplied the states some 900 times, and Phosphor Rooftops could not be solved until it did.
+   - **Results:** The routes clear each stage with every item: 1,366 to 1,445 frames (23 to 24 s of perfect play). All 74 take-offs on the eight stages have windows of 8 to 17 frames. 178 checks, `verify.js`, the smoke test and the sweep pass. The code is 54.5 KB (83%): step 13 starts by making room (the stage data into the ROM, or `mangle`).
+13. **A finale for each zone.** Four new stages (1-3 to 4-3), each the hardest of its world, with a treasure and two pieces. The treasure case grows to 12 and the puzzle wall's cutaways to 6 pieces. The stage select lists three a zone, and a zone's finale opens the next zone.
+   - **Built:** First, room: the stages moved from the code into the ROM. `stages.py` holds them, with the same helpers as `code.js`, and writes `rom/stages.bin` (JSON), which `loadStages()` reads at start. The data is identical, and the code went from 54.5 KB to 43.9 KB. Then the finales, each the hardest stage of its world with four beacons, a treasure and two pieces off the main route:
+     - **1-3 Assembly Line** (3,200 px): stepping stones under presses, three lifts (one ridden down), three scanline spans, and a spring up to the treasure.
+     - **2-3 Cartridge Vault** (3,200 px): four shelves and two lifts across bays, a wave of three contacts, and presses.
+     - **3-3 Motherboard Maze** (3,200 px): four relays, two of whose first bridges go nowhere, a gauntlet of three presses, and two spring caches.
+     - **4-3 Test Pattern** (3,240 px): five scanline spans, two lifts, a spring up to the treasure, presses and contacts.
+
+     Stages are numbered in play order, three a zone (`STAGES_PER_ZONE`). The zone's finale opens the next zone, and it is the zone's third stage on the stage select. Twelve treasures: four new pictures (a golden A button, a mask ROM chip, a crystal oscillator, a colour-bar card). The cabinet shows two rows of six, the case three rows of four. Each puzzle has six pieces, in a 3 × 2 cut of its 32 px cutaway (`PUZZLE_PARTS`). The stage select lists twelve rows; the title, the lab's HUD and the ending count twelve and twenty-four. The ending's count of treasures and pieces is on two lines (one would be 264 px).
+   - **Results:** The finales' routes clear them with every item, in 1,514 to 1,632 frames (25 to 27 s of perfect play). All 132 take-offs on the twelve stages have windows of 8 frames or more. On the way there, five optional ledges 48 px up (the top of a jump) came down to 40 px, a spring cache was widened, a contact beside a press was removed, a ledge that caught a late jump off a lift moved, and a stone under a press was widened to leave a safe strip. 199 checks pass. The campaign test plays all twelve stages through the real menus. The lab test reads the twelve-slot case and the six-part puzzles. The streaming, smoke, sweep (13 routes, 4 seeds) and `verify.js` pass. The gallery has 43 screens, the finales' starts and exits among them, and the art review's warnings are as before (menus over the world). The code is 44.8 KB (68%) and the ROM 27.7 KB.
+14. **Time medals.** Each stage gets a target time from its recorded route. The best time is saved on a clear and shown on the clear card and the stage select, with a medal when it beats the target. The lab shows the medal count.
+15. **Hard remixes.** Once the ending has been seen, each of the 12 stages has a remix: the same ground with tighter timing, more hazards and fewer beacons, plus a golden chip to find. Remixes have their own clears, best times and medals, and the lab shows the chips.
+16. **Balance and release again.** Check every route at human timing; the gallery, the art review and the songs over the longer stages; release with `--keep-label`.
+
+## 16. Open questions
+
+- Working names, device assignments, and treasure designs in the zone table.
+- First-clear stage length, movement tuning, and whether a midpoint is enough for each stage.
+- The collection model of one treasure and two pieces per stage, with a cutaway for each six-piece puzzle.
+- Linear zone unlocks and the lab’s final boot sequence.
+- Optional time medals and written treasure stories are ideas for a later pass.

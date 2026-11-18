@@ -1,0 +1,444 @@
+{
+ "colors": {
+  "CORAL": 233,
+  "CYAN": 231,
+  "DARK": 235,
+  "GOLD": 230,
+  "HOT": 236,
+  "INK": 225,
+  "MUTED": 228,
+  "PANEL": 226,
+  "PURPLE": 232,
+  "SIGNAL": 237,
+  "STEEL": 234,
+  "TRIM": 227,
+  "WHITE": 229
+ },
+ "gradients": [
+  "cavernSky",
+  "gardenSky",
+  "labSky",
+  "sky",
+  "skylineSky"
+ ],
+ "palettes": {
+  "bg1": {
+   "base": 16,
+   "colors": {
+    "face0": 2,
+    "face1": 3,
+    "face2": 4,
+    "face3": 5,
+    "ink": 1,
+    "rim0": 6,
+    "rim1": 7,
+    "rim2": 8
+   }
+  },
+  "bg2": {
+   "base": 32,
+   "colors": {
+    "edge": 3,
+    "lamp": 4,
+    "mould": 5,
+    "pin": 6,
+    "shadow": 1,
+    "steel": 2
+   }
+  },
+  "bg3": {
+   "base": 48,
+   "colors": {
+    "edge": 6,
+    "gold0": 1,
+    "gold1": 2,
+    "gold2": 3,
+    "gold3": 4,
+    "gold4": 5,
+    "shade": 7
+   }
+  },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "face0": 2,
+    "face1": 3,
+    "face2": 4,
+    "face3": 5,
+    "ink": 1,
+    "rim0": 6,
+    "rim1": 7,
+    "rim2": 8
+   }
+  },
+  "bg5": {
+   "base": 80,
+   "colors": {
+    "circuit": 6,
+    "panel": 3,
+    "purple": 4,
+    "shadow": 1,
+    "standby": 5,
+    "wall": 2
+   }
+  },
+  "bg6": {
+   "base": 96,
+   "colors": {
+    "detail": 4,
+    "light": 5,
+    "panel": 2,
+    "rim": 3,
+    "shadow": 1
+   }
+  },
+  "bg7": {
+   "base": 112,
+   "colors": {
+    "face0": 2,
+    "face1": 3,
+    "face2": 4,
+    "face3": 5,
+    "ink": 1,
+    "rim0": 6,
+    "rim1": 7,
+    "rim2": 8
+   }
+  },
+  "spr0": {
+   "base": 128,
+   "colors": {
+    "aqua0": 9,
+    "aqua1": 10,
+    "aqua2": 11,
+    "ink": 1,
+    "joint0": 3,
+    "joint1": 4,
+    "pack0": 12,
+    "pack1": 13,
+    "pack2": 14,
+    "pin": 15,
+    "shell0": 5,
+    "shell1": 6,
+    "shell2": 7,
+    "shell3": 8,
+    "visor": 2
+   }
+  },
+  "spr1": {
+   "base": 144,
+   "colors": {
+    "gold0": 2,
+    "gold1": 3,
+    "gold2": 4,
+    "gold3": 5,
+    "ink": 1,
+    "white": 6
+   }
+  },
+  "spr2": {
+   "base": 160,
+   "colors": {
+    "body0": 5,
+    "body1": 6,
+    "body2": 7,
+    "frame": 2,
+    "idle": 3,
+    "ink": 1,
+    "live": 4,
+    "screen": 8
+   }
+  },
+  "spr3": {
+   "base": 176,
+   "colors": {
+    "labCyan0": 7,
+    "labCyan1": 8,
+    "labCyan2": 9,
+    "labDark0": 1,
+    "labDark1": 2,
+    "labDark2": 3,
+    "labPurple0": 4,
+    "labPurple1": 5,
+    "labPurple2": 6
+   }
+  },
+  "spr4": {
+   "base": 192,
+   "colors": {
+    "dark": 2,
+    "edge": 1,
+    "highlight": 5,
+    "light": 4,
+    "mid": 3
+   }
+  },
+  "spr5": {
+   "base": 208,
+   "colors": {
+    "copper0": 5,
+    "copper1": 6,
+    "copper2": 7,
+    "cyan0": 8,
+    "cyan1": 9,
+    "cyan2": 10,
+    "ink": 1,
+    "violet0": 2,
+    "violet1": 3,
+    "violet2": 4,
+    "white": 11
+   }
+  },
+  "spr7": {
+   "base": 240,
+   "colors": {
+    "amber": 6,
+    "board": 3,
+    "frame": 2,
+    "grid": 1,
+    "light": 7,
+    "trace": 4,
+    "wire": 5
+   }
+  }
+ },
+ "scenes": {
+  "cavern": {
+   "h": 28,
+   "mx": 96,
+   "my": 32,
+   "pal": 6,
+   "w": 32
+  },
+  "factory": {
+   "h": 28,
+   "mx": 0,
+   "my": 32,
+   "pal": 2,
+   "w": 32
+  },
+  "garden": {
+   "h": 28,
+   "mx": 128,
+   "my": 32,
+   "pal": 6,
+   "w": 32
+  },
+  "lab": {
+   "h": 28,
+   "mx": 64,
+   "my": 32,
+   "pal": 5,
+   "w": 32
+  },
+  "logo": {
+   "h": 6,
+   "mx": 0,
+   "my": 16,
+   "pal": 3,
+   "w": 32
+  },
+  "skyline": {
+   "h": 28,
+   "mx": 160,
+   "my": 32,
+   "pal": 6,
+   "w": 32
+  }
+ },
+ "sprites": {
+  "displayTreasure0": {
+   "pal": 5,
+   "size": 16,
+   "tile": 456
+  },
+  "displayTreasure1": {
+   "pal": 5,
+   "size": 16,
+   "tile": 458
+  },
+  "displayTreasure10": {
+   "pal": 5,
+   "size": 16,
+   "tile": 516
+  },
+  "displayTreasure11": {
+   "pal": 5,
+   "size": 16,
+   "tile": 518
+  },
+  "displayTreasure2": {
+   "pal": 5,
+   "size": 16,
+   "tile": 460
+  },
+  "displayTreasure3": {
+   "pal": 5,
+   "size": 16,
+   "tile": 462
+  },
+  "displayTreasure4": {
+   "pal": 5,
+   "size": 16,
+   "tile": 488
+  },
+  "displayTreasure5": {
+   "pal": 5,
+   "size": 16,
+   "tile": 490
+  },
+  "displayTreasure6": {
+   "pal": 5,
+   "size": 16,
+   "tile": 492
+  },
+  "displayTreasure7": {
+   "pal": 5,
+   "size": 16,
+   "tile": 494
+  },
+  "displayTreasure8": {
+   "pal": 5,
+   "size": 16,
+   "tile": 512
+  },
+  "displayTreasure9": {
+   "pal": 5,
+   "size": 16,
+   "tile": 514
+  },
+  "exitTerminal": {
+   "pal": 2,
+   "size": 32,
+   "tile": 448
+  },
+  "heroBlink": {
+   "pal": 0,
+   "size": 32,
+   "tile": 260
+  },
+  "heroCheer": {
+   "pal": 0,
+   "size": 32,
+   "tile": 392
+  },
+  "heroFall": {
+   "pal": 0,
+   "size": 32,
+   "tile": 332
+  },
+  "heroIdle": {
+   "pal": 0,
+   "size": 32,
+   "tile": 256
+  },
+  "heroJump": {
+   "pal": 0,
+   "size": 32,
+   "tile": 328
+  },
+  "heroLand": {
+   "pal": 0,
+   "size": 32,
+   "tile": 388
+  },
+  "heroPlug": {
+   "pal": 0,
+   "size": 32,
+   "tile": 384
+  },
+  "heroWalk1": {
+   "pal": 0,
+   "size": 32,
+   "tile": 264
+  },
+  "heroWalk2": {
+   "pal": 0,
+   "size": 32,
+   "tile": 268
+  },
+  "heroWalk3": {
+   "pal": 0,
+   "size": 32,
+   "tile": 320
+  },
+  "heroWalk4": {
+   "pal": 0,
+   "size": 32,
+   "tile": 324
+  },
+  "labConsole": {
+   "pal": 3,
+   "size": 32,
+   "tile": 452
+  },
+  "piece": {
+   "pal": 4,
+   "size": 16,
+   "tile": 398
+  },
+  "puzzleArt0": {
+   "pal": 7,
+   "size": 32,
+   "tile": 520
+  },
+  "puzzleArt1": {
+   "pal": 7,
+   "size": 32,
+   "tile": 524
+  },
+  "puzzleArt2": {
+   "pal": 7,
+   "size": 32,
+   "tile": 576
+  },
+  "puzzleArt3": {
+   "pal": 7,
+   "size": 32,
+   "tile": 580
+  },
+  "socketIdle": {
+   "pal": 2,
+   "size": 16,
+   "tile": 428
+  },
+  "socketLive": {
+   "pal": 2,
+   "size": 16,
+   "tile": 430
+  },
+  "treasure": {
+   "pal": 1,
+   "size": 16,
+   "tile": 396
+  }
+ },
+ "tiles": {
+  "deckEnd0": 121,
+  "deckEnd1": 127,
+  "deckEnd2": 133,
+  "deckEnd3": 137,
+  "deckLedge0": 124,
+  "deckLedge1": 130,
+  "deckLedge2": 130,
+  "deckLedge3": 140,
+  "deckLedgeEnd0": 125,
+  "deckLedgeEnd1": 131,
+  "deckLedgeEnd2": 131,
+  "deckLedgeEnd3": 141,
+  "deckTop0": 120,
+  "deckTop1": 126,
+  "deckTop2": 132,
+  "deckTop3": 136,
+  "deckWall0": 122,
+  "deckWall1": 128,
+  "deckWall2": 134,
+  "deckWall20": 123,
+  "deckWall21": 129,
+  "deckWall22": 135,
+  "deckWall23": 139,
+  "deckWall3": 138
+ },
+ "used": 847,
+ "version": 1
+}
