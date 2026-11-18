@@ -5,10 +5,12 @@ export const CART = fileURLToPath(new URL('../../../carts/bits-console-quest.nov
 
 const PROBE = `__expose(() => ({
   get state() { return state; }, get paused() { return paused; }, get playing() { return playing; },
-  get bit() { return bit; }, get lift() { return lift; }, get camera() { return camera; },
+  get bit() { return bit; }, get lift() { return devices.find(d => d.id === 'lift'); }, get camera() { return camera; },
   get checkpoint() { return checkpoint; }, get deathTimer() { return deathTimer; }, get falls() { return falls; },
-  hasTreasure, stageCleared, interaction, mget, ART, deck, COURSE_MAP_Y,
-  SFX, SONG, RESPAWN_FRAMES, SAVE_VERSION, CLEAR_SLOT, TREASURE_SLOT,
+  get course() { return course; }, get devices() { return devices; },
+  get deck() { return course.deck; }, get COURSE_MAP_Y() { return course.mapY; },
+  hasTreasure, stageCleared, interaction: () => interaction()?.id ?? null, clearSocketPath, mget, ART,
+  SFX, SONG, RESPAWN_FRAMES, SAVE_VERSION, CLEAR_SLOT, TREASURE_SLOT, PIECE_SLOT,
 }));`;
 
 export const newGame = (seed = 1, { title = false, save = null } = {}) =>

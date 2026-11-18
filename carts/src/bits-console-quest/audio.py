@@ -1,6 +1,6 @@
 # Bit’s Console Quest's audio: carts/src/bits-console-quest/audio.json.
 #   python3 carts/src/bits-console-quest/audio.py carts/src/bits-console-quest/audio.json
-# Two songs (0 the title, 1 the game) and the effects numbered as SFX in code.js. Written with the song
+# Songs 0 and 1 play on the title and Foundry. Song 2 is the practice theme. Effects follow SFX in code.js. Written with the song
 # toolkit (tools/devkit/music/kit.py; its header explains the bar() arguments). Rules (playbook section 5):
 # leads are quiet, with no vibrato; songs use channels 0 to 5 and effects 6 and 7 (code.js takes turns); the drums are
 # samples on channel 5. The new sound chip (SPEC 5): sampled instruments from samples.py (a.voice) and an echo per song.
@@ -57,4 +57,9 @@ a.effect(2, ['G-4', 'C-5', 'G-5', 'OFF'], 'BLIP')                  # 7 jump
 a.effect(2, ['A-3', 'E-4', 'A-4', 'OFF'], 'CHIME')                 # 8 plug
 a.effect(4, ['E-5', 'G-5', 'C-6', 'OFF'], 'CHIME')                 # 9 checkpoint
 
-a.write(sys.argv[1], songs=2)
+# Scott Joplin, The Entertainer (1902), bars 1–36. See the song library's scores/SOURCES.md.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../tools/devkit/music/songs'))
+from library import add
+
+add(a, 'entertainer')
+a.write(sys.argv[1], songs=3)

@@ -13,6 +13,7 @@
   "WHITE": 117
  },
  "gradients": [
+  "labSky",
   "sky"
  ],
  "palettes": {
@@ -50,6 +51,30 @@
     "gold3": 4,
     "gold4": 5,
     "shade": 7
+   }
+  },
+  "bg4": {
+   "base": 64,
+   "colors": {
+    "face0": 2,
+    "face1": 3,
+    "face2": 4,
+    "face3": 5,
+    "ink": 1,
+    "rim0": 6,
+    "rim1": 7,
+    "rim2": 8
+   }
+  },
+  "bg5": {
+   "base": 80,
+   "colors": {
+    "circuit": 6,
+    "panel": 3,
+    "purple": 4,
+    "shadow": 1,
+    "standby": 5,
+    "wall": 2
    }
   },
   "spr0": {
@@ -105,6 +130,16 @@
     "labPurple1": 5,
     "labPurple2": 6
    }
+  },
+  "spr4": {
+   "base": 192,
+   "colors": {
+    "dark": 2,
+    "edge": 1,
+    "highlight": 5,
+    "light": 4,
+    "mid": 3
+   }
   }
  },
  "scenes": {
@@ -113,6 +148,13 @@
    "mx": 0,
    "my": 32,
    "pal": 2,
+   "w": 32
+  },
+  "lab": {
+   "h": 28,
+   "mx": 64,
+   "my": 32,
+   "pal": 5,
    "w": 32
   },
   "logo": {
@@ -184,15 +226,20 @@
    "size": 32,
    "tile": 448
   },
+  "piece": {
+   "pal": 4,
+   "size": 16,
+   "tile": 398
+  },
   "socketIdle": {
    "pal": 2,
    "size": 16,
-   "tile": 398
+   "tile": 428
   },
   "socketLive": {
    "pal": 2,
    "size": 16,
-   "tile": 428
+   "tile": 430
   },
   "treasure": {
    "pal": 1,
@@ -204,6 +251,6 @@
   "deckSide": 2,
   "deckTop": 1
  },
- "used": 365,
+ "used": 401,
  "version": 1
 }

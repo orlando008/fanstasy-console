@@ -1,8 +1,8 @@
 # Bit’s Console Quest
 
-**Version:** 0.3 (Foundry art proof)
+**Version:** 0.4 (devices and practice)
 
-**Status:** The packed cart runs the first Controller Foundry course with Bit’s gameplay animation and the Foundry art proof. The lab palette and console sprite are visual studies.
+**Status:** The packed cart runs the first Controller Foundry course and a three-station practice wing. A starts Foundry and B opens practice from the title while the lab hub is in development.
 
 **Shelf and players:** Arcade, one player
 
@@ -165,8 +165,11 @@ Use stable stage and item IDs. Derive unlocked stages and complete lab puzzles f
 2. **Art proof.** Draw Bit’s gameplay poses from the supplied sheet, make the purple-and-cyan lab and Foundry palettes, and render a real Foundry screen. Review the proof before drawing the remaining zones.
    - **Built:** Eleven 32 × 32 frames for Bit, including idle and blink, four running frames, jump, fall, plug, land, and cheer. Kept the cream shell, cyan soles and eyes, purple cartridge backpack, and two-pin cable from the reference. Added controller moulds to the Foundry’s distant layer and a short spark when Bit powers the lift. The lab study uses a dark casing, purple trim, and cyan ports from the supplied NOVA-16 image.
    - **Results:** The proof shows the sprites at native and 4× size with both palettes and the live upper-deck frame. All 50 checks and eight recorded routes pass. The production worker rendered the treasure route with matching output. The art diagnostic flags overlay edges and a socket covered by the pause panel. The browser smoke test still cannot start in this workspace.
-   - **Review:** The first playable Foundry look was well received. The updated character frames and lab study are ready for review.
+   - **Review:** The first playable Foundry look was well received. The updated character frames and lab palette were approved.
 3. **Core mechanics.** Add the full socket and device behaviors, collectible bookkeeping, and practice stations. Test repeated B presses, checkpoint restores, and revisiting a collected item.
+   - **Built:** The same course runner handles Foundry and practice. Sockets check reach and line of sight, choose the closest eligible target, and react to a fresh B press. Foundry adds a spring launch at −6.2 px per frame and two independently saved puzzle pieces. The existing clear and treasure bits retain their save format.
+   - **Practice:** The 800 px wing starts with a 48 px held-jump ledge over a safe floor. Next, a relay switches power from a shelf that slides 40 px at 1 px per frame to a 128 px bridge. A final lift rises 80 px, then Bit plugs into the exit. The two beacons snapshot devices and switches for recovery after a fall. Practice has its own purple-and-cyan scenery and plays Scott Joplin’s *The Entertainer*, with effects on channel 7.
+   - **Results:** 78 checks and a 3,000-frame soak passed. Four runs each of the Foundry exit route, Foundry collection route, and practice route cleared without a fall. The production worker rendered both modes with their expected save data. All three songs meet the loudness limits. Reviewed 13 rendered screens. Chromium still cannot start the browser smoke test in this workspace.
 4. **Hazards.** Implement warned presses, live contacts, and timed platforms. Verify they remain readable and reset consistently.
 5. **Stage content.** Build and clear all eight stages. Record a route to every exit and collectible.
 6. **Lab and campaign flow.** Implement stage selection, clear cards, exhibits, puzzle cutaways, replay, and save and resume. Verify that the ending and completed campaign reopen correctly.

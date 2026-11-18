@@ -50,7 +50,7 @@ const drawn = name => course.ppu.oamTile.subarray(0, course.ppu.oamCount).includ
 replay(course, toUpperDeck.slice(0, 1));
 check(drawn('heroPlug'), 'powering the lift plays the plug pose');
 replay(course, toUpperDeck.slice(1));
-check(course.ppu.oamCount <= 4, 'Bit, the treasure, and sockets fit the sprite budget');
+check(course.ppu.oamCount <= 7, 'Bit, the collectibles, and sockets fit the sprite budget');
 
 replay(course, treasureRoute);
 check(current.state === 'clear' && drawn('heroCheer'), 'Bit celebrates after the exit is powered');

@@ -10,6 +10,7 @@ art.region('bg', 1, 255)
 art.region('spr', 256, 1023)
 
 art.gradient('sky', ['141126', '251b37', '41243f'], y0=0, y1=223)
+art.gradient('labSky', ['121125', '1f1b38', '34284a'], y0=0, y1=223)
 overlay = {
     'INK': '151222', 'PANEL': '201a34', 'TRIM': '52446c', 'MUTED': 'b9afca',
     'WHITE': 'fff0d9', 'GOLD': 'ffca70', 'CYAN': '67f1e3', 'PURPLE': '9975c9',
@@ -77,6 +78,31 @@ for x, y in [(24, 64), (152, 96)]:
     factory.rect(x + 44, 39, 5, y - 38, far.shadow)
     factory.blit(mould, x, y)
 art.scene('factory', factory, pal=far, at=(0, 32), region='bg')
+
+# The practice wing reuses the deck shapes in the lab's cooler palette.
+art.palette(4, {
+    'ink': '232039', 'face': ['2b2348', '393056', '57416e', '806099'],
+    'rim': ['4d2a72', '814caa', 'b48add'],
+})
+practice = art.palette(5, {
+    'shadow': '18172a', 'wall': '2b2244', 'panel': '352750',
+    'purple': '51366e', 'standby': '396675', 'circuit': '3e3159',
+})
+wing = Img(256, 224)
+wing.rect(0, 45, 256, 9, practice.shadow)
+wing.rect(0, 47, 256, 1, practice.purple)
+wing.rect(0, 156, 256, 14, practice.shadow)
+wing.rect(0, 159, 256, 2, practice.circuit)
+for x in range(0, 256, 64):
+    wing.rect(x + 5, 55, 4, 102, practice.circuit)
+    wing.rect(x + 13, 74, 43, 59, practice.shadow)
+    wing.rect(x + 15, 76, 39, 55, practice.wall)
+    wing.rect(x + 18, 80, 33, 20, practice.panel)
+    wing.rect(x + 20, 82, 4, 1, practice.standby)
+    wing.rect(x + 22, 113, 24, 2, practice.circuit)
+    wing.rect(x + 22, 118, 14, 2, practice.circuit)
+    wing.rect(x + 13, 140, 12, 3, practice.purple)
+art.scene('lab', wing, pal=practice, at=(64, 32), region='bg')
 
 logo = art.palette(3, {
     'gold': ramp('ffbf70', 5), 'edge': '21182b', 'shade': '684254',
@@ -205,6 +231,21 @@ treasure.rect(6, 6, 4, 4, item.gold[3])
 treasure.rect(7, 3, 1, 9, item.white)
 treasure.rect(3, 7, 9, 1, item.white)
 art.sprite('treasure', treasure, pal=item, region='spr')
+
+chip = art.sprite_palette(4, {
+    'edge': '211936', 'dark': '287e90', 'mid': '35b3c6', 'light': '9cfff1', 'highlight': 'edfff7',
+})
+piece = Img(16, 16)
+piece.rect(3, 5, 10, 8, chip.edge)
+piece.rect(6, 2, 4, 5, chip.edge)
+piece.rect(11, 7, 4, 4, chip.edge)
+piece.rect(4, 6, 8, 6, chip.dark)
+piece.rect(7, 3, 2, 4, chip.mid)
+piece.rect(5, 6, 6, 4, chip.mid)
+piece.rect(11, 8, 3, 2, chip.mid)
+piece.rect(5, 6, 5, 1, chip.light)
+piece.pset(7, 4, chip.highlight)
+art.sprite('piece', piece, pal=chip, region='spr')
 
 hardware = art.sprite_palette(2, {
     'ink': '151222', 'frame': '937bab', 'idle': 'ffca70', 'live': '67f1e3',
