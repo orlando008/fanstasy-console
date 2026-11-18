@@ -241,9 +241,10 @@ class Song:
     def __init__(s, audio, key, speed, echo=None):
         s.audio, s.key, s.speed, s.rows, s.echo, s.held = audio, key, speed, [], echo, {}
     def bar(s, length, chord, lead=None, li='LEAD', grid=2, drums='none', bass=None, bgrid=None, upper=None,
-            counter=None, ci='COUNTER', cgrid=None, cbase=48, lv=None, fill=False, pi='PAD', ai='ARP', bi='BASS'):
+            counter=None, ci='COUNTER', cgrid=None, cbase=48, lv=None, fill=False, pi='PAD', ai='ARP', bi='BASS', pbase=48):
         """One bar. lead/bass/counter: a line of tokens, one per `grid` rows ('-' holds, '.' releases, '1358' chord tones).
-        bass: 'long' for one held root. upper: 'pad', 'arp' (every 2 rows) or 'arp1' (every row). fill: the last half
+        bass: 'long' for one held root. upper: 'pad', 'arp' (every 2 rows) or 'arp1' (every row); pbase: the pad's octave
+        (48, octave 4; 36 puts a held pad an octave lower, under the lead, where it is warm rather than shrill). fill: the last half
         bar is a snare roll. Instruments are by name: li, ci, pi (pad), ai (arpeggio), bi (bass); KICK, SNARE, HAT, OHAT
         are expected to exist.
         On the new chip the counter-melody has its own channel (1), so it plays alongside upper, and 'pad' is the
@@ -273,9 +274,9 @@ class Song:
             s.held = {1: bool(counter), 3: bool(upper), 4: upper == 'pad'}
         if counter and not chip2: pass   # on the old chip the counter-melody takes the upper channel
         elif upper == 'pad' and chip2:
-            rows[0][3] = cell(tones[1] + 48, I[pi]); rows[0][4] = cell(tones[2] + 48, I[pi])
+            rows[0][3] = cell(tones[1] + pbase, I[pi]); rows[0][4] = cell(tones[2] + pbase, I[pi])
         elif upper == 'pad':
-            rows[0][3] = cell(tones[1] + 48, I[pi]); rows[length // 2][3] = cell(tones[2] + 48, I[pi])
+            rows[0][3] = cell(tones[1] + pbase, I[pi]); rows[length // 2][3] = cell(tones[2] + pbase, I[pi])
         elif upper in ('arp', 'arp1'):
             seq = [0, 1, 2, 3, 2, 1]
             for k, r in enumerate(range(0, length, 1 if upper == 'arp1' else 2)):

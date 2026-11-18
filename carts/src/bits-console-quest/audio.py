@@ -25,8 +25,12 @@ a.instrument('KICK', 'sample', 0, 0, 15, 0, 12, sample=0, echo=2)
 a.instrument('SNARE', 'sample', 0, 0, 15, 0, 10, sample=1, echo=5)
 a.voice('SOFTHORN', 'brass', 6, -0.15, a=6)
 a.voice('KEYS', 'epiano', 9, -0.15)
-a.voice('MARIMBA', 'marimba', 9, 0.25)
-a.instrument('CRT', 'pulse25', 0, 10, 8, 8, 5, pan=-0.15)         # the Skyline's lead: a soft square, no vibrato
+a.voice('MARIMBA', 'marimba', 12, 0.25)
+# The zone songs' held voices are kept soft: the user heard the first versions' long notes as shrill and too loud over
+# the quick parts. The pad plays an octave lower (pbase=36) and quieter; the leads ease off while a note is held.
+a.voice('ZPAD', 'strings', 4, 0.2)
+a.voice('GFLUTE', 'flute', 4, -0.15, d=24, s=7)
+a.instrument('CRT', 'pulse50', 0, 14, 4, 8, 4, pan=-0.15)         # the Skyline's lead: a square that fades as it holds
 a.instrument('BLIP', 'pulse12', 0, 3, 0, 0, 8)                 # effects from here on
 a.instrument('CHIME', 'pulse50', 0, 6, 5, 6, 9)
 a.instrument('THUD', 'pulse50', 0, 4, 0, 0, 11)
@@ -51,28 +55,28 @@ S.finish()
 
 # --- 2 Cartridge Caverns: D minor, slow, in a big echoing cave ---
 S = a.song(Key('D', MINOR), 8, echo=(12, 8, 8, 7))
-bars(S, 16, ['1', '6', '7', '1'], None, drums='none', bass='long', upper='pad', counter='1 - 5 - 8 - 5 -', ci='MARIMBA')
+bars(S, 16, ['1', '6', '7', '1'], None, drums='none', bass='long', upper='pad', pi='ZPAD', pbase=36, counter='1 - 5 - 8 - 5 -', ci='MARIMBA')
 A = ['D4 - - - F4 - A4 -', 'Bb4 - - - F4 - D4 -', 'G4 - A4 - C5 - A4 -', 'A4 - - - E4 - - .']
-bars(S, 16, ['1', '6', '7', '5'], A, li='KEYS', drums='soft', bass='1 - - - 5 - - -', upper='pad', counter='1 - 5 - 8 - 5 -', ci='MARIMBA')
+bars(S, 16, ['1', '6', '7', '5'], A, li='KEYS', drums='soft', bass='1 - - - 5 - - -', upper='pad', pi='ZPAD', pbase=36, counter='1 - 5 - 8 - 5 -', ci='MARIMBA')
 bars(S, 16, ['4', '6', '1', '5'], ['G4 - Bb4 - D5 - C5 -', 'Bb4 - F4 - D4 - F4 -', 'F4 - - - D4 - A4 -', 'E4 - - - D4 - - .'],
-     li='KEYS', drums='soft', bass='1 - - - 5 - - -', upper='pad', counter='1 - 5 - 8 - 5 -', ci='MARIMBA')
-bars(S, 16, ['1', '6', '7', '5'], A, li='KEYS', drums='soft', bass='1 - - - 5 - - -', upper='pad', counter='1 - 5 - 8 - 5 -', ci='MARIMBA', fill=[False, False, False, True])
+     li='KEYS', drums='soft', bass='1 - - - 5 - - -', upper='pad', pi='ZPAD', pbase=36, counter='1 - 5 - 8 - 5 -', ci='MARIMBA')
+bars(S, 16, ['1', '6', '7', '5'], A, li='KEYS', drums='soft', bass='1 - - - 5 - - -', upper='pad', pi='ZPAD', pbase=36, counter='1 - 5 - 8 - 5 -', ci='MARIMBA', fill=[False, False, False, True])
 S.finish()
 
 # --- 3 Circuit Gardens: G major, bright and bouncy, marimba ---
 S = a.song(Key('G', MAJOR), 6, echo=(5, 4, 5, 9))
-bars(S, 16, ['1', '5', '6', '4'], None, drums='kick', bass='1 - 5 - 1 - 5 -', upper='pad', counter='1 3 5 3 8 5 3 5', ci='MARIMBA')
+bars(S, 16, ['1', '5', '6', '4'], None, drums='kick', bass='1 - 5 - 1 - 5 -', upper='pad', pi='ZPAD', pbase=36, counter='1 3 5 3 8 5 3 5', ci='MARIMBA')
 bars(S, 16, ['1', '5', '6', '4'], ['G4 - B4 - D5 - B4 -', 'A4 - - - F#4 - D4 -', 'E4 - G4 - B4 - A4 G4', 'C5 - B4 - A4 - - .'],
-     li='LEAD', drums='bouncy', bass='1 - 5 - 1 - 5 -', upper='pad', counter='1 3 5 3 8 5 3 5', ci='MARIMBA')
+     li='GFLUTE', drums='bouncy', bass='1 - 5 - 1 - 5 -', upper='pad', pi='ZPAD', pbase=36, counter='1 3 5 3 8 5 3 5', ci='MARIMBA')
 bars(S, 16, ['1', '3', '4', '5'], ['B4 - D5 - G4 - - -', 'B4 - A4 - F#4 - D4 -', 'E4 - G4 - C5 - B4 A4', 'A4 - - - D4 - - .'],
-     li='LEAD', drums='bouncy', bass='1 - 5 - 1 - 5 -', upper='pad', counter='1 3 5 3 8 5 3 5', ci='MARIMBA')
+     li='GFLUTE', drums='bouncy', bass='1 - 5 - 1 - 5 -', upper='pad', pi='ZPAD', pbase=36, counter='1 3 5 3 8 5 3 5', ci='MARIMBA')
 bars(S, 16, ['1', '5', '4', '1'], ['G4 - B4 - D5 - B4 -', 'A4 - - - F#4 - D4 -', 'C5 - B4 - A4 - E4 -', 'G4 - - - - - - .'],
-     li='LEAD', drums='bouncy', bass='1 - 5 - 1 - 5 -', upper='pad', counter='1 3 5 3 8 5 3 5', ci='MARIMBA', fill=[False, False, False, True])
+     li='GFLUTE', drums='bouncy', bass='1 - 5 - 1 - 5 -', upper='pad', pi='ZPAD', pbase=36, counter='1 3 5 3 8 5 3 5', ci='MARIMBA', fill=[False, False, False, True])
 S.finish()
 
 # --- 4 CRT Skyline: E minor, driving, a square-wave lead over a fast arpeggio ---
 S = a.song(Key('E', MINOR), 6, echo=(7, 6, 6, 8))
-bars(S, 16, ['1', '6', '3', '7'], None, drums='kick', bass='1 1 5 1 1 1 5 1', upper='pad')
+bars(S, 16, ['1', '6', '3', '7'], None, drums='kick', bass='1 1 5 1 1 1 5 1', upper='pad', pi='ZPAD', pbase=36)
 A = ['E4 - G4 - B4 - G4 -', 'C5 - B4 - G4 - E4 -', 'G4 - - - B4 - D5 -', 'D5 - C5 - B4 - A4 -']
 bars(S, 16, ['1', '6', '3', '7'], A, li='CRT', drums='drive', bass='1 1 5 1 1 1 5 1', upper='arp1')
 bars(S, 16, ['4', '1', '6', '5'], ['A4 - C5 - E5 - D5 -', 'B4 - G4 - E4 - G4 -', 'C5 - - - E4 - G4 -', 'B4 - - - F#4 - - .'],
