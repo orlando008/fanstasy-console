@@ -12,7 +12,8 @@ const PROBE = `__expose(() => ({
   hasTreasure, stageCleared, interaction: () => interaction()?.id ?? null, clearSocketPath, mget, ART,
   get hazardTick() { return hazardTick; }, hazardState, solidDevice,
   get selection() { return selection; }, get labMenu() { return labMenu; }, get exhibit() { return exhibit; },
-  CAMPAIGN, lastUnlocked, readyToBoot, puzzleMask, ENDING_SLOT,
+  CAMPAIGN, lastUnlocked, readyToBoot, puzzleMask, ENDING_SLOT, STAGE_SLOT,
+  startCourse, terrainTile, get ringCol() { return ringCol; }, RING,
   SFX, SONG, RESPAWN_FRAMES, SAVE_VERSION, CLEAR_SLOT, TREASURE_SLOT, PIECE_SLOT,
 }));`;
 
@@ -25,4 +26,12 @@ export const enterSelectedStage = vm => {
   vm.press('A'); // Enter the lab beside the console.
   vm.press('B');
   vm.press('A');
+};
+
+/** A save in the cart's format 3 (spec section 15, "Saves"): clears, treasures and pieces as bit masks, the last stage
+ * entered, the ending seen. */
+export const saveWith = ({ clears = 0, treasures = 0, pieces = 0, stage = 0, ending = 0 } = {}) => {
+  const save = new Int32Array(256);
+  save[0] = 3; save[1] = clears; save[2] = treasures; save[3] = pieces; save[5] = stage; save[6] = ending;
+  return save;
 };

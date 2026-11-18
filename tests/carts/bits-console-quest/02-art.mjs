@@ -15,8 +15,9 @@ enterSelectedStage(vm);
 check(!vm.ppu.layers[0].show && vm.ppu.layers[1].show, 'play shows the terrain instead of the logo');
 
 const base = p.COURSE_MAP_Y;
+// (the map holds only the columns near the camera, streamed in: 08-streaming checks that; this checks what is streamed)
 check(p.deck.every(({ x, y, w }) => {
-  for (let dx = 0; dx < w; dx += 8) if (!p.mget((x + dx) / 8, base + y / 8)) return false;
+  for (let dx = 0; dx < w; dx += 8) if (!p.terrainTile((x + dx) / 8, y / 8)) return false;
   return true;
 }), 'every platform in the collision geometry has a drawn top');
 check(!p.mget(192 / 8, base + 192 / 8), 'the first gap stays open in the terrain map');

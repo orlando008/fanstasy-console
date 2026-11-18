@@ -1,5 +1,5 @@
 // Recorded Foundry and practice inputs for the packed cart.
-import { M, newGame as boot } from './lib.mjs';
+import { M, newGame as boot, saveWith } from './lib.mjs';
 import { campaignRoutes } from './campaign-routes.mjs';
 
 export const toLift = [
@@ -49,7 +49,7 @@ const campaignKeys = campaignRoutes.map((inputs, i) => {
 export const defaults = { frames: 1100, seeds: 4, set: { route: ['main', 'treasure', 'practice', ...campaignKeys] } };
 export const newGame = (seed, { route }) => {
   const index = campaignKeys.indexOf(route) + 1;
-  const save = index ? Int32Array.from([2, (1 << index) - 1, 0, 0, index]) : null;
+  const save = index ? saveWith({ clears: (1 << index) - 1, stage: index }) : null;
   return boot(seed, { title: route === 'practice' || index > 0, save });
 };
 export const pad = (_vm, _probe, frame, { route }) => routes[route][frame] ?? 0;

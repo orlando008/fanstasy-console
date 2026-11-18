@@ -134,13 +134,16 @@ Draw Bit at native console resolution from the supplied reference and proof idle
 
 | Slot | Contents |
 |---|---|
-| 0 | Format version. The campaign gets a new version when it replaces the starter’s high-score format. |
-| 1 | Stage clears, bits 0–7 |
-| 2 | Treasures, bits 0–7 |
-| 3 | Puzzle pieces, bits 0–15, two consecutive bits per stage |
-| 4 | Last stage entered, 0–7 |
-| 5 | Ending seen, 0 or 1 |
-| 6–255 | Reserved |
+| 0 | Format version: 3 since the second pass (step 10). A save in any other format starts over: the user chose not to keep the first version's saves. |
+| 1 | Stage clears, bits 0–11 (bits 0–7 until step 13 adds the finales); remix clears, bits 16–27 (step 15) |
+| 2 | Treasures, bits 0–11 |
+| 3 | Puzzle pieces, two per stage (bits 2n and 2n + 1) |
+| 4 | Remix golden chips, bits 0–11 (step 15) |
+| 5 | Last stage entered |
+| 6 | Ending seen, 0 or 1 |
+| 16–27 | Best time of each stage, in frames (step 14) |
+| 32–43 | Best time of each remix, in frames (step 15) |
+| others | Reserved |
 
 Use stable stage and item IDs. Derive unlocked stages and complete lab puzzles from the masks. Save clear and collection bits on the frame that grants them. Resuming from title enters the lab. Checkpoint state lives in the current stage attempt.
 
@@ -207,6 +210,8 @@ The limits that shape it:
 - **Saves.** The user does not need old saves kept (2026-11-18), so the format moves to version 3, which clears a version 2 save. Stages are numbered in play order, three a zone (zone z's stages are 3z, 3z + 1 and 3z + 2). Clears: slot 1 bits 0–11, with remix clears in bits 16–27. Treasures: slot 2 bits 0–11. Pieces: slot 3, two per stage (bits 2n and 2n + 1); a zone's six (bits 6z to 6z + 5) make its puzzle, a 3 × 2 cutaway. Remix chips: slot 4 bits 0–11. Last stage entered: slot 5; ending seen: slot 6. Best times, in frames: slots 16–27, and the remixes' in slots 32–43.
 
 10. **Long-stage engine.** Stream the terrain into a wrapping 256-column map as Bit runs; take stage widths up to 4,096 px; allow three beacons a stage; turn on `strip`; extend the stage format for what the new stages need. Test the streaming at the ring's seams and after a checkpoint jump back.
+   - **Built:** The terrain streams into a ring of 256 map columns (`resetTerrain`, `terrainTile`, `streamTerrain`), and BG1 wraps. A column is written when it comes within a tile of the screen, from a per-column list of the decks that cover it, so a stage can be as wide as its data (up to 4,096 px is the plan). Collisions still use the deck list, never the map. A stage can have any number of beacons. `meta.json` sets `strip`. Saves are format 3 (section 13), and the tests build saves with `saveWith()` in `lib.mjs`. The stage format itself needs nothing new yet; steps 11 to 13 will extend it as the new stages need.
+   - **Results:** 178 checks pass. The new `08-streaming` runs Bit across a synthetic 4,096 px course, twice the map's width. The camera crosses the ring's seam, and every column on screen holds its tile all the way. A reboot to a beacon near the start brings the camera back, with those columns written again. A frame at the seam was looked at: the ground and a ledge draw across it cleanly. The code is 49.4 KB with `strip` (75%; it was 52.9 KB). The smoke test, the sweep and `verify.js` pass; the PNG cart was rebuilt with `--keep-label`.
 11. **Longer, harder stages: Foundry and Caverns.** Rebuild Button Assembly, Cable Works, Contact Mine and Slot Elevator at about three times their length, harder throughout. Re-record their routes and collectibles; check every jump's window.
 12. **Longer, harder stages: Gardens and Skyline.** The same for Trace Trail, Relay Grove, Phosphor Rooftops and Picture Lock.
 13. **A finale for each zone.** Four new stages (1-3 to 4-3), each the hardest of its world, with a treasure and two pieces. The treasure case grows to 12 and the puzzle wall's cutaways to 6 pieces. The stage select lists three a zone, and a zone's finale opens the next zone.

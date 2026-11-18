@@ -1,4 +1,4 @@
-import { newGame, M } from './lib.mjs';
+import { newGame, M, saveWith } from './lib.mjs';
 import { replay, toLift, toUpperDeck, treasureRoute, toPracticeRelay, toPracticeLift, practiceFinish } from './bot.mjs';
 
 let failures = 0;
@@ -102,12 +102,12 @@ function runUntil(vm, condition, buttons = 0, limit = 120) {
 }
 
 {
-  const save = Int32Array.from([2, 1, 1, 3]);
+  const save = saveWith({ clears: 1, treasures: 1, pieces: 3 });
   const vm = startPractice(save);
   const p = vm.probe();
   replay(vm, [...toPracticeRelay, ...toPracticeLift, ...practiceFinish]);
   check(p.state === 'clear' && p.checkpoint?.index === 1 && p.reboots === 0, 'the recorded practice route finishes all three stations');
-  check([...vm.m.save.slice(0, 4)].join() === '2,1,1,3', 'practice completion leaves campaign progress intact');
+  check([...vm.m.save.slice(0, 4)].join() === '3,1,1,3', 'practice completion leaves campaign progress intact');
   const musicStart = vm.audioLog.findIndex(event => event[1] === 'music' && event[2] === p.SONG.practice);
   check(musicStart >= 0 && vm.audioLog.slice(musicStart).filter(event => event[1] === 'sfx').every(event => event[3] === 7),
     'practice effects leave the accompaniment channels alone');
@@ -123,7 +123,7 @@ function runUntil(vm, condition, buttons = 0, limit = 120) {
 
 { // Contact Mine: jump over the first beacon, plug in on the shelf, then jump back to the beacon. The beacon must not
   // keep the one-shot shelf moving away, or every reboot strands Bit on the near side of the gap.
-  const vm = newGame(1, { title: true, save: Int32Array.from([2, 3, 0, 0, 2]) });
+  const vm = newGame(1, { title: true, save: saveWith({ clears: 3, stage: 2 }) });
   const p = vm.probe();
   vm.press('A');
   vm.press('B');

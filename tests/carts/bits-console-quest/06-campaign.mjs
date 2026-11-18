@@ -57,13 +57,9 @@ reopened.press('LEFT');
 reopened.press('A');
 check(saved.course.index === 6 && saved.hasTreasure(), 'cleared stages can be selected again with the treasures retained');
 
-const legacy = newGame(1, { title: true, save: Int32Array.from([2, 1, 1, 3]) });
+const legacy = newGame(1, { title: true, save: Int32Array.from([2, 255, 255, 65535, 7, 1]) });
 const old = legacy.probe();
-legacy.press('A');
-legacy.press('B');
-legacy.press('RIGHT');
-legacy.press('RIGHT');
-check(old.selection === 1 && old.lastUnlocked() === 1, 'the Foundry prototype save unlocks Cable Works');
-check([...legacy.m.save.slice(0, 4)].join() === '2,1,1,3', 'existing Foundry progress needs no save migration');
+check(old.lastUnlocked() === 0 && [...legacy.m.save.slice(0, 7)].join() === '3,0,0,0,0,0,0',
+  'a save of the first version (format 2) starts over: the second pass changed the stages');
 
 process.exitCode = failures ? 1 : 0;

@@ -1,4 +1,4 @@
-import { newGame, M, enterSelectedStage } from './lib.mjs';
+import { newGame, M, enterSelectedStage, saveWith } from './lib.mjs';
 import { campaignRoutes } from './campaign-routes.mjs';
 import { replay, toLift, toUpperDeck, treasureRoute, hazardApproach, crossScanline, toPracticeRelay, toPracticeLift, practiceFinish } from './bot.mjs';
 
@@ -65,7 +65,7 @@ export default function screens(shot) {
   replay(practice, practiceFinish);
   shot(practice, 'practice complete');
 
-  const collection = newGame(1, { title: true, save: Int32Array.from([2, 255, 255, 65535, 7, 1]) });
+  const collection = newGame(1, { title: true, save: saveWith({ clears: 255, treasures: 255, pieces: 65535, stage: 7, ending: 1 }) });
   collection.press('A');
   collection.run(71, M('RIGHT'));
   collection.run(7);
@@ -78,7 +78,7 @@ export default function screens(shot) {
   collection.press('B');
   shot(collection, 'puzzle wall');
 
-  const ending = newGame(1, { title: true, save: Int32Array.from([2, 255, 255, 65535, 7]) });
+  const ending = newGame(1, { title: true, save: saveWith({ clears: 255, treasures: 255, pieces: 65535, stage: 7 }) });
   ending.press('A');
   ending.press('B');
   ending.run(45);
@@ -89,7 +89,7 @@ export default function screens(shot) {
   for (const [index, label] of [[1, 'Cable Works'], [2, 'Contact Mine'],
     [3, 'Slot Elevator'], [4, 'Trace Trail'], [5, 'Relay Grove'],
     [6, 'Phosphor Rooftops'], [7, 'Picture Lock']]) {
-    const save = Int32Array.from([2, (1 << index) - 1, 0, 0, index]);
+    const save = saveWith({ clears: (1 << index) - 1, stage: index });
     const level = newGame(1, { title: true, save });
     enterSelectedStage(level);
     level.run(42, M('RIGHT'));
@@ -98,7 +98,7 @@ export default function screens(shot) {
 
   // Each zone's look at the far end of a stage: its terrain, ledges and the exit terminal
   for (const [index, label] of [[2, 'Contact Mine exit'], [4, 'Trace Trail exit'], [7, 'Picture Lock exit']]) {
-    const save = Int32Array.from([2, (1 << index) - 1, 0, 0, index]);
+    const save = saveWith({ clears: (1 << index) - 1, stage: index });
     const level = newGame(1, { title: true, save });
     enterSelectedStage(level);
     const route = campaignRoutes[index - 1].slice(0, -1);

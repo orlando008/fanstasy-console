@@ -25,7 +25,8 @@ const RUN_SPEED = 2.25, GROUND_ACCEL = 0.35, AIR_ACCEL = 0.22, BRAKE = 0.45;
 const JUMP_SPEED = -4.7, HELD_GRAVITY = 0.22, GRAVITY = 0.30, FALL_LIMIT = 5.5;
 const COYOTE_FRAMES = 6, BUFFER_FRAMES = 6, RESPAWN_FRAMES = 24;
 const SOCKET_X_REACH = 20, SOCKET_Y_REACH = 12, PLUG_FRAMES = 12;
-const SAVE_VERSION = 2, CLEAR_SLOT = 1, TREASURE_SLOT = 2, PIECE_SLOT = 3, STAGE_SLOT = 4, ENDING_SLOT = 5;
+const SAVE_VERSION = 3, CLEAR_SLOT = 1, TREASURE_SLOT = 2, PIECE_SLOT = 3, CHIP_SLOT = 4, STAGE_SLOT = 5, ENDING_SLOT = 6;
+const BEST_SLOT = 16, REMIX_BEST_SLOT = 32; // best times in frames, a slot for each stage (steps 14 and 15)
 const SFX = { move: 0, confirm: 1, pause: 2, fall: 3, treasure: 4, piece: 5, clear: 6, jump: 7, plug: 8, checkpoint: 9, power: 10, reboot: 11, spring: 12 };
 const SONG = { title: 0, zones: [1, 2, 3, 4], practice: 5 };
 const SFX_CH = [7, 6];
@@ -249,24 +250,40 @@ function scene(layer, asset, opts) {
   bg(layer, { mx: asset.mx, my: asset.my, mw: asset.w, mh: asset.h, ...opts });
 }
 
-function buildTerrain(level) {
-  // Each zone has its own terrain tiles (art.py's terrain()); practice and the lab use Foundry's in their own colours.
-  const zone = level.practice || level.hub ? 0 : level.zone;
-  const tileOf = name => ART.tiles['deck' + name + zone];
-  // All campaign courses share the same map region. Clear gaps as well as writing the new terrain.
-  for (let row = 0; row < SCREEN_H / 8; row++) {
-    for (let col = 0; col < level.width / 8; col++) mset(col, level.mapY + row, 0);
+// Terrain streams into a ring of 256 map columns (2,048 px, the width of Map RAM) as the camera moves, and BG1 wraps,
+// so a stage can be wider than the map. Collisions use the stage's deck list, never the map.
+const RING = 256, ROWS = SCREEN_H / 8;
+let ringCol = new Int32Array(RING), decksAt = [];
+
+function resetTerrain(level) {
+  for (let row = 0; row < ROWS; row++) for (let col = 0; col < RING; col++) mset(col, level.mapY + row, 0);
+  ringCol.fill(-1);
+  decksAt = Array.from({ length: level.width / 8 }, () => []);
+  for (const d of level.deck) for (let c = d.x / 8; c < (d.x + d.w) / 8; c++) decksAt[c].push(d);
+}
+
+/** The map entry for world column c, row `row`: each zone has its own tiles (art.py's terrain()); practice and the
+ * lab use Foundry's in their own colours. */
+function terrainTile(c, row) {
+  const zone = course.practice || course.hub ? 0 : course.zone;
+  for (const { x, y, w, h, oneWay } of decksAt[c]) {
+    const dy = row * 8 - y;
+    if (dy < 0 || dy >= h) continue;
+    const i = c - x / 8, cols = w / 8, edge = i === 0 || i === cols - 1, my = course.mapY + row;
+    const name = dy ? ((c * 7 + my * 3) % 5 ? 'Wall' : 'Wall2') : oneWay ? (edge ? 'LedgeEnd' : 'Ledge') : edge ? 'End' : 'Top';
+    return tile(ART.tiles['deck' + name + zone], course.palette, !dy && i === cols - 1 && cols > 1);
   }
-  for (const { x, y, w, h, oneWay } of level.deck) {
-    const cols = w / 8;
-    for (let dy = 0; dy < h; dy += 8) {
-      for (let c = 0; c < cols; c++) {
-        const mx = x / 8 + c, my = level.mapY + (y + dy) / 8, edge = c === 0 || c === cols - 1;
-        const name = dy ? ((mx * 7 + my * 3) % 5 ? 'Wall' : 'Wall2') :
-          oneWay ? (edge ? 'LedgeEnd' : 'Ledge') : edge ? 'End' : 'Top';
-        mset(mx, my, tile(tileOf(name), level.palette, !dy && c === cols - 1 && cols > 1));
-      }
-    }
+  return 0;
+}
+
+/** Write the columns the camera can see (and one each side) into their ring slots, if they are not there yet. */
+function streamTerrain() {
+  const first = Math.floor(camera / 8) - 1, last = Math.min(course.width / 8 - 1, first + SCREEN_W / 8 + 2);
+  for (let c = Math.max(0, first); c <= last; c++) {
+    const slot = c % RING;
+    if (ringCol[slot] === c) continue;
+    ringCol[slot] = c;
+    for (let row = 0; row < ROWS; row++) mset(slot, course.mapY + row, terrainTile(c, row));
   }
 }
 
@@ -327,14 +344,15 @@ function startCourse(level, entry = level.spawn) {
       writeSubPalette(7, STAGE_DECK_COLORS[level.zone]);
     }
   }
-  buildTerrain(level);
+  resetTerrain(level);
   checkpoint = null;
   reboots = 0;
   hazardTick = 0;
   resetDevices(null);
   spawnBit(entry);
   setBackdrop(course.backdrop);
-  bg(1, { mx: 0, my: course.mapY, mw: course.width / 8, mh: SCREEN_H / 8, x: 0, y: 0, wrap: false });
+  bg(1, { mx: 0, my: course.mapY, mw: RING, mh: ROWS, x: 0, y: 0, wrap: true });
+  streamTerrain();
   state = level.hub ? 'lab' : 'play';
   paused = false;
   clock = 0;
@@ -744,6 +762,7 @@ function draw() {
   const title = state === 'title';
   bg(0, { show: title });
   bg(1, { show: !title });
+  if (!title) streamTerrain();
   const scroll = title ? Math.floor(clock / 4) : Math.floor(camera);
   bgscroll(2, Math.floor(scroll / 3), 0);
   if (title) drawTitle();

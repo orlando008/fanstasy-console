@@ -3,7 +3,7 @@
 // few frames off, so a window under 10 frames is a jump to make easier. Not a numbered test: it takes a minute or two.
 //
 //   node tests/carts/bits-console-quest/jump-windows.mjs      (exit code 1 if a window is under 10 frames)
-import { newGame, M } from './lib.mjs';
+import { newGame, M, saveWith } from './lib.mjs';
 import { campaignRoutes } from './campaign-routes.mjs';
 import { toLift, toUpperDeck, mainRoute } from './bot.mjs';
 const NARROW = 10;
@@ -13,7 +13,7 @@ const routes = [[...toLift, ...toUpperDeck, ...mainRoute], ...campaignRoutes];
 const names = ['Button Assembly', 'Cable Works', 'Contact Mine', 'Slot Elevator', 'Trace Trail', 'Relay Grove', 'Phosphor Rooftops', 'Picture Lock'];
 const where = (s) => s ? (s.id || `deck@${s.x},${s.y}`) : null;
 function start(index) {
-  const vm = newGame(1, { title: true, save: Int32Array.from([2, (1 << index) - 1, 0, 0, index]) });
+  const vm = newGame(1, { title: true, save: saveWith({ clears: (1 << index) - 1, stage: index }) });
   vm.press('A'); vm.press('B'); vm.press('A'); return vm;
 }
 for (const [index, route] of routes.entries()) {

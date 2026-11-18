@@ -1,4 +1,4 @@
-import { newGame, M } from './lib.mjs';
+import { newGame, M, saveWith } from './lib.mjs';
 
 let failures = 0;
 function check(condition, description) {
@@ -57,7 +57,7 @@ function hasPixels(vm, min, max, x, y, w, h) {
 }
 
 {
-  const save = Int32Array.from([2, 1, 129, 0x00AB]);
+  const save = saveWith({ clears: 1, treasures: 129, pieces: 0x00AB });
   const vm = startLab(save);
   const p = vm.probe();
   walkTo(vm, 226);
@@ -82,11 +82,11 @@ function hasPixels(vm, min, max, x, y, w, h) {
   check(p.exhibit === 1, 'Down selects the next zone in the puzzle wall');
   check(!hasPixels(vm, 241, 256, 155, 48, 32, 32) && hasPixels(vm, 241, 256, 187, 48, 32, 32),
     'the selected zone changes the visible illustration pieces');
-  check([...vm.m.save.slice(0, 4)].join() === '2,1,129,171', 'viewing the lab collection leaves the save intact');
+  check([...vm.m.save.slice(0, 4)].join() === '3,1,129,171', 'viewing the lab collection leaves the save intact');
 }
 
 {
-  const vm = startLab(Int32Array.from([2, 255, 0, 15, 7]));
+  const vm = startLab(saveWith({ clears: 255, pieces: 15, stage: 7 }));
   const p = vm.probe();
   check(p.readyToBoot(), 'all eight clears unlock the ending with optional collections still incomplete');
   vm.press('B');
