@@ -1,4 +1,4 @@
-"""Regenerate the Controller Foundry art and the lab palette study."""
+"""Regenerate Bit’s sprites, the practice wing, and the four zone backdrops."""
 import os
 import sys
 
@@ -7,17 +7,21 @@ from kit import Art, Img, big_text, ramp
 
 art = Art()
 art.region('bg', 1, 255)
-art.region('spr', 256, 1023)
+art.region('spr', 256, 767)
+art.region('campaign', 768, 1023)
 
 art.gradient('sky', ['141126', '251b37', '41243f'], y0=0, y1=223)
 art.gradient('labSky', ['121125', '1f1b38', '34284a'], y0=0, y1=223)
+art.gradient('cavernSky', ['141124', '2d2036', '422942'], y0=0, y1=223)
+art.gradient('gardenSky', ['102324', '1b3332', '2c4c3b'], y0=0, y1=223)
+art.gradient('skylineSky', ['121427', '272543', '433050'], y0=0, y1=223)
 overlay = {
     'INK': '151222', 'PANEL': '201a34', 'TRIM': '52446c', 'MUTED': 'b9afca',
     'WHITE': 'fff0d9', 'GOLD': 'ffca70', 'CYAN': '67f1e3', 'PURPLE': '9975c9',
     'CORAL': 'ec8868', 'STEEL': '665374', 'DARK': '382d4a',
     'HOT': 'ff665c', 'SIGNAL': 'afffd4',
 }
-for index, (name, rgb) in enumerate(overlay.items(), 113):
+for index, (name, rgb) in enumerate(overlay.items(), 225):
     art.color(index, rgb, name)
 
 deck = art.palette(1, {
@@ -104,6 +108,61 @@ for x in range(0, 256, 64):
     wing.rect(x + 22, 118, 14, 2, practice.circuit)
     wing.rect(x + 13, 140, 12, 3, practice.purple)
 art.scene('lab', wing, pal=practice, at=(64, 32), region='bg')
+
+# The campaign reuses five backdrop roles, recolored per zone at load time.
+zones = art.palette(6, {
+    'shadow': '1d172d', 'panel': '2d233f', 'rim': '4b3051',
+    'detail': '6d4c67', 'light': '96695c',
+})
+art.palette(7, {
+    'ink': '251c34', 'face': ['433046', '59404e', '83574e', 'ae7962'],
+    'rim': ['6d3c5b', 'bd7865', 'f0b887'],
+})
+
+cavern = Img(256, 224)
+for x, y in [(8, 58), (136, 86)]:
+    cavern.rect(x + 28, 24, 4, y - 24, zones.rim)
+    cavern.poly([(x + 6, y), (x + 100, y), (x + 112, y + 16), (x + 112, y + 93),
+                 (x, y + 93), (x, y + 8)], zones.shadow)
+    cavern.rect(x + 5, y + 8, 102, 75, zones.panel)
+    cavern.rect(x + 10, y + 14, 91, 2, zones.rim)
+    cavern.rect(x + 18, y + 26, 75, 24, zones.rim)
+    cavern.rect(x + 21, y + 29, 69, 18, zones.panel)
+    cavern.rect(x + 10, y + 60, 90, 14, zones.shadow)
+    for pin in range(15, 97, 8):
+        cavern.rect(x + pin, y + 62, 3, 9, zones.detail)
+        cavern.pset(x + pin, y + 62, zones.light)
+art.scene('cavern', cavern, pal=zones, at=(96, 32), region='campaign')
+
+garden = Img(256, 224)
+for x, y in [(12, 64), (82, 108), (150, 62), (210, 115)]:
+    garden.rect(x, y, 38, 37, zones.shadow)
+    garden.rect(x + 3, y + 3, 32, 31, zones.panel)
+    garden.rect(x + 7, y + 7, 24, 2, zones.rim)
+    garden.rect(x + 8, y + 11, 3, 3, zones.light)
+    for dy in (11, 18, 25):
+        garden.line(x - 10, y + dy + 14, x - 1, y + dy + 5, zones.rim)
+        garden.line(x - 1, y + dy + 5, x + 5, y + dy + 5, zones.rim)
+        garden.line(x + 33, y + dy, x + 45, y + dy, zones.detail)
+        garden.rect(x + 45, y + dy - 1, 2, 3, zones.detail)
+    garden.line(x + 18, y + 38, x + 18, 181, zones.rim)
+    garden.disc(x + 18, 181, 3, zones.detail)
+art.scene('garden', garden, pal=zones, at=(128, 32), region='campaign')
+
+skyline = Img(256, 224)
+skyline.rect(0, 170, 256, 54, zones.shadow)
+for x, y in [(9, 69), (82, 100), (157, 54)]:
+    skyline.rect(x + 3, y + 52, 55, 117 - y + 52, zones.shadow)
+    skyline.poly([(x + 7, y), (x + 58, y), (x + 64, y + 6), (x + 64, y + 48),
+                  (x + 58, y + 54), (x, y + 54), (x, y + 8)], zones.shadow)
+    skyline.rect(x + 4, y + 5, 55, 43, zones.rim)
+    skyline.rect(x + 7, y + 8, 49, 36, zones.panel)
+    for line_y in range(y + 11, y + 42, 5):
+        skyline.rect(x + 10, line_y, 43, 1, zones.detail)
+    skyline.rect(x + 50, y + 50, 4, 2, zones.light)
+for x, y in [(6, 46), (66, 31), (122, 54), (146, 36), (225, 87), (243, 34)]:
+    skyline.pset(x, y, zones.detail)
+art.scene('skyline', skyline, pal=zones, at=(160, 32), region='campaign')
 
 logo = art.palette(3, {
     'gold': ramp('ffbf70', 5), 'edge': '21182b', 'shade': '684254',

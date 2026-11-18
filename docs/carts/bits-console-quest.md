@@ -1,8 +1,8 @@
 # Bit’s Console Quest
 
-**Version:** 0.5 (Foundry hazards)
+**Version:** 0.6 (campaign stages)
 
-**Status:** The packed cart runs the first Controller Foundry course with a timed hazard stretch, plus a three-station practice wing. A starts Foundry and B opens practice from the title while the lab hub is in development.
+**Status:** The packed cart runs all eight campaign stages and the three-station practice wing. Use Left or Right on the title screen to choose an unlocked stage, A to start, and B for practice. On a stage-clear card, A advances to the next stage and Left replays the current stage.
 
 **Shelf and players:** Arcade, one player
 
@@ -138,7 +138,7 @@ Draw Bit at native console resolution from the supplied reference and proof idle
 | 1 | Stage clears, bits 0–7 |
 | 2 | Treasures, bits 0–7 |
 | 3 | Puzzle pieces, bits 0–15, two consecutive bits per stage |
-| 4 | Last selected stage, 0–7 |
+| 4 | Last stage entered, 0–7 |
 | 5 | Ending seen, 0 or 1 |
 | 6–255 | Reserved |
 
@@ -175,6 +175,9 @@ Use stable stage and item IDs. Derive unlocked stages and complete lab puzzles f
    - **Recovery:** Pause freezes hazard and device timing. A fall or hit restores the latest beacon’s device state and hazard clock after 24 frames. The pre-bridge beacon starts the retry on solid ground with the bridge unpowered. Save version 2 and existing collectibles carry forward.
    - **Results:** 97 checks and a 3,000-frame soak passed. Twelve recorded runs cleared Foundry or practice without a reboot. The production console worker rendered both modes with expected save data. Reviewed the scanline warning, press warning and descent, and live contacts at console resolution. The browser smoke test still cannot start in this workspace.
 5. **Stage content.** Build and clear all eight stages. Record a route to every exit and collectible.
+   - **Built:** Two playable stages per zone, 1,152–1,568 px wide. Cable Works combines a spring climb and a lift. Contact Mine carries Bit over a gap on a sliding cartridge shelf, and Slot Elevator has two lift rides. Trace Trail opens two bridges, while Relay Grove routes power between a spring cache and a bridge. Phosphor Rooftops links two timed spans. Picture Lock combines lift, spring, scanline, and hazard timing. Each zone has its own backdrop and deck colors. Foundry and the other zones share the current stage music for this pass.
+   - **Progress:** Clearing a stage unlocks the next and immediately saves its clear bit. Eight treasure bits and sixteen piece bits are independent of stage clears. Existing version 2 saves retain Foundry progress. The title stage selector and last-played slot provide access while the lab hub is in development.
+   - **Results:** 134 checks, a 3,000-frame soak, and 40 route runs passed. A fresh-save replay in the production console worker cleared all eight stages and saved all 24 collectibles over 5,714 frames. Recorded perfect routes take roughly 10–16 seconds per stage. First-clear pacing still needs human playtesting. The browser smoke test could not start in this workspace.
 6. **Lab and campaign flow.** Implement stage selection, clear cards, exhibits, puzzle cutaways, replay, and save and resume. Verify that the ending and completed campaign reopen correctly.
 7. **Remaining art.** Draw the zones, lab furnishings, treasures, cutaways, and ending. Review screenshots of each stage and screen.
 8. **Audio.** Compose and test the chiptune tracks and effects. Add *The Entertainer* for the lab and practice course. Verify cues and check levels on the new chip.

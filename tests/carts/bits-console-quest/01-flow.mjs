@@ -65,8 +65,8 @@ function check(condition, description) {
   const p = vm.probe();
   replay(vm, [...toLift, ...toUpperDeck, ...mainRoute]);
   check(p.state === 'clear' && !p.hasTreasure() && p.reboots === 0, 'the main route works without collecting the optional treasure');
-  vm.press('A');
-  check(p.state === 'play' && p.bit.x === 32 && p.stageCleared(), 'A replays the course and keeps the clear bit');
+  vm.press('LEFT');
+  check(p.state === 'play' && p.bit.x === 32 && p.stageCleared(), 'LEFT replays the course and keeps the clear bit');
 }
 
 process.exitCode = failures ? 1 : 0;

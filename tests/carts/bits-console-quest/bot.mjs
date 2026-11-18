@@ -1,5 +1,6 @@
 // Recorded Foundry and practice inputs for the packed cart.
 import { M, newGame as boot } from './lib.mjs';
+import { campaignRoutes } from './campaign-routes.mjs';
 
 export const toLift = [
   [56, M('RIGHT')], [42, M('RIGHT', 'A')], [54, M('RIGHT')],
@@ -37,8 +38,18 @@ const routes = {
   practice: expand([[1, M('B')], [1, 0], ...toPracticeRelay, ...toPracticeLift, ...practiceFinish]),
 };
 
-export const defaults = { frames: 700, seeds: 4, set: { route: ['main', 'treasure', 'practice'] } };
-export const newGame = (seed, { route }) => boot(seed, { title: route === 'practice' });
+const campaignKeys = campaignRoutes.map((inputs, i) => {
+  const key = 'stage' + (i + 2);
+  routes[key] = expand([[1, M('A')], [1, 0], ...inputs]);
+  return key;
+});
+
+export const defaults = { frames: 1100, seeds: 4, set: { route: ['main', 'treasure', 'practice', ...campaignKeys] } };
+export const newGame = (seed, { route }) => {
+  const index = campaignKeys.indexOf(route) + 1;
+  const save = index ? Int32Array.from([2, (1 << index) - 1, 0, 0, index]) : null;
+  return boot(seed, { title: route === 'practice' || index > 0, save });
+};
 export const pad = (_vm, _probe, frame, { route }) => routes[route][frame] ?? 0;
 export const finished = (probe) => probe.state === 'clear';
 

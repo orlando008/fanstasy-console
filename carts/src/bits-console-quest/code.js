@@ -4,9 +4,9 @@
 const ART = {
   tiles: {"deckSide": 2, "deckTop": 1},
   sprites: {"heroBlink": {"pal": 0, "size": 32, "tile": 260}, "heroCheer": {"pal": 0, "size": 32, "tile": 392}, "heroFall": {"pal": 0, "size": 32, "tile": 332}, "heroIdle": {"pal": 0, "size": 32, "tile": 256}, "heroJump": {"pal": 0, "size": 32, "tile": 328}, "heroLand": {"pal": 0, "size": 32, "tile": 388}, "heroPlug": {"pal": 0, "size": 32, "tile": 384}, "heroWalk1": {"pal": 0, "size": 32, "tile": 264}, "heroWalk2": {"pal": 0, "size": 32, "tile": 268}, "heroWalk3": {"pal": 0, "size": 32, "tile": 320}, "heroWalk4": {"pal": 0, "size": 32, "tile": 324}, "labConsole": {"pal": 3, "size": 32, "tile": 448}, "piece": {"pal": 4, "size": 16, "tile": 398}, "socketIdle": {"pal": 2, "size": 16, "tile": 428}, "socketLive": {"pal": 2, "size": 16, "tile": 430}, "treasure": {"pal": 1, "size": 16, "tile": 396}},
-  scenes: {"factory": {"h": 28, "mx": 0, "my": 32, "pal": 2, "w": 32}, "lab": {"h": 28, "mx": 64, "my": 32, "pal": 5, "w": 32}, "logo": {"h": 6, "mx": 0, "my": 16, "pal": 3, "w": 32}},
-  colors: {"CORAL": 121, "CYAN": 119, "DARK": 123, "GOLD": 118, "HOT": 124, "INK": 113, "MUTED": 116, "PANEL": 114, "PURPLE": 120, "SIGNAL": 125, "STEEL": 122, "TRIM": 115, "WHITE": 117},
-  gradients: {"labSky":{"entry":0,"lines":[4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,6211,6211,6211,6211,6211,6211,6211,6211,6211,6211,6211,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,7267,7267,7267,7267,7267,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7300,7300,7300,7300,7300,7300,7300,7301,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8326,8326,8326,8326,8326,8326,8326,8326,9350,9350,9350,9350,9350,9350,9350,9350,9350,9350,9350,9382,9382,9382,9382,9382],"y0":0},"sky":{"entry":0,"lines":[4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,6211,6211,6211,6211,6211,6211,6211,6211,6211,6211,6243,6243,6243,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,7268,7268,7268,7268,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7270,7270,7270,7270,7270,7270,7270,7270,7270,7270,7270,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7304,7304,7304,7304,7304,7304],"y0":0}},
+  scenes: {"cavern": {"h": 28, "mx": 96, "my": 32, "pal": 6, "w": 32}, "factory": {"h": 28, "mx": 0, "my": 32, "pal": 2, "w": 32}, "garden": {"h": 28, "mx": 128, "my": 32, "pal": 6, "w": 32}, "lab": {"h": 28, "mx": 64, "my": 32, "pal": 5, "w": 32}, "logo": {"h": 6, "mx": 0, "my": 16, "pal": 3, "w": 32}, "skyline": {"h": 28, "mx": 160, "my": 32, "pal": 6, "w": 32}},
+  colors: {"CORAL": 233, "CYAN": 231, "DARK": 235, "GOLD": 230, "HOT": 236, "INK": 225, "MUTED": 228, "PANEL": 226, "PURPLE": 232, "SIGNAL": 237, "STEEL": 234, "TRIM": 227, "WHITE": 229},
+  gradients: {"cavernSky":{"entry":0,"lines":[4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4163,4163,4163,4163,4163,4163,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5219,5219,5219,5220,5220,5220,5220,5220,5220,5220,5220,5220,5220,5220,5220,5220,5220,5220,5220,5220,5220,5220,5220,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6245,6245,6245,6245,6245,6245,6245,6245,6245,6245,6245,6245,6245,6245,6245,6245,6245,6245,6245,6245,6277,6277,6277,6277,6277,6277,6277,6277,6277,6277,6277,6277,6277,6277,6277,6277,6277,6278,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,8327,8327,8327,8327,8359,8359,8359,8359,8359,8359,8360,8360,8360,8360,8360,8360,8360,8360,8360,8360,8360,8360,8360],"y0":0},"gardenSky":{"entry":0,"lines":[4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,4226,5250,5250,5250,5250,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5282,5283,5283,5283,5283,5283,5283,5283,5283,5283,5283,5283,5315,5315,5315,5315,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6339,6371,6371,6371,6371,6371,6371,6371,6371,6371,6371,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6372,6404,6404,6404,6404,6404,6404,6404,6404,6404,7428,7428,7428,7428,7428,7428,7428,7428,7428,7428,7428,7428,7428,7428,7428,7428,7428,7429,7429,7429,7429,7429,7429,7429,7429,7429,7461,7461,7461,7461,7461,7461,7461,7461,7461,7461,7461,7461,7461,7461,7461,7461,7461,7461,7461,7461],"y0":0},"labSky":{"entry":0,"lines":[4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,6211,6211,6211,6211,6211,6211,6211,6211,6211,6211,6211,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,7267,7267,7267,7267,7267,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7268,7300,7300,7300,7300,7300,7300,7300,7301,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8326,8326,8326,8326,8326,8326,8326,8326,9350,9350,9350,9350,9350,9350,9350,9350,9350,9350,9350,9382,9382,9382,9382,9382],"y0":0},"sky":{"entry":0,"lines":[4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,4162,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,5187,6211,6211,6211,6211,6211,6211,6211,6211,6211,6211,6243,6243,6243,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,6244,7268,7268,7268,7268,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7269,7270,7270,7270,7270,7270,7270,7270,7270,7270,7270,7270,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7302,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7303,7304,7304,7304,7304,7304,7304],"y0":0},"skylineSky":{"entry":0,"lines":[4162,4162,4162,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5186,5218,5218,5218,5218,5218,5218,5218,5219,5219,5219,5219,5219,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,6243,7267,7267,7267,7267,7267,7267,7268,7268,7268,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,7300,8324,8324,8324,8324,8324,8324,8324,8324,8324,8324,8324,8324,8324,8324,8324,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8325,8357,8357,8357,8357,8357,8357,8357,8357,8357,8358,8358,8358,8358,8358,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9382,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9383,9384,9384,9384,9384,9384,9384,9384,9384,9416,10440,10440,10440,10440,10440],"y0":0}},
 };
 /** In scanline(y): set the CGRAM entry of a gradient from ART.gradients to its colour for line y (generated by art.py). */
 function gradientLine(g, y) {
@@ -25,7 +25,7 @@ const RUN_SPEED = 2.25, GROUND_ACCEL = 0.35, AIR_ACCEL = 0.22, BRAKE = 0.45;
 const JUMP_SPEED = -4.7, HELD_GRAVITY = 0.22, GRAVITY = 0.30, FALL_LIMIT = 5.5;
 const COYOTE_FRAMES = 6, BUFFER_FRAMES = 6, RESPAWN_FRAMES = 24;
 const SOCKET_X_REACH = 20, SOCKET_Y_REACH = 12, PLUG_FRAMES = 12;
-const SAVE_VERSION = 2, CLEAR_SLOT = 1, TREASURE_SLOT = 2, PIECE_SLOT = 3;
+const SAVE_VERSION = 2, CLEAR_SLOT = 1, TREASURE_SLOT = 2, PIECE_SLOT = 3, STAGE_SLOT = 4;
 const SFX = { move: 0, confirm: 1, pause: 2, fall: 3, pickup: 5, clear: 6, jump: 7, plug: 8, checkpoint: 9 };
 const SONG = { title: 0, stage: 1, practice: 2 };
 const SFX_CH = [7, 6];
@@ -34,7 +34,7 @@ const WALK = [ART.sprites.heroWalk1, ART.sprites.heroWalk2, ART.sprites.heroWalk
 const C = ART.colors;
 
 const FOUNDRY = {
-  index: 0, width: 1152, mapY: 64, palette: 1, backdrop: 'factory', song: SONG.stage,
+  index: 0, zone: 0, name: 'BUTTON ASSEMBLY', treasureName: 'PROTOTYPE D-PAD', width: 1152, mapY: 64, palette: 1, backdrop: 'factory', song: SONG.stage,
   spawn: { x: 32, y: 192 },
   deck: [
     { x: 0, y: 192, w: 184, h: 32 },
@@ -71,6 +71,156 @@ const FOUNDRY = {
   ],
 };
 
+// Deck coordinates are tile aligned. Short gaps teach the device before a long gap requires it.
+const stageDeck = (x, w, y, h = 24) => ({ x, y, w, h });
+const ledge = (x, w, y) => ({ ...stageDeck(x, w, y, 8), oneWay: true });
+const liftAt = (id, x, y, top) => ({ id, kind: 'lift', x, y, w: 56, top });
+const springAt = (id, x, y) => ({ id, kind: 'spring', x, y, w: 24 });
+const span = (kind, id, x, y, w = 128) => ({ kind, id, x, y, w });
+const shelfAt = (id, x, y, target) => ({ id, kind: 'shelf', x, y, target, w: 56 });
+const power = (id, x, y) => ({ id, mode: 'once', x, y, on: [id] });
+const mounted = (id, dy = -10, dx = 28) => ({ id, mode: 'once', mount: id, dx, dy, on: [id] });
+const relay = (id, x, y, on, off = []) => ({ id, mode: 'switch', x, y, on, off });
+const contact = (x, y, offset = 0) => ({ kind: 'contact', x, y, w: 24, offset });
+const press = (x, y, offset = 0) => ({ kind: 'press', x, y, w: 40, raisedY: Math.max(22, y - 66), offset });
+const point = (x, y) => ({ x, y });
+const sign = (x, y, text) => ({ x, y, text });
+
+const ZONES = ['FOUNDRY', 'CAVERNS', 'GARDENS', 'SKYLINE'];
+const STAGE_SKIES = ['sky', 'cavernSky', 'gardenSky', 'skylineSky'];
+const STAGE_BACKDROPS = ['factory', 'cavern', 'garden', 'skyline'];
+const STAGE_DECK_COLORS = [null,
+  ['251c34', '433046', '59404e', '83574e', 'ae7962', '6d3c5b', 'bd7865', 'f0b887'],
+  ['132b2b', '1e3e32', '2f5946', '4d7954', '86a573', '245b4b', '479f74', '9ce3a0'],
+  ['252342', '302b55', '463b74', '6b5590', '9678b4', '55477c', '8d70cb', 'bcaff5'],
+];
+const SCENERY_COLORS = [null,
+  ['1d172d', '2d233f', '4b3051', '6d4c67', '96695c'],
+  ['14282b', '1b3837', '254a42', '376753', '548a64'],
+  ['181931', '242443', '39335d', '52527a', '697cab'],
+];
+
+function campaignStage(index, name, treasureName, width, spawnY, layout) {
+  const { goal, treasure, pieces, devices = [], sockets = [], hazards = [], signs = [], ...terrain } = layout;
+  const zone = index >> 1;
+  return {
+    index, name, treasureName, zone, width, mapY: 64, palette: zone ? 7 : 1,
+    backdrop: STAGE_BACKDROPS[zone], song: SONG.stage, spawn: point(32, spawnY),
+    devices, hazards, signs, ...terrain,
+    sockets: [...sockets, { id: 'exit', mode: 'exit', ...goal }],
+    items: [
+      { kind: 'treasure', index, ...treasure },
+      ...pieces.map((p, i) => ({ kind: 'piece', index: index * 2 + i, ...p })),
+    ],
+  };
+}
+
+const CAMPAIGN = [
+  FOUNDRY,
+  campaignStage(1, 'CABLE WORKS', 'BRAIDED CABLE', 1408, 192, {
+    deck: [
+      stageDeck(0, 224, 192, 32), stageDeck(208, 264, 136),
+      stageDeck(592, 320, 72), ledge(736, 48, 40),
+      stageDeck(952, 168, 88), stageDeck(1160, 248, 104),
+    ],
+    devices: [springAt('spring', 160, 192), liftAt('lift', 496, 136, 72)],
+    sockets: [power('spring', 108, 181), mounted('lift')],
+    beacons: [point(332, 136), point(980, 88)],
+    hazards: [press(1240, 104, 32)],
+    signs: [sign(114, 129, 'POWER THE SPRING'), sign(504, 82, 'RIDE THE LIFT')],
+    goal: point(1376, 93), treasure: point(760, 23),
+    pieces: [point(144, 177), point(1008, 73)],
+  }),
+  campaignStage(2, 'CONTACT MINE', 'CLEAR-SHELL CART', 1280, 184, {
+    deck: [
+      stageDeck(0, 352, 184, 40), stageDeck(536, 288, 184, 40),
+      ledge(664, 64, 144), stageDeck(864, 176, 160), stageDeck(1080, 200, 184, 40),
+    ],
+    devices: [shelfAt('shelf', 352, 184, 488)],
+    sockets: [mounted('shelf')],
+    beacons: [point(304, 184), point(784, 184)],
+    hazards: [contact(152, 184, 30), contact(584, 184, 72), contact(1120, 184, 16)],
+    signs: [sign(160, 125, 'JUMP LIVE CONTACTS'), sign(378, 120, 'PLUG IN ON SHELF')],
+    goal: point(1248, 173), treasure: point(704, 129),
+    pieces: [point(254, 168), point(930, 143)],
+  }),
+  campaignStage(3, 'SLOT ELEVATOR', 'GOLD CONTACT BOARD', 1360, 200, {
+    deck: [
+      stageDeck(0, 176, 200), stageDeck(288, 288, 120),
+      stageDeck(696, 320, 56), stageDeck(1056, 304, 104), ledge(1112, 80, 72),
+    ],
+    devices: [liftAt('lift', 200, 200, 120), liftAt('upperLift', 600, 120, 56)],
+    sockets: [mounted('lift'), mounted('upperLift')],
+    beacons: [point(362, 120), point(918, 56)],
+    hazards: [contact(445, 120, 48), press(1232, 104, 88)],
+    goal: point(1328, 93), treasure: point(1156, 56),
+    pieces: [point(330, 104), point(752, 40)],
+  }),
+  campaignStage(4, 'TRACE TRAIL', 'CERAMIC LOGIC CHIP', 1312, 184, {
+    deck: [
+      stageDeck(0, 232, 184, 40), stageDeck(360, 192, 184, 40),
+      stageDeck(592, 216, 160), ledge(664, 64, 120),
+      stageDeck(936, 184, 160), stageDeck(1160, 152, 136),
+    ],
+    devices: [span('bridge', 'firstBridge', 232, 184), span('bridge', 'secondBridge', 808, 160)],
+    sockets: [power('firstBridge', 204, 173), power('secondBridge', 776, 149)],
+    beacons: [point(480, 184), point(768, 160)],
+    hazards: [contact(1000, 160, 46)],
+    signs: [sign(205, 120, 'POWER THE TRACE')],
+    goal: point(1280, 125), treasure: point(707, 105),
+    pieces: [point(420, 168), point(675, 104)],
+  }),
+  campaignStage(5, 'RELAY GROVE', 'RELAY MODULE', 1472, 184, {
+    deck: [
+      stageDeck(0, 264, 184, 40), stageDeck(392, 256, 184, 40), ledge(592, 40, 128),
+      stageDeck(776, 248, 184, 40), stageDeck(1064, 184, 160), stageDeck(1288, 184, 136),
+    ],
+    devices: [
+      span('bridge', 'firstBridge', 264, 184), shelfAt('shelf', 144, 144, 200),
+      span('bridge', 'secondBridge', 648, 184), springAt('spring', 562, 184),
+    ],
+    sockets: [relay('firstRelay', 236, 173, ['firstBridge'], ['shelf']),
+      relay('secondRelay', 630, 173, ['secondBridge'], ['spring'])],
+    beacons: [point(468, 184), point(790, 184)],
+    hazards: [contact(850, 184, 12), contact(954, 184, 65)],
+    signs: [sign(232, 116, 'ROUTE POWER'), sign(583, 92, 'SPRING CACHE')],
+    goal: point(1440, 125), treasure: point(622, 111),
+    pieces: [point(480, 168), point(1104, 144)],
+  }),
+  campaignStage(6, 'PHOSPHOR ROOFTOPS', 'PHOSPHOR SWATCH', 1360, 144, {
+    deck: [
+      stageDeck(0, 200, 144), stageDeck(328, 232, 144),
+      stageDeck(696, 200, 144), ledge(728, 72, 104),
+      stageDeck(936, 176, 120), stageDeck(1152, 208, 96),
+    ],
+    devices: [span('scanline', 'firstScanline', 200, 144),
+      span('scanline', 'secondScanline', 560, 144, 136)],
+    sockets: [power('firstScanline', 172, 133), power('secondScanline', 532, 133)],
+    beacons: [point(496, 144), point(850, 144)],
+    hazards: [contact(426, 144, 45), contact(1004, 120, 25)],
+    signs: [sign(165, 80, 'POWER + RUN'), sign(532, 78, 'GOLD MEANS GO')],
+    goal: point(1328, 85), treasure: point(775, 89),
+    pieces: [point(368, 127), point(746, 88)],
+  }),
+  campaignStage(7, 'PICTURE LOCK', 'CRT TUNING DIAL', 1568, 192, {
+    deck: [
+      stageDeck(0, 192, 192, 32), stageDeck(312, 224, 112),
+      stageDeck(664, 208, 112), ledge(728, 64, 72),
+      stageDeck(864, 216, 56), stageDeck(1208, 360, 56),
+    ],
+    devices: [liftAt('lift', 216, 192, 112), span('scanline', 'firstScanline', 536, 112),
+      springAt('spring', 824, 112), span('scanline', 'lastScanline', 1080, 56)],
+    sockets: [mounted('lift'), power('firstScanline', 506, 101),
+      power('spring', 804, 101), power('lastScanline', 1044, 45)],
+    beacons: [point(378, 112), point(704, 112), point(1016, 56)],
+    hazards: [contact(112, 192, 42), press(424, 112, 76),
+      press(1290, 56, 40), contact(1420, 56, 64)],
+    signs: [sign(504, 46, 'POWER + RUN'), sign(820, 24, 'SPRING UP')],
+    goal: point(1536, 45), treasure: point(770, 55),
+    pieces: [point(388, 96), point(744, 55)],
+  }),
+];
+
 const PRACTICE = {
   practice: true, width: 800, mapY: 96, palette: 4, backdrop: 'lab', song: SONG.practice,
   spawn: { x: 32, y: 192 },
@@ -102,6 +252,7 @@ const PRACTICE = {
 
 let skipTitle = false;
 let state = 'title', paused = false, pauseSel = 0, clock = 0;
+let selection = 0;
 let input = 0, previousInput = 0, playing = -1, fxNext = 0;
 let course = FOUNDRY, devices = [], sockets = [], checkpoint, bit, camera, deathTimer, reboots, hazardTick;
 
@@ -123,6 +274,10 @@ function scene(layer, asset, opts) {
 function buildTerrain(level) {
   const { deckTop, deckSide } = ART.tiles;
   const top = tile(deckTop, level.palette), side = tile(deckSide, level.palette);
+  // All campaign courses share the same map region. Clear gaps as well as writing the new terrain.
+  for (let row = 0; row < SCREEN_H / 8; row++) {
+    for (let col = 0; col < level.width / 8; col++) mset(col, level.mapY + row, 0);
+  }
   for (const { x, y, w, h } of level.deck) {
     for (let dy = 0; dy < h; dy += 8) {
       for (let dx = 0; dx < w; dx += 8) mset((x + dx) / 8, level.mapY + (y + dy) / 8, dy ? side : top);
@@ -135,11 +290,17 @@ function init() {
     for (let slot = 1; slot < 256; slot++) dset(slot, 0);
     dset(0, SAVE_VERSION);
   }
-  buildTerrain(FOUNDRY);
-  buildTerrain(PRACTICE);
+  selection = clamp(dget(STAGE_SLOT), 0, lastUnlocked());
   scene(0, ART.scenes.logo, { x: 0, y: -48, wrap: false });
   if (skipTitle) startCourse(FOUNDRY);
   else toTitle();
+}
+
+function writeSubPalette(index, colors) {
+  colors.forEach((rgb, i) => {
+    const value = parseInt(rgb, 16);
+    color(index * 16 + i + 1, value >> 19, (value >> 11) & 31, (value >> 3) & 31);
+  });
 }
 
 function setBackdrop(name) {
@@ -171,6 +332,15 @@ function resetDevices(saved) {
 
 function startCourse(level) {
   course = level;
+  if (!level.practice) {
+    selection = level.index;
+    dset(STAGE_SLOT, selection);
+    if (level.zone) {
+      writeSubPalette(6, SCENERY_COLORS[level.zone]);
+      writeSubPalette(7, STAGE_DECK_COLORS[level.zone]);
+    }
+  }
+  buildTerrain(level);
   checkpoint = null;
   reboots = 0;
   hazardTick = 0;
@@ -205,17 +375,24 @@ function update() {
   }
   clock++;
   if (state === 'title') {
+    const dir = Number(pressed(RIGHT)) - Number(pressed(LEFT));
+    const next = clamp(selection + dir, 0, lastUnlocked());
+    if (next !== selection) {
+      selection = next;
+      fx(SFX.move);
+    }
     if (pressed(A) || pressed(START) || pressed(B)) {
       fx(SFX.confirm);
-      startCourse(pressed(B) ? PRACTICE : FOUNDRY);
+      startCourse(pressed(B) ? PRACTICE : CAMPAIGN[selection]);
     }
     return;
   }
   if (state === 'clear') {
-    if (pressed(A) || pressed(START)) {
+    if (pressed(B)) toTitle();
+    else if (pressed(LEFT) || pressed(A) || pressed(START)) {
       fx(SFX.confirm);
-      startCourse(course);
-    } else if (pressed(B)) toTitle();
+      startCourse(pressed(LEFT) ? course : nextStage() || course);
+    }
     return;
   }
   if (pressed(START)) {
@@ -414,11 +591,19 @@ function plug(s) {
   fx(SFX.plug);
 }
 
-const stageCleared = () => (dget(CLEAR_SLOT) & (1 << FOUNDRY.index)) !== 0;
+const stageCleared = (index = 0) => (dget(CLEAR_SLOT) & (1 << index)) !== 0;
+
+function lastUnlocked() {
+  const firstIncomplete = CAMPAIGN.findIndex(stage => !stageCleared(stage.index));
+  return firstIncomplete < 0 ? CAMPAIGN.length - 1 : firstIncomplete;
+}
+
+const nextStage = () => course.practice ? null : CAMPAIGN[course.index + 1];
+const stageNumber = stage => (stage.zone + 1) + '-' + ((stage.index & 1) + 1);
 const itemSlot = item => item.kind === 'treasure' ? TREASURE_SLOT : PIECE_SLOT;
 const hasItem = item => (dget(itemSlot(item)) & (1 << item.index)) !== 0;
 const collected = kind => course.items.filter(item => item.kind === kind && hasItem(item)).length;
-const hasTreasure = () => hasItem(FOUNDRY.items[0]);
+const hasTreasure = () => course.items.some(item => item.kind === 'treasure' && hasItem(item));
 
 function hazardState(h) {
   if (h.kind === 'contact') {
@@ -467,9 +652,10 @@ function updateStage() {
     fx(SFX.fall);
     return;
   }
-  const index = (checkpoint?.index ?? -1) + 1;
-  const beacon = course.beacons[index];
-  if (beacon && bit.support && bit.y === beacon.y && Math.abs(bit.x - beacon.x) < 12) {
+  const index = bit.support ? course.beacons.findIndex((b, i) => i > (checkpoint?.index ?? -1) &&
+    bit.y === b.y && Math.abs(bit.x - b.x) < 12) : -1;
+  if (index >= 0) {
+    const beacon = course.beacons[index];
     checkpoint = { index, beacon, hazardTick, devices: devices.map(d => ({ ...d })), switches: sockets.map(s => s.active) };
     fx(SFX.checkpoint);
   }
@@ -503,10 +689,14 @@ function draw() {
 }
 
 function drawTitle() {
-  centered('CONTROLLER FOUNDRY', 113, C.MUTED);
-  panel(45, 148, 166, 47);
-  centered(stageCleared() ? 'A  REPLAY FOUNDRY' : 'A  PLAY FOUNDRY', 158, C.WHITE);
-  centered('B  PRACTICE', 176, C.CYAN);
+  const stage = CAMPAIGN[selection];
+  centered(stageNumber(stage) + ' ' + ZONES[stage.zone], 109, C.CYAN);
+  centered(stage.name, 123, C.WHITE);
+  panel(26, 145, 204, 51);
+  centered('A  PLAY     B  PRACTICE', 155, C.WHITE);
+  centered('LEFT / RIGHT  STAGE', 175, C.MUTED);
+  if (selection > 0) print('<', 13, 123, C.CYAN);
+  if (selection < lastUnlocked()) print('>', 235, 123, C.CYAN);
 }
 
 function drawDevices(scroll) {
@@ -610,10 +800,15 @@ function drawStage(scroll) {
     print('LAB PRACTICE', 5, 4, C.WHITE);
     print('STATION ' + ((checkpoint?.index ?? -1) + 2) + '/3', 154, 4, C.CYAN);
   } else {
-    print('1-1 FOUNDRY', 5, 4, C.WHITE);
+    print(stageNumber(course) + ' ' + ZONES[course.zone], 5, 4, C.WHITE);
     print('T ' + collected('treasure') + '/1   P ' + collected('piece') + '/2', 131, 4, C.GOLD);
   }
   if (deathTimer && !paused) centered('REBOOTING', 70, C.MUTED);
+  else if (!course.practice && state === 'play' && clock < 100) {
+    const width = course.name.length * 8 + 12;
+    rectfill((SCREEN_W - width) / 2, 21, width, 14, C.PANEL);
+    centered(course.name, 25, C.WHITE);
+  }
 }
 
 function bitSprite() {
@@ -658,10 +853,17 @@ function drawPause() {
 }
 
 function drawClear() {
-  panel(24, 68, 208, 87);
-  centered(course.practice ? 'PRACTICE COMPLETE' : 'STAGE CLEAR', 79, C.GOLD);
-  centered(course.practice ? 'ALL 3 STATIONS' : 'TREASURE ' + collected('treasure') + '/1  PIECES ' + collected('piece') + '/2', 99, C.MUTED);
-  centered('A REPLAY   B TITLE', 129, C.WHITE);
+  const next = nextStage();
+  panel(24, 60, 208, 102);
+  const title = course.practice ? 'PRACTICE COMPLETE' : next ? 'STAGE CLEAR' : 'CAMPAIGN CLEAR';
+  centered(title, 71, C.GOLD);
+  if (course.practice) centered('ALL 3 STATIONS', 97, C.MUTED);
+  else {
+    centered(hasTreasure() ? course.treasureName : 'TREASURE MISSING', 90, C.MUTED);
+    centered('PIECES ' + collected('piece') + '/2', 105, C.MUTED);
+  }
+  centered(next ? 'A NEXT   B TITLE' : 'A REPLAY   B TITLE', 126, C.WHITE);
+  if (next) centered('LEFT REPLAYS STAGE', 143, C.MUTED);
 }
 
 function panel(x, y, w, h) {
@@ -675,5 +877,7 @@ function centered(text, y, colorIndex) {
 }
 
 function scanline(y) {
-  gradientLine(state !== 'title' && course.practice ? ART.gradients.labSky : ART.gradients.sky, y);
+  const name = state === 'title' ? 'sky' : course.practice ? 'labSky' :
+    STAGE_SKIES[course.zone];
+  gradientLine(ART.gradients[name], y);
 }

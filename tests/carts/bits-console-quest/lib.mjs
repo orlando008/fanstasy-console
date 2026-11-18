@@ -11,6 +11,7 @@ const PROBE = `__expose(() => ({
   get deck() { return course.deck; }, get COURSE_MAP_Y() { return course.mapY; },
   hasTreasure, stageCleared, interaction: () => interaction()?.id ?? null, clearSocketPath, mget, ART,
   get hazardTick() { return hazardTick; }, hazardState, solidDevice,
+  get selection() { return selection; }, CAMPAIGN, lastUnlocked,
   SFX, SONG, RESPAWN_FRAMES, SAVE_VERSION, CLEAR_SLOT, TREASURE_SLOT, PIECE_SLOT,
 }));`;
 

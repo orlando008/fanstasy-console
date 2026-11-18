@@ -59,4 +59,14 @@ export default function screens(shot) {
   shot(practice, 'practice lift station');
   replay(practice, practiceFinish);
   shot(practice, 'practice complete');
+
+  for (const [index, label] of [[1, 'Cable Works'], [2, 'Contact Mine'],
+    [3, 'Slot Elevator'], [4, 'Trace Trail'], [5, 'Relay Grove'],
+    [6, 'Phosphor Rooftops'], [7, 'Picture Lock']]) {
+    const save = Int32Array.from([2, (1 << index) - 1, 0, 0, index]);
+    const level = newGame(1, { title: true, save });
+    level.press('A');
+    level.run(42, M('RIGHT'));
+    shot(level, label);
+  }
 }

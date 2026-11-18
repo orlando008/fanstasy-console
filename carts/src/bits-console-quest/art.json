@@ -1,22 +1,25 @@
 {
  "colors": {
-  "CORAL": 121,
-  "CYAN": 119,
-  "DARK": 123,
-  "GOLD": 118,
-  "HOT": 124,
-  "INK": 113,
-  "MUTED": 116,
-  "PANEL": 114,
-  "PURPLE": 120,
-  "SIGNAL": 125,
-  "STEEL": 122,
-  "TRIM": 115,
-  "WHITE": 117
+  "CORAL": 233,
+  "CYAN": 231,
+  "DARK": 235,
+  "GOLD": 230,
+  "HOT": 236,
+  "INK": 225,
+  "MUTED": 228,
+  "PANEL": 226,
+  "PURPLE": 232,
+  "SIGNAL": 237,
+  "STEEL": 234,
+  "TRIM": 227,
+  "WHITE": 229
  },
  "gradients": [
+  "cavernSky",
+  "gardenSky",
   "labSky",
-  "sky"
+  "sky",
+  "skylineSky"
  ],
  "palettes": {
   "bg1": {
@@ -77,6 +80,29 @@
     "shadow": 1,
     "standby": 5,
     "wall": 2
+   }
+  },
+  "bg6": {
+   "base": 96,
+   "colors": {
+    "detail": 4,
+    "light": 5,
+    "panel": 2,
+    "rim": 3,
+    "shadow": 1
+   }
+  },
+  "bg7": {
+   "base": 112,
+   "colors": {
+    "face0": 2,
+    "face1": 3,
+    "face2": 4,
+    "face3": 5,
+    "ink": 1,
+    "rim0": 6,
+    "rim1": 7,
+    "rim2": 8
    }
   },
   "spr0": {
@@ -145,11 +171,25 @@
   }
  },
  "scenes": {
+  "cavern": {
+   "h": 28,
+   "mx": 96,
+   "my": 32,
+   "pal": 6,
+   "w": 32
+  },
   "factory": {
    "h": 28,
    "mx": 0,
    "my": 32,
    "pal": 2,
+   "w": 32
+  },
+  "garden": {
+   "h": 28,
+   "mx": 128,
+   "my": 32,
+   "pal": 6,
    "w": 32
   },
   "lab": {
@@ -164,6 +204,13 @@
    "mx": 0,
    "my": 16,
    "pal": 3,
+   "w": 32
+  },
+  "skyline": {
+   "h": 28,
+   "mx": 160,
+   "my": 32,
+   "pal": 6,
    "w": 32
   }
  },
@@ -253,6 +300,6 @@
   "deckSide": 2,
   "deckTop": 1
  },
- "used": 401,
+ "used": 630,
  "version": 1
 }
