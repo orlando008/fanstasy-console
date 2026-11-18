@@ -139,10 +139,14 @@
   "spr2": {
    "base": 160,
    "colors": {
+    "body0": 5,
+    "body1": 6,
+    "body2": 7,
     "frame": 2,
     "idle": 3,
     "ink": 1,
-    "live": 4
+    "live": 4,
+    "screen": 8
    }
   },
   "spr3": {
@@ -246,42 +250,47 @@
   "displayTreasure0": {
    "pal": 5,
    "size": 16,
-   "tile": 452
+   "tile": 456
   },
   "displayTreasure1": {
    "pal": 5,
    "size": 16,
-   "tile": 454
+   "tile": 458
   },
   "displayTreasure2": {
    "pal": 5,
    "size": 16,
-   "tile": 456
+   "tile": 460
   },
   "displayTreasure3": {
    "pal": 5,
    "size": 16,
-   "tile": 458
+   "tile": 462
   },
   "displayTreasure4": {
    "pal": 5,
    "size": 16,
-   "tile": 460
+   "tile": 488
   },
   "displayTreasure5": {
    "pal": 5,
    "size": 16,
-   "tile": 462
+   "tile": 490
   },
   "displayTreasure6": {
    "pal": 5,
    "size": 16,
-   "tile": 484
+   "tile": 492
   },
   "displayTreasure7": {
    "pal": 5,
    "size": 16,
-   "tile": 486
+   "tile": 494
+  },
+  "exitTerminal": {
+   "pal": 2,
+   "size": 32,
+   "tile": 448
   },
   "heroBlink": {
    "pal": 0,
@@ -341,7 +350,7 @@
   "labConsole": {
    "pal": 3,
    "size": 32,
-   "tile": 448
+   "tile": 452
   },
   "piece": {
    "pal": 4,
@@ -385,9 +394,31 @@
   }
  },
  "tiles": {
-  "deckSide": 2,
-  "deckTop": 1
+  "deckEnd0": 121,
+  "deckEnd1": 127,
+  "deckEnd2": 133,
+  "deckEnd3": 137,
+  "deckLedge0": 124,
+  "deckLedge1": 130,
+  "deckLedge2": 130,
+  "deckLedge3": 140,
+  "deckLedgeEnd0": 125,
+  "deckLedgeEnd1": 131,
+  "deckLedgeEnd2": 131,
+  "deckLedgeEnd3": 141,
+  "deckTop0": 120,
+  "deckTop1": 126,
+  "deckTop2": 132,
+  "deckTop3": 136,
+  "deckWall0": 122,
+  "deckWall1": 128,
+  "deckWall2": 134,
+  "deckWall20": 123,
+  "deckWall21": 129,
+  "deckWall22": 135,
+  "deckWall23": 139,
+  "deckWall3": 138
  },
- "used": 726,
+ "used": 831,
  "version": 1
 }

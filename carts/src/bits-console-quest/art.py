@@ -7,8 +7,8 @@ from kit import Art, Img, big_text, ramp
 
 art = Art()
 art.region('bg', 1, 255)
-art.region('spr', 256, 767)
-art.region('campaign', 768, 1023)
+art.region('spr', 256, 639)
+art.region('campaign', 640, 1023)
 
 art.gradient('sky', ['141126', '251b37', '41243f'], y0=0, y1=223)
 art.gradient('labSky', ['121125', '1f1b38', '34284a'], y0=0, y1=223)
@@ -27,20 +27,6 @@ for index, (name, rgb) in enumerate(overlay.items(), 225):
 deck = art.palette(1, {
     'ink': '2b2139', 'face': ramp('8e675c', 4), 'rim': ramp('eb9874', 3),
 })
-top = Img(8, 8)
-top.rect(0, 0, 8, 8, deck.face[1])
-top.rect(0, 0, 8, 1, deck.rim[2])
-top.rect(0, 1, 8, 2, deck.rim[1])
-top.rect(0, 3, 8, 1, deck.ink)
-top.rect(1, 5, 2, 1, deck.face[3])
-art.tile('deckTop', top, pal=deck, region='bg')
-
-side = Img(8, 8)
-side.rect(0, 0, 8, 8, deck.face[0])
-side.rect(0, 0, 8, 1, deck.ink)
-side.line(0, 7, 6, 1, deck.face[1])
-side.line(4, 7, 7, 4, deck.face[1])
-art.tile('deckSide', side, pal=deck, region='bg')
 
 far = art.palette(2, {
     'shadow': '201b33', 'steel': '342644', 'edge': '50344f', 'lamp': '78475a',
@@ -112,12 +98,49 @@ art.scene('lab', wing, pal=practice, at=(64, 32), region='bg')
 # The campaign reuses five backdrop roles, recolored per zone at load time.
 zones = art.palette(6, {
     'shadow': '1d172d', 'panel': '2d233f', 'rim': '4b3051',
-    'detail': '6d4c67', 'light': '96695c',
+    'detail': '9a6448', 'light': '4f9a94',
 })
-art.palette(7, {
+zone_deck = art.palette(7, {
     'ink': '251c34', 'face': ['433046', '59404e', '83574e', 'ae7962'],
     'rim': ['6d3c5b', 'bd7865', 'f0b887'],
 })
+
+# Terrain, a set of 8 x 8 tiles for each zone: the deck's top, its end (flipped for the right end), two walls that
+# alternate, and a one-way ledge with its end. All four sets use the same roles (ink, face dark to light, rim dark to
+# light), so Foundry's set shows in palette 1, the practice wing's in 4, and the other zones' in 7, recoloured per zone.
+def terrain(z, pal):
+    ink, f, r = pal.ink, pal.face, pal.rim
+    top, end, wall, wall2, ledge, ledge_end = (Img(8, 8) for _ in range(6))
+    if z == 0:  # Foundry: a conveyor deck on riveted plate
+        top.rect(0, 0, 8, 8, f[1]).rect(0, 0, 8, 1, r[2]).rect(0, 1, 8, 2, r[1]).rect(0, 3, 8, 1, ink).rect(1, 5, 2, 1, f[3])
+        wall.rect(0, 0, 8, 8, f[0]).rect(0, 0, 8, 1, ink).line(0, 7, 6, 1, f[1]).line(4, 7, 7, 4, f[1])
+        wall2.rect(0, 0, 8, 8, f[0]).rect(0, 0, 8, 1, ink).rect(3, 3, 2, 2, f[2]).pset(3, 3, f[3]).line(0, 7, 2, 5, f[1])
+    elif z == 1:  # Caverns: cut rock with a copper rail along the top, contact pins in the wall
+        top.rect(0, 0, 8, 8, f[1]).rect(0, 0, 8, 2, r[1]).rect(0, 0, 8, 1, r[2]).rect(0, 2, 8, 1, ink)
+        top.rect(1, 4, 3, 2, f[2]).pset(1, 4, f[3]).rect(5, 5, 2, 2, f[0])
+        wall.rect(0, 0, 8, 8, f[0]).line(0, 3, 4, 3, ink).line(4, 3, 4, 7, ink).rect(1, 0, 3, 2, f[1]).rect(5, 4, 2, 2, f[1])
+        wall2.rect(0, 0, 8, 8, f[0]).rect(2, 1, 1, 4, r[0]).rect(5, 1, 1, 4, r[0]).pset(2, 1, r[1]).pset(5, 1, r[1]).line(0, 6, 7, 6, ink)
+    elif z == 2:  # Gardens: circuit board, a bright edge, solder pads and traces
+        top.rect(0, 0, 8, 8, f[1]).rect(0, 0, 8, 1, r[2]).rect(0, 1, 8, 1, r[1]).rect(0, 2, 8, 1, ink)
+        top.rect(1, 4, 2, 2, f[3]).rect(5, 4, 2, 2, f[3]).pset(1, 4, r[2]).pset(5, 4, r[2])
+        wall.rect(0, 0, 8, 8, f[0]).line(0, 2, 4, 2, f[2]).line(4, 2, 7, 5, f[2]).rect(6, 5, 2, 2, f[3]).pset(1, 5, ink)
+        wall2.rect(0, 0, 8, 8, f[0]).line(2, 0, 2, 4, f[2]).line(2, 4, 5, 7, f[2]).rect(5, 1, 2, 2, ink).pset(5, 1, f[1])
+    else:  # Skyline: rooftop coping over panelled walls with a lit window here and there
+        top.rect(0, 0, 8, 8, f[1]).rect(0, 0, 8, 2, r[1]).rect(0, 0, 8, 1, r[2]).rect(0, 2, 8, 1, ink).rect(0, 3, 8, 1, f[0])
+        top.rect(3, 5, 1, 3, ink)
+        wall.rect(0, 0, 8, 8, f[0]).rect(0, 0, 1, 8, ink).rect(1, 0, 1, 8, f[1])
+        wall2.rect(0, 0, 8, 8, f[0]).rect(0, 0, 1, 8, ink).rect(1, 0, 1, 8, f[1]).rect(3, 2, 3, 4, ink).rect(4, 3, 1, 2, r[2]).pset(3, 2, r[0])
+    # the end of a deck: the top's colours, rounded off at the outer corner with an ink edge down the side
+    end.blit(top, 0, 0).rect(0, 0, 1, 8, ink).pset(1, 0, ink).pset(0, 0, 0)
+    # a one-way ledge: the top's first rows on brackets, open beneath so it reads as something to jump up through
+    ledge.blit(top.crop(0, 0, 8, 4), 0, 0).rect(0, 4, 8, 1, ink).rect(1, 5, 2, 1, f[0]).rect(5, 5, 2, 1, f[0]).pset(2, 6, f[0]).pset(5, 6, f[0])
+    ledge_end.blit(ledge, 0, 0).rect(0, 0, 1, 5, ink).pset(1, 0, ink).pset(0, 0, 0)
+    for name, img in [('Top', top), ('End', end), ('Wall', wall), ('Wall2', wall2), ('Ledge', ledge), ('LedgeEnd', ledge_end)]:
+        art.tile('deck%s%d' % (name, z), img, pal=pal, region='bg')
+
+terrain(0, deck)
+for z in (1, 2, 3):
+    terrain(z, zone_deck)
 
 cavern = Img(256, 224)
 for x, y in [(8, 58), (136, 86)]:
@@ -162,6 +185,21 @@ for x, y in [(9, 69), (82, 100), (157, 54)]:
     skyline.rect(x + 50, y + 50, 4, 2, zones.light)
 for x, y in [(6, 46), (66, 31), (122, 54), (146, 36), (225, 87), (243, 34)]:
     skyline.pset(x, y, zones.detail)
+# A lower band of distant rooftops in front of the screens' stands: lit windows (light) and antenna masts (detail),
+# so the dark below the decks reads as a city rather than a void.
+for x, w, top in [(0, 30, 150), (26, 40, 168), (62, 22, 140), (92, 38, 160), (126, 26, 146), (150, 44, 172),
+                  (190, 24, 138), (212, 44, 156)]:
+    skyline.rect(x, top, w, 224 - top, zones.panel)
+    skyline.rect(x, top, w, 1, zones.rim)
+    for wy in range(top + 6, 222, 9):
+        for wx in range(x + 4, x + w - 4, 7):
+            if (wx * 5 + wy * 3) % 13 == 0:
+                skyline.rect(wx, wy, 2, 3, zones.light)
+            elif (wx + wy) % 3 == 0:
+                skyline.rect(wx, wy, 2, 3, zones.rim)
+for x, top, h in [(70, 140, 22), (198, 138, 18), (232, 156, 14)]:
+    skyline.rect(x, top - h, 1, h, zones.detail)
+    skyline.pset(x, top - h, zones.light)
 art.scene('skyline', skyline, pal=zones, at=(160, 32), region='campaign')
 
 logo = art.palette(3, {
@@ -309,6 +347,7 @@ art.sprite('piece', piece, pal=chip, region='spr')
 
 hardware = art.sprite_palette(2, {
     'ink': '151222', 'frame': '937bab', 'idle': 'ffca70', 'live': '67f1e3',
+    'body': ['2f2643', '4b3d63', '6a5788'], 'screen': '163a42',
 })
 for name, pins in [('socketIdle', hardware.idle), ('socketLive', hardware.live)]:
     socket = Img(16, 16)
@@ -317,6 +356,19 @@ for name, pins in [('socketIdle', hardware.idle), ('socketLive', hardware.live)]
     socket.rect(5, 6, 2, 4, pins)
     socket.rect(9, 6, 2, 4, pins)
     art.sprite(name, socket, pal=hardware, region='spr')
+
+# The exit terminal: a small screen with an arrow on a pedestal. Its socket (drawn over it) sits in the front panel.
+terminal = Img(32, 32)
+terminal.rect(3, 0, 26, 15, hardware.ink)
+terminal.rect(4, 1, 24, 13, hardware.body[1]).rect(4, 1, 24, 1, hardware.body[2]).rect(4, 13, 24, 1, hardware.body[0])
+terminal.rect(7, 3, 18, 9, hardware.screen)
+for y in (4, 6, 8, 10):
+    terminal.rect(8, y, 5, 1, hardware.body[0])
+terminal.rect(14, 7, 6, 1, hardware.live).line(17, 4, 20, 7, hardware.live).line(17, 10, 20, 7, hardware.live)
+terminal.rect(9, 15, 14, 17, hardware.ink)
+terminal.rect(10, 15, 12, 17, hardware.body[0]).rect(10, 15, 1, 17, hardware.body[1])
+terminal.rect(6, 29, 20, 3, hardware.ink).rect(7, 29, 18, 2, hardware.body[1]).rect(7, 29, 18, 1, hardware.body[2])
+art.sprite('exitTerminal', terminal, pal=hardware, region='spr')
 
 # Native-size exhibit study from the supplied NOVA-16 reference. It carries the proposed lab palette.
 lab = art.sprite_palette(3, {

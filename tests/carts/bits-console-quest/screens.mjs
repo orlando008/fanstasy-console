@@ -1,4 +1,5 @@
 import { newGame, M, enterSelectedStage } from './lib.mjs';
+import { campaignRoutes } from './campaign-routes.mjs';
 import { replay, toLift, toUpperDeck, treasureRoute, hazardApproach, crossScanline, toPracticeRelay, toPracticeLift, practiceFinish } from './bot.mjs';
 
 export const hero = [
@@ -92,6 +93,17 @@ export default function screens(shot) {
     const level = newGame(1, { title: true, save });
     enterSelectedStage(level);
     level.run(42, M('RIGHT'));
+    shot(level, label);
+  }
+
+  // Each zone's look at the far end of a stage: its terrain, ledges and the exit terminal
+  for (const [index, label] of [[2, 'Contact Mine exit'], [4, 'Trace Trail exit'], [7, 'Picture Lock exit']]) {
+    const save = Int32Array.from([2, (1 << index) - 1, 0, 0, index]);
+    const level = newGame(1, { title: true, save });
+    enterSelectedStage(level);
+    const route = campaignRoutes[index - 1].slice(0, -1);
+    route[route.length - 1] = [Math.max(1, route.at(-1)[0] - 24), route.at(-1)[1]]; // stop short of the terminal
+    replay(level, route);
     shot(level, label);
   }
 }
